@@ -21,8 +21,10 @@ export function DashboardLayoutWrapper({ children }: Props) {
         'transition-all duration-300 ease-in-out',
         'min-h-screen',
         // Ajustar margen según estado del sidebar
-        // En mobile: sin margen (sidebar es drawer)
-        'lg:ml-16',
+        // Mobile (< md): sin margen (sidebar es drawer)
+        // Tablet (md:): margen de 16 (sidebar colapsado)
+        // Desktop (lg:): margen de 16 colapsado o 64 expandido
+        'md:ml-16',
         sidebarExpanded && 'lg:ml-64'
       )}
     >

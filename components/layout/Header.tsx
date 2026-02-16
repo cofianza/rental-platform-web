@@ -35,7 +35,7 @@ export function Header() {
       {/* Botón hamburguesa (solo mobile) */}
       <button
         onClick={openSidebar}
-        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label="Abrir menú"
       >
         <IconMenu size={20} className="text-gray-700" />
