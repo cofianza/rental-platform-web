@@ -1,0 +1,283 @@
+/**
+ * Constantes del dominio - Habitar Propiedades 2.0
+ * Configuración de navegación, estados, formatos y constantes del negocio
+ */
+
+// ============================================
+// NAVEGACIÓN DEL DASHBOARD
+// ============================================
+
+export interface NavItem {
+  label: string
+  href: string
+  icon: string // Nombre del ícono (para usar con librería de íconos)
+  description?: string
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: 'LayoutDashboard',
+    description: 'Vista general y KPIs',
+  },
+  {
+    label: 'Inmuebles',
+    href: '/inmuebles',
+    icon: 'Building2',
+    description: 'Gestión de propiedades',
+  },
+  {
+    label: 'Expedientes',
+    href: '/expedientes',
+    icon: 'FolderOpen',
+    description: 'Casos de arrendamiento',
+  },
+  {
+    label: 'Reportes',
+    href: '/reportes',
+    icon: 'BarChart3',
+    description: 'Reportes y estadísticas',
+  },
+  {
+    label: 'Usuarios',
+    href: '/usuarios',
+    icon: 'Users',
+    description: 'Gestión de usuarios',
+  },
+  {
+    label: 'Configuración',
+    href: '/configuracion',
+    icon: 'Settings',
+    description: 'Configuración del sistema',
+  },
+]
+
+// ============================================
+// ESTADOS DEL SISTEMA
+// ============================================
+
+export type EstadoExpediente =
+  | 'borrador'
+  | 'en_revision'
+  | 'informacion_incompleta'
+  | 'aprobado'
+  | 'rechazado'
+  | 'condicionado'
+  | 'cerrado'
+
+export type EstadoInmueble = 'disponible' | 'en_estudio' | 'arrendado' | 'no_disponible'
+
+export interface EstadoConfig {
+  label: string
+  color: string // Clase de Tailwind
+  bgColor: string
+  textColor: string
+  borderColor: string
+}
+
+/**
+ * Configuración visual de estados de expedientes
+ * Con colores consistentes según reglas de negocio
+ */
+export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
+  borrador: {
+    label: 'Borrador',
+    color: 'gray',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+  },
+  en_revision: {
+    label: 'En Revisión',
+    color: 'amber',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-300',
+  },
+  informacion_incompleta: {
+    label: 'Información Incompleta',
+    color: 'orange',
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-700',
+    borderColor: 'border-orange-300',
+  },
+  aprobado: {
+    label: 'Aprobado',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+  },
+  rechazado: {
+    label: 'Rechazado',
+    color: 'red',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+  },
+  condicionado: {
+    label: 'Condicionado',
+    color: 'purple',
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
+    borderColor: 'border-purple-300',
+  },
+  cerrado: {
+    label: 'Cerrado',
+    color: 'slate',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-700',
+    borderColor: 'border-slate-300',
+  },
+}
+
+export const ESTADOS_INMUEBLE: Record<EstadoInmueble, EstadoConfig> = {
+  disponible: {
+    label: 'Disponible',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+  },
+  en_estudio: {
+    label: 'En Estudio',
+    color: 'amber',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-300',
+  },
+  arrendado: {
+    label: 'Arrendado',
+    color: 'blue',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+  },
+  no_disponible: {
+    label: 'No Disponible',
+    color: 'gray',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+  },
+}
+
+// ============================================
+// FORMATOS Y UTILIDADES
+// ============================================
+
+/**
+ * Formatea valores monetarios en pesos colombianos (COP)
+ * Formato: $1.500.000 (punto como separador de miles, sin decimales)
+ *
+ * @param value - Valor numérico a formatear
+ * @returns String formateado con símbolo $ y separadores de miles
+ *
+ * @example
+ * formatCurrency(1500000) // "$1.500.000"
+ * formatCurrency(500000) // "$500.000"
+ */
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+/**
+ * Formatea fechas al formato colombiano
+ * @param date - Fecha a formatear
+ * @returns String con formato dd/mm/yyyy
+ */
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return new Intl.DateTimeFormat('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(d)
+}
+
+/**
+ * Formatea fechas con hora al formato colombiano
+ * @param date - Fecha a formatear
+ * @returns String con formato dd/mm/yyyy hh:mm
+ */
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return new Intl.DateTimeFormat('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d)
+}
+
+// ============================================
+// CONSTANTES DEL NEGOCIO
+// ============================================
+
+/**
+ * Tipos de documento válidos en Colombia
+ */
+export const TIPOS_DOCUMENTO = {
+  CC: 'Cédula de Ciudadanía',
+  CE: 'Cédula de Extranjería',
+  NIT: 'NIT',
+  PASAPORTE: 'Pasaporte',
+} as const
+
+/**
+ * Estratos socioeconómicos en Colombia (1-6)
+ */
+export const ESTRATOS = [1, 2, 3, 4, 5, 6] as const
+
+/**
+ * Tipos de inmueble
+ */
+export const TIPOS_INMUEBLE = {
+  APARTAMENTO: 'Apartamento',
+  CASA: 'Casa',
+  LOCAL: 'Local Comercial',
+  OFICINA: 'Oficina',
+  BODEGA: 'Bodega',
+  LOTE: 'Lote',
+} as const
+
+/**
+ * Roles del sistema
+ */
+export const ROLES = {
+  ADMINISTRADOR: 'Administrador',
+  OPERADOR: 'Operador/Analista',
+  GERENCIA: 'Gerencia/Consulta',
+} as const
+
+/**
+ * Límites del sistema
+ */
+export const LIMITS = {
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_PHOTOS_PER_PROPERTY: 10,
+  ITEMS_PER_PAGE: 20,
+} as const
+
+/**
+ * URLs de la API
+ */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'
+
+/**
+ * Mensajes de error comunes
+ */
+export const ERROR_MESSAGES = {
+  NETWORK_ERROR: 'Error de conexión. Por favor, verifica tu conexión a internet.',
+  UNAUTHORIZED: 'No tienes autorización para realizar esta acción.',
+  NOT_FOUND: 'El recurso solicitado no fue encontrado.',
+  SERVER_ERROR: 'Error en el servidor. Por favor, intenta de nuevo más tarde.',
+  VALIDATION_ERROR: 'Error de validación. Verifica los datos ingresados.',
+} as const
