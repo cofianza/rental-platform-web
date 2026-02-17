@@ -209,6 +209,34 @@ class AuthService {
   }
 
   // ============================================
+  // RECUPERACIÓN DE CONTRASEÑA
+  // ============================================
+
+  /**
+   * Solicita un enlace de recuperación de contraseña
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/forgot-password', { email })
+    return response.data
+  }
+
+  /**
+   * Valida que un token de reset sea válido y no haya expirado
+   */
+  async validateResetToken(token: string): Promise<{ valid: boolean }> {
+    const response = await apiClient.get<{ valid: boolean }>(`/auth/reset-password/${token}`)
+    return response.data
+  }
+
+  /**
+   * Restablece la contraseña usando un token válido
+   */
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/reset-password', { token, password })
+    return response.data
+  }
+
+  // ============================================
   // MÉTODOS PRIVADOS
   // ============================================
 

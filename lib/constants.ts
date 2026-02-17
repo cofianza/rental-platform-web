@@ -304,6 +304,7 @@ export const AUTH_ROUTES = {
   LOGIN: '/login',
   REGISTER: '/registro',
   FORGOT_PASSWORD: '/recuperar-contrasena',
+  RESET_PASSWORD: '/restablecer-contrasena',
   DASHBOARD: '/dashboard',
 } as const
 
@@ -326,4 +327,5 @@ export const PUBLIC_AUTH_ROUTES = [
   '/login',
   '/registro',
   '/recuperar-contrasena',
+  '/restablecer-contrasena',
 ] as const
