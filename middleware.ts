@@ -20,14 +20,14 @@ const protectedRoutes = [
 // Rutas de auth que deben redirigir a dashboard si ya está autenticado
 const authRoutes = ['/login', '/registro', '/recuperar-contrasena']
 
+// Cookie de sesión establecida por authService después del login
+const SESSION_COOKIE_NAME = 'hp-session'
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Verificar si hay refresh token cookie (indica sesión activa)
-  // El nombre de la cookie debe coincidir con lo que setea el backend
-  const hasSession = request.cookies.has('refresh_token') ||
-                     request.cookies.has('sb-access-token') || // Supabase cookie
-                     request.cookies.has('sb-refresh-token')   // Supabase cookie
+  // Verificar si hay cookie de sesión (establecida por authService.login)
+  const hasSession = request.cookies.has(SESSION_COOKIE_NAME)
 
   // Ruta protegida sin sesión -> redirect a login
   const isProtectedRoute = protectedRoutes.some((route) =>

@@ -9,6 +9,26 @@ import { useAuthStore } from '@/stores/auth.store'
 import { AUTH_MESSAGES, AUTH_ROUTES } from '@/lib/constants'
 import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse } from '@/types/auth'
 
+// Nombre de la cookie de sesión para el middleware
+const SESSION_COOKIE_NAME = 'hp-session'
+
+/**
+ * Establece una cookie de sesión (para que el middleware detecte autenticación)
+ */
+function setSessionCookie(expiresAt: number): void {
+  if (typeof document === 'undefined') return
+  const expires = new Date(expiresAt * 1000).toUTCString()
+  document.cookie = `${SESSION_COOKIE_NAME}=1; path=/; expires=${expires}; SameSite=Lax`
+}
+
+/**
+ * Elimina la cookie de sesión
+ */
+function clearSessionCookie(): void {
+  if (typeof document === 'undefined') return
+  document.cookie = `${SESSION_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+}
+
 class AuthService {
   private refreshTimerId: ReturnType<typeof setTimeout> | null = null
 
@@ -33,6 +53,9 @@ class AuthService {
 
       // Guardar en memoria (Zustand)
       store.login(fullUser, session.access_token)
+
+      // Establecer cookie de sesión para el middleware
+      setSessionCookie(session.expires_at)
 
       // Programar refresh antes de expiración (expires_at es Unix timestamp)
       this.scheduleTokenRefreshFromTimestamp(session.expires_at)
@@ -67,8 +90,9 @@ class AuthService {
       // Ignorar errores de Supabase
     }
 
-    // Limpiar estado local
+    // Limpiar estado local y cookie de sesión
     store.logout()
+    clearSessionCookie()
     this.clearTokenRefreshTimer()
   }
 
