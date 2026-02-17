@@ -1,7 +1,9 @@
 /**
  * EmptyState - Estado vacío con icono, título y acción opcional
- * Server Component - no requiere interactividad
+ * Client Component - usa onClick en acción opcional
  */
+
+'use client'
 
 import { cn } from '@/lib/utils'
 import type { IconProps } from '@/components/icons'
