@@ -6,13 +6,52 @@
 import { cn } from '@/lib/utils'
 import type { IconProps } from '@/components/icons'
 
+// Mapa estático de variantes de color para que Tailwind detecte las clases en build
+const ACCENT_VARIANTS: Record<string, { border: string; iconBg: string; iconText: string }> = {
+  'bg-primary-600': {
+    border: 'bg-primary-600',
+    iconBg: 'bg-primary-100',
+    iconText: 'text-primary-600',
+  },
+  'bg-green-600': {
+    border: 'bg-green-600',
+    iconBg: 'bg-green-100',
+    iconText: 'text-green-600',
+  },
+  'bg-amber-600': {
+    border: 'bg-amber-600',
+    iconBg: 'bg-amber-100',
+    iconText: 'text-amber-600',
+  },
+  'bg-blue-600': {
+    border: 'bg-blue-600',
+    iconBg: 'bg-blue-100',
+    iconText: 'text-blue-600',
+  },
+  'bg-red-600': {
+    border: 'bg-red-600',
+    iconBg: 'bg-red-100',
+    iconText: 'text-red-600',
+  },
+  'bg-purple-600': {
+    border: 'bg-purple-600',
+    iconBg: 'bg-purple-100',
+    iconText: 'text-purple-600',
+  },
+  'bg-teal-600': {
+    border: 'bg-teal-600',
+    iconBg: 'bg-teal-100',
+    iconText: 'text-teal-600',
+  },
+}
+
 export interface KPICardProps {
   title: string
   value: string | number
   change?: number
   trend?: 'up' | 'down' | 'neutral'
   icon?: React.ComponentType<IconProps>
-  accentColor?: string
+  accentColor?: keyof typeof ACCENT_VARIANTS
   className?: string
 }
 
@@ -37,6 +76,9 @@ export function KPICard({
     neutral: '→',
   }
 
+  // Obtener variantes del mapa estático o usar valores por defecto
+  const variants = ACCENT_VARIANTS[accentColor] || ACCENT_VARIANTS['bg-primary-600']
+
   return (
     <div
       className={cn(
@@ -46,7 +88,7 @@ export function KPICard({
       )}
     >
       {/* Borde de acento izquierdo */}
-      <div className={cn('absolute left-0 top-0 bottom-0 w-1', accentColor)} />
+      <div className={cn('absolute left-0 top-0 bottom-0 w-1', variants.border)} />
 
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -69,8 +111,8 @@ export function KPICard({
 
         {/* Icono opcional */}
         {Icon && (
-          <div className={cn('p-3 rounded-lg', accentColor.replace('bg-', 'bg-').replace('-600', '-100'))}>
-            <Icon size={24} className={cn(accentColor.replace('bg-', 'text-'))} />
+          <div className={cn('p-3 rounded-lg', variants.iconBg)}>
+            <Icon size={24} className={variants.iconText} />
           </div>
         )}
       </div>
