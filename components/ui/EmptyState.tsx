@@ -1,6 +1,6 @@
 /**
  * EmptyState - Estado vacío con icono, título y acción opcional
- * Client Component - action.onClick requiere interactividad
+ * Client Component - usa onClick en acción opcional
  */
 
 'use client'

@@ -6,44 +6,23 @@
 import { cn } from '@/lib/utils'
 import type { IconProps } from '@/components/icons'
 
-// Mapa estático de variantes de color para que Tailwind detecte las clases en build
-const ACCENT_VARIANTS: Record<string, { border: string; iconBg: string; iconText: string }> = {
-  'bg-primary-600': {
-    border: 'bg-primary-600',
-    iconBg: 'bg-primary-100',
-    iconText: 'text-primary-600',
-  },
-  'bg-green-600': {
-    border: 'bg-green-600',
-    iconBg: 'bg-green-100',
-    iconText: 'text-green-600',
-  },
-  'bg-amber-600': {
-    border: 'bg-amber-600',
-    iconBg: 'bg-amber-100',
-    iconText: 'text-amber-600',
-  },
-  'bg-blue-600': {
-    border: 'bg-blue-600',
-    iconBg: 'bg-blue-100',
-    iconText: 'text-blue-600',
-  },
-  'bg-red-600': {
-    border: 'bg-red-600',
-    iconBg: 'bg-red-100',
-    iconText: 'text-red-600',
-  },
-  'bg-purple-600': {
-    border: 'bg-purple-600',
-    iconBg: 'bg-purple-100',
-    iconText: 'text-purple-600',
-  },
-  'bg-teal-600': {
-    border: 'bg-teal-600',
-    iconBg: 'bg-teal-100',
-    iconText: 'text-teal-600',
-  },
+/**
+ * Mapa estático de variantes de color para que Tailwind detecte todas las clases.
+ * Cada entrada mapea la clase bg del acento a sus variantes light (fondo icono) y text (icono).
+ */
+const ACCENT_VARIANTS: Record<string, { light: string; text: string }> = {
+  'bg-primary-600': { light: 'bg-primary-100', text: 'text-primary-600' },
+  'bg-blue-600': { light: 'bg-blue-100', text: 'text-blue-600' },
+  'bg-green-600': { light: 'bg-green-100', text: 'text-green-600' },
+  'bg-red-600': { light: 'bg-red-100', text: 'text-red-600' },
+  'bg-amber-600': { light: 'bg-amber-100', text: 'text-amber-600' },
+  'bg-purple-600': { light: 'bg-purple-100', text: 'text-purple-600' },
+  'bg-orange-600': { light: 'bg-orange-100', text: 'text-orange-600' },
+  'bg-indigo-600': { light: 'bg-indigo-100', text: 'text-indigo-600' },
+  'bg-teal-600': { light: 'bg-teal-100', text: 'text-teal-600' },
 }
+
+const DEFAULT_VARIANT = { light: 'bg-gray-100', text: 'text-gray-600' }
 
 export interface KPICardProps {
   title: string
@@ -76,8 +55,7 @@ export function KPICard({
     neutral: '→',
   }
 
-  // Obtener variantes del mapa estático o usar valores por defecto
-  const variants = ACCENT_VARIANTS[accentColor] || ACCENT_VARIANTS['bg-primary-600']
+  const variant = ACCENT_VARIANTS[accentColor] ?? DEFAULT_VARIANT
 
   return (
     <div
@@ -88,7 +66,7 @@ export function KPICard({
       )}
     >
       {/* Borde de acento izquierdo */}
-      <div className={cn('absolute left-0 top-0 bottom-0 w-1', variants.border)} />
+      <div className={cn('absolute left-0 top-0 bottom-0 w-1', accentColor)} />
 
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -111,8 +89,8 @@ export function KPICard({
 
         {/* Icono opcional */}
         {Icon && (
-          <div className={cn('p-3 rounded-lg', variants.iconBg)}>
-            <Icon size={24} className={variants.iconText} />
+          <div className={cn('p-3 rounded-lg', variant.light)}>
+            <Icon size={24} className={variant.text} />
           </div>
         )}
       </div>
