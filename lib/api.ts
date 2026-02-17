@@ -44,11 +44,16 @@ const DEFAULT_HEADERS = {
 }
 
 /**
- * Obtiene el token JWT de autenticación desde el storage
+ * Obtiene el token JWT de autenticación desde el store de Zustand
+ * HP-95: Token en memoria, no en localStorage
  */
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem('auth_token')
+
+  // Importación dinámica para evitar dependencias circulares
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useAuthStore } = require('@/stores/auth.store')
+  return useAuthStore.getState().accessToken
 }
 
 /**

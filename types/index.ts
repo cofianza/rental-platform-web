@@ -23,3 +23,15 @@ export type {
   ApiError,
   ApiListResponse,
 } from '@/lib/api'
+
+// Tipos de autenticación (HP-95)
+export type {
+  UserRole,
+  IUser,
+  ILoginCredentials,
+  ILoginResponse,
+  IMeResponse,
+  AuthErrorCode,
+  IAuthError,
+  IAuthState,
+} from './auth'

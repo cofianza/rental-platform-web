@@ -281,3 +281,49 @@ export const ERROR_MESSAGES = {
   SERVER_ERROR: 'Error en el servidor. Por favor, intenta de nuevo más tarde.',
   VALIDATION_ERROR: 'Error de validación. Verifica los datos ingresados.',
 } as const
+
+// ============================================
+// AUTENTICACIÓN (HP-95)
+// ============================================
+
+/**
+ * Mensajes de error de autenticación
+ */
+export const AUTH_MESSAGES = {
+  INVALID_CREDENTIALS: 'Credenciales inválidas. Verifica tu correo y contraseña.',
+  INACTIVE_ACCOUNT: 'Tu cuenta está inactiva. Contacta al administrador.',
+  SESSION_EXPIRED: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+  NETWORK_ERROR: 'Error de conexión. Por favor, verifica tu conexión a internet.',
+  SERVER_ERROR: 'Error en el servidor. Por favor, intenta de nuevo más tarde.',
+} as const
+
+/**
+ * Rutas de autenticación
+ */
+export const AUTH_ROUTES = {
+  LOGIN: '/login',
+  REGISTER: '/registro',
+  FORGOT_PASSWORD: '/recuperar-contrasena',
+  DASHBOARD: '/dashboard',
+} as const
+
+/**
+ * Rutas protegidas que requieren autenticación
+ */
+export const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/inmuebles',
+  '/expedientes',
+  '/reportes',
+  '/usuarios',
+  '/configuracion',
+] as const
+
+/**
+ * Rutas públicas de autenticación (no requieren sesión)
+ */
+export const PUBLIC_AUTH_ROUTES = [
+  '/login',
+  '/registro',
+  '/recuperar-contrasena',
+] as const
