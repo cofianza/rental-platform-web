@@ -1,5 +1,5 @@
 /**
- * Next.js Middleware - Protección de rutas (HP-95)
+ * Next.js Proxy - Protección de rutas (HP-95)
  * Redirige usuarios no autenticados a /login
  * Redirige usuarios autenticados fuera de /login
  */
@@ -15,6 +15,7 @@ const protectedRoutes = [
   '/reportes',
   '/usuarios',
   '/configuracion',
+  '/bitacora',
 ]
 
 // Rutas de auth que deben redirigir a dashboard si ya está autenticado
@@ -23,7 +24,7 @@ const authRoutes = ['/login', '/registro', '/recuperar-contrasena', '/restablece
 // Cookie de sesión establecida por authService después del login
 const SESSION_COOKIE_NAME = 'hp-session'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Verificar si hay cookie de sesión (establecida por authService.login)
