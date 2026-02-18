@@ -44,6 +44,30 @@ const initialFormData: FormData = {
 
 const STEP_LABELS = ['Datos Empresa', 'Representante', 'Terminos']
 
+/**
+ * Valida el digito de verificacion del NIT colombiano con algoritmo modulo-11.
+ */
+function validateNitModulo11(nit: string): boolean {
+  const match = nit.match(/^(\d{1,15})-(\d)$/)
+  if (!match) return false
+
+  const digits = match[1]
+  const expectedCheck = parseInt(match[2], 10)
+
+  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71]
+
+  let sum = 0
+  const reversed = digits.split('').reverse()
+  for (let i = 0; i < reversed.length; i++) {
+    sum += parseInt(reversed[i], 10) * weights[i]
+  }
+
+  const remainder = sum % 11
+  const checkDigit = remainder >= 2 ? 11 - remainder : remainder
+
+  return checkDigit === expectedCheck
+}
+
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
@@ -132,6 +156,8 @@ export default function RegisterInmobiliariaPage() {
         newErrors.nit = 'NIT requerido'
       } else if (!/^\d{1,15}-\d$/.test(formData.nit)) {
         newErrors.nit = 'Formato invalido. Ejemplo: 900123456-9'
+      } else if (!validateNitModulo11(formData.nit)) {
+        newErrors.nit = 'Digito de verificacion del NIT invalido'
       }
       if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Direccion comercial requerida'
       if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
