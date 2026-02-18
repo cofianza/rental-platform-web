@@ -18,7 +18,7 @@ const protectedRoutes = [
 ]
 
 // Rutas de auth que deben redirigir a dashboard si ya está autenticado
-const authRoutes = ['/login', '/registro', '/recuperar-contrasena', '/restablecer-contrasena']
+const authRoutes = ['/login', '/registro', '/recuperar-contrasena', '/restablecer-contrasena', '/verificar-email']
 
 // Cookie de sesión establecida por authService después del login
 const SESSION_COOKIE_NAME = 'hp-session'
@@ -42,7 +42,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Ruta de auth con sesión -> redirect a dashboard
-  const isAuthRoute = authRoutes.some((route) => pathname === route)
+  const isAuthRoute = authRoutes.some((route) => pathname === route) || pathname.startsWith('/registro')
 
   if (isAuthRoute && hasSession) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
