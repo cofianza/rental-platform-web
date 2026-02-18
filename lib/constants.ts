@@ -54,6 +54,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'usuarios',
   },
   {
+    label: 'Bitacora',
+    href: '/bitacora',
+    icon: 'ClipboardList',
+    description: 'Registro de actividad',
+    resource: 'bitacora',
+  },
+  {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',
