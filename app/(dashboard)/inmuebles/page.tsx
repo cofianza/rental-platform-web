@@ -1,123 +1,188 @@
-/**
- * Página de listado de inmuebles
- * HP-57: Listado con búsqueda y tabla
- */
-
 'use client'
 
-import { useState, useMemo } from 'react'
-import { PageHeader, SearchInput, DataTable, Badge } from '@/components/ui'
-import type { Column } from '@/components/ui/DataTable'
-import { MOCK_INMUEBLES, type MockInmueble } from '@/lib/mock-data'
-import { formatCurrency } from '@/lib/constants'
+/**
+ * Página de gestión de inmuebles - HP-174
+ * Listado con filtros, paginación y ordenamiento
+ */
 
-export default function InmueblesPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+import { useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { PageHeader } from '@/components/ui'
+import { IconLoader, IconHome, IconChevronRight } from '@/components/icons'
+import {
+  InmueblesFilters,
+  InmueblesTable,
+  InmueblesSkeleton,
+} from '@/components/inmuebles'
+import { ConfirmDialog } from '@/components/users'
+import { useInmuebles } from '@/hooks/useInmuebles'
+import { useAuth } from '@/hooks/useAuth'
+import type { IInmueble } from '@/types/inmueble'
 
-  // Filtrar inmuebles según búsqueda
-  const filteredInmuebles = useMemo(() => {
-    if (!searchTerm.trim()) return MOCK_INMUEBLES
+/**
+ * Breadcrumbs component
+ */
+function Breadcrumbs() {
+  return (
+    <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+      <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
+        <IconHome size={16} />
+        Inicio
+      </Link>
+      <IconChevronRight size={14} />
+      <span className="text-gray-900 font-medium">Inmuebles</span>
+    </nav>
+  )
+}
 
-    const term = searchTerm.toLowerCase()
-    return MOCK_INMUEBLES.filter(
-      (inmueble) =>
-        inmueble.codigo.toLowerCase().includes(term) ||
-        inmueble.direccion.toLowerCase().includes(term) ||
-        inmueble.ciudad.toLowerCase().includes(term) ||
-        inmueble.barrio.toLowerCase().includes(term) ||
-        inmueble.tipo.toLowerCase().includes(term)
-    )
-  }, [searchTerm])
+function InmueblesContent() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const {
+    inmuebles,
+    meta,
+    filters,
+    filterOptions,
+    isLoading,
+    error,
+    setFilters,
+    clearFilters,
+    handleSort,
+    deleteInmueble,
+  } = useInmuebles()
 
-  // Definición de columnas
-  const columns: Column<MockInmueble>[] = [
-    {
-      key: 'codigo',
-      label: 'Código',
-      sortable: true,
-      render: (row) => (
-        <span className="font-medium text-gray-900">{row.codigo}</span>
-      ),
-    },
-    {
-      key: 'direccion',
-      label: 'Dirección',
-      sortable: true,
-      render: (row) => (
-        <div>
-          <p className="text-gray-900">{row.direccion}</p>
-          <p className="text-xs text-gray-500">{row.barrio}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'ciudad',
-      label: 'Ciudad',
-      sortable: true,
-    },
-    {
-      key: 'tipo',
-      label: 'Tipo',
-      sortable: true,
-    },
-    {
-      key: 'estrato',
-      label: 'Estrato',
-      sortable: true,
-      render: (row) => (
-        <span className="text-center">{row.estrato}</span>
-      ),
-    },
-    {
-      key: 'valor_arriendo',
-      label: 'Canon',
-      sortable: true,
-      render: (row) => (
-        <span className="font-medium">{formatCurrency(row.valor_arriendo)}</span>
-      ),
-    },
-    {
-      key: 'propietario_nombre',
-      label: 'Propietario',
-      sortable: true,
-    },
-    {
-      key: 'estado',
-      label: 'Estado',
-      render: (row) => <Badge estado={row.estado} />,
-    },
-  ]
+  // Estado local para diálogo de confirmación de eliminación
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    inmueble: IInmueble | null
+  }>({
+    isOpen: false,
+    inmueble: null,
+  })
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
+
+  // Permisos según rol
+  const isAdmin = user?.rol === 'administrador'
+  const isOperador = user?.rol === 'operador_analista'
+
+  // Permisos de CRUD
+  const canCreate = isAdmin || isOperador
+  const canEdit = isAdmin || isOperador
+  const canDelete = isAdmin // Solo admin puede eliminar
+
+  // Handlers
+  const handleCreateClick = () => {
+    router.push('/inmuebles/nuevo')
+  }
+
+  const handleView = (inmueble: IInmueble) => {
+    router.push(`/inmuebles/${inmueble.id}`)
+  }
+
+  const handleEdit = (inmueble: IInmueble) => {
+    router.push(`/inmuebles/${inmueble.id}/editar`)
+  }
+
+  const handleDeleteClick = (inmueble: IInmueble) => {
+    setDeleteDialog({ isOpen: true, inmueble })
+  }
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({ isOpen: false, inmueble: null })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.inmueble) return
+
+    setIsDeleteLoading(true)
+    const success = await deleteInmueble(deleteDialog.inmueble)
+    setIsDeleteLoading(false)
+
+    if (success) {
+      closeDeleteDialog()
+    }
+  }
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
+
       {/* Header */}
       <PageHeader
         title="Inmuebles"
-        subtitle={`${filteredInmuebles.length} propiedades`}
-        actions={
-          <button className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
-            + Nuevo Inmueble
-          </button>
-        }
+        subtitle={meta ? `${meta.total} inmuebles registrados` : 'Cargando...'}
       />
 
-      {/* Búsqueda */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 max-w-md">
-          <SearchInput
-            placeholder="Buscar por dirección, código, ciudad..."
-            onSearch={setSearchTerm}
-          />
+      {/* Error global */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* Tabla */}
-      <DataTable
-        columns={columns}
-        data={filteredInmuebles}
-        pageSize={10}
-        emptyMessage="No se encontraron inmuebles"
+      {/* Filtros */}
+      <InmueblesFilters
+        filters={filters}
+        filterOptions={filterOptions}
+        onFilterChange={setFilters}
+        onClearFilters={clearFilters}
+        onCreateClick={handleCreateClick}
+        isLoading={isLoading}
+        canCreate={canCreate}
+      />
+
+      {/* Tabla o Skeleton */}
+      {isLoading && inmuebles.length === 0 ? (
+        <InmueblesSkeleton rows={filters.limit} />
+      ) : (
+        <InmueblesTable
+          inmuebles={inmuebles}
+          meta={meta}
+          filters={filters}
+          onFilterChange={setFilters}
+          onSort={handleSort}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+          isLoading={isLoading}
+          canEdit={canEdit}
+          canDelete={canDelete}
+        />
+      )}
+
+      {/* Diálogo de confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Inmueble"
+        message={`¿Estás seguro de que deseas eliminar el inmueble ${deleteDialog.inmueble?.codigo}? Esta acción marcará el inmueble como inactivo.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={isDeleteLoading}
       />
     </div>
+  )
+}
+
+// Loading fallback
+function LoadingFallback() {
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Inmuebles" subtitle="Cargando..." />
+      <div className="flex items-center justify-center h-64">
+        <IconLoader size={32} className="text-primary-600 animate-spin" />
+      </div>
+    </div>
+  )
+}
+
+export default function InmueblesPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <InmueblesContent />
+    </Suspense>
   )
 }
