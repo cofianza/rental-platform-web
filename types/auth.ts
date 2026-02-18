@@ -24,15 +24,19 @@ export interface ILoginUser {
 }
 
 /**
- * Perfil completo del usuario (respuesta de /auth/me)
+ * Perfil completo del usuario (respuesta de /auth/me y /users)
  * (de la tabla perfiles en Supabase)
  */
 export interface IUserProfile {
   id: string
   email: string
-  nombre_completo: string
+  nombre: string
+  apellido: string
+  nombre_completo?: string // Solo viene de /auth/me (construido en backend)
+  telefono?: string | null
   rol: UserRole
-  activo: boolean
+  activo?: boolean
+  estado?: 'activo' | 'inactivo'
   created_at: string
   updated_at: string
 }

@@ -98,15 +98,23 @@ class AuthService {
 
   /**
    * Verifica la sesión actual (al cargar la app)
-   * El backend retorna el perfil directamente desde /auth/me
+   * Primero refresca el token, luego obtiene el perfil
    */
   async checkSession(): Promise<IUser | null> {
     const store = useAuthStore.getState()
     store.setLoading(true)
 
     try {
-      // La cookie httpOnly se envía automáticamente
-      // /auth/me retorna el perfil directamente (no envuelto en user)
+      // Primero refrescar el token para tener accessToken en memoria
+      // Pasamos false para que no haga logout automático si falla
+      const token = await this.refreshToken(false)
+      if (!token) {
+        store.logout()
+        clearSessionCookie()
+        return null
+      }
+
+      // Ahora obtener el perfil del usuario
       const response = await apiClient.get<IMeResponse>('/auth/me')
       const profile = response.data
 
@@ -121,10 +129,15 @@ class AuthService {
 
       store.setUser(user)
 
+      // Actualizar cookie de sesión
+      const expiresAt = Math.floor(Date.now() / 1000) + 3600 // 1 hora
+      setSessionCookie(expiresAt)
+
       return user
     } catch {
       // Sesión inválida o expirada
       store.logout()
+      clearSessionCookie()
       return null
     } finally {
       store.setLoading(false)
@@ -134,8 +147,9 @@ class AuthService {
 
   /**
    * Refresca el token de acceso
+   * @param logoutOnFail - Si es true, cierra sesión al fallar (default: true)
    */
-  async refreshToken(): Promise<string | null> {
+  async refreshToken(logoutOnFail = true): Promise<string | null> {
     try {
       const response = await apiClient.post<IRefreshResponse>('/auth/refresh')
       const { access_token, expires_at } = response.data
@@ -145,8 +159,10 @@ class AuthService {
 
       return access_token
     } catch {
-      // Refresh falló, cerrar sesión
-      await this.logout()
+      // Refresh falló
+      if (logoutOnFail) {
+        await this.logout()
+      }
       return null
     }
   }

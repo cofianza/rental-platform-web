@@ -540,6 +540,109 @@ export function IconGoogle({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Editar/Lápiz (HP-117: CRUD usuarios)
+export function IconEdit({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <path d="m15 5 4 4" />
+    </svg>
+  )
+}
+
+// Usuario activo/check (HP-117: activar usuario)
+export function IconUserCheck({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <polyline points="16 11 18 13 22 9" />
+    </svg>
+  )
+}
+
+// Usuario inactivo/X (HP-117: desactivar usuario)
+export function IconUserX({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="17" y1="8" x2="22" y2="13" />
+      <line x1="22" y1="8" x2="17" y2="13" />
+    </svg>
+  )
+}
+
+// Alerta/Warning (HP-117: diálogo confirmación)
+export function IconAlertTriangle({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  )
+}
+
+// ChevronLeft (HP-117: paginación)
+export function IconChevronLeft({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  )
+}
+
 // Loader/Spinner (HP-95: Estado de carga)
 export function IconLoader({ className, size = defaultSize }: IconProps) {
   return (
@@ -587,6 +690,11 @@ export const ICON_MAP = {
   Lock: IconLock,
   Google: IconGoogle,
   Loader: IconLoader,
+  Edit: IconEdit,
+  UserCheck: IconUserCheck,
+  UserX: IconUserX,
+  AlertTriangle: IconAlertTriangle,
+  ChevronLeft: IconChevronLeft,
 } as const
 
 export type IconName = keyof typeof ICON_MAP
