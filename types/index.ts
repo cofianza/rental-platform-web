@@ -35,3 +35,15 @@ export type {
   IAuthError,
   IAuthState,
 } from './auth'
+
+// Tipos de usuarios (HP-117)
+export type {
+  IUserProfile,
+  IUserFilters,
+  IUserFormData,
+  IUsersMeta,
+  IUsersResponse,
+  IUserResponse,
+  UserModalMode,
+  IUsersState,
+} from './user'

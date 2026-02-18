@@ -203,6 +203,36 @@ export class ApiClient {
   }
 
   /**
+   * Realiza una petición PUT
+   */
+  async put<T = unknown>(
+    endpoint: string,
+    body?: unknown,
+    options?: RequestInit
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'PUT',
+        headers: buildHeaders(options?.headers),
+        credentials: 'include',
+        body: body ? JSON.stringify(body) : undefined,
+        ...options,
+      })
+
+      if (!response.ok) {
+        await handleApiError(response)
+      }
+
+      return await response.json()
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        throw error
+      }
+      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
+    }
+  }
+
+  /**
    * Realiza una petición PATCH
    */
   async patch<T = unknown>(
