@@ -13,12 +13,20 @@ import { NAV_ITEMS } from '@/lib/constants'
 import { ICON_MAP } from '@/components/icons'
 import { IconChevronRight, IconChevronDown, IconX, IconLogOut } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
 
 export function Sidebar() {
   const pathname = usePathname()
   const { sidebarExpanded, sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const { logout } = useAuth()
+  const { canAccessResource } = usePermissions()
+
+  // Filtrar items de navegacion por permisos del usuario
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (!item.resource) return true
+    return canAccessResource(item.resource)
+  })
 
   // Cerrar sidebar en mobile al navegar
   useEffect(() => {
@@ -114,7 +122,7 @@ export function Sidebar() {
 
         {/* Items de navegación */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP]
             const active = isActive(item.href)
 

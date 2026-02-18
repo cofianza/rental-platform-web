@@ -8,16 +8,22 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth.store'
 import { AUTH_MESSAGES, AUTH_ROUTES } from '@/lib/constants'
 import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse } from '@/types/auth'
+import type { PermissionsResponse } from '@/types/permissions'
 
 // Nombre de la cookie de sesión para el middleware
 const SESSION_COOKIE_NAME = 'hp-session'
 
+// Clave de localStorage para el refresh token
+const REFRESH_TOKEN_KEY = 'hp-rt'
+
 /**
  * Establece una cookie de sesión (para que el middleware detecte autenticación)
+ * Dura 30 dias (alineada con el refresh token de Supabase, no con el access token)
  */
-function setSessionCookie(expiresAt: number): void {
+function setSessionCookie(): void {
   if (typeof document === 'undefined') return
-  const expires = new Date(expiresAt * 1000).toUTCString()
+  const thirtyDays = 30 * 24 * 60 * 60 * 1000
+  const expires = new Date(Date.now() + thirtyDays).toUTCString()
   document.cookie = `${SESSION_COOKIE_NAME}=1; path=/; expires=${expires}; SameSite=Lax`
 }
 
@@ -31,6 +37,7 @@ function clearSessionCookie(): void {
 
 class AuthService {
   private refreshTimerId: ReturnType<typeof setTimeout> | null = null
+  private refreshPromise: Promise<string | null> | null = null
 
   /**
    * Inicia sesión con email y contraseña
@@ -54,11 +61,17 @@ class AuthService {
       // Guardar en memoria (Zustand)
       store.login(fullUser, session.access_token)
 
+      // Persistir refresh token para sobrevivir recargas de pagina
+      localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token)
+
       // Establecer cookie de sesión para el middleware
-      setSessionCookie(session.expires_at)
+      setSessionCookie()
 
       // Programar refresh antes de expiración (expires_at es Unix timestamp)
       this.scheduleTokenRefreshFromTimestamp(session.expires_at)
+
+      // Cargar permisos del usuario
+      await this.fetchPermissions()
 
       return response.data
     } catch (error) {
@@ -90,9 +103,10 @@ class AuthService {
       // Ignorar errores de Supabase
     }
 
-    // Limpiar estado local y cookie de sesión
+    // Limpiar estado local, cookie de sesión y refresh token
     store.logout()
     clearSessionCookie()
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
     this.clearTokenRefreshTimer()
   }
 
@@ -129,9 +143,11 @@ class AuthService {
 
       store.setUser(user)
 
-      // Actualizar cookie de sesión
-      const expiresAt = Math.floor(Date.now() / 1000) + 3600 // 1 hora
-      setSessionCookie(expiresAt)
+      // Cargar permisos del usuario
+      await this.fetchPermissions()
+
+      // Renovar cookie de sesión
+      setSessionCookie()
 
       return user
     } catch {
@@ -146,20 +162,42 @@ class AuthService {
   }
 
   /**
-   * Refresca el token de acceso
-   * @param logoutOnFail - Si es true, cierra sesión al fallar (default: true)
+   * Refresca el token de acceso.
+   * Usa deduplicacion: si ya hay un refresh en curso, reutiliza esa promesa
+   * para evitar que dos llamadas simultáneas roten el token y una falle.
    */
   async refreshToken(logoutOnFail = true): Promise<string | null> {
+    if (this.refreshPromise) return this.refreshPromise
+
+    this.refreshPromise = this.doRefreshToken(logoutOnFail)
     try {
-      const response = await apiClient.post<IRefreshResponse>('/auth/refresh')
-      const { access_token, expires_at } = response.data
+      return await this.refreshPromise
+    } finally {
+      this.refreshPromise = null
+    }
+  }
+
+  private async doRefreshToken(logoutOnFail: boolean): Promise<string | null> {
+    try {
+      const refresh_token = localStorage.getItem(REFRESH_TOKEN_KEY)
+      if (!refresh_token) return null
+
+      const response = await apiClient.post<IRefreshResponse>('/auth/refresh', { refresh_token })
+      const { access_token, refresh_token: new_refresh_token, expires_at } = response.data
 
       useAuthStore.getState().setAccessToken(access_token)
       this.scheduleTokenRefreshFromTimestamp(expires_at)
+      setSessionCookie()
+
+      // Actualizar el refresh token almacenado (rotacion de tokens)
+      if (new_refresh_token) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, new_refresh_token)
+      }
 
       return access_token
     } catch {
       // Refresh falló
+      localStorage.removeItem(REFRESH_TOKEN_KEY)
       if (logoutOnFail) {
         await this.logout()
       }
@@ -250,6 +288,46 @@ class AuthService {
   async resetPassword(token: string, password: string): Promise<{ message: string }> {
     const response = await apiClient.post<{ message: string }>('/auth/reset-password', { token, password })
     return response.data
+  }
+
+  // ============================================
+  // REGISTRO PUBLICO
+  // ============================================
+
+  async registerPropietario(data: Record<string, unknown>): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/register/propietario', data)
+    return response.data
+  }
+
+  async registerInmobiliaria(data: Record<string, unknown>): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/register/inmobiliaria', data)
+    return response.data
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await apiClient.get<{ message: string }>(`/auth/register/verify-email/${token}`)
+    return response.data
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/register/resend-verification', { email })
+    return response.data
+  }
+
+  // ============================================
+  // PERMISOS RBAC
+  // ============================================
+
+  /**
+   * Carga los permisos del usuario desde el backend
+   */
+  async fetchPermissions(): Promise<void> {
+    try {
+      const response = await apiClient.get<PermissionsResponse>('/auth/permissions')
+      useAuthStore.getState().setPermissions(response.data.permissions)
+    } catch {
+      useAuthStore.getState().setPermissions(null)
+    }
   }
 
   // ============================================

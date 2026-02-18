@@ -7,20 +7,31 @@
 
 import Link from 'next/link'
 import { useUIStore } from '@/stores/ui.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
+import { ROLES } from '@/lib/constants'
 import { IconMenu, IconBell, IconChevronRight } from '@/components/icons'
 import { cn } from '@/lib/utils'
 
+const ROLE_DISPLAY: Record<string, string> = {
+  administrador: ROLES.ADMINISTRADOR,
+  operador_analista: ROLES.OPERADOR,
+  gerencia_consulta: ROLES.GERENCIA,
+}
+
 export function Header() {
   const { sidebarExpanded, openSidebar } = useUIStore()
+  const user = useAuthStore((state) => state.user)
   const breadcrumbs = useBreadcrumbs()
 
-  // Datos mock del usuario (se reemplazarán con datos reales)
-  const user = {
-    nombre: 'Mario Vélez',
-    email: 'mario.velez@habitarpropiedades.com',
-    iniciales: 'MV',
-  }
+  const nombre = user?.nombre_completo || user?.email || 'Usuario'
+  const iniciales = nombre
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+  const rolDisplay = user?.rol ? ROLE_DISPLAY[user.rol] ?? user.rol : ''
 
   const notificationCount = 3 // Placeholder
 
@@ -94,12 +105,12 @@ export function Header() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-sm font-medium text-gray-900">
-              {user.nombre}
+              {nombre}
             </span>
-            <span className="text-xs text-gray-500">Administrador</span>
+            <span className="text-xs text-gray-500">{rolDisplay}</span>
           </div>
           <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-            {user.iniciales}
+            {iniciales}
           </div>
         </div>
       </div>

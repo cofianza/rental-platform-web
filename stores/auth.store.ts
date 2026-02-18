@@ -5,6 +5,7 @@
 
 import { create } from 'zustand'
 import type { IUser, IAuthError, IAuthState } from '@/types/auth'
+import type { PermissionMap } from '@/types/permissions'
 
 interface AuthActions {
   // Setters
@@ -13,6 +14,7 @@ interface AuthActions {
   setLoading: (loading: boolean) => void
   setError: (error: IAuthError | null) => void
   setInitialized: (initialized: boolean) => void
+  setPermissions: (permissions: PermissionMap | null) => void
 
   // Auth actions
   login: (user: IUser, accessToken: string) => void
@@ -29,6 +31,7 @@ const initialState: IAuthState = {
   isLoading: false,
   isInitialized: false,
   error: null,
+  permissions: null,
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -44,6 +47,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setError: (error) => set({ error }),
 
   setInitialized: (isInitialized) => set({ isInitialized }),
+
+  setPermissions: (permissions) => set({ permissions }),
 
   // Auth actions
   login: (user, accessToken) =>
@@ -68,3 +73,4 @@ export const useUser = () => useAuthStore((state) => state.user)
 export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated)
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading)
 export const useAuthError = () => useAuthStore((state) => state.error)
+export const usePermissionsData = () => useAuthStore((state) => state.permissions)

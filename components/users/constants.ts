@@ -11,6 +11,8 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   administrador: 'Administrador',
   operador_analista: 'Operador/Analista',
   gerencia_consulta: 'Gerencia/Consulta',
+  propietario: 'Propietario',
+  inmobiliaria: 'Inmobiliaria',
   sin_rol: 'Sin Rol',
 }
 
@@ -21,6 +23,8 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   administrador: 'purple',
   operador_analista: 'blue',
   gerencia_consulta: 'green',
+  propietario: 'teal',
+  inmobiliaria: 'orange',
   sin_rol: 'gray',
 }
 
@@ -31,6 +35,8 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
   administrador: 'bg-purple-100 text-purple-800',
   operador_analista: 'bg-blue-100 text-blue-800',
   gerencia_consulta: 'bg-green-100 text-green-800',
+  propietario: 'bg-teal-100 text-teal-800',
+  inmobiliaria: 'bg-orange-100 text-orange-800',
   sin_rol: 'bg-gray-100 text-gray-800',
 }
 

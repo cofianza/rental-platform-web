@@ -7,11 +7,14 @@
 // NAVEGACIÓN DEL DASHBOARD
 // ============================================
 
+import type { Resource } from '@/types/permissions'
+
 export interface NavItem {
   label: string
   href: string
   icon: string // Nombre del ícono (para usar con librería de íconos)
   description?: string
+  resource?: Resource // Recurso asociado para filtrado RBAC
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -20,36 +23,42 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/dashboard',
     icon: 'LayoutDashboard',
     description: 'Vista general y KPIs',
+    resource: 'dashboard',
   },
   {
     label: 'Inmuebles',
     href: '/inmuebles',
     icon: 'Building2',
     description: 'Gestión de propiedades',
+    resource: 'inmuebles',
   },
   {
     label: 'Expedientes',
     href: '/expedientes',
     icon: 'FolderOpen',
     description: 'Casos de arrendamiento',
+    resource: 'expedientes',
   },
   {
     label: 'Reportes',
     href: '/reportes',
     icon: 'BarChart3',
     description: 'Reportes y estadísticas',
+    resource: 'reportes',
   },
   {
     label: 'Usuarios',
     href: '/usuarios',
     icon: 'Users',
     description: 'Gestión de usuarios',
+    resource: 'usuarios',
   },
   {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',
     description: 'Configuración del sistema',
+    resource: 'configuracion',
   },
 ]
 
@@ -303,6 +312,10 @@ export const AUTH_MESSAGES = {
 export const AUTH_ROUTES = {
   LOGIN: '/login',
   REGISTER: '/registro',
+  REGISTER_PROPIETARIO: '/registro/propietario',
+  REGISTER_INMOBILIARIA: '/registro/inmobiliaria',
+  REGISTER_SUCCESS: '/registro/exito',
+  VERIFY_EMAIL: '/verificar-email',
   FORGOT_PASSWORD: '/recuperar-contrasena',
   RESET_PASSWORD: '/restablecer-contrasena',
   DASHBOARD: '/dashboard',
@@ -326,6 +339,10 @@ export const PROTECTED_ROUTES = [
 export const PUBLIC_AUTH_ROUTES = [
   '/login',
   '/registro',
+  '/registro/propietario',
+  '/registro/inmobiliaria',
+  '/registro/exito',
+  '/verificar-email',
   '/recuperar-contrasena',
   '/restablecer-contrasena',
 ] as const

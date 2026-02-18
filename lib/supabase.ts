@@ -18,9 +18,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Persistir sesión de Supabase en localStorage para OAuth callback
+    // Persistir sesión solo para que el callback de OAuth funcione
     persistSession: true,
-    autoRefreshToken: true,
+    // No auto-refrescar: nosotros manejamos tokens via nuestro backend
+    autoRefreshToken: false,
     detectSessionInUrl: true,
   },
 })

@@ -11,7 +11,7 @@
  * - gerencia_consulta: Solo lectura/reportes
  * - sin_rol: Usuario sin rol asignado (valor por defecto del backend)
  */
-export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'sin_rol'
+export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria' | 'sin_rol'
 
 /**
  * Usuario básico retornado en login
@@ -120,4 +120,5 @@ export interface IAuthState {
   isLoading: boolean
   isInitialized: boolean
   error: IAuthError | null
+  permissions: import('./permissions').PermissionMap | null
 }

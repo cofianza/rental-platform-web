@@ -1,11 +1,10 @@
 /**
  * Layout para páginas del dashboard
- * Con Sidebar colapsable y Header con breadcrumbs
+ * DashboardShell muestra loader hasta que auth esté inicializado,
+ * evitando el flash de sidebar/header con datos vacíos.
  */
 
-import { Sidebar } from '@/components/layout/Sidebar'
-import { Header } from '@/components/layout/Header'
-import { DashboardLayoutWrapper } from '@/components/layout/DashboardLayoutWrapper'
+import { DashboardShell } from '@/components/layout/DashboardShell'
 
 export default function DashboardLayout({
   children,
@@ -14,13 +13,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <DashboardLayoutWrapper>
-        <Header />
-        <main className="p-4 lg:p-6 overflow-x-hidden">
-          {children}
-        </main>
-      </DashboardLayoutWrapper>
+      <DashboardShell>{children}</DashboardShell>
     </div>
   )
 }
