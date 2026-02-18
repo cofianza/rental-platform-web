@@ -5,12 +5,14 @@
  * CRUD completo con filtros, paginación y modales
  */
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui'
 import { IconLoader } from '@/components/icons'
 import {
   UserFilters,
   UsersTable,
+  UsersSkeleton,
   UserForm,
   ConfirmDialog,
   USER_MESSAGES,
@@ -20,7 +22,8 @@ import { useAuth } from '@/hooks/useAuth'
 import type { IUserProfile, IUserFormData } from '@/types/user'
 
 function UsuariosContent() {
-  const { user } = useAuth()
+  const router = useRouter()
+  const { user, isInitialized } = useAuth()
   const {
     users,
     meta,
@@ -54,6 +57,13 @@ function UsuariosContent() {
 
   // Verificar si es administrador
   const isAdmin = user?.rol === 'administrador'
+
+  // Redirigir a /dashboard si no es admin
+  useEffect(() => {
+    if (isInitialized && !isAdmin) {
+      router.replace('/dashboard')
+    }
+  }, [isInitialized, isAdmin, router])
 
   // Abrir diálogo de confirmación
   const handleToggleStatus = (userToToggle: IUserProfile) => {
@@ -96,20 +106,11 @@ function UsuariosContent() {
     return false
   }
 
-  // Si no es admin, mostrar mensaje de acceso denegado
+  // Si no es admin, mostrar loader mientras redirige
   if (!isAdmin) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Usuarios"
-          subtitle="Gestión de usuarios del sistema"
-        />
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-red-600 mb-2">Acceso Denegado</div>
-          <p className="text-gray-500">
-            Solo los administradores pueden acceder a esta sección.
-          </p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <IconLoader size={32} className="text-primary-600 animate-spin" />
       </div>
     )
   }
@@ -138,8 +139,10 @@ function UsuariosContent() {
         isLoading={isLoading}
       />
 
-      {/* Tabla */}
-      <div className="relative">
+      {/* Tabla o Skeleton */}
+      {isLoading && users.length === 0 ? (
+        <UsersSkeleton rows={filters.limit} />
+      ) : (
         <UsersTable
           users={users}
           meta={meta}
@@ -149,7 +152,7 @@ function UsuariosContent() {
           onToggleStatus={handleToggleStatus}
           isLoading={isLoading}
         />
-      </div>
+      )}
 
       {/* Modal de formulario */}
       <UserForm

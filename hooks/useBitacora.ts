@@ -39,6 +39,7 @@ export function useBitacora() {
 
     const urlFilters: Partial<IAuditLogFilters> = {}
 
+    const userId = searchParams.get('userId')
     const action = searchParams.get('action')
     const entityType = searchParams.get('entityType')
     const dateFrom = searchParams.get('dateFrom')
@@ -47,6 +48,7 @@ export function useBitacora() {
     const limit = searchParams.get('limit')
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' | null
 
+    if (userId) urlFilters.userId = userId
     if (action) urlFilters.action = action
     if (entityType) urlFilters.entityType = entityType
     if (dateFrom) urlFilters.dateFrom = dateFrom
@@ -65,6 +67,7 @@ export function useBitacora() {
     (newFilters: IAuditLogFilters) => {
       const params = new URLSearchParams()
 
+      if (newFilters.userId) params.set('userId', newFilters.userId)
       if (newFilters.action) params.set('action', newFilters.action)
       if (newFilters.entityType) params.set('entityType', newFilters.entityType)
       if (newFilters.dateFrom) params.set('dateFrom', newFilters.dateFrom)

@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { toast } from 'sonner'
 import { useUsersStore } from '@/stores/users.store'
 import { userService } from '@/services/userService'
 import { DEFAULT_FILTERS, USER_MESSAGES } from '@/components/users/constants'
@@ -158,10 +159,12 @@ export function useUsers() {
         await userService.createUser(data)
         closeModal()
         await fetchUsers()
+        toast.success(USER_MESSAGES.CREATE_SUCCESS)
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.CREATE_ERROR
         setError(message)
+        toast.error(message)
         return false
       } finally {
         setLoading(false)
@@ -182,10 +185,12 @@ export function useUsers() {
         const updated = await userService.updateUser(id, data)
         updateUserInList(updated)
         closeModal()
+        toast.success(USER_MESSAGES.UPDATE_SUCCESS)
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.UPDATE_ERROR
         setError(message)
+        toast.error(message)
         return false
       } finally {
         setLoading(false)
@@ -205,10 +210,12 @@ export function useUsers() {
       try {
         const updated = await userService.activateUser(user.id)
         updateUserInList(updated)
+        toast.success(USER_MESSAGES.ACTIVATE_SUCCESS)
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.ACTIVATE_ERROR
         setError(message)
+        toast.error(message)
         return false
       } finally {
         setLoading(false)
@@ -228,10 +235,12 @@ export function useUsers() {
       try {
         const updated = await userService.deactivateUser(user.id)
         updateUserInList(updated)
+        toast.success(USER_MESSAGES.DEACTIVATE_SUCCESS)
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.DEACTIVATE_ERROR
         setError(message)
+        toast.error(message)
         return false
       } finally {
         setLoading(false)
