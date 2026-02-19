@@ -16,6 +16,12 @@ import type {
   IFilterOptionsResponse,
   IInmueblesMeta,
 } from '@/types/inmueble'
+import type {
+  ICambioInmueble,
+  ICambiosResumen,
+  ICambiosResponse,
+  ICambiosResumenResponse,
+} from '@/types/cambio-inmueble'
 
 const BUCKET_NAME = 'inmuebles'
 
@@ -267,6 +273,42 @@ class InmuebleService {
       console.error('Error fetching expedientes:', error)
       return []
     }
+  }
+
+  /**
+   * Obtiene el historial de cambios de un inmueble (paginado)
+   */
+  async getCambios(
+    inmuebleId: string,
+    params?: { page?: number; limit?: number; campo?: string }
+  ): Promise<{
+    data: ICambioInmueble[]
+    pagination: { total: number; page: number; size: number; totalPages: number }
+  }> {
+    const queryParams = new URLSearchParams()
+    if (params?.page) queryParams.append('page', params.page.toString())
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    if (params?.campo) queryParams.append('campo', params.campo)
+    const qs = queryParams.toString()
+
+    const response = (await apiClient.get(
+      `/inmuebles/${inmuebleId}/cambios${qs ? `?${qs}` : ''}`
+    )) as unknown as ICambiosResponse
+
+    return {
+      data: response.data || [],
+      pagination: response.pagination || { total: 0, page: 1, size: 20, totalPages: 0 },
+    }
+  }
+
+  /**
+   * Obtiene el resumen del historial de cambios de un inmueble
+   */
+  async getCambiosResumen(inmuebleId: string): Promise<ICambiosResumen> {
+    const response = (await apiClient.get(
+      `/inmuebles/${inmuebleId}/cambios/resumen`
+    )) as unknown as ICambiosResumenResponse
+    return response.data
   }
 
   /**

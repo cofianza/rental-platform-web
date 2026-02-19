@@ -17,6 +17,7 @@ import {
   EstratoIndicator,
   InmuebleDetailSkeleton,
   ExpedientesSection,
+  HistorialSection,
   type IExpedienteResumen,
 } from '@/components/inmuebles'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
@@ -308,7 +309,7 @@ export default function InmuebleDetailPage() {
   const tabs = [
     { id: 'info' as TabId, label: 'Información', icon: IconInfo },
     { id: 'expedientes' as TabId, label: 'Expedientes', icon: IconFolderOpen },
-    { id: 'historial' as TabId, label: 'Historial', icon: IconHistory, disabled: true },
+    { id: 'historial' as TabId, label: 'Historial', icon: IconHistory },
     { id: 'galeria' as TabId, label: 'Galería', icon: IconImages, disabled: true },
   ]
 
@@ -547,10 +548,7 @@ export default function InmuebleDetailPage() {
               )}
 
               {activeTab === 'historial' && (
-                <div className="text-center py-8 text-gray-500">
-                  <IconHistory size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>El historial de cambios estará disponible próximamente (HP-188)</p>
-                </div>
+                <HistorialSection inmuebleId={inmueble.id} />
               )}
 
               {activeTab === 'galeria' && (

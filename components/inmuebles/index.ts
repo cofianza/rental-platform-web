@@ -20,6 +20,7 @@ export { PropietarioSelector } from './PropietarioSelector'
 export { EstratoIndicator } from './EstratoIndicator'
 export { InmuebleDetailSkeleton } from './InmuebleDetailSkeleton'
 export { ExpedientesSection, type IExpedienteResumen } from './ExpedientesSection'
+export { HistorialSection } from './HistorialSection'
 
 // Constantes
 export * from './constants'
