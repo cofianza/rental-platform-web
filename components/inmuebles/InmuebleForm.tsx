@@ -27,7 +27,7 @@ import type {
   TipoInmueble,
   UsoInmueble,
 } from '@/types/inmueble'
-import type { IUserProfile } from '@/types/user'
+// No importamos IUserProfile ya que solo usamos el ID del propietario
 import { cn } from '@/lib/utils'
 
 // Departamentos de Colombia (principales)
@@ -308,7 +308,8 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     }
   }
 
-  const handlePropietarioChange = (propietarioId: string, _propietario: IUserProfile | null) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePropietarioChange = (propietarioId: string, _propietario: any) => {
     handleChange('propietario_id', propietarioId)
   }
 

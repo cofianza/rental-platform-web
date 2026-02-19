@@ -1,19 +1,30 @@
 /**
  * Selector de Propietario - HP-174
  * Componente para buscar y seleccionar propietarios
+ * Usa Supabase directamente para evitar problemas con el RPC de usuarios
  */
 
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { IconSearch, IconLoader, IconX, IconUser } from '@/components/icons'
-import { userService } from '@/services/userService'
-import type { IUserProfile } from '@/types/user'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+
+// Tipo simplificado para el selector (no necesita todos los campos de IUserProfile)
+interface PropietarioOption {
+  id: string
+  nombre: string
+  apellido: string
+  email: string
+  telefono: string | null
+  rol: string
+  estado: string
+}
 
 interface PropietarioSelectorProps {
   value: string // propietario_id
-  onChange: (propietarioId: string, propietario: IUserProfile | null) => void
+  onChange: (propietarioId: string, propietario: PropietarioOption | null) => void
   disabled?: boolean
   error?: string
   initialPropietario?: { id: string; nombre: string; apellido: string } | null
@@ -28,7 +39,7 @@ export function PropietarioSelector({
 }: PropietarioSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [users, setUsers] = useState<IUserProfile[]>([])
+  const [users, setUsers] = useState<PropietarioOption[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedUser, setSelectedUser] = useState<{
     id: string
@@ -41,6 +52,7 @@ export function PropietarioSelector({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Buscar usuarios cuando cambia el término de búsqueda
+  // Usa Supabase directamente para evitar el bug del RPC list_users_with_email
   const searchUsers = useCallback(async (term: string) => {
     if (term.length < 2) {
       setUsers([])
@@ -49,12 +61,32 @@ export function PropietarioSelector({
 
     setIsLoading(true)
     try {
-      const response = await userService.getUsers({
-        search: term,
-        is_active: 'true',
-        limit: 10,
-      })
-      setUsers(response.data)
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('id, nombre, apellido, telefono, rol, estado')
+        .eq('estado', 'activo')
+        .or(`nombre.ilike.%${term}%,apellido.ilike.%${term}%`)
+        .order('nombre', { ascending: true })
+        .limit(10)
+
+      if (error) {
+        console.error('Error searching users:', error)
+        setUsers([])
+        return
+      }
+
+      // Mapear a IUserProfile (sin email ya que no está en perfiles)
+      const mappedUsers = (data || []).map((user) => ({
+        id: user.id as string,
+        nombre: user.nombre as string,
+        apellido: user.apellido as string,
+        email: '', // Email no disponible desde perfiles directamente
+        telefono: user.telefono as string | null,
+        rol: user.rol as string,
+        estado: user.estado as string,
+      }))
+
+      setUsers(mappedUsers)
     } catch (err) {
       console.error('Error searching users:', err)
       setUsers([])
@@ -103,7 +135,7 @@ export function PropietarioSelector({
     }
   }, [initialPropietario])
 
-  const handleSelect = (user: IUserProfile) => {
+  const handleSelect = (user: PropietarioOption) => {
     setSelectedUser({
       id: user.id,
       nombre: user.nombre || '',
@@ -218,7 +250,12 @@ export function PropietarioSelector({
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {user.nombre} {user.apellido}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      {user.email && (
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      )}
+                      {user.rol && (
+                        <p className="text-xs text-gray-400 truncate capitalize">{user.rol.replace('_', ' ')}</p>
+                      )}
                     </div>
                   </button>
                 </li>
