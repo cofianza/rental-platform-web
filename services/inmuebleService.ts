@@ -239,6 +239,46 @@ class InmuebleService {
       // No lanzar error, solo loguear
     }
   }
+
+  /**
+   * Obtiene los expedientes asociados a un inmueble
+   * @returns Lista de expedientes con datos básicos
+   */
+  async getExpedientesByInmueble(inmuebleId: string): Promise<{
+    id: string
+    numero_expediente: string
+    solicitante_nombre: string
+    estado: string
+    fecha_creacion: string
+  }[]> {
+    try {
+      const response = await apiClient.get(`/inmuebles/${inmuebleId}/expedientes`) as unknown as {
+        success: boolean
+        data: {
+          id: string
+          numero_expediente: string
+          solicitante_nombre: string
+          estado: string
+          fecha_creacion: string
+        }[]
+      }
+      return response.data || []
+    } catch (error) {
+      console.error('Error fetching expedientes:', error)
+      return []
+    }
+  }
+
+  /**
+   * Actualiza la visibilidad del inmueble en la vitrina
+   */
+  async toggleVisibleVitrina(id: string, visible: boolean): Promise<IInmueble> {
+    const response = (await apiClient.patch(
+      `/inmuebles/${id}`,
+      { visible_vitrina: visible }
+    )) as unknown as IInmuebleResponse
+    return response.data
+  }
 }
 
 // Instancia singleton

@@ -791,6 +791,131 @@ export function IconClipboardList({ className, size = defaultSize }: IconProps) 
   )
 }
 
+// Bed (HP-180: habitaciones)
+export function IconBed({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M2 4v16" />
+      <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+      <path d="M2 17h20" />
+      <path d="M6 8v9" />
+    </svg>
+  )
+}
+
+// Bath (HP-180: baños)
+export function IconBath({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" />
+      <line x1="10" y1="5" x2="8" y2="7" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <line x1="7" y1="19" x2="7" y2="21" />
+      <line x1="17" y1="19" x2="17" y2="21" />
+    </svg>
+  )
+}
+
+// Car (HP-180: parqueaderos)
+export function IconCar({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.2 1 13.2V16c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <path d="M9 17h6" />
+      <circle cx="17" cy="17" r="2" />
+    </svg>
+  )
+}
+
+// Ruler (HP-180: área m2)
+export function IconRuler({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+      <path d="m14.5 12.5 2-2" />
+      <path d="m11.5 9.5 2-2" />
+      <path d="m8.5 6.5 2-2" />
+      <path d="m17.5 15.5 2-2" />
+    </svg>
+  )
+}
+
+// Globe (HP-180: visible vitrina)
+export function IconGlobe({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </svg>
+  )
+}
+
+// History (HP-180: historial de cambios tab)
+export function IconHistory({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  )
+}
+
+// Images (HP-180: galería tab)
+export function IconImages({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M18 22H4a2 2 0 0 1-2-2V6" />
+      <path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18" />
+      <circle cx="12" cy="8" r="2" />
+      <rect x="6" y="2" width="16" height="16" rx="2" />
+    </svg>
+  )
+}
+
+// ExternalLink (HP-180: ver expediente/contrato)
+export function IconExternalLink({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  )
+}
+
+// Power (HP-180: desactivar/reactivar)
+export function IconPower({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 2v10" />
+      <path d="M18.4 6.6a9 9 0 1 1-12.77.04" />
+    </svg>
+  )
+}
+
+// Play (HP-180: iniciar estudio)
+export function IconPlay({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </svg>
+  )
+}
+
+// Info (HP-180: información tab)
+export function IconInfo({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -836,6 +961,17 @@ export const ICON_MAP = {
   Upload: IconUpload,
   Image: IconImage,
   Home: IconHome,
+  Bed: IconBed,
+  Bath: IconBath,
+  Car: IconCar,
+  Ruler: IconRuler,
+  Globe: IconGlobe,
+  History: IconHistory,
+  Images: IconImages,
+  ExternalLink: IconExternalLink,
+  Power: IconPower,
+  Play: IconPlay,
+  Info: IconInfo,
 } as const
 
 export type IconName = keyof typeof ICON_MAP
