@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { PageHeader, SearchInput, DataTable, Badge, Tabs, Avatar } from '@/components/ui'
+import { PageHeader, SearchInput, Badge, Tabs, Avatar } from '@/components/ui'
 import type { Column } from '@/components/ui/DataTable'
 import type { Tab } from '@/components/ui/Tabs'
 import { MOCK_EXPEDIENTES, calcularDiasEnProceso, type MockExpediente } from '@/lib/mock-data'

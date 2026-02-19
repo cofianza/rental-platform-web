@@ -20,7 +20,7 @@ const ROLE_DISPLAY: Record<string, string> = {
 }
 
 export function Header() {
-  const { sidebarExpanded, openSidebar } = useUIStore()
+  const { openSidebar } = useUIStore()
   const user = useAuthStore((state) => state.user)
   const breadcrumbs = useBreadcrumbs()
 

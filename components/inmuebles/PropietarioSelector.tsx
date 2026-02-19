@@ -31,7 +31,7 @@ interface PropietarioSelectorProps {
 }
 
 export function PropietarioSelector({
-  value,
+  value: _value,
   onChange,
   disabled = false,
   error,

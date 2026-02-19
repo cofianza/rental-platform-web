@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.96.0",
@@ -20,10 +21,18 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@next/eslint-plugin-next": "^16.1.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.6",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

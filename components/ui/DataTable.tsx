@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { IconChevronDown, IconChevronRight } from '@/components/icons'
+import { IconChevronDown } from '@/components/icons'
 
 export interface Column<T> {
   key: keyof T | string
@@ -26,7 +26,7 @@ export interface DataTableProps<T> {
 
 type SortDirection = 'asc' | 'desc' | null
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
   data,
   pageSize = 10,

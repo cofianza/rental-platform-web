@@ -373,7 +373,7 @@ export default function ExpedienteDetallePage() {
 
                 {/* Eventos */}
                 <div className="space-y-6">
-                  {MOCK_TIMELINE.map((evento, index) => (
+                  {MOCK_TIMELINE.map((evento) => (
                     <div key={evento.id} className="relative flex gap-4">
                       <TimelineIcon tipo={evento.tipo} />
                       <div className="flex-1 pb-6">

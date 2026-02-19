@@ -51,7 +51,6 @@ function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null
 
   // Importación dinámica para evitar dependencias circulares
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useAuthStore } = require('@/stores/auth.store')
   return useAuthStore.getState().accessToken
 }
