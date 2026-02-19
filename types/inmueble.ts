@@ -188,3 +188,70 @@ export interface IFilterOptionsResponse {
   success: boolean
   data: IFilterOptions
 }
+
+// ============================================
+// FOTOS DEL INMUEBLE - HP-203
+// ============================================
+
+/**
+ * Foto del inmueble
+ */
+export interface IFotoInmueble {
+  id: string
+  inmueble_id: string
+  url: string
+  url_thumbnail?: string | null
+  descripcion?: string | null
+  orden: number
+  es_fachada: boolean
+  tamaño_archivo?: number | null
+  tipo_archivo?: string | null
+  created_at: string
+}
+
+/**
+ * Datos para crear una foto
+ */
+export interface IFotoInmuebleCreate {
+  url: string
+  url_thumbnail?: string
+  descripcion?: string
+  orden?: number
+  es_fachada?: boolean
+  tamaño_archivo?: number
+  tipo_archivo?: string
+}
+
+/**
+ * Datos para actualizar una foto
+ */
+export interface IFotoInmuebleUpdate {
+  descripcion?: string | null
+  orden?: number
+  es_fachada?: boolean
+}
+
+/**
+ * Respuesta de lista de fotos
+ */
+export interface IFotosInmuebleResponse {
+  success: boolean
+  data: IFotoInmueble[]
+}
+
+/**
+ * Respuesta de una foto
+ */
+export interface IFotoInmuebleResponse {
+  success: boolean
+  data: IFotoInmueble
+}
+
+/**
+ * Constantes de fotos
+ */
+export const FOTO_LIMITS = {
+  MAX_FOTOS_PER_INMUEBLE: 20,
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
+} as const

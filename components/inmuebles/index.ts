@@ -22,5 +22,8 @@ export { InmuebleDetailSkeleton } from './InmuebleDetailSkeleton'
 export { ExpedientesSection, type IExpedienteResumen } from './ExpedientesSection'
 export { HistorialSection } from './HistorialSection'
 
+// Galería (HP-203)
+export { GaleriaSection } from './GaleriaSection'
+
 // Constantes
 export * from './constants'

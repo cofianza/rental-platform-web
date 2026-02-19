@@ -15,7 +15,13 @@ import type {
   IFilterOptions,
   IFilterOptionsResponse,
   IInmueblesMeta,
+  IFotoInmueble,
+  IFotoInmuebleCreate,
+  IFotoInmuebleUpdate,
+  IFotosInmuebleResponse,
+  IFotoInmuebleResponse,
 } from '@/types/inmueble'
+import { FOTO_LIMITS } from '@/types/inmueble'
 import type {
   ICambioInmueble,
   ICambiosResumen,
@@ -320,6 +326,143 @@ class InmuebleService {
       { visible_vitrina: visible }
     )) as unknown as IInmuebleResponse
     return response.data
+  }
+
+  // ============================================
+  // FOTOS DEL INMUEBLE - HP-203
+  // ============================================
+
+  /**
+   * Obtiene las fotos de un inmueble ordenadas
+   */
+  async getFotos(inmuebleId: string): Promise<IFotoInmueble[]> {
+    try {
+      const response = (await apiClient.get(
+        `/inmuebles/${inmuebleId}/fotos`
+      )) as unknown as IFotosInmuebleResponse
+      return response.data || []
+    } catch (error) {
+      console.error('Error fetching fotos:', error)
+      return []
+    }
+  }
+
+  /**
+   * Sube una foto a Supabase Storage y la registra en el backend
+   * @returns La foto creada
+   */
+  async uploadFoto(
+    inmuebleId: string,
+    file: File,
+    options?: { descripcion?: string; orden?: number; es_fachada?: boolean }
+  ): Promise<IFotoInmueble> {
+    // Validar tipo de archivo
+    const allowedTypes: readonly string[] = FOTO_LIMITS.ALLOWED_TYPES
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.')
+    }
+
+    // Validar tamaño
+    if (file.size > FOTO_LIMITS.MAX_FILE_SIZE) {
+      throw new Error('El archivo excede el tamaño máximo de 5MB.')
+    }
+
+    // Generar nombre único para el archivo
+    const fileExt = file.name.split('.').pop()
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 8)
+    const fileName = `${inmuebleId}/fotos/${timestamp}-${randomId}.${fileExt}`
+
+    // Subir a Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error('Error uploading file:', uploadError)
+      throw new Error('Error al subir la imagen. Por favor, intenta de nuevo.')
+    }
+
+    // Obtener URL pública
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(uploadData.path)
+
+    // Registrar en el backend
+    const fotoData: IFotoInmuebleCreate = {
+      url: urlData.publicUrl,
+      descripcion: options?.descripcion,
+      orden: options?.orden,
+      es_fachada: options?.es_fachada,
+      tamaño_archivo: file.size,
+      tipo_archivo: file.type,
+    }
+
+    const response = (await apiClient.post(
+      `/inmuebles/${inmuebleId}/fotos`,
+      fotoData
+    )) as unknown as IFotoInmuebleResponse
+
+    return response.data
+  }
+
+  /**
+   * Actualiza una foto (descripción, orden, es_fachada)
+   */
+  async updateFoto(
+    inmuebleId: string,
+    fotoId: string,
+    data: IFotoInmuebleUpdate
+  ): Promise<IFotoInmueble> {
+    const response = (await apiClient.patch(
+      `/inmuebles/${inmuebleId}/fotos/${fotoId}`,
+      data
+    )) as unknown as IFotoInmuebleResponse
+    return response.data
+  }
+
+  /**
+   * Elimina una foto del storage y del backend
+   */
+  async deleteFoto(inmuebleId: string, fotoId: string, fotoUrl: string): Promise<void> {
+    // Eliminar del storage
+    const bucketUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/`
+    const filePath = fotoUrl.replace(bucketUrl, '')
+
+    if (filePath) {
+      const { error: storageError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([filePath])
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError)
+      }
+    }
+
+    // Eliminar del backend
+    await apiClient.delete(`/inmuebles/${inmuebleId}/fotos/${fotoId}`)
+  }
+
+  /**
+   * Reordena las fotos de un inmueble
+   * @param fotoIds Array de IDs en el nuevo orden
+   */
+  async reordenarFotos(inmuebleId: string, fotoIds: string[]): Promise<IFotoInmueble[]> {
+    const response = (await apiClient.patch(
+      `/inmuebles/${inmuebleId}/fotos/reordenar`,
+      { foto_ids: fotoIds }
+    )) as unknown as IFotosInmuebleResponse
+    return response.data
+  }
+
+  /**
+   * Marca una foto como fachada principal
+   */
+  async setFotoFachada(inmuebleId: string, fotoId: string): Promise<IFotoInmueble> {
+    return this.updateFoto(inmuebleId, fotoId, { es_fachada: true })
   }
 }
 

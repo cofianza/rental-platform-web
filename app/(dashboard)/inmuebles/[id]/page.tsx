@@ -18,6 +18,7 @@ import {
   InmuebleDetailSkeleton,
   ExpedientesSection,
   HistorialSection,
+  GaleriaSection,
   type IExpedienteResumen,
 } from '@/components/inmuebles'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
@@ -310,7 +311,7 @@ export default function InmuebleDetailPage() {
     { id: 'info' as TabId, label: 'Información', icon: IconInfo },
     { id: 'expedientes' as TabId, label: 'Expedientes', icon: IconFolderOpen },
     { id: 'historial' as TabId, label: 'Historial', icon: IconHistory },
-    { id: 'galeria' as TabId, label: 'Galería', icon: IconImages, disabled: true },
+    { id: 'galeria' as TabId, label: 'Galería', icon: IconImages },
   ]
 
   return (
@@ -380,24 +381,16 @@ export default function InmuebleDetailPage() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => !tab.disabled && setActiveTab(tab.id)}
-                      disabled={tab.disabled}
+                      onClick={() => setActiveTab(tab.id)}
                       className={cn(
                         'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                         activeTab === tab.id
                           ? 'border-primary-600 text-primary-600'
-                          : tab.disabled
-                          ? 'border-transparent text-gray-400 cursor-not-allowed'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       )}
                     >
                       <Icon size={16} />
                       {tab.label}
-                      {tab.disabled && (
-                        <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                          Próximamente
-                        </span>
-                      )}
                     </button>
                   )
                 })}
@@ -552,10 +545,7 @@ export default function InmuebleDetailPage() {
               )}
 
               {activeTab === 'galeria' && (
-                <div className="text-center py-8 text-gray-500">
-                  <IconImages size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>La galería de fotos estará disponible próximamente (HP-203)</p>
-                </div>
+                <GaleriaSection inmuebleId={inmueble.id} canEdit={canEdit} />
               )}
             </div>
           </div>
