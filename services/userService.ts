@@ -57,7 +57,7 @@ class UserService {
       pagination: {
         total: number
         page: string | number
-        size: string | number
+        limit: string | number
         totalPages: number
       }
     }
@@ -72,7 +72,7 @@ class UserService {
       meta: {
         total: backendData.pagination?.total || 0,
         page: Number(backendData.pagination?.page) || 1,
-        size: Number(backendData.pagination?.size) || 10,
+        limit: Number(backendData.pagination?.limit) || 10,
         totalPages: backendData.pagination?.totalPages || 0,
       },
     }

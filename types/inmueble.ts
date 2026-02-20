@@ -136,7 +136,7 @@ export interface IInmuebleFilters {
 export interface IInmueblesMeta {
   total: number
   page: number
-  size: number
+  limit: number
   totalPages: number
 }
 
@@ -174,7 +174,7 @@ export interface IInmueblesResponse {
   pagination: {
     total: number
     page: number
-    size: number
+    limit: number
     totalPages: number
   }
 }

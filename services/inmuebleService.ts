@@ -82,7 +82,7 @@ class InmuebleService {
       meta: {
         total: response.pagination?.total || 0,
         page: Number(response.pagination?.page) || 1,
-        size: Number(response.pagination?.size) || 10,
+        limit: Number(response.pagination?.limit) || 10,
         totalPages: response.pagination?.totalPages || 0,
       },
     }
@@ -177,7 +177,7 @@ class InmuebleService {
       meta: {
         total: response.pagination?.total || 0,
         page: Number(response.pagination?.page) || 1,
-        size: Number(response.pagination?.size) || 20,
+        limit: Number(response.pagination?.limit) || 20,
         totalPages: response.pagination?.totalPages || 0,
       },
     }
@@ -289,7 +289,7 @@ class InmuebleService {
     params?: { page?: number; limit?: number; campo?: string }
   ): Promise<{
     data: ICambioInmueble[]
-    pagination: { total: number; page: number; size: number; totalPages: number }
+    pagination: { total: number; page: number; limit: number; totalPages: number }
   }> {
     const queryParams = new URLSearchParams()
     if (params?.page) queryParams.append('page', params.page.toString())
@@ -303,7 +303,7 @@ class InmuebleService {
 
     return {
       data: response.data || [],
-      pagination: response.pagination || { total: 0, page: 1, size: 20, totalPages: 0 },
+      pagination: response.pagination || { total: 0, page: 1, limit: 20, totalPages: 0 },
     }
   }
 

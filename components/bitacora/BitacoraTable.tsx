@@ -134,8 +134,8 @@ export function BitacoraTable({
         <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500">
-              Mostrando {(meta.page - 1) * meta.size + 1} -{' '}
-              {Math.min(meta.page * meta.size, meta.total)} de {meta.total} registros
+              Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
+              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} registros
             </div>
 
             <div className="flex items-center gap-4">

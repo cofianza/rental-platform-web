@@ -292,8 +292,8 @@ export function InmueblesTable({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/* Info */}
             <div className="text-sm text-gray-500">
-              Mostrando {(meta.page - 1) * meta.size + 1} -{' '}
-              {Math.min(meta.page * meta.size, meta.total)} de {meta.total} inmuebles
+              Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
+              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} inmuebles
             </div>
 
             {/* Controles */}

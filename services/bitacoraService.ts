@@ -39,7 +39,7 @@ class BitacoraService {
       meta: {
         total: response.meta?.total ?? 0,
         page: Number(response.meta?.page) || 1,
-        size: Number(response.meta?.size) || 10,
+        limit: Number(response.meta?.limit) || 10,
         totalPages: response.meta?.totalPages ?? 0,
       },
     }

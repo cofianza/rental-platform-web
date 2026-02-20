@@ -38,7 +38,7 @@ export interface IUserFormData {
 export interface IUsersMeta {
   total: number
   page: number
-  size: number
+  limit: number
   totalPages: number
 }
 

@@ -30,7 +30,7 @@ export interface ICambiosResponse {
   pagination: {
     total: number
     page: number
-    size: number
+    limit: number
     totalPages: number
   }
 }

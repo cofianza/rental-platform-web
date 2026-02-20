@@ -24,7 +24,7 @@ export interface IAuditLogFilters {
 export interface IAuditLogsMeta {
   total: number
   page: number
-  size: number
+  limit: number
   totalPages: number
 }
 
