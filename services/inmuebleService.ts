@@ -286,7 +286,7 @@ class InmuebleService {
    */
   async getCambios(
     inmuebleId: string,
-    params?: { page?: number; limit?: number; campo?: string }
+    params?: { page?: number; limit?: number; campo?: string; usuario_id?: string }
   ): Promise<{
     data: ICambioInmueble[]
     pagination: { total: number; page: number; limit: number; totalPages: number }
@@ -295,6 +295,7 @@ class InmuebleService {
     if (params?.page) queryParams.append('page', params.page.toString())
     if (params?.limit) queryParams.append('limit', params.limit.toString())
     if (params?.campo) queryParams.append('campo', params.campo)
+    if (params?.usuario_id) queryParams.append('usuario_id', params.usuario_id)
     const qs = queryParams.toString()
 
     const response = (await apiClient.get(

@@ -20,6 +20,11 @@ interface HistorialSectionProps {
   inmuebleId: string
 }
 
+interface UsuarioOption {
+  id: string
+  nombre: string
+}
+
 function formatValue(campo: string, valor: string | null): string {
   if (valor === null || valor === '') return '(vacío)'
 
@@ -86,6 +91,8 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
   const [totalPages, setTotalPages] = useState(0)
   const [total, setTotal] = useState(0)
   const [filterCampo, setFilterCampo] = useState('')
+  const [filterUsuario, setFilterUsuario] = useState('')
+  const [usuarios, setUsuarios] = useState<UsuarioOption[]>([])
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -95,8 +102,11 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           page,
           limit: ITEMS_PER_PAGE,
           campo: filterCampo || undefined,
+          usuario_id: filterUsuario || undefined,
         }),
-        page === 1 && !filterCampo ? inmuebleService.getCambiosResumen(inmuebleId) : Promise.resolve(null),
+        page === 1 && !filterCampo && !filterUsuario
+          ? inmuebleService.getCambiosResumen(inmuebleId)
+          : Promise.resolve(null),
       ])
 
       setCambios(cambiosResult.data)
@@ -106,19 +116,43 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
       if (resumenResult) {
         setResumen(resumenResult)
       }
+
+      // Extraer usuarios únicos de los cambios cargados
+      setUsuarios((prev) => {
+        const map = new Map(prev.map((u) => [u.id, u]))
+        for (const c of cambiosResult.data) {
+          if (c.usuario_id && c.usuario_nombre && !map.has(c.usuario_id)) {
+            map.set(c.usuario_id, { id: c.usuario_id, nombre: c.usuario_nombre })
+          }
+        }
+        return Array.from(map.values())
+      })
     } catch (error) {
       console.error('Error fetching historial:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [inmuebleId, page, filterCampo])
+  }, [inmuebleId, page, filterCampo, filterUsuario])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  const handleFilterChange = (campo: string) => {
+  const handleFilterCampoChange = (campo: string) => {
     setFilterCampo(campo)
+    setPage(1)
+  }
+
+  const handleFilterUsuarioChange = (usuarioId: string) => {
+    setFilterUsuario(usuarioId)
+    setPage(1)
+  }
+
+  const hasActiveFilters = filterCampo || filterUsuario
+
+  const clearFilters = () => {
+    setFilterCampo('')
+    setFilterUsuario('')
     setPage(1)
   }
 
@@ -132,7 +166,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
   }
 
   // Empty state
-  if (!isLoading && cambios.length === 0 && !filterCampo) {
+  if (!isLoading && cambios.length === 0 && !hasActiveFilters) {
     return (
       <div className="text-center py-12">
         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -140,7 +174,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
         </div>
         <p className="text-gray-600 mb-1">No hay cambios registrados</p>
         <p className="text-sm text-gray-400">
-          Los cambios se registran automaticamente al editar el inmueble
+          Los cambios se registran automáticamente al editar el inmueble
         </p>
       </div>
     )
@@ -159,7 +193,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           </div>
           {resumen.ultimo_cambio && (
             <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Ultimo cambio</p>
+              <p className="text-xs text-gray-500">Último cambio</p>
               <p className="text-sm font-medium text-gray-900">
                 {formatDateTime(resumen.ultimo_cambio.created_at)}
               </p>
@@ -170,7 +204,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           )}
           {resumen.campos_mas_modificados.length > 0 && (
             <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Campo mas modificado</p>
+              <p className="text-xs text-gray-500">Campo más modificado</p>
               <p className="text-sm font-medium text-gray-900">
                 {resumen.campos_mas_modificados[0].campo_label}
               </p>
@@ -182,13 +216,15 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
         </div>
       )}
 
-      {/* Filtro por campo */}
-      {resumen && resumen.campos_mas_modificados.length > 1 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Filtrar:</span>
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-gray-500">Filtrar:</span>
+
+        {/* Filtro por campo */}
+        {resumen && resumen.campos_mas_modificados.length > 1 && (
           <select
             value={filterCampo}
-            onChange={(e) => handleFilterChange(e.target.value)}
+            onChange={(e) => handleFilterCampoChange(e.target.value)}
             className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos los campos</option>
@@ -198,20 +234,37 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
               </option>
             ))}
           </select>
-          {total > 0 && (
-            <span className="text-xs text-gray-400 ml-auto">
-              {total} resultado{total !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-      )}
+        )}
+
+        {/* Filtro por usuario */}
+        {usuarios.length > 1 && (
+          <select
+            value={filterUsuario}
+            onChange={(e) => handleFilterUsuarioChange(e.target.value)}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          >
+            <option value="">Todos los usuarios</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nombre}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {total > 0 && (
+          <span className="text-xs text-gray-400 ml-auto">
+            {total} resultado{total !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
 
       {/* Empty filtered state */}
-      {!isLoading && cambios.length === 0 && filterCampo && (
+      {!isLoading && cambios.length === 0 && hasActiveFilters && (
         <div className="text-center py-8">
-          <p className="text-gray-500 text-sm">No hay cambios para este campo</p>
+          <p className="text-gray-500 text-sm">No hay cambios con los filtros seleccionados</p>
           <button
-            onClick={() => handleFilterChange('')}
+            onClick={clearFilters}
             className="text-primary-600 text-sm hover:underline mt-1"
           >
             Ver todos los cambios
@@ -324,7 +377,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           </button>
 
           <span className="text-xs text-gray-500">
-            Pagina {page} de {totalPages}
+            Página {page} de {totalPages}
           </span>
 
           <button
