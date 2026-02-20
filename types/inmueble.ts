@@ -13,6 +13,7 @@ export interface IPropietario {
   nombre: string
   apellido: string
   telefono?: string
+  email?: string
 }
 
 // Inmueble completo

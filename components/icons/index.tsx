@@ -928,6 +928,18 @@ export function IconRefresh({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Calendar (HP-180: fechas de registro)
+export function IconCalendar({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M3 10h18" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -985,6 +997,7 @@ export const ICON_MAP = {
   Play: IconPlay,
   Info: IconInfo,
   Refresh: IconRefresh,
+  Calendar: IconCalendar,
 } as const
 
 export type IconName = keyof typeof ICON_MAP

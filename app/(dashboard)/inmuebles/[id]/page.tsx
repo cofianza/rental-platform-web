@@ -33,6 +33,7 @@ import {
   IconBuilding2,
   IconUser,
   IconPhone,
+  IconMail,
   IconGlobe,
   IconPlay,
   IconPower,
@@ -42,6 +43,7 @@ import {
   IconImages,
   IconFolderOpen,
   IconLoader,
+  IconRefresh,
 } from '@/components/icons'
 import { inmuebleService } from '@/services/inmuebleService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -116,6 +118,16 @@ export default function InmuebleDetailPage() {
       fetchExpedientes()
     }
   }, [activeTab, fetchExpedientes])
+
+  // Título dinámico de la página
+  useEffect(() => {
+    if (inmueble) {
+      document.title = `${inmueble.codigo} | Habitar Propiedades`
+    }
+    return () => {
+      document.title = 'Habitar Propiedades'
+    }
+  }, [inmueble])
 
   // Toggle visibilidad vitrina
   const handleToggleVitrina = async () => {
@@ -200,13 +212,22 @@ export default function InmuebleDetailPage() {
           <p className="text-gray-600 mb-6">
             El inmueble que buscas no existe o no tienes permisos para verlo.
           </p>
-          <button
-            onClick={() => router.push('/inmuebles')}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            <IconArrowLeft size={16} />
-            Volver al listado
-          </button>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={fetchInmueble}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <IconRefresh size={16} />
+              Reintentar
+            </button>
+            <button
+              onClick={() => router.push('/inmuebles')}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <IconArrowLeft size={16} />
+              Volver al listado
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -597,9 +618,18 @@ export default function InmuebleDetailPage() {
                   <IconUser size={20} className="text-primary-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                  <Link
+                    href={`/usuarios/${inmueble.propietario.id}`}
+                    className="text-sm font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                  >
                     {inmueble.propietario.nombre} {inmueble.propietario.apellido}
-                  </p>
+                  </Link>
+                  {inmueble.propietario.email && (
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                      <IconMail size={12} />
+                      {inmueble.propietario.email}
+                    </p>
+                  )}
                   {inmueble.propietario.telefono && (
                     <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                       <IconPhone size={12} />
