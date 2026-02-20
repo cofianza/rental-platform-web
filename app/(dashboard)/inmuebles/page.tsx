@@ -50,6 +50,7 @@ function InmueblesContent() {
     clearFilters,
     handleSort,
     deleteInmueble,
+    fetchInmuebles,
   } = useInmuebles()
 
   // Estado local para diálogo de confirmación de eliminación
@@ -149,6 +150,10 @@ function InmueblesContent() {
           isLoading={isLoading}
           canEdit={canEdit}
           canDelete={canDelete}
+          canCreate={canCreate}
+          error={error}
+          onRetry={fetchInmuebles}
+          onCreateNew={handleCreateClick}
         />
       )}
 

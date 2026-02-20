@@ -14,6 +14,8 @@ import {
   IconLoader,
   IconChevronUp,
   IconChevronDown,
+  IconPlus,
+  IconRefresh,
 } from '@/components/icons'
 import { EstadoBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
 import { ITEMS_PER_PAGE_OPTIONS, INMUEBLE_MESSAGES } from './constants'
@@ -31,6 +33,10 @@ interface InmueblesTableProps {
   isLoading?: boolean
   canEdit?: boolean
   canDelete?: boolean
+  canCreate?: boolean
+  error?: string | null
+  onRetry?: () => void
+  onCreateNew?: () => void
 }
 
 /**
@@ -92,6 +98,10 @@ export function InmueblesTable({
   isLoading = false,
   canEdit = true,
   canDelete = false,
+  canCreate = true,
+  error = null,
+  onRetry,
+  onCreateNew,
 }: InmueblesTableProps) {
   const handlePageChange = (newPage: number) => {
     onFilterChange({ page: newPage })
@@ -101,11 +111,38 @@ export function InmueblesTable({
     onFilterChange({ limit: newLimit, page: 1 })
   }
 
+  // Estado de error
+  if (error && !isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-red-200 p-8 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <IconRefresh size={18} />
+            Reintentar
+          </button>
+        )}
+      </div>
+    )
+  }
+
   // Estado vacío
   if (!isLoading && inmuebles.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-        <p className="text-gray-500">{INMUEBLE_MESSAGES.NO_RESULTS}</p>
+        <p className="text-gray-500 mb-4">{INMUEBLE_MESSAGES.EMPTY_STATE}</p>
+        {canCreate && onCreateNew && (
+          <button
+            onClick={onCreateNew}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <IconPlus size={18} />
+            Nuevo Inmueble
+          </button>
+        )}
       </div>
     )
   }
@@ -133,8 +170,14 @@ export function InmueblesTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo
+              <th className="px-4 py-3 text-left">
+                <SortableHeader
+                  label="Tipo"
+                  column="tipo"
+                  currentSort={filters.sortBy}
+                  currentOrder={filters.sortOrder}
+                  onSort={onSort}
+                />
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Dirección
@@ -148,8 +191,14 @@ export function InmueblesTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estrato
+              <th className="px-4 py-3 text-center">
+                <SortableHeader
+                  label="Estrato"
+                  column="estrato"
+                  currentSort={filters.sortBy}
+                  currentOrder={filters.sortOrder}
+                  onSort={onSort}
+                />
               </th>
               <th className="px-4 py-3 text-right">
                 <SortableHeader
@@ -160,8 +209,14 @@ export function InmueblesTable({
                   onSort={onSort}
                 />
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
+              <th className="px-4 py-3 text-center">
+                <SortableHeader
+                  label="Estado"
+                  column="estado"
+                  currentSort={filters.sortBy}
+                  currentOrder={filters.sortOrder}
+                  onSort={onSort}
+                />
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones

@@ -113,4 +113,4 @@ export const INMUEBLE_MESSAGES = {
 }
 
 // Columnas ordenables
-export const SORTABLE_COLUMNS = ['codigo', 'ciudad', 'valor_arriendo', 'area_m2', 'created_at'] as const
+export const SORTABLE_COLUMNS = ['codigo', 'ciudad', 'valor_arriendo', 'area_m2', 'created_at', 'tipo', 'estrato', 'estado'] as const

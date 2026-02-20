@@ -916,6 +916,18 @@ export function IconInfo({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Refresh (HP-174: reintentar en estado de error)
+export function IconRefresh({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -972,6 +984,7 @@ export const ICON_MAP = {
   Power: IconPower,
   Play: IconPlay,
   Info: IconInfo,
+  Refresh: IconRefresh,
 } as const
 
 export type IconName = keyof typeof ICON_MAP

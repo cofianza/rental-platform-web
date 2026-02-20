@@ -128,7 +128,7 @@ export interface IInmuebleFilters {
   page: number
   limit: number
   // Ordenamiento
-  sortBy: 'created_at' | 'valor_arriendo' | 'ciudad' | 'codigo' | 'area_m2'
+  sortBy: 'created_at' | 'valor_arriendo' | 'ciudad' | 'codigo' | 'area_m2' | 'tipo' | 'estrato' | 'estado'
   sortOrder: 'asc' | 'desc'
 }
 
