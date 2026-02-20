@@ -1,6 +1,6 @@
 /**
  * Galería de Fotos del Inmueble - HP-203
- * Componente completo con upload, grid, lightbox y gestión de fotos
+ * Componente completo con upload, grid, lightbox, drag & drop y gestión de fotos
  */
 
 'use client'
@@ -8,6 +8,23 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   IconUpload,
   IconX,
@@ -37,11 +54,148 @@ interface UploadingFile {
   error?: string
 }
 
+interface SortablePhotoProps {
+  foto: IFotoInmueble
+  index: number
+  canEdit: boolean
+  isSettingFachada: string | null
+  onSetFachada: (foto: IFotoInmueble) => void
+  onEditDescription: (foto: IFotoInmueble) => void
+  onDelete: (foto: IFotoInmueble) => void
+  onClick: (index: number) => void
+}
+
+/**
+ * Componente de foto ordenable con drag & drop
+ */
+function SortablePhoto({
+  foto,
+  index,
+  canEdit,
+  isSettingFachada,
+  onSetFachada,
+  onEditDescription,
+  onDelete,
+  onClick,
+}: SortablePhotoProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: foto.id, disabled: !canEdit })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'group relative aspect-square rounded-lg overflow-hidden bg-gray-100',
+        canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+      )}
+      {...attributes}
+      {...listeners}
+    >
+      <div
+        className="absolute inset-0"
+        onClick={(e) => {
+          if (!isDragging) {
+            e.stopPropagation()
+            onClick(index)
+          }
+        }}
+      >
+        <Image
+          src={foto.url_thumbnail || foto.url}
+          alt={foto.descripcion || `Foto ${index + 1}`}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+          draggable={false}
+        />
+      </div>
+
+      {/* Badge de fachada */}
+      {foto.es_fachada && (
+        <div className="absolute top-2 left-2 px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded flex items-center gap-1 z-10">
+          <IconHome size={12} />
+          Fachada
+        </div>
+      )}
+
+      {/* Overlay con acciones */}
+      {canEdit && !isDragging && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 z-20">
+          {/* Set as fachada */}
+          {!foto.es_fachada && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onSetFachada(foto)
+              }}
+              disabled={isSettingFachada === foto.id}
+              className="p-2 bg-white rounded-full text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              title="Establecer como fachada"
+            >
+              {isSettingFachada === foto.id ? (
+                <IconLoader size={16} className="animate-spin" />
+              ) : (
+                <IconHome size={16} />
+              )}
+            </button>
+          )}
+
+          {/* Edit description */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onEditDescription(foto)
+            }}
+            className="p-2 bg-white rounded-full text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            title="Editar descripción"
+          >
+            <IconEdit size={16} />
+          </button>
+
+          {/* Delete */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(foto)
+            }}
+            className="p-2 bg-white rounded-full text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+            title="Eliminar"
+          >
+            <IconTrash size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Descripción */}
+      {foto.descripcion && (
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent z-10">
+          <p className="text-xs text-white truncate">{foto.descripcion}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionProps) {
   const [fotos, setFotos] = useState<IFotoInmueble[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [isReordering, setIsReordering] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [editingFoto, setEditingFoto] = useState<IFotoInmueble | null>(null)
   const [editDescription, setEditDescription] = useState('')
@@ -52,6 +206,18 @@ export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionPr
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
+
+  // Sensors para drag & drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Requiere mover 8px antes de iniciar drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Cargar fotos
   const fetchFotos = useCallback(async () => {
@@ -150,7 +316,38 @@ export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionPr
     }
   }
 
-  // Handlers de drag & drop
+  // Handler de drag end para reordenar
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) return
+
+    const oldIndex = fotos.findIndex((f) => f.id === active.id)
+    const newIndex = fotos.findIndex((f) => f.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Actualizar UI optimistamente
+    const reorderedFotos = arrayMove(fotos, oldIndex, newIndex)
+    setFotos(reorderedFotos)
+
+    // Persistir en backend
+    setIsReordering(true)
+    try {
+      const fotoIds = reorderedFotos.map((f) => f.id)
+      await inmuebleService.reordenarFotos(inmuebleId, fotoIds)
+      toast.success('Orden actualizado')
+    } catch (error) {
+      console.error('Error reordering fotos:', error)
+      toast.error('Error al reordenar fotos')
+      // Revertir cambio
+      fetchFotos()
+    } finally {
+      setIsReordering(false)
+    }
+  }
+
+  // Handlers de drag & drop para upload
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -349,6 +546,20 @@ export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionPr
         </div>
       )}
 
+      {/* Hint de reordenar (solo si puede editar y hay fotos) */}
+      {canEdit && fotos.length > 1 && (
+        <p className="text-xs text-gray-500 text-center">
+          {isReordering ? (
+            <span className="flex items-center justify-center gap-1">
+              <IconLoader size={12} className="animate-spin" />
+              Guardando orden...
+            </span>
+          ) : (
+            'Arrastra las fotos para reordenarlas'
+          )}
+        </p>
+      )}
+
       {/* Archivos subiendo */}
       {uploadingFiles.length > 0 && (
         <div className="space-y-2">
@@ -402,86 +613,32 @@ export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionPr
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {fotos.map((foto, index) => (
-            <div
-              key={foto.id}
-              className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer"
-              onClick={() => setLightboxIndex(index)}
-            >
-              <Image
-                src={foto.url_thumbnail || foto.url}
-                alt={foto.descripcion || `Foto ${index + 1}`}
-                fill
-                className="object-cover transition-transform group-hover:scale-105"
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-              />
-
-              {/* Badge de fachada */}
-              {foto.es_fachada && (
-                <div className="absolute top-2 left-2 px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded flex items-center gap-1">
-                  <IconHome size={12} />
-                  Fachada
-                </div>
-              )}
-
-              {/* Overlay con acciones */}
-              {canEdit && (
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                  {/* Set as fachada */}
-                  {!foto.es_fachada && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSetFachada(foto)
-                      }}
-                      disabled={isSettingFachada === foto.id}
-                      className="p-2 bg-white rounded-full text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-                      title="Establecer como fachada"
-                    >
-                      {isSettingFachada === foto.id ? (
-                        <IconLoader size={16} className="animate-spin" />
-                      ) : (
-                        <IconHome size={16} />
-                      )}
-                    </button>
-                  )}
-
-                  {/* Edit description */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openEditDescription(foto)
-                    }}
-                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    title="Editar descripción"
-                  >
-                    <IconEdit size={16} />
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDeletingFoto(foto)
-                    }}
-                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-                    title="Eliminar"
-                  >
-                    <IconTrash size={16} />
-                  </button>
-                </div>
-              )}
-
-              {/* Descripción */}
-              {foto.descripcion && (
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="text-xs text-white truncate">{foto.descripcion}</p>
-                </div>
-              )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={fotos.map((f) => f.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {fotos.map((foto, index) => (
+                <SortablePhoto
+                  key={foto.id}
+                  foto={foto}
+                  index={index}
+                  canEdit={canEdit}
+                  isSettingFachada={isSettingFachada}
+                  onSetFachada={handleSetFachada}
+                  onEditDescription={openEditDescription}
+                  onDelete={setDeletingFoto}
+                  onClick={setLightboxIndex}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Lightbox */}
