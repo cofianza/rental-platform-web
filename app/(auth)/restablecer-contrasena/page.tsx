@@ -153,7 +153,7 @@ function ResetPasswordForm() {
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
               'bg-primary-600 hover:bg-primary-700 text-white',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
             )}
           >
@@ -201,7 +201,7 @@ function ResetPasswordForm() {
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
               'bg-primary-600 hover:bg-primary-700 text-white',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
             )}
           >
@@ -265,7 +265,7 @@ function ResetPasswordForm() {
               autoFocus
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.password
                   ? 'border-red-500 bg-red-50'
@@ -333,7 +333,7 @@ function ResetPasswordForm() {
               autoComplete="new-password"
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.confirmPassword
                   ? 'border-red-500 bg-red-50'
@@ -361,7 +361,7 @@ function ResetPasswordForm() {
           className={cn(
             'w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm',
             'bg-primary-600 hover:bg-primary-700',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+            'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'transition-colors flex items-center justify-center gap-2',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}

@@ -53,7 +53,7 @@ export function BitacoraFilters({
           <select
             value={filters.userId}
             onChange={(e) => onFilterChange({ userId: e.target.value })}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="">Todos los usuarios</option>
@@ -71,7 +71,7 @@ export function BitacoraFilters({
           <select
             value={filters.action}
             onChange={(e) => onFilterChange({ action: e.target.value })}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
             {ACTION_OPTIONS.map((opt) => (
@@ -88,7 +88,7 @@ export function BitacoraFilters({
           <select
             value={filters.entityType}
             onChange={(e) => onFilterChange({ entityType: e.target.value })}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
             {ENTITY_OPTIONS.map((opt) => (
@@ -106,7 +106,7 @@ export function BitacoraFilters({
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onFilterChange({ dateFrom: e.target.value })}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           />
         </div>
@@ -118,7 +118,7 @@ export function BitacoraFilters({
             type="date"
             value={filters.dateTo}
             onChange={(e) => onFilterChange({ dateTo: e.target.value })}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           />
         </div>

@@ -238,7 +238,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.nombre ? 'border-red-500' : 'border-gray-300')}
+                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.nombre ? 'border-red-500' : 'border-gray-300')}
                   placeholder="Tu nombre"
                 />
               </div>
@@ -251,7 +251,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.apellido ? 'border-red-500' : 'border-gray-300')}
+                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.apellido ? 'border-red-500' : 'border-gray-300')}
                   placeholder="Tu apellido"
                 />
               </div>
@@ -267,7 +267,7 @@ export default function RegisterPropietarioPage() {
                 <select
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
+                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
                 >
                   <option value="">Seleccionar...</option>
                   <option value="cc">Cedula de Ciudadania</option>
@@ -284,7 +284,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.numero_documento ? 'border-red-500' : 'border-gray-300')}
+                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.numero_documento ? 'border-red-500' : 'border-gray-300')}
                   placeholder="Numero de documento"
                 />
               </div>
@@ -299,7 +299,7 @@ export default function RegisterPropietarioPage() {
               <input
                 type="tel" value={formData.telefono}
                 onChange={(e) => updateField('telefono', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.telefono ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.telefono ? 'border-red-500' : 'border-gray-300')}
                 placeholder="+57 3XXXXXXXXX"
               />
             </div>
@@ -313,7 +313,7 @@ export default function RegisterPropietarioPage() {
               <input
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.direccion ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.direccion ? 'border-red-500' : 'border-gray-300')}
                 placeholder="Tu direccion"
               />
             </div>
@@ -332,7 +332,7 @@ export default function RegisterPropietarioPage() {
               <input
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.email ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.email ? 'border-red-500' : 'border-gray-300')}
                 placeholder="tu@email.com"
               />
             </div>
@@ -347,7 +347,7 @@ export default function RegisterPropietarioPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
                 placeholder="Minimo 8 caracteres"
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -366,7 +366,7 @@ export default function RegisterPropietarioPage() {
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
                 placeholder="Repite tu contrasena"
               />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">

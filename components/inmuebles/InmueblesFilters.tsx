@@ -59,7 +59,7 @@ export function InmueblesFilters({
             placeholder="Buscar por código, dirección..."
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
@@ -67,7 +67,7 @@ export function InmueblesFilters({
         {canCreate && (
           <button
             onClick={onCreateClick}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
             <IconPlus size={18} />
             Nuevo Inmueble
@@ -81,7 +81,7 @@ export function InmueblesFilters({
         <select
           value={filters.tipo}
           onChange={(e) => onFilterChange({ tipo: e.target.value as IInmuebleFilters['tipo'] })}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
         >
           {TIPO_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -94,7 +94,7 @@ export function InmueblesFilters({
         <select
           value={filters.ciudad}
           onChange={(e) => onFilterChange({ ciudad: e.target.value })}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
         >
           <option value="">Todas las ciudades</option>
           {ciudadOptions.map((ciudad) => (
@@ -108,7 +108,7 @@ export function InmueblesFilters({
         <select
           value={filters.estado}
           onChange={(e) => onFilterChange({ estado: e.target.value as IInmuebleFilters['estado'] })}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
         >
           {ESTADO_OPTIONS.filter(opt => opt.value !== 'inactivo').map((option) => (
             <option key={option.value} value={option.value}>
@@ -124,7 +124,7 @@ export function InmueblesFilters({
             const value = e.target.value
             onFilterChange({ estrato: value === '' ? '' : parseInt(value, 10) })
           }}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white"
         >
           {ESTRATO_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -163,7 +163,7 @@ export function InmueblesFilters({
                 const value = e.target.value
                 onFilterChange({ rent_min: value === '' ? '' : parseInt(value, 10) })
               }}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -178,7 +178,7 @@ export function InmueblesFilters({
                 const value = e.target.value
                 onFilterChange({ rent_max: value === '' ? '' : parseInt(value, 10) })
               }}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>

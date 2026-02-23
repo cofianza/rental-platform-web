@@ -204,7 +204,7 @@ export function PropietarioSelector({
             placeholder="Buscar propietario por nombre o email..."
             className={cn(
               'w-full pl-10 pr-4 py-2 border rounded-lg text-sm',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+              'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
               error ? 'border-red-300' : 'border-gray-300',
               disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
             )}

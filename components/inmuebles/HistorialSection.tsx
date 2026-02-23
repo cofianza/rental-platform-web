@@ -225,7 +225,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           <select
             value={filterCampo}
             onChange={(e) => handleFilterCampoChange(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-hidden focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos los campos</option>
             {resumen.campos_mas_modificados.map((c) => (
@@ -241,7 +241,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
           <select
             value={filterUsuario}
             onChange={(e) => handleFilterUsuarioChange(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-hidden focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos los usuarios</option>
             {usuarios.map((u) => (

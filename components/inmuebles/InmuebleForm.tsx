@@ -316,7 +316,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   const inputClasses = (hasError: boolean) =>
     cn(
       'block w-full px-3 py-2 border rounded-lg text-sm',
-      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+      'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
       'disabled:bg-gray-100 disabled:cursor-not-allowed',
       hasError ? 'border-red-300' : 'border-gray-300'
     )
@@ -776,14 +776,14 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         <div className="flex justify-end gap-4">
           <Link
             href="/inmuebles"
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
           >
             Cancelar
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
           >
             {isSubmitting && <IconLoader size={16} className="animate-spin" />}
             {mode === 'create' ? 'Crear Inmueble' : 'Guardar Cambios'}

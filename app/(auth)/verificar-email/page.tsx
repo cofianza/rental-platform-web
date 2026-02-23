@@ -117,7 +117,7 @@ function VerifyEmailContent() {
                   type="email"
                   value={resendEmail}
                   onChange={(e) => { setResendEmail(e.target.value); setResendMessage(null) }}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="tu@email.com"
                 />
               </div>

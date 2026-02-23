@@ -197,7 +197,7 @@ export function UsersTable({
                 <select
                   value={filters.limit}
                   onChange={(e) => handleLimitChange(Number(e.target.value))}
-                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                 >
                   {ITEMS_PER_PAGE_OPTIONS.map((option) => (
                     <option key={option} value={option}>

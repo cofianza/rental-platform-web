@@ -39,7 +39,7 @@ export function UserFilters({
             placeholder="Buscar por nombre o email..."
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           />
         </div>
@@ -50,7 +50,7 @@ export function UserFilters({
           <select
             value={filters.role}
             onChange={(e) => onFilterChange({ role: e.target.value as UserRole | '' })}
-            className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
             {ROLE_OPTIONS.map((option) => (
@@ -66,7 +66,7 @@ export function UserFilters({
             onChange={(e) =>
               onFilterChange({ is_active: e.target.value as 'true' | 'false' | '' })
             }
-            className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
             {STATUS_OPTIONS.map((option) => (
@@ -93,7 +93,7 @@ export function UserFilters({
           <button
             type="button"
             onClick={onCreateClick}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             disabled={isLoading}
           >
             <IconPlus className="h-4 w-4" />

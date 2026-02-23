@@ -142,7 +142,7 @@ export function UserForm({
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             disabled={mode === 'edit' || isLoading}
-            className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+            className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
               errors.email ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="usuario@ejemplo.com"
@@ -165,7 +165,7 @@ export function UserForm({
               value={formData.nombre}
               onChange={(e) => handleChange('nombre', e.target.value)}
               disabled={isLoading}
-              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
+              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
                 errors.nombre ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="Juan"
@@ -182,7 +182,7 @@ export function UserForm({
               value={formData.apellido}
               onChange={(e) => handleChange('apellido', e.target.value)}
               disabled={isLoading}
-              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
+              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
                 errors.apellido ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="Pérez"
@@ -202,7 +202,7 @@ export function UserForm({
             value={formData.telefono}
             onChange={(e) => handleChange('telefono', e.target.value)}
             disabled={isLoading}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100"
             placeholder="+57 300 123 4567"
           />
         </div>
@@ -217,7 +217,7 @@ export function UserForm({
             value={formData.rol}
             onChange={(e) => handleChange('rol', e.target.value as UserRole)}
             disabled={isLoading}
-            className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
+            className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
               errors.rol ? 'border-red-300' : 'border-gray-300'
             }`}
           >
@@ -236,14 +236,14 @@ export function UserForm({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}
             {mode === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
