@@ -244,10 +244,10 @@ class AuthService {
     store.setLoading(true)
 
     try {
-      // Verificar sesión de Supabase
-      const { data: { session } } = await supabase.auth.getSession()
+      // Verificar usuario autenticado en Supabase (getUser valida el JWT server-side)
+      const { data: { user: supabaseUser } } = await supabase.auth.getUser()
 
-      if (!session) {
+      if (!supabaseUser) {
         return null
       }
 

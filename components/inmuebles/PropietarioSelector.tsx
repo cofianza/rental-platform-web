@@ -243,7 +243,7 @@ export function PropietarioSelector({
                     onClick={() => handleSelect(user)}
                     className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
                   >
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
                       <IconUser size={16} className="text-primary-600" />
                     </div>
                     <div className="min-w-0">

@@ -614,7 +614,7 @@ export default function InmuebleDetailPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Propietario</h3>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
                   <IconUser size={20} className="text-primary-600" />
                 </div>
                 <div className="min-w-0">
@@ -655,7 +655,7 @@ export default function InmuebleDetailPage() {
                   onClick={handleToggleVitrina}
                   disabled={isTogglingVitrina}
                   className={cn(
-                    'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                     inmueble.visible_vitrina ? 'bg-primary-600' : 'bg-gray-200',
                     isTogglingVitrina && 'opacity-50 cursor-not-allowed'
                   )}

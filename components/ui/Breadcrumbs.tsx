@@ -31,7 +31,7 @@ export function Breadcrumbs({ items, showHome = true }: BreadcrumbsProps) {
           return (
             <li key={index} className="flex items-center gap-1.5">
               {index > 0 && (
-                <IconChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+                <IconChevronRight size={14} className="text-gray-400 shrink-0" />
               )}
               {item.href && !isLast ? (
                 <Link

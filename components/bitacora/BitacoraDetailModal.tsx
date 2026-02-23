@@ -24,7 +24,7 @@ function formatDateTime(dateStr: string) {
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 py-2 border-b border-gray-100 last:border-0">
-      <span className="text-sm font-medium text-gray-500 sm:w-32 flex-shrink-0">{label}</span>
+      <span className="text-sm font-medium text-gray-500 sm:w-32 shrink-0">{label}</span>
       <div className="text-sm text-gray-900 flex-1">{children}</div>
     </div>
   )

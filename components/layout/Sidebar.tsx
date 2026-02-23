@@ -94,7 +94,7 @@ export function Sidebar() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           {/* Logo - Completo en mobile y desktop expandido, solo icono en tablet y desktop colapsado */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0">
               HP
             </div>
             <span
@@ -114,7 +114,7 @@ export function Sidebar() {
           {/* Botón cerrar (solo mobile) */}
           <button
             onClick={closeSidebar}
-            className="md:hidden p-1 hover:bg-gray-100 rounded flex-shrink-0"
+            className="md:hidden p-1 hover:bg-gray-100 rounded shrink-0"
           >
             <IconX size={20} className="text-gray-600" />
           </button>
@@ -143,7 +143,7 @@ export function Sidebar() {
                   <Icon
                     size={20}
                     className={cn(
-                      'flex-shrink-0',
+                      'shrink-0',
                       active ? 'text-white' : 'text-gray-600 group-hover:text-gray-900'
                     )}
                   />
@@ -191,7 +191,7 @@ export function Sidebar() {
             )}
             title="Cerrar sesión"
           >
-            <IconLogOut size={20} className="flex-shrink-0 text-gray-600 group-hover:text-red-600" />
+            <IconLogOut size={20} className="shrink-0 text-gray-600 group-hover:text-red-600" />
             <span
               className={cn(
                 'font-medium text-sm',
