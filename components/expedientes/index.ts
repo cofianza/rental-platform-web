@@ -1,10 +1,24 @@
 /**
- * Expedientes Components - HP-229
+ * Expedientes Components - HP-229, HP-243, HP-263, HP-270, HP-285
  * Barrel export
  */
 
+// HP-229: Listado
 export * from './constants'
 export * from './ExpedienteBadges'
 export * from './ExpedientesFilters'
 export * from './ExpedientesSkeleton'
 export * from './ExpedientesTable'
+
+// HP-243: Vista detalle
+export * from './ExpedienteProgressBar'
+export * from './TransicionModal'
+
+// HP-263: Comentarios
+export * from './ComentariosSection'
+
+// HP-270: Timeline
+export * from './TimelineSection'
+
+// HP-285: Asignación responsable
+export * from './AsignacionResponsableModal'

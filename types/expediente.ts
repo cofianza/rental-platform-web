@@ -142,3 +142,145 @@ export interface IExpedientesStatsResponse {
   success: boolean
   data: IExpedientesStatsRaw
 }
+
+// ============================================
+// HP-243: Vista Detalle del Expediente
+// ============================================
+
+/**
+ * Inmueble detallado para vista de expediente
+ * Campos alineados con backend: inmuebles(id, codigo, direccion, ciudad, departamento, tipo, estado, valor_arriendo)
+ */
+export interface IExpedienteInmuebleDetalle {
+  id: string
+  codigo: string
+  titulo?: string  // Opcional - no viene del backend en detalle
+  direccion: string
+  ciudad: string
+  departamento: string
+  tipo: string
+  uso?: string  // Opcional
+  estrato?: number  // Opcional
+  valor_arriendo: number
+  valor_administracion?: number | null
+  area_construida?: number | null
+  habitaciones?: number | null
+  banos?: number | null
+  parqueaderos?: number | null
+  foto_fachada_url?: string | null
+}
+
+/**
+ * Solicitante detallado para vista de expediente
+ * Campos alineados con backend: solicitantes(id, nombre, apellido, tipo_documento, numero_documento, email, telefono)
+ */
+export interface IExpedienteSolicitanteDetalle {
+  id: string
+  tipo_persona?: 'natural' | 'juridica'
+  tipo_documento: string
+  numero_documento: string
+  nombre: string  // Backend usa singular
+  apellido: string  // Backend usa singular
+  email: string
+  telefono: string
+  direccion?: string | null
+  departamento?: string | null
+  ciudad?: string | null
+  ocupacion?: string | null
+  actividad_economica?: string | null
+  ingresos_mensuales?: number | null
+  nivel_educativo?: string | null
+  parentesco?: string | null
+  habitara_inmueble?: boolean | null
+}
+
+/**
+ * Expediente con datos completos para vista detalle
+ */
+export interface IExpedienteDetalle extends Omit<IExpediente, 'inmueble' | 'solicitante'> {
+  inmueble: IExpedienteInmuebleDetalle | null
+  solicitante: IExpedienteSolicitanteDetalle | null
+}
+
+/**
+ * Transición disponible para un expediente
+ */
+export interface ITransicionDisponible {
+  estado_destino: EstadoExpediente
+  etiqueta: string
+  requiere_comentario: boolean
+  color?: string
+}
+
+/**
+ * Payload para ejecutar transición
+ */
+export interface IEjecutarTransicion {
+  estado_destino: EstadoExpediente
+  comentario: string
+}
+
+/**
+ * Comentario interno del expediente (HP-263)
+ */
+export interface IComentarioExpediente {
+  id: string
+  expediente_id: string
+  usuario_id: string
+  usuario: {
+    id: string
+    nombre: string
+    apellido: string
+  }
+  contenido: string
+  created_at: string
+}
+
+/**
+ * Payload para crear comentario
+ */
+export interface ICrearComentario {
+  contenido: string
+}
+
+/**
+ * Evento del timeline del expediente (HP-270)
+ */
+export interface ITimelineEvento {
+  id: string
+  expediente_id: string
+  tipo: 'creacion' | 'transicion' | 'documento' | 'comentario' | 'asignacion' | 'estudio' | 'contrato' | 'pago'
+  descripcion: string
+  detalle: Record<string, unknown> | null
+  usuario_id: string
+  usuario: {
+    id: string
+    nombre: string
+    apellido: string
+  }
+  created_at: string
+}
+
+// ============================================
+// Responses para HP-243
+// ============================================
+
+export interface IExpedienteDetalleResponse {
+  success: boolean
+  data: IExpedienteDetalle
+}
+
+export interface ITransicionesDisponiblesResponse {
+  success: boolean
+  data: ITransicionDisponible[]
+}
+
+export interface IComentariosResponse {
+  success: boolean
+  data: IComentarioExpediente[]
+}
+
+export interface ITimelineResponse {
+  success: boolean
+  data: ITimelineEvento[]
+}

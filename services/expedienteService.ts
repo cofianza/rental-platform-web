@@ -14,6 +14,16 @@ import type {
   IExpedientesStatsRaw,
   IAnalistaOption,
   EstadoExpediente,
+  IExpedienteDetalle,
+  IExpedienteDetalleResponse,
+  ITransicionDisponible,
+  ITransicionesDisponiblesResponse,
+  IEjecutarTransicion,
+  IComentarioExpediente,
+  IComentariosResponse,
+  ICrearComentario,
+  ITimelineEvento,
+  ITimelineResponse,
 } from '@/types/expediente'
 
 /**
@@ -135,6 +145,107 @@ class ExpedienteService {
       console.error('Error loading analistas:', err)
       return []
     }
+  }
+
+  // ============================================
+  // HP-243: Vista Detalle del Expediente
+  // ============================================
+
+  /**
+   * Obtiene el detalle completo de un expediente
+   */
+  async getExpedienteDetalle(id: string): Promise<IExpedienteDetalle> {
+    const response = (await apiClient.get(
+      `/expedientes/${id}`
+    )) as unknown as IExpedienteDetalleResponse
+
+    return response.data
+  }
+
+  /**
+   * Obtiene las transiciones disponibles para el estado actual del expediente
+   */
+  async getTransicionesDisponibles(id: string): Promise<ITransicionDisponible[]> {
+    const response = (await apiClient.get(
+      `/expedientes/${id}/available-transitions`
+    )) as unknown as ITransicionesDisponiblesResponse
+
+    return response.data || []
+  }
+
+  /**
+   * Ejecuta una transición de estado en el expediente
+   */
+  async ejecutarTransicion(
+    id: string,
+    data: IEjecutarTransicion
+  ): Promise<IExpedienteDetalle> {
+    const response = (await apiClient.post(
+      `/expedientes/${id}/transitions`,
+      data
+    )) as unknown as IExpedienteDetalleResponse
+
+    return response.data
+  }
+
+  /**
+   * Asigna o reasigna el responsable del expediente (HP-285)
+   */
+  async asignarResponsable(
+    id: string,
+    analistaId: string
+  ): Promise<IExpedienteDetalle> {
+    const response = (await apiClient.patch(
+      `/expedientes/${id}`,
+      { analista_id: analistaId }
+    )) as unknown as IExpedienteDetalleResponse
+
+    return response.data
+  }
+
+  // ============================================
+  // HP-263: Comentarios internos
+  // ============================================
+
+  /**
+   * Obtiene los comentarios de un expediente
+   */
+  async getComentarios(expedienteId: string): Promise<IComentarioExpediente[]> {
+    const response = (await apiClient.get(
+      `/expedientes/${expedienteId}/comments`
+    )) as unknown as IComentariosResponse
+
+    return response.data || []
+  }
+
+  /**
+   * Crea un nuevo comentario en el expediente
+   */
+  async crearComentario(
+    expedienteId: string,
+    data: ICrearComentario
+  ): Promise<IComentarioExpediente> {
+    const response = (await apiClient.post(
+      `/expedientes/${expedienteId}/comments`,
+      data
+    )) as unknown as { success: boolean; data: IComentarioExpediente }
+
+    return response.data
+  }
+
+  // ============================================
+  // HP-270: Timeline de eventos
+  // ============================================
+
+  /**
+   * Obtiene el timeline de eventos del expediente
+   */
+  async getTimeline(expedienteId: string): Promise<ITimelineEvento[]> {
+    const response = (await apiClient.get(
+      `/expedientes/${expedienteId}/timeline`
+    )) as unknown as ITimelineResponse
+
+    return response.data || []
   }
 }
 

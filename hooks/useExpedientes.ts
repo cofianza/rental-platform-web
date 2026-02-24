@@ -191,11 +191,12 @@ export function useExpedientes() {
 
   /**
    * Cargar analistas y stats al montar
+   * TODO: Descomentar fetchAnalistas cuando el endpoint esté disponible
    */
   useEffect(() => {
-    fetchAnalistas()
+    // fetchAnalistas() // Comentado temporalmente - endpoint no disponible aún
     fetchStats()
-  }, [fetchAnalistas, fetchStats])
+  }, [fetchStats])
 
   /**
    * Actualiza filtros (con reset de página si no es cambio de página)
