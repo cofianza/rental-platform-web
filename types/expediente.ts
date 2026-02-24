@@ -282,9 +282,17 @@ export interface IComentariosResponse {
   data: IComentarioExpediente[]
 }
 
+export interface ITimelinePagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export interface ITimelineResponse {
   success: boolean
   data: ITimelineEvento[]
+  pagination: ITimelinePagination
 }
 
 // ============================================

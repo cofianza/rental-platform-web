@@ -17,6 +17,7 @@ import type {
   IComentarioExpediente,
   ICrearComentario,
   ITimelineEvento,
+  ITimelinePagination,
   IHistorialTransicion,
 } from '@/types/expediente'
 
@@ -305,15 +306,27 @@ class ExpedienteService {
   // ============================================
 
   /**
-   * Obtiene el timeline de eventos del expediente
+   * Obtiene el timeline unificado de eventos del expediente
+   * Soporta paginación y filtro por tipo
    */
-  async getTimeline(expedienteId: string): Promise<ITimelineEvento[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(
-      `/expedientes/${expedienteId}/timeline`
-    )) as any
+  async getTimeline(
+    expedienteId: string,
+    params?: { page?: number; limit?: number; tipo?: string }
+  ): Promise<{ data: ITimelineEvento[]; pagination: ITimelinePagination }> {
+    const qs = new URLSearchParams()
+    if (params?.page) qs.append('page', params.page.toString())
+    if (params?.limit) qs.append('limit', params.limit.toString())
+    if (params?.tipo) qs.append('tipo', params.tipo)
+    const queryString = qs.toString()
+    const url = `/expedientes/${expedienteId}/timeline${queryString ? `?${queryString}` : ''}`
 
-    return response.data || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(url)) as any
+
+    return {
+      data: response.data || [],
+      pagination: response.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 },
+    }
   }
 
   /**
