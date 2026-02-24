@@ -118,16 +118,22 @@ async function handleApiError(response: Response): Promise<never> {
   }
 
   // Si hay datos de error del servidor, usarlos
-  if (errorData?.error) {
-    message = errorData.error.message || message
-    code = errorData.error.code || code
+  // Backend retorna: { success, errorCode, message, details? }
+  const serverData = errorData as Record<string, unknown> | null
+  if (serverData?.message) {
+    message = serverData.message as string
+    code = (serverData.errorCode as string) || code
+  } else if (serverData?.error) {
+    const err = serverData.error as Record<string, unknown>
+    message = (err.message as string) || message
+    code = (err.code as string) || code
   }
 
   throw new ApiClientError(
     message,
     statusCode,
     code,
-    errorData?.error?.details
+    (serverData?.details as ApiClientError['details']) ?? undefined
   )
 }
 
