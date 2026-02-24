@@ -1,30 +1,28 @@
 /**
- * Servicio de Expedientes - HP-229
- * Llamadas a la API para expedientes
+ * Servicio de Expedientes - HP-229 / HP-243 / HP-263 / HP-270
+ * Llamadas a la API para expedientes con transformaciones backend→frontend
  */
 
 import { apiClient } from '@/lib/api'
 import type {
   IExpediente,
   IExpedienteFilters,
-  IExpedientesResponse,
-  IExpedienteResponse,
   IExpedientesMeta,
   IExpedientesStats,
-  IExpedientesStatsRaw,
   IAnalistaOption,
   EstadoExpediente,
   IExpedienteDetalle,
-  IExpedienteDetalleResponse,
   ITransicionDisponible,
-  ITransicionesDisponiblesResponse,
   IEjecutarTransicion,
   IComentarioExpediente,
-  IComentariosResponse,
   ICrearComentario,
   ITimelineEvento,
-  ITimelineResponse,
+  IHistorialTransicion,
 } from '@/types/expediente'
+
+// ============================================
+// Helpers
+// ============================================
 
 /**
  * Construye query string desde filtros
@@ -51,6 +49,21 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   return queryString ? `?${queryString}` : ''
 }
 
+/**
+ * Transforma un expediente del backend al formato frontend
+ * Backend usa 'numero', frontend usa 'numero_expediente'
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapExpediente<T>(raw: any): T {
+  if (!raw) return raw
+  const { numero, ...rest } = raw
+  return { ...rest, numero_expediente: numero } as T
+}
+
+// ============================================
+// Service
+// ============================================
+
 class ExpedienteService {
   /**
    * Obtiene lista paginada de expedientes con filtros
@@ -60,12 +73,15 @@ class ExpedienteService {
     meta: IExpedientesMeta
   }> {
     const queryString = buildQueryString(filters)
-    const response = (await apiClient.get(
-      `/expedientes${queryString}`
-    )) as unknown as IExpedientesResponse
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/expedientes${queryString}`)) as any
+
+    const items = (response.data || []).map((item: unknown) =>
+      mapExpediente<IExpediente>(item)
+    )
 
     return {
-      data: response.data || [],
+      data: items,
       meta: {
         total: response.pagination?.total || 0,
         page: Number(response.pagination?.page) || 1,
@@ -77,15 +93,11 @@ class ExpedienteService {
 
   /**
    * Obtiene estadísticas/contadores por estado
-   * Transforma el formato API a un objeto más fácil de usar en UI
    */
   async getStats(): Promise<IExpedientesStats> {
-    const response = (await apiClient.get('/expedientes/stats')) as unknown as {
-      success: boolean
-      data: IExpedientesStatsRaw
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get('/expedientes/stats')) as any
 
-    // Transformar array de stats a objeto por_estado
     const por_estado: Record<EstadoExpediente, number> = {
       borrador: 0,
       en_revision: 0,
@@ -97,8 +109,9 @@ class ExpedienteService {
     }
 
     if (response.data?.stats) {
-      response.data.stats.forEach((stat) => {
-        por_estado[stat.estado] = stat.count
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      response.data.stats.forEach((stat: any) => {
+        por_estado[stat.estado as EstadoExpediente] = stat.count
       })
     }
 
@@ -112,11 +125,9 @@ class ExpedienteService {
    * Obtiene un expediente por ID
    */
   async getExpedienteById(id: string): Promise<IExpediente> {
-    const response = (await apiClient.get(
-      `/expedientes/${id}`
-    )) as unknown as IExpedienteResponse
-
-    return response.data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/expedientes/${id}`)) as any
+    return mapExpediente<IExpediente>(response.data)
   }
 
   /**
@@ -125,24 +136,18 @@ class ExpedienteService {
    */
   async getAnalistas(): Promise<IAnalistaOption[]> {
     try {
-      // Intentar obtener usuarios con rol operador_analista
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = (await apiClient.get(
         '/users?role=operador_analista&limit=100&is_active=true'
-      )) as unknown as {
-        success: boolean
-        data: Array<{
-          id: string
-          nombre: string
-          apellido?: string
-        }>
-      }
+      )) as any
 
-      return (response.data || []).map((u) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (response.data || []).map((u: any) => ({
         id: u.id,
         nombre: `${u.nombre} ${u.apellido || ''}`.trim(),
       }))
-    } catch (err) {
-      console.error('Error loading analistas:', err)
+    } catch {
+      // Silenciar error si el endpoint falla (ej. usuario sin permiso)
       return []
     }
   }
@@ -155,37 +160,53 @@ class ExpedienteService {
    * Obtiene el detalle completo de un expediente
    */
   async getExpedienteDetalle(id: string): Promise<IExpedienteDetalle> {
-    const response = (await apiClient.get(
-      `/expedientes/${id}`
-    )) as unknown as IExpedienteDetalleResponse
-
-    return response.data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/expedientes/${id}`)) as any
+    return mapExpediente<IExpedienteDetalle>(response.data)
   }
 
   /**
    * Obtiene las transiciones disponibles para el estado actual del expediente
+   * Backend retorna: { transiciones_disponibles: [{ estado, label }] }
+   * Frontend espera: ITransicionDisponible[] con { estado_destino, etiqueta }
    */
   async getTransicionesDisponibles(id: string): Promise<ITransicionDisponible[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.get(
       `/expedientes/${id}/available-transitions`
-    )) as unknown as ITransicionesDisponiblesResponse
+    )) as any
 
-    return response.data || []
+    // Backend devuelve { data: { expediente_id, estado_actual, transiciones_disponibles } }
+    const transiciones = response.data?.transiciones_disponibles || []
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return transiciones.map((t: any) => ({
+      estado_destino: t.estado as EstadoExpediente,
+      etiqueta: t.label as string,
+      requiere_comentario: true, // Siempre obligatorio
+    }))
   }
 
   /**
    * Ejecuta una transición de estado en el expediente
+   * Frontend envía: { estado_destino, comentario }
+   * Backend espera: { nuevo_estado, comentario }
    */
   async ejecutarTransicion(
     id: string,
     data: IEjecutarTransicion
   ): Promise<IExpedienteDetalle> {
+    // Transformar campo: estado_destino → nuevo_estado
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.post(
       `/expedientes/${id}/transitions`,
-      data
-    )) as unknown as IExpedienteDetalleResponse
+      {
+        nuevo_estado: data.estado_destino,
+        comentario: data.comentario,
+      }
+    )) as any
 
-    return response.data
+    return mapExpediente<IExpedienteDetalle>(response.data)
   }
 
   /**
@@ -195,12 +216,13 @@ class ExpedienteService {
     id: string,
     analistaId: string
   ): Promise<IExpedienteDetalle> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.patch(
       `/expedientes/${id}`,
       { analista_id: analistaId }
-    )) as unknown as IExpedienteDetalleResponse
+    )) as any
 
-    return response.data
+    return mapExpediente<IExpedienteDetalle>(response.data)
   }
 
   // ============================================
@@ -211,9 +233,10 @@ class ExpedienteService {
    * Obtiene los comentarios de un expediente
    */
   async getComentarios(expedienteId: string): Promise<IComentarioExpediente[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.get(
       `/expedientes/${expedienteId}/comments`
-    )) as unknown as IComentariosResponse
+    )) as any
 
     return response.data || []
   }
@@ -225,10 +248,11 @@ class ExpedienteService {
     expedienteId: string,
     data: ICrearComentario
   ): Promise<IComentarioExpediente> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.post(
       `/expedientes/${expedienteId}/comments`,
       data
-    )) as unknown as { success: boolean; data: IComentarioExpediente }
+    )) as any
 
     return response.data
   }
@@ -241,11 +265,25 @@ class ExpedienteService {
    * Obtiene el timeline de eventos del expediente
    */
   async getTimeline(expedienteId: string): Promise<ITimelineEvento[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.get(
       `/expedientes/${expedienteId}/timeline`
-    )) as unknown as ITimelineResponse
+    )) as any
 
     return response.data || []
+  }
+
+  /**
+   * Obtiene el historial de transiciones de estado del expediente
+   * Endpoint: GET /expedientes/:id/transitions
+   */
+  async getHistorialTransiciones(expedienteId: string): Promise<IHistorialTransicion[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/${expedienteId}/transitions`
+    )) as any
+
+    return response.data?.historial || []
   }
 
   // ============================================
@@ -261,12 +299,9 @@ class ExpedienteService {
     analista_id?: string
     notas?: string
   }): Promise<IExpedienteDetalle> {
-    const response = (await apiClient.post(
-      '/expedientes',
-      data
-    )) as unknown as IExpedienteDetalleResponse
-
-    return response.data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.post('/expedientes', data)) as any
+    return mapExpediente<IExpedienteDetalle>(response.data)
   }
 }
 

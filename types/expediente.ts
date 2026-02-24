@@ -284,3 +284,24 @@ export interface ITimelineResponse {
   success: boolean
   data: ITimelineEvento[]
 }
+
+// ============================================
+// Historial de transiciones de estado
+// ============================================
+
+/**
+ * Item del historial de transiciones (GET /expedientes/:id/transitions)
+ */
+export interface IHistorialTransicion {
+  id: string
+  estado_anterior: EstadoExpediente | null
+  estado_nuevo: EstadoExpediente | null
+  comentario: string | null
+  descripcion: string
+  created_at: string
+  usuario: {
+    id: string
+    nombre: string
+    apellido: string
+  } | null
+}

@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * Hook de Expedientes - HP-229
- * Maneja la lista de expedientes con sincronización de URL, debounce y ordenamiento
+ * Hook de Expedientes - HP-229 + Bandejas Operativas
+ * Maneja la lista de expedientes con sincronización de URL, debounce, ordenamiento y bandejas
  */
 
 import { useCallback, useEffect, useRef } from 'react'
@@ -10,11 +10,11 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { useExpedientesStore, DEFAULT_EXPEDIENTE_FILTERS } from '@/stores/expedientesStore'
 import { expedienteService } from '@/services/expedienteService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { IExpedienteFilters, EstadoExpediente } from '@/types/expediente'
 
 const DEBOUNCE_DELAY = 300
 
-// Mensajes
 const EXPEDIENTE_MESSAGES = {
   FETCH_ERROR: 'Error al cargar los expedientes',
   STATS_ERROR: 'Error al cargar estadísticas',
@@ -28,6 +28,9 @@ export function useExpedientes() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const initializedRef = useRef(false)
 
+  // Auth
+  const user = useAuthStore((state) => state.user)
+
   // Estado del store
   const expedientes = useExpedientesStore((state) => state.expedientes)
   const meta = useExpedientesStore((state) => state.meta)
@@ -38,6 +41,8 @@ export function useExpedientes() {
   const isLoadingStats = useExpedientesStore((state) => state.isLoadingStats)
   const error = useExpedientesStore((state) => state.error)
   const selectedExpediente = useExpedientesStore((state) => state.selectedExpediente)
+  const activeBandeja = useExpedientesStore((state) => state.activeBandeja)
+  const misExpedientes = useExpedientesStore((state) => state.misExpedientes)
 
   // Acciones del store
   const setExpedientes = useExpedientesStore((state) => state.setExpedientes)
@@ -51,6 +56,8 @@ export function useExpedientes() {
   const setSelectedExpediente = useExpedientesStore((state) => state.setSelectedExpediente)
   const resetFilters = useExpedientesStore((state) => state.resetFilters)
   const toggleEstadoFilter = useExpedientesStore((state) => state.toggleEstadoFilter)
+  const storeSetActiveBandeja = useExpedientesStore((state) => state.setActiveBandeja)
+  const storeSetMisExpedientes = useExpedientesStore((state) => state.setMisExpedientes)
 
   /**
    * Sincroniza URL params -> Store (al montar)
@@ -73,7 +80,12 @@ export function useExpedientes() {
 
     if (search) urlFilters.search = search
     if (estado) {
-      urlFilters.estado = estado.split(',') as EstadoExpediente[]
+      const estados = estado.split(',') as EstadoExpediente[]
+      urlFilters.estado = estados
+      // Sincronizar bandeja si es un solo estado
+      if (estados.length === 1) {
+        storeSetActiveBandeja(estados[0])
+      }
     }
     if (analista_id) urlFilters.analista_id = analista_id
     if (fecha_desde) urlFilters.fecha_desde = fecha_desde
@@ -86,7 +98,7 @@ export function useExpedientes() {
     if (Object.keys(urlFilters).length > 0) {
       setFilters(urlFilters)
     }
-  }, [searchParams, setFilters])
+  }, [searchParams, setFilters, storeSetActiveBandeja])
 
   /**
    * Actualiza URL cuando cambian los filtros
@@ -191,12 +203,11 @@ export function useExpedientes() {
 
   /**
    * Cargar analistas y stats al montar
-   * TODO: Descomentar fetchAnalistas cuando el endpoint esté disponible
    */
   useEffect(() => {
-    // fetchAnalistas() // Comentado temporalmente - endpoint no disponible aún
+    fetchAnalistas()
     fetchStats()
-  }, [fetchStats])
+  }, [fetchStats, fetchAnalistas])
 
   /**
    * Actualiza filtros (con reset de página si no es cambio de página)
@@ -232,17 +243,39 @@ export function useExpedientes() {
   }, [resetFilters])
 
   /**
-   * Verifica si hay filtros activos
+   * Verifica si hay filtros activos (excluye bandeja y misExpedientes)
    */
   const hasActiveFilters = useCallback(() => {
     return (
       filters.search !== '' ||
-      filters.estado.length > 0 ||
-      filters.analista_id !== '' ||
       filters.fecha_desde !== '' ||
       filters.fecha_hasta !== ''
     )
   }, [filters])
+
+  /**
+   * Selecciona una bandeja (filtra por estado)
+   */
+  const setActiveBandeja = useCallback(
+    (bandeja: EstadoExpediente | null) => {
+      storeSetActiveBandeja(bandeja)
+    },
+    [storeSetActiveBandeja]
+  )
+
+  /**
+   * Toggle "Mis Expedientes" - filtra por analista_id del usuario logueado
+   */
+  const toggleMisExpedientes = useCallback(() => {
+    const newValue = !misExpedientes
+    storeSetMisExpedientes(newValue)
+
+    if (newValue && user?.id) {
+      setFilters({ analista_id: user.id, page: 1 })
+    } else {
+      setFilters({ analista_id: '', page: 1 })
+    }
+  }, [misExpedientes, user, storeSetMisExpedientes, setFilters])
 
   return {
     // Estado
@@ -255,6 +288,12 @@ export function useExpedientes() {
     isLoadingStats,
     error,
     selectedExpediente,
+
+    // Bandejas
+    activeBandeja,
+    misExpedientes,
+    setActiveBandeja,
+    toggleMisExpedientes,
 
     // Acciones de filtros
     setFilters: handleFilterChange,

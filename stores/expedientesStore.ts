@@ -1,6 +1,6 @@
 /**
- * Store de Expedientes - Zustand (HP-229)
- * Maneja el estado de la lista de expedientes y filtros
+ * Store de Expedientes - Zustand (HP-229 + Bandejas)
+ * Maneja el estado de la lista de expedientes, filtros y bandejas operativas
  */
 
 import { create } from 'zustand'
@@ -41,6 +41,10 @@ interface IExpedientesState {
   isLoadingStats: boolean
   error: string | null
   selectedExpediente: IExpediente | null
+
+  // Bandejas operativas
+  activeBandeja: EstadoExpediente | null // null = "Todos"
+  misExpedientes: boolean
 }
 
 /**
@@ -62,6 +66,10 @@ interface ExpedientesActions {
   resetFilters: () => void
   toggleEstadoFilter: (estado: EstadoExpediente) => void
   updateExpedienteInList: (expediente: IExpediente) => void
+
+  // Bandejas
+  setActiveBandeja: (bandeja: EstadoExpediente | null) => void
+  setMisExpedientes: (value: boolean) => void
 }
 
 type ExpedientesStore = IExpedientesState & ExpedientesActions
@@ -76,6 +84,8 @@ const initialState: IExpedientesState = {
   isLoadingStats: false,
   error: null,
   selectedExpediente: null,
+  activeBandeja: null,
+  misExpedientes: false,
 }
 
 export const useExpedientesStore = create<ExpedientesStore>((set) => ({
@@ -96,7 +106,12 @@ export const useExpedientesStore = create<ExpedientesStore>((set) => ({
   setSelectedExpediente: (selectedExpediente) => set({ selectedExpediente }),
 
   // Actions
-  resetFilters: () => set({ filters: DEFAULT_EXPEDIENTE_FILTERS }),
+  resetFilters: () =>
+    set({
+      filters: DEFAULT_EXPEDIENTE_FILTERS,
+      activeBandeja: null,
+      misExpedientes: false,
+    }),
 
   toggleEstadoFilter: (estado) =>
     set((state) => {
@@ -113,4 +128,17 @@ export const useExpedientesStore = create<ExpedientesStore>((set) => ({
         exp.id === updatedExpediente.id ? updatedExpediente : exp
       ),
     })),
+
+  // Bandejas
+  setActiveBandeja: (bandeja) =>
+    set((state) => ({
+      activeBandeja: bandeja,
+      filters: {
+        ...state.filters,
+        estado: bandeja ? [bandeja] : [],
+        page: 1,
+      },
+    })),
+
+  setMisExpedientes: (value) => set({ misExpedientes: value }),
 }))

@@ -1,6 +1,6 @@
 /**
- * Página de listado de expedientes - HP-229
- * Listado con filtros multi-select, búsqueda, ordenamiento y paginación del servidor
+ * Página de listado de expedientes - HP-229 + Bandejas Operativas
+ * Listado con bandejas por estado, filtros, ordenamiento y paginación del servidor
  */
 
 'use client'
@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import {
+  BandejaTabs,
   ExpedientesFilters,
   ExpedientesTable,
   ExpedientesSkeleton,
@@ -27,10 +28,13 @@ function ExpedientesContent() {
     analistas,
     isLoading,
     error,
+    activeBandeja,
+    misExpedientes,
+    setActiveBandeja,
+    toggleMisExpedientes,
     setFilters,
     clearFilters,
     handleSort,
-    toggleEstadoFilter,
     hasActiveFilters,
     fetchExpedientes,
   } = useExpedientes()
@@ -70,15 +74,22 @@ function ExpedientesContent() {
         }
       />
 
-      {/* Filtros */}
+      {/* Bandejas operativas: KPIs + Tabs + Toggle Mis Expedientes */}
+      <BandejaTabs
+        activeBandeja={activeBandeja}
+        misExpedientes={misExpedientes}
+        stats={stats}
+        onBandejaChange={setActiveBandeja}
+        onToggleMisExpedientes={toggleMisExpedientes}
+      />
+
+      {/* Filtros (sin chips de estado, ahora están en bandejas) */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <ExpedientesFilters
           filters={filters}
           analistas={analistas}
-          stats={stats}
           isLoading={isLoading}
           onFilterChange={setFilters}
-          onToggleEstado={toggleEstadoFilter}
           onClearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters()}
         />
@@ -126,20 +137,32 @@ function ExpedientesPageSkeleton() {
         <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
       </div>
 
+      {/* KPI cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="h-3 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+            <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      {/* Bandeja tabs skeleton */}
+      <div className="flex gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-9 w-28 bg-gray-200 rounded-lg animate-pulse" />
+        ))}
+      </div>
+
       {/* Filters skeleton */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4 mb-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse" />
           <div className="lg:w-56 h-10 bg-gray-200 rounded animate-pulse" />
           <div className="flex gap-2">
             <div className="flex-1 lg:w-40 h-10 bg-gray-200 rounded animate-pulse" />
             <div className="flex-1 lg:w-40 h-10 bg-gray-200 rounded animate-pulse" />
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-8 w-24 bg-gray-200 rounded-full animate-pulse" />
-          ))}
         </div>
       </div>
 

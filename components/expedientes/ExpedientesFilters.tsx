@@ -6,18 +6,14 @@
 'use client'
 
 import { IconSearch, IconX, IconLoader, IconCalendar } from '@/components/icons'
-import { EstadoChip } from './ExpedienteBadges'
-import { ESTADO_OPTIONS, EXPEDIENTE_UI_MESSAGES } from './constants'
-import type { EstadoExpediente } from '@/lib/constants'
-import type { IExpedienteFilters, IAnalistaOption, IExpedientesStats } from '@/types/expediente'
+import { EXPEDIENTE_UI_MESSAGES } from './constants'
+import type { IExpedienteFilters, IAnalistaOption } from '@/types/expediente'
 
 export interface ExpedientesFiltersProps {
   filters: IExpedienteFilters
   analistas: IAnalistaOption[]
-  stats: IExpedientesStats | null
   isLoading: boolean
   onFilterChange: (filters: Partial<IExpedienteFilters>) => void
-  onToggleEstado: (estado: EstadoExpediente) => void
   onClearFilters: () => void
   hasActiveFilters: boolean
 }
@@ -25,10 +21,8 @@ export interface ExpedientesFiltersProps {
 export function ExpedientesFilters({
   filters,
   analistas,
-  stats,
   isLoading,
   onFilterChange,
-  onToggleEstado,
   onClearFilters,
   hasActiveFilters,
 }: ExpedientesFiltersProps) {
@@ -107,30 +101,18 @@ export function ExpedientesFilters({
         </div>
       </div>
 
-      {/* Chips de estados (multi-select) */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-500 mr-1">Estados:</span>
-        {ESTADO_OPTIONS.map((option) => (
-          <EstadoChip
-            key={option.value}
-            estado={option.value}
-            isSelected={filters.estado.includes(option.value)}
-            onClick={() => onToggleEstado(option.value)}
-            count={stats?.por_estado[option.value]}
-          />
-        ))}
-
-        {/* Botón limpiar filtros */}
-        {hasActiveFilters && (
+      {/* Botón limpiar filtros */}
+      {hasActiveFilters && (
+        <div className="flex justify-end">
           <button
             onClick={onClearFilters}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
           >
             <IconX size={14} />
             {EXPEDIENTE_UI_MESSAGES.CLEAR_FILTERS}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

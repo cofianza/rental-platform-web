@@ -46,12 +46,8 @@ export function AsignacionResponsableModal({
     setIsLoadingAnalistas(true)
     setError(null)
     try {
-      // TODO: Descomentar cuando el endpoint esté disponible
-      // const data = await expedienteService.getAnalistas()
-      // setAnalistas(data)
-
-      // Por ahora retornar lista vacía - endpoint no disponible aún
-      setAnalistas([])
+      const data = await expedienteService.getAnalistas()
+      setAnalistas(data)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar analistas'
       setError(message)
