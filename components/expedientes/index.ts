@@ -22,3 +22,6 @@ export * from './TimelineSection'
 
 // HP-285: Asignación responsable
 export * from './AsignacionResponsableModal'
+
+// HP-247: Wizard de creación
+export * from './wizard'

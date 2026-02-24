@@ -1,0 +1,144 @@
+/**
+ * Pagina de Creacion de Expediente - HP-247
+ * Wizard de 4 pasos para crear un nuevo expediente
+ */
+
+'use client'
+
+import { useRouter } from 'next/navigation'
+import {
+  WizardStepIndicator,
+  WizardNavigation,
+  Step1InmuebleSelection,
+  Step2Solicitante,
+  Step3Configuration,
+  Step4Confirmation,
+} from '@/components/expedientes/wizard'
+import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
+
+export default function NuevoExpedientePage() {
+  const router = useRouter()
+
+  const {
+    currentStep,
+    data,
+    errors,
+    isSubmitting,
+    submitError,
+    nextStep,
+    prevStep,
+    updateStep1,
+    updateStep2,
+    updateStep2Field,
+    updateStep3,
+    canProceed,
+    submitExpediente,
+  } = useExpedienteWizard()
+
+  // Manejar cancelar
+  const handleCancel = () => {
+    router.push('/expedientes')
+  }
+
+  // Renderizar paso actual
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <Step1InmuebleSelection
+            data={data.step1}
+            errors={errors.step1}
+            onUpdate={updateStep1}
+          />
+        )
+      case 2:
+        return (
+          <Step2Solicitante
+            data={data.step2}
+            errors={errors.step2}
+            onUpdate={updateStep2}
+            onUpdateField={updateStep2Field}
+          />
+        )
+      case 3:
+        return (
+          <Step3Configuration
+            data={data.step3}
+            errors={errors.step3}
+            onUpdate={updateStep3}
+          />
+        )
+      case 4:
+        return (
+          <Step4Confirmation
+            data={data}
+            isSubmitting={isSubmitting}
+            submitError={submitError}
+            onSubmit={submitExpediente}
+          />
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Nuevo Expediente
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Complete los pasos para crear un nuevo expediente de arrendamiento
+          </p>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="mb-8">
+          <WizardStepIndicator
+            currentStep={currentStep}
+          />
+        </div>
+
+        {/* Contenido del paso */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          {renderStep()}
+        </div>
+
+        {/* Navegacion (no mostrar en paso 4 porque tiene su propio boton) */}
+        {currentStep < 4 && (
+          <WizardNavigation
+            currentStep={currentStep}
+            canProceed={canProceed()}
+            isSubmitting={isSubmitting}
+            onPrevious={prevStep}
+            onNext={nextStep}
+            onCancel={handleCancel}
+          />
+        )}
+
+        {/* Boton cancelar en paso 4 */}
+        {currentStep === 4 && !isSubmitting && (
+          <div className="flex justify-between">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

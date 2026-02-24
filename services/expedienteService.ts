@@ -247,6 +247,27 @@ class ExpedienteService {
 
     return response.data || []
   }
+
+  // ============================================
+  // HP-247: Creacion de expediente
+  // ============================================
+
+  /**
+   * Crea un nuevo expediente
+   */
+  async createExpediente(data: {
+    inmueble_id: string
+    solicitante_id: string
+    analista_id?: string
+    notas?: string
+  }): Promise<IExpedienteDetalle> {
+    const response = (await apiClient.post(
+      '/expedientes',
+      data
+    )) as unknown as IExpedienteDetalleResponse
+
+    return response.data
+  }
 }
 
 // Instancia singleton
