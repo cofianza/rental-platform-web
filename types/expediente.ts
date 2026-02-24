@@ -114,6 +114,24 @@ export interface IAnalistaOption {
 }
 
 /**
+ * Item del historial de asignaciones (HP-285)
+ */
+export interface IAsignacionHistorial {
+  id: string
+  descripcion: string
+  analista_anterior: string | null
+  analista_anterior_id: string | null
+  analista_nuevo: string | null
+  analista_nuevo_id: string | null
+  usuario: {
+    id: string
+    nombre: string
+    apellido: string
+  }
+  created_at: string
+}
+
+/**
  * Respuesta de listado de expedientes
  */
 export interface IExpedientesResponse {

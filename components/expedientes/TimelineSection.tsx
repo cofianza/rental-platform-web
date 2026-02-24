@@ -371,13 +371,25 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
 
   if (tipo === 'asignacion') {
     const anterior = detalle.analista_anterior as string | null
-    if (!anterior) return null
+    const nuevo = detalle.analista_nuevo as string | null
+
+    if (!anterior && !nuevo) return null
 
     return (
       <div className="mt-3 pt-3 border-t border-gray-100">
         <p className="text-xs text-gray-500">
-          Responsable anterior:{' '}
-          <span className="font-medium">{anterior}</span>
+          {anterior ? (
+            <>
+              <span className="font-medium text-gray-700">{anterior}</span>
+              {' → '}
+              <span className="font-medium text-gray-700">{nuevo}</span>
+            </>
+          ) : (
+            <>
+              Asignado a:{' '}
+              <span className="font-medium text-gray-700">{nuevo}</span>
+            </>
+          )}
         </p>
       </div>
     )

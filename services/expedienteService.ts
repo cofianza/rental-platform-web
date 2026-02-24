@@ -1,5 +1,5 @@
 /**
- * Servicio de Expedientes - HP-229 / HP-243 / HP-263 / HP-270
+ * Servicio de Expedientes - HP-229 / HP-243 / HP-263 / HP-270 / HP-285
  * Llamadas a la API para expedientes con transformaciones backend→frontend
  */
 
@@ -19,6 +19,7 @@ import type {
   ITimelineEvento,
   ITimelinePagination,
   IHistorialTransicion,
+  IAsignacionHistorial,
 } from '@/types/expediente'
 
 // ============================================
@@ -149,9 +150,7 @@ class ExpedienteService {
   async getAnalistas(): Promise<IAnalistaOption[]> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = (await apiClient.get(
-        '/users?role=operador_analista&limit=100&is_active=true'
-      )) as any
+      const response = (await apiClient.get('/users/operators')) as any
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (response.data || []).map((u: any) => ({
@@ -229,12 +228,24 @@ class ExpedienteService {
     analistaId: string
   ): Promise<IExpedienteDetalle> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.patch(
-      `/expedientes/${id}`,
+    const response = (await apiClient.post(
+      `/expedientes/${id}/assignments`,
       { analista_id: analistaId }
     )) as any
 
     return mapExpediente<IExpedienteDetalle>(response.data)
+  }
+
+  /**
+   * Obtiene el historial de asignaciones de un expediente
+   */
+  async getHistorialAsignaciones(expedienteId: string): Promise<IAsignacionHistorial[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/${expedienteId}/assignments`
+    )) as any
+
+    return response.data?.historial || []
   }
 
   // ============================================
