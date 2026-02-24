@@ -233,7 +233,9 @@ export interface IComentarioExpediente {
     apellido: string
   }
   contenido: string
+  is_internal: boolean
   created_at: string
+  updated_at: string
 }
 
 /**

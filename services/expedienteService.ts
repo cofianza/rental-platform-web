@@ -60,6 +60,17 @@ function mapExpediente<T>(raw: any): T {
   return { ...rest, numero_expediente: numero } as T
 }
 
+/**
+ * Transforma un comentario del backend al formato frontend
+ * Backend usa 'texto', frontend usa 'contenido'
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapComentario(raw: any): IComentarioExpediente {
+  if (!raw) return raw
+  const { texto, ...rest } = raw
+  return { ...rest, contenido: texto } as IComentarioExpediente
+}
+
 // ============================================
 // Service
 // ============================================
@@ -231,6 +242,7 @@ class ExpedienteService {
 
   /**
    * Obtiene los comentarios de un expediente
+   * Backend devuelve `texto`, frontend usa `contenido`
    */
   async getComentarios(expedienteId: string): Promise<IComentarioExpediente[]> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -238,11 +250,13 @@ class ExpedienteService {
       `/expedientes/${expedienteId}/comments`
     )) as any
 
-    return response.data || []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (response.data || []).map((c: any) => mapComentario(c))
   }
 
   /**
    * Crea un nuevo comentario en el expediente
+   * Frontend envía `contenido` → Backend espera `texto`
    */
   async crearComentario(
     expedienteId: string,
@@ -251,10 +265,39 @@ class ExpedienteService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.post(
       `/expedientes/${expedienteId}/comments`,
-      data
+      { texto: data.contenido }
     )) as any
 
-    return response.data
+    return mapComentario(response.data)
+  }
+
+  /**
+   * Edita un comentario existente (solo el autor puede)
+   */
+  async editarComentario(
+    expedienteId: string,
+    commentId: string,
+    data: { contenido: string }
+  ): Promise<IComentarioExpediente> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.put(
+      `/expedientes/${expedienteId}/comments/${commentId}`,
+      { texto: data.contenido }
+    )) as any
+
+    return mapComentario(response.data)
+  }
+
+  /**
+   * Elimina un comentario (admin cualquiera, operador solo propios)
+   */
+  async eliminarComentario(
+    expedienteId: string,
+    commentId: string
+  ): Promise<void> {
+    await apiClient.delete(
+      `/expedientes/${expedienteId}/comments/${commentId}`
+    )
   }
 
   // ============================================

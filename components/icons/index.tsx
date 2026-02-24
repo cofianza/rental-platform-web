@@ -940,6 +940,17 @@ export function IconCalendar({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// MoreVertical (Comentarios: menú de acciones)
+export function IconMoreVertical({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -998,6 +1009,7 @@ export const ICON_MAP = {
   Info: IconInfo,
   Refresh: IconRefresh,
   Calendar: IconCalendar,
+  MoreVertical: IconMoreVertical,
 } as const
 
 export type IconName = keyof typeof ICON_MAP
