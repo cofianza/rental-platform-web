@@ -17,7 +17,7 @@ export const TIPO_OPTIONS: { value: TipoInmueble | ''; label: string }[] = [
 // Opciones de uso
 export const USO_OPTIONS: { value: UsoInmueble; label: string }[] = [
   { value: 'vivienda', label: 'Vivienda' },
-  { value: 'comercial', label: 'Local comercial' },
+  { value: 'local_comercial', label: 'Local comercial' },
 ]
 
 // Opciones de estado

@@ -358,6 +358,24 @@ class ExpedienteService {
   // ============================================
 
   /**
+   * Verifica si un inmueble tiene un expediente activo
+   */
+  async checkActiveExpediente(inmuebleId: string): Promise<{
+    hasActiveExpediente: boolean
+    expediente: { id: string; numero: string; estado: string } | null
+  }> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/check-inmueble/${inmuebleId}`
+    )) as any
+
+    return {
+      hasActiveExpediente: response.data?.hasActiveExpediente || false,
+      expediente: response.data?.expediente || null,
+    }
+  }
+
+  /**
    * Crea un nuevo expediente
    */
   async createExpediente(data: {
