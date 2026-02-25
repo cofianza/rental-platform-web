@@ -70,8 +70,8 @@ class AuthService {
       // Programar refresh antes de expiración (expires_at es Unix timestamp)
       this.scheduleTokenRefreshFromTimestamp(session.expires_at)
 
-      // Cargar permisos del usuario
-      await this.fetchPermissions()
+      // Cargar permisos en background (no bloquear el login/redirect)
+      this.fetchPermissions()
 
       return response.data
     } catch (error) {

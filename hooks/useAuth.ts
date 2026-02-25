@@ -23,17 +23,19 @@ export function useAuth() {
 
   /**
    * Inicia sesión con email y contraseña
+   * Usa window.location.replace para garantizar redirect en producción
+   * (router.push puede fallar silenciosamente con RSC payloads en ciertos entornos)
    */
   const login = useCallback(
     async (credentials: ILoginCredentials) => {
       try {
         await authService.login(credentials)
-        router.push(AUTH_ROUTES.DASHBOARD)
+        window.location.replace(AUTH_ROUTES.DASHBOARD)
       } catch {
         // Error ya manejado en authService
       }
     },
-    [router]
+    []
   )
 
   /**

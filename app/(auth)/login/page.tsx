@@ -5,7 +5,7 @@
 
 'use client'
 
-import { Suspense, useState, FormEvent, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IconEye, IconEyeOff, IconMail, IconLock, IconGoogle, IconLoader } from '@/components/icons'
@@ -33,11 +33,11 @@ function LoginForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // Redirigir si ya está autenticado
+  // Redirigir si ya está autenticado (ej: navega a /login estando logueado)
   useEffect(() => {
     if (isAuthenticated) {
       const redirect = searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
-      router.push(redirect)
+      router.replace(redirect)
     }
   }, [isAuthenticated, router, searchParams])
 
@@ -68,9 +68,7 @@ function LoginForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-
+  const handleLogin = async () => {
     if (!validateForm()) {
       return
     }
@@ -111,7 +109,7 @@ function LoginForm() {
       )}
 
       {/* Formulario */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); handleLogin() }} className="space-y-5">
         {/* Campo Email */}
         <div>
           <label
