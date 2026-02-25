@@ -19,7 +19,7 @@ export { PropietarioSelector } from './PropietarioSelector'
 // Detalle (HP-180)
 export { EstratoIndicator } from './EstratoIndicator'
 export { InmuebleDetailSkeleton } from './InmuebleDetailSkeleton'
-export { ExpedientesSection, type IExpedienteResumen } from './ExpedientesSection'
+export { ExpedientesSection } from './ExpedientesSection'
 export { HistorialSection } from './HistorialSection'
 
 // Galería (HP-203)

@@ -9,18 +9,10 @@ import Link from 'next/link'
 import { IconFolderOpen, IconPlus, IconExternalLink, IconLoader } from '@/components/icons'
 import { Badge } from '@/components/ui'
 import { formatDate } from '@/lib/constants'
-
-// Tipo temporal para expedientes (se moverá a types/expediente.ts cuando se implemente HP-57)
-export interface IExpedienteResumen {
-  id: string
-  numero_expediente: string
-  solicitante_nombre: string
-  estado: string
-  fecha_creacion: string
-}
+import type { IExpediente } from '@/types/expediente'
 
 interface ExpedientesSectionProps {
-  expedientes: IExpedienteResumen[]
+  expedientes: IExpediente[]
   inmuebleId: string
   isLoading?: boolean
   canCreate?: boolean
@@ -78,29 +70,35 @@ export function ExpedientesSection({
       </div>
 
       <div className="divide-y divide-gray-100">
-        {expedientes.map((expediente) => (
-          <Link
-            key={expediente.id}
-            href={`/expedientes/${expediente.id}`}
-            className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition-colors group"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-primary-600 group-hover:text-primary-700">
-                  {expediente.numero_expediente}
-                </span>
-                <Badge estado={expediente.estado} />
+        {expedientes.map((expediente) => {
+          const solicitanteNombre = expediente.solicitante
+            ? `${expediente.solicitante.nombre}`
+            : 'Sin solicitante'
+
+          return (
+            <Link
+              key={expediente.id}
+              href={`/expedientes/${expediente.id}`}
+              className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition-colors group"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-primary-600 group-hover:text-primary-700">
+                    {expediente.numero_expediente}
+                  </span>
+                  <Badge estado={expediente.estado} />
+                </div>
+                <p className="text-sm text-gray-500 truncate mt-0.5">
+                  {solicitanteNombre}
+                </p>
               </div>
-              <p className="text-sm text-gray-500 truncate mt-0.5">
-                {expediente.solicitante_nombre}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
-              <span>{formatDate(expediente.fecha_creacion)}</span>
-              <IconExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          </Link>
-        ))}
+              <div className="flex items-center gap-3 text-sm text-gray-400">
+                <span>{formatDate(expediente.created_at)}</span>
+                <IconExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
