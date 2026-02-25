@@ -5,13 +5,14 @@
  */
 
 /**
- * Roles del sistema
+ * Roles del sistema (alineados con enum rol_usuario en BD)
  * - administrador: Acceso total
  * - operador_analista: Gestión de expedientes
  * - gerencia_consulta: Solo lectura/reportes
- * - sin_rol: Usuario sin rol asignado (valor por defecto del backend)
+ * - propietario: Dueño de inmuebles
+ * - inmobiliaria: Empresa inmobiliaria
  */
-export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria' | 'sin_rol'
+export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria'
 
 /**
  * Usuario básico retornado en login

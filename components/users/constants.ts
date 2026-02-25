@@ -13,7 +13,6 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   gerencia_consulta: 'Gerencia/Consulta',
   propietario: 'Propietario',
   inmobiliaria: 'Inmobiliaria',
-  sin_rol: 'Sin Rol',
 }
 
 /**
@@ -25,7 +24,6 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   gerencia_consulta: 'green',
   propietario: 'teal',
   inmobiliaria: 'orange',
-  sin_rol: 'gray',
 }
 
 /**
@@ -37,7 +35,6 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
   gerencia_consulta: 'bg-green-100 text-green-800',
   propietario: 'bg-teal-100 text-teal-800',
   inmobiliaria: 'bg-orange-100 text-orange-800',
-  sin_rol: 'bg-gray-100 text-gray-800',
 }
 
 /**
@@ -74,6 +71,8 @@ export const ROLE_OPTIONS: { value: UserRole | ''; label: string }[] = [
   { value: 'administrador', label: 'Administrador' },
   { value: 'operador_analista', label: 'Operador/Analista' },
   { value: 'gerencia_consulta', label: 'Gerencia/Consulta' },
+  { value: 'propietario', label: 'Propietario' },
+  { value: 'inmobiliaria', label: 'Inmobiliaria' },
 ]
 
 /**

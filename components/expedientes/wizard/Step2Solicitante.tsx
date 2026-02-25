@@ -507,7 +507,7 @@ function SolicitanteForm({
           {/* Telefono */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_TELEFONO} <span className="text-red-500">*</span>
+              {WIZARD_MESSAGES.LABEL_TELEFONO}
             </label>
             <input
               type="tel"

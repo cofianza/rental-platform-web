@@ -348,7 +348,9 @@ export default function ExpedienteDetallePage() {
                       value={`${expediente.solicitante.tipo_documento} ${expediente.solicitante.numero_documento}`}
                     />
                     <InfoRow label="Email" value={expediente.solicitante.email} />
-                    <InfoRow label="Teléfono" value={expediente.solicitante.telefono} />
+                    {expediente.solicitante.telefono && (
+                      <InfoRow label="Teléfono" value={expediente.solicitante.telefono} />
+                    )}
                     {expediente.solicitante.ciudad && (
                       <InfoRow
                         label="Ciudad"

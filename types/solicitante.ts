@@ -37,7 +37,7 @@ export interface ISolicitante {
   tipo_documento: TipoDocumento
   numero_documento: string
   email: string
-  telefono: string
+  telefono: string | null
   direccion: string | null
   departamento: string | null
   ciudad: string | null
@@ -63,7 +63,7 @@ export interface ISolicitanteCreateData {
   tipo_documento: TipoDocumento
   numero_documento: string
   email: string
-  telefono: string
+  telefono?: string
   direccion?: string
   departamento?: string
   ciudad?: string
