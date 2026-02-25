@@ -13,9 +13,11 @@ import {
   IconX,
   IconHome,
   IconMapPin,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import { inmuebleService } from '@/services/inmuebleService'
+import { expedienteService } from '@/services/expedienteService'
 import type { IInmueble } from '@/types/inmueble'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
@@ -39,6 +41,11 @@ export function Step1InmuebleSelection({
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<IInmueble[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isCheckingExpediente, setIsCheckingExpediente] = useState(false)
+  const [activeExpedienteInfo, setActiveExpedienteInfo] = useState<{
+    numero: string
+    estado: string
+  } | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -94,18 +101,42 @@ export function Step1InmuebleSelection({
   }
 
   // Seleccionar inmueble
-  const handleSelectInmueble = (inmueble: IInmueble) => {
+  const handleSelectInmueble = async (inmueble: IInmueble) => {
     setShowDropdown(false)
     setSearchTerm('')
-    // La validacion de expediente activo se hace en el backend al crear
-    onUpdate({
-      inmueble,
-      hasActiveExpediente: false,
-    })
+    setIsCheckingExpediente(true)
+    setActiveExpedienteInfo(null)
+
+    try {
+      // Verificar si el inmueble tiene expediente activo
+      const result = await expedienteService.checkActiveExpediente(inmueble.id)
+
+      if (result.hasActiveExpediente && result.expediente) {
+        setActiveExpedienteInfo({
+          numero: result.expediente.numero,
+          estado: result.expediente.estado,
+        })
+      }
+
+      onUpdate({
+        inmueble,
+        hasActiveExpediente: result.hasActiveExpediente,
+      })
+    } catch (err) {
+      console.warn('Error al verificar expediente activo:', err)
+      // En caso de error, permitir continuar
+      onUpdate({
+        inmueble,
+        hasActiveExpediente: false,
+      })
+    } finally {
+      setIsCheckingExpediente(false)
+    }
   }
 
   // Limpiar seleccion
   const handleClearSelection = () => {
+    setActiveExpedienteInfo(null)
     onUpdate({
       inmueble: null,
       hasActiveExpediente: false,
@@ -217,8 +248,37 @@ export function Step1InmuebleSelection({
       ) : (
         // Inmueble seleccionado - mostrar card
         <div className="space-y-4">
+          {/* Verificando expediente activo */}
+          {isCheckingExpediente && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <IconLoader size={16} className="animate-spin" />
+              <span>Verificando disponibilidad...</span>
+            </div>
+          )}
+
+          {/* Advertencia de expediente activo */}
+          {data.hasActiveExpediente && activeExpedienteInfo && (
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">
+                  {WIZARD_MESSAGES.INMUEBLE_HAS_ACTIVE_EXPEDIENTE}
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Expediente: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Seleccione otro inmueble para continuar.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Card del inmueble seleccionado */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className={cn(
+            'border rounded-lg overflow-hidden',
+            data.hasActiveExpediente ? 'border-amber-300' : 'border-gray-200'
+          )}>
             {/* Imagen */}
             <div className="relative h-48 bg-gray-100">
               {data.inmueble.foto_fachada_url ? (
