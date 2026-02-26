@@ -177,6 +177,114 @@ export interface ITiposDocumentoResponse {
 }
 
 // ============================================
+// Tipos para visor de documentos
+// ============================================
+
+/**
+ * Respuesta de URL de visualizacion/descarga
+ */
+export interface IDocumentoUrlResponse {
+  url: string
+  nombre_original: string
+  tipo_mime: string | null
+  expires_in: number
+}
+
+// ============================================
+// Tipos para validacion de documentos
+// ============================================
+
+/**
+ * Historial de revision de un documento (incluye versiones anteriores)
+ */
+export interface IRevisionHistorial {
+  id: string
+  estado: EstadoDocumento
+  motivo_rechazo: string | null
+  validado_por: string | null
+  fecha_revision: string | null
+  version: number
+  nombre_original: string
+  created_at: string
+  validador?: { id: string; nombre: string; apellido: string } | null
+}
+
+/**
+ * Respuesta de pendientes de revision
+ */
+export interface IPendientesRevisionResponse {
+  documentos: IDocumento[]
+  total_documentos: number
+  pendientes: number
+}
+
+// ============================================
+// Payloads para admin de tipos de documento
+// ============================================
+
+export interface ICreateTipoDocumento {
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  es_obligatorio: boolean
+  formatos_aceptados: string[]
+  tamano_maximo_mb: number
+  orden?: number
+}
+
+export type IUpdateTipoDocumento = Partial<ICreateTipoDocumento>
+
+// ============================================
+// Payloads para reemplazo de documentos
+// ============================================
+
+export interface IReemplazarDocumentoRequest {
+  nombre_original: string
+  tipo_mime: string
+  tamano_bytes: number
+}
+
+export interface IReemplazarPresignedResponse {
+  signedUrl: string
+  storage_key: string
+  nombre_archivo: string
+  token: string
+  expires_in: number
+  documento_original_id: string
+  expediente_id: string
+  tipo_documento_id: string
+}
+
+export interface IConfirmarReemplazoRequest {
+  nombre_original: string
+  nombre_archivo: string
+  storage_key: string
+  tipo_mime: string
+  tamano_bytes: number
+}
+
+export interface IVersionEntry {
+  id: string
+  estado: EstadoDocumento
+  motivo_rechazo: string | null
+  validado_por: string | null
+  fecha_revision: string | null
+  version: number
+  nombre_original: string
+  created_at: string
+  subido_por: string | null
+  validador?: { id: string; nombre: string; apellido: string } | null
+  subidor?: { id: string; nombre: string; apellido: string } | null
+}
+
+export interface IVersionesResponse {
+  documento_id: string
+  expediente_id: string
+  tipo_documento_id: string
+  versiones: IVersionEntry[]
+}
+
+// ============================================
 // Tipos para UI del wizard de documentos
 // ============================================
 

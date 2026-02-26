@@ -11,7 +11,25 @@ import type {
   IPresignedUrlResponse,
   IConfirmarSubidaRequest,
   IListDocumentosQuery,
+  IPendientesRevisionResponse,
+  IRevisionHistorial,
+  IDocumentoUrlResponse,
+  IReemplazarDocumentoRequest,
+  IReemplazarPresignedResponse,
+  IConfirmarReemplazoRequest,
+  IVersionesResponse,
 } from '@/types/documento'
+
+// ============================================
+// URL Cache
+// ============================================
+
+interface CachedUrl {
+  url: string
+  expiresAt: number // Unix timestamp ms
+}
+
+const MIN_REMAINING_MS = 2 * 60 * 1000 // Refresh if < 2 min remaining
 
 // ============================================
 // Helpers
@@ -39,6 +57,23 @@ function buildQueryString(query: IListDocumentosQuery): string {
 // ============================================
 
 class DocumentoService {
+  private viewUrlCache = new Map<string, CachedUrl>()
+  private downloadUrlCache = new Map<string, CachedUrl>()
+
+  private getCachedUrl(cache: Map<string, CachedUrl>, id: string): string | null {
+    const cached = cache.get(id)
+    if (!cached) return null
+    if (cached.expiresAt - Date.now() < MIN_REMAINING_MS) {
+      cache.delete(id)
+      return null
+    }
+    return cached.url
+  }
+
+  private setCachedUrl(cache: Map<string, CachedUrl>, id: string, url: string, expiresInSeconds: number) {
+    cache.set(id, { url, expiresAt: Date.now() + expiresInSeconds * 1000 })
+  }
+
   /**
    * Obtiene la lista de tipos de documento activos
    */
@@ -191,6 +226,78 @@ class DocumentoService {
   }
 
   /**
+   * Aprueba un documento
+   */
+  async aprobarDocumento(id: string): Promise<IDocumento> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.patch(`/documentos/${id}/aprobar`)) as any
+    return response.data
+  }
+
+  /**
+   * Rechaza un documento con motivo
+   */
+  async rechazarDocumento(id: string, motivo: string): Promise<IDocumento> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.patch(`/documentos/${id}/rechazar`, {
+      motivo_rechazo: motivo,
+    })) as any
+    return response.data
+  }
+
+  /**
+   * Obtiene documentos pendientes de revision de un expediente
+   */
+  async getPendientesRevision(expedienteId: string): Promise<IPendientesRevisionResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/${expedienteId}/documentos/pendientes-revision`
+    )) as any
+    return response.data
+  }
+
+  /**
+   * Obtiene historial de revisiones de un documento
+   */
+  async getHistorialRevision(id: string): Promise<IRevisionHistorial[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/documentos/${id}/historial-revision`)) as any
+    return response.data || []
+  }
+
+  /**
+   * Obtiene URL segura de visualizacion (15 min, con cache)
+   */
+  async getViewUrl(documentoId: string): Promise<IDocumentoUrlResponse> {
+    const cached = this.getCachedUrl(this.viewUrlCache, documentoId)
+    if (cached) {
+      return { url: cached, nombre_original: '', tipo_mime: null, expires_in: 0 }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/documentos/${documentoId}/url-visualizacion`)) as any
+    const data = response.data as IDocumentoUrlResponse
+    this.setCachedUrl(this.viewUrlCache, documentoId, data.url, data.expires_in)
+    return data
+  }
+
+  /**
+   * Obtiene URL segura de descarga (con nombre original, con cache)
+   */
+  async getDownloadUrl(documentoId: string): Promise<IDocumentoUrlResponse> {
+    const cached = this.getCachedUrl(this.downloadUrlCache, documentoId)
+    if (cached) {
+      return { url: cached, nombre_original: '', tipo_mime: null, expires_in: 0 }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/documentos/${documentoId}/url-descarga`)) as any
+    const data = response.data as IDocumentoUrlResponse
+    this.setCachedUrl(this.downloadUrlCache, documentoId, data.url, data.expires_in)
+    return data
+  }
+
+  /**
    * Valida un archivo antes de subirlo
    * @returns null si es valido, mensaje de error si no
    */
@@ -254,6 +361,76 @@ class DocumentoService {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  // ============================================
+  // Reemplazo de documentos rechazados
+  // ============================================
+
+  /**
+   * Inicia reemplazo de un documento rechazado (obtiene presigned URL)
+   */
+  async iniciarReemplazo(
+    docId: string,
+    data: IReemplazarDocumentoRequest
+  ): Promise<IReemplazarPresignedResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.post(`/documentos/${docId}/reemplazar`, data)) as any
+    return response.data
+  }
+
+  /**
+   * Confirma la subida del documento de reemplazo
+   */
+  async confirmarReemplazo(
+    docId: string,
+    data: IConfirmarReemplazoRequest
+  ): Promise<IDocumento> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.post(`/documentos/${docId}/confirmar-reemplazo`, data)) as any
+    return response.data
+  }
+
+  /**
+   * Flujo completo de reemplazo de documento rechazado:
+   * 1. Iniciar reemplazo (presigned URL)
+   * 2. Subir archivo a storage
+   * 3. Confirmar reemplazo en backend
+   */
+  async replaceDocument(
+    docId: string,
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<IDocumento> {
+    // 1. Obtener presigned URL para reemplazo
+    const presignedData = await this.iniciarReemplazo(docId, {
+      nombre_original: file.name,
+      tipo_mime: file.type,
+      tamano_bytes: file.size,
+    })
+
+    // 2. Subir archivo a storage
+    await this.uploadToSignedUrl(presignedData.signedUrl, file, onProgress)
+
+    // 3. Confirmar reemplazo
+    const documento = await this.confirmarReemplazo(docId, {
+      nombre_original: file.name,
+      nombre_archivo: presignedData.nombre_archivo,
+      storage_key: presignedData.storage_key,
+      tipo_mime: file.type,
+      tamano_bytes: file.size,
+    })
+
+    return documento
+  }
+
+  /**
+   * Obtiene historial de versiones de un documento
+   */
+  async getVersiones(docId: string): Promise<IVersionesResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(`/documentos/${docId}/versiones`)) as any
+    return response.data
   }
 }
 

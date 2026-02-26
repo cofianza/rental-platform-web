@@ -19,16 +19,21 @@ import {
   IconX,
   IconAlertTriangle,
   IconTrash,
-  IconDownload,
   IconEye,
+  IconHistory,
+  IconChevronUp,
+  IconChevronDown,
 } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { DocumentViewer } from '@/components/ui/DocumentViewer'
+import { RevisionPanel } from './RevisionPanel'
 import { documentoService } from '@/services/documentoService'
 import type {
   IDocumento,
   ITipoDocumento,
   EstadoDocumento,
   UploadStatus,
+  IVersionEntry,
 } from '@/types/documento'
 
 // ============================================
@@ -95,6 +100,96 @@ interface DocumentCardState {
 }
 
 // ============================================
+// VersionHistoryPanel subcomponent
+// ============================================
+
+function VersionHistoryPanel({ documentoId }: { documentoId: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [versiones, setVersiones] = useState<IVersionEntry[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleToggle = async () => {
+    if (!isExpanded && versiones.length === 0) {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const result = await documentoService.getVersiones(documentoId)
+        setVersiones(result.versiones)
+      } catch {
+        setError('Error al cargar historial')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    setIsExpanded((prev) => !prev)
+  }
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={handleToggle}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <IconHistory size={14} />
+        Historial de versiones
+        {isExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+      </button>
+
+      {isExpanded && (
+        <div className="mt-2 space-y-2">
+          {isLoading ? (
+            <div className="flex items-center gap-2 py-2">
+              <IconLoader size={14} className="animate-spin text-gray-400" />
+              <span className="text-xs text-gray-500">Cargando...</span>
+            </div>
+          ) : error ? (
+            <p className="text-xs text-red-500">{error}</p>
+          ) : versiones.length === 0 ? (
+            <p className="text-xs text-gray-500">Sin historial</p>
+          ) : (
+            versiones.map((v) => {
+              const isCurrent = v.estado !== 'reemplazado' && v.estado !== 'rechazado'
+              return (
+                <div
+                  key={v.id}
+                  className={`p-2 rounded-lg border text-xs ${
+                    isCurrent
+                      ? 'bg-primary-50 border-primary-200'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-medium text-gray-700">v{v.version}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full font-medium ${getEstadoBadgeClass(v.estado)}`}>
+                      {getEstadoLabel(v.estado)}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-primary-600 font-medium">(actual)</span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-gray-500">
+                    <span className="truncate">{v.nombre_original}</span>
+                    {' · '}
+                    {new Date(v.created_at).toLocaleDateString('es-CO')}
+                    {v.subidor && (
+                      <span> · {v.subidor.nombre} {v.subidor.apellido}</span>
+                    )}
+                  </div>
+                  {v.estado === 'rechazado' && v.motivo_rechazo && (
+                    <p className="mt-1 text-red-600">Motivo: {v.motivo_rechazo}</p>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
 // DocumentUploadCard subcomponent
 // ============================================
 
@@ -105,6 +200,7 @@ interface DocumentUploadCardProps {
   onUploadComplete: (tipoId: string, documento: IDocumento) => void
   onUploadError: (tipoId: string, error: string) => void
   onDelete: (documento: IDocumento) => void
+  onView: (documento: IDocumento) => void
 }
 
 function DocumentUploadCard({
@@ -114,41 +210,15 @@ function DocumentUploadCard({
   onUploadComplete,
   onUploadError,
   onDelete,
+  onView,
 }: DocumentUploadCardProps) {
   const { tipoDocumento, documento, status, progress, error } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
 
   const hasDocument = documento && documento.estado !== 'reemplazado'
   const canUpload = !hasDocument || documento?.estado === 'rechazado'
   const isUploading = status === 'uploading'
-
-  // Download handler - fetches file and triggers download
-  const handleDownload = async () => {
-    if (!documento?.archivo_url || isDownloading) return
-
-    setIsDownloading(true)
-    try {
-      const response = await fetch(documento.archivo_url)
-      if (!response.ok) throw new Error('Error al descargar')
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = documento.nombre_original
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-    } catch (err) {
-      toast.error('Error al descargar el archivo')
-    } finally {
-      setIsDownloading(false)
-    }
-  }
 
   // File validation and upload
   const handleFile = useCallback(
@@ -162,14 +232,22 @@ function DocumentUploadCard({
       onUploadStart(tipoDocumento.id, file)
 
       try {
-        const newDoc = await documentoService.uploadDocument(
-          expedienteId,
-          tipoDocumento.id,
-          file,
-          (prog) => {
-            // Progress is handled through state updates
-          }
-        )
+        let newDoc: IDocumento
+        if (documento?.estado === 'rechazado') {
+          // Use dedicated replacement flow
+          newDoc = await documentoService.replaceDocument(
+            documento.id,
+            file,
+            () => { /* Progress handled through state updates */ }
+          )
+        } else {
+          newDoc = await documentoService.uploadDocument(
+            expedienteId,
+            tipoDocumento.id,
+            file,
+            () => { /* Progress handled through state updates */ }
+          )
+        }
         onUploadComplete(tipoDocumento.id, newDoc)
         toast.success(`${tipoDocumento.nombre} subido correctamente`)
       } catch (err) {
@@ -179,7 +257,7 @@ function DocumentUploadCard({
         toast.error(message)
       }
     },
-    [expedienteId, tipoDocumento, onUploadStart, onUploadComplete, onUploadError]
+    [expedienteId, tipoDocumento, documento, onUploadStart, onUploadComplete, onUploadError]
   )
 
   // Drag and drop handlers
@@ -292,25 +370,11 @@ function DocumentUploadCard({
             <div className="flex items-center gap-2 pt-2">
               {canPreview && (
                 <button
-                  onClick={() => setShowPreview(true)}
+                  onClick={() => onView(documento)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <IconEye size={14} />
                   Ver
-                </button>
-              )}
-              {documento.archivo_url && (
-                <button
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  {isDownloading ? (
-                    <IconLoader size={14} className="animate-spin" />
-                  ) : (
-                    <IconDownload size={14} />
-                  )}
-                  {isDownloading ? 'Descargando...' : 'Descargar'}
                 </button>
               )}
               {documento.estado === 'pendiente' && (
@@ -332,8 +396,13 @@ function DocumentUploadCard({
                 className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <IconUpload size={16} />
-                Subir nuevo documento
+                Resubir documento
               </button>
+            )}
+
+            {/* Version history panel */}
+            {(documento.version > 1 || documento.estado === 'rechazado') && (
+              <VersionHistoryPanel documentoId={documento.id} />
             )}
           </div>
         ) : (
@@ -405,40 +474,6 @@ function DocumentUploadCard({
         />
       </div>
 
-      {/* Preview modal (simple implementation) */}
-      {showPreview && documento && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-          onClick={() => setShowPreview(false)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setShowPreview(false)}
-              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 z-10"
-            >
-              <IconX size={20} />
-            </button>
-            {isImage && documento.archivo_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={documento.archivo_url}
-                alt={documento.nombre_original}
-                className="max-w-full max-h-[85vh] object-contain"
-              />
-            )}
-            {isPdf && documento.archivo_url && (
-              <iframe
-                src={documento.archivo_url}
-                className="w-[800px] h-[80vh]"
-                title={documento.nombre_original}
-              />
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -449,15 +484,20 @@ function DocumentUploadCard({
 
 export interface DocumentosSectionProps {
   expedienteId: string
+  userRole?: string
+  onPendientesChange?: (count: number) => void
 }
 
-export function DocumentosSection({ expedienteId }: DocumentosSectionProps) {
+export function DocumentosSection({ expedienteId, userRole, onPendientesChange }: DocumentosSectionProps) {
   // State
   const [tiposDocumento, setTiposDocumento] = useState<ITipoDocumento[]>([])
   const [documentos, setDocumentos] = useState<IDocumento[]>([])
   const [cardStates, setCardStates] = useState<Map<string, DocumentCardState>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Viewer
+  const [viewerDoc, setViewerDoc] = useState<IDocumento | null>(null)
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<IDocumento | null>(null)
@@ -480,6 +520,12 @@ export function DocumentosSection({ expedienteId }: DocumentosSectionProps) {
 
       setTiposDocumento(tipos)
       setDocumentos(docsResult.documentos)
+
+      // Notify parent of pendientes count
+      const pendientesCount = docsResult.documentos.filter(
+        (d) => d.estado === 'pendiente'
+      ).length
+      onPendientesChange?.(pendientesCount)
 
       // Initialize card states
       const states = new Map<string, DocumentCardState>()
@@ -728,6 +774,7 @@ export function DocumentosSection({ expedienteId }: DocumentosSectionProps) {
               onUploadComplete={handleUploadComplete}
               onUploadError={handleUploadError}
               onDelete={setDeleteTarget}
+              onView={setViewerDoc}
             />
           ))}
       </div>
@@ -737,6 +784,14 @@ export function DocumentosSection({ expedienteId }: DocumentosSectionProps) {
           <IconFileText size={48} className="mx-auto text-gray-300 mb-4" />
           <p className="text-sm">No hay tipos de documento configurados</p>
         </div>
+      )}
+
+      {/* Panel de revision para operadores/admin */}
+      {(userRole === 'administrador' || userRole === 'operador_analista') && (
+        <RevisionPanel
+          expedienteId={expedienteId}
+          onRevisionChange={fetchData}
+        />
       )}
 
       {/* Delete confirmation dialog */}
@@ -749,6 +804,13 @@ export function DocumentosSection({ expedienteId }: DocumentosSectionProps) {
         confirmLabel="Eliminar"
         variant="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Document viewer */}
+      <DocumentViewer
+        documento={viewerDoc}
+        isOpen={!!viewerDoc}
+        onClose={() => setViewerDoc(null)}
       />
     </div>
   )

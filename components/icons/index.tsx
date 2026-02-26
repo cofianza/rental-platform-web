@@ -951,6 +951,37 @@ export function IconMoreVertical({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// RotateCw (Document Viewer: rotar imagen)
+export function IconRotateCw({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+    </svg>
+  )
+}
+
+// Minus (Document Viewer: zoom out)
+export function IconMinus({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
+// Maximize (Document Viewer: ajustar a pantalla)
+export function IconMaximize({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -1010,6 +1041,9 @@ export const ICON_MAP = {
   Refresh: IconRefresh,
   Calendar: IconCalendar,
   MoreVertical: IconMoreVertical,
+  RotateCw: IconRotateCw,
+  Minus: IconMinus,
+  Maximize: IconMaximize,
 } as const
 
 export type IconName = keyof typeof ICON_MAP

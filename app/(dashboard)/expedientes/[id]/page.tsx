@@ -28,6 +28,7 @@ import {
   AsignacionResponsableModal,
   DocumentosSection,
 } from '@/components/expedientes'
+import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type {
@@ -36,18 +37,21 @@ import type {
   EstadoExpediente,
 } from '@/types/expediente'
 
-// Tabs disponibles según HP-243
-const TABS: Tab[] = [
-  { id: 'resumen', label: 'Resumen' },
-  { id: 'documentos', label: 'Documentos' },
-  { id: 'comentarios', label: 'Comentarios' },
-  { id: 'timeline', label: 'Timeline' },
-]
-
 export default function ExpedienteDetallePage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  const user = useAuthStore((s) => s.user)
+
+  // Pendientes count for badge
+  const [pendientesCount, setPendientesCount] = useState(0)
+
+  const tabs: Tab[] = [
+    { id: 'resumen', label: 'Resumen' },
+    { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
+    { id: 'comentarios', label: 'Comentarios' },
+    { id: 'timeline', label: 'Timeline' },
+  ]
 
   // Estado principal
   const [expediente, setExpediente] = useState<IExpedienteDetalle | null>(null)
@@ -278,7 +282,7 @@ export default function ExpedienteDetallePage() {
       </div>
 
       {/* Tabs */}
-      <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Contenido de tabs */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -418,7 +422,11 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Documentos (HP-295) */}
         {activeTab === 'documentos' && (
           <div className="p-6">
-            <DocumentosSection expedienteId={id} />
+            <DocumentosSection
+              expedienteId={id}
+              userRole={user?.rol}
+              onPendientesChange={setPendientesCount}
+            />
           </div>
         )}
 
