@@ -47,3 +47,20 @@ export type {
   UserModalMode,
   IUsersState,
 } from './user'
+
+// Tipos de documentos (HP-295)
+export type {
+  EstadoDocumento,
+  ITipoDocumento,
+  IDocumento,
+  IPresignedUrlRequest,
+  IPresignedUrlResponse,
+  IConfirmarSubidaRequest,
+  IListDocumentosQuery,
+  IDocumentosListResponse,
+  IDocumentoResponse,
+  ITiposDocumentoResponse,
+  UploadStatus,
+  IDocumentoUploadState,
+  IDocumentosProgress,
+} from './documento'

@@ -1,6 +1,7 @@
 /**
- * Página de detalle de expediente - HP-243
+ * Página de detalle de expediente - HP-243, HP-295
  * Vista detallada con tabs, barra de progreso y acciones contextuales
+ * HP-295: Documentos con drag & drop upload
  */
 
 'use client'
@@ -25,6 +26,7 @@ import {
   ComentariosSection,
   TimelineSection,
   AsignacionResponsableModal,
+  DocumentosSection,
 } from '@/components/expedientes'
 import { expedienteService } from '@/services/expedienteService'
 import { formatCurrency, formatDate } from '@/lib/constants'
@@ -413,16 +415,10 @@ export default function ExpedienteDetallePage() {
           </div>
         )}
 
-        {/* Tab: Documentos (Placeholder) */}
+        {/* Tab: Documentos (HP-295) */}
         {activeTab === 'documentos' && (
           <div className="p-6">
-            <div className="text-center py-12">
-              <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Próximamente</h3>
-              <p className="text-sm text-gray-500 max-w-md mx-auto">
-                El módulo de documentos está en desarrollo y estará disponible próximamente.
-              </p>
-            </div>
+            <DocumentosSection expedienteId={id} />
           </div>
         )}
 
