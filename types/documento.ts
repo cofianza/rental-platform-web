@@ -1,5 +1,5 @@
 /**
- * Tipos para Documentos - HP-295
+ * Tipos para Documentos - HP-295, HP-327
  * Interfaces para el modulo de documentos de expedientes
  */
 
@@ -11,6 +11,20 @@
  * Estados de un documento
  */
 export type EstadoDocumento = 'pendiente' | 'aprobado' | 'rechazado' | 'reemplazado'
+
+/**
+ * HP-327: Metodo de captura para selfies y documentos
+ */
+export type MetodoCaptura = 'camara' | 'archivo'
+
+/**
+ * HP-327: Metadatos adicionales del documento (selfie, captura con camara, etc.)
+ */
+export interface IDocumentoMetadatos {
+  metodo_captura?: MetodoCaptura
+  timestamp_captura?: string
+  user_agent?: string
+}
 
 // ============================================
 // Interfaces principales
@@ -53,6 +67,7 @@ export interface IDocumento {
   subido_por: string | null
   fecha_revision: string | null
   reemplazado_por: string | null
+  metadatos: IDocumentoMetadatos | null // HP-327
   created_at: string
   updated_at: string
   // Relacion con tipo_documento (join)
@@ -112,6 +127,7 @@ export interface IConfirmarSubidaRequest {
   storage_key: string
   tipo_mime: string
   tamano_bytes: number
+  metadatos?: IDocumentoMetadatos // HP-327
 }
 
 /**

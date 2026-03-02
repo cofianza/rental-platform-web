@@ -1,8 +1,9 @@
 /**
- * DocumentosSection - HP-295
+ * DocumentosSection - HP-295, HP-327
  * Seccion de documentos del expediente con upload drag & drop
  * Estados: pendiente, aprobado, rechazado, reemplazado
  * Flujo: presigned URL -> upload directo -> confirmar
+ * HP-327: Soporte para captura de selfie con camara
  */
 
 'use client'
@@ -23,10 +24,14 @@ import {
   IconHistory,
   IconChevronUp,
   IconChevronDown,
+  IconCamera,
+  IconCompare,
 } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { DocumentViewer } from '@/components/ui/DocumentViewer'
 import { RevisionPanel } from './RevisionPanel'
+import { SelfieCapture } from './SelfieCapture'
+import { SelfieComparisonView } from './SelfieComparisonView'
 import { documentoService } from '@/services/documentoService'
 import type {
   IDocumento,
@@ -34,7 +39,12 @@ import type {
   EstadoDocumento,
   UploadStatus,
   IVersionEntry,
+  IDocumentoMetadatos,
 } from '@/types/documento'
+
+// HP-327: Codigos de tipos de documento para selfie
+const SELFIE_CODIGO = 'selfie_con_id'
+const ID_FRONTAL_CODIGO = 'id_frontal'
 
 // ============================================
 // Helpers
@@ -201,6 +211,8 @@ interface DocumentUploadCardProps {
   onUploadError: (tipoId: string, error: string) => void
   onDelete: (documento: IDocumento) => void
   onView: (documento: IDocumento) => void
+  onCameraCapture?: (tipoId: string) => void // HP-327
+  isSelfieType?: boolean // HP-327
 }
 
 function DocumentUploadCard({
@@ -211,6 +223,8 @@ function DocumentUploadCard({
   onUploadError,
   onDelete,
   onView,
+  onCameraCapture,
+  isSelfieType = false,
 }: DocumentUploadCardProps) {
   const { tipoDocumento, documento, status, progress, error } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -219,6 +233,13 @@ function DocumentUploadCard({
   const hasDocument = documento && documento.estado !== 'reemplazado'
   const canUpload = !hasDocument || documento?.estado === 'rechazado'
   const isUploading = status === 'uploading'
+
+  // HP-327: Camera capture handler
+  const handleCameraClick = () => {
+    if (onCameraCapture) {
+      onCameraCapture(tipoDocumento.id)
+    }
+  }
 
   // File validation and upload
   const handleFile = useCallback(
@@ -449,10 +470,39 @@ function DocumentUploadCard({
               </div>
             ) : (
               <>
-                <IconUpload size={32} className="mx-auto text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-900">
-                  Arrastra un archivo o haz clic para seleccionar
-                </p>
+                {/* HP-327: Show camera option for selfie types */}
+                {isSelfieType ? (
+                  <div className="space-y-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleCameraClick()
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      <IconCamera size={20} />
+                      Tomar selfie con camara
+                    </button>
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-xs">o</span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+                    <div className="text-center">
+                      <IconUpload size={24} className="mx-auto text-gray-400 mb-1" />
+                      <p className="text-xs text-gray-500">
+                        Subir imagen existente
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <IconUpload size={32} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm font-medium text-gray-900">
+                      Arrastra un archivo o haz clic para seleccionar
+                    </p>
+                  </>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
                   Formatos: {getAcceptedFormatsText(tipoDocumento.formatos_aceptados)}
                 </p>
@@ -502,6 +552,14 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<IDocumento | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // HP-327: Selfie capture state
+  const [showSelfieCapture, setShowSelfieCapture] = useState(false)
+  const [selfieTargetTipoId, setSelfieTargetTipoId] = useState<string | null>(null)
+  const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
+
+  // HP-327: Comparison view state
+  const [showComparison, setShowComparison] = useState(false)
 
   // ============================================
   // Fetch data
@@ -613,6 +671,74 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       return newMap
     })
   }, [])
+
+  // ============================================
+  // HP-327: Camera capture handlers
+  // ============================================
+
+  const handleCameraCapture = useCallback((tipoId: string) => {
+    setSelfieTargetTipoId(tipoId)
+    setShowSelfieCapture(true)
+  }, [])
+
+  const handleSelfieCancel = useCallback(() => {
+    setShowSelfieCapture(false)
+    setSelfieTargetTipoId(null)
+  }, [])
+
+  const handleSelfieCapture = useCallback(async (file: File) => {
+    if (!selfieTargetTipoId) return
+
+    setIsUploadingSelfie(true)
+
+    // Prepare metadatos for selfie
+    const metadatos: IDocumentoMetadatos = {
+      metodo_captura: 'camara',
+      timestamp_captura: new Date().toISOString(),
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+    }
+
+    // Update card state
+    handleUploadStart(selfieTargetTipoId, file)
+
+    try {
+      const documento = await documentoService.uploadDocument(
+        expedienteId,
+        selfieTargetTipoId,
+        file,
+        undefined,
+        metadatos
+      )
+      handleUploadComplete(selfieTargetTipoId, documento)
+      toast.success('Selfie capturada y subida correctamente')
+      setShowSelfieCapture(false)
+      setSelfieTargetTipoId(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al subir selfie'
+      handleUploadError(selfieTargetTipoId, message)
+      toast.error(message)
+    } finally {
+      setIsUploadingSelfie(false)
+    }
+  }, [selfieTargetTipoId, expedienteId, handleUploadStart, handleUploadComplete, handleUploadError])
+
+  // HP-327: Get selfie and ID frontal documents for comparison
+  const getSelfieDoc = useCallback(() => {
+    const selfieType = tiposDocumento.find(t => t.codigo === SELFIE_CODIGO)
+    if (!selfieType) return null
+    return documentos.find(d => d.tipo_documento_id === selfieType.id && d.estado !== 'reemplazado') || null
+  }, [tiposDocumento, documentos])
+
+  const getIdFrontalDoc = useCallback(() => {
+    const idType = tiposDocumento.find(t => t.codigo === ID_FRONTAL_CODIGO)
+    if (!idType) return null
+    return documentos.find(d => d.tipo_documento_id === idType.id && d.estado !== 'reemplazado') || null
+  }, [tiposDocumento, documentos])
+
+  // HP-327: Check if comparison is available (both selfie and ID frontal exist)
+  const canShowComparison = useCallback(() => {
+    return getSelfieDoc() !== null && getIdFrontalDoc() !== null
+  }, [getSelfieDoc, getIdFrontalDoc])
 
   // ============================================
   // Delete handler
@@ -761,6 +887,19 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
         </div>
       </div>
 
+      {/* HP-327: Comparison button for operators */}
+      {(userRole === 'administrador' || userRole === 'operador_analista') && canShowComparison() && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowComparison(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+          >
+            <IconCompare size={18} />
+            Comparar Selfie con ID
+          </button>
+        </div>
+      )}
+
       {/* Document cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.from(cardStates.values())
@@ -775,6 +914,8 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               onUploadError={handleUploadError}
               onDelete={setDeleteTarget}
               onView={setViewerDoc}
+              onCameraCapture={handleCameraCapture}
+              isSelfieType={state.tipoDocumento.codigo === SELFIE_CODIGO}
             />
           ))}
       </div>
@@ -811,6 +952,23 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
         documento={viewerDoc}
         isOpen={!!viewerDoc}
         onClose={() => setViewerDoc(null)}
+      />
+
+      {/* HP-327: Selfie capture modal */}
+      {showSelfieCapture && (
+        <SelfieCapture
+          onCapture={handleSelfieCapture}
+          onCancel={handleSelfieCancel}
+          isUploading={isUploadingSelfie}
+        />
+      )}
+
+      {/* HP-327: Comparison view */}
+      <SelfieComparisonView
+        selfieDoc={getSelfieDoc()}
+        idFrontalDoc={getIdFrontalDoc()}
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
       />
     </div>
   )

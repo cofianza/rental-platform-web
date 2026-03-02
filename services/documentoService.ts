@@ -18,6 +18,7 @@ import type {
   IReemplazarPresignedResponse,
   IConfirmarReemplazoRequest,
   IVersionesResponse,
+  IDocumentoMetadatos,
 } from '@/types/documento'
 
 // ============================================
@@ -185,12 +186,14 @@ class DocumentoService {
    * 1. Obtener URL presignada
    * 2. Subir archivo a storage
    * 3. Confirmar subida en backend
+   * HP-327: Ahora acepta metadatos opcionales para selfies/captura con camara
    */
   async uploadDocument(
     expedienteId: string,
     tipoDocumentoId: string,
     file: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    metadatos?: IDocumentoMetadatos
   ): Promise<IDocumento> {
     // 1. Solicitar URL presignada
     const presignedData = await this.getPresignedUrl({
@@ -204,7 +207,7 @@ class DocumentoService {
     // 2. Subir archivo a storage
     await this.uploadToSignedUrl(presignedData.signedUrl, file, onProgress)
 
-    // 3. Confirmar subida
+    // 3. Confirmar subida (HP-327: include metadatos)
     const documento = await this.confirmarSubida({
       expediente_id: expedienteId,
       tipo_documento_id: tipoDocumentoId,
@@ -213,6 +216,7 @@ class DocumentoService {
       storage_key: presignedData.storage_key,
       tipo_mime: file.type,
       tamano_bytes: file.size,
+      metadatos,
     })
 
     return documento
