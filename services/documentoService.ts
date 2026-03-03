@@ -400,11 +400,13 @@ class DocumentoService {
    * 1. Iniciar reemplazo (presigned URL)
    * 2. Subir archivo a storage
    * 3. Confirmar reemplazo en backend
+   * D1 CR: Ahora acepta metadatos opcionales para selfies
    */
   async replaceDocument(
     docId: string,
     file: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    metadatos?: IDocumentoMetadatos
   ): Promise<IDocumento> {
     // 1. Obtener presigned URL para reemplazo
     const presignedData = await this.iniciarReemplazo(docId, {
@@ -416,13 +418,14 @@ class DocumentoService {
     // 2. Subir archivo a storage
     await this.uploadToSignedUrl(presignedData.signedUrl, file, onProgress)
 
-    // 3. Confirmar reemplazo
+    // 3. Confirmar reemplazo (D1 CR: include metadatos)
     const documento = await this.confirmarReemplazo(docId, {
       nombre_original: file.name,
       nombre_archivo: presignedData.nombre_archivo,
       storage_key: presignedData.storage_key,
       tipo_mime: file.type,
       tamano_bytes: file.size,
+      metadatos,
     })
 
     return documento
