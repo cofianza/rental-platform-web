@@ -264,11 +264,12 @@ function DocumentUploadCard({
       try {
         let newDoc: IDocumento
         if (documento?.estado === 'rechazado') {
-          // Use dedicated replacement flow
+          // Use dedicated replacement flow (D1 CR: pass metadatos)
           newDoc = await documentoService.replaceDocument(
             documento.id,
             file,
-            (p) => onUploadProgress(tipoDocumento.id, p)
+            (p) => onUploadProgress(tipoDocumento.id, p),
+            metadatos
           )
         } else {
           newDoc = await documentoService.uploadDocument(
@@ -761,17 +762,44 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
     return getSelfieDoc() !== null && getIdFrontalDoc() !== null
   }, [getSelfieDoc, getIdFrontalDoc])
 
+  // D3 CR: Auto-open comparison for operators when selfie is pending
+  useEffect(() => {
+    // Only for operator/admin roles
+    if (userRole !== 'administrador' && userRole !== 'operador_analista') return
+
+    const selfie = getSelfieDoc()
+    const idFrontal = getIdFrontalDoc()
+
+    // Auto-open when both docs exist and selfie is pending review
+    if (selfie && idFrontal && selfie.estado === 'pendiente' && !showComparison) {
+      setShowComparison(true)
+    }
+  }, [userRole, getSelfieDoc, getIdFrontalDoc, showComparison])
+
   // HP-327 CR: Handlers for approve/reject from comparison view
+  // D2 CR: Added try/catch with toast.error()
   const handleComparisonApprove = useCallback(async (documentoId: string) => {
-    await documentoService.aprobarDocumento(documentoId)
-    toast.success('Selfie aprobado')
-    fetchData() // Refresh documents
+    try {
+      await documentoService.aprobarDocumento(documentoId)
+      toast.success('Selfie aprobado')
+      fetchData() // Refresh documents
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al aprobar selfie'
+      toast.error(message)
+      throw err // Re-throw so SelfieComparisonView can handle it
+    }
   }, [fetchData])
 
   const handleComparisonReject = useCallback(async (documentoId: string, motivo: string) => {
-    await documentoService.rechazarDocumento(documentoId, motivo)
-    toast.success('Selfie rechazado')
-    fetchData() // Refresh documents
+    try {
+      await documentoService.rechazarDocumento(documentoId, motivo)
+      toast.success('Selfie rechazado')
+      fetchData() // Refresh documents
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al rechazar selfie'
+      toast.error(message)
+      throw err // Re-throw so SelfieComparisonView can handle it
+    }
   }, [fetchData])
 
   // ============================================
