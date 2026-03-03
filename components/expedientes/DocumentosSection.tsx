@@ -254,6 +254,13 @@ function DocumentUploadCard({
 
       onUploadStart(tipoDocumento.id, file)
 
+      // CR HP-327: Enviar metadatos para uploads de archivo (especialmente selfie)
+      const metadatos: IDocumentoMetadatos | undefined = isSelfieType ? {
+        metodo_captura: 'archivo',
+        timestamp_captura: new Date().toISOString(),
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      } : undefined
+
       try {
         let newDoc: IDocumento
         if (documento?.estado === 'rechazado') {
@@ -268,7 +275,8 @@ function DocumentUploadCard({
             expedienteId,
             tipoDocumento.id,
             file,
-            (p) => onUploadProgress(tipoDocumento.id, p)
+            (p) => onUploadProgress(tipoDocumento.id, p),
+            metadatos
           )
         }
         onUploadComplete(tipoDocumento.id, newDoc)
@@ -280,7 +288,7 @@ function DocumentUploadCard({
         toast.error(message)
       }
     },
-    [expedienteId, tipoDocumento, documento, onUploadStart, onUploadComplete, onUploadProgress, onUploadError]
+    [expedienteId, tipoDocumento, documento, isSelfieType, onUploadStart, onUploadComplete, onUploadProgress, onUploadError]
   )
 
   // Drag and drop handlers
@@ -753,6 +761,19 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
     return getSelfieDoc() !== null && getIdFrontalDoc() !== null
   }, [getSelfieDoc, getIdFrontalDoc])
 
+  // HP-327 CR: Handlers for approve/reject from comparison view
+  const handleComparisonApprove = useCallback(async (documentoId: string) => {
+    await documentoService.aprobarDocumento(documentoId)
+    toast.success('Selfie aprobado')
+    fetchData() // Refresh documents
+  }, [fetchData])
+
+  const handleComparisonReject = useCallback(async (documentoId: string, motivo: string) => {
+    await documentoService.rechazarDocumento(documentoId, motivo)
+    toast.success('Selfie rechazado')
+    fetchData() // Refresh documents
+  }, [fetchData])
+
   // ============================================
   // Delete handler
   // ============================================
@@ -983,6 +1004,8 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
         idFrontalDoc={getIdFrontalDoc()}
         isOpen={showComparison}
         onClose={() => setShowComparison(false)}
+        onApprove={handleComparisonApprove}
+        onReject={handleComparisonReject}
       />
     </div>
   )
