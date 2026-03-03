@@ -131,9 +131,7 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
     } else if (!EMAIL_REGEX.test(form.email)) {
       errors.email = 'Email invalido'
     }
-    if (!form.telefono?.trim()) {
-      errors.telefono = 'Telefono requerido'
-    } else if (!PHONE_REGEX.test(form.telefono.replace(/\s/g, ''))) {
+    if (form.telefono?.trim() && !PHONE_REGEX.test(form.telefono.replace(/\s/g, ''))) {
       errors.telefono = 'Formato: +57 3XXXXXXXXX o 3XXXXXXXXX'
     }
   }
@@ -296,8 +294,7 @@ export function useExpedienteWizard() {
           form.apellido?.trim() &&
           form.tipo_documento &&
           form.numero_documento?.trim() &&
-          form.email?.trim() &&
-          form.telefono?.trim()
+          form.email?.trim()
         )
       }
       return false

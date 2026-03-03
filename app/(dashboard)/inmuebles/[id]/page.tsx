@@ -19,8 +19,8 @@ import {
   ExpedientesSection,
   HistorialSection,
   GaleriaSection,
-  type IExpedienteResumen,
 } from '@/components/inmuebles'
+import type { IExpediente } from '@/types/expediente'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
 import {
   IconArrowLeft,
@@ -60,7 +60,7 @@ export default function InmuebleDetailPage() {
   const user = useAuthStore((state) => state.user)
 
   const [inmueble, setInmueble] = useState<IInmueble | null>(null)
-  const [expedientes, setExpedientes] = useState<IExpedienteResumen[]>([])
+  const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingExpedientes, setIsLoadingExpedientes] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,8 +100,8 @@ export default function InmuebleDetailPage() {
 
     setIsLoadingExpedientes(true)
     try {
-      const data = await inmuebleService.getExpedientesByInmueble(id)
-      setExpedientes(data)
+      const result = await inmuebleService.getExpedientesByInmueble(id)
+      setExpedientes(result.data)
     } catch (err) {
       console.error('Error fetching expedientes:', err)
     } finally {

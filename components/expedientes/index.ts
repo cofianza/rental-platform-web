@@ -1,5 +1,5 @@
 /**
- * Expedientes Components - HP-229, HP-243, HP-263, HP-270, HP-285
+ * Expedientes Components - HP-229, HP-243, HP-263, HP-270, HP-285, HP-295
  * Barrel export
  */
 
@@ -23,6 +23,9 @@ export * from './TimelineSection'
 
 // HP-285: Asignación responsable
 export * from './AsignacionResponsableModal'
+
+// HP-295: Documentos
+export * from './DocumentosSection'
 
 // HP-247: Wizard de creación
 export * from './wizard'
