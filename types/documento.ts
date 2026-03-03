@@ -278,6 +278,7 @@ export interface IConfirmarReemplazoRequest {
   storage_key: string
   tipo_mime: string
   tamano_bytes: number
+  metadatos?: IDocumentoMetadatos // D1 CR
 }
 
 export interface IVersionEntry {
