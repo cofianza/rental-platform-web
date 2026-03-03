@@ -68,6 +68,7 @@ export interface IExpedienteFilters {
   search: string
   estado: EstadoExpediente[] // Multi-select: array de estados
   analista_id: string
+  inmueble_id: string // Filtrar por inmueble asociado
   fecha_desde: string // ISO date string
   fecha_hasta: string // ISO date string
   page: number

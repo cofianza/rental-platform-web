@@ -84,7 +84,7 @@ export function ExpedienteProgressBar({
                 </div>
                 <span
                   className={cn(
-                    'mt-2 text-xs font-medium text-center max-w-[80px]',
+                    'mt-2 text-xs font-medium text-center max-w-20',
                     esActual && config.textColor,
                     esCompletado && 'text-green-600',
                     esPendiente && 'text-gray-400'

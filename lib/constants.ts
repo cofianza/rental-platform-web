@@ -61,6 +61,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'bitacora',
   },
   {
+    label: 'Tipos Documento',
+    href: '/tipos-documento',
+    icon: 'FileText',
+    description: 'Administrar tipos de documento',
+    resource: 'configuracion',
+  },
+  {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',

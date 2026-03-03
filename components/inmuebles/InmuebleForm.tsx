@@ -109,6 +109,12 @@ interface FormErrors {
   valor_arriendo?: string
   propietario_id?: string
   foto_fachada_url?: string
+  area_m2?: string
+  habitaciones?: string
+  banos?: string
+  parqueaderos?: string
+  valor_comercial?: string
+  administracion?: string
 }
 
 const initialFormData: FormData = {
@@ -216,6 +222,29 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
       newErrors.foto_fachada_url = INMUEBLE_MESSAGES.FOTO_REQUIRED
     }
 
+    // Validaciones de rango en campos numéricos
+    if (formData.area_m2 && Number(formData.area_m2) > 99999) {
+      newErrors.area_m2 = 'El area no puede superar 99.999 m²'
+    }
+    if (formData.valor_arriendo && Number(formData.valor_arriendo) > 999999999) {
+      newErrors.valor_arriendo = 'El valor no puede superar $999.999.999'
+    }
+    if (formData.valor_comercial && Number(formData.valor_comercial) > 99999999999) {
+      newErrors.valor_comercial = 'El valor no puede superar $99.999.999.999'
+    }
+    if (formData.administracion && Number(formData.administracion) > 999999999) {
+      newErrors.administracion = 'El valor no puede superar $999.999.999'
+    }
+    if (formData.habitaciones && Number(formData.habitaciones) > 99) {
+      newErrors.habitaciones = 'Maximo 99 habitaciones'
+    }
+    if (formData.banos && Number(formData.banos) > 99) {
+      newErrors.banos = 'Maximo 99 baños'
+    }
+    if (formData.parqueaderos && Number(formData.parqueaderos) > 99) {
+      newErrors.parqueaderos = 'Maximo 99 parqueaderos'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -293,9 +322,24 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
       }
 
       router.push('/inmuebles')
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error saving inmueble:', err)
-      toast.error(mode === 'create' ? INMUEBLE_MESSAGES.CREATE_ERROR : INMUEBLE_MESSAGES.UPDATE_ERROR)
+      // Intentar mostrar el detalle del error del backend
+      const apiError = err as { response?: { data?: { message?: string; details?: Array<{ field: string; message: string }> } } }
+      const details = apiError?.response?.data?.details
+      if (details && details.length > 0) {
+        // Mostrar errores por campo del backend
+        const backendErrors: FormErrors = {}
+        for (const d of details) {
+          if (d.field in backendErrors || d.field === 'direccion' || d.field === 'ciudad' || d.field === 'tipo' || d.field === 'area_m2' || d.field === 'valor_arriendo' || d.field === 'valor_comercial' || d.field === 'administracion' || d.field === 'habitaciones' || d.field === 'banos' || d.field === 'parqueaderos') {
+            backendErrors[d.field as keyof FormErrors] = d.message
+          }
+        }
+        setErrors((prev) => ({ ...prev, ...backendErrors }))
+        toast.error(details.map((d) => d.message).join('. '))
+      } else {
+        toast.error(mode === 'create' ? INMUEBLE_MESSAGES.CREATE_ERROR : INMUEBLE_MESSAGES.UPDATE_ERROR)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -443,10 +487,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('area_m2', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="99999"
                 step="0.01"
                 placeholder="Ej: 85"
-                className={inputClasses(false)}
+                className={inputClasses(!!errors.area_m2)}
               />
+              {errors.area_m2 && <p className="mt-1 text-xs text-red-600">{errors.area_m2}</p>}
             </div>
           </div>
         </div>
@@ -581,9 +627,11 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('habitaciones', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="99"
                 placeholder="0"
-                className={inputClasses(false)}
+                className={inputClasses(!!errors.habitaciones)}
               />
+              {errors.habitaciones && <p className="mt-1 text-xs text-red-600">{errors.habitaciones}</p>}
             </div>
 
             {/* Baños */}
@@ -598,9 +646,11 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('banos', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="99"
                 placeholder="0"
-                className={inputClasses(false)}
+                className={inputClasses(!!errors.banos)}
               />
+              {errors.banos && <p className="mt-1 text-xs text-red-600">{errors.banos}</p>}
             </div>
 
             {/* Parqueadero checkbox */}
@@ -631,9 +681,11 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                   onChange={(e) => handleChange('parqueaderos', e.target.value ? Number(e.target.value) : '')}
                   disabled={isSubmitting}
                   min="1"
+                  max="99"
                   placeholder="1"
-                  className={inputClasses(false)}
+                  className={inputClasses(!!errors.parqueaderos)}
                 />
+                {errors.parqueaderos && <p className="mt-1 text-xs text-red-600">{errors.parqueaderos}</p>}
               </div>
             )}
           </div>
@@ -656,6 +708,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('valor_arriendo', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="999999999"
                 step="1000"
                 placeholder="Ej: 2500000"
                 className={inputClasses(!!errors.valor_arriendo)}
@@ -677,10 +730,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('administracion', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="999999999"
                 step="1000"
                 placeholder="Ej: 350000"
-                className={inputClasses(false)}
+                className={inputClasses(!!errors.administracion)}
               />
+              {errors.administracion && <p className="mt-1 text-xs text-red-600">{errors.administracion}</p>}
             </div>
 
             {/* Valor comercial */}
@@ -695,10 +750,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 onChange={(e) => handleChange('valor_comercial', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
                 min="0"
+                max="99999999999"
                 step="1000000"
                 placeholder="Ej: 450000000"
-                className={inputClasses(false)}
+                className={inputClasses(!!errors.valor_comercial)}
               />
+              {errors.valor_comercial && <p className="mt-1 text-xs text-red-600">{errors.valor_comercial}</p>}
             </div>
           </div>
         </div>

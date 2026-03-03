@@ -124,8 +124,8 @@ export function ImageUploader({
 
       {value ? (
         // Vista previa de imagen
-        <div className="relative group">
-          <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-200">
+        <div className="relative group max-w-md mx-auto">
+          <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-200">
             <Image
               src={value}
               alt="Foto de fachada"
@@ -176,7 +176,7 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           className={cn(
-            'relative w-full h-48 border-2 border-dashed rounded-lg transition-colors cursor-pointer',
+            'relative w-full max-w-md mx-auto aspect-[4/3] border-2 border-dashed rounded-lg transition-colors cursor-pointer',
             'flex flex-col items-center justify-center gap-3',
             dragOver
               ? 'border-primary-500 bg-primary-50'

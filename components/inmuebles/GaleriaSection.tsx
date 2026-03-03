@@ -182,7 +182,7 @@ function SortablePhoto({
 
       {/* Descripción */}
       {foto.descripcion && (
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-linear-to-t from-black/60 to-transparent z-10">
           <p className="text-xs text-white truncate">{foto.descripcion}</p>
         </div>
       )}

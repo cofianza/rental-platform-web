@@ -54,7 +54,7 @@ export function UserForm({
         nombre: user.nombre || '',
         apellido: user.apellido || '',
         telefono: user.telefono || '',
-        rol: user.rol === 'sin_rol' ? 'operador_analista' : user.rol,
+        rol: user.rol,
       })
     } else if (mode === 'create') {
       setFormData({
@@ -118,8 +118,8 @@ export function UserForm({
 
   const title = mode === 'create' ? 'Nuevo Usuario' : 'Editar Usuario'
 
-  // Filtrar opciones de rol (excluir sin_rol)
-  const roleOptionsFiltered = ROLE_OPTIONS.filter((opt) => opt.value && opt.value !== 'sin_rol')
+  // Filtrar opciones de rol (excluir opción vacía "Todos los roles")
+  const roleOptionsFiltered = ROLE_OPTIONS.filter((opt) => opt.value)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
