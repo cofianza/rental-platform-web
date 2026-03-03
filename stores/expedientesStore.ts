@@ -20,6 +20,7 @@ export const DEFAULT_EXPEDIENTE_FILTERS: IExpedienteFilters = {
   search: '',
   estado: [], // Multi-select vacío = todos
   analista_id: '',
+  inmueble_id: '',
   fecha_desde: '',
   fecha_hasta: '',
   page: 1,

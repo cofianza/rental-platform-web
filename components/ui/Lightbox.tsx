@@ -7,26 +7,8 @@
 
 import { useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
-import { IconX, IconChevronLeft, IconChevronRight, IconPlus } from '@/components/icons'
-
-// Icono de zoom out (minus)
-function IconMinus({ size = 24, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M5 12h14" />
-    </svg>
-  )
-}
+import { IconX, IconChevronLeft, IconChevronRight, IconPlus, IconMinus } from '@/components/icons'
+import { useTouchGestures } from '@/hooks/useTouchGestures'
 
 export interface LightboxImage {
   url: string
@@ -63,6 +45,10 @@ export function Lightbox({
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  const touchHandlers = useTouchGestures({
+    zoom, setZoom, position, setPosition, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM,
+  })
 
   // Reset zoom cuando cambia la imagen
   useEffect(() => {
@@ -213,7 +199,7 @@ export function Lightbox({
           >
             <IconMinus size={18} />
           </button>
-          <span className="px-2 text-sm text-white/80 min-w-[3rem] text-center">
+          <span className="px-2 text-sm text-white/80 min-w-12 text-center">
             {Math.round(zoom * 100)}%
           </span>
           <button
@@ -243,9 +229,12 @@ export function Lightbox({
 
       {/* Imagen con zoom */}
       <div
-        className="relative max-w-[90vw] max-h-[85vh] w-full h-full flex items-center justify-center overflow-hidden"
+        className="relative max-w-[90vw] max-h-[85vh] w-full h-full flex items-center justify-center overflow-hidden touch-none"
         onClick={(e) => e.stopPropagation()}
         onWheel={handleWheel}
+        onTouchStart={touchHandlers.onTouchStart}
+        onTouchMove={touchHandlers.onTouchMove}
+        onTouchEnd={touchHandlers.onTouchEnd}
       >
         <div
           className="relative w-full h-full transition-transform duration-100"
@@ -292,7 +281,7 @@ export function Lightbox({
       {/* Hint de zoom */}
       {!isZoomed && (
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 text-xs text-white/60">
-          Doble clic o rueda del mouse para zoom
+          Doble clic, rueda del mouse o pellizco para zoom
         </div>
       )}
     </div>

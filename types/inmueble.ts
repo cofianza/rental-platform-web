@@ -4,7 +4,7 @@
 
 // Enums
 export type TipoInmueble = 'apartamento' | 'casa' | 'oficina' | 'local' | 'bodega'
-export type UsoInmueble = 'vivienda' | 'comercial'
+export type UsoInmueble = 'vivienda' | 'local_comercial'
 export type EstadoInmueble = 'disponible' | 'en_estudio' | 'ocupado' | 'inactivo'
 
 // Propietario (datos embebidos en inmueble)

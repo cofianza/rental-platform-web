@@ -40,6 +40,7 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   }
 
   if (filters.analista_id) params.append('analista_id', filters.analista_id)
+  if (filters.inmueble_id) params.append('inmueble_id', filters.inmueble_id)
   if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
   if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)
   if (filters.page) params.append('page', filters.page.toString())
@@ -356,6 +357,24 @@ class ExpedienteService {
   // ============================================
   // HP-247: Creacion de expediente
   // ============================================
+
+  /**
+   * Verifica si un inmueble tiene un expediente activo
+   */
+  async checkActiveExpediente(inmuebleId: string): Promise<{
+    hasActiveExpediente: boolean
+    expediente: { id: string; numero: string; estado: string } | null
+  }> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/check-inmueble/${inmuebleId}`
+    )) as any
+
+    return {
+      hasActiveExpediente: response.data?.hasActiveExpediente || false,
+      expediente: response.data?.expediente || null,
+    }
+  }
 
   /**
    * Crea un nuevo expediente

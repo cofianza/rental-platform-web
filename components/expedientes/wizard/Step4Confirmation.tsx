@@ -160,10 +160,12 @@ export function Step4Confirmation({
                   <IconMail size={14} className="text-gray-400" />
                   {solicitanteData.email}
                 </span>
-                <span className="flex items-center gap-1">
-                  <IconPhone size={14} className="text-gray-400" />
-                  {solicitanteData.telefono}
-                </span>
+                {solicitanteData.telefono && (
+                  <span className="flex items-center gap-1">
+                    <IconPhone size={14} className="text-gray-400" />
+                    {solicitanteData.telefono}
+                  </span>
+                )}
               </div>
 
               {/* Info adicional si existe */}
