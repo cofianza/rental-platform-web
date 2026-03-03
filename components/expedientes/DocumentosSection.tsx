@@ -208,6 +208,7 @@ interface DocumentUploadCardProps {
   expedienteId: string
   onUploadStart: (tipoId: string, file: File) => void
   onUploadComplete: (tipoId: string, documento: IDocumento) => void
+  onUploadProgress: (tipoId: string, progress: number) => void
   onUploadError: (tipoId: string, error: string) => void
   onDelete: (documento: IDocumento) => void
   onView: (documento: IDocumento) => void
@@ -220,6 +221,7 @@ function DocumentUploadCard({
   expedienteId,
   onUploadStart,
   onUploadComplete,
+  onUploadProgress,
   onUploadError,
   onDelete,
   onView,
@@ -259,14 +261,14 @@ function DocumentUploadCard({
           newDoc = await documentoService.replaceDocument(
             documento.id,
             file,
-            () => { /* Progress handled through state updates */ }
+            (p) => onUploadProgress(tipoDocumento.id, p)
           )
         } else {
           newDoc = await documentoService.uploadDocument(
             expedienteId,
             tipoDocumento.id,
             file,
-            () => { /* Progress handled through state updates */ }
+            (p) => onUploadProgress(tipoDocumento.id, p)
           )
         }
         onUploadComplete(tipoDocumento.id, newDoc)
@@ -278,7 +280,7 @@ function DocumentUploadCard({
         toast.error(message)
       }
     },
-    [expedienteId, tipoDocumento, documento, onUploadStart, onUploadComplete, onUploadError]
+    [expedienteId, tipoDocumento, documento, onUploadStart, onUploadComplete, onUploadProgress, onUploadError]
   )
 
   // Drag and drop handlers
@@ -423,7 +425,7 @@ function DocumentUploadCard({
 
             {/* Version history panel */}
             {(documento.version > 1 || documento.estado === 'rechazado') && (
-              <VersionHistoryPanel documentoId={documento.id} />
+              <VersionHistoryPanel key={documento.id} documentoId={documento.id} />
             )}
           </div>
         ) : (
@@ -653,6 +655,17 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       return newMap
     })
     setDocumentos((prev) => [documento, ...prev])
+  }, [])
+
+  const handleUploadProgress = useCallback((tipoId: string, progress: number) => {
+    setCardStates((prev) => {
+      const newMap = new Map(prev)
+      const current = newMap.get(tipoId)
+      if (current && current.status === 'uploading') {
+        newMap.set(tipoId, { ...current, progress })
+      }
+      return newMap
+    })
   }, [])
 
   const handleUploadError = useCallback((tipoId: string, error: string) => {
@@ -911,6 +924,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               expedienteId={expedienteId}
               onUploadStart={handleUploadStart}
               onUploadComplete={handleUploadComplete}
+              onUploadProgress={handleUploadProgress}
               onUploadError={handleUploadError}
               onDelete={setDeleteTarget}
               onView={setViewerDoc}
