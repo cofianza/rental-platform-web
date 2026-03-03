@@ -181,7 +181,7 @@ export default function UsuarioDetailPage() {
       {/* Contenido principal */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Avatar y badges */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-8">
+        <div className="bg-linear-to-r from-primary-600 to-primary-700 px-6 py-8">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
               <IconUser size={40} className="text-primary-600" />

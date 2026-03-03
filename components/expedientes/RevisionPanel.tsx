@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import {
   IconCheck,
@@ -86,6 +86,67 @@ type FilterEstado = 'todos' | EstadoDocumento
 interface RevisionPanelProps {
   expedienteId: string
   onRevisionChange?: () => void
+}
+
+// ============================================
+// ThumbnailImage — fetches signed URL for preview
+// ============================================
+
+function ThumbnailImage({ doc, onClick }: { doc: IDocumento; onClick: () => void }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null)
+  const [isLoadingUrl, setIsLoadingUrl] = useState(true)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    setIsLoadingUrl(true)
+
+    documentoService
+      .getViewUrl(doc.id)
+      .then((data) => {
+        if (mountedRef.current) setSignedUrl(data.url)
+      })
+      .catch(() => {
+        // silently fail — thumbnail simply won't show
+      })
+      .finally(() => {
+        if (mountedRef.current) setIsLoadingUrl(false)
+      })
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [doc.id])
+
+  if (isLoadingUrl) {
+    return (
+      <div className="w-full h-32 bg-gray-50 rounded-lg flex items-center justify-center">
+        <IconLoader size={18} className="animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
+  if (!signedUrl) return null
+
+  return (
+    <div
+      className="relative w-full h-32 bg-gray-50 rounded-lg overflow-hidden cursor-pointer group"
+      onClick={onClick}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={signedUrl}
+        alt={doc.nombre_original}
+        className="w-full h-full object-contain"
+      />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+        <IconEye
+          size={24}
+          className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
+        />
+      </div>
+    </div>
+  )
 }
 
 // ============================================
@@ -379,25 +440,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
                 )}
 
                 {/* Preview thumbnail for images */}
-                {isImage && doc.archivo_url && (
-                  <div
-                    className="relative w-full h-32 bg-gray-50 rounded-lg overflow-hidden cursor-pointer group"
-                    onClick={() => setPreviewDoc(doc)}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={doc.archivo_url}
-                      alt={doc.nombre_original}
-                      className="w-full h-full object-contain"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <IconEye
-                        size={24}
-                        className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
-                      />
-                    </div>
-                  </div>
-                )}
+                {isImage && <ThumbnailImage doc={doc} onClick={() => setPreviewDoc(doc)} />}
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-1">

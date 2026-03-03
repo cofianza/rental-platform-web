@@ -43,6 +43,7 @@ export interface ITipoDocumento {
   tamano_maximo_mb: number
   orden: number
   activo: boolean
+  es_protegido: boolean
   created_at: string
   updated_at: string
 }

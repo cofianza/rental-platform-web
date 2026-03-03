@@ -21,8 +21,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
-import { PageHeader, ConfirmDialog } from '@/components/ui'
-import { IconLoader, IconPlus, IconEdit, IconMenu } from '@/components/icons'
+import { PageHeader, ConfirmDialog, SearchInput } from '@/components/ui'
+import { IconLoader, IconPlus, IconEdit, IconMenu, IconLock, IconChevronLeft, IconChevronRight } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { tipoDocumentoAdminService } from '@/services/tipoDocumentoAdminService'
 import type { ITipoDocumento } from '@/types/documento'
@@ -125,16 +125,24 @@ function SortableRow({ tipo, onEdit, onToggle }: SortableRowProps) {
       </td>
       {/* Activo */}
       <td className="px-3 py-3 w-24">
-        <span
-          className={cn(
-            'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-            tipo.activo
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700',
+        <div className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+              tipo.activo
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700',
+            )}
+          >
+            {tipo.activo ? 'Activo' : 'Inactivo'}
+          </span>
+          {tipo.es_protegido && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700" title="Tipo base del sistema">
+              <IconLock size={10} />
+              Base
+            </span>
           )}
-        >
-          {tipo.activo ? 'Activo' : 'Inactivo'}
-        </span>
+        </div>
       </td>
       {/* Acciones */}
       <td className="px-3 py-3 w-28">
@@ -148,12 +156,16 @@ function SortableRow({ tipo, onEdit, onToggle }: SortableRowProps) {
           </button>
           <button
             onClick={() => onToggle(tipo)}
+            disabled={tipo.es_protegido && tipo.activo}
             className={cn(
               'px-2 py-1 text-xs rounded-lg transition-colors',
-              tipo.activo
-                ? 'text-red-600 hover:bg-red-50'
-                : 'text-green-600 hover:bg-green-50',
+              tipo.es_protegido && tipo.activo
+                ? 'text-gray-400 cursor-not-allowed'
+                : tipo.activo
+                  ? 'text-red-600 hover:bg-red-50'
+                  : 'text-green-600 hover:bg-green-50',
             )}
+            title={tipo.es_protegido && tipo.activo ? 'Tipo base del sistema - no se puede desactivar' : undefined}
           >
             {tipo.activo ? 'Desactivar' : 'Activar'}
           </button>
@@ -177,6 +189,11 @@ function TiposDocumentoContent() {
   const [isReordering, setIsReordering] = useState(false)
   const [filterActivo, setFilterActivo] = useState<FilterActivo>('todos')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<{
+    total: number; page: number; limit: number; totalPages: number
+  } | null>(null)
+  const ITEMS_PER_PAGE = 20
   const [toggleDialog, setToggleDialog] = useState<{
     isOpen: boolean
     tipo: ITipoDocumento | null
@@ -207,17 +224,19 @@ function TiposDocumentoContent() {
       const activoParam =
         filterActivo === 'activos' ? 'true' : filterActivo === 'inactivos' ? 'false' : undefined
       const response = await tipoDocumentoAdminService.list({
-        limit: 100,
+        page,
+        limit: ITEMS_PER_PAGE,
         activo: activoParam,
         search: search || undefined,
       })
       setTipos(response.data)
+      setPagination(response.pagination)
     } catch {
       toast.error('Error al cargar tipos de documento')
     } finally {
       setIsLoading(false)
     }
-  }, [filterActivo, search])
+  }, [filterActivo, search, page])
 
   useEffect(() => {
     if (isAdmin) fetchTipos()
@@ -277,7 +296,7 @@ function TiposDocumentoContent() {
     <div className="space-y-6">
       <PageHeader
         title="Tipos de Documento"
-        subtitle={`${tipos.length} tipos configurados`}
+        subtitle={pagination ? `${pagination.total} tipos configurados` : 'Cargando...'}
       />
 
       {/* Toolbar */}
@@ -287,7 +306,7 @@ function TiposDocumentoContent() {
           {(['todos', 'activos', 'inactivos'] as const).map((filter) => (
             <button
               key={filter}
-              onClick={() => setFilterActivo(filter)}
+              onClick={() => { setFilterActivo(filter); setPage(1) }}
               className={cn(
                 'px-3 py-1.5 text-sm rounded-lg transition-colors',
                 filterActivo === filter
@@ -300,12 +319,13 @@ function TiposDocumentoContent() {
           ))}
 
           {/* Search */}
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+          <SearchInput
             placeholder="Buscar..."
-            className="ml-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent w-48"
+            onSearch={(value) => {
+              setSearch(value)
+              setPage(1)
+            }}
+            className="ml-2 w-48"
           />
         </div>
 
@@ -391,6 +411,38 @@ function TiposDocumentoContent() {
             </div>
           </div>
         </DndContext>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-gray-500">
+              Mostrando {(pagination.page - 1) * pagination.limit + 1} -{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
+              {pagination.total} tipos
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={pagination.page <= 1}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <IconChevronLeft size={20} />
+              </button>
+              <span className="px-3 text-sm text-gray-700">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                disabled={pagination.page >= pagination.totalPages}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <IconChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toggle confirm dialog */}

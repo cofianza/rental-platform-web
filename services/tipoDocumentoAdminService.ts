@@ -64,6 +64,15 @@ class TipoDocumentoAdminService {
     const response = (await apiClient.patch('/admin/tipos-documento/reordenar', { items })) as unknown as { success: boolean; data: ITipoDocumento[] }
     return response.data
   }
+
+  async checkCodigo(codigo: string, excludeId?: string): Promise<{ disponible: boolean }> {
+    const params = new URLSearchParams({ codigo })
+    if (excludeId) params.append('excludeId', excludeId)
+    const response = (await apiClient.get(
+      `/admin/tipos-documento/check-codigo?${params.toString()}`
+    )) as unknown as { success: boolean; data: { disponible: boolean } }
+    return response.data
+  }
 }
 
 export const tipoDocumentoAdminService = new TipoDocumentoAdminService()

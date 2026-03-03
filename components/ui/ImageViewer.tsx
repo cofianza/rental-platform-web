@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { IconPlus, IconMinus, IconMaximize, IconRotateCw } from '@/components/icons'
+import { useTouchGestures } from '@/hooks/useTouchGestures'
 
 interface ImageViewerProps {
   url: string
@@ -23,6 +24,10 @@ export function ImageViewer({ url, alt }: ImageViewerProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  const touchHandlers = useTouchGestures({
+    zoom, setZoom, position, setPosition, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM,
+  })
 
   // Reset state when URL changes
   useEffect(() => {
@@ -128,11 +133,14 @@ export function ImageViewer({ url, alt }: ImageViewerProps) {
     <div className="relative w-full h-full flex flex-col items-center justify-center">
       {/* Image container */}
       <div
-        className="w-full h-full flex items-center justify-center overflow-hidden"
+        className="w-full h-full flex items-center justify-center overflow-hidden touch-none"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={touchHandlers.onTouchStart}
+        onTouchMove={touchHandlers.onTouchMove}
+        onTouchEnd={touchHandlers.onTouchEnd}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -159,7 +167,7 @@ export function ImageViewer({ url, alt }: ImageViewerProps) {
         >
           <IconMinus size={18} />
         </button>
-        <span className="text-xs text-white/80 min-w-[3rem] text-center">
+        <span className="text-xs text-white/80 min-w-12 text-center">
           {Math.round(zoom * 100)}%
         </span>
         <button
@@ -190,7 +198,7 @@ export function ImageViewer({ url, alt }: ImageViewerProps) {
       {/* Hint */}
       {!isZoomed && (
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-white/50">
-          Doble clic o rueda del mouse para zoom
+          Doble clic, rueda del mouse o pellizco para zoom
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { IconLoader } from '@/components/icons'
 import type { ITipoDocumento, ICreateTipoDocumento } from '@/types/documento'
+import { tipoDocumentoAdminService } from '@/services/tipoDocumentoAdminService'
 
 interface TipoDocumentoFormProps {
   mode: 'create' | 'edit'
@@ -54,6 +55,8 @@ export function TipoDocumentoForm({
   const [formData, setFormData] = useState<ICreateTipoDocumento>(DEFAULT_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
   const [autoSlug, setAutoSlug] = useState(mode === 'create')
+  const [isCheckingCodigo, setIsCheckingCodigo] = useState(false)
+  const [codigoDisponible, setCodigoDisponible] = useState<boolean | null>(null)
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -69,6 +72,70 @@ export function TipoDocumentoForm({
     }
   }, [mode, initialData])
 
+  // Debounced code uniqueness check
+  useEffect(() => {
+    const codigo = formData.codigo.trim()
+    if (!codigo || codigo.length < 2 || !/^[a-z0-9_]+$/.test(codigo)) {
+      setCodigoDisponible(null)
+      return
+    }
+    if (mode === 'edit' && initialData && codigo === initialData.codigo) {
+      setCodigoDisponible(true)
+      return
+    }
+
+    setIsCheckingCodigo(true)
+    const timer = setTimeout(async () => {
+      try {
+        const excludeId = mode === 'edit' ? initialData?.id : undefined
+        const result = await tipoDocumentoAdminService.checkCodigo(codigo, excludeId)
+        setCodigoDisponible(result.disponible)
+      } catch {
+        setCodigoDisponible(null)
+      } finally {
+        setIsCheckingCodigo(false)
+      }
+    }, 400)
+
+    return () => {
+      clearTimeout(timer)
+      setIsCheckingCodigo(false)
+    }
+  }, [formData.codigo, mode, initialData])
+
+  // Unsaved changes protection
+  const isDirty = useMemo(() => {
+    if (mode === 'create') {
+      return (
+        formData.nombre !== '' ||
+        formData.codigo !== '' ||
+        (formData.descripcion || '') !== '' ||
+        formData.es_obligatorio !== false ||
+        formData.formatos_aceptados.length !== 0 ||
+        formData.tamano_maximo_mb !== 10
+      )
+    }
+    if (!initialData) return false
+    return (
+      formData.nombre !== initialData.nombre ||
+      formData.codigo !== initialData.codigo ||
+      (formData.descripcion || '') !== (initialData.descripcion || '') ||
+      formData.es_obligatorio !== initialData.es_obligatorio ||
+      JSON.stringify([...formData.formatos_aceptados].sort()) !==
+        JSON.stringify([...initialData.formatos_aceptados].sort()) ||
+      formData.tamano_maximo_mb !== initialData.tamano_maximo_mb
+    )
+  }, [formData, mode, initialData])
+
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
@@ -82,6 +149,8 @@ export function TipoDocumentoForm({
       newErrors.codigo = 'Solo letras minusculas, numeros y guion bajo'
     } else if (formData.codigo.length < 2) {
       newErrors.codigo = 'Minimo 2 caracteres'
+    } else if (codigoDisponible === false) {
+      newErrors.codigo = 'Este codigo ya esta en uso'
     }
 
     if (formData.formatos_aceptados.length === 0) {
@@ -191,6 +260,17 @@ export function TipoDocumentoForm({
         <p className="mt-1 text-xs text-gray-500">
           Solo letras minusculas, numeros y guion bajo (_)
         </p>
+        {isCheckingCodigo && (
+          <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+            <IconLoader size={12} className="animate-spin" /> Verificando disponibilidad...
+          </p>
+        )}
+        {!isCheckingCodigo && codigoDisponible === false && !errors.codigo && (
+          <p className="mt-1 text-xs text-red-600">Este codigo ya esta en uso</p>
+        )}
+        {!isCheckingCodigo && codigoDisponible === true && formData.codigo.length >= 2 && !errors.codigo && (
+          <p className="mt-1 text-xs text-green-600">Codigo disponible</p>
+        )}
         {errors.codigo && <p className="mt-1 text-xs text-red-600">{errors.codigo}</p>}
       </div>
 

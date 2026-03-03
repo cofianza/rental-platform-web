@@ -6,16 +6,44 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import { toast } from 'sonner'
 import { IconX, IconDownload, IconLoader } from '@/components/icons'
+import { ApiClientError } from '@/lib/api'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento } from '@/types/documento'
 import { ImageViewer } from './ImageViewer'
-import { PdfViewer } from './PdfViewer'
+
+const PdfViewer = dynamic(
+  () => import('./PdfViewer').then((m) => ({ default: m.PdfViewer })),
+  { ssr: false }
+)
 
 interface DocumentViewerProps {
   documento: IDocumento | null
   isOpen: boolean
   onClose: () => void
+}
+
+const PROACTIVE_REFRESH_MS = 13 * 60 * 1000
+
+function getDocumentoErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError) {
+    switch (error.statusCode) {
+      case 404:
+        if (error.code === 'STORAGE_FILE_NOT_FOUND') {
+          return 'El archivo no se encuentra en el almacenamiento. Puede haber sido eliminado.'
+        }
+        return 'Documento no encontrado.'
+      case 403:
+        return 'No tienes permiso para ver este documento.'
+      case 0:
+        return 'Error de conexion. Verifica tu conexion a internet.'
+      default:
+        return error.message || 'Error al obtener el documento.'
+    }
+  }
+  return 'Error al obtener la URL del documento.'
 }
 
 export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerProps) {
@@ -25,6 +53,19 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
   const [isDownloading, setIsDownloading] = useState(false)
 
   // Fetch view URL when opened
+  const fetchViewUrl = useCallback(async (doc: IDocumento) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await documentoService.getViewUrl(doc.id)
+      setViewUrl(data.url)
+    } catch (err) {
+      setError(getDocumentoErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!isOpen || !documento) {
       setViewUrl(null)
@@ -33,8 +74,6 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
     }
 
     let cancelled = false
-    setIsLoading(true)
-    setError(null)
 
     documentoService
       .getViewUrl(documento.id)
@@ -44,17 +83,36 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
           setIsLoading(false)
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (!cancelled) {
-          setError('Error al obtener la URL del documento')
+          setError(getDocumentoErrorMessage(err))
           setIsLoading(false)
         }
       })
+
+    setIsLoading(true)
+    setError(null)
 
     return () => {
       cancelled = true
     }
   }, [isOpen, documento])
+
+  // Proactive URL refresh before expiry
+  useEffect(() => {
+    if (!viewUrl || !documento || !isOpen) return
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await documentoService.getViewUrl(documento.id)
+        setViewUrl(data.url)
+      } catch {
+        // Silent - lazy cache invalidation is the fallback
+      }
+    }, PROACTIVE_REFRESH_MS)
+
+    return () => clearTimeout(timer)
+  }, [viewUrl, documento, isOpen])
 
   // Lock body scroll when open
   useEffect(() => {
@@ -81,13 +139,28 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
     setIsDownloading(true)
     try {
       const data = await documentoService.getDownloadUrl(documento.id)
-      window.open(data.url, '_blank')
-    } catch {
-      // Silent fail - URL might have expired
+      const response = await fetch(data.url)
+      if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = blobUrl
+      anchor.download = data.nombre_original || documento.nombre_original
+      anchor.style.display = 'none'
+      document.body.appendChild(anchor)
+      anchor.click()
+      document.body.removeChild(anchor)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      toast.error(getDocumentoErrorMessage(err))
     } finally {
       setIsDownloading(false)
     }
   }, [documento, isDownloading])
+
+  const handleRetry = useCallback(() => {
+    if (documento) fetchViewUrl(documento)
+  }, [documento, fetchViewUrl])
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -149,12 +222,20 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
         {error && (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <p className="text-sm text-red-400">{error}</p>
-            <button
-              onClick={onClose}
-              className="text-sm text-white/60 hover:text-white underline"
-            >
-              Cerrar
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRetry}
+                className="text-sm text-blue-400 hover:text-blue-300 underline"
+              >
+                Reintentar
+              </button>
+              <button
+                onClick={onClose}
+                className="text-sm text-white/60 hover:text-white underline"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         )}
 
