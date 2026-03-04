@@ -16,6 +16,10 @@ import type {
   IRegistrarResultadoInput,
   ICertificadoPresignedUrlResponse,
   ICertificadoViewUrlResponse,
+  IDocumentoSoporte,
+  IEstudioHistorial,
+  ISoportePresignedUrlInput,
+  IConfirmarSoporteInput,
 } from '@/types/estudio'
 
 // ============================================
@@ -155,6 +159,58 @@ export const estudioService = {
   async getCertificadoViewUrl(estudioId: string): Promise<ICertificadoViewUrlResponse> {
     const res = await apiClient.get<ICertificadoViewUrlResponse>(
       `/estudios/${estudioId}/certificado/url`,
+    )
+    return res.data
+  },
+
+  /**
+   * Obtiene URL presigned para subir documento soporte
+   */
+  async getSoportePresignedUrl(
+    estudioId: string,
+    input: ISoportePresignedUrlInput,
+  ): Promise<{ signedUrl: string; storage_key: string }> {
+    const res = await apiClient.post<{ signedUrl: string; storage_key: string }>(
+      `/estudios/${estudioId}/documentos-soporte/presigned-url`,
+      input,
+    )
+    return res.data
+  },
+
+  /**
+   * Confirma la subida de un documento soporte
+   */
+  async confirmarSoporte(
+    estudioId: string,
+    input: IConfirmarSoporteInput,
+  ): Promise<IDocumentoSoporte> {
+    const res = await apiClient.post<IDocumentoSoporte>(
+      `/estudios/${estudioId}/documentos-soporte/confirmar`,
+      input,
+    )
+    return res.data
+  },
+
+  /**
+   * Solicita re-evaluacion de un estudio
+   */
+  async solicitarReEvaluacion(
+    estudioId: string,
+    observaciones?: string,
+  ): Promise<IEstudio> {
+    const res = await apiClient.post<IEstudio>(
+      `/estudios/${estudioId}/re-evaluar`,
+      { observaciones },
+    )
+    return res.data
+  },
+
+  /**
+   * Obtiene historial de re-evaluaciones
+   */
+  async getHistorial(estudioId: string): Promise<IEstudioHistorial> {
+    const res = await apiClient.get<IEstudioHistorial>(
+      `/estudios/${estudioId}/historial`,
     )
     return res.data
   },

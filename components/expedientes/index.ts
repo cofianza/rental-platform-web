@@ -32,6 +32,8 @@ export * from './EstudiosSection'
 export * from './SolicitarEstudioModal'
 export * from './EstudioDetailModal'
 export * from './RegistrarResultadoModal'
+export * from './ReEvaluacionSection'
+export * from './EstudioHistorialSection'
 
 // HP-247: Wizard de creación
 export * from './wizard'

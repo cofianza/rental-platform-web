@@ -5,13 +5,15 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { IconFileText, IconLoader } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
-import type { IEstudio } from '@/types/estudio'
+import { ReEvaluacionSection } from './ReEvaluacionSection'
+import { EstudioHistorialSection } from './EstudioHistorialSection'
+import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -55,10 +57,43 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   )
 }
 
-export function EstudioDetailModal({ isOpen, onClose, estudio }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
+  const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
+  const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
+  const [loadingHistorial, setLoadingHistorial] = useState(false)
+
+  // Sync with prop changes
+  useEffect(() => {
+    setEstudio(initialEstudio)
+  }, [initialEstudio])
+
+  // Fetch historial when modal opens
+  const fetchHistorial = useCallback(async (estudioId: string) => {
+    setLoadingHistorial(true)
+    try {
+      const data = await estudioService.getHistorial(estudioId)
+      setHistorial(data)
+    } catch {
+      // silent fail
+    } finally {
+      setLoadingHistorial(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && estudio?.id) {
+      fetchHistorial(estudio.id)
+    } else {
+      setHistorial(null)
+    }
+  }, [isOpen, estudio?.id, fetchHistorial])
 
   if (!estudio) return null
+
+  const isReevaluable =
+    estudio.estado === 'completado' &&
+    (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
 
   const handleViewCertificado = async () => {
     if (!estudio.certificado_url) return
@@ -71,6 +106,24 @@ export function EstudioDetailModal({ isOpen, onClose, estudio }: EstudioDetailMo
       toast.error(msg)
     } finally {
       setLoadingCert(false)
+    }
+  }
+
+  const handleReEvaluacionCreated = (nuevoEstudio: IEstudio) => {
+    setEstudio(nuevoEstudio)
+    fetchHistorial(nuevoEstudio.id)
+  }
+
+  const handleDocumentoAdded = () => {
+    if (estudio?.id) fetchHistorial(estudio.id)
+  }
+
+  const handleEstudioSelect = async (estudioId: string) => {
+    try {
+      const detail = await estudioService.getEstudioById(estudioId)
+      setEstudio(detail)
+    } catch {
+      toast.error('Error al cargar estudio')
     }
   }
 
@@ -179,6 +232,24 @@ export function EstudioDetailModal({ isOpen, onClose, estudio }: EstudioDetailMo
             </div>
           </div>
         )}
+
+        {/* Re-evaluacion section */}
+        {isReevaluable && (
+          <ReEvaluacionSection
+            estudio={estudio}
+            historial={historial}
+            onReEvaluacionCreated={handleReEvaluacionCreated}
+            onDocumentoAdded={handleDocumentoAdded}
+          />
+        )}
+
+        {/* Historial de re-evaluaciones */}
+        <EstudioHistorialSection
+          estudioId={estudio.id}
+          historial={historial}
+          isLoading={loadingHistorial}
+          onEstudioSelect={handleEstudioSelect}
+        />
 
         {/* Boton cerrar */}
         <div className="flex justify-end pt-2">

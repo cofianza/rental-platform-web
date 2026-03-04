@@ -45,6 +45,7 @@ export interface IEstudio {
   datos_formulario?: Record<string, unknown> | null
   token_self_service?: string | null
   expiracion_token?: string | null
+  estudio_padre_id?: string | null
   created_at: string
   updated_at: string
   solicitado_por?: {
@@ -146,4 +147,54 @@ export interface IEstudiosMeta {
   page: number
   limit: number
   totalPages: number
+}
+
+// ============================================
+// Re-evaluacion
+// ============================================
+
+export type PropositoSoporte =
+  | 'certificacion_laboral'
+  | 'extractos_bancarios'
+  | 'declaracion_renta'
+  | 'carta_referencia'
+  | 'otros_soportes'
+
+export interface IDocumentoSoporte {
+  id: string
+  estudio_id: string
+  storage_key: string
+  nombre_original: string
+  tipo_mime: string
+  tamano_bytes: number
+  proposito: PropositoSoporte
+  created_at: string
+  archivo_url?: string | null
+}
+
+export interface IEstudioHistorialItem extends IEstudio {
+  numero_en_cadena: number
+  es_reevaluacion: boolean
+  documentos_soporte: IDocumentoSoporte[]
+}
+
+export interface IEstudioHistorial {
+  total_en_cadena: number
+  puede_reevaluar: boolean
+  historial: IEstudioHistorialItem[]
+}
+
+export interface ISoportePresignedUrlInput {
+  nombre_original: string
+  tipo_mime: string
+  tamano_bytes: number
+  proposito: PropositoSoporte
+}
+
+export interface IConfirmarSoporteInput {
+  storage_key: string
+  nombre_original: string
+  tipo_mime: string
+  tamano_bytes: number
+  proposito: PropositoSoporte
 }
