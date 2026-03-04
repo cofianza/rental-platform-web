@@ -4,6 +4,8 @@
 
 export type EstadoContrato =
   | 'borrador'
+  | 'en_revision'
+  | 'aprobado'
   | 'pendiente_firma'
   | 'firmado'
   | 'vigente'
@@ -28,6 +30,10 @@ export interface IContrato {
   storage_key: string | null
   nombre_archivo: string | null
   plantilla_version: number | null
+  fecha_firma: string | null
+  fecha_terminacion: string | null
+  motivo_cancelacion: string | null
+  contrato_padre_id: string | null
   created_at: string
   updated_at: string
 }
@@ -110,4 +116,48 @@ export interface IVersionesResponse {
 export interface IVersionComparisonResponse {
   success: boolean
   data: IVersionComparison
+}
+
+// ============================================================
+// Transiciones de estado
+// ============================================================
+
+export interface IContratoTransicionDisponible {
+  estado_destino: EstadoContrato
+  etiqueta: string
+}
+
+export interface IContratoTransicionesResponse {
+  success: boolean
+  data: {
+    contrato_id: string
+    estado_actual: EstadoContrato
+    transiciones_disponibles: Array<{ estado: EstadoContrato; label: string }>
+  }
+}
+
+export interface IContratoHistorialEntry {
+  id: string
+  estado_anterior: EstadoContrato | null
+  estado_nuevo: EstadoContrato | null
+  comentario: string | null
+  motivo: string | null
+  descripcion: string
+  created_at: string
+  usuario: { id: string; nombre: string; apellido: string } | null
+}
+
+export interface IContratoHistorialResponse {
+  success: boolean
+  data: {
+    contrato_id: string
+    estado_actual: EstadoContrato
+    historial: IContratoHistorialEntry[]
+  }
+}
+
+export interface IContratoTransitionInput {
+  nuevo_estado: EstadoContrato
+  comentario: string
+  motivo?: string
 }

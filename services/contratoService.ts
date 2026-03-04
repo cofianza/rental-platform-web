@@ -15,6 +15,10 @@ import type {
   IContratoDownloadApiResponse,
   IVersionesResponse,
   IVersionComparisonResponse,
+  IContratoTransicionesResponse,
+  IContratoHistorialResponse,
+  IContratoTransitionInput,
+  IContratoHistorialEntry,
 } from '@/types/contrato'
 
 class ContratoService {
@@ -96,6 +100,32 @@ class ContratoService {
     const response = (await apiClient.get(
       `/contratos/${contratoId}/versiones/comparar?v1=${v1}&v2=${v2}`
     )) as unknown as IVersionComparisonResponse
+    return response.data
+  }
+
+  // ============================================================
+  // Transiciones de estado
+  // ============================================================
+
+  async transicionar(id: string, input: IContratoTransitionInput): Promise<IContrato> {
+    const response = (await apiClient.post(
+      `/contratos/${id}/transitions`,
+      input
+    )) as unknown as IContratoResponse
+    return response.data
+  }
+
+  async getTransicionesDisponibles(id: string): Promise<IContratoTransicionesResponse['data']> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/available-transitions`
+    )) as unknown as IContratoTransicionesResponse
+    return response.data
+  }
+
+  async getHistorialTransiciones(id: string): Promise<{ estado_actual: string; historial: IContratoHistorialEntry[] }> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/transitions`
+    )) as unknown as IContratoHistorialResponse
     return response.data
   }
 }

@@ -201,6 +201,79 @@ export const ESTADOS_INMUEBLE: Record<EstadoInmueble, EstadoConfig> = {
 }
 
 // ============================================
+// ESTADOS DE CONTRATO
+// ============================================
+
+export type EstadoContratoKey =
+  | 'borrador'
+  | 'en_revision'
+  | 'aprobado'
+  | 'pendiente_firma'
+  | 'firmado'
+  | 'vigente'
+  | 'finalizado'
+  | 'cancelado'
+
+export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
+  borrador: {
+    label: 'Borrador',
+    color: 'gray',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+  },
+  en_revision: {
+    label: 'En Revision',
+    color: 'amber',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-300',
+  },
+  aprobado: {
+    label: 'Aprobado',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+  },
+  pendiente_firma: {
+    label: 'Enviado a Firma',
+    color: 'purple',
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
+    borderColor: 'border-purple-300',
+  },
+  firmado: {
+    label: 'Firmado',
+    color: 'teal',
+    bgColor: 'bg-teal-100',
+    textColor: 'text-teal-700',
+    borderColor: 'border-teal-300',
+  },
+  vigente: {
+    label: 'Vigente',
+    color: 'blue',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+  },
+  finalizado: {
+    label: 'Finalizado',
+    color: 'slate',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-700',
+    borderColor: 'border-slate-300',
+  },
+  cancelado: {
+    label: 'Cancelado',
+    color: 'red',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+  },
+}
+
+// ============================================
 // ESTADOS DE ESTUDIO DE RIESGO
 // ============================================
 

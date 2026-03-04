@@ -1,15 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { IconX } from '@/components/icons'
+import { IconX, IconHistory } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { VersionHistorialSection } from './VersionHistorialSection'
 import { CompararVersionesModal } from './CompararVersionesModal'
+import { ContratoHistorialModal } from './ContratoHistorialModal'
 import type { IContrato } from '@/types/contrato'
 
 const ESTADO_LABELS: Record<string, string> = {
   borrador: 'Borrador',
-  pendiente_firma: 'Pendiente Firma',
+  en_revision: 'En Revision',
+  aprobado: 'Aprobado',
+  pendiente_firma: 'Enviado a Firma',
   firmado: 'Firmado',
   vigente: 'Vigente',
   finalizado: 'Finalizado',
@@ -23,6 +26,7 @@ interface ContratoDetalleModalProps {
 
 export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModalProps) {
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
+  const [historialOpen, setHistorialOpen] = useState(false)
 
   if (!contrato) return null
 
@@ -101,7 +105,40 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                   : '—'}
               </dd>
             </div>
+            {contrato.fecha_firma && (
+              <div>
+                <dt className="text-gray-500">Fecha Firma</dt>
+                <dd className="font-medium text-gray-900 mt-0.5">
+                  {formatDateTime(contrato.fecha_firma)}
+                </dd>
+              </div>
+            )}
+            {contrato.fecha_terminacion && (
+              <div>
+                <dt className="text-gray-500">Fecha Terminacion</dt>
+                <dd className="font-medium text-gray-900 mt-0.5">
+                  {formatDateTime(contrato.fecha_terminacion)}
+                </dd>
+              </div>
+            )}
           </div>
+
+          {/* Motivo cancelacion */}
+          {contrato.motivo_cancelacion && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs font-medium text-red-700 mb-1">Motivo de cancelacion</p>
+              <p className="text-sm text-red-600">{contrato.motivo_cancelacion}</p>
+            </div>
+          )}
+
+          {/* Historial de estados */}
+          <button
+            onClick={() => setHistorialOpen(true)}
+            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            <IconHistory size={16} />
+            Ver historial de estados
+          </button>
 
           {/* Variables snapshot */}
           {variableEntries.length > 0 && (
@@ -153,6 +190,13 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           onClose={() => setCompareVersions(null)}
         />
       )}
+
+      {/* Historial de estados modal */}
+      <ContratoHistorialModal
+        isOpen={historialOpen}
+        onClose={() => setHistorialOpen(false)}
+        contratoId={contrato.id}
+      />
     </div>
   )
 }

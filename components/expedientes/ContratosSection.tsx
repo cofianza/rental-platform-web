@@ -2,22 +2,27 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader } from '@/components/icons'
+import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight } from '@/components/icons'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ContratoDetalleModal } from './ContratoDetalleModal'
+import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
-import type { IContrato } from '@/types/contrato'
+import type { IContrato, EstadoContrato } from '@/types/contrato'
 
 const ESTADO_STYLES: Record<string, { label: string; bg: string; text: string }> = {
   borrador: { label: 'Borrador', bg: 'bg-gray-100', text: 'text-gray-700' },
-  pendiente_firma: { label: 'Pendiente Firma', bg: 'bg-amber-100', text: 'text-amber-700' },
-  firmado: { label: 'Firmado', bg: 'bg-green-100', text: 'text-green-700' },
+  en_revision: { label: 'En Revision', bg: 'bg-amber-100', text: 'text-amber-700' },
+  aprobado: { label: 'Aprobado', bg: 'bg-green-100', text: 'text-green-700' },
+  pendiente_firma: { label: 'Enviado a Firma', bg: 'bg-purple-100', text: 'text-purple-700' },
+  firmado: { label: 'Firmado', bg: 'bg-teal-100', text: 'text-teal-700' },
   vigente: { label: 'Vigente', bg: 'bg-blue-100', text: 'text-blue-700' },
   finalizado: { label: 'Finalizado', bg: 'bg-slate-100', text: 'text-slate-700' },
   cancelado: { label: 'Cancelado', bg: 'bg-red-100', text: 'text-red-700' },
 }
+
+const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
 interface ContratosSectionProps {
   expedienteId: string
@@ -33,6 +38,9 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
   // Modals
   const [generarOpen, setGenerarOpen] = useState(false)
   const [detalleContrato, setDetalleContrato] = useState<IContrato | null>(null)
+  const [transicionContrato, setTransicionContrato] = useState<IContrato | null>(null)
+  const [transicionesDisponibles, setTransicionesDisponibles] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [transicionLoading, setTransicionLoading] = useState(false)
 
   // Action loading
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -93,6 +101,36 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
   function handleGenerated() {
     setGenerarOpen(false)
     fetchContratos()
+  }
+
+  async function handleOpenTransicion(contrato: IContrato) {
+    try {
+      const data = await contratoService.getTransicionesDisponibles(contrato.id)
+      setTransicionesDisponibles(data.transiciones_disponibles)
+      setTransicionContrato(contrato)
+    } catch {
+      toast.error('Error al obtener las transiciones disponibles')
+    }
+  }
+
+  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string) {
+    if (!transicionContrato) return
+    setTransicionLoading(true)
+    try {
+      await contratoService.transicionar(transicionContrato.id, {
+        nuevo_estado: estadoDestino,
+        comentario,
+        motivo,
+      })
+      toast.success('Estado del contrato actualizado')
+      setTransicionContrato(null)
+      fetchContratos()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al cambiar estado'
+      toast.error(message)
+    } finally {
+      setTransicionLoading(false)
+    }
   }
 
   // Loading state
@@ -231,6 +269,15 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
                               )}
                             </button>
                           )}
+                          {canRegenerate && !TERMINAL_STATES.includes(c.estado) && (
+                            <button
+                              onClick={() => handleOpenTransicion(c)}
+                              className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                              title="Cambiar estado"
+                            >
+                              <IconArrowRight size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -255,6 +302,18 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
         contrato={detalleContrato}
         onClose={() => setDetalleContrato(null)}
       />
+
+      {/* Transicion Modal */}
+      {transicionContrato && (
+        <ContratoTransicionModal
+          isOpen={true}
+          onClose={() => setTransicionContrato(null)}
+          estadoActual={transicionContrato.estado}
+          transicionesDisponibles={transicionesDisponibles}
+          onConfirmar={handleConfirmarTransicion}
+          isLoading={transicionLoading}
+        />
+      )}
     </div>
   )
 }

@@ -44,6 +44,8 @@ export * from './GenerarContratoModal'
 export * from './ContratoDetalleModal'
 export * from './VersionHistorialSection'
 export * from './CompararVersionesModal'
+export * from './ContratoTransicionModal'
+export * from './ContratoHistorialModal'
 
 // HP-247: Wizard de creación
 export * from './wizard'
