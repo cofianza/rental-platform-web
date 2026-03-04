@@ -35,5 +35,8 @@ export * from './RegistrarResultadoModal'
 export * from './ReEvaluacionSection'
 export * from './EstudioHistorialSection'
 
+// HP-334: Autorizacion habeas data
+export * from './AutorizacionSection'
+
 // HP-247: Wizard de creación
 export * from './wizard'

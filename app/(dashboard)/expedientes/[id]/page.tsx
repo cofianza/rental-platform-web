@@ -28,6 +28,7 @@ import {
   AsignacionResponsableModal,
   DocumentosSection,
   EstudiosSection,
+  AutorizacionSection,
 } from '@/components/expedientes'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
@@ -434,7 +435,8 @@ export default function ExpedienteDetallePage() {
 
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
-          <div className="p-6">
+          <div className="p-6 space-y-6">
+            <AutorizacionSection expedienteId={id} />
             <EstudiosSection expedienteId={id} />
           </div>
         )}
