@@ -68,6 +68,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'bitacora',
   },
   {
+    label: 'Plantillas',
+    href: '/plantillas-contrato',
+    icon: 'ScrollText',
+    description: 'Plantillas de contrato',
+    resource: 'plantillas',
+  },
+  {
     label: 'Tipos Documento',
     href: '/tipos-documento',
     icon: 'FileText',
