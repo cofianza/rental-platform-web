@@ -38,5 +38,10 @@ export * from './EstudioHistorialSection'
 // HP-334: Autorizacion habeas data
 export * from './AutorizacionSection'
 
+// Contratos
+export * from './ContratosSection'
+export * from './GenerarContratoModal'
+export * from './ContratoDetalleModal'
+
 // HP-247: Wizard de creación
 export * from './wizard'
