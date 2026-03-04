@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
-import { IconFileText, IconLoader } from '@/components/icons'
+import { IconFileText, IconLoader, IconCheck } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { EstudioHistorialSection } from './EstudioHistorialSection'
@@ -59,6 +59,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
+  const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
   const [loadingHistorial, setLoadingHistorial] = useState(false)
@@ -95,14 +96,31 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
     estudio.estado === 'completado' &&
     (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
 
-  const handleViewCertificado = async () => {
-    if (!estudio.certificado_url) return
+  const isCertificable =
+    estudio.estado === 'completado' &&
+    (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado')
+
+  const handleGenerarCertificado = async () => {
+    setGeneratingCert(true)
+    try {
+      const result = await estudioService.generarCertificado(estudio.id)
+      toast.success(`Certificado ${result.codigo} generado correctamente`)
+      setEstudio((prev) => prev ? { ...prev, certificado_url: result.pdf_storage_key } : prev)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al generar certificado'
+      toast.error(msg)
+    } finally {
+      setGeneratingCert(false)
+    }
+  }
+
+  const handleDescargarCertificado = async () => {
     setLoadingCert(true)
     try {
-      const res = await estudioService.getCertificadoViewUrl(estudio.id)
-      window.open(res.signed_url, '_blank')
+      const res = await estudioService.descargarCertificado(estudio.id)
+      window.open(res.url, '_blank')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al obtener certificado'
+      const msg = err instanceof Error ? err.message : 'Error al descargar certificado'
       toast.error(msg)
     } finally {
       setLoadingCert(false)
@@ -200,20 +218,55 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
         )}
 
         {/* Certificado */}
-        {estudio.certificado_url && (
+        {isCertificable && (
           <div>
-            <button
-              onClick={handleViewCertificado}
-              disabled={loadingCert}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
-            >
-              {loadingCert ? (
-                <IconLoader size={16} className="animate-spin" />
-              ) : (
-                <IconFileText size={16} />
-              )}
-              Ver certificado
-            </button>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Certificado</h4>
+            {estudio.certificado_url ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDescargarCertificado}
+                  disabled={loadingCert}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
+                >
+                  {loadingCert ? (
+                    <IconLoader size={16} className="animate-spin" />
+                  ) : (
+                    <IconFileText size={16} />
+                  )}
+                  Descargar Certificado
+                </button>
+                <button
+                  onClick={handleGenerarCertificado}
+                  disabled={generatingCert}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                >
+                  {generatingCert ? (
+                    <IconLoader size={14} className="animate-spin" />
+                  ) : (
+                    <IconCheck size={14} />
+                  )}
+                  Regenerar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleGenerarCertificado}
+                disabled={generatingCert}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {generatingCert ? (
+                  <>
+                    <IconLoader size={16} className="animate-spin" />
+                    Generando certificado...
+                  </>
+                ) : (
+                  <>
+                    <IconFileText size={16} />
+                    Generar Certificado
+                  </>
+                )}
+              </button>
+            )}
           </div>
         )}
 

@@ -198,3 +198,38 @@ export interface IConfirmarSoporteInput {
   tamano_bytes: number
   proposito: PropositoSoporte
 }
+
+// ============================================
+// Certificado PDF
+// ============================================
+
+export interface ICertificadoGenerateResponse {
+  id: string
+  estudio_id: string
+  codigo: string
+  pdf_storage_key: string
+  fecha_emision: string
+  fecha_vencimiento: string
+  version: number
+}
+
+export interface ICertificadoDownloadResponse {
+  url: string
+  expires_in: number
+  codigo: string
+  version: number
+}
+
+export type VerificacionStatus = 'valido_vigente' | 'valido_vencido' | 'invalido'
+
+export interface IVerificacionCertificado {
+  status: VerificacionStatus
+  codigo: string
+  nombre_masked: string
+  resultado: ResultadoEstudio | string
+  direccion_masked: string
+  fecha_emision: string
+  fecha_vencimiento: string
+  empresa: string
+  numero_documento_masked: string
+}

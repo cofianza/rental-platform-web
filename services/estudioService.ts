@@ -20,6 +20,9 @@ import type {
   IEstudioHistorial,
   ISoportePresignedUrlInput,
   IConfirmarSoporteInput,
+  ICertificadoGenerateResponse,
+  ICertificadoDownloadResponse,
+  IVerificacionCertificado,
 } from '@/types/estudio'
 
 // ============================================
@@ -214,6 +217,26 @@ export const estudioService = {
     )
     return res.data
   },
+
+  /**
+   * Genera certificado PDF para un estudio
+   */
+  async generarCertificado(estudioId: string): Promise<ICertificadoGenerateResponse> {
+    const res = await apiClient.post<ICertificadoGenerateResponse>(
+      `/estudios/${estudioId}/certificado/generar`,
+    )
+    return res.data
+  },
+
+  /**
+   * Descarga certificado PDF (signed URL)
+   */
+  async descargarCertificado(estudioId: string): Promise<ICertificadoDownloadResponse> {
+    const res = await apiClient.get<ICertificadoDownloadResponse>(
+      `/estudios/${estudioId}/certificado/descargar`,
+    )
+    return res.data
+  },
 }
 
 // ============================================
@@ -240,6 +263,16 @@ export const estudioPublicService = {
     const res = await publicClient.post<{ message: string }>(
       `/public/estudios/${token}/formulario`,
       data,
+    )
+    return res.data
+  },
+
+  /**
+   * Verifica un certificado por codigo (publico)
+   */
+  async verificarCertificado(codigo: string): Promise<IVerificacionCertificado> {
+    const res = await publicClient.get<IVerificacionCertificado>(
+      `/public/verificar/${codigo}`,
     )
     return res.data
   },
