@@ -40,6 +40,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'expedientes',
   },
   {
+    label: 'Contratos',
+    href: '/contratos',
+    icon: 'FileText',
+    description: 'Gestion de contratos',
+    resource: 'contratos',
+  },
+  {
     label: 'Estudios',
     href: '/estudios',
     icon: 'Shield',

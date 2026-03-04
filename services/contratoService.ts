@@ -6,6 +6,8 @@ import { apiClient } from '@/lib/api'
 import type {
   IContrato,
   IContratoMeta,
+  IContratoListItem,
+  IContratoListFilters,
   IGenerarContratoInput,
   IContratoDownloadResponse,
   IContratoVersion,
@@ -22,6 +24,35 @@ import type {
 } from '@/types/contrato'
 
 class ContratoService {
+  async getAllContratos(
+    filters: Partial<IContratoListFilters> = {}
+  ): Promise<{ data: IContratoListItem[]; meta: IContratoMeta }> {
+    const params = new URLSearchParams()
+    if (filters.page) params.append('page', filters.page.toString())
+    if (filters.limit) params.append('limit', filters.limit.toString())
+    if (filters.sortBy) params.append('sortBy', filters.sortBy)
+    if (filters.sortDir) params.append('sortDir', filters.sortDir)
+    if (filters.estado) params.append('estado', filters.estado)
+    if (filters.search) params.append('search', filters.search)
+    if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
+    if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)
+    const qs = params.toString()
+
+    const response = (await apiClient.get(
+      `/contratos${qs ? `?${qs}` : ''}`
+    )) as unknown as { success: boolean; data: IContratoListItem[]; pagination: IContratoMeta }
+
+    return {
+      data: response.data || [],
+      meta: {
+        total: response.pagination?.total || 0,
+        page: Number(response.pagination?.page) || 1,
+        limit: Number(response.pagination?.limit) || 10,
+        totalPages: response.pagination?.totalPages || 0,
+      },
+    }
+  }
+
   async getContratosForExpediente(
     expedienteId: string,
     query?: { page?: number; limit?: number }

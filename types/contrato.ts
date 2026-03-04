@@ -161,3 +161,25 @@ export interface IContratoTransitionInput {
   comentario: string
   motivo?: string
 }
+
+// ============================================================
+// Listado global
+// ============================================================
+
+export interface IContratoListItem extends IContrato {
+  expedientes?: {
+    numero: string
+    inmuebles?: { direccion: string; ciudad: string } | null
+  } | null
+}
+
+export interface IContratoListFilters {
+  page?: number
+  limit?: number
+  sortBy?: string
+  sortDir?: 'asc' | 'desc'
+  estado?: string
+  search?: string
+  fecha_desde?: string
+  fecha_hasta?: string
+}
