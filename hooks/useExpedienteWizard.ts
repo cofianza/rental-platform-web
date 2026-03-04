@@ -91,10 +91,6 @@ function validateStep1(data: WizardStep1Data): Record<string, string> {
     errors.inmueble = 'Debe seleccionar un inmueble'
   }
 
-  if (data.hasActiveExpediente) {
-    errors.inmueble = 'Este inmueble ya tiene un expediente activo'
-  }
-
   return errors
 }
 
@@ -282,7 +278,7 @@ export function useExpedienteWizard() {
 
   const canProceed = useCallback((): boolean => {
     if (currentStep === 1) {
-      return !!data.step1.inmueble && !data.step1.hasActiveExpediente
+      return !!data.step1.inmueble
     }
     if (currentStep === 2) {
       if (data.step2.solicitante) return true

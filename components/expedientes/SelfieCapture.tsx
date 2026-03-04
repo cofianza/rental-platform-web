@@ -330,21 +330,22 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
             </div>
           )}
 
-          {(state === 'ready' || state === 'captured') && (
+          {(state === 'initializing' || state === 'ready' || state === 'captured') && (
             <>
-              {/* Video feed */}
+              {/* Video feed — rendered during initializing (hidden) so ref is available for getUserMedia */}
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className={`h-full max-h-full object-contain transform scale-x-[-1] ${
-                  state === 'captured' ? 'hidden' : ''
+                  state !== 'ready' ? 'hidden' : ''
                 }`}
               />
 
               {/* Captured image preview */}
               {state === 'captured' && capturedImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={capturedImageUrl}
                   alt="Selfie capturada"
