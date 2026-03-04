@@ -113,3 +113,37 @@ export interface ICertificadoPresignedUrlResponse {
 export interface ICertificadoViewUrlResponse {
   signed_url: string
 }
+
+// ============================================
+// Global listing
+// ============================================
+
+export interface IEstudioListItem extends IEstudio {
+  expedientes?: {
+    numero: string
+    solicitantes?: {
+      nombre: string
+      apellido: string
+    } | null
+  } | null
+}
+
+export interface IEstudioFilters {
+  search: string
+  estado: EstadoEstudio[]
+  resultado: string
+  proveedor: string
+  fecha_desde: string
+  fecha_hasta: string
+  page: number
+  limit: number
+  sortBy: 'created_at' | 'estado' | 'resultado' | 'score'
+  sortOrder: 'asc' | 'desc'
+}
+
+export interface IEstudiosMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}

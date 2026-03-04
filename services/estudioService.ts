@@ -6,6 +6,9 @@
 import { apiClient, ApiClient } from '@/lib/api'
 import type {
   IEstudio,
+  IEstudioListItem,
+  IEstudioFilters,
+  IEstudiosMeta,
   ICreateEstudioInput,
   IEstudioPublicForm,
   ISubmitFormularioInput,
@@ -20,6 +23,28 @@ import type {
 // ============================================
 
 export const estudioService = {
+  /**
+   * Lista todos los estudios (global)
+   */
+  async listAll(
+    filters: IEstudioFilters,
+  ): Promise<{ data: IEstudioListItem[]; pagination: IEstudiosMeta }> {
+    const params = new URLSearchParams()
+    if (filters.search) params.set('search', filters.search)
+    if (filters.estado.length > 0) params.set('estado', filters.estado.join(','))
+    if (filters.resultado) params.set('resultado', filters.resultado)
+    if (filters.proveedor) params.set('proveedor', filters.proveedor)
+    if (filters.fecha_desde) params.set('fecha_desde', filters.fecha_desde)
+    if (filters.fecha_hasta) params.set('fecha_hasta', filters.fecha_hasta)
+    params.set('page', String(filters.page))
+    params.set('limit', String(filters.limit))
+    params.set('sortBy', filters.sortBy)
+    params.set('sortOrder', filters.sortOrder)
+
+    const res = await apiClient.get<IEstudioListItem[]>(`/estudios?${params.toString()}`)
+    return res as unknown as { data: IEstudioListItem[]; pagination: IEstudiosMeta }
+  },
+
   /**
    * Lista estudios de un expediente
    */

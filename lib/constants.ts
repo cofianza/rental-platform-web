@@ -40,6 +40,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'expedientes',
   },
   {
+    label: 'Estudios',
+    href: '/estudios',
+    icon: 'Shield',
+    description: 'Estudios de riesgo crediticio',
+    resource: 'estudios',
+  },
+  {
     label: 'Reportes',
     href: '/reportes',
     icon: 'BarChart3',
@@ -183,6 +190,136 @@ export const ESTADOS_INMUEBLE: Record<EstadoInmueble, EstadoConfig> = {
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-700',
     borderColor: 'border-gray-300',
+  },
+}
+
+// ============================================
+// ESTADOS DE ESTUDIO DE RIESGO
+// ============================================
+
+export type EstadoEstudioType =
+  | 'solicitado'
+  | 'pago_pendiente'
+  | 'pagado'
+  | 'autorizado'
+  | 'formulario_enviado'
+  | 'formulario_completado'
+  | 'documentos_cargados'
+  | 'en_proceso'
+  | 'completado'
+  | 'fallido'
+  | 'cancelado'
+
+export type ResultadoEstudioType = 'pendiente' | 'aprobado' | 'rechazado' | 'condicionado'
+
+export const ESTADOS_ESTUDIO: Record<EstadoEstudioType, EstadoConfig> = {
+  solicitado: {
+    label: 'Solicitado',
+    color: 'blue',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+  },
+  pago_pendiente: {
+    label: 'Pago Pendiente',
+    color: 'orange',
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-700',
+    borderColor: 'border-orange-300',
+  },
+  pagado: {
+    label: 'Pagado',
+    color: 'teal',
+    bgColor: 'bg-teal-100',
+    textColor: 'text-teal-700',
+    borderColor: 'border-teal-300',
+  },
+  autorizado: {
+    label: 'Autorizado',
+    color: 'cyan',
+    bgColor: 'bg-cyan-100',
+    textColor: 'text-cyan-700',
+    borderColor: 'border-cyan-300',
+  },
+  formulario_enviado: {
+    label: 'Enlace Enviado',
+    color: 'cyan',
+    bgColor: 'bg-cyan-100',
+    textColor: 'text-cyan-700',
+    borderColor: 'border-cyan-300',
+  },
+  formulario_completado: {
+    label: 'Form. Completado',
+    color: 'indigo',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-700',
+    borderColor: 'border-indigo-300',
+  },
+  documentos_cargados: {
+    label: 'Docs Cargados',
+    color: 'violet',
+    bgColor: 'bg-violet-100',
+    textColor: 'text-violet-700',
+    borderColor: 'border-violet-300',
+  },
+  en_proceso: {
+    label: 'En Proceso',
+    color: 'amber',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-300',
+  },
+  completado: {
+    label: 'Completado',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+  },
+  fallido: {
+    label: 'Fallido',
+    color: 'red',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+  },
+  cancelado: {
+    label: 'Cancelado',
+    color: 'slate',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-700',
+    borderColor: 'border-slate-300',
+  },
+}
+
+export const ESTADOS_RESULTADO_ESTUDIO: Record<ResultadoEstudioType, EstadoConfig> = {
+  pendiente: {
+    label: 'Pendiente',
+    color: 'gray',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+  },
+  aprobado: {
+    label: 'Aprobado',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+  },
+  rechazado: {
+    label: 'Rechazado',
+    color: 'red',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+  },
+  condicionado: {
+    label: 'Condicionado',
+    color: 'yellow',
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-700',
+    borderColor: 'border-yellow-300',
   },
 }
 
@@ -342,6 +479,7 @@ export const PROTECTED_ROUTES = [
   '/dashboard',
   '/inmuebles',
   '/expedientes',
+  '/estudios',
   '/reportes',
   '/usuarios',
   '/configuracion',
