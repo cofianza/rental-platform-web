@@ -27,6 +27,7 @@ import {
   TimelineSection,
   AsignacionResponsableModal,
   DocumentosSection,
+  EstudiosSection,
 } from '@/components/expedientes'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
@@ -49,6 +50,7 @@ export default function ExpedienteDetallePage() {
   const tabs: Tab[] = [
     { id: 'resumen', label: 'Resumen' },
     { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
+    { id: 'estudios', label: 'Estudios' },
     { id: 'comentarios', label: 'Comentarios' },
     { id: 'timeline', label: 'Timeline' },
   ]
@@ -427,6 +429,13 @@ export default function ExpedienteDetallePage() {
               userRole={user?.rol}
               onPendientesChange={setPendientesCount}
             />
+          </div>
+        )}
+
+        {/* Tab: Estudios */}
+        {activeTab === 'estudios' && (
+          <div className="p-6">
+            <EstudiosSection expedienteId={id} />
           </div>
         )}
 

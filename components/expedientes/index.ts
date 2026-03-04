@@ -27,5 +27,11 @@ export * from './AsignacionResponsableModal'
 // HP-295: Documentos
 export * from './DocumentosSection'
 
+// Estudios de riesgo crediticio
+export * from './EstudiosSection'
+export * from './SolicitarEstudioModal'
+export * from './EstudioDetailModal'
+export * from './RegistrarResultadoModal'
+
 // HP-247: Wizard de creación
 export * from './wizard'
