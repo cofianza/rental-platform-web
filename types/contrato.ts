@@ -68,3 +68,46 @@ export interface IContratoDownloadApiResponse {
   success: boolean
   data: IContratoDownloadResponse
 }
+
+// ============================================================
+// Versiones
+// ============================================================
+
+export interface IContratoVersion {
+  id: string
+  contrato_id: string
+  version: number
+  datos_variables: Record<string, string> | null
+  storage_key: string
+  nombre_archivo: string | null
+  plantilla_version: number | null
+  generado_por: string | null
+  fecha_generacion: string | null
+  resumen_cambios: string | null
+  created_at: string
+}
+
+export interface IVersionDiferencia {
+  variable: string
+  valor_v1: string | null
+  valor_v2: string | null
+  cambio: 'agregada' | 'eliminada' | 'modificada' | 'sin_cambio'
+}
+
+export interface IVersionComparison {
+  contrato_id: string
+  v1: { version: number; fecha_generacion: string | null; plantilla_version: number | null }
+  v2: { version: number; fecha_generacion: string | null; plantilla_version: number | null }
+  diferencias: IVersionDiferencia[]
+  total_cambios: number
+}
+
+export interface IVersionesResponse {
+  success: boolean
+  data: IContratoVersion[]
+}
+
+export interface IVersionComparisonResponse {
+  success: boolean
+  data: IVersionComparison
+}

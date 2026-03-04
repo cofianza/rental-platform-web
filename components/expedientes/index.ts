@@ -42,6 +42,8 @@ export * from './AutorizacionSection'
 export * from './ContratosSection'
 export * from './GenerarContratoModal'
 export * from './ContratoDetalleModal'
+export * from './VersionHistorialSection'
+export * from './CompararVersionesModal'
 
 // HP-247: Wizard de creación
 export * from './wizard'

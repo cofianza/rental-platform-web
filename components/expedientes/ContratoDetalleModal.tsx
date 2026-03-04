@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { IconX } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
+import { VersionHistorialSection } from './VersionHistorialSection'
+import { CompararVersionesModal } from './CompararVersionesModal'
 import type { IContrato } from '@/types/contrato'
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -19,6 +22,8 @@ interface ContratoDetalleModalProps {
 }
 
 export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModalProps) {
+  const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
+
   if (!contrato) return null
 
   const variables = contrato.datos_variables || {}
@@ -118,6 +123,13 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
               </div>
             </div>
           )}
+
+          {/* Version history */}
+          <VersionHistorialSection
+            contratoId={contrato.id}
+            currentVersion={contrato.version}
+            onCompare={(v1, v2) => setCompareVersions({ v1, v2 })}
+          />
         </div>
 
         {/* Footer */}
@@ -130,6 +142,17 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           </button>
         </div>
       </div>
+
+      {/* Compare versions modal */}
+      {compareVersions && (
+        <CompararVersionesModal
+          contratoId={contrato.id}
+          v1={compareVersions.v1}
+          v2={compareVersions.v2}
+          isOpen={true}
+          onClose={() => setCompareVersions(null)}
+        />
+      )}
     </div>
   )
 }

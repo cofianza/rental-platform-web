@@ -8,9 +8,13 @@ import type {
   IContratoMeta,
   IGenerarContratoInput,
   IContratoDownloadResponse,
+  IContratoVersion,
+  IVersionComparison,
   IContratosResponse,
   IContratoResponse,
   IContratoDownloadApiResponse,
+  IVersionesResponse,
+  IVersionComparisonResponse,
 } from '@/types/contrato'
 
 class ContratoService {
@@ -71,6 +75,27 @@ class ContratoService {
     const response = (await apiClient.get(
       `/contratos/${id}/descargar`
     )) as unknown as IContratoDownloadApiResponse
+    return response.data
+  }
+
+  async getVersiones(contratoId: string): Promise<IContratoVersion[]> {
+    const response = (await apiClient.get(
+      `/contratos/${contratoId}/versiones`
+    )) as unknown as IVersionesResponse
+    return response.data || []
+  }
+
+  async descargarVersion(contratoId: string, versionNum: number): Promise<IContratoDownloadResponse> {
+    const response = (await apiClient.get(
+      `/contratos/${contratoId}/versiones/${versionNum}/descargar`
+    )) as unknown as IContratoDownloadApiResponse
+    return response.data
+  }
+
+  async compararVersiones(contratoId: string, v1: number, v2: number): Promise<IVersionComparison> {
+    const response = (await apiClient.get(
+      `/contratos/${contratoId}/versiones/comparar?v1=${v1}&v2=${v2}`
+    )) as unknown as IVersionComparisonResponse
     return response.data
   }
 }
