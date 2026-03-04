@@ -3,6 +3,8 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { API_BASE_URL } from '@/lib/constants'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   IContrato,
   IContratoMeta,
@@ -21,6 +23,9 @@ import type {
   IContratoHistorialResponse,
   IContratoTransitionInput,
   IContratoHistorialEntry,
+  IContratoInfoFirma,
+  IContratoVerificacionIntegridad,
+  IContratoAccesoFirmado,
 } from '@/types/contrato'
 
 class ContratoService {
@@ -157,6 +162,62 @@ class ContratoService {
     const response = (await apiClient.get(
       `/contratos/${id}/transitions`
     )) as unknown as IContratoHistorialResponse
+    return response.data
+  }
+
+  // ============================================================
+  // Contrato firmado
+  // ============================================================
+
+  async subirContratoFirmado(
+    id: string,
+    file: File,
+    opts?: { referencia_otp?: string; notas?: string }
+  ): Promise<IContrato> {
+    const formData = new FormData()
+    formData.append('archivo', file)
+    if (opts?.referencia_otp) formData.append('referencia_otp', opts.referencia_otp)
+    if (opts?.notas) formData.append('notas', opts.notas)
+
+    const token = useAuthStore.getState().accessToken
+    const response = await fetch(`${API_BASE_URL}/contratos/${id}/subir-firmado`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+
+    const json = await response.json()
+    if (!response.ok) {
+      throw new Error(json.message || 'Error al subir el contrato firmado')
+    }
+    return json.data
+  }
+
+  async descargarContratoFirmado(id: string): Promise<IContratoDownloadResponse> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/descargar-firmado`
+    )) as unknown as IContratoDownloadApiResponse
+    return response.data
+  }
+
+  async getInfoFirma(id: string): Promise<IContratoInfoFirma> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/info-firma`
+    )) as unknown as { success: boolean; data: IContratoInfoFirma }
+    return response.data
+  }
+
+  async verificarIntegridad(id: string): Promise<IContratoVerificacionIntegridad> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/verificar-integridad`
+    )) as unknown as { success: boolean; data: IContratoVerificacionIntegridad }
+    return response.data
+  }
+
+  async getLogAccesos(id: string): Promise<IContratoAccesoFirmado[]> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/log-accesos`
+    )) as unknown as { success: boolean; data: IContratoAccesoFirmado[] }
     return response.data
   }
 }

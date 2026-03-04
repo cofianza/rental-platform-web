@@ -21,6 +21,7 @@ import { VersionHistorialSection } from '@/components/expedientes/VersionHistori
 import { CompararVersionesModal } from '@/components/expedientes/CompararVersionesModal'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { ContratoHistorialModal } from '@/components/expedientes/ContratoHistorialModal'
+import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSection'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 
 const PdfViewer = dynamic(
@@ -29,6 +30,7 @@ const PdfViewer = dynamic(
 )
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
+const FIRMADO_VISIBLE_STATES: EstadoContrato[] = ['firmado', 'vigente', 'finalizado', 'cancelado']
 
 export default function ContratoDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -373,6 +375,14 @@ export default function ContratoDetallePage() {
               Ver historial de estados
             </button>
           </div>
+
+          {/* Documento firmado section */}
+          {FIRMADO_VISIBLE_STATES.includes(contrato.estado) && (
+            <ContratoFirmadoSection
+              contrato={contrato}
+              onContratoUpdated={fetchContrato}
+            />
+          )}
         </div>
       </div>
 

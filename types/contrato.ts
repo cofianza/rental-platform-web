@@ -34,6 +34,16 @@ export interface IContrato {
   fecha_terminacion: string | null
   motivo_cancelacion: string | null
   contrato_padre_id: string | null
+  firmado_storage_key: string | null
+  firmado_nombre_archivo: string | null
+  firmado_hash_integridad: string | null
+  firmado_ip: string | null
+  firmado_user_agent: string | null
+  firmado_referencia_otp: string | null
+  firmado_notas: string | null
+  firmado_tamano_bytes: number | null
+  firmado_subido_por: string | null
+  firmado_subido_en: string | null
   created_at: string
   updated_at: string
 }
@@ -172,6 +182,43 @@ export interface IContratoListItem extends IContrato {
     inmuebles?: { direccion: string; ciudad: string } | null
   } | null
 }
+
+// ============================================================
+// Contrato firmado
+// ============================================================
+
+export interface IContratoInfoFirma {
+  tiene_firmado: boolean
+  firmado_nombre_archivo: string | null
+  firmado_hash_integridad: string | null
+  firmado_ip: string | null
+  firmado_user_agent: string | null
+  firmado_referencia_otp: string | null
+  firmado_notas: string | null
+  firmado_tamano_bytes: number | null
+  firmado_subido_en: string | null
+  firmado_subido_por: { id: string; nombre: string; apellido: string } | null
+}
+
+export interface IContratoVerificacionIntegridad {
+  valido: boolean
+  hash_almacenado: string
+  hash_recalculado: string
+  fecha_verificacion: string
+}
+
+export interface IContratoAccesoFirmado {
+  id: string
+  tipo_accion: 'descarga' | 'visualizacion' | 'verificacion'
+  ip: string | null
+  user_agent: string | null
+  created_at: string
+  usuario: { id: string; nombre: string; apellido: string } | null
+}
+
+// ============================================================
+// Listado global
+// ============================================================
 
 export interface IContratoListFilters {
   page?: number
