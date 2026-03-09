@@ -241,7 +241,7 @@ export function Step1InmuebleSelection({
           )}
 
           {/* Error de validacion */}
-          {errors.inmueble && !data.hasActiveExpediente && (
+          {errors.inmueble && (
             <p className="mt-2 text-sm text-red-600">{errors.inmueble}</p>
           )}
         </div>
@@ -256,19 +256,19 @@ export function Step1InmuebleSelection({
             </div>
           )}
 
-          {/* Advertencia de expediente activo */}
+          {/* Aviso informativo de expediente activo */}
           {data.hasActiveExpediente && activeExpedienteInfo && (
-            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <IconAlertTriangle size={20} className="text-blue-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800">
-                  {WIZARD_MESSAGES.INMUEBLE_HAS_ACTIVE_EXPEDIENTE}
+                <p className="text-sm font-medium text-blue-800">
+                  Este inmueble ya tiene un expediente activo
                 </p>
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-blue-600 mt-1">
                   Expediente: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
                 </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  Seleccione otro inmueble para continuar.
+                <p className="text-xs text-blue-600 mt-1">
+                  Puede continuar y crear otro expediente para este inmueble.
                 </p>
               </div>
             </div>
@@ -277,7 +277,7 @@ export function Step1InmuebleSelection({
           {/* Card del inmueble seleccionado */}
           <div className={cn(
             'border rounded-lg overflow-hidden',
-            data.hasActiveExpediente ? 'border-amber-300' : 'border-gray-200'
+            data.hasActiveExpediente ? 'border-blue-300' : 'border-gray-200'
           )}>
             {/* Imagen */}
             <div className="relative h-48 bg-gray-100">

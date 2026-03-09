@@ -27,5 +27,25 @@ export * from './AsignacionResponsableModal'
 // HP-295: Documentos
 export * from './DocumentosSection'
 
+// Estudios de riesgo crediticio
+export * from './EstudiosSection'
+export * from './SolicitarEstudioModal'
+export * from './EstudioDetailModal'
+export * from './RegistrarResultadoModal'
+export * from './ReEvaluacionSection'
+export * from './EstudioHistorialSection'
+
+// HP-334: Autorizacion habeas data
+export * from './AutorizacionSection'
+
+// Contratos
+export * from './ContratosSection'
+export * from './GenerarContratoModal'
+export * from './ContratoDetalleModal'
+export * from './VersionHistorialSection'
+export * from './CompararVersionesModal'
+export * from './ContratoTransicionModal'
+export * from './ContratoHistorialModal'
+
 // HP-247: Wizard de creación
 export * from './wizard'

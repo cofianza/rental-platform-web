@@ -422,14 +422,35 @@ function DocumentUploadCard({
 
             {/* Reupload button for rejected */}
             {documento.estado === 'rechazado' && (
-              <button
-                onClick={handleClick}
-                disabled={isUploading}
-                className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <IconUpload size={16} />
-                Resubir documento
-              </button>
+              isSelfieType ? (
+                <div className="mt-2 space-y-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCameraClick() }}
+                    disabled={isUploading}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <IconCamera size={16} />
+                    Tomar nueva selfie
+                  </button>
+                  <button
+                    onClick={handleClick}
+                    disabled={isUploading}
+                    className="w-full px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <IconUpload size={16} />
+                    Subir imagen existente
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleClick}
+                  disabled={isUploading}
+                  className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <IconUpload size={16} />
+                  Resubir documento
+                </button>
+              )
             )}
 
             {/* Version history panel */}
@@ -569,6 +590,9 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   const [selfieTargetTipoId, setSelfieTargetTipoId] = useState<string | null>(null)
   const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
 
+  // Trigger RevisionPanel refresh after uploads/replacements
+  const [revisionRefreshKey, setRevisionRefreshKey] = useState(0)
+
   // HP-327: Comparison view state
   const [showComparison, setShowComparison] = useState(false)
 
@@ -664,6 +688,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       return newMap
     })
     setDocumentos((prev) => [documento, ...prev])
+    setRevisionRefreshKey((k) => k + 1)
   }, [])
 
   const handleUploadProgress = useCallback((tipoId: string, progress: number) => {
@@ -762,20 +787,6 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
     return getSelfieDoc() !== null && getIdFrontalDoc() !== null
   }, [getSelfieDoc, getIdFrontalDoc])
 
-  // D3 CR: Auto-open comparison for operators when selfie is pending
-  useEffect(() => {
-    // Only for operator/admin roles
-    if (userRole !== 'administrador' && userRole !== 'operador_analista') return
-
-    const selfie = getSelfieDoc()
-    const idFrontal = getIdFrontalDoc()
-
-    // Auto-open when both docs exist and selfie is pending review
-    if (selfie && idFrontal && selfie.estado === 'pendiente' && !showComparison) {
-      setShowComparison(true)
-    }
-  }, [userRole, getSelfieDoc, getIdFrontalDoc, showComparison])
-
   // HP-327 CR: Handlers for approve/reject from comparison view
   // D2 CR: Added try/catch with toast.error()
   const handleComparisonApprove = useCallback(async (documentoId: string) => {
@@ -815,27 +826,13 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
 
     try {
       await documentoService.deleteDocumento(toDelete.id)
-
-      // Update card state
-      setCardStates((prev) => {
-        const newMap = new Map(prev)
-        const current = newMap.get(toDelete.tipo_documento_id)
-        if (current) {
-          newMap.set(toDelete.tipo_documento_id, {
-            ...current,
-            documento: null,
-            status: 'idle',
-            progress: 0,
-            error: null,
-          })
-        }
-        return newMap
-      })
-
-      // Remove from documentos list
-      setDocumentos((prev) => prev.filter((d) => d.id !== toDelete.id))
-
       toast.success('Documento eliminado')
+
+      // Re-fetch all data so the card shows the correct state.
+      // If this was a replacement (v2+), the backend reverted the original
+      // to 'rechazado' — fetchData will pick it up and show "Resubir documento".
+      await fetchData()
+      setRevisionRefreshKey((k) => k + 1)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error al eliminar documento'
@@ -993,6 +990,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       {/* Panel de revision para operadores/admin */}
       {(userRole === 'administrador' || userRole === 'operador_analista') && (
         <RevisionPanel
+          key={revisionRefreshKey}
           expedienteId={expedienteId}
           onRevisionChange={fetchData}
         />

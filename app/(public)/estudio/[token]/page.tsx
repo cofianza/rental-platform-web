@@ -1,0 +1,344 @@
+/**
+ * Pagina publica de formulario self-service para estudio de riesgo crediticio
+ * Accesible sin autenticacion via token unico
+ */
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { estudioPublicService } from '@/services/estudioService'
+import type { IEstudioPublicForm, ISubmitFormularioInput } from '@/types/estudio'
+
+// ============================================
+// Types
+// ============================================
+
+type PageState = 'loading' | 'form' | 'submitted' | 'error'
+
+// ============================================
+// Page Component
+// ============================================
+
+export default function EstudioFormularioPage() {
+  const params = useParams()
+  const token = params.token as string
+
+  const [pageState, setPageState] = useState<PageState>('loading')
+  const [formInfo, setFormInfo] = useState<IEstudioPublicForm | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Form fields
+  const [nombre, setNombre] = useState('')
+  const [tipoDoc, setTipoDoc] = useState('CC')
+  const [numDoc, setNumDoc] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [ingresos, setIngresos] = useState('')
+  const [ocupacion, setOcupacion] = useState('')
+  const [empresa, setEmpresa] = useState('')
+  const [direccion, setDireccion] = useState('')
+  const [acepta, setAcepta] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  // Load form info
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await estudioPublicService.getFormulario(token)
+        setFormInfo(data)
+        setPageState('form')
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Enlace invalido o expirado'
+        setErrorMessage(msg)
+        setPageState('error')
+      }
+    }
+    load()
+  }, [token])
+
+  // Submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormError(null)
+
+    if (!nombre.trim() || !numDoc.trim() || !email.trim() || !telefono.trim()) {
+      setFormError('Por favor complete todos los campos obligatorios')
+      return
+    }
+
+    if (!acepta) {
+      setFormError('Debe aceptar los terminos y condiciones')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const data: ISubmitFormularioInput = {
+        nombre_completo: nombre.trim(),
+        tipo_documento: tipoDoc,
+        numero_documento: numDoc.trim(),
+        email: email.trim(),
+        telefono: telefono.trim(),
+        ingresos_mensuales: ingresos ? Number(ingresos) : undefined,
+        ocupacion: ocupacion.trim() || undefined,
+        empresa: empresa.trim() || undefined,
+        direccion_residencia: direccion.trim() || undefined,
+        acepta_terminos: true,
+      }
+      await estudioPublicService.submitFormulario(token, data)
+      setPageState('submitted')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al enviar el formulario'
+      setFormError(msg)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ============================================
+  // Render states
+  // ============================================
+
+  if (pageState === 'loading') {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Cargando formulario...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (pageState === 'error') {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Enlace no disponible</h2>
+        <p className="text-gray-500">{errorMessage}</p>
+        <p className="text-sm text-gray-400 mt-4">
+          Si necesitas un nuevo enlace, contacta a tu agente inmobiliario.
+        </p>
+      </div>
+    )
+  }
+
+  if (pageState === 'submitted') {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
+        <p className="text-gray-500">
+          Gracias por completar la informacion. Tu estudio de riesgo crediticio esta siendo procesado.
+        </p>
+        <p className="text-sm text-gray-400 mt-4">
+          Puedes cerrar esta ventana.
+        </p>
+      </div>
+    )
+  }
+
+  // ============================================
+  // Form
+  // ============================================
+
+  return (
+    <div className="space-y-6">
+      {/* Info banner */}
+      {formInfo && (
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-primary-900 mb-1">
+            Estudio de Riesgo Crediticio
+          </h2>
+          <p className="text-sm text-primary-700">
+            Expediente: <strong>{formInfo.expediente_numero}</strong>
+            {formInfo.inmueble_direccion && (
+              <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
+        <h3 className="text-lg font-semibold text-gray-900">Datos personales</h3>
+
+        {formError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {formError}
+          </div>
+        )}
+
+        {/* Nombre */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nombre completo <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Ingrese su nombre completo"
+          />
+        </div>
+
+        {/* Tipo y numero de documento */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo documento <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={tipoDoc}
+              onChange={(e) => setTipoDoc(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="CC">Cedula de Ciudadania</option>
+              <option value="CE">Cedula de Extranjeria</option>
+              <option value="NIT">NIT</option>
+              <option value="PAS">Pasaporte</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Numero de documento <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={numDoc}
+              onChange={(e) => setNumDoc(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Ingrese su numero de documento"
+            />
+          </div>
+        </div>
+
+        {/* Email y telefono */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Correo electronico <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="correo@ejemplo.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Telefono <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="3001234567"
+            />
+          </div>
+        </div>
+
+        {/* Ingresos y ocupacion */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ingresos mensuales <span className="text-gray-400">(opcional)</span>
+            </label>
+            <input
+              type="number"
+              value={ingresos}
+              onChange={(e) => setIngresos(e.target.value)}
+              min={0}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="$ 0"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ocupacion <span className="text-gray-400">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={ocupacion}
+              onChange={(e) => setOcupacion(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Empleado, independiente, etc."
+            />
+          </div>
+        </div>
+
+        {/* Empresa */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Empresa donde trabaja <span className="text-gray-400">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={empresa}
+            onChange={(e) => setEmpresa(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Nombre de la empresa"
+          />
+        </div>
+
+        {/* Direccion */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Direccion de residencia <span className="text-gray-400">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Calle, numero, barrio, ciudad"
+          />
+        </div>
+
+        {/* Terminos */}
+        <div className="flex items-start gap-3 pt-2">
+          <input
+            id="acepta_terminos"
+            type="checkbox"
+            checked={acepta}
+            onChange={(e) => setAcepta(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+          <label htmlFor="acepta_terminos" className="text-sm text-gray-600">
+            Autorizo el tratamiento de mis datos personales para la realizacion del estudio
+            de riesgo crediticio y acepto los terminos y condiciones del servicio.
+          </label>
+        </div>
+
+        {/* Submit */}
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-3 px-4 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? 'Enviando...' : 'Enviar formulario'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
