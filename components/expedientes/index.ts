@@ -47,5 +47,9 @@ export * from './CompararVersionesModal'
 export * from './ContratoTransicionModal'
 export * from './ContratoHistorialModal'
 
+// HP-341: Firma electronica
+export * from './EnviarFirmaModal'
+export * from './FirmaSolicitudesSection'
+
 // HP-247: Wizard de creación
 export * from './wizard'
