@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
   IconDownload,
@@ -27,7 +27,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   const isAdmin = user?.rol === 'administrador'
 
-  const [subirOpen, setSirOpen] = useState(false)
+  const [subirOpen, setSubirOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
   const [downloadLoading, setDownloadLoading] = useState(false)
   const [infoFirma, setInfoFirma] = useState<IContratoInfoFirma | null>(null)
@@ -82,9 +82,12 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
   }
 
   // Auto-load info when firmado exists
-  if (tieneFirmado && !infoFirma && !infoLoading) {
-    handleLoadInfo()
-  }
+  useEffect(() => {
+    if (tieneFirmado && !infoFirma && !infoLoading) {
+      handleLoadInfo()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tieneFirmado])
 
   function formatBytes(bytes: number | null): string {
     if (!bytes) return '—'
@@ -221,7 +224,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
           <p className="text-sm text-gray-500 mb-3">No se ha subido el contrato firmado</p>
           {canManage && (
             <button
-              onClick={() => setSirOpen(true)}
+              onClick={() => setSubirOpen(true)}
               className="flex items-center gap-1.5 mx-auto px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
             >
               <IconUpload size={16} />
@@ -234,7 +237,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
       {/* Modals */}
       <SubirFirmadoModal
         isOpen={subirOpen}
-        onClose={() => setSirOpen(false)}
+        onClose={() => setSubirOpen(false)}
         contratoId={contrato.id}
         onSuccess={onContratoUpdated}
       />
