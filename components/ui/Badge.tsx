@@ -4,7 +4,16 @@
  */
 
 import { cn } from '@/lib/utils'
-import { ESTADOS_EXPEDIENTE, ESTADOS_INMUEBLE, type EstadoExpediente, type EstadoInmueble } from '@/lib/constants'
+import {
+  ESTADOS_EXPEDIENTE,
+  ESTADOS_INMUEBLE,
+  ESTADOS_ESTUDIO,
+  ESTADOS_RESULTADO_ESTUDIO,
+  type EstadoExpediente,
+  type EstadoInmueble,
+  type EstadoEstudioType,
+  type ResultadoEstudioType,
+} from '@/lib/constants'
 
 export interface BadgeProps {
   estado: EstadoExpediente | EstadoInmueble | string
@@ -26,7 +35,9 @@ export function Badge({ estado, className }: BadgeProps) {
   // Intentar obtener configuración desde constantes
   const config =
     ESTADOS_EXPEDIENTE[estado as EstadoExpediente] ||
-    ESTADOS_INMUEBLE[estado as EstadoInmueble]
+    ESTADOS_INMUEBLE[estado as EstadoInmueble] ||
+    ESTADOS_ESTUDIO[estado as EstadoEstudioType] ||
+    ESTADOS_RESULTADO_ESTUDIO[estado as ResultadoEstudioType]
 
   // Si no hay configuración, usar valores por defecto
   const label = config?.label || formatLabel(estado)
