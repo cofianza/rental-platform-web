@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight } from '@/components/icons'
+import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight, IconMail } from '@/components/icons'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ContratoDetalleModal } from './ContratoDetalleModal'
 import { ContratoTransicionModal } from './ContratoTransicionModal'
+import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
@@ -45,6 +46,7 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
   // Action loading
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
+  const [firmaContratoId, setFirmaContratoId] = useState<string | null>(null)
 
   // Permissions
   const canCreate = user?.rol === 'administrador' || user?.rol === 'operador_analista'
@@ -269,6 +271,15 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
                               )}
                             </button>
                           )}
+                          {canRegenerate && c.estado === 'pendiente_firma' && (
+                            <button
+                              onClick={() => setFirmaContratoId(firmaContratoId === c.id ? null : c.id)}
+                              className={`p-1.5 rounded-md hover:bg-gray-100 ${firmaContratoId === c.id ? 'text-primary-600 bg-primary-50' : 'text-gray-400 hover:text-primary-600'}`}
+                              title="Solicitudes de firma"
+                            >
+                              <IconMail size={16} />
+                            </button>
+                          )}
                           {canRegenerate && !TERMINAL_STATES.includes(c.estado) && (
                             <button
                               onClick={() => handleOpenTransicion(c)}
@@ -286,6 +297,17 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Firma Solicitudes */}
+      {firmaContratoId && (
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+          <FirmaSolicitudesSection
+            contratoId={firmaContratoId}
+            estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
+            canManage={canCreate}
+          />
         </div>
       )}
 
