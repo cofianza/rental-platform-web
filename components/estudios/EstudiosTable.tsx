@@ -47,7 +47,7 @@ function ScoreBar({ score }: { score?: number | null }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-[60px]">
+      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-15">
         <div
           className={cn('h-full rounded-full transition-all', barColor)}
           style={{ width: `${pct}%` }}
@@ -227,7 +227,7 @@ export function EstudiosTable({
               >
                 <td className="px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                    <p className="text-sm font-medium text-gray-900 truncate max-w-50">
                       {getSolicitanteName(estudio)}
                     </p>
                     <p className="text-xs text-gray-500 font-mono">

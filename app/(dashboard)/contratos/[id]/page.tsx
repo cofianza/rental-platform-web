@@ -13,6 +13,7 @@ import {
   IconChevronRight,
   IconHistory,
   IconArrowRight,
+  IconRotateCw,
 } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
@@ -52,6 +53,7 @@ export default function ContratoDetallePage() {
   const [historialOpen, setHistorialOpen] = useState(false)
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
   const [variablesOpen, setVariablesOpen] = useState(false)
+  const [renewLoading, setRenewLoading] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
 
@@ -145,6 +147,20 @@ export default function ContratoDetallePage() {
       toast.error(message)
     } finally {
       setTransicionLoading(false)
+    }
+  }
+
+  async function handleRenovar() {
+    setRenewLoading(true)
+    try {
+      const nuevoContrato = await contratoService.renovarContrato(id)
+      toast.success('Contrato de renovacion creado correctamente')
+      router.push(`/contratos/${nuevoContrato.id}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al renovar el contrato'
+      toast.error(message)
+    } finally {
+      setRenewLoading(false)
     }
   }
 
@@ -284,6 +300,16 @@ export default function ContratoDetallePage() {
               </button>
             )
           })}
+          {canManage && contrato.estado === 'vigente' && (
+            <button
+              onClick={handleRenovar}
+              disabled={renewLoading}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
+            >
+              {renewLoading ? <IconLoader size={16} className="animate-spin" /> : <IconRotateCw size={16} />}
+              Renovar Contrato
+            </button>
+          )}
         </div>
       </div>
 
