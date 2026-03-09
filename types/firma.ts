@@ -42,6 +42,7 @@ export interface ISolicitudFirmaPublic {
   nombre_firmante: string
   email_firmante: string
   estado: string
+  token_expiracion: string
   contrato_nombre: string
   expediente_numero: string
   inmueble_direccion: string

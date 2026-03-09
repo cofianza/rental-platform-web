@@ -49,15 +49,34 @@ export default function FirmaPage() {
   }
 
   if (pageState === 'error') {
+    const isExpired = errorMessage.toLowerCase().includes('expir')
     return (
       <div className="bg-white rounded-xl border border-red-200 p-8 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-          <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          {isExpired ? (
+            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Enlace no valido</h2>
-        <p className="text-sm text-gray-500">{errorMessage}</p>
+        <h2 className="text-xl font-bold text-gray-900">
+          {isExpired ? 'El enlace de firma ha expirado' : 'Enlace no valido'}
+        </h2>
+        <p className="text-sm text-gray-500 max-w-sm mx-auto">{errorMessage}</p>
+        {isExpired && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left max-w-sm mx-auto">
+            <p className="text-sm text-amber-800 font-medium mb-1">
+              ¿Que puedes hacer?
+            </p>
+            <p className="text-sm text-amber-700">
+              Contacta al administrador de tu expediente para que te envie un nuevo enlace de firma. El enlace anterior ha sido invalidado por seguridad.
+            </p>
+          </div>
+        )}
       </div>
     )
   }

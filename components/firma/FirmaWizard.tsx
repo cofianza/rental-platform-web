@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { ISolicitudFirmaPublic } from '@/types/firma'
 import { firmaService } from '@/services/firmaService'
 import { FirmaStepIndicator } from './FirmaStepIndicator'
@@ -42,6 +42,7 @@ interface WizardState {
   error: string | null
   geo: GeoData | null
   firmadoEn: string | null
+  tokenExpired: boolean
 }
 
 const STEP_LABELS = [
@@ -66,7 +67,20 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     error: null,
     geo: null,
     firmadoEn: null,
+    tokenExpired: false,
   })
+
+  // Check token expiration every 60 seconds
+  useEffect(() => {
+    function checkExpiration() {
+      if (new Date(data.token_expiracion) < new Date()) {
+        setState((s) => ({ ...s, tokenExpired: true }))
+      }
+    }
+    checkExpiration()
+    const interval = setInterval(checkExpiration, 60_000)
+    return () => clearInterval(interval)
+  }, [data.token_expiracion])
 
   // Navigate between steps
   const goToStep = useCallback((step: FirmaWizardStep) => {
@@ -185,6 +199,33 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
       }))
     }
   }, [state.legalAccepted, state.signatureDataUrl, state.geo, token])
+
+  // Show expiration message if token expired mid-process (but not if already signed)
+  if (state.tokenExpired && !state.firmadoEn) {
+    return (
+      <div className="bg-white rounded-xl border border-red-200 p-8 text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">
+          El enlace de firma ha expirado
+        </h2>
+        <p className="text-sm text-gray-500 max-w-sm mx-auto">
+          El tiempo para completar la firma se ha agotado. Por seguridad, el enlace ya no es válido.
+        </p>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left max-w-sm mx-auto">
+          <p className="text-sm text-amber-800 font-medium mb-1">
+            ¿Qué puedes hacer?
+          </p>
+          <p className="text-sm text-amber-700">
+            Contacta al administrador de tu expediente para que te envíe un nuevo enlace de firma.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

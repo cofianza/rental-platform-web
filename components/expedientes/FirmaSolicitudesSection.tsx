@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye } from '@/components/icons'
+import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle } from '@/components/icons'
 import { EnviarFirmaModal } from './EnviarFirmaModal'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
@@ -40,6 +40,7 @@ export function FirmaSolicitudesSection({
   const [enviarOpen, setEnviarOpen] = useState(false)
   const [reenviandoId, setReenviandoId] = useState<string | null>(null)
   const [cancelandoId, setCancelandoId] = useState<string | null>(null)
+  const [reenviarTarget, setReenviarTarget] = useState<ISolicitudFirma | null>(null)
 
   const fetchSolicitudes = useCallback(async () => {
     setIsLoading(true)
@@ -57,7 +58,10 @@ export function FirmaSolicitudesSection({
     fetchSolicitudes()
   }, [fetchSolicitudes])
 
-  async function handleReenviar(id: string) {
+  async function handleReenviarConfirmed() {
+    if (!reenviarTarget) return
+    const id = reenviarTarget.id
+    setReenviarTarget(null)
     setReenviandoId(id)
     try {
       await firmaService.reenviarSolicitud(id)
@@ -165,7 +169,7 @@ export function FirmaSolicitudesSection({
                 {isActive && canManage && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
-                      onClick={() => handleReenviar(s.id)}
+                      onClick={() => setReenviarTarget(s)}
                       disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
                       className="px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 disabled:opacity-50"
                       title="Reenviar enlace"
@@ -205,6 +209,54 @@ export function FirmaSolicitudesSection({
         defaultEmail={defaultEmail}
         defaultTelefono={defaultTelefono}
       />
+
+      {/* Confirmation modal for reenviar */}
+      {reenviarTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <IconAlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Reenviar enlace de firma</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Se enviará un nuevo enlace a:
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+              <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
+              <p className="text-sm text-gray-600">{reenviarTarget.email_firmante}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Envíos: {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
+              </p>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800">
+                El enlace anterior quedará <span className="font-semibold">invalidado</span> por seguridad. El firmante deberá usar el nuevo enlace.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setReenviarTarget(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleReenviarConfirmed}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+              >
+                Reenviar enlace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
