@@ -7,6 +7,8 @@ import type {
   ISolicitudFirma,
   ICrearSolicitudFirmaInput,
   ISolicitudFirmaPublic,
+  IOtpSolicitarResponse,
+  IOtpVerificarResponse,
 } from '@/types/firma'
 
 class FirmaService {
@@ -47,6 +49,21 @@ class FirmaService {
     const response = (await apiClient.get(
       `/public/firma/${token}`
     )) as unknown as { success: boolean; data: ISolicitudFirmaPublic }
+    return response.data
+  }
+
+  async solicitarOtp(token: string): Promise<IOtpSolicitarResponse> {
+    const response = (await apiClient.post(
+      `/public/firma/${token}/otp/solicitar`
+    )) as unknown as { success: boolean; data: IOtpSolicitarResponse }
+    return response.data
+  }
+
+  async verificarOtp(token: string, codigo: string): Promise<IOtpVerificarResponse> {
+    const response = (await apiClient.post(
+      `/public/firma/${token}/otp/verificar`,
+      { codigo }
+    )) as unknown as { success: boolean; data: IOtpVerificarResponse }
     return response.data
   }
 }

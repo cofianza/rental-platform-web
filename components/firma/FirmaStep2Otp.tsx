@@ -1,12 +1,14 @@
 /**
- * FirmaStep2Otp - HP-342
+ * FirmaStep2Otp - HP-342/HP-343
  * Paso 2: Verificacion OTP con input de 6 digitos
  * Autofocus y navegacion automatica entre campos
+ * Conectado a endpoints reales de solicitar/verificar OTP
  */
 
 'use client'
 
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { firmaService } from '@/services/firmaService'
 import {
   IconMail,
   IconLoader,
@@ -17,6 +19,7 @@ import {
 
 interface FirmaStep2OtpProps {
   email: string
+  token: string
   onSubmit: (code: string) => Promise<void>
   onChange: (code: string) => void
   value: string
@@ -27,8 +30,11 @@ interface FirmaStep2OtpProps {
 
 const OTP_LENGTH = 6
 
+type OtpPhase = 'initial' | 'sending' | 'input'
+
 export function FirmaStep2Otp({
   email,
+  token,
   onSubmit,
   onChange,
   value,
@@ -38,17 +44,13 @@ export function FirmaStep2Otp({
 }: FirmaStep2OtpProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const [resendCooldown, setResendCooldown] = useState(0)
+  const [phase, setPhase] = useState<OtpPhase>('initial')
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [maskedDestination, setMaskedDestination] = useState<string | null>(null)
 
   // Initialize refs array
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, OTP_LENGTH)
-  }, [])
-
-  // Focus first input on mount
-  useEffect(() => {
-    setTimeout(() => {
-      inputRefs.current[0]?.focus()
-    }, 100)
   }, [])
 
   // Resend cooldown timer
@@ -59,24 +61,46 @@ export function FirmaStep2Otp({
     }
   }, [resendCooldown])
 
+  // Focus first input when entering input phase
+  useEffect(() => {
+    if (phase === 'input') {
+      setTimeout(() => {
+        inputRefs.current[0]?.focus()
+      }, 100)
+    }
+  }, [phase])
+
+  // Send OTP request
+  const handleSendOtp = useCallback(async () => {
+    setPhase('sending')
+    setSendError(null)
+
+    try {
+      const result = await firmaService.solicitarOtp(token)
+      setMaskedDestination(result.destino_enmascarado)
+      setResendCooldown(60)
+      setPhase('input')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al enviar el codigo'
+      setSendError(msg)
+      setPhase('initial')
+    }
+  }, [token])
+
   // Handle input change
   const handleChange = useCallback(
     (index: number, inputValue: string) => {
-      // Only allow digits
       const digit = inputValue.replace(/\D/g, '').slice(-1)
 
-      // Update the value array
       const digits = value.split('')
       digits[index] = digit
       const newValue = digits.join('').slice(0, OTP_LENGTH)
       onChange(newValue)
 
-      // Auto-focus next input if digit entered
       if (digit && index < OTP_LENGTH - 1) {
         inputRefs.current[index + 1]?.focus()
       }
 
-      // Auto-submit when complete
       if (newValue.length === OTP_LENGTH && !isSubmitting) {
         onSubmit(newValue)
       }
@@ -90,12 +114,10 @@ export function FirmaStep2Otp({
       if (e.key === 'Backspace') {
         const digits = value.split('')
         if (!digits[index] && index > 0) {
-          // If current is empty, go back and clear previous
           inputRefs.current[index - 1]?.focus()
           digits[index - 1] = ''
           onChange(digits.join(''))
         } else {
-          // Clear current
           digits[index] = ''
           onChange(digits.join(''))
         }
@@ -116,11 +138,9 @@ export function FirmaStep2Otp({
       const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
       onChange(pastedData)
 
-      // Focus appropriate input
       const focusIndex = Math.min(pastedData.length, OTP_LENGTH - 1)
       inputRefs.current[focusIndex]?.focus()
 
-      // Auto-submit if complete
       if (pastedData.length === OTP_LENGTH && !isSubmitting) {
         setTimeout(() => onSubmit(pastedData), 100)
       }
@@ -131,13 +151,85 @@ export function FirmaStep2Otp({
   // Resend OTP
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0) return
-    // TODO: Call backend to resend OTP
-    setResendCooldown(60)
-  }, [resendCooldown])
+    setSendError(null)
 
-  // Mask email for display
-  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, '$1***$3')
+    try {
+      const result = await firmaService.solicitarOtp(token)
+      setMaskedDestination(result.destino_enmascarado)
+      setResendCooldown(60)
+      onChange('')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al reenviar el codigo'
+      setSendError(msg)
+    }
+  }, [resendCooldown, token, onChange])
 
+  // Mask email for initial display
+  const displayEmail = maskedDestination || email.replace(/(.{2})(.*)(@.*)/, '$1***$3')
+
+  // ============================================
+  // Phase: Initial — show "Send code" button
+  // ============================================
+  if (phase === 'initial' || phase === 'sending') {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+            <IconMail size={32} className="text-blue-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">
+            Verifica tu identidad
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Enviaremos un codigo de 6 digitos a
+          </p>
+          <p className="font-medium text-gray-700">
+            {displayEmail}
+          </p>
+        </div>
+
+        {sendError && (
+          <div className="flex items-center justify-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
+            <IconAlertTriangle size={18} className="text-red-500 shrink-0" />
+            <p className="text-sm text-red-600">{sendError}</p>
+          </div>
+        )}
+
+        <button
+          onClick={handleSendOtp}
+          disabled={phase === 'sending'}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50"
+        >
+          {phase === 'sending' ? (
+            <>
+              <IconLoader size={20} className="animate-spin" />
+              Enviando codigo...
+            </>
+          ) : (
+            <>
+              <IconMail size={20} />
+              Enviar codigo de verificacion
+            </>
+          )}
+        </button>
+
+        <div className="flex justify-between pt-4 border-t border-gray-100">
+          <button
+            onClick={onBack}
+            disabled={phase === 'sending'}
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+          >
+            <IconArrowLeft size={18} />
+            Volver
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================
+  // Phase: Input — show OTP input fields
+  // ============================================
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -152,7 +244,7 @@ export function FirmaStep2Otp({
           Ingresa el codigo de 6 digitos enviado a
         </p>
         <p className="font-medium text-gray-700">
-          {maskedEmail}
+          {displayEmail}
         </p>
       </div>
 
@@ -192,10 +284,10 @@ export function FirmaStep2Otp({
       </div>
 
       {/* Error message */}
-      {error && (
+      {(error || sendError) && (
         <div className="flex items-center justify-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
           <IconAlertTriangle size={18} className="text-red-500 shrink-0" />
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-red-600">{error || sendError}</p>
         </div>
       )}
 

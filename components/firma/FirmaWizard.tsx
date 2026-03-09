@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react'
 import type { ISolicitudFirmaPublic } from '@/types/firma'
+import { firmaService } from '@/services/firmaService'
 import { FirmaStepIndicator } from './FirmaStepIndicator'
 import { FirmaStep1Summary } from './FirmaStep1Summary'
 import { FirmaStep2Otp } from './FirmaStep2Otp'
@@ -92,14 +93,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     setState((s) => ({ ...s, isSubmitting: true, error: null }))
 
     try {
-      // TODO: Call backend to validate OTP with Auco
-      // For now, validate that code is 6 digits
-      if (code.length !== 6 || !/^\d+$/.test(code)) {
-        throw new Error('El codigo debe ser de 6 digitos')
-      }
-
-      // Simulated API call - replace with actual endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await firmaService.verificarOtp(token, code)
 
       setState((s) => ({
         ...s,
@@ -115,7 +109,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
         error: err instanceof Error ? err.message : 'Error al validar codigo',
       }))
     }
-  }, [nextStep])
+  }, [nextStep, token])
 
   // Step 3: Capture signature
   const handleSignatureComplete = useCallback((dataUrl: string) => {
@@ -181,6 +175,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
         {state.step === 2 && (
           <FirmaStep2Otp
             email={data.email_firmante}
+            token={token}
             onSubmit={handleOtpSubmit}
             onChange={handleOtpChange}
             value={state.otpCode}

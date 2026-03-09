@@ -47,3 +47,15 @@ export interface ISolicitudFirmaPublic {
   inmueble_direccion: string
   inmueble_ciudad: string
 }
+
+export interface IOtpSolicitarResponse {
+  enviado: boolean
+  canal: 'email' | 'sms'
+  destino_enmascarado: string
+  expira_en_minutos: number
+}
+
+export interface IOtpVerificarResponse {
+  verificado: boolean
+  estado: string
+}
