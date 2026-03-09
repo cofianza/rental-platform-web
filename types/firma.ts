@@ -59,3 +59,17 @@ export interface IOtpVerificarResponse {
   verificado: boolean
   estado: string
 }
+
+export interface ICompletarFirmaInput {
+  firma_imagen: string
+  user_agent: string
+  geo_latitud?: number
+  geo_longitud?: number
+  geo_precision?: number
+}
+
+export interface ICompletarFirmaResponse {
+  firmado: boolean
+  firmado_en: string
+  hash_documento: string
+}

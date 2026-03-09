@@ -9,6 +9,8 @@ import type {
   ISolicitudFirmaPublic,
   IOtpSolicitarResponse,
   IOtpVerificarResponse,
+  ICompletarFirmaInput,
+  ICompletarFirmaResponse,
 } from '@/types/firma'
 
 class FirmaService {
@@ -64,6 +66,14 @@ class FirmaService {
       `/public/firma/${token}/otp/verificar`,
       { codigo }
     )) as unknown as { success: boolean; data: IOtpVerificarResponse }
+    return response.data
+  }
+
+  async completarFirma(token: string, input: ICompletarFirmaInput): Promise<ICompletarFirmaResponse> {
+    const response = (await apiClient.post(
+      `/public/firma/${token}/completar`,
+      input
+    )) as unknown as { success: boolean; data: ICompletarFirmaResponse }
     return response.data
   }
 }

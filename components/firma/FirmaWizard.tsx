@@ -26,6 +26,12 @@ interface FirmaWizardProps {
   token: string
 }
 
+interface GeoData {
+  latitud: number
+  longitud: number
+  precision: number
+}
+
 interface WizardState {
   step: FirmaWizardStep
   otpValidated: boolean
@@ -34,6 +40,7 @@ interface WizardState {
   legalAccepted: boolean
   isSubmitting: boolean
   error: string | null
+  geo: GeoData | null
 }
 
 const STEP_LABELS = [
@@ -56,6 +63,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     legalAccepted: false,
     isSubmitting: false,
     error: null,
+    geo: null,
   })
 
   // Navigate between steps
@@ -111,6 +119,25 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     }
   }, [nextStep, token])
 
+  // Request geolocation (non-blocking, 10s timeout)
+  const requestGeolocation = useCallback(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setState((s) => ({
+          ...s,
+          geo: {
+            latitud: position.coords.latitude,
+            longitud: position.coords.longitude,
+            precision: position.coords.accuracy,
+          },
+        }))
+      },
+      () => { /* silently ignore — geolocation is optional */ },
+      { timeout: 10000, enableHighAccuracy: false },
+    )
+  }, [])
+
   // Step 3: Capture signature
   const handleSignatureComplete = useCallback((dataUrl: string) => {
     setState((s) => ({
@@ -137,14 +164,17 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     setState((s) => ({ ...s, isSubmitting: true, error: null }))
 
     try {
-      // TODO: Call backend to submit signature
-      // POST /api/v1/public/firma/:token/submit
-      // Body: { otp_code, signature_data_url }
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await firmaService.completarFirma(token, {
+        firma_imagen: state.signatureDataUrl,
+        user_agent: navigator.userAgent,
+        ...(state.geo && {
+          geo_latitud: state.geo.latitud,
+          geo_longitud: state.geo.longitud,
+          geo_precision: state.geo.precision,
+        }),
+      })
 
-      // Success - show confirmation
       setState((s) => ({ ...s, isSubmitting: false }))
-      // The step 4 will show success message
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -152,7 +182,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
         error: err instanceof Error ? err.message : 'Error al enviar firma',
       }))
     }
-  }, [state.legalAccepted, state.signatureDataUrl])
+  }, [state.legalAccepted, state.signatureDataUrl, state.geo, token])
 
   return (
     <div className="space-y-6">
@@ -190,6 +220,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
             nombreFirmante={data.nombre_firmante}
             onComplete={handleSignatureComplete}
             onBack={prevStep}
+            onRequestGeo={requestGeolocation}
           />
         )}
 

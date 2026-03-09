@@ -18,17 +18,24 @@ interface FirmaStep3SignatureProps {
   nombreFirmante: string
   onComplete: (signatureDataUrl: string) => void
   onBack: () => void
+  onRequestGeo?: () => void
 }
 
 export function FirmaStep3Signature({
   nombreFirmante,
   onComplete,
   onBack,
+  onRequestGeo,
 }: FirmaStep3SignatureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
   const [lastPos, setLastPos] = useState<{ x: number; y: number } | null>(null)
+
+  // Request geolocation on mount (non-blocking)
+  useEffect(() => {
+    onRequestGeo?.()
+  }, [onRequestGeo])
 
   // Canvas setup
   useEffect(() => {
