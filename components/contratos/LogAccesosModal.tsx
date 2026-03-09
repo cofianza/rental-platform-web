@@ -14,14 +14,16 @@ interface LogAccesosModalProps {
 
 const TIPO_LABELS: Record<string, string> = {
   descarga: 'Descarga',
-  visualizacion: 'Visualizacion',
-  verificacion: 'Verificacion',
+  visualizacion: 'Visualización',
+  verificacion: 'Verificación',
+  subida: 'Subida',
 }
 
 const TIPO_COLORS: Record<string, string> = {
   descarga: 'bg-blue-100 text-blue-700',
   visualizacion: 'bg-gray-100 text-gray-700',
   verificacion: 'bg-purple-100 text-purple-700',
+  subida: 'bg-green-100 text-green-700',
 }
 
 export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModalProps) {
@@ -73,7 +75,7 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 px-3 font-medium text-gray-600">Fecha</th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">Usuario</th>
-                    <th className="text-left py-2 px-3 font-medium text-gray-600">Accion</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600">Acción</th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">IP</th>
                   </tr>
                 </thead>

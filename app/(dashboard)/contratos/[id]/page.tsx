@@ -23,6 +23,7 @@ import { CompararVersionesModal } from '@/components/expedientes/CompararVersion
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { ContratoHistorialModal } from '@/components/expedientes/ContratoHistorialModal'
 import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSection'
+import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 
 const PdfViewer = dynamic(
@@ -332,7 +333,7 @@ export default function ContratoDetallePage() {
         <div className="space-y-6">
           {/* Contract info */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Informacion del Contrato</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Información del Contrato</h3>
             <dl className="space-y-3 text-sm">
               <InfoRow label="Fecha Inicio" value={contrato.fecha_inicio || '—'} />
               <InfoRow
@@ -408,6 +409,11 @@ export default function ContratoDetallePage() {
               contrato={contrato}
               onContratoUpdated={fetchContrato}
             />
+          )}
+
+          {/* Archivos asociados section */}
+          {FIRMADO_VISIBLE_STATES.includes(contrato.estado) && (
+            <ContratoArchivosSection contrato={contrato} />
           )}
         </div>
       </div>

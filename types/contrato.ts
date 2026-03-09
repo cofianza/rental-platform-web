@@ -215,11 +215,30 @@ export interface IContratoVerificacionIntegridad {
 
 export interface IContratoAccesoFirmado {
   id: string
-  tipo_accion: 'descarga' | 'visualizacion' | 'verificacion'
+  tipo_accion: 'descarga' | 'visualizacion' | 'verificacion' | 'subida'
   ip: string | null
   user_agent: string | null
   created_at: string
   usuario: { id: string; nombre: string; apellido: string } | null
+}
+
+// ============================================================
+// Archivos asociados al contrato
+// ============================================================
+
+export type TipoArchivoContrato = 'inventario' | 'acta_entrega' | 'documento_identidad'
+
+export interface IContratoArchivo {
+  id: string
+  contrato_id: string
+  tipo_archivo: TipoArchivoContrato
+  tipo_archivo_label: string
+  nombre_archivo: string
+  tipo_mime: string
+  tamano_bytes: number
+  hash_integridad: string
+  created_at: string
+  subido_por: { id: string; nombre: string; apellido: string } | null
 }
 
 // ============================================================

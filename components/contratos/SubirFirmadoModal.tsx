@@ -132,7 +132,7 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
                 <p className="text-sm font-medium text-gray-900">
                   Arrastra el PDF firmado o haz clic para seleccionar
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Solo PDF, maximo 20 MB</p>
+                <p className="text-xs text-gray-500 mt-1">Solo PDF, máximo 20 MB</p>
               </>
             )}
           </div>

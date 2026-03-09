@@ -119,7 +119,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Tamano</span>
+              <span className="text-gray-500">Tamaño</span>
               <span className="font-medium text-gray-900">
                 {formatBytes(contrato.firmado_tamano_bytes)}
               </span>

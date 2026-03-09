@@ -27,6 +27,8 @@ import type {
   IContratoInfoFirma,
   IContratoVerificacionIntegridad,
   IContratoAccesoFirmado,
+  IContratoArchivo,
+  TipoArchivoContrato,
 } from '@/types/contrato'
 
 class ContratoService {
@@ -231,6 +233,51 @@ class ContratoService {
       `/contratos/${id}/log-accesos`
     )) as unknown as { success: boolean; data: IContratoAccesoFirmado[] }
     return response.data
+  }
+
+  // ============================================================
+  // Archivos asociados al contrato
+  // ============================================================
+
+  async subirArchivo(
+    id: string,
+    file: File,
+    tipoArchivo: TipoArchivoContrato,
+  ): Promise<IContratoArchivo> {
+    const formData = new FormData()
+    formData.append('archivo', file)
+    formData.append('tipo_archivo', tipoArchivo)
+
+    const token = useAuthStore.getState().accessToken
+    const response = await fetch(`${API_BASE_URL}/contratos/${id}/archivos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+
+    const json = await response.json()
+    if (!response.ok) {
+      throw new Error(json.message || 'Error al subir el archivo')
+    }
+    return json.data
+  }
+
+  async listarArchivos(id: string): Promise<IContratoArchivo[]> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/archivos`
+    )) as unknown as { success: boolean; data: { archivos: IContratoArchivo[] } }
+    return response.data.archivos
+  }
+
+  async descargarArchivo(contratoId: string, archivoId: string): Promise<IContratoDownloadResponse> {
+    const response = (await apiClient.get(
+      `/contratos/${contratoId}/archivos/${archivoId}/descargar`
+    )) as unknown as IContratoDownloadApiResponse
+    return response.data
+  }
+
+  async eliminarArchivo(contratoId: string, archivoId: string): Promise<void> {
+    await apiClient.delete(`/contratos/${contratoId}/archivos/${archivoId}`)
   }
 }
 
