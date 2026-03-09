@@ -41,6 +41,7 @@ interface WizardState {
   isSubmitting: boolean
   error: string | null
   geo: GeoData | null
+  firmadoEn: string | null
 }
 
 const STEP_LABELS = [
@@ -64,6 +65,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     isSubmitting: false,
     error: null,
     geo: null,
+    firmadoEn: null,
   })
 
   // Navigate between steps
@@ -164,7 +166,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     setState((s) => ({ ...s, isSubmitting: true, error: null }))
 
     try {
-      await firmaService.completarFirma(token, {
+      const result = await firmaService.completarFirma(token, {
         firma_imagen: state.signatureDataUrl,
         user_agent: navigator.userAgent,
         ...(state.geo && {
@@ -174,7 +176,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
         }),
       })
 
-      setState((s) => ({ ...s, isSubmitting: false }))
+      setState((s) => ({ ...s, isSubmitting: false, firmadoEn: result.firmado_en }))
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -234,6 +236,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
             onBack={prevStep}
             isSubmitting={state.isSubmitting}
             error={state.error}
+            firmadoEn={state.firmadoEn}
           />
         )}
       </div>

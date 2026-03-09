@@ -17,6 +17,7 @@ import {
   IconUser,
   IconClock,
   IconDollarSign,
+  IconPencil,
 } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
@@ -85,6 +86,7 @@ const EVENTO_CONFIG: Record<
   asignacion: { icon: IconUser, color: 'text-orange-600', bgColor: 'bg-orange-100' },
   estudio: { icon: IconCheck, color: 'text-amber-600', bgColor: 'bg-amber-100' },
   contrato: { icon: IconFileText, color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
+  firma: { icon: IconPencil, color: 'text-green-600', bgColor: 'bg-green-100' },
   pago: { icon: IconDollarSign, color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
 }
 
@@ -391,6 +393,29 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
             </>
           )}
         </p>
+      </div>
+    )
+  }
+
+  if (tipo === 'firma') {
+    const firmadoEn = detalle.firmado_en as string | null
+    const nombreFirmante = detalle.nombre_firmante as string | null
+
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+        {nombreFirmante && (
+          <p className="text-xs text-gray-500">
+            Firmante: <span className="font-medium text-gray-700">{nombreFirmante}</span>
+          </p>
+        )}
+        {firmadoEn && (
+          <p className="text-xs text-gray-500">
+            {new Date(firmadoEn).toLocaleString('es-CO', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })}
+          </p>
+        )}
       </div>
     )
   }

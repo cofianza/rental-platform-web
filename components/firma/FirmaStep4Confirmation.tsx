@@ -27,6 +27,7 @@ interface FirmaStep4ConfirmationProps {
   onBack: () => void
   isSubmitting: boolean
   error: string | null
+  firmadoEn: string | null
 }
 
 export function FirmaStep4Confirmation({
@@ -38,6 +39,7 @@ export function FirmaStep4Confirmation({
   onBack,
   isSubmitting,
   error,
+  firmadoEn,
 }: FirmaStep4ConfirmationProps) {
   const [isSuccess, setIsSuccess] = useState(false)
 
@@ -72,6 +74,15 @@ export function FirmaStep4Confirmation({
             <span className="font-medium">Inmueble:</span> {data.inmueble_direccion}
             {data.inmueble_ciudad && `, ${data.inmueble_ciudad}`}
           </p>
+          {firmadoEn && (
+            <p className="text-sm text-green-800 mt-1">
+              <span className="font-medium">Fecha y hora:</span>{' '}
+              {new Date(firmadoEn).toLocaleString('es-CO', {
+                dateStyle: 'long',
+                timeStyle: 'short',
+              })}
+            </p>
+          )}
         </div>
         <p className="text-sm text-gray-500">
           Recibiras una copia del contrato firmado en tu correo electronico.
