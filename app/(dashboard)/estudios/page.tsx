@@ -84,6 +84,7 @@ function EstudiosContent() {
             onSort={handleSort}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+            onClearFilters={hasActiveFilters() ? clearFilters : undefined}
           />
         )}
       </div>

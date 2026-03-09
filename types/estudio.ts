@@ -53,6 +53,17 @@ export interface IEstudio {
     nombre: string
     apellido: string
   } | null
+  documentos?: IEstudioDocumento[] | null
+}
+
+export interface IEstudioDocumento {
+  id: string
+  tipo: string
+  nombre_original: string
+  tipo_mime: string
+  tamano_bytes: number
+  estado: string
+  created_at: string
 }
 
 export interface ICreateEstudioInput {

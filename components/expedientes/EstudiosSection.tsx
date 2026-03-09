@@ -189,13 +189,22 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
       {/* Empty state */}
       {estudios.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">
+          <IconClipboardList size={48} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 mb-1">
+            No hay estudios de riesgo
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
             No hay estudios de riesgo crediticio para este expediente.
           </p>
           {canManage && (
-            <p className="text-sm text-gray-400 mt-1">
-              Haz clic en &quot;Solicitar estudio&quot; para iniciar uno.
-            </p>
+            <button
+              onClick={() => setShowSolicitar(true)}
+              disabled={hasActiveEstudio}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <IconPlus size={16} />
+              Solicitar estudio
+            </button>
           )}
         </div>
       )}

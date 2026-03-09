@@ -108,6 +108,7 @@ export interface EstudiosTableProps {
   onSort: (column: IEstudioFilters['sortBy']) => void
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
+  onClearFilters?: () => void
 }
 
 export function EstudiosTable({
@@ -117,6 +118,7 @@ export function EstudiosTable({
   onSort,
   onPageChange,
   onLimitChange,
+  onClearFilters,
 }: EstudiosTableProps) {
   const [selectedEstudio, setSelectedEstudio] = useState<IEstudio | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
@@ -141,9 +143,17 @@ export function EstudiosTable({
         <h3 className="text-lg font-medium text-gray-900 mb-1">
           {ESTUDIO_UI_MESSAGES.EMPTY_STATE}
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 mb-4">
           {ESTUDIO_UI_MESSAGES.EMPTY_STATE_FILTERED}
         </p>
+        {onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100"
+          >
+            {ESTUDIO_UI_MESSAGES.CLEAR_FILTERS}
+          </button>
+        )}
       </div>
     )
   }
