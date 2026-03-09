@@ -1037,6 +1037,49 @@ export function IconScrollText({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// HP-342: Iconos para firma electronica
+
+// ShieldCheck (verificacion segura)
+export function IconShieldCheck({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+// Pencil (firma/dibujar)
+export function IconPencil({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <path d="m15 5 4 4" />
+    </svg>
+  )
+}
+
+// FileCheck (documento verificado)
+export function IconFileCheck({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="m9 15 2 2 4-4" />
+    </svg>
+  )
+}
+
+// CheckCircle (confirmacion exitosa)
+export function IconCheckCircle({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,
@@ -1104,6 +1147,10 @@ export const ICON_MAP = {
   ZoomOut: IconZoomOut,
   Compare: IconCompare,
   ScrollText: IconScrollText,
+  ShieldCheck: IconShieldCheck,
+  Pencil: IconPencil,
+  FileCheck: IconFileCheck,
+  CheckCircle: IconCheckCircle,
 } as const
 
 export type IconName = keyof typeof ICON_MAP
