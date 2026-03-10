@@ -11,6 +11,7 @@ import type {
   IOtpVerificarResponse,
   ICompletarFirmaInput,
   ICompletarFirmaResponse,
+  IContratoPdfResponse,
 } from '@/types/firma'
 
 class FirmaService {
@@ -74,6 +75,14 @@ class FirmaService {
       `/public/firma/${token}/completar`,
       input
     )) as unknown as { success: boolean; data: ICompletarFirmaResponse }
+    return response.data
+  }
+
+  // HP-342: Get contract PDF signed URL for viewer
+  async getContratoPdf(token: string): Promise<IContratoPdfResponse> {
+    const response = (await apiClient.get(
+      `/public/firma/${token}/pdf`
+    )) as unknown as { success: boolean; data: IContratoPdfResponse }
     return response.data
   }
 }

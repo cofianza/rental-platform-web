@@ -241,6 +241,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
         {state.step === 1 && (
           <FirmaStep1Summary
             data={data}
+            token={token}
             onContinue={handleStartSigning}
           />
         )}

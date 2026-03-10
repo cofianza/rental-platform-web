@@ -1,11 +1,14 @@
 /**
  * FirmaStep1Summary - HP-342
- * Paso 1: Resumen del contrato antes de iniciar firma
+ * Paso 1: Resumen del contrato con visor PDF embebido
+ * El PDF se muestra en modo solo lectura sin opcion de descarga
  */
 
 'use client'
 
+import { useState, useEffect } from 'react'
 import type { ISolicitudFirmaPublic } from '@/types/firma'
+import { firmaService } from '@/services/firmaService'
 import {
   IconFileText,
   IconMapPin,
@@ -13,14 +16,38 @@ import {
   IconMail,
   IconArrowRight,
   IconShieldCheck,
+  IconLoader,
+  IconAlertTriangle,
 } from '@/components/icons'
 
 interface FirmaStep1SummaryProps {
   data: ISolicitudFirmaPublic
+  token: string
   onContinue: () => void
 }
 
-export function FirmaStep1Summary({ data, onContinue }: FirmaStep1SummaryProps) {
+type PdfState = 'loading' | 'ready' | 'error'
+
+export function FirmaStep1Summary({ data, token, onContinue }: FirmaStep1SummaryProps) {
+  const [pdfState, setPdfState] = useState<PdfState>('loading')
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pdfError, setPdfError] = useState<string | null>(null)
+
+  // Fetch PDF URL on mount
+  useEffect(() => {
+    async function fetchPdf() {
+      try {
+        const result = await firmaService.getContratoPdf(token)
+        setPdfUrl(result.pdf_url)
+        setPdfState('ready')
+      } catch (err) {
+        setPdfError(err instanceof Error ? err.message : 'Error al cargar el PDF')
+        setPdfState('error')
+      }
+    }
+    fetchPdf()
+  }, [token])
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -32,61 +59,82 @@ export function FirmaStep1Summary({ data, onContinue }: FirmaStep1SummaryProps) 
           Firma de Contrato de Arrendamiento
         </h1>
         <p className="mt-2 text-sm text-gray-500">
-          Revisa la informacion del contrato antes de continuar
+          Revisa el contrato completo antes de continuar
         </p>
       </div>
 
-      {/* Contract info */}
-      <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-        {/* Firmante */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
-            <IconUser size={20} className="text-gray-600" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Firmante</p>
-            <p className="font-medium text-gray-900">{data.nombre_firmante}</p>
-          </div>
+      {/* PDF Viewer */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100">
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
+          <IconFileText size={18} className="text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">
+            {data.contrato_nombre}
+          </span>
         </div>
 
-        {/* Email */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
-            <IconMail size={20} className="text-gray-600" />
+        {pdfState === 'loading' && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-3">
+              <IconLoader size={32} className="text-primary-600 animate-spin mx-auto" />
+              <p className="text-sm text-gray-500">Cargando contrato...</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Correo electronico</p>
-            <p className="font-medium text-gray-900">{data.email_firmante}</p>
-          </div>
-        </div>
+        )}
 
-        {/* Inmueble */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
-            <IconMapPin size={20} className="text-gray-600" />
+        {pdfState === 'error' && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-3">
+              <IconAlertTriangle size={32} className="text-amber-500 mx-auto" />
+              <p className="text-sm text-gray-700 font-medium">No se pudo cargar el PDF</p>
+              <p className="text-xs text-gray-500">{pdfError}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Inmueble</p>
-            <p className="font-medium text-gray-900">
-              {data.inmueble_direccion}
-              {data.inmueble_ciudad && `, ${data.inmueble_ciudad}`}
-            </p>
-          </div>
-        </div>
+        )}
 
-        {/* Contrato */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
-            <IconFileText size={20} className="text-gray-600" />
+        {pdfState === 'ready' && pdfUrl && (
+          <iframe
+            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+            className="w-full"
+            style={{ height: '400px' }}
+            title="Contrato de arrendamiento"
+          />
+        )}
+      </div>
+
+      {/* Contract info summary */}
+      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+          Informacion del contrato
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Firmante */}
+          <div className="flex items-center gap-2">
+            <IconUser size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Firmante</p>
+              <p className="text-sm font-medium text-gray-900">{data.nombre_firmante}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Contrato</p>
-            <p className="font-medium text-gray-900">{data.contrato_nombre}</p>
-            {data.expediente_numero && (
-              <p className="text-sm text-gray-500">
-                Expediente: {data.expediente_numero}
+
+          {/* Email */}
+          <div className="flex items-center gap-2">
+            <IconMail size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Email</p>
+              <p className="text-sm font-medium text-gray-900">{data.email_firmante}</p>
+            </div>
+          </div>
+
+          {/* Inmueble */}
+          <div className="flex items-center gap-2 sm:col-span-2">
+            <IconMapPin size={16} className="text-gray-400" />
+            <div>
+              <p className="text-xs text-gray-500">Inmueble</p>
+              <p className="text-sm font-medium text-gray-900">
+                {data.inmueble_direccion}
+                {data.inmueble_ciudad && `, ${data.inmueble_ciudad}`}
               </p>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -107,7 +155,8 @@ export function FirmaStep1Summary({ data, onContinue }: FirmaStep1SummaryProps) 
       {/* Action button */}
       <button
         onClick={onContinue}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+        disabled={pdfState === 'loading'}
+        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Iniciar proceso de firma
         <IconArrowRight size={20} />
@@ -115,7 +164,7 @@ export function FirmaStep1Summary({ data, onContinue }: FirmaStep1SummaryProps) 
 
       {/* Legal disclaimer */}
       <p className="text-xs text-gray-400 text-center">
-        Al continuar, aceptas recibir comunicaciones relacionadas con este contrato.
+        Al continuar, aceptas que has leido el contrato y deseas proceder con la firma electronica.
       </p>
     </div>
   )

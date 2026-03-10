@@ -74,3 +74,10 @@ export interface ICompletarFirmaResponse {
   firmado_en: string
   hash_documento: string
 }
+
+// HP-342: PDF viewer response
+export interface IContratoPdfResponse {
+  pdf_url: string
+  nombre_archivo: string
+  expira_en_segundos: number
+}
