@@ -23,6 +23,7 @@ const TIPOS_ESTUDIO: { value: TipoEstudio; label: string }[] = [
 ]
 
 const PROVEEDORES: { value: ProveedorEstudio; label: string }[] = [
+  { value: 'manual', label: 'Manual (sin proveedor)' },
   { value: 'transunion', label: 'TransUnion' },
   { value: 'sifin', label: 'SIFIN' },
   { value: 'datacredito', label: 'DataCredito' },
@@ -40,7 +41,7 @@ export function SolicitarEstudioModal({
   isLoading = false,
 }: SolicitarEstudioModalProps) {
   const [tipo, setTipo] = useState<TipoEstudio>('individual')
-  const [proveedor, setProveedor] = useState<ProveedorEstudio>('transunion')
+  const [proveedor, setProveedor] = useState<ProveedorEstudio>('manual')
   const [duracion, setDuracion] = useState(12)
   const [pagoPor, setPagoPor] = useState<PagoPor>('inmobiliaria')
   const [observaciones, setObservaciones] = useState('')

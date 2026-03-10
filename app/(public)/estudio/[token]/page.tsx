@@ -14,7 +14,7 @@ import type { IEstudioPublicForm, ISubmitFormularioInput } from '@/types/estudio
 // Types
 // ============================================
 
-type PageState = 'loading' | 'form' | 'submitted' | 'error'
+type PageState = 'loading' | 'form' | 'submitted' | 'completed' | 'error'
 
 // ============================================
 // Page Component
@@ -48,7 +48,7 @@ export default function EstudioFormularioPage() {
       try {
         const data = await estudioPublicService.getFormulario(token)
         setFormInfo(data)
-        setPageState('form')
+        setPageState(data.ya_completado ? 'completed' : 'form')
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Enlace invalido o expirado'
         setErrorMessage(msg)
@@ -144,6 +144,101 @@ export default function EstudioFormularioPage() {
         <p className="text-sm text-gray-400 mt-4">
           Puedes cerrar esta ventana.
         </p>
+      </div>
+    )
+  }
+
+  // ============================================
+  // Already completed — read-only summary
+  // ============================================
+
+  if (pageState === 'completed' && formInfo) {
+    const datos = (formInfo.datos_formulario || {}) as Record<string, string | number | undefined>
+    return (
+      <div className="space-y-6">
+        {/* Info banner */}
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-primary-900 mb-1">
+            Estudio de Riesgo Crediticio
+          </h2>
+          <p className="text-sm text-primary-700">
+            Expediente: <strong>{formInfo.expediente_numero}</strong>
+            {formInfo.inmueble_direccion && (
+              <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
+            )}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Formulario completado</h3>
+              <p className="text-sm text-gray-500">Tu informacion fue enviada exitosamente. A continuacion un resumen de los datos registrados.</p>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 space-y-3">
+            {datos.nombre_completo && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Nombre</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.nombre_completo}</span>
+              </div>
+            )}
+            {datos.tipo_documento && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Documento</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.tipo_documento} {datos.numero_documento}</span>
+              </div>
+            )}
+            {datos.email && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Email</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.email}</span>
+              </div>
+            )}
+            {datos.telefono && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Telefono</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.telefono}</span>
+              </div>
+            )}
+            {datos.ingresos_mensuales && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Ingresos</span>
+                <span className="text-sm text-gray-900 col-span-2">
+                  ${Number(datos.ingresos_mensuales).toLocaleString('es-CO')}
+                </span>
+              </div>
+            )}
+            {datos.ocupacion && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Ocupacion</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.ocupacion}</span>
+              </div>
+            )}
+            {datos.empresa && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Empresa</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.empresa}</span>
+              </div>
+            )}
+            {datos.direccion_residencia && (
+              <div className="grid grid-cols-3 gap-2">
+                <span className="text-sm text-gray-500">Direccion</span>
+                <span className="text-sm text-gray-900 col-span-2">{datos.direccion_residencia}</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-400 pt-2">
+            Tu estudio de riesgo crediticio esta siendo procesado. Puedes cerrar esta ventana.
+          </p>
+        </div>
       </div>
     )
   }

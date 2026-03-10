@@ -3,7 +3,7 @@
 // ============================================
 
 export type TipoEstudio = 'individual' | 'con_coarrendatario'
-export type ProveedorEstudio = 'transunion' | 'sifin' | 'datacredito'
+export type ProveedorEstudio = 'manual' | 'transunion' | 'sifin' | 'datacredito'
 export type PagoPor = 'inmobiliaria' | 'arrendatario'
 
 export type EstadoEstudio =
@@ -83,6 +83,7 @@ export interface IEstudioPublicForm {
   inmueble_ciudad: string
   solicitante_nombre: string
   ya_completado: boolean
+  datos_formulario: Record<string, unknown> | null
 }
 
 export interface ISubmitFormularioInput {
