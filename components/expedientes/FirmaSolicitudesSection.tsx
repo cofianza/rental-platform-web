@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle } from '@/components/icons'
+import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle, IconShieldCheck } from '@/components/icons'
 import { EnviarFirmaModal } from './EnviarFirmaModal'
+import { EvidenciaFirmaModal } from './EvidenciaFirmaModal'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { ISolicitudFirma, EstadoSolicitudFirma } from '@/types/firma'
@@ -41,6 +42,7 @@ export function FirmaSolicitudesSection({
   const [reenviandoId, setReenviandoId] = useState<string | null>(null)
   const [cancelandoId, setCancelandoId] = useState<string | null>(null)
   const [reenviarTarget, setReenviarTarget] = useState<ISolicitudFirma | null>(null)
+  const [evidenciaTarget, setEvidenciaTarget] = useState<ISolicitudFirma | null>(null)
 
   const fetchSolicitudes = useCallback(async () => {
     setIsLoading(true)
@@ -166,34 +168,46 @@ export function FirmaSolicitudesSection({
                   </div>
                 </div>
 
-                {isActive && canManage && (
-                  <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {s.estado === 'firmado' && (
                     <button
-                      onClick={() => setReenviarTarget(s)}
-                      disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
-                      className="px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 disabled:opacity-50"
-                      title="Reenviar enlace"
+                      onClick={() => setEvidenciaTarget(s)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-md hover:bg-green-100"
+                      title="Ver evidencia de firma"
                     >
-                      {reenviandoId === s.id ? (
-                        <IconLoader size={12} className="animate-spin" />
-                      ) : (
-                        'Reenviar'
-                      )}
+                      <IconShieldCheck size={12} />
+                      Evidencia
                     </button>
-                    <button
-                      onClick={() => handleCancelar(s.id)}
-                      disabled={cancelandoId === s.id}
-                      className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
-                      title="Cancelar solicitud"
-                    >
-                      {cancelandoId === s.id ? (
-                        <IconLoader size={12} className="animate-spin" />
-                      ) : (
-                        <IconX size={14} />
-                      )}
-                    </button>
-                  </div>
-                )}
+                  )}
+                  {isActive && canManage && (
+                    <>
+                      <button
+                        onClick={() => setReenviarTarget(s)}
+                        disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
+                        className="px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 disabled:opacity-50"
+                        title="Reenviar enlace"
+                      >
+                        {reenviandoId === s.id ? (
+                          <IconLoader size={12} className="animate-spin" />
+                        ) : (
+                          'Reenviar'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleCancelar(s.id)}
+                        disabled={cancelandoId === s.id}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                        title="Cancelar solicitud"
+                      >
+                        {cancelandoId === s.id ? (
+                          <IconLoader size={12} className="animate-spin" />
+                        ) : (
+                          <IconX size={14} />
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -209,6 +223,16 @@ export function FirmaSolicitudesSection({
         defaultEmail={defaultEmail}
         defaultTelefono={defaultTelefono}
       />
+
+      {/* Evidence modal for firmado solicitudes */}
+      {evidenciaTarget && (
+        <EvidenciaFirmaModal
+          isOpen={!!evidenciaTarget}
+          onClose={() => setEvidenciaTarget(null)}
+          solicitudId={evidenciaTarget.id}
+          nombreFirmante={evidenciaTarget.nombre_firmante}
+        />
+      )}
 
       {/* Confirmation modal for reenviar */}
       {reenviarTarget && (

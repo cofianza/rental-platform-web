@@ -81,3 +81,26 @@ export interface IContratoPdfResponse {
   nombre_archivo: string
   expira_en_segundos: number
 }
+
+// HP-344: Evidencia de firma
+export interface IEvidenciaFirma {
+  id: string
+  solicitud_firma_id: string
+  ip_firmante: string
+  user_agent: string
+  geo_latitud: number | null
+  geo_longitud: number | null
+  geo_precision: number | null
+  otp_verificado_en: string
+  firma_imagen_url: string | null
+  firmado_en: string
+  hash_documento: string
+  tiene_acuse: boolean
+  created_at: string
+}
+
+export interface IAcuseDownloadResponse {
+  url: string
+  nombre_archivo: string
+  expira_en_segundos: number
+}

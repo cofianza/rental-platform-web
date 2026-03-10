@@ -12,6 +12,8 @@ import type {
   ICompletarFirmaInput,
   ICompletarFirmaResponse,
   IContratoPdfResponse,
+  IEvidenciaFirma,
+  IAcuseDownloadResponse,
 } from '@/types/firma'
 
 class FirmaService {
@@ -83,6 +85,21 @@ class FirmaService {
     const response = (await apiClient.get(
       `/public/firma/${token}/pdf`
     )) as unknown as { success: boolean; data: IContratoPdfResponse }
+    return response.data
+  }
+
+  // HP-344: Evidencia de firma
+  async getEvidencia(solicitudId: string): Promise<IEvidenciaFirma> {
+    const response = (await apiClient.get(
+      `/firma/solicitudes/${solicitudId}/evidencia`
+    )) as unknown as { success: boolean; data: IEvidenciaFirma }
+    return response.data
+  }
+
+  async downloadAcuse(solicitudId: string): Promise<IAcuseDownloadResponse> {
+    const response = (await apiClient.get(
+      `/firma/solicitudes/${solicitudId}/evidencia/pdf`
+    )) as unknown as { success: boolean; data: IAcuseDownloadResponse }
     return response.data
   }
 }

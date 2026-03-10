@@ -50,6 +50,7 @@ export * from './ContratoHistorialModal'
 // HP-341: Firma electronica
 export * from './EnviarFirmaModal'
 export * from './FirmaSolicitudesSection'
+export * from './EvidenciaFirmaModal'
 
 // HP-247: Wizard de creación
 export * from './wizard'
