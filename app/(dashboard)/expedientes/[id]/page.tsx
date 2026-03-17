@@ -31,7 +31,7 @@ import {
   AutorizacionSection,
   ContratosSection,
 } from '@/components/expedientes'
-import { PagosSection } from '@/components/pagos'
+import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
 import { formatCurrency, formatDate } from '@/lib/constants'
@@ -440,6 +440,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
+            <PagoEstudioSection expedienteId={id} onPagoCompletado={fetchExpediente} />
             <AutorizacionSection expedienteId={id} />
             <EstudiosSection expedienteId={id} />
           </div>
