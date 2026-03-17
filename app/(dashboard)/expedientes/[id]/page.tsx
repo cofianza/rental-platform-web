@@ -31,6 +31,7 @@ import {
   AutorizacionSection,
   ContratosSection,
 } from '@/components/expedientes'
+import { PagosSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
 import { formatCurrency, formatDate } from '@/lib/constants'
@@ -54,6 +55,7 @@ export default function ExpedienteDetallePage() {
     { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
     { id: 'estudios', label: 'Estudios' },
     { id: 'contratos', label: 'Contratos' },
+    { id: 'pagos', label: 'Pagos' },
     { id: 'comentarios', label: 'Comentarios' },
     { id: 'timeline', label: 'Timeline' },
   ]
@@ -447,6 +449,13 @@ export default function ExpedienteDetallePage() {
         {activeTab === 'contratos' && (
           <div className="p-6">
             <ContratosSection expedienteId={id} />
+          </div>
+        )}
+
+        {/* Tab: Pagos (HP-351) */}
+        {activeTab === 'pagos' && (
+          <div className="p-6">
+            <PagosSection expedienteId={id} />
           </div>
         )}
 

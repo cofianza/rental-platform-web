@@ -58,6 +58,27 @@ export interface IRegistrarPagoManualInput {
   comprobante_tamano_bytes?: number
 }
 
+// HP-351: Input para crear link de pago via pasarela
+export interface ICrearLinkPagoInput {
+  concepto: 'estudio' | 'garantia' | 'primer_canon' | 'deposito' | 'otro'
+  monto: number
+  descripcion: string
+  email_pagador: string
+  nombre_pagador: string
+  enviar_email?: boolean
+}
+
+// HP-351: Respuesta de listado con paginacion
+export interface IPagoListResponse {
+  pagos: IPago[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export interface IPresignedUrlResponse {
   signedUrl: string
   storage_key: string
@@ -77,14 +98,14 @@ export interface IComprobanteUrlResponse {
 
 class PagoService {
   /**
-   * Lista pagos de un expediente
+   * Lista pagos de un expediente con paginacion
    */
   async listByExpediente(expedienteId: string, params?: {
     page?: number
     limit?: number
     concepto?: string
     estado?: string
-  }) {
+  }): Promise<IPagoListResponse> {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
@@ -93,8 +114,21 @@ class PagoService {
 
     const qs = searchParams.toString()
     const url = `/expedientes/${expedienteId}/pagos${qs ? `?${qs}` : ''}`
-    const response = await apiClient.get<IPago[]>(url)
-    return response
+    // Backend returns { success, data: IPago[], pagination }
+    // apiClient returns the raw JSON, so we need to map it correctly
+    const response = await apiClient.get<IPago[]>(url) as { data: IPago[]; pagination: IPagoListResponse['pagination'] }
+    return {
+      pagos: response.data,
+      pagination: response.pagination,
+    }
+  }
+
+  /**
+   * HP-351: Crea link de pago via pasarela
+   */
+  async createPaymentLink(expedienteId: string, input: ICrearLinkPagoInput): Promise<IPago> {
+    const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pagos`, input)
+    return response.data
   }
 
   /**
