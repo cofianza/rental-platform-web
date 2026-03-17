@@ -1,5 +1,5 @@
 /**
- * Constantes del dominio - Habitar Propiedades 2.0
+ * Constantes del dominio - Cofianza 2.0
  * Configuración de navegación, estados, formatos y constantes del negocio
  */
 

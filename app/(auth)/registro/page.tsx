@@ -13,7 +13,7 @@ export default function RegisterTypeSelectorPage() {
           <span className="text-white font-bold text-lg">HP</span>
         </div>
         <span className="text-xl font-semibold text-primary-700">
-          Habitar Propiedades
+          Cofianza
         </span>
       </div>
 

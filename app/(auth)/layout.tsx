@@ -19,7 +19,7 @@ export default function AuthLayout({
             HP
           </div>
           <span className="text-white font-semibold text-xl">
-            Habitar Propiedades
+            Cofianza
           </span>
         </div>
 
@@ -54,7 +54,7 @@ export default function AuthLayout({
 
         {/* Footer */}
         <p className="text-primary-300 text-sm">
-          © 2026 Habitar Propiedades. Todos los derechos reservados.
+          © 2026 Cofianza. Todos los derechos reservados.
         </p>
       </div>
 

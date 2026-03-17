@@ -35,7 +35,7 @@ function SuccessContent() {
         <div className="w-10 h-10 bg-primary-700 rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-lg">HP</span>
         </div>
-        <span className="text-xl font-semibold text-primary-700">Habitar Propiedades</span>
+        <span className="text-xl font-semibold text-primary-700">Cofianza</span>
       </div>
 
       <div className="flex justify-center mb-6">

@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-4">
             HP
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Habitar Propiedades</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Cofianza</h1>
         </div>
 
         <div className="text-center">
@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
         <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-4">
           HP
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Habitar Propiedades</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Cofianza</h1>
       </div>
 
       {/* Título */}

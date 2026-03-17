@@ -16,7 +16,7 @@ export default function PublicLayout({
             <span className="text-white font-bold text-sm">HP</span>
           </div>
           <span className="text-lg font-semibold text-gray-900">
-            Habitar Propiedades
+            Cofianza
           </span>
         </div>
       </header>

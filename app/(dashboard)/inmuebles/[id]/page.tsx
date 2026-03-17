@@ -122,10 +122,10 @@ export default function InmuebleDetailPage() {
   // Título dinámico de la página
   useEffect(() => {
     if (inmueble) {
-      document.title = `${inmueble.codigo} | Habitar Propiedades`
+      document.title = `${inmueble.codigo} | Cofianza`
     }
     return () => {
-      document.title = 'Habitar Propiedades'
+      document.title = 'Cofianza'
     }
   }, [inmueble])
 

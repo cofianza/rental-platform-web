@@ -1,5 +1,5 @@
 /**
- * Tipos de permisos RBAC - Habitar Propiedades 2.0
+ * Tipos de permisos RBAC - Cofianza 2.0
  * Mirror de los tipos del backend (src/config/permissions.ts)
  */
 

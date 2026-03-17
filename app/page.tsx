@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Habitar Propiedades - Encuentra tu hogar ideal',
+  title: 'Cofianza - Encuentra tu hogar ideal',
   description: 'Plataforma de arrendamiento de inmuebles en Colombia',
 }
 
@@ -18,7 +18,7 @@ export default function HomePage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary-600">
-            Habitar Propiedades
+            Cofianza
           </h1>
           <Link
             href="/login"

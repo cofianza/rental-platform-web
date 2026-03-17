@@ -1,5 +1,5 @@
 /**
- * Hook de permisos RBAC - Habitar Propiedades 2.0
+ * Hook de permisos RBAC - Cofianza 2.0
  * Proporciona acceso al estado de permisos del usuario actual
  */
 

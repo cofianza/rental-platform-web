@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Habitar Propiedades",
+  title: "Cofianza",
   description: "Plataforma de gestión de arrendamientos en Colombia",
   keywords: "arrendamiento, inmuebles, propiedades, colombia, gestión",
   authors: [{ name: "INXENIUX" }],

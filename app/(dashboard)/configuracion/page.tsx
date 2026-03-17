@@ -98,7 +98,7 @@ export default function ConfiguracionPage() {
           </div>
           <div>
             <span className="text-gray-500">Soporte:</span>
-            <span className="ml-2 text-primary-600">soporte@habitarpropiedades.com</span>
+            <span className="ml-2 text-primary-600">soporte@cofianza.com</span>
           </div>
         </div>
       </div>

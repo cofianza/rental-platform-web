@@ -104,7 +104,7 @@ export default function UsuarioDetailPage() {
         const userData = await userService.getUserById(userId)
         setUser(userData)
         // Actualizar título de la página
-        document.title = `${userData.nombre} ${userData.apellido} | Habitar Propiedades`
+        document.title = `${userData.nombre} ${userData.apellido} | Cofianza`
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error al cargar el usuario'
         setError(message)

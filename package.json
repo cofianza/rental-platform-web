@@ -2,7 +2,7 @@
   "name": "rental-platform-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Habitar Propiedades - Rental Platform Web Client",
+  "description": "Cofianza - Rental Platform Web Client",
   "author": "INXENIUX",
   "scripts": {
     "dev": "next dev --webpack",

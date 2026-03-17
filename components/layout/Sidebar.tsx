@@ -107,7 +107,7 @@ export function Sidebar() {
                 sidebarExpanded && 'lg:block'
               )}
             >
-              Habitar Propiedades
+              Cofianza
             </span>
           </div>
 

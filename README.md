@@ -1,4 +1,4 @@
-# Habitar Propiedades - Frontend Web
+# Cofianza - Frontend Web
 
 Plataforma de gestión de arrendamientos en Colombia.
 
