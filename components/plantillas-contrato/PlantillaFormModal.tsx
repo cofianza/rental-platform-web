@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { IconX } from '@/components/icons'
+import { RichTextEditor } from './RichTextEditor'
 import type { IPlantillaContrato, IPlantillaContratoFormData } from '@/types/plantilla-contrato'
 
 interface PlantillaFormModalProps {
@@ -115,18 +116,15 @@ export function PlantillaFormModal({
           {/* Contenido */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contenido HTML <span className="text-red-500">*</span>
+              Contenido <span className="text-red-500">*</span>
             </label>
-            <textarea
-              value={contenido}
-              onChange={(e) => setContenido(e.target.value)}
-              required
-              rows={12}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm font-mono"
-              placeholder={'<h1>CONTRATO DE ARRENDAMIENTO</h1>\n<p>Entre {{arrendador_nombre}}, identificado con {{arrendador_documento}}...</p>'}
+            <RichTextEditor
+              content={contenido}
+              onChange={setContenido}
+              placeholder="Escribe el contenido del contrato aqui. Usa el boton 'Variable' para insertar datos dinamicos..."
             />
             <p className="text-xs text-gray-500 mt-1">
-              Usa {'{{variable}}'} para insertar variables dinamicas.
+              Usa el boton <strong>+ Variable</strong> en la barra de herramientas para insertar datos dinamicos como nombres, documentos, fechas, etc.
             </p>
           </div>
 
