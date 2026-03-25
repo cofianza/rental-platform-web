@@ -61,6 +61,13 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'reportes',
   },
   {
+    label: 'Facturacion',
+    href: '/facturacion',
+    icon: 'Receipt',
+    description: 'Facturacion y datos fiscales',
+    resource: 'facturas',
+  },
+  {
     label: 'Usuarios',
     href: '/usuarios',
     icon: 'Users',
@@ -568,6 +575,7 @@ export const PROTECTED_ROUTES = [
   '/expedientes',
   '/estudios',
   '/reportes',
+  '/facturacion',
   '/usuarios',
   '/configuracion',
 ] as const
