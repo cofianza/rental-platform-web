@@ -4,6 +4,7 @@
  * Referencia visual: Metrocuadrado.com
  */
 
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PropertyGrid } from '@/components/vitrina/PropertyGrid'
@@ -103,7 +104,22 @@ export default function HomePage() {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Inmuebles disponibles</h2>
           <p className="text-gray-500">Encuentra tu proximo hogar entre nuestra seleccion de propiedades verificadas</p>
         </div>
-        <PropertyGrid />
+        <Suspense fallback={
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="p-4 space-y-3">
+                  <div className="h-5 w-32 bg-gray-200 rounded" />
+                  <div className="h-4 w-48 bg-gray-200 rounded" />
+                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        }>
+          <PropertyGrid />
+        </Suspense>
       </main>
 
       {/* Como funciona */}
