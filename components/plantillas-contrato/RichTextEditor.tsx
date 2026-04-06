@@ -381,6 +381,8 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     }
   }, [editor, content])
 
+  if (!editor) return null
+
   return (
     <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500">
       <Toolbar editor={editor} />
