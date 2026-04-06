@@ -1,19 +1,41 @@
 /**
  * Página de reportes
  * HP-57: Grid de tarjetas de reportes disponibles
+ * HP-360: Agregado reporte de volumen de expedientes
+ * HP-361: Agregado reporte de tasa de aprobacion
+ * HP-362: Agregado reporte de ingresos por pagos
+ * HP-363: Agregado reporte de tiempos por etapa
  */
 
+import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconBarChart3, IconUsers, IconDollarSign, IconClock } from '@/components/icons'
+import { IconBarChart3, IconUsers, IconDollarSign, IconClock, IconCheckCircle } from '@/components/icons'
 
 // Configuración de reportes
 const REPORTES = [
+  {
+    id: 'volumen-expedientes',
+    titulo: 'Volumen de Expedientes',
+    descripcion: 'Expedientes creados vs cerrados por periodo con gráfico comparativo.',
+    icon: IconBarChart3,
+    color: 'bg-primary-100 text-primary-600',
+    href: '/reportes/volumen',
+  },
+  {
+    id: 'aprobacion-expedientes',
+    titulo: 'Aprobados vs Rechazados',
+    descripcion: 'Tasa de aprobacion de expedientes por periodo con desglose de condicionados.',
+    icon: IconCheckCircle,
+    color: 'bg-green-100 text-green-600',
+    href: '/reportes/aprobacion',
+  },
   {
     id: 'expedientes-estado',
     titulo: 'Expedientes por estado',
     descripcion: 'Distribución de expedientes según su estado actual en el flujo de trabajo.',
     icon: IconBarChart3,
     color: 'bg-primary-100 text-primary-600',
+    href: undefined as string | undefined,
   },
   {
     id: 'expedientes-analista',
@@ -21,20 +43,23 @@ const REPORTES = [
     descripcion: 'Carga de trabajo y rendimiento de cada analista del equipo.',
     icon: IconUsers,
     color: 'bg-blue-100 text-blue-600',
+    href: undefined as string | undefined,
   },
   {
-    id: 'ingresos-mensuales',
-    titulo: 'Ingresos mensuales',
-    descripcion: 'Evolución de ingresos por comisiones y servicios durante el año.',
+    id: 'ingresos-pagos',
+    titulo: 'Ingresos por Pagos',
+    descripcion: 'Ingresos totales por periodo y concepto con desglose de pagos.',
     icon: IconDollarSign,
     color: 'bg-green-100 text-green-600',
+    href: '/reportes/ingresos',
   },
   {
     id: 'tiempo-proceso',
-    titulo: 'Tiempo promedio de proceso',
-    descripcion: 'Análisis del tiempo que toma cada expediente desde su creación hasta el cierre.',
+    titulo: 'Tiempos por Etapa',
+    descripcion: 'Análisis del tiempo promedio en cada etapa del flujo, identificando cuellos de botella.',
     icon: IconClock,
     color: 'bg-amber-100 text-amber-600',
+    href: '/reportes/tiempos',
   },
 ]
 
@@ -51,27 +76,43 @@ export default function ReportesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {REPORTES.map((reporte) => {
           const Icon = reporte.icon
+          const content = (
+            <div className="flex items-start gap-4">
+              <div className={`p-3 rounded-lg ${reporte.color}`}>
+                <Icon size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {reporte.titulo}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  {reporte.descripcion}
+                </p>
+                <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                  Ver reporte →
+                </span>
+              </div>
+            </div>
+          )
+
+          if (reporte.href) {
+            return (
+              <Link
+                key={reporte.id}
+                href={reporte.href}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow block"
+              >
+                {content}
+              </Link>
+            )
+          }
+
           return (
             <div
               key={reporte.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow opacity-60"
             >
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg ${reporte.color}`}>
-                  <Icon size={24} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {reporte.titulo}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {reporte.descripcion}
-                  </p>
-                  <button className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
-                    Ver reporte →
-                  </button>
-                </div>
-              </div>
+              {content}
             </div>
           )
         })}

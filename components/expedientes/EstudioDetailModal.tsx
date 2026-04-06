@@ -15,9 +15,12 @@ import { PdfViewer } from '@/components/ui/PdfViewer'
 import { IconFileText, IconLoader, IconCheck, IconEye } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { documentoService } from '@/services/documentoService'
+import { ScoreGauge } from '@/components/estudios/ScoreGauge'
+import { TransUnionReportDetail } from '@/components/estudios/TransUnionReportDetail'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { EstudioHistorialSection } from './EstudioHistorialSection'
 import type { IEstudio, IEstudioHistorial, IEstudioDocumento } from '@/types/estudio'
+import type { TransUnionResponse } from '@/types/transunion'
 import type { Tab as TabType } from '@/components/ui/Tabs'
 
 interface EstudioDetailModalProps {
@@ -176,6 +179,12 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
 
   if (!estudio) return null
 
+  const isTransUnion = estudio.proveedor === 'transunion'
+  const isTransUnionCompleted = isTransUnion && estudio.estado === 'completado'
+  const transunionData = isTransUnionCompleted
+    ? (estudio.datos_formulario as TransUnionResponse | null)
+    : null
+
   const isReevaluable =
     estudio.estado === 'completado' &&
     (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
@@ -241,15 +250,25 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle del Estudio" size="lg">
       <div className="space-y-4">
         {/* Estado y resultado */}
-        <div className="flex items-center gap-3">
-          <Badge estado={estudio.estado} />
-          <Badge estado={estudio.resultado} />
-          {estudio.score != null && (
-            <span className="text-sm font-semibold text-gray-700">
-              Score: {estudio.score}
-            </span>
-          )}
-        </div>
+        {isTransUnionCompleted ? (
+          <div className="flex flex-col items-center py-2">
+            <ScoreGauge score={estudio.score} resultado={estudio.resultado} size="md" />
+            <div className="flex items-center gap-2 mt-3">
+              <Badge estado={estudio.estado} />
+              <Badge estado={estudio.resultado} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Badge estado={estudio.estado} />
+            <Badge estado={estudio.resultado} />
+            {estudio.score != null && (
+              <span className="text-sm font-semibold text-gray-700">
+                Score: {estudio.score}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
@@ -368,8 +387,16 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
               </div>
             )}
 
-            {/* Datos formulario */}
-            {estudio.datos_formulario && (
+            {/* TransUnion Report Detail */}
+            {transunionData && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte TransUnion</h4>
+                <TransUnionReportDetail data={transunionData} />
+              </div>
+            )}
+
+            {/* Datos formulario (non-TransUnion providers) */}
+            {estudio.datos_formulario && !isTransUnionCompleted && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
                 <div className="bg-gray-50 rounded-lg p-4">

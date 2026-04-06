@@ -5,10 +5,11 @@
  * Listado con filtros, paginación y ordenamiento
  */
 
-import { useState, Suspense } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { PageHeader } from '@/components/ui'
+import { toast } from 'sonner'
+import { PageHeader, ExportButton } from '@/components/ui'
 import { IconLoader, IconHome, IconChevronRight } from '@/components/icons'
 import {
   InmueblesFilters,
@@ -18,6 +19,7 @@ import {
 import { ConfirmDialog } from '@/components/users'
 import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
+import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 
 /**
@@ -51,6 +53,7 @@ function InmueblesContent() {
     handleSort,
     deleteInmueble,
     fetchInmuebles,
+    updateInmuebleInList,
   } = useInmuebles()
 
   // Estado local para diálogo de confirmación de eliminación
@@ -85,6 +88,34 @@ function InmueblesContent() {
     router.push(`/inmuebles/${inmueble.id}/editar`)
   }
 
+  /**
+   * Toggle visibilidad en vitrina - HP-369
+   * Optimistic update: actualiza UI inmediatamente, revierte si falla
+   */
+  const handleToggleVitrina = useCallback(
+    async (id: string, value: boolean) => {
+      const inmueble = inmuebles.find((i) => i.id === id)
+      if (!inmueble) return
+
+      // Optimistic update
+      updateInmuebleInList({ ...inmueble, visible_vitrina: value })
+
+      try {
+        await inmuebleService.toggleVisibleVitrina(id, value)
+        toast.success(
+          value
+            ? 'Inmueble publicado en la vitrina'
+            : 'Inmueble retirado de la vitrina'
+        )
+      } catch {
+        // Revert on failure
+        updateInmuebleInList({ ...inmueble, visible_vitrina: !value })
+        toast.error('Error al actualizar la visibilidad en vitrina')
+      }
+    },
+    [inmuebles, updateInmuebleInList]
+  )
+
   const handleDeleteClick = (inmueble: IInmueble) => {
     setDeleteDialog({ isOpen: true, inmueble })
   }
@@ -114,6 +145,19 @@ function InmueblesContent() {
       <PageHeader
         title="Inmuebles"
         subtitle={meta ? `${meta.total} inmuebles registrados` : 'Cargando...'}
+        actions={
+          <ExportButton
+            endpoint="/export/inmuebles"
+            params={{
+              ...(filters.search ? { search: filters.search } : {}),
+              ...(filters.tipo ? { tipo: filters.tipo } : {}),
+              ...(filters.ciudad ? { ciudad: filters.ciudad } : {}),
+              ...(filters.estado ? { estado: filters.estado } : {}),
+              ...(filters.estrato ? { estrato: String(filters.estrato) } : {}),
+            }}
+            entityName="Inmuebles"
+          />
+        }
       />
 
       {/* Error global */}
@@ -151,6 +195,8 @@ function InmueblesContent() {
           canEdit={canEdit}
           canDelete={canDelete}
           canCreate={canCreate}
+          isAdmin={isAdmin}
+          onToggleVitrina={isAdmin ? handleToggleVitrina : undefined}
           error={error}
           onRetry={fetchInmuebles}
           onCreateNew={handleCreateClick}

@@ -1,70 +1,229 @@
 /**
- * Página de Dashboard
- * HP-57: Pantalla principal con KPIs y expedientes recientes
+ * Dashboard Operativo — HP-359
+ * KPIs reales, gráfica de dona, listado de pendientes con acciones rápidas
  */
 
 'use client'
 
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { PageHeader, KPICard, Badge } from '@/components/ui'
-import { IconFolderOpen, IconBuilding2, IconBarChart3, IconChevronRight } from '@/components/icons'
-import { MOCK_EXPEDIENTES, MOCK_DASHBOARD_KPIS } from '@/lib/mock-data'
-import { formatDate } from '@/lib/constants'
+import {
+  IconFolderOpen, IconCheck, IconClock, IconDollarSign,
+  IconChevronRight, IconRefresh, IconLoader, IconCalendar,
+} from '@/components/icons'
+import { dashboardService } from '@/services/dashboardService'
+import { expedienteService } from '@/services/expedienteService'
+import { usePermissions } from '@/hooks/usePermissions'
+import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
+import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
+import type { IExpediente } from '@/types/expediente'
+
+// ── Date filter presets ─────────────────────────────────────
+
+const DATE_PRESETS = [
+  { label: 'Hoy', getValue: () => { const d = new Date(); return { dateFrom: startOfDay(d), dateTo: d.toISOString() } } },
+  { label: 'Semana', getValue: () => { const d = new Date(); d.setDate(d.getDate() - 7); return { dateFrom: startOfDay(d), dateTo: new Date().toISOString() } } },
+  { label: 'Mes', getValue: () => { const d = new Date(); return { dateFrom: new Date(d.getFullYear(), d.getMonth(), 1).toISOString(), dateTo: d.toISOString() } } },
+  { label: 'Trimestre', getValue: () => { const d = new Date(); d.setMonth(d.getMonth() - 3); return { dateFrom: startOfDay(d), dateTo: new Date().toISOString() } } },
+] as const
+
+function startOfDay(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString()
+}
+
+// ── Donut chart colors per estado ───────────────────────────
+
+const ESTADO_COLORS: Record<string, string> = {
+  borrador: '#9ca3af',
+  en_revision: '#f59e0b',
+  informacion_incompleta: '#f97316',
+  aprobado: '#22c55e',
+  rechazado: '#ef4444',
+  condicionado: '#a855f7',
+  cerrado: '#64748b',
+}
+
+const AUTO_REFRESH_MS = 5 * 60 * 1000 // 5 minutes
+
+// ── Page Component ──────────────────────────────────────────
 
 export default function DashboardPage() {
-  // Obtener los últimos 5 expedientes
-  const expedientesRecientes = MOCK_EXPEDIENTES.slice(0, 5)
+  const { canAccess, hasRole } = usePermissions()
+  const canDoActions = hasRole('administrador') || hasRole('operador_analista')
+
+  // State
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [porEstado, setPorEstado] = useState<ExpedientePorEstado[]>([])
+  const [pendientes, setPendientes] = useState<IExpediente[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({})
+  const [activePreset, setActivePreset] = useState(2) // "Mes" by default
+  const [filters, setFilters] = useState<DashboardFilters>(() => DATE_PRESETS[2].getValue())
+  const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ── Fetch data ──────────────────────────────────────────
+
+  const fetchAll = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true)
+    const errors: Record<string, string> = {}
+
+    // Fetch all 3 sections in parallel, errors are isolated per section
+    const [summaryResult, estadoResult, pendientesResult] = await Promise.allSettled([
+      dashboardService.getSummary(filters),
+      dashboardService.getExpedientesPorEstado(filters),
+      expedienteService.getExpedientes({
+        search: '',
+        estado: ['borrador', 'en_revision', 'informacion_incompleta'],
+        analista_id: '',
+        page: 1,
+        limit: 10,
+        sortBy: 'created_at',
+        sortOrder: 'asc',
+      }),
+    ])
+
+    if (summaryResult.status === 'fulfilled') {
+      setSummary(summaryResult.value)
+    } else {
+      errors.summary = 'Error al cargar indicadores'
+    }
+
+    if (estadoResult.status === 'fulfilled') {
+      setPorEstado(estadoResult.value)
+    } else {
+      errors.chart = 'Error al cargar grafica'
+    }
+
+    if (pendientesResult.status === 'fulfilled') {
+      setPendientes(pendientesResult.value.data)
+    } else {
+      errors.pendientes = 'Error al cargar pendientes'
+    }
+
+    setSectionErrors(errors)
+    setLoading(false)
+  }, [filters])
+
+  useEffect(() => {
+    fetchAll()
+  }, [fetchAll])
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    refreshTimer.current = setInterval(() => {
+      fetchAll(false) // silent refresh without loading skeleton
+    }, AUTO_REFRESH_MS)
+    return () => {
+      if (refreshTimer.current) clearInterval(refreshTimer.current)
+    }
+  }, [fetchAll])
+
+  // ── Filter handlers ─────────────────────────────────────
+
+  const handlePresetClick = (index: number) => {
+    setActivePreset(index)
+    setFilters(DATE_PRESETS[index].getValue())
+  }
+
+  // ── Render ──────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
         title="Dashboard"
-        subtitle="Bienvenido de vuelta"
+        subtitle="Indicadores operativos"
       />
 
-      {/* Grid de KPIs - 1 col mobile, 2 tablet, 4 desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title={MOCK_DASHBOARD_KPIS[0].label}
-          value={MOCK_DASHBOARD_KPIS[0].value}
-          change={MOCK_DASHBOARD_KPIS[0].change}
-          trend={MOCK_DASHBOARD_KPIS[0].trend}
-          icon={IconFolderOpen}
-          accentColor="bg-primary-600"
-        />
-        <KPICard
-          title={MOCK_DASHBOARD_KPIS[1].label}
-          value={MOCK_DASHBOARD_KPIS[1].value}
-          change={MOCK_DASHBOARD_KPIS[1].change}
-          trend={MOCK_DASHBOARD_KPIS[1].trend}
-          icon={IconFolderOpen}
-          accentColor="bg-green-600"
-        />
-        <KPICard
-          title={MOCK_DASHBOARD_KPIS[2].label}
-          value={MOCK_DASHBOARD_KPIS[2].value}
-          change={MOCK_DASHBOARD_KPIS[2].change}
-          trend={MOCK_DASHBOARD_KPIS[2].trend}
-          icon={IconFolderOpen}
-          accentColor="bg-amber-600"
-        />
-        <KPICard
-          title={MOCK_DASHBOARD_KPIS[3].label}
-          value={MOCK_DASHBOARD_KPIS[3].value}
-          change={MOCK_DASHBOARD_KPIS[3].change}
-          trend={MOCK_DASHBOARD_KPIS[3].trend}
-          icon={IconFolderOpen}
-          accentColor="bg-blue-600"
-        />
+      {/* Date filter bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <IconCalendar size={16} className="text-gray-400" />
+        {DATE_PRESETS.map((preset, idx) => (
+          <button
+            key={preset.label}
+            onClick={() => handlePresetClick(idx)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+              activePreset === idx
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+        <button
+          onClick={() => fetchAll()}
+          disabled={loading}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 disabled:opacity-50"
+        >
+          <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
+          Actualizar
+        </button>
       </div>
 
-      {/* Sección de contenido principal */}
+      {/* KPI Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 animate-pulse">
+              <div className="h-4 w-24 bg-gray-200 rounded mb-3" />
+              <div className="h-8 w-16 bg-gray-200 rounded mb-2" />
+              <div className="h-3 w-32 bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : sectionErrors.summary ? (
+        <SectionError message={sectionErrors.summary} onRetry={() => fetchAll()} />
+      ) : summary ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            title="Expedientes activos"
+            value={summary.totalExpedientesActivos}
+            icon={IconFolderOpen}
+            accentColor="bg-primary-600"
+          />
+          <KPICard
+            title="Tasa de aprobacion"
+            value={`${summary.tasaAprobacion}%`}
+            icon={IconCheck}
+            accentColor="bg-green-600"
+          />
+          <KPICard
+            title="Tiempo promedio"
+            value={`${summary.tiempoPromedioResolucionDias} dias`}
+            icon={IconClock}
+            accentColor="bg-amber-600"
+          />
+          <KPICard
+            title="Ingresos del periodo"
+            value={formatCurrency(summary.ingresosDelPeriodo)}
+            icon={IconDollarSign}
+            accentColor="bg-blue-600"
+          />
+        </div>
+      ) : null}
+
+      {/* Main content: Chart + Pendientes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Expedientes recientes - 2 columnas */}
+        {/* Donut Chart — 1 col */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expedientes por estado</h2>
+          {loading ? (
+            <div className="flex items-center justify-center h-64 animate-pulse">
+              <div className="w-48 h-48 bg-gray-200 rounded-full" />
+            </div>
+          ) : sectionErrors.chart ? (
+            <SectionError message={sectionErrors.chart} onRetry={() => fetchAll()} />
+          ) : (
+            <DonutChart data={porEstado} />
+          )}
+        </div>
+
+        {/* Pendientes — 2 col */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Expedientes recientes</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Pendientes prioritarios</h2>
             <Link
               href="/expedientes"
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
@@ -72,105 +231,199 @@ export default function DashboardPage() {
               Ver todos
             </Link>
           </div>
-          <div className="divide-y divide-gray-100">
-            {expedientesRecientes.map((expediente) => (
-              <Link
-                key={expediente.id}
-                href={`/expedientes/${expediente.id}`}
-                className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
-                    {expediente.numero_expediente}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {expediente.inmueble_titulo}
-                  </p>
+          {loading ? (
+            <div className="divide-y divide-gray-100">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="px-6 py-4 animate-pulse">
+                  <div className="h-4 w-32 bg-gray-200 rounded mb-2" />
+                  <div className="h-3 w-48 bg-gray-200 rounded" />
                 </div>
-                <div className="flex items-center gap-4 ml-4">
-                  <Badge estado={expediente.estado} />
-                  <span className="text-sm text-gray-500 hidden sm:inline">
-                    {formatDate(expediente.fecha_creacion)}
-                  </span>
-                  <IconChevronRight size={16} className="text-gray-400" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Acciones rápidas - 1 columna */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Acciones rápidas</h2>
-          </div>
-          <div className="p-6 space-y-3">
-            <Link
-              href="/expedientes"
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary-300 transition-colors group"
-            >
-              <div className="p-2 bg-primary-100 rounded-lg group-hover:bg-primary-200 transition-colors">
-                <IconFolderOpen size={20} className="text-primary-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Nuevo expediente</p>
-                <p className="text-xs text-gray-500">Crear un nuevo caso</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/inmuebles"
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary-300 transition-colors group"
-            >
-              <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                <IconBuilding2 size={20} className="text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Nuevo inmueble</p>
-                <p className="text-xs text-gray-500">Agregar propiedad</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/reportes"
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-primary-300 transition-colors group"
-            >
-              <div className="p-2 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors">
-                <IconBarChart3 size={20} className="text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Ver reportes</p>
-                <p className="text-xs text-gray-500">Estadísticas y métricas</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Placeholders para gráficos futuros */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Expedientes por mes</h3>
-          <div className="h-64 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <IconBarChart3 size={48} className="text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Gráfico de expedientes por mes</p>
-              <p className="text-xs text-gray-400">Se implementará con librería de gráficos</p>
+              ))}
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingresos mensuales</h3>
-          <div className="h-64 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <IconBarChart3 size={48} className="text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Gráfico de ingresos mensuales</p>
-              <p className="text-xs text-gray-400">Se implementará con librería de gráficos</p>
+          ) : sectionErrors.pendientes ? (
+            <div className="p-6">
+              <SectionError message={sectionErrors.pendientes} onRetry={() => fetchAll()} />
             </div>
-          </div>
+          ) : pendientes.length === 0 ? (
+            <div className="text-center py-12">
+              <IconCheck size={40} className="mx-auto text-green-300 mb-3" />
+              <p className="text-sm text-gray-500">No hay expedientes pendientes</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {pendientes.map((exp) => (
+                <Link
+                  key={exp.id}
+                  href={`/expedientes/${exp.id}`}
+                  className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-medium text-gray-900">
+                        {exp.numero_expediente || 'Sin numero'}
+                      </span>
+                      <Badge estado={exp.estado} />
+                    </div>
+                    <p className="text-xs text-gray-500 truncate">
+                      {exp.solicitante
+                        ? exp.solicitante.nombre
+                        : 'Sin solicitante'}
+                      {exp.inmueble?.direccion ? ` · ${exp.inmueble.direccion}` : ''}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {formatDate(exp.created_at)}
+                      {exp.analista ? ` · ${exp.analista.nombre} ${exp.analista.apellido}` : ''}
+                    </p>
+                  </div>
+                  <IconChevronRight size={16} className="text-gray-400 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
+}
+
+// ── Section Error ───────────────────────────────────────────
+
+function SectionError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="text-center py-8">
+      <p className="text-sm text-red-600 mb-2">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700"
+      >
+        <IconRefresh size={14} />
+        Reintentar
+      </button>
+    </div>
+  )
+}
+
+// ── Donut Chart (SVG) ───────────────────────────────────────
+
+function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-gray-400">Sin datos para el periodo</p>
+      </div>
+    )
+  }
+
+  const total = data.reduce((sum, d) => sum + d.count, 0)
+  if (total === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-gray-400">Sin expedientes en el periodo</p>
+      </div>
+    )
+  }
+
+  const cx = 100
+  const cy = 100
+  const radius = 70
+  const innerRadius = 45
+  let cumulativeAngle = -90 // start at top
+
+  const segments = data
+    .filter((d) => d.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .map((d) => {
+      const angle = (d.count / total) * 360
+      const startAngle = cumulativeAngle
+      cumulativeAngle += angle
+      return { ...d, startAngle, angle }
+    })
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <svg viewBox="0 0 200 200" className="w-48 h-48" role="img" aria-label="Distribucion de expedientes por estado">
+        {segments.map((seg) => {
+          const color = ESTADO_COLORS[seg.estado] || '#9ca3af'
+          return (
+            <DonutSegment
+              key={seg.estado}
+              cx={cx}
+              cy={cy}
+              radius={radius}
+              innerRadius={innerRadius}
+              startAngle={seg.startAngle}
+              angle={seg.angle}
+              color={color}
+            />
+          )
+        })}
+        {/* Center text */}
+        <text x={cx} y={cy - 6} textAnchor="middle" className="fill-gray-900 text-2xl font-bold" fontSize="24">
+          {total}
+        </text>
+        <text x={cx} y={cy + 12} textAnchor="middle" className="fill-gray-500" fontSize="10">
+          expedientes
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 w-full">
+        {segments.map((seg) => {
+          const estadoConfig = ESTADOS_EXPEDIENTE[seg.estado as keyof typeof ESTADOS_EXPEDIENTE]
+          return (
+            <div key={seg.estado} className="flex items-center gap-2">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: ESTADO_COLORS[seg.estado] || '#9ca3af' }}
+              />
+              <span className="text-xs text-gray-600 truncate">
+                {estadoConfig?.label || seg.estado}
+              </span>
+              <span className="text-xs font-semibold text-gray-900 ml-auto">{seg.count}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── SVG Donut Segment ───────────────────────────────────────
+
+function DonutSegment({
+  cx, cy, radius, innerRadius, startAngle, angle, color,
+}: {
+  cx: number; cy: number; radius: number; innerRadius: number
+  startAngle: number; angle: number; color: string
+}) {
+  if (angle >= 360) {
+    // Full circle
+    return (
+      <>
+        <circle cx={cx} cy={cy} r={radius} fill={color} />
+        <circle cx={cx} cy={cy} r={innerRadius} fill="white" />
+      </>
+    )
+  }
+
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const x1 = cx + radius * Math.cos(toRad(startAngle))
+  const y1 = cy + radius * Math.sin(toRad(startAngle))
+  const x2 = cx + radius * Math.cos(toRad(startAngle + angle))
+  const y2 = cy + radius * Math.sin(toRad(startAngle + angle))
+  const ix1 = cx + innerRadius * Math.cos(toRad(startAngle + angle))
+  const iy1 = cy + innerRadius * Math.sin(toRad(startAngle + angle))
+  const ix2 = cx + innerRadius * Math.cos(toRad(startAngle))
+  const iy2 = cy + innerRadius * Math.sin(toRad(startAngle))
+  const largeArc = angle > 180 ? 1 : 0
+
+  const d = [
+    `M ${x1} ${y1}`,
+    `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+    `L ${ix1} ${iy1}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2}`,
+    'Z',
+  ].join(' ')
+
+  return <path d={d} fill={color} />
 }

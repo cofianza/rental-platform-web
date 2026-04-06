@@ -303,7 +303,7 @@ class InmuebleService {
    */
   async toggleVisibleVitrina(id: string, visible: boolean): Promise<IInmueble> {
     const response = (await apiClient.patch(
-      `/inmuebles/${id}`,
+      `/inmuebles/${id}/visibility`,
       { visible_vitrina: visible }
     )) as unknown as IInmuebleResponse
     return response.data

@@ -36,8 +36,14 @@ function LoginForm() {
   // Redirigir si ya está autenticado (ej: navega a /login estando logueado)
   useEffect(() => {
     if (isAuthenticated) {
-      const redirect = searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
-      router.replace(redirect)
+      const intent = searchParams.get('intent')
+      const propertyId = searchParams.get('property_id')
+      if (intent === 'interest' && propertyId) {
+        router.replace(`/vitrina/interest?property_id=${propertyId}`)
+      } else {
+        const redirect = searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
+        router.replace(redirect)
+      }
     }
   }, [isAuthenticated, router, searchParams])
 

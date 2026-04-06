@@ -11,7 +11,7 @@ import { useEffect } from 'react'
 import { useUIStore } from '@/stores/ui.store'
 import { NAV_ITEMS } from '@/lib/constants'
 import { ICON_MAP } from '@/components/icons'
-import { IconChevronRight, IconChevronDown, IconX, IconLogOut } from '@/components/icons'
+import { IconChevronRight, IconChevronDown, IconX, IconLogOut, IconGlobe } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { cn } from '@/lib/utils'
@@ -181,8 +181,39 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Botón de cerrar sesión */}
-        <div className="border-t border-gray-200 p-2">
+        {/* Vitrina publica + Cerrar sesion */}
+        <div className="border-t border-gray-200 p-2 space-y-1">
+          <Link
+            href="/"
+            target="_blank"
+            className={cn(
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+              'text-gray-700 hover:bg-primary-50 hover:text-primary-600 group relative'
+            )}
+            title="Ver vitrina publica"
+          >
+            <IconGlobe size={20} className="shrink-0 text-gray-600 group-hover:text-primary-600" />
+            <span
+              className={cn(
+                'font-medium text-sm',
+                'md:hidden',
+                sidebarExpanded && 'lg:inline'
+              )}
+            >
+              Ver vitrina
+            </span>
+            <div
+              className={cn(
+                'absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md',
+                'opacity-0 invisible group-hover:opacity-100 group-hover:visible',
+                'transition-all whitespace-nowrap z-50 pointer-events-none',
+                'hidden md:block',
+                sidebarExpanded && 'lg:hidden'
+              )}
+            >
+              Ver vitrina
+            </div>
+          </Link>
           <button
             onClick={logout}
             className={cn(

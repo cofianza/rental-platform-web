@@ -5,10 +5,12 @@
  * Tabla responsive con paginación y ordenamiento
  */
 
+import { useState } from 'react'
 import {
   IconEdit,
   IconTrash,
   IconEye,
+  IconEyeOff,
   IconChevronLeft,
   IconChevronRight,
   IconLoader,
@@ -20,6 +22,71 @@ import {
 import { EstadoBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
 import { ITEMS_PER_PAGE_OPTIONS, INMUEBLE_MESSAGES } from './constants'
 import type { IInmueble, IInmuebleFilters, IInmueblesMeta } from '@/types/inmueble'
+
+/**
+ * Toggle de visibilidad en vitrina - HP-369
+ */
+function VitrinaToggle({
+  inmueble,
+  onToggle,
+}: {
+  inmueble: IInmueble
+  onToggle: (id: string, value: boolean) => Promise<void>
+}) {
+  const [loading, setLoading] = useState(false)
+  const disabled = inmueble.estado !== 'disponible'
+
+  const handleClick = async () => {
+    if (disabled || loading) return
+    setLoading(true)
+    try {
+      await onToggle(inmueble.id, !inmueble.visible_vitrina)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Estado visual simplificado
+  const isActive = inmueble.visible_vitrina && !disabled
+
+  return (
+    <div
+      className="flex items-center gap-2"
+      title={
+        disabled
+          ? 'Solo inmuebles disponibles pueden publicarse en la vitrina'
+          : inmueble.visible_vitrina
+            ? 'Visible en vitrina'
+            : 'Oculto de vitrina'
+      }
+    >
+      {disabled ? (
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-100 text-gray-400 text-[11px]">
+          <IconEyeOff size={13} />
+          No disponible
+        </span>
+      ) : inmueble.visible_vitrina ? (
+        <button
+          onClick={handleClick}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-[11px] font-medium hover:bg-green-100 transition-colors disabled:opacity-50"
+        >
+          {loading ? <IconLoader size={13} className="animate-spin" /> : <IconEye size={13} />}
+          Publicado
+        </button>
+      ) : (
+        <button
+          onClick={handleClick}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-500 text-[11px] font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+        >
+          {loading ? <IconLoader size={13} className="animate-spin" /> : <IconEyeOff size={13} />}
+          Oculto
+        </button>
+      )}
+    </div>
+  )
+}
 
 interface InmueblesTableProps {
   inmuebles: IInmueble[]
@@ -34,6 +101,8 @@ interface InmueblesTableProps {
   canEdit?: boolean
   canDelete?: boolean
   canCreate?: boolean
+  isAdmin?: boolean
+  onToggleVitrina?: (id: string, value: boolean) => Promise<void>
   error?: string | null
   onRetry?: () => void
   onCreateNew?: () => void
@@ -99,6 +168,8 @@ export function InmueblesTable({
   canEdit = true,
   canDelete = false,
   canCreate = true,
+  isAdmin = false,
+  onToggleVitrina,
   error = null,
   onRetry,
   onCreateNew,
@@ -218,6 +289,11 @@ export function InmueblesTable({
                   onSort={onSort}
                 />
               </th>
+              {isAdmin && onToggleVitrina && (
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vitrina
+                </th>
+              )}
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
               </th>
@@ -255,6 +331,13 @@ export function InmueblesTable({
                 <td className="px-4 py-3 whitespace-nowrap text-center">
                   <EstadoBadge estado={inmueble.estado} />
                 </td>
+                {isAdmin && onToggleVitrina && (
+                  <td className="px-4 py-3 whitespace-nowrap text-center">
+                    <div className="flex justify-center">
+                      <VitrinaToggle inmueble={inmueble} onToggle={onToggleVitrina} />
+                    </div>
+                  </td>
+                )}
                 <td className="px-4 py-3 whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-1">
                     <button
@@ -336,6 +419,9 @@ export function InmueblesTable({
               <span className="text-sm font-medium text-gray-900">
                 {formatCOP(inmueble.valor_arriendo)}
               </span>
+              {isAdmin && onToggleVitrina && (
+                <VitrinaToggle inmueble={inmueble} onToggle={onToggleVitrina} />
+              )}
             </div>
           </div>
         ))}

@@ -7,7 +7,7 @@
 
 import { Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, ExportButton } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import {
@@ -64,13 +64,26 @@ function ExpedientesContent() {
         title="Expedientes"
         subtitle={meta ? `${meta.total} expedientes` : 'Cargando...'}
         actions={
-          <button
-            onClick={() => router.push('/expedientes/nuevo')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
-            <IconPlus size={18} />
-            {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
-          </button>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              endpoint="/export/expedientes"
+              params={{
+                ...(filters.search ? { search: filters.search } : {}),
+                ...(filters.estado.length > 0 ? { estado: filters.estado.join(',') } : {}),
+                ...(filters.analista_id ? { analista_id: filters.analista_id } : {}),
+                ...(filters.fecha_desde ? { dateFrom: filters.fecha_desde } : {}),
+                ...(filters.fecha_hasta ? { dateTo: filters.fecha_hasta } : {}),
+              }}
+              entityName="Expedientes"
+            />
+            <button
+              onClick={() => router.push('/expedientes/nuevo')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+            >
+              <IconPlus size={18} />
+              {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
+            </button>
+          </div>
         }
       />
 
