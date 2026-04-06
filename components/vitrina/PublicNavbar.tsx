@@ -30,7 +30,7 @@ export function PublicNavbar() {
           >
             <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
               <span className="text-sm font-semibold text-primary-700">
-                {user.nombre?.[0]?.toUpperCase() || <IconUser size={16} />}
+                {user.email?.[0]?.toUpperCase() || <IconUser size={16} />}
               </span>
             </div>
             <span className="text-sm font-medium text-gray-700 hidden sm:inline">
