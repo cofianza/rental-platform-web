@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -40,6 +40,14 @@ interface FormErrors {
 }
 
 export default function RegistroSolicitantePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><IconLoader size={24} className="animate-spin text-primary-600" /></div>}>
+      <RegistroSolicitanteContent />
+    </Suspense>
+  )
+}
+
+function RegistroSolicitanteContent() {
   const searchParams = useSearchParams()
   const propertyId = searchParams.get('property_id') || ''
   const intent = searchParams.get('intent') || ''
