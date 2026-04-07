@@ -200,33 +200,28 @@ class InmuebleService {
       throw new Error('El archivo excede el tamaño máximo de 5MB.')
     }
 
-    // Generar nombre único para el archivo
-    const fileExt = file.name.split('.').pop()
-    const timestamp = Date.now()
-    const randomId = Math.random().toString(36).substring(2, 8)
-    const fileName = inmuebleId
-      ? `${inmuebleId}/${timestamp}-${randomId}.${fileExt}`
-      : `temp/${timestamp}-${randomId}.${fileExt}`
+    // Upload via backend API (uses service_role_key for Storage access)
+    const formData = new FormData()
+    formData.append('file', file)
+    if (inmuebleId) formData.append('inmueble_id', inmuebleId)
 
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false,
-      })
+    const { useAuthStore } = await import('@/stores/auth.store')
+    const token = useAuthStore.getState().accessToken
+    const { API_BASE_URL } = await import('@/lib/constants')
 
-    if (error) {
-      console.error('Error uploading file:', error)
-      throw new Error('Error al subir la imagen. Por favor, intenta de nuevo.')
+    const res = await fetch(`${API_BASE_URL}/inmuebles/upload-fachada`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      throw new Error(err?.message || 'Error al subir la imagen. Por favor, intenta de nuevo.')
     }
 
-    // Obtener URL pública
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(data.path)
-
-    return urlData.publicUrl
+    const json = await res.json()
+    return json.data?.url || json.url || ''
   }
 
   /**
