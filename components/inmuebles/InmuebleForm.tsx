@@ -148,6 +148,8 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
   const isPropietarioUser = authUser?.rol === 'propietario'
+  const isInmobiliariaUser = authUser?.rol === 'inmobiliaria'
+  const isAutoAssignOwner = isPropietarioUser || isInmobiliariaUser
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -157,12 +159,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     apellido: string
   } | null>(null)
 
-  // Auto-asignar propietario_id si el usuario es propietario
+  // Auto-asignar propietario_id si el usuario es propietario o inmobiliaria
   useEffect(() => {
-    if (isPropietarioUser && authUser && mode === 'create') {
+    if (isAutoAssignOwner && authUser && mode === 'create') {
       setFormData((prev) => ({ ...prev, propietario_id: authUser.id }))
     }
-  }, [isPropietarioUser, authUser, mode])
+  }, [isAutoAssignOwner, authUser, mode])
 
   // Cargar datos del inmueble al editar
   useEffect(() => {
@@ -770,15 +772,21 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           </div>
         </div>
 
-        {/* Propietario — oculto para usuarios propietario (se auto-asigna) */}
-        {isPropietarioUser ? (
+        {/* Propietario — auto-asigna para propietario e inmobiliaria */}
+        {isAutoAssignOwner ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
-              {authUser?.email?.[0]?.toUpperCase() || 'P'}
+              {authUser?.email?.[0]?.toUpperCase() || 'U'}
             </div>
             <div>
-              <p className="text-sm font-medium text-green-800">Propietario: Tu cuenta</p>
-              <p className="text-xs text-green-600">El inmueble se registrara a tu nombre automaticamente</p>
+              <p className="text-sm font-medium text-green-800">
+                {isPropietarioUser ? 'Propietario: Tu cuenta' : 'Administrado por: Tu inmobiliaria'}
+              </p>
+              <p className="text-xs text-green-600">
+                {isPropietarioUser
+                  ? 'El inmueble se registrara a tu nombre automaticamente'
+                  : 'El inmueble quedara vinculado a tu inmobiliaria'}
+              </p>
             </div>
           </div>
         ) : (
