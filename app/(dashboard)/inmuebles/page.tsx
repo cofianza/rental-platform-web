@@ -69,10 +69,12 @@ function InmueblesContent() {
   // Permisos según rol
   const isAdmin = user?.rol === 'administrador'
   const isOperador = user?.rol === 'operador_analista'
+  const isPropietario = user?.rol === 'propietario'
+  const isInmobiliaria = user?.rol === 'inmobiliaria'
 
   // Permisos de CRUD
-  const canCreate = isAdmin || isOperador
-  const canEdit = isAdmin || isOperador
+  const canCreate = isAdmin || isOperador || isPropietario || isInmobiliaria
+  const canEdit = isAdmin || isOperador || isPropietario || isInmobiliaria
   const canDelete = isAdmin // Solo admin puede eliminar
 
   // Handlers
