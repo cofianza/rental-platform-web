@@ -131,12 +131,30 @@ function RegistroSolicitanteContent() {
 
       toast.success('Registro exitoso')
 
-      // Redirect to interest flow if property_id exists
+      // If property interest: create expediente+estudio directly with the fresh token
       if (propertyId) {
-        window.location.href = `/vitrina/interest?property_id=${propertyId}`
-      } else {
-        window.location.href = '/dashboard'
+        try {
+          const interestRes = await fetch(`${API_BASE_URL}/vitrina/interest`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ property_id: propertyId }),
+          })
+          const interestJson = await interestRes.json()
+          if (interestRes.ok && interestJson.data?.expediente?.id) {
+            localStorage.removeItem('cofianza_interested_property')
+            toast.success('Expediente creado exitosamente')
+            window.location.href = `/expedientes/${interestJson.data.expediente.id}`
+            return
+          }
+        } catch {
+          // If interest creation fails, redirect to dashboard
+        }
       }
+
+      window.location.href = '/dashboard'
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error de conexion'
       setErrors({ general: msg })
