@@ -31,6 +31,20 @@ import type {
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 
+// ── Field Tooltip ───────────────────────────────────────────
+
+function FieldTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group ml-1 inline-flex">
+      <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center cursor-help hover:bg-primary-100 hover:text-primary-600 transition-colors">?</span>
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-normal w-56 text-center opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-lg">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+      </span>
+    </span>
+  )
+}
+
 // ── COP Currency Input ──────────────────────────────────────
 
 function formatCOPDisplay(value: number | ''): string {
@@ -45,7 +59,7 @@ function parseCOPInput(display: string): number | '' {
   return isNaN(num) ? '' : num
 }
 
-function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max }: {
+function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max, tooltip }: {
   label: string
   id: string
   value: number | ''
@@ -54,6 +68,7 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
   placeholder?: string
   error?: string
   max?: number
+  tooltip?: string
 }) {
   const [display, setDisplay] = useState(formatCOPDisplay(value))
 
@@ -78,7 +93,10 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {tooltip && <FieldTooltip text={tooltip} />}
+      </label>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
         <input
@@ -605,6 +623,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             <div>
               <label htmlFor="uso" className="block text-sm font-medium text-gray-700 mb-1">
                 Uso
+                <FieldTooltip text="Vivienda: para habitar. Comercial: para oficinas, locales o negocios." />
               </label>
               <select
                 id="uso"
@@ -625,6 +644,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             <div>
               <label htmlFor="estrato" className="block text-sm font-medium text-gray-700 mb-1">
                 Estrato *
+                <FieldTooltip text="Clasificacion socioeconomica de 1 a 6 usada en Colombia. Determina el costo de servicios publicos. 1 es el mas bajo, 6 el mas alto." />
               </label>
               <select
                 id="estrato"
@@ -867,6 +887,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             {/* Valor arriendo */}
             <CurrencyInput
               label="Valor Arriendo (COP) *"
+              tooltip="Monto mensual que el arrendatario paga por vivir en el inmueble."
               id="valor_arriendo"
               value={formData.valor_arriendo}
               onChange={(val) => handleChange('valor_arriendo', val)}
@@ -879,6 +900,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             {/* Administración */}
             <CurrencyInput
               label="Administracion (COP)"
+              tooltip="Cuota mensual de administracion del conjunto o edificio. Dejalo en 0 si no aplica."
               id="administracion"
               value={formData.administracion}
               onChange={(val) => handleChange('administracion', val)}
@@ -891,6 +913,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             {/* Valor comercial */}
             <CurrencyInput
               label="Valor Comercial (COP)"
+              tooltip="Precio estimado de venta del inmueble en el mercado. Es referencial, no obligatorio."
               id="valor_comercial"
               value={formData.valor_comercial}
               onChange={(val) => handleChange('valor_comercial', val)}
@@ -957,6 +980,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             <div>
               <label htmlFor="notas_internas" className="block text-sm font-medium text-gray-700 mb-1">
                 Notas Internas
+                <FieldTooltip text="Notas privadas visibles solo para administradores. No se muestran al arrendatario ni en la vitrina publica." />
               </label>
               <textarea
                 id="notas_internas"
