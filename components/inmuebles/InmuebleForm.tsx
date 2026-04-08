@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconChevronRight, IconHome } from '@/components/icons'
+import { IconLoader, IconChevronRight, IconHome, IconPlus, IconX, IconImage } from '@/components/icons'
 import { PageHeader } from '@/components/ui'
 import { ImageUploader } from './ImageUploader'
 import { PropietarioSelector } from './PropietarioSelector'
@@ -158,6 +158,8 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     nombre: string
     apellido: string
   } | null>(null)
+  const [fotosAdicionales, setFotosAdicionales] = useState<{ file: File; preview: string }[]>([])
+  const [uploadingFotos, setUploadingFotos] = useState(false)
 
   // Auto-asignar propietario_id si el usuario es propietario o inmobiliaria
   useEffect(() => {
@@ -300,7 +302,28 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           visible_vitrina: formData.visible_vitrina,
         }
 
-        await inmuebleService.createInmueble(createData)
+        const newInmueble = await inmuebleService.createInmueble(createData)
+
+        // Upload fotos adicionales si hay
+        if (fotosAdicionales.length > 0 && newInmueble?.id) {
+          setUploadingFotos(true)
+          let uploaded = 0
+          for (const foto of fotosAdicionales) {
+            try {
+              await inmuebleService.uploadAndCreateFoto(newInmueble.id, foto.file, {
+                orden: uploaded + 1,
+              })
+              uploaded++
+            } catch {
+              // Continuar con las demas fotos si una falla
+            }
+          }
+          if (uploaded > 0) {
+            toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
+          }
+          setUploadingFotos(false)
+        }
+
         toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS)
       } else if (inmueble) {
         const updateData: IInmuebleUpdateData = {
@@ -416,6 +439,71 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             disabled={isSubmitting}
             error={errors.foto_fachada_url}
           />
+        </div>
+
+        {/* Fotos adicionales (opcional) */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Fotos adicionales</h3>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Agrega fotos del interior, habitaciones, banos, cocina, etc. Tambien puedes agregarlas despues desde el detalle del inmueble.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {/* Preview de fotos seleccionadas */}
+            {fotosAdicionales.map((foto, idx) => (
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    URL.revokeObjectURL(foto.preview)
+                    setFotosAdicionales((prev) => prev.filter((_, i) => i !== idx))
+                  }}
+                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <IconX size={14} />
+                </button>
+                {idx === 0 && fotosAdicionales.length > 0 && (
+                  <span className="absolute bottom-1 left-1 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">
+                    {fotosAdicionales.length} foto{fotosAdicionales.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            ))}
+
+            {/* Boton agregar */}
+            {fotosAdicionales.length < 10 && (
+              <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
+                <IconImage size={24} className="text-gray-400 mb-1" />
+                <span className="text-xs text-gray-500">Agregar</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  disabled={isSubmitting}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || [])
+                    const remaining = 10 - fotosAdicionales.length
+                    const toAdd = files.slice(0, remaining)
+                    const newFotos = toAdd.map((file) => ({
+                      file,
+                      preview: URL.createObjectURL(file),
+                    }))
+                    setFotosAdicionales((prev) => [...prev, ...newFotos])
+                    e.target.value = '' // reset input
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
+          {fotosAdicionales.length >= 10 && (
+            <p className="text-xs text-amber-600 mt-2">Maximo 10 fotos adicionales</p>
+          )}
         </div>
 
         {/* Información básica */}
