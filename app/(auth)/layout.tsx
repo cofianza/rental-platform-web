@@ -4,6 +4,8 @@
  * Una columna en mobile
  */
 
+import Link from 'next/link'
+
 export default function AuthLayout({
   children,
 }: {
@@ -13,15 +15,15 @@ export default function AuthLayout({
     <div className="min-h-screen flex">
       {/* Columna izquierda - Branding (oculta en mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary-700 flex-col justify-between p-12">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
+        {/* Logo — click vuelve a la landing */}
+        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-700 font-bold text-xl">
-            HP
+            C
           </div>
           <span className="text-white font-semibold text-xl">
             Cofianza
           </span>
-        </div>
+        </Link>
 
         {/* Contenido hero */}
         <div className="space-y-6">
@@ -59,8 +61,17 @@ export default function AuthLayout({
       </div>
 
       {/* Columna derecha - Formulario */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
-        <div className="w-full max-w-md">{children}</div>
+      <div className="flex-1 flex flex-col bg-gray-50 px-6 py-12">
+        {/* Mobile: link to landing */}
+        <div className="lg:hidden mb-6 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span className="text-sm font-medium">Volver a la vitrina</span>
+          </Link>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-md">{children}</div>
+        </div>
       </div>
     </div>
   )
