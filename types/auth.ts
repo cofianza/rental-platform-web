@@ -12,7 +12,7 @@
  * - propietario: Dueño de inmuebles
  * - inmobiliaria: Empresa inmobiliaria
  */
-export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria'
+export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria' | 'solicitante'
 
 /**
  * Usuario básico retornado en login
