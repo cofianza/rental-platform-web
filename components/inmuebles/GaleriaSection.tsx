@@ -45,6 +45,7 @@ import { FOTO_LIMITS } from '@/types/inmueble'
 interface GaleriaSectionProps {
   inmuebleId: string
   canEdit?: boolean
+  onFachadaChange?: (newUrl: string) => void
 }
 
 interface UploadingFile {
@@ -190,7 +191,7 @@ function SortablePhoto({
   )
 }
 
-export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionProps) {
+export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }: GaleriaSectionProps) {
   const [fotos, setFotos] = useState<IFotoInmueble[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
@@ -448,6 +449,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false }: GaleriaSectionPr
           es_fachada: f.id === foto.id ? updated.es_fachada : false,
         }))
       )
+      onFachadaChange?.(foto.url)
       toast.success('Foto de fachada actualizada')
     } catch (error) {
       console.error('Error setting fachada:', error)

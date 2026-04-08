@@ -568,7 +568,11 @@ export default function InmuebleDetailPage() {
               )}
 
               {activeTab === 'galeria' && (
-                <GaleriaSection inmuebleId={inmueble.id} canEdit={canEdit} />
+                <GaleriaSection
+                  inmuebleId={inmueble.id}
+                  canEdit={canEdit}
+                  onFachadaChange={(newUrl) => setInmueble((prev) => prev ? { ...prev, foto_fachada_url: newUrl } : prev)}
+                />
               )}
             </div>
           </div>
