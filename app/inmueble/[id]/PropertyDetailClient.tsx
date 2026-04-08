@@ -29,7 +29,14 @@ export function PropertyDetailClient({ property, similares }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [selectedPhoto, setSelectedPhoto] = useState(0)
 
-  const fotos = property.fotos ?? []
+  // Sort fotos so fachada (matching foto_fachada_url) is first
+  const rawFotos = property.fotos ?? []
+  const fotos = rawFotos.length > 0 && property.foto_fachada_url
+    ? [
+        ...rawFotos.filter((f) => f.url === property.foto_fachada_url),
+        ...rawFotos.filter((f) => f.url !== property.foto_fachada_url),
+      ]
+    : rawFotos
   const hasPhotos = fotos.length > 0
   const mainImage = hasPhotos ? fotos[selectedPhoto]?.url : property.foto_fachada_url
   const lightboxImages = hasPhotos

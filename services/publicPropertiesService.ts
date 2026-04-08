@@ -56,7 +56,7 @@ interface PaginationMeta {
 // ── Fetch helper (no auth) ──────────────────
 
 async function publicFetch<T>(path: string): Promise<{ data: T; meta?: PaginationMeta }> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { next: { revalidate: 60 } })
+  const res = await fetch(`${API_BASE_URL}${path}`, { cache: 'no-store' })
   if (!res.ok) {
     throw new Error(`Error ${res.status}: ${res.statusText}`)
   }
