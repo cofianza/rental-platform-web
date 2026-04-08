@@ -72,9 +72,11 @@ export default function InmuebleDetailPage() {
   // Permisos por rol
   const isAdmin = user?.rol === 'administrador'
   const isOperador = user?.rol === 'operador_analista'
-  const canEdit = isAdmin || isOperador
+  const isPropietario = user?.rol === 'propietario'
+  const isInmobiliaria = user?.rol === 'inmobiliaria'
+  const canEdit = isAdmin || isOperador || isPropietario || isInmobiliaria
   const canDeactivate = isAdmin
-  const canCreate = isAdmin || isOperador
+  const canCreate = isAdmin || isOperador || isPropietario || isInmobiliaria
 
   // Cargar inmueble
   const fetchInmueble = useCallback(async () => {
