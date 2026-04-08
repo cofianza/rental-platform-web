@@ -343,33 +343,31 @@ class InmuebleService {
       throw new Error('El archivo excede el tamaño máximo de 5MB.')
     }
 
-    // Generar nombre único para el archivo
-    const fileExt = file.name.split('.').pop()
-    const timestamp = Date.now()
-    const randomId = Math.random().toString(36).substring(2, 8)
-    const fileName = `${inmuebleId}/fotos/${timestamp}-${randomId}.${fileExt}`
+    // Upload via backend (same as fachada — avoids Supabase Storage auth issues)
+    const { useAuthStore } = await import('@/stores/auth.store')
+    const token = useAuthStore.getState().accessToken
+    const { API_BASE_URL } = await import('@/lib/constants')
 
-    // Subir a Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false,
-      })
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('inmueble_id', inmuebleId)
 
-    if (uploadError) {
-      console.error('Error uploading file:', uploadError)
-      throw new Error('Error al subir la imagen. Por favor, intenta de nuevo.')
+    const uploadRes = await fetch(`${API_BASE_URL}/inmuebles/upload-fachada`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+
+    if (!uploadRes.ok) {
+      throw new Error('Error al subir la imagen.')
     }
 
-    // Obtener URL pública
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(uploadData.path)
+    const uploadJson = await uploadRes.json()
+    const publicUrl = uploadJson.data?.url || ''
 
     // Registrar en el backend
     const fotoData: IFotoInmuebleCreate = {
-      url: urlData.publicUrl,
+      url: publicUrl,
       descripcion: options?.descripcion,
       orden: options?.orden,
       es_fachada: options?.es_fachada,
