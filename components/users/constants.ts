@@ -13,6 +13,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   gerencia_consulta: 'Gerencia/Consulta',
   propietario: 'Propietario',
   inmobiliaria: 'Inmobiliaria',
+  solicitante: 'Solicitante',
 }
 
 /**
@@ -24,6 +25,7 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   gerencia_consulta: 'green',
   propietario: 'teal',
   inmobiliaria: 'orange',
+  solicitante: 'cyan',
 }
 
 /**
@@ -35,6 +37,7 @@ export const ROLE_BADGE_CLASSES: Record<UserRole, string> = {
   gerencia_consulta: 'bg-green-100 text-green-800',
   propietario: 'bg-teal-100 text-teal-800',
   inmobiliaria: 'bg-orange-100 text-orange-800',
+  solicitante: 'bg-cyan-100 text-cyan-800',
 }
 
 /**
