@@ -13,6 +13,7 @@ import { IconLoader, IconChevronRight, IconHome, IconPlus, IconX, IconImage } fr
 import { PageHeader } from '@/components/ui'
 import { ImageUploader } from './ImageUploader'
 import { PropietarioSelector } from './PropietarioSelector'
+import { GaleriaSection } from './GaleriaSection'
 import {
   TIPO_OPTIONS,
   USO_OPTIONS,
@@ -536,82 +537,88 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Foto de fachada */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Foto de Fachada *</h3>
-          <ImageUploader
-            value={formData.foto_fachada_url}
-            onChange={(url) => handleChange('foto_fachada_url', url)}
-            inmuebleId={inmueble?.id}
-            disabled={isSubmitting}
-            error={errors.foto_fachada_url}
-          />
-        </div>
-
-        {/* Fotos adicionales (opcional) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">Fotos adicionales</h3>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
+        {/* Fotos — Galeria completa en edicion, uploader simple en creacion */}
+        {mode === 'edit' && inmueble?.id ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Galeria de Fotos</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Sube, reordena, marca la foto de fachada y agrega descripciones a cada imagen.
+            </p>
+            <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
           </div>
-          <p className="text-sm text-gray-500 mb-4">
-            Agrega fotos del interior, habitaciones, banos, cocina, etc. Tambien puedes agregarlas despues desde el detalle del inmueble.
-          </p>
+        ) : (
+          <>
+            {/* Foto de fachada (creacion) */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Foto de Fachada *</h3>
+              <ImageUploader
+                value={formData.foto_fachada_url}
+                onChange={(url) => handleChange('foto_fachada_url', url)}
+                inmuebleId={inmueble?.id}
+                disabled={isSubmitting}
+                error={errors.foto_fachada_url}
+              />
+            </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {/* Preview de fotos seleccionadas */}
-            {fotosAdicionales.map((foto, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
-                <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    URL.revokeObjectURL(foto.preview)
-                    setFotosAdicionales((prev) => prev.filter((_, i) => i !== idx))
-                  }}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <IconX size={14} />
-                </button>
-                {idx === 0 && fotosAdicionales.length > 0 && (
-                  <span className="absolute bottom-1 left-1 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">
-                    {fotosAdicionales.length} foto{fotosAdicionales.length > 1 ? 's' : ''}
-                  </span>
+            {/* Fotos adicionales (creacion) */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">Fotos adicionales</h3>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Agrega fotos del interior. La primera foto sera la de fachada. Puedes reordenar y editar descripciones despues desde el detalle.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {fotosAdicionales.map((foto, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                    <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        URL.revokeObjectURL(foto.preview)
+                        setFotosAdicionales((prev) => prev.filter((_, i) => i !== idx))
+                      }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <IconX size={14} />
+                    </button>
+                  </div>
+                ))}
+
+                {fotosAdicionales.length < 10 && (
+                  <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
+                    <IconImage size={24} className="text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-500">Agregar</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      disabled={isSubmitting}
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || [])
+                        const remaining = 10 - fotosAdicionales.length
+                        const toAdd = files.slice(0, remaining)
+                        const newFotos = toAdd.map((file) => ({
+                          file,
+                          preview: URL.createObjectURL(file),
+                        }))
+                        setFotosAdicionales((prev) => [...prev, ...newFotos])
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
                 )}
               </div>
-            ))}
 
-            {/* Boton agregar */}
-            {fotosAdicionales.length < 10 && (
-              <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
-                <IconImage size={24} className="text-gray-400 mb-1" />
-                <span className="text-xs text-gray-500">Agregar</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  className="hidden"
-                  disabled={isSubmitting}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    const remaining = 10 - fotosAdicionales.length
-                    const toAdd = files.slice(0, remaining)
-                    const newFotos = toAdd.map((file) => ({
-                      file,
-                      preview: URL.createObjectURL(file),
-                    }))
-                    setFotosAdicionales((prev) => [...prev, ...newFotos])
-                    e.target.value = '' // reset input
-                  }}
-                />
-              </label>
-            )}
-          </div>
-
-          {fotosAdicionales.length >= 10 && (
-            <p className="text-xs text-amber-600 mt-2">Maximo 10 fotos adicionales</p>
-          )}
-        </div>
+              {fotosAdicionales.length >= 10 && (
+                <p className="text-xs text-amber-600 mt-2">Maximo 10 fotos adicionales</p>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Información básica */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
