@@ -439,6 +439,27 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         }
 
         await inmuebleService.updateInmueble(inmueble.id, updateData)
+
+        // Upload fotos adicionales si hay (en modo edicion)
+        if (fotosAdicionales.length > 0) {
+          setUploadingFotos(true)
+          let uploaded = 0
+          for (const foto of fotosAdicionales) {
+            try {
+              await inmuebleService.uploadFoto(inmueble.id, foto.file, {
+                orden: uploaded + 1,
+              })
+              uploaded++
+            } catch {
+              // Continuar con las demas
+            }
+          }
+          if (uploaded > 0) {
+            toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
+          }
+          setUploadingFotos(false)
+        }
+
         toast.success(INMUEBLE_MESSAGES.UPDATE_SUCCESS)
       }
 
