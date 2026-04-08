@@ -56,6 +56,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
       user,
       accessToken,
       isAuthenticated: true,
+      isInitialized: true,
+      isLoading: false,
       error: null,
     }),
 
