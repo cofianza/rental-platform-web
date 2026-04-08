@@ -31,6 +31,74 @@ import type {
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 
+// ── COP Currency Input ──────────────────────────────────────
+
+function formatCOPDisplay(value: number | ''): string {
+  if (value === '' || value === 0) return ''
+  return new Intl.NumberFormat('es-CO').format(Number(value))
+}
+
+function parseCOPInput(display: string): number | '' {
+  const cleaned = display.replace(/\./g, '').replace(/,/g, '').replace(/\s/g, '')
+  if (!cleaned) return ''
+  const num = parseInt(cleaned, 10)
+  return isNaN(num) ? '' : num
+}
+
+function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max }: {
+  label: string
+  id: string
+  value: number | ''
+  onChange: (val: number | '') => void
+  disabled?: boolean
+  placeholder?: string
+  error?: string
+  max?: number
+}) {
+  const [display, setDisplay] = useState(formatCOPDisplay(value))
+
+  useEffect(() => {
+    setDisplay(formatCOPDisplay(value))
+  }, [value])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value
+    // Allow only digits and dots (as thousand separators)
+    const onlyDigits = raw.replace(/[^\d]/g, '')
+    if (!onlyDigits) {
+      setDisplay('')
+      onChange('')
+      return
+    }
+    const num = parseInt(onlyDigits, 10)
+    if (max && num > max) return
+    setDisplay(new Intl.NumberFormat('es-CO').format(num))
+    onChange(num)
+  }
+
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          id={id}
+          value={display}
+          onChange={handleInputChange}
+          disabled={disabled}
+          placeholder={placeholder}
+          className={`w-full pl-7 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+            error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+          } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+        />
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
 // Departamentos de Colombia (principales)
 const DEPARTAMENTOS = [
   'Amazonas',
@@ -310,7 +378,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           let uploaded = 0
           for (const foto of fotosAdicionales) {
             try {
-              await inmuebleService.uploadAndCreateFoto(newInmueble.id, foto.file, {
+              await inmuebleService.uploadFoto(newInmueble.id, foto.file, {
                 orden: uploaded + 1,
               })
               uploaded++
@@ -797,66 +865,40 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Valor arriendo */}
-            <div>
-              <label htmlFor="valor_arriendo" className="block text-sm font-medium text-gray-700 mb-1">
-                Valor Arriendo (COP) *
-              </label>
-              <input
-                type="number"
-                id="valor_arriendo"
-                value={formData.valor_arriendo}
-                onChange={(e) => handleChange('valor_arriendo', e.target.value ? Number(e.target.value) : '')}
-                disabled={isSubmitting}
-                min="0"
-                max="999999999"
-                step="1000"
-                placeholder="Ej: 2500000"
-                className={inputClasses(!!errors.valor_arriendo)}
-              />
-              {errors.valor_arriendo && (
-                <p className="mt-1 text-xs text-red-600">{errors.valor_arriendo}</p>
-              )}
-            </div>
+            <CurrencyInput
+              label="Valor Arriendo (COP) *"
+              id="valor_arriendo"
+              value={formData.valor_arriendo}
+              onChange={(val) => handleChange('valor_arriendo', val)}
+              disabled={isSubmitting}
+              placeholder="Ej: 2.500.000"
+              error={errors.valor_arriendo}
+              max={999999999}
+            />
 
             {/* Administración */}
-            <div>
-              <label htmlFor="administracion" className="block text-sm font-medium text-gray-700 mb-1">
-                Administración (COP)
-              </label>
-              <input
-                type="number"
-                id="administracion"
-                value={formData.administracion}
-                onChange={(e) => handleChange('administracion', e.target.value ? Number(e.target.value) : '')}
-                disabled={isSubmitting}
-                min="0"
-                max="999999999"
-                step="1000"
-                placeholder="Ej: 350000"
-                className={inputClasses(!!errors.administracion)}
-              />
-              {errors.administracion && <p className="mt-1 text-xs text-red-600">{errors.administracion}</p>}
-            </div>
+            <CurrencyInput
+              label="Administracion (COP)"
+              id="administracion"
+              value={formData.administracion}
+              onChange={(val) => handleChange('administracion', val)}
+              disabled={isSubmitting}
+              placeholder="Ej: 350.000"
+              error={errors.administracion}
+              max={999999999}
+            />
 
             {/* Valor comercial */}
-            <div>
-              <label htmlFor="valor_comercial" className="block text-sm font-medium text-gray-700 mb-1">
-                Valor Comercial (COP)
-              </label>
-              <input
-                type="number"
-                id="valor_comercial"
-                value={formData.valor_comercial}
-                onChange={(e) => handleChange('valor_comercial', e.target.value ? Number(e.target.value) : '')}
-                disabled={isSubmitting}
-                min="0"
-                max="99999999999"
-                step="1000000"
-                placeholder="Ej: 450000000"
-                className={inputClasses(!!errors.valor_comercial)}
-              />
-              {errors.valor_comercial && <p className="mt-1 text-xs text-red-600">{errors.valor_comercial}</p>}
-            </div>
+            <CurrencyInput
+              label="Valor Comercial (COP)"
+              id="valor_comercial"
+              value={formData.valor_comercial}
+              onChange={(val) => handleChange('valor_comercial', val)}
+              disabled={isSubmitting}
+              placeholder="Ej: 450.000.000"
+              error={errors.valor_comercial}
+              max={99999999999}
+            />
           </div>
         </div>
 
