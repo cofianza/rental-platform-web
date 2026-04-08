@@ -54,7 +54,8 @@ export default function DashboardPage() {
   const canDoActions = hasRole('administrador') || hasRole('operador_analista')
   const isPropietario = hasRole('propietario')
   const isInmobiliaria = hasRole('inmobiliaria')
-  const isExternalUser = isPropietario || isInmobiliaria
+  const isSolicitante = hasRole('solicitante')
+  const isExternalUser = isPropietario || isInmobiliaria || isSolicitante
 
   // State
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
@@ -137,8 +138,8 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title={isPropietario ? 'Mi Panel' : 'Panel Inmobiliaria'}
-          subtitle={isPropietario ? 'Gestiona tus inmuebles y solicitudes' : 'Gestiona inmuebles y expedientes'}
+          title={isSolicitante ? 'Mi Panel de Arrendatario' : isPropietario ? 'Mi Panel' : 'Panel Inmobiliaria'}
+          subtitle={isSolicitante ? 'Consulta el estado de tus solicitudes de arrendamiento' : isPropietario ? 'Gestiona tus inmuebles y solicitudes' : 'Gestiona inmuebles y expedientes'}
         />
 
         {/* Quick actions */}
