@@ -145,27 +145,14 @@ function RegistroSolicitanteContent() {
         return
       }
 
-      // If property interest: create expediente+estudio directly with the fresh token
+      // Flujo unificado: en vez de crear expediente SIN cita aquí, mandamos
+      // al usuario al detalle del inmueble ya autenticado. Allí <MeInteresaCTA>
+      // abre el modal con SlotSelector y crea expediente + cita en un solo
+      // paso. Resuelve el TODO de "unificación de flujos" del Prompt 10.
       if (propertyId) {
-        try {
-          const interestRes = await fetch(`${API_BASE_URL}/vitrina/interest`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({ property_id: propertyId }),
-          })
-          const interestJson = await interestRes.json()
-          if (interestRes.ok && interestJson.data?.expediente?.id) {
-            localStorage.removeItem('cofianza_interested_property')
-            toast.success('Expediente creado exitosamente')
-            window.location.href = `/expedientes/${interestJson.data.expediente.id}`
-            return
-          }
-        } catch {
-          // If interest creation fails, redirect to dashboard
-        }
+        localStorage.removeItem('cofianza_interested_property')
+        window.location.href = `/inmueble/${propertyId}`
+        return
       }
 
       window.location.href = '/dashboard'
