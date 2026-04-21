@@ -246,42 +246,47 @@ export default function ExpedienteDetallePage() {
               )}
             </div>
 
-            {/* Responsable */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Responsable:</span>
-              {nombreAnalista ? (
-                <button
-                  onClick={() => setShowAsignacionModal(true)}
-                  className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-primary-600 transition-colors"
-                >
-                  <Avatar name={nombreAnalista} size="sm" />
-                  <span>{nombreAnalista}</span>
-                  <IconEdit size={14} className="text-gray-400" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowAsignacionModal(true)}
-                  className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
-                >
-                  <IconUser size={14} />
-                  Asignar responsable
-                </button>
-              )}
-            </div>
+            {/* Responsable — solo interno (admin/operador/propietario/inmobiliaria).
+                El solicitante no gestiona analistas, así que ocultamos el control. */}
+            {user?.rol !== 'solicitante' && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Responsable:</span>
+                {nombreAnalista ? (
+                  <button
+                    onClick={() => setShowAsignacionModal(true)}
+                    className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                  >
+                    <Avatar name={nombreAnalista} size="sm" />
+                    <span>{nombreAnalista}</span>
+                    <IconEdit size={14} className="text-gray-400" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowAsignacionModal(true)}
+                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
+                  >
+                    <IconUser size={14} />
+                    Asignar responsable
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="flex gap-3 ml-12 lg:ml-0">
-          {transiciones.length > 0 && (
-            <button
-              onClick={() => setShowTransicionModal(true)}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-            >
-              Cambiar estado
-            </button>
-          )}
-        </div>
+        {/* Acciones — el solicitante no cambia estado manualmente. */}
+        {user?.rol !== 'solicitante' && (
+          <div className="flex gap-3 ml-12 lg:ml-0">
+            {transiciones.length > 0 && (
+              <button
+                onClick={() => setShowTransicionModal(true)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+              >
+                Cambiar estado
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Barra de progreso */}
@@ -422,18 +427,20 @@ export default function ExpedienteDetallePage() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <InfoRow label="Fecha creación" value={formatDate(expediente.created_at)} />
-                  {expediente.creador && (
+                  {expediente.creador && user?.rol !== 'solicitante' && (
                     <InfoRow
                       label="Creado por"
                       value={`${expediente.creador.nombre} ${expediente.creador.apellido}`.trim()}
                     />
                   )}
-                  <InfoRow
-                    label="Responsable"
-                    value={nombreAnalista || 'Sin asignar'}
-                  />
+                  {user?.rol !== 'solicitante' && (
+                    <InfoRow
+                      label="Responsable"
+                      value={nombreAnalista || 'Sin asignar'}
+                    />
+                  )}
                 </div>
-                {expediente.notas && (
+                {expediente.notas && user?.rol !== 'solicitante' && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-xs text-gray-500 mb-2">Notas internas</p>
                     <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
