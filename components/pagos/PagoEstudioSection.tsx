@@ -395,20 +395,56 @@ function EnviarLinkModal({
 function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) {
   const linkPago = estado.pago?.payment_link_url || null
 
-  // Pago completado (Stripe) o asumido por inmobiliaria → banner verde.
+  // Pago completado (Stripe) o asumido por inmobiliaria → banner verde
+  // con explicación del siguiente paso (estudio en TransUnion).
   if (estado.estado === 'completado' || estado.estado === 'asumido_inmobiliaria') {
     return (
-      <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <p className="text-sm font-medium text-green-800">
-            {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
-          </p>
-          <p className="text-xs text-green-600">
-            {estado.monto_formateado} COP — Tu estudio crediticio está en proceso.
-          </p>
+      <div className="space-y-3">
+        {/* Confirmación del pago */}
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-green-800">
+              {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
+            </p>
+            <p className="text-xs text-green-600">
+              {estado.monto_formateado} COP — Recibimos tu pago correctamente.
+            </p>
+          </div>
+        </div>
+
+        {/* Qué sigue — estudio en TransUnion */}
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+              <svg className="h-5 w-5 text-blue-700 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-blue-900 mb-1">Estudio crediticio en proceso</h3>
+              <p className="text-sm text-blue-800 mb-3">
+                Estamos consultando tu historial crediticio con <strong>TransUnion</strong>. Este proceso toma unos minutos.
+              </p>
+              <div className="text-sm text-blue-800 space-y-1.5">
+                <p className="flex items-start gap-2">
+                  <span className="text-blue-600">•</span>
+                  <span>Te <strong>notificaremos por correo</strong> apenas tengamos el resultado.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-blue-600">•</span>
+                  <span>Si el estudio es <strong>aprobado</strong>, avanzaremos a la generación del contrato.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-blue-600">•</span>
+                  <span>No tienes que hacer nada mientras tanto. Puedes cerrar esta ventana.</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
