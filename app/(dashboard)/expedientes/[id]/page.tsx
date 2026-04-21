@@ -296,7 +296,13 @@ export default function ExpedienteDetallePage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
-          <div className="p-6">
+          <div className="p-6 space-y-6">
+            {/* Sección Cita Previa — al tope para que el solicitante vea
+                de un vistazo la fecha/hora y si fue reprogramada. */}
+            <div className="border border-gray-200 rounded-lg p-5">
+              <CitasSection expedienteId={id} onCitaRealizada={fetchExpediente} />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Sección Inmueble */}
               <div className="border border-gray-200 rounded-lg p-5">
@@ -394,11 +400,6 @@ export default function ExpedienteDetallePage() {
                 ) : (
                   <p className="text-sm text-gray-500">Sin solicitante asociado</p>
                 )}
-              </div>
-
-              {/* Sección Cita Previa */}
-              <div className="border border-gray-200 rounded-lg p-5 lg:col-span-2">
-                <CitasSection expedienteId={id} onCitaRealizada={fetchExpediente} />
               </div>
 
               {/* Sección Expediente */}

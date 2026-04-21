@@ -413,10 +413,18 @@ type CitaActivaEstado = 'solicitada' | 'confirmada' | 'realizada'
 interface CitaActivaInfo {
   estado: CitaActivaEstado
   fecha: string | null // fecha_confirmada || fecha_propuesta, ISO
+  estudioHabilitado: boolean // para banner "esperando que el propietario habilite el estudio"
 }
 
 /** Elige la cita más relevante para mostrar: prioriza realizada > confirmada > solicitada. */
-function resolverCitaActiva(citas: Array<{ estado: string; fecha_propuesta: string | null; fecha_confirmada: string | null }>): CitaActivaInfo | null {
+function resolverCitaActiva(
+  citas: Array<{
+    estado: string
+    fecha_propuesta: string | null
+    fecha_confirmada: string | null
+    expediente?: { estudio_habilitado: boolean } | null
+  }>,
+): CitaActivaInfo | null {
   const activas = citas.filter((c) => c.estado === 'realizada' || c.estado === 'confirmada' || c.estado === 'solicitada')
   if (activas.length === 0) return null
   const prioridad: Record<string, number> = { realizada: 3, confirmada: 2, solicitada: 1 }
@@ -425,6 +433,7 @@ function resolverCitaActiva(citas: Array<{ estado: string; fecha_propuesta: stri
   return {
     estado: pick.estado as CitaActivaEstado,
     fecha: pick.fecha_confirmada || pick.fecha_propuesta,
+    estudioHabilitado: pick.expediente?.estudio_habilitado ?? false,
   }
 }
 
@@ -479,6 +488,14 @@ function SolicitanteDashboard() {
   const expedientesCitaConfirmada = expedientes.filter(
     (exp) => estadoActivo(exp) && citasByExpediente[exp.id]?.estado === 'confirmada',
   )
+  // Cita realizada pero el propietario aún no habilita el estudio: el solicitante
+  // depende de una acción externa — mostramos banner ámbar sutil.
+  const expedientesEsperandoHabilitacion = expedientes.filter(
+    (exp) =>
+      estadoActivo(exp) &&
+      citasByExpediente[exp.id]?.estado === 'realizada' &&
+      citasByExpediente[exp.id]?.estudioHabilitado === false,
+  )
 
   return (
     <div className="space-y-6">
@@ -491,8 +508,9 @@ function SolicitanteDashboard() {
           Naranja/gradient: sin cita → CTA "Agendar cita".
           Azul: cita solicitada → esperando confirmación del propietario.
           Verde: cita confirmada → fecha lista para la visita.
-          Si la cita está realizada, el stepper de la card toma el relevo (sin banner). */}
-      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length) > 0 && (
+          Ámbar: cita realizada pero el propietario aún no habilita el estudio.
+          Si la cita está realizada y el estudio ya está habilitado, el stepper de la card toma el relevo. */}
+      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length) > 0 && (
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
@@ -550,6 +568,31 @@ function SolicitanteDashboard() {
               </div>
             )
           })}
+
+          {/* Cita realizada, estudio pendiente de habilitar — ámbar sutil */}
+          {expedientesEsperandoHabilitacion.map((exp) => (
+            <div key={`esp-${exp.id}`} className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+                  <IconClock size={22} className="text-amber-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-amber-900 mb-0.5">
+                    Esperando que el propietario habilite tu estudio
+                  </h3>
+                  <p className="text-sm text-amber-800">
+                    Tu visita ya se realizó. En cuanto el propietario autorice el siguiente paso, podrás pagar el estudio crediticio y continuar con tu solicitud.
+                  </p>
+                </div>
+                <Link
+                  href={`/expedientes/${exp.id}`}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 shadow-sm transition-colors shrink-0"
+                >
+                  Ver mi solicitud
+                </Link>
+              </div>
+            </div>
+          ))}
 
           {/* Cita confirmada — verde */}
           {expedientesCitaConfirmada.map((exp) => {
