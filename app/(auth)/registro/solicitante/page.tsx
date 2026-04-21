@@ -6,7 +6,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck } from '@/components/icons'
@@ -49,6 +49,7 @@ export default function RegistroSolicitantePage() {
 }
 
 function RegistroSolicitanteContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const propertyId = searchParams.get('property_id') || ''
   const intent = searchParams.get('intent') || ''
@@ -146,16 +147,17 @@ function RegistroSolicitanteContent() {
       }
 
       // Flujo unificado: en vez de crear expediente SIN cita aquí, mandamos
-      // al usuario al detalle del inmueble ya autenticado. Allí <MeInteresaCTA>
-      // abre el modal con SlotSelector y crea expediente + cita en un solo
-      // paso. Resuelve el TODO de "unificación de flujos" del Prompt 10.
+      // al usuario al detalle del inmueble ya autenticado. router.push (no
+      // window.location) preserva el auth state en memoria — con full reload
+      // se perdía la sesión durante la rehidratación del AuthProvider.
+      // El flag ?agendar=1 le dice a <MeInteresaCTA> que auto-abra el modal.
       if (propertyId) {
         localStorage.removeItem('cofianza_interested_property')
-        window.location.href = `/inmueble/${propertyId}`
+        router.push(`/inmueble/${propertyId}?agendar=1`)
         return
       }
 
-      window.location.href = '/dashboard'
+      router.push('/dashboard')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error de conexion'
       setErrors({ general: msg })

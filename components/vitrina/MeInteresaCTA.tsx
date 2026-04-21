@@ -13,7 +13,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui'
 import { IconLoader, IconCheck } from '@/components/icons'
@@ -41,6 +41,8 @@ interface ExpedienteActivo {
 
 export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTAProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isInitialized = useAuthStore((s) => s.isInitialized)
@@ -82,6 +84,30 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
       cancelled = true
     }
   }, [isInitialized, isAuthenticated, isSolicitante, inmuebleId])
+
+  // Auto-apertura del modal cuando venimos de /registro/solicitante con ?agendar=1.
+  // Espera a que el check de expediente termine para decidir bien. Si ya hay
+  // expediente activo, no abre modal (la rama "Ver mi solicitud" toma control).
+  // Limpia el query param con router.replace para que cerrar el modal no lo
+  // re-abra en loops de re-render.
+  useEffect(() => {
+    if (!isInitialized || !isAuthenticated || !isSolicitante) return
+    if (isCheckingExpediente) return
+    if (expedienteActivo) return
+    if (searchParams.get('agendar') !== '1') return
+
+    setShowModal(true)
+    router.replace(pathname, { scroll: false })
+  }, [
+    isInitialized,
+    isAuthenticated,
+    isSolicitante,
+    isCheckingExpediente,
+    expedienteActivo,
+    searchParams,
+    router,
+    pathname,
+  ])
 
   // ── Handlers ──────────────────────────────────────────
 
