@@ -94,6 +94,15 @@ export const estudioService = {
   },
 
   /**
+   * Ejecuta el estudio contra el proveedor de riesgo (TransUnion).
+   * Lo dispara el solicitante tras confirmar sus datos, o admin/operador.
+   */
+  async ejecutarEstudio(estudioId: string): Promise<IEstudio> {
+    const res = await apiClient.post<IEstudio>(`/estudios/${estudioId}/ejecutar`)
+    return res.data
+  },
+
+  /**
    * Envia enlace self-service al solicitante
    */
   async enviarEnlace(estudioId: string): Promise<ISendLinkResponse> {

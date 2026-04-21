@@ -29,6 +29,7 @@ export * from './DocumentosSection'
 
 // Estudios de riesgo crediticio
 export * from './EstudiosSection'
+export * from './EstudioSolicitanteCard'
 export * from './SolicitarEstudioModal'
 export * from './EstudioDetailModal'
 export * from './RegistrarResultadoModal'

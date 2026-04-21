@@ -31,6 +31,7 @@ import {
   AutorizacionSection,
   ContratosSection,
   CitasSection,
+  EstudioSolicitanteCard,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -303,16 +304,22 @@ export default function ExpedienteDetallePage() {
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
             {/* "Siguiente paso" — solo para el solicitante, al tope.
-                hideIfNoAction=true hace que la sección retorne null si el
-                pago aún no aplica (sin_definir / cancelado), evitando ruido
-                cuando la cita es lo relevante. */}
+                Dos bloques encadenados (cada uno se auto-oculta si no aplica):
+                1) Pago del estudio (CTA "Pagar ahora" o "¡Pago confirmado!").
+                2) Estudio crediticio ("Confirma cédula" / "Consultando..." / resultado). */}
             {user?.rol === 'solicitante' && (
-              <PagoEstudioSection
-                expedienteId={id}
-                userRole={user?.rol}
-                onPagoCompletado={fetchExpediente}
-                hideIfNoAction
-              />
+              <div className="space-y-4">
+                <PagoEstudioSection
+                  expedienteId={id}
+                  userRole={user?.rol}
+                  onPagoCompletado={fetchExpediente}
+                  hideIfNoAction
+                />
+                <EstudioSolicitanteCard
+                  expedienteId={id}
+                  onEjecutado={fetchExpediente}
+                />
+              </div>
             )}
 
             {/* Sección Cita Previa — al tope para que el solicitante vea
