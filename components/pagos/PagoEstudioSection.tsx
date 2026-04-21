@@ -7,9 +7,12 @@ import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstu
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
+  /** Rol del usuario actual — el solicitante ve un CTA "Pagar ahora" en lugar
+   *  de los controles admin (enviar link / asumir costo). */
+  userRole?: string
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole }: PagoEstudioSectionProps) {
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,6 +81,13 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado }: PagoEstud
   }
 
   if (!estado) return null
+
+  // ── Vista solicitante ─────────────────────────────────────────────────
+  // El solicitante no puede "asumir" ni "enviar link". Solo paga si hay
+  // link de Stripe generado, o espera a que definan la forma de pago.
+  if (userRole === 'solicitante') {
+    return <PagoEstudioSolicitanteView estado={estado} />
+  }
 
   return (
     <div className="space-y-4">
@@ -368,5 +378,123 @@ function EnviarLinkModal({
         </div>
       </form>
     </Modal>
+  )
+}
+
+// ============================================
+// Vista para el solicitante: ver estado + pagar
+// ============================================
+
+function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) {
+  const linkPago = estado.pago?.payment_link_url || null
+
+  // Pago completado (Stripe) o asumido por inmobiliaria → banner verde.
+  if (estado.estado === 'completado' || estado.estado === 'asumido_inmobiliaria') {
+    return (
+      <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <p className="text-sm font-medium text-green-800">
+            {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
+          </p>
+          <p className="text-xs text-green-600">
+            {estado.monto_formateado} COP — Tu estudio crediticio está en proceso.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Pendiente con link de Stripe → CTA grande "Pagar ahora".
+  if (estado.estado === 'pendiente' && linkPago) {
+    return (
+      <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+            <svg className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu estudio crediticio</h3>
+            <p className="text-sm text-gray-600 mb-1">
+              Monto a pagar: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Serás redirigido a Stripe (pasarela segura). Al completar el pago, tu estudio se ejecuta automáticamente.
+            </p>
+            <a
+              href={linkPago}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+            >
+              Pagar ahora
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Pendiente sin link todavía (propietario habilitó pero aún no hay checkout).
+  if (estado.estado === 'pendiente') {
+    return (
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <p className="text-sm font-medium text-amber-800">Preparando tu link de pago</p>
+        <p className="text-xs text-amber-600 mt-1">
+          El link llegará a tu correo en unos momentos. También aparecerá aquí en tu panel.
+        </p>
+      </div>
+    )
+  }
+
+  // Pago fallido → ofrecer reintentar con el mismo link (si sigue válido).
+  if (estado.estado === 'fallido') {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-sm font-medium text-red-800 mb-1">No pudimos procesar tu pago</p>
+        <p className="text-xs text-red-600 mb-3">
+          Monto: {estado.monto_formateado} COP. Puedes intentarlo de nuevo.
+        </p>
+        {linkPago && (
+          <a
+            href={linkPago}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Reintentar pago
+          </a>
+        )}
+      </div>
+    )
+  }
+
+  // Cancelado o sin definir → mensaje neutro.
+  if (estado.estado === 'cancelado') {
+    return (
+      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <p className="text-sm font-medium text-gray-800">El pago fue cancelado</p>
+        <p className="text-xs text-gray-500 mt-1">
+          Contacta al propietario o a la inmobiliaria para retomar el proceso.
+        </p>
+      </div>
+    )
+  }
+
+  // sin_definir — esperando que admin/inmobiliaria configure el cobro.
+  return (
+    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <p className="text-sm font-medium text-blue-800">Esperando que definan la forma de pago</p>
+      <p className="text-xs text-blue-600 mt-1">
+        Tu estudio ya fue habilitado. Te avisaremos por correo cuando esté listo el link de pago.
+      </p>
+    </div>
   )
 }

@@ -447,7 +447,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
-            <PagoEstudioSection expedienteId={id} onPagoCompletado={fetchExpediente} />
+            <PagoEstudioSection expedienteId={id} userRole={user?.rol} onPagoCompletado={fetchExpediente} />
             <AutorizacionSection expedienteId={id} />
             <EstudiosSection expedienteId={id} />
           </div>
