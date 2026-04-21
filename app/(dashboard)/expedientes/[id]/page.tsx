@@ -297,6 +297,19 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
+            {/* "Siguiente paso" — solo para el solicitante, al tope.
+                hideIfNoAction=true hace que la sección retorne null si el
+                pago aún no aplica (sin_definir / cancelado), evitando ruido
+                cuando la cita es lo relevante. */}
+            {user?.rol === 'solicitante' && (
+              <PagoEstudioSection
+                expedienteId={id}
+                userRole={user?.rol}
+                onPagoCompletado={fetchExpediente}
+                hideIfNoAction
+              />
+            )}
+
             {/* Sección Cita Previa — al tope para que el solicitante vea
                 de un vistazo la fecha/hora y si fue reprogramada. */}
             <div className="border border-gray-200 rounded-lg p-5">

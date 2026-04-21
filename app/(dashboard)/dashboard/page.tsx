@@ -16,6 +16,7 @@ import {
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
 import { citaService } from '@/services/citaService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { usePermissions } from '@/hooks/usePermissions'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
@@ -451,9 +452,16 @@ function formatCitaFecha(iso: string | null): string {
   })
 }
 
+/** Info del pago del estudio por expediente (cuando ya aplica). */
+interface PagoEstudioInfo {
+  estado: string // 'sin_definir' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
+  linkPago: string | null // payment_link_url de Stripe si existe
+}
+
 function SolicitanteDashboard() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
+  const [pagoByExpediente, setPagoByExpediente] = useState<Record<string, PagoEstudioInfo | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
 
   useEffect(() => {
@@ -472,6 +480,29 @@ function SolicitanteDashboard() {
           })
         )
         setCitasByExpediente(citasMap)
+
+        // Para expedientes con cita realizada + estudio habilitado, consultar
+        // estado del pago — así podemos mostrar CTA "Pagar ahora" si aplica.
+        const pagoMap: Record<string, PagoEstudioInfo | null> = {}
+        await Promise.all(
+          res.data.map(async (exp) => {
+            const cita = citasMap[exp.id]
+            if (!cita || cita.estado !== 'realizada' || !cita.estudioHabilitado) {
+              pagoMap[exp.id] = null
+              return
+            }
+            try {
+              const estado = await pagoEstudioService.getEstado(exp.id)
+              pagoMap[exp.id] = {
+                estado: estado.estado,
+                linkPago: estado.pago?.payment_link_url || null,
+              }
+            } catch {
+              pagoMap[exp.id] = null
+            }
+          }),
+        )
+        setPagoByExpediente(pagoMap)
       })
       .catch(() => {})
       .finally(() => setLoadingExp(false))
@@ -496,6 +527,15 @@ function SolicitanteDashboard() {
       citasByExpediente[exp.id]?.estado === 'realizada' &&
       citasByExpediente[exp.id]?.estudioHabilitado === false,
   )
+  // Estudio habilitado + pago pendiente: acción activa del solicitante.
+  const expedientesPagoPendiente = expedientes.filter(
+    (exp) =>
+      estadoActivo(exp) &&
+      citasByExpediente[exp.id]?.estado === 'realizada' &&
+      citasByExpediente[exp.id]?.estudioHabilitado === true &&
+      (pagoByExpediente[exp.id]?.estado === 'pendiente' ||
+        pagoByExpediente[exp.id]?.estado === 'fallido'),
+  )
 
   return (
     <div className="space-y-6">
@@ -509,8 +549,9 @@ function SolicitanteDashboard() {
           Azul: cita solicitada → esperando confirmación del propietario.
           Verde: cita confirmada → fecha lista para la visita.
           Ámbar: cita realizada pero el propietario aún no habilita el estudio.
-          Si la cita está realizada y el estudio ya está habilitado, el stepper de la card toma el relevo. */}
-      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length) > 0 && (
+          Primario/gradient: estudio habilitado + pago pendiente → CTA "Pagar estudio".
+          Si el pago está completado o asumido, no mostramos banner; el stepper de la card toma el relevo. */}
+      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length + expedientesPagoPendiente.length) > 0 && (
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
@@ -564,6 +605,55 @@ function SolicitanteDashboard() {
                   >
                     Ver detalles de la cita
                   </Link>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Estudio habilitado, pago pendiente → CTA "Pagar ahora" (gradient primario) */}
+          {expedientesPagoPendiente.map((exp) => {
+            const pago = pagoByExpediente[exp.id]
+            const esFallido = pago?.estado === 'fallido'
+            return (
+              <div key={`pago-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
+                    <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold mb-1">
+                      {esFallido ? 'No pudimos procesar tu pago' : 'Paga tu estudio crediticio'}
+                    </h3>
+                    <p className="text-sm text-white/90">
+                      {esFallido
+                        ? 'Hubo un problema con el pago anterior. Intenta de nuevo para continuar con tu estudio.'
+                        : 'Tu estudio ya está habilitado. Realiza el pago para que podamos ejecutarlo y avancemos a la aprobación.'}
+                    </p>
+                  </div>
+                  {pago?.linkPago ? (
+                    <a
+                      href={pago.linkPago}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
+                    >
+                      {esFallido ? 'Reintentar pago' : 'Pagar ahora'}
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/expedientes/${exp.id}`}
+                      className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
+                    >
+                      Ver detalles del pago
+                    </Link>
+                  )}
                 </div>
               </div>
             )

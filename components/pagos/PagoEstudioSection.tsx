@@ -10,9 +10,13 @@ interface PagoEstudioSectionProps {
   /** Rol del usuario actual — el solicitante ve un CTA "Pagar ahora" en lugar
    *  de los controles admin (enviar link / asumir costo). */
   userRole?: string
+  /** Si true, renderiza null cuando no hay acción relevante (sin_definir /
+   *  cancelado). Útil para incluir la sección en el tab Resumen sin dejar
+   *  un bloque vacío cuando el pago aún no aplica. */
+  hideIfNoAction?: boolean
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction }: PagoEstudioSectionProps) {
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -86,6 +90,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole }:
   // El solicitante no puede "asumir" ni "enviar link". Solo paga si hay
   // link de Stripe generado, o espera a que definan la forma de pago.
   if (userRole === 'solicitante') {
+    if (hideIfNoAction && (estado.estado === 'sin_definir' || estado.estado === 'cancelado')) {
+      return null
+    }
     return <PagoEstudioSolicitanteView estado={estado} />
   }
 
