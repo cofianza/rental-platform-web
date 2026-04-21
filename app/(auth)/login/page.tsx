@@ -36,9 +36,21 @@ function LoginForm() {
   // Redirigir si ya está autenticado (ej: navega a /login estando logueado)
   useEffect(() => {
     if (isAuthenticated) {
+      // Prioridad: token de invitación externa pendiente > intent vitrina > redirect query > dashboard
+      const invitacionToken =
+        typeof window !== 'undefined' ? sessionStorage.getItem('invitacion_token') : null
+      if (invitacionToken) {
+        sessionStorage.removeItem('invitacion_token')
+        router.replace(`/invitacion/${invitacionToken}`)
+        return
+      }
+
       const intent = searchParams.get('intent')
       const propertyId = searchParams.get('property_id')
       if (intent === 'interest' && propertyId) {
+        // TODO(unificación de flujos): este redirect lleva a una pantalla que crea
+        // expediente SIN cita. El flujo "solicitante autenticado en vitrina" sí crea
+        // con cita. Ver comentario en /vitrina/interest/page.tsx.
         router.replace(`/vitrina/interest?property_id=${propertyId}`)
       } else {
         const redirect = searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD

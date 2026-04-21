@@ -182,7 +182,6 @@ interface FormData {
   parqueadero: boolean
   parqueaderos: number | ''
   piso: string
-  codigo_postal: string
   descripcion: string
   notas_internas: string
   visible_vitrina: boolean
@@ -225,7 +224,6 @@ const initialFormData: FormData = {
   parqueadero: false,
   parqueaderos: '',
   piso: '',
-  codigo_postal: '',
   descripcion: '',
   notas_internas: '',
   visible_vitrina: true,
@@ -278,7 +276,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         parqueadero: inmueble.parqueadero,
         parqueaderos: inmueble.parqueaderos || '',
         piso: inmueble.piso || '',
-        codigo_postal: inmueble.codigo_postal || '',
         descripcion: inmueble.descripcion || '',
         notas_internas: inmueble.notas_internas || '',
         visible_vitrina: inmueble.visible_vitrina,
@@ -383,7 +380,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           parqueadero: formData.parqueadero,
           parqueaderos: formData.parqueaderos ? Number(formData.parqueaderos) : undefined,
           piso: formData.piso || undefined,
-          codigo_postal: formData.codigo_postal || undefined,
           descripcion: formData.descripcion || undefined,
           notas_internas: formData.notas_internas || undefined,
           visible_vitrina: formData.visible_vitrina,
@@ -433,7 +429,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           parqueadero: formData.parqueadero,
           parqueaderos: formData.parqueaderos ? Number(formData.parqueaderos) : null,
           piso: formData.piso || null,
-          codigo_postal: formData.codigo_postal || null,
           descripcion: formData.descripcion || null,
           notas_internas: formData.notas_internas || null,
           visible_vitrina: formData.visible_vitrina,
@@ -808,21 +803,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               />
             </div>
 
-            {/* Código postal */}
-            <div>
-              <label htmlFor="codigo_postal" className="block text-sm font-medium text-gray-700 mb-1">
-                Código Postal
-              </label>
-              <input
-                type="text"
-                id="codigo_postal"
-                value={formData.codigo_postal}
-                onChange={(e) => handleChange('codigo_postal', e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Ej: 110111"
-                className={inputClasses(false)}
-              />
-            </div>
           </div>
         </div>
 

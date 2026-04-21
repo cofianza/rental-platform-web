@@ -20,12 +20,16 @@ export function Sidebar() {
   const pathname = usePathname()
   const { sidebarExpanded, sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const { logout } = useAuth()
-  const { canAccessResource } = usePermissions()
+  const { canAccessResource, userRole } = usePermissions()
 
-  // Filtrar items de navegacion por permisos del usuario
+  // Filtrar items de navegacion por permisos del usuario. Aplica 2 reglas:
+  //   1) Si el item declara `resource`, el rol debe tener acceso a ese recurso.
+  //   2) Si el item declara `requiredRoles`, el rol debe estar en la lista
+  //      (aunque tenga el permiso — oculta ítems no relevantes por rol).
   const visibleNavItems = NAV_ITEMS.filter((item) => {
-    if (!item.resource) return true
-    return canAccessResource(item.resource)
+    if (item.resource && !canAccessResource(item.resource)) return false
+    if (item.requiredRoles && (!userRole || !item.requiredRoles.includes(userRole))) return false
+    return true
   })
 
   // Cerrar sidebar en mobile al navegar

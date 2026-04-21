@@ -18,6 +18,8 @@ export type Resource =
   | 'documentos'
   | 'pagos'
   | 'facturas'
+  | 'citas'
+  | 'disponibilidad'
 
 export type Action =
   | 'create'

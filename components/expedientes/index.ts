@@ -52,5 +52,11 @@ export * from './EnviarFirmaModal'
 export * from './FirmaSolicitudesSection'
 export * from './EvidenciaFirmaModal'
 
+// Citas previas (visitas)
+export * from './CitasSection'
+
+// Expediente externo (invitación)
+export * from './ExpedienteExternoModal'
+
 // HP-247: Wizard de creación
 export * from './wizard'

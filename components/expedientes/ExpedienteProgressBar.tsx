@@ -1,105 +1,129 @@
 /**
- * ExpedienteProgressBar - HP-243
- * Barra de progreso visual del flujo de estados del expediente
+ * ExpedienteProgressBar
+ * Barra de progreso visual del flujo del usuario (7 pasos):
+ * Solicitud → Cita previa → Estudio → Aprobacion → Contrato → Firma → Listo
+ *
+ * Calcula el paso actual combinando el estado del expediente y si tiene
+ * cita realizada (consulta automatica al servicio de citas).
  */
 
-import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { IconCheck } from '@/components/icons'
+import { citaService } from '@/services/citaService'
+import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
-/**
- * Orden del flujo de estados (workflow)
- * Define el orden en que se muestran los estados en la barra de progreso
- */
-const WORKFLOW_ESTADOS: EstadoExpediente[] = [
-  'borrador',
-  'en_revision',
-  'aprobado',
+const PROCESS_STEPS = [
+  { id: 'solicitud', label: 'Solicitud' },
+  { id: 'cita', label: 'Cita previa' },
+  { id: 'estudio', label: 'Estudio' },
+  { id: 'aprobacion', label: 'Aprobacion' },
+  { id: 'contrato', label: 'Contrato' },
+  { id: 'firma', label: 'Firma' },
+  { id: 'listo', label: 'Listo' },
 ]
 
-/**
- * Estados que representan finalizaciones alternativas (no en el flujo principal)
- */
-const ESTADOS_FINALES: EstadoExpediente[] = [
-  'informacion_incompleta',
-  'rechazado',
-  'condicionado',
-  'cerrado',
-]
+function getProcessStep(estado: EstadoExpediente, citaRealizada: boolean): number {
+  // Si todavia no hay cita realizada y el expediente esta en fase inicial,
+  // estamos en "Cita previa"
+  if (!citaRealizada && (estado === 'borrador' || estado === 'en_revision' || estado === 'informacion_incompleta')) {
+    return 1
+  }
+
+  switch (estado) {
+    case 'borrador': return 2
+    case 'en_revision': return 2
+    case 'informacion_incompleta': return 2
+    case 'aprobado': return 4
+    case 'condicionado': return 3
+    case 'rechazado': return 3
+    case 'cerrado': return 6
+    default: return 0
+  }
+}
 
 export interface ExpedienteProgressBarProps {
+  expedienteId: string
   estadoActual: EstadoExpediente
   className?: string
 }
 
 export function ExpedienteProgressBar({
+  expedienteId,
   estadoActual,
   className,
 }: ExpedienteProgressBarProps) {
-  // Determinar si el estado actual está en el flujo principal
-  const estadoEnFlujo = WORKFLOW_ESTADOS.includes(estadoActual)
-  const indiceActual = estadoEnFlujo
-    ? WORKFLOW_ESTADOS.indexOf(estadoActual)
-    : -1
+  const [citaRealizada, setCitaRealizada] = useState(false)
 
-  // Si está en un estado final alternativo, mostrarlo especialmente
-  const esEstadoFinal = ESTADOS_FINALES.includes(estadoActual)
-  const configEstadoActual = ESTADOS_EXPEDIENTE[estadoActual]
+  useEffect(() => {
+    let cancelled = false
+    citaService.getCitasByExpediente(expedienteId)
+      .then((citas) => {
+        if (!cancelled) {
+          setCitaRealizada(citas.some((c) => c.estado === 'realizada'))
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [expedienteId, estadoActual])
+
+  const isRejected = estadoActual === 'rechazado'
+  const isConditioned = estadoActual === 'condicionado'
+  const currentStep = getProcessStep(estadoActual, citaRealizada)
+
+  if (isRejected) {
+    return (
+      <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
+        <p className="text-sm font-semibold text-red-700">Estudio no aprobado</p>
+        <p className="text-xs text-red-600 mt-0.5">El expediente fue rechazado tras el estudio crediticio.</p>
+      </div>
+    )
+  }
+
+  if (isConditioned) {
+    return (
+      <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
+        <p className="text-sm font-semibold text-amber-700">Se requieren documentos adicionales</p>
+        <p className="text-xs text-amber-600 mt-0.5">Sube los documentos solicitados para continuar con la evaluacion.</p>
+      </div>
+    )
+  }
 
   return (
     <div className={cn('w-full', className)}>
-      {/* Flujo principal */}
-      <div className="flex items-center justify-between">
-        {WORKFLOW_ESTADOS.map((estado, index) => {
-          const config = ESTADOS_EXPEDIENTE[estado]
-          const esActual = estado === estadoActual
-          const esCompletado = estadoEnFlujo && index < indiceActual
-          const esPendiente = !esActual && !esCompletado
-
+      <div className="flex items-center gap-1">
+        {PROCESS_STEPS.map((step, idx) => {
+          const isComplete = idx < currentStep
+          const isCurrent = idx === currentStep
           return (
-            <div key={estado} className="flex items-center flex-1">
-              {/* Nodo del estado */}
-              <div className="flex flex-col items-center">
+            <div key={step.id} className="flex items-center flex-1">
+              <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all',
-                    esActual && `${config.bgColor} ${config.borderColor}`,
-                    esCompletado && 'bg-green-500 border-green-500',
-                    esPendiente && 'bg-gray-100 border-gray-300'
+                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    isComplete && 'bg-primary-600 text-white',
+                    isCurrent && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
+                    !isComplete && !isCurrent && 'bg-gray-100 text-gray-400',
                   )}
                 >
-                  {esCompletado ? (
-                    <IconCheck size={20} className="text-white" />
-                  ) : (
-                    <span
-                      className={cn(
-                        'text-sm font-semibold',
-                        esActual && config.textColor,
-                        esPendiente && 'text-gray-400'
-                      )}
-                    >
-                      {index + 1}
-                    </span>
-                  )}
+                  {isComplete ? <IconCheck size={18} /> : idx + 1}
                 </div>
                 <span
                   className={cn(
-                    'mt-2 text-xs font-medium text-center max-w-20',
-                    esActual && config.textColor,
-                    esCompletado && 'text-green-600',
-                    esPendiente && 'text-gray-400'
+                    'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    isCurrent ? 'text-amber-700 font-semibold' : isComplete ? 'text-primary-700 font-medium' : 'text-gray-400',
                   )}
                 >
-                  {config.label}
+                  {step.label}
                 </span>
               </div>
-
-              {/* Línea conectora (excepto el último) */}
-              {index < WORKFLOW_ESTADOS.length - 1 && (
+              {idx < PROCESS_STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'flex-1 h-1 mx-2 rounded',
-                    index < indiceActual ? 'bg-green-500' : 'bg-gray-200'
+                    'h-0.5 flex-1 mx-1 mt-[-18px] rounded',
+                    isComplete ? 'bg-primary-600' : 'bg-gray-200',
                   )}
                 />
               )}
@@ -107,29 +131,6 @@ export function ExpedienteProgressBar({
           )
         })}
       </div>
-
-      {/* Mostrar estado final alternativo si aplica */}
-      {esEstadoFinal && (
-        <div className="mt-4 flex items-center justify-center">
-          <div
-            className={cn(
-              'px-4 py-2 rounded-lg border-2 flex items-center gap-2',
-              configEstadoActual.bgColor,
-              configEstadoActual.borderColor
-            )}
-          >
-            <span
-              className={cn(
-                'w-3 h-3 rounded-full',
-                configEstadoActual.textColor.replace('text-', 'bg-')
-              )}
-            />
-            <span className={cn('text-sm font-semibold', configEstadoActual.textColor)}>
-              {configEstadoActual.label}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

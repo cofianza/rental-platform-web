@@ -484,12 +484,6 @@ export default function InmuebleDetailPage() {
                           <dd className="text-gray-900">{inmueble.barrio}</dd>
                         </div>
                       )}
-                      {inmueble.codigo_postal && (
-                        <div>
-                          <dt className="text-gray-500">Código postal</dt>
-                          <dd className="text-gray-900">{inmueble.codigo_postal}</dd>
-                        </div>
-                      )}
                       {inmueble.piso && (
                         <div>
                           <dt className="text-gray-500">Piso</dt>

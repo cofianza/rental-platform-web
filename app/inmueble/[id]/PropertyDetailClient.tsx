@@ -13,6 +13,7 @@ import {
   IconChevronLeft, IconChevronRight, IconCalendar,
 } from '@/components/icons'
 import { formatCurrency, formatDate } from '@/lib/constants'
+import { MeInteresaCTA } from '@/components/vitrina/MeInteresaCTA'
 import type { PublicProperty } from '@/services/publicPropertiesService'
 
 const TIPO_LABELS: Record<string, string> = {
@@ -50,16 +51,6 @@ export function PropertyDetailClient({ property, similares }: Props) {
   const handleImageClick = (index: number) => {
     setLightboxIndex(index)
     setLightboxOpen(true)
-  }
-
-  const handleMeInteresa = () => {
-    localStorage.setItem('cofianza_interested_property', property.id)
-    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('cofianza_refresh_token') : null
-    if (refreshToken) {
-      window.location.href = `/vitrina/interest?property_id=${property.id}`
-    } else {
-      window.location.href = `/registro/solicitante?property_id=${property.id}&intent=interest`
-    }
   }
 
   // Map embed URL (approximate location — barrio + ciudad only)
@@ -205,13 +196,8 @@ export function PropertyDetailClient({ property, similares }: Props) {
                 Publicado: {formatDate(property.created_at)}
               </div>
 
-              {/* CTA Button */}
-              <button
-                onClick={handleMeInteresa}
-                className="w-full py-3.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors text-center"
-              >
-                Me interesa este inmueble
-              </button>
+              {/* CTA Button — 4 ramas según rol/sesión, ver MeInteresaCTA */}
+              <MeInteresaCTA inmuebleId={property.id} variant="primary" />
             </div>
           </div>
         </div>
@@ -224,12 +210,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
             <p className="text-lg font-bold text-primary-700">{formatCurrency(property.valor_arriendo)}<span className="text-xs font-normal text-gray-500">/mes</span></p>
             <p className="text-xs text-gray-500">{property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}</p>
           </div>
-          <button
-            onClick={handleMeInteresa}
-            className="px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors shrink-0"
-          >
-            Me interesa
-          </button>
+          <MeInteresaCTA inmuebleId={property.id} variant="sticky" />
         </div>
       </div>
 

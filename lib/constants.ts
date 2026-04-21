@@ -8,6 +8,7 @@
 // ============================================
 
 import type { Resource } from '@/types/permissions'
+import type { UserRole } from '@/types/auth'
 
 export interface NavItem {
   label: string
@@ -15,6 +16,11 @@ export interface NavItem {
   icon: string // Nombre del ícono (para usar con librería de íconos)
   description?: string
   resource?: Resource // Recurso asociado para filtrado RBAC
+  // Si se especifica, el item solo se muestra si user.rol ∈ requiredRoles.
+  // Se combina (AND) con el check de `resource`. Útil para ocultar rutas a
+  // roles que técnicamente tienen `read` pero no deben verlas en la nav
+  // (ej: solicitante tiene citas.read pero el kanban es solo operativo).
+  requiredRoles?: UserRole[]
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -38,6 +44,22 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'FolderOpen',
     description: 'Casos de arrendamiento',
     resource: 'expedientes',
+  },
+  {
+    label: 'Citas',
+    href: '/citas',
+    icon: 'Calendar',
+    description: 'Gestiona visitas a tus inmuebles',
+    resource: 'citas',
+    requiredRoles: ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'],
+  },
+  {
+    label: 'Disponibilidad',
+    href: '/disponibilidad',
+    icon: 'Clock',
+    description: 'Horarios para agendar visitas',
+    resource: 'disponibilidad',
+    requiredRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
     label: 'Contratos',

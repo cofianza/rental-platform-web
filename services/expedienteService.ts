@@ -377,6 +377,22 @@ class ExpedienteService {
   }
 
   /**
+   * Devuelve el expediente activo del solicitante autenticado sobre el inmueble dado.
+   * Usado por <MeInteresaCTA> para decidir UX (botón crear vs link "Ver mi solicitud").
+   * Backend filtra por solicitantes.creado_por = req.user.id (rol solicitante).
+   * Siempre devuelve 200; null si no hay expediente activo.
+   */
+  async miExpedientePorInmueble(inmuebleId: string): Promise<{
+    expediente: { id: string; numero: string; estado: string } | null
+  }> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.get(
+      `/expedientes/mi-expediente-por-inmueble/${inmuebleId}`
+    )) as any
+    return { expediente: response.data?.expediente || null }
+  }
+
+  /**
    * Crea un nuevo expediente
    */
   async createExpediente(data: {
@@ -388,6 +404,34 @@ class ExpedienteService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.post('/expedientes', data)) as any
     return mapExpediente<IExpedienteDetalle>(response.data)
+  }
+
+  /**
+   * Crear expediente externo (invitación por email, salta cita)
+   */
+  async crearExpedienteExterno(data: {
+    inmueble_id: string
+    email_invitacion: string
+    notas?: string
+  }): Promise<IExpediente> {
+    const response = await apiClient.post<IExpediente>('/expedientes/externo', data)
+    return response.data
+  }
+
+  /**
+   * Habilita el estudio crediticio para un expediente — Paso 3 del flujo.
+   * Dispara el RPC fn_habilitar_estudio_expediente (crea placeholder en
+   * estudios + timeline + email al solicitante).
+   */
+  async habilitarEstudio(expedienteId: string): Promise<{
+    expediente: { id: string; numero: string; estudio_habilitado: true }
+    estudio: { id: string; estado: string; resultado: string }
+  }> {
+    const response = await apiClient.patch<{
+      expediente: { id: string; numero: string; estudio_habilitado: true }
+      estudio: { id: string; estado: string; resultado: string }
+    }>(`/expedientes/${expedienteId}/habilitar-estudio`, {})
+    return response.data
   }
 }
 

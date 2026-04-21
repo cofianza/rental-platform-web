@@ -15,10 +15,12 @@ import {
 } from '@/components/icons'
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
+import { citaService } from '@/services/citaService'
 import { usePermissions } from '@/hooks/usePermissions'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
+import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 
 // ── Date filter presets ─────────────────────────────────────
 
@@ -146,6 +148,9 @@ export default function DashboardPage() {
           title={isPropietario ? 'Mi Panel' : 'Panel Inmobiliaria'}
           subtitle={isPropietario ? 'Gestiona tus inmuebles y solicitudes' : 'Gestiona inmuebles y expedientes'}
         />
+
+        {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio) */}
+        <AccionesPendientesWidget />
 
         {/* Quick actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -374,37 +379,68 @@ export default function DashboardPage() {
 // ── Solicitante Dashboard ────────────────────────────────────
 
 const PROCESS_STEPS = [
-  { id: 'expediente', label: 'Solicitud creada', description: 'Tu expediente esta registrado' },
-  { id: 'estudio', label: 'Estudio crediticio', description: 'Evaluacion de riesgo en proceso' },
+  { id: 'expediente', label: 'Solicitud', description: 'Tu expediente esta registrado' },
+  { id: 'cita', label: 'Cita previa', description: 'Agenda una visita al inmueble' },
+  { id: 'estudio', label: 'Estudio', description: 'Evaluacion de riesgo en proceso' },
   { id: 'aprobado', label: 'Aprobacion', description: 'Resultado del estudio' },
   { id: 'contrato', label: 'Contrato', description: 'Generacion y revision del contrato' },
   { id: 'firma', label: 'Firma', description: 'Firma electronica del contrato' },
   { id: 'vigente', label: 'Listo', description: 'Contrato vigente' },
 ]
 
-function getProcessStep(expedienteEstado: string): number {
+function getProcessStep(expedienteEstado: string, citaRealizada: boolean): number {
+  // Si todavia no hay cita realizada, el solicitante esta en el paso de "Cita previa"
+  // (excepto si el expediente ya esta en un estado terminal o avanzado)
+  if (!citaRealizada && (expedienteEstado === 'borrador' || expedienteEstado === 'en_revision' || expedienteEstado === 'informacion_incompleta')) {
+    return 1 // Cita previa
+  }
+
+  // Una vez la cita esta realizada, seguimos el flujo normal
   switch (expedienteEstado) {
-    case 'borrador': return 0
-    case 'en_revision': return 1
-    case 'informacion_incompleta': return 1
-    case 'aprobado': return 3
-    case 'condicionado': return 2
-    case 'rechazado': return 2
-    case 'cerrado': return 5
+    case 'borrador': return 2 // cita realizada, tocaria estudio
+    case 'en_revision': return 2 // estudio en proceso
+    case 'informacion_incompleta': return 2
+    case 'aprobado': return 4
+    case 'condicionado': return 3
+    case 'rechazado': return 3
+    case 'cerrado': return 6
     default: return 0
   }
 }
 
 function SolicitanteDashboard() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
+  const [citasByExpediente, setCitasByExpediente] = useState<Record<string, boolean>>({})
   const [loadingExp, setLoadingExp] = useState(true)
 
   useEffect(() => {
     expedienteService.getExpedientes({ page: 1, limit: 5, sortBy: 'created_at', sortOrder: 'desc' })
-      .then((res) => setExpedientes(res.data))
+      .then(async (res) => {
+        setExpedientes(res.data)
+        // Cargar citas de cada expediente para saber si tiene cita realizada
+        const citasMap: Record<string, boolean> = {}
+        await Promise.all(
+          res.data.map(async (exp) => {
+            try {
+              const citas = await citaService.getCitasByExpediente(exp.id)
+              citasMap[exp.id] = citas.some((c) => c.estado === 'realizada')
+            } catch {
+              citasMap[exp.id] = false
+            }
+          })
+        )
+        setCitasByExpediente(citasMap)
+      })
       .catch(() => {})
       .finally(() => setLoadingExp(false))
   }, [])
+
+  // Expedientes activos que aun necesitan agendar cita
+  const expedientesPendientesCita = expedientes.filter((exp) => {
+    const citaRealizada = citasByExpediente[exp.id] ?? false
+    const estadoActivo = exp.estado === 'borrador' || exp.estado === 'en_revision' || exp.estado === 'informacion_incompleta'
+    return estadoActivo && !citaRealizada
+  })
 
   return (
     <div className="space-y-6">
@@ -412,6 +448,42 @@ function SolicitanteDashboard() {
         title="Mi Panel de Arrendatario"
         subtitle="Consulta el estado de tus solicitudes de arrendamiento"
       />
+
+      {/* Banner: citas pendientes por agendar */}
+      {!loadingExp && expedientesPendientesCita.length > 0 && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+          {/* Decoración de fondo */}
+          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
+              <IconCalendar size={28} className="text-white" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold mb-1">
+                {expedientesPendientesCita.length === 1
+                  ? 'Tienes una visita pendiente por agendar'
+                  : `Tienes ${expedientesPendientesCita.length} visitas pendientes por agendar`}
+              </h3>
+              <p className="text-sm text-white/90">
+                Antes de continuar con tu estudio crediticio, agenda una visita al inmueble. El propietario debera confirmar la fecha.
+              </p>
+            </div>
+
+            {expedientesPendientesCita.length === 1 && (
+              <Link
+                href={`/expedientes/${expedientesPendientesCita[0].id}`}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
+              >
+                <IconCalendar size={16} />
+                Agendar cita ahora
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Active processes */}
       {loadingExp ? (
@@ -432,7 +504,8 @@ function SolicitanteDashboard() {
       ) : (
         <div className="space-y-4">
           {expedientes.map((exp) => {
-            const currentStep = getProcessStep(exp.estado)
+            const citaRealizada = citasByExpediente[exp.id] ?? false
+            const currentStep = getProcessStep(exp.estado, citaRealizada)
             const isRejected = exp.estado === 'rechazado'
             const isConditioned = exp.estado === 'condicionado'
 

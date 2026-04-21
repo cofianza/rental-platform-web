@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
@@ -84,7 +85,7 @@ function RegistroSolicitanteContent() {
     if (!nombre.trim()) e.nombre = 'Requerido'
     if (!apellido.trim()) e.apellido = 'Requerido'
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalido'
-    if (!telefono.trim() || telefono.length < 10) e.telefono = 'Telefono invalido'
+    if (!telefono.trim() || !/^\+\d{1,4}[\s-]?\d{7,15}$/.test(telefono.replace(/[\s-]+/g, ' ').trim())) e.telefono = 'Telefono invalido'
     if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
     if (password.length < 8) e.password = 'Minimo 8 caracteres'
     if (password !== confirmPassword) e.confirm_password = 'No coinciden'
@@ -101,6 +102,12 @@ function RegistroSolicitanteContent() {
     setSubmitting(true)
     setErrors({})
 
+    // Si el usuario viene del flujo de invitación externa, preservamos el token
+    // para: (a) marcar registration_source='invitacion_externa' en backend y
+    // (b) redirigir al canje post-auto-login.
+    const invitacionToken =
+      typeof window !== 'undefined' ? sessionStorage.getItem('invitacion_token') : null
+
     try {
       const res = await fetch(`${API_BASE_URL}/vitrina/register`, {
         method: 'POST',
@@ -112,6 +119,7 @@ function RegistroSolicitanteContent() {
           password, confirm_password: confirmPassword,
           accept_terms: true, accept_data_treatment: true,
           property_interest_id: propertyId || undefined,
+          from_invitation: invitacionToken ? true : undefined,
         }),
       })
 
@@ -130,6 +138,12 @@ function RegistroSolicitanteContent() {
       localStorage.setItem('cofianza_refresh_token', session.refresh_token)
 
       toast.success('Registro exitoso')
+
+      // Flujo invitación externa tiene prioridad sobre property_interest.
+      if (invitacionToken) {
+        window.location.href = `/invitacion/${invitacionToken}`
+        return
+      }
 
       // If property interest: create expediente+estudio directly with the fresh token
       if (propertyId) {
@@ -228,7 +242,12 @@ function RegistroSolicitanteContent() {
           </div>
 
           <FormField label="Email" type="email" value={email} onChange={setEmail} error={errors.email} />
-          <FormField label="Telefono" type="tel" value={telefono} onChange={setTelefono} error={errors.telefono} placeholder="+57 300 123 4567" />
+          <PhoneInput
+            label="Telefono"
+            value={telefono}
+            onChange={setTelefono}
+            error={errors.telefono}
+          />
 
           <div className="grid grid-cols-5 gap-3">
             <div className="col-span-2">

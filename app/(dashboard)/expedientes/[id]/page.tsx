@@ -30,6 +30,7 @@ import {
   EstudiosSection,
   AutorizacionSection,
   ContratosSection,
+  CitasSection,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -285,7 +286,7 @@ export default function ExpedienteDetallePage() {
 
       {/* Barra de progreso */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <ExpedienteProgressBar estadoActual={expediente.estado} />
+        <ExpedienteProgressBar expedienteId={id} estadoActual={expediente.estado} />
       </div>
 
       {/* Tabs */}
@@ -393,6 +394,11 @@ export default function ExpedienteDetallePage() {
                 ) : (
                   <p className="text-sm text-gray-500">Sin solicitante asociado</p>
                 )}
+              </div>
+
+              {/* Sección Cita Previa */}
+              <div className="border border-gray-200 rounded-lg p-5 lg:col-span-2">
+                <CitasSection expedienteId={id} onCitaRealizada={fetchExpediente} />
               </div>
 
               {/* Sección Expediente */}

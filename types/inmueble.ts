@@ -37,7 +37,6 @@ export interface IInmueble {
   parqueadero: boolean
   parqueaderos: number
   piso?: string | null
-  codigo_postal?: string | null
   latitud?: number | null
   longitud?: number | null
   descripcion?: string | null
@@ -75,7 +74,6 @@ export interface IInmuebleCreateData {
   parqueadero?: boolean
   parqueaderos?: number
   piso?: string
-  codigo_postal?: string
   latitud?: number
   longitud?: number
   descripcion?: string
@@ -102,7 +100,6 @@ export interface IInmuebleUpdateData {
   parqueadero?: boolean
   parqueaderos?: number | null
   piso?: string | null
-  codigo_postal?: string | null
   latitud?: number | null
   longitud?: number | null
   descripcion?: string | null

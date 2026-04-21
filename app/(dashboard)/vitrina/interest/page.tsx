@@ -2,6 +2,12 @@
  * Interest Processing Page — HP-368
  * Creates expediente + estudio automatically after register/login
  * Protected page (requires auth via dashboard layout)
+ *
+ * TODO(unificación de flujos): Esta pantalla crea expediente SIN cita tras
+ * el flujo visitante→login→intent. En contraste, el flujo "solicitante ya
+ * autenticado" desde <MeInteresaCTA> crea expediente + cita en un solo paso.
+ * Esta divergencia existe por simplicidad: agregar modal de cita tras login
+ * amplía scope. Considerar unificar cuando el equipo lo priorice.
  */
 
 'use client'
@@ -15,8 +21,14 @@ import { apiClient } from '@/lib/api'
 type Status = 'processing' | 'success' | 'error'
 
 interface InterestResult {
-  expediente: { id: string; numero: string }
-  estudio: { id: string }
+  expediente: {
+    id: string
+    numero: string
+    estado: 'borrador'
+    estudio_habilitado: boolean
+    source: 'vitrina_publica'
+  }
+  siguiente_paso: 'agendar_cita'
 }
 
 export default function InterestPage() {
@@ -76,7 +88,7 @@ export default function InterestPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 mb-2">Procesando tu solicitud</h1>
               <p className="text-sm text-gray-500">
-                Estamos creando tu expediente y preparando el estudio de arrendamiento...
+                Estamos creando tu expediente y preparando el siguiente paso...
               </p>
             </div>
           </>
@@ -90,7 +102,7 @@ export default function InterestPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 mb-2">Expediente creado</h1>
               <p className="text-sm text-gray-500 mb-4">
-                Tu expediente <span className="font-semibold text-gray-700">{result.expediente.numero}</span> ha sido creado exitosamente.
+                Tu expediente <span className="font-semibold text-gray-700">{result.expediente.numero}</span> fue creado. El siguiente paso es agendar una cita con el propietario.
               </p>
               <p className="text-xs text-gray-400">Redirigiendo al detalle del expediente...</p>
             </div>

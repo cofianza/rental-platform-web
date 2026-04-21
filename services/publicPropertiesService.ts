@@ -1,9 +1,10 @@
 // ============================================
 // Public Properties Service — HP-366
-// No auth required — public API
+// No auth required for getters — `registrarInteres` SÍ requiere auth.
 // ============================================
 
 import { API_BASE_URL } from '@/lib/constants'
+import { apiClient } from '@/lib/api'
 
 // ── Types ───────────────────────────────────
 
@@ -99,4 +100,29 @@ export async function getPublicPropertyById(id: string): Promise<PublicProperty>
 export async function getPublicPropertyFilters(): Promise<PublicPropertyFilters> {
   const result = await publicFetch<PublicPropertyFilters>('/public/properties/filters')
   return result.data ?? { ciudades: [], tipos: [], estratos: [] }
+}
+
+// ── Interés (autenticado, rol solicitante) ────
+
+export interface RegistrarInteresResult {
+  expediente: {
+    id: string
+    numero: string
+    estado: 'borrador'
+    estudio_habilitado: boolean
+    source: 'vitrina_publica'
+  }
+  siguiente_paso: 'agendar_cita'
+}
+
+/**
+ * Registra el interés del solicitante autenticado en un inmueble. Crea el
+ * expediente vía POST /vitrina/interest. NO crea cita — eso lo hace el caller
+ * (ej. <MeInteresaCTA>) en un segundo paso si el flujo lo requiere.
+ */
+export async function registrarInteres(propertyId: string): Promise<RegistrarInteresResult> {
+  const res = await apiClient.post<RegistrarInteresResult>('/vitrina/interest', {
+    property_id: propertyId,
+  })
+  return res.data
 }

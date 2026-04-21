@@ -4,9 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  IconUser, IconMail, IconLock, IconPhone, IconMapPin, IconId,
+  IconUser, IconMail, IconLock, IconMapPin, IconId,
   IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
 } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
@@ -168,8 +169,8 @@ export default function RegisterInmobiliariaPage() {
       if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
       if (!formData.telefono.trim()) {
         newErrors.telefono = 'Telefono requerido'
-      } else if (!/^\+57\s?3\d{9}$/.test(formData.telefono)) {
-        newErrors.telefono = 'Formato: +57 3XXXXXXXXX'
+      } else if (!/^\+\d{1,4}[\s-]?\d{7,15}$/.test(formData.telefono.replace(/[\s-]+/g, ' ').trim())) {
+        newErrors.telefono = 'Ingresa un numero de telefono valido con lada'
       }
       if (!formData.email.trim()) {
         newErrors.email = 'Email requerido'
@@ -357,19 +358,12 @@ export default function RegisterInmobiliariaPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefono de contacto</label>
-            <div className="relative">
-              <IconPhone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="tel" value={formData.telefono}
-                onChange={(e) => updateField('telefono', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.telefono ? 'border-red-500' : 'border-gray-300')}
-                placeholder="+57 3XXXXXXXXX"
-              />
-            </div>
-            {errors.telefono && <p className="mt-1.5 text-sm text-red-600">{errors.telefono}</p>}
-          </div>
+          <PhoneInput
+            label="Telefono de contacto"
+            value={formData.telefono}
+            onChange={(v) => updateField('telefono', v)}
+            error={errors.telefono}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email corporativo</label>

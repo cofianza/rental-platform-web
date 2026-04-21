@@ -17,3 +17,4 @@ export { Breadcrumbs, type BreadcrumbsProps, type BreadcrumbItem } from './Bread
 export { Lightbox, type LightboxProps, type LightboxImage } from './Lightbox'
 export { DocumentViewer } from './DocumentViewer'
 export { ExportButton, type ExportButtonProps } from './ExportButton'
+export { PhoneInput, COUNTRY_CODES, type CountryCode } from './PhoneInput'
