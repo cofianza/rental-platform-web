@@ -408,24 +408,57 @@ function getProcessStep(expedienteEstado: string, citaRealizada: boolean): numbe
   }
 }
 
+/** Info de la cita "activa" de un expediente para el dashboard del solicitante. */
+type CitaActivaEstado = 'solicitada' | 'confirmada' | 'realizada'
+interface CitaActivaInfo {
+  estado: CitaActivaEstado
+  fecha: string | null // fecha_confirmada || fecha_propuesta, ISO
+}
+
+/** Elige la cita más relevante para mostrar: prioriza realizada > confirmada > solicitada. */
+function resolverCitaActiva(citas: Array<{ estado: string; fecha_propuesta: string | null; fecha_confirmada: string | null }>): CitaActivaInfo | null {
+  const activas = citas.filter((c) => c.estado === 'realizada' || c.estado === 'confirmada' || c.estado === 'solicitada')
+  if (activas.length === 0) return null
+  const prioridad: Record<string, number> = { realizada: 3, confirmada: 2, solicitada: 1 }
+  activas.sort((a, b) => prioridad[b.estado] - prioridad[a.estado])
+  const pick = activas[0]
+  return {
+    estado: pick.estado as CitaActivaEstado,
+    fecha: pick.fecha_confirmada || pick.fecha_propuesta,
+  }
+}
+
+/** "23 abr 2026, 3:00 p. m." en zona Bogotá (independiente del browser). */
+function formatCitaFecha(iso: string | null): string {
+  if (!iso) return 'Fecha por confirmar'
+  return new Date(iso).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
 function SolicitanteDashboard() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
-  const [citasByExpediente, setCitasByExpediente] = useState<Record<string, boolean>>({})
+  const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
 
   useEffect(() => {
     expedienteService.getExpedientes({ page: 1, limit: 5, sortBy: 'created_at', sortOrder: 'desc' })
       .then(async (res) => {
         setExpedientes(res.data)
-        // Cargar citas de cada expediente para saber si tiene cita realizada
-        const citasMap: Record<string, boolean> = {}
+        const citasMap: Record<string, CitaActivaInfo | null> = {}
         await Promise.all(
           res.data.map(async (exp) => {
             try {
               const citas = await citaService.getCitasByExpediente(exp.id)
-              citasMap[exp.id] = citas.some((c) => c.estado === 'realizada')
+              citasMap[exp.id] = resolverCitaActiva(citas)
             } catch {
-              citasMap[exp.id] = false
+              citasMap[exp.id] = null
             }
           })
         )
@@ -435,12 +468,17 @@ function SolicitanteDashboard() {
       .finally(() => setLoadingExp(false))
   }, [])
 
-  // Expedientes activos que aun necesitan agendar cita
-  const expedientesPendientesCita = expedientes.filter((exp) => {
-    const citaRealizada = citasByExpediente[exp.id] ?? false
-    const estadoActivo = exp.estado === 'borrador' || exp.estado === 'en_revision' || exp.estado === 'informacion_incompleta'
-    return estadoActivo && !citaRealizada
-  })
+  // Clasificar expedientes según el estado de su cita activa, para apilar banners.
+  const estadoActivo = (exp: IExpediente) =>
+    exp.estado === 'borrador' || exp.estado === 'en_revision' || exp.estado === 'informacion_incompleta'
+
+  const expedientesSinCita = expedientes.filter((exp) => estadoActivo(exp) && !citasByExpediente[exp.id])
+  const expedientesCitaSolicitada = expedientes.filter(
+    (exp) => estadoActivo(exp) && citasByExpediente[exp.id]?.estado === 'solicitada',
+  )
+  const expedientesCitaConfirmada = expedientes.filter(
+    (exp) => estadoActivo(exp) && citasByExpediente[exp.id]?.estado === 'confirmada',
+  )
 
   return (
     <div className="space-y-6">
@@ -449,39 +487,97 @@ function SolicitanteDashboard() {
         subtitle="Consulta el estado de tus solicitudes de arrendamiento"
       />
 
-      {/* Banner: citas pendientes por agendar */}
-      {!loadingExp && expedientesPendientesCita.length > 0 && (
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
-          {/* Decoración de fondo */}
-          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
-              <IconCalendar size={28} className="text-white" />
+      {/* Banners apilados: uno por expediente + estado de cita.
+          Naranja/gradient: sin cita → CTA "Agendar cita".
+          Azul: cita solicitada → esperando confirmación del propietario.
+          Verde: cita confirmada → fecha lista para la visita.
+          Si la cita está realizada, el stepper de la card toma el relevo (sin banner). */}
+      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length) > 0 && (
+        <div className="space-y-3">
+          {/* Sin cita */}
+          {expedientesSinCita.map((exp) => (
+            <div key={`sin-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+              <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
+                  <IconCalendar size={28} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold mb-1">Tienes una visita pendiente por agendar</h3>
+                  <p className="text-sm text-white/90">
+                    Antes de continuar con tu estudio crediticio, agenda una visita al inmueble. El propietario debera confirmar la fecha.
+                  </p>
+                </div>
+                <Link
+                  href={`/expedientes/${exp.id}`}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
+                >
+                  <IconCalendar size={16} />
+                  Ver detalles de la cita
+                </Link>
+              </div>
             </div>
+          ))}
 
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold mb-1">
-                {expedientesPendientesCita.length === 1
-                  ? 'Tienes una visita pendiente por agendar'
-                  : `Tienes ${expedientesPendientesCita.length} visitas pendientes por agendar`}
-              </h3>
-              <p className="text-sm text-white/90">
-                Antes de continuar con tu estudio crediticio, agenda una visita al inmueble. El propietario debera confirmar la fecha.
-              </p>
-            </div>
+          {/* Cita solicitada — azul */}
+          {expedientesCitaSolicitada.map((exp) => {
+            const cita = citasByExpediente[exp.id]!
+            return (
+              <div key={`sol-${exp.id}`} className="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0">
+                    <IconClock size={22} className="text-blue-700" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-blue-900 mb-0.5">
+                      Solicitud de visita enviada
+                    </h3>
+                    <p className="text-sm text-blue-800">
+                      El propietario revisará tu fecha propuesta. Te notificaremos cuando la confirme.
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Fecha propuesta: <strong>{formatCitaFecha(cita.fecha)}</strong>
+                    </p>
+                  </div>
+                  <Link
+                    href={`/expedientes/${exp.id}`}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-800 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 shadow-sm transition-colors shrink-0"
+                  >
+                    Ver detalles de la cita
+                  </Link>
+                </div>
+              </div>
+            )
+          })}
 
-            {expedientesPendientesCita.length === 1 && (
-              <Link
-                href={`/expedientes/${expedientesPendientesCita[0].id}`}
-                className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
-              >
-                <IconCalendar size={16} />
-                Agendar cita ahora
-              </Link>
-            )}
-          </div>
+          {/* Cita confirmada — verde */}
+          {expedientesCitaConfirmada.map((exp) => {
+            const cita = citasByExpediente[exp.id]!
+            return (
+              <div key={`conf-${exp.id}`} className="bg-green-50 border border-green-200 rounded-xl p-5 shadow-sm">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-100 border border-green-200 flex items-center justify-center shrink-0">
+                    <IconCheck size={22} className="text-green-700" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-green-900 mb-0.5">
+                      ¡Cita confirmada!
+                    </h3>
+                    <p className="text-sm text-green-800">
+                      Te esperamos el <strong>{formatCitaFecha(cita.fecha)}</strong>.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/expedientes/${exp.id}`}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-50 shadow-sm transition-colors shrink-0"
+                  >
+                    Ver detalles de la cita
+                  </Link>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -504,7 +600,7 @@ function SolicitanteDashboard() {
       ) : (
         <div className="space-y-4">
           {expedientes.map((exp) => {
-            const citaRealizada = citasByExpediente[exp.id] ?? false
+            const citaRealizada = citasByExpediente[exp.id]?.estado === 'realizada'
             const currentStep = getProcessStep(exp.estado, citaRealizada)
             const isRejected = exp.estado === 'rechazado'
             const isConditioned = exp.estado === 'condicionado'
