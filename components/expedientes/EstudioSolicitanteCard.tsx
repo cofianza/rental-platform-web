@@ -26,10 +26,14 @@ interface EstudioSolicitanteCardProps {
   onEjecutado?: () => void
 }
 
+type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti' | 'pasaporte'
+
 export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSolicitanteCardProps) {
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [tipoDoc, setTipoDoc] = useState<TipoDoc>('cc')
+  const [numeroDoc, setNumeroDoc] = useState('')
 
   const fetchEstudio = useCallback(async () => {
     try {
@@ -37,7 +41,18 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       // Tomamos el estudio activo más reciente (ignoramos cancelados).
       const activos = res.data.filter((e) => e.estado !== 'cancelado')
       activos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      setEstudio(activos[0] ?? null)
+      const elegido = activos[0] ?? null
+      setEstudio(elegido)
+
+      // Prefill del form (si datos_formulario viene del backend).
+      const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
+      if (datos.tipo_documento) {
+        const t = datos.tipo_documento.toLowerCase()
+        if (t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti' || t === 'pasaporte') {
+          setTipoDoc(t)
+        }
+      }
+      if (datos.numero_documento) setNumeroDoc(datos.numero_documento)
     } catch {
       setEstudio(null)
     } finally {
@@ -59,9 +74,17 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
 
   const handleEjecutar = async () => {
     if (!estudio) return
+    const numero = numeroDoc.trim()
+    if (!numero) {
+      toast.error('Ingresa tu número de cédula para continuar')
+      return
+    }
     setSubmitting(true)
     try {
-      await estudioService.ejecutarEstudio(estudio.id)
+      await estudioService.ejecutarEstudio(estudio.id, {
+        tipo_documento: tipoDoc,
+        numero_documento: numero,
+      })
       toast.success('Estudio enviado a TransUnion. Te avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
       onEjecutado?.()
@@ -84,7 +107,7 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
 
   // Form "Confirma tu cédula y envía".
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'formulario_enviado' || estudio.estado === 'documentos_cargados') {
-    const datos = (estudio.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string; nombre_completo?: string }
+    const canSubmit = numeroDoc.trim().length >= 5 && !submitting
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Confirma tus datos para el estudio crediticio</h3>
@@ -93,29 +116,47 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 mb-4">
-          {datos.nombre_completo && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Nombre:</span>
-              <span className="font-medium text-gray-900">{datos.nombre_completo}</span>
-            </div>
-          )}
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">Tipo de documento:</span>
-            <span className="font-medium text-gray-900 uppercase">{datos.tipo_documento || 'CC'}</span>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Tipo de documento
+            </label>
+            <select
+              value={tipoDoc}
+              onChange={(e) => setTipoDoc(e.target.value as TipoDoc)}
+              disabled={submitting}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            >
+              <option value="cc">Cédula de ciudadanía (CC)</option>
+              <option value="ce">Cédula de extranjería (CE)</option>
+              <option value="ti">Tarjeta de identidad (TI)</option>
+              <option value="pasaporte">Pasaporte</option>
+              <option value="nit">NIT</option>
+            </select>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">Número de cédula:</span>
-            <span className="font-mono font-semibold text-gray-900 text-base">{datos.numero_documento || '—'}</span>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Número de documento
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={numeroDoc}
+              onChange={(e) => setNumeroDoc(e.target.value.replace(/[^\w]/g, ''))}
+              placeholder="Ingresa tu número de cédula"
+              disabled={submitting}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              maxLength={20}
+            />
           </div>
         </div>
 
         <p className="text-xs text-gray-500 mb-4">
-          Si tu cédula no es correcta, contacta a la inmobiliaria antes de enviar.
+          Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en el buró de crédito.
         </p>
 
         <button
           onClick={handleEjecutar}
-          disabled={submitting || !datos.numero_documento}
+          disabled={!canSubmit}
           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
         >
           {submitting && (

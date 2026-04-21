@@ -96,9 +96,14 @@ export const estudioService = {
   /**
    * Ejecuta el estudio contra el proveedor de riesgo (TransUnion).
    * Lo dispara el solicitante tras confirmar sus datos, o admin/operador.
+   * Acepta override del documento (opcional) cuando el solicitante lo
+   * confirma/corrige desde la card.
    */
-  async ejecutarEstudio(estudioId: string): Promise<IEstudio> {
-    const res = await apiClient.post<IEstudio>(`/estudios/${estudioId}/ejecutar`)
+  async ejecutarEstudio(
+    estudioId: string,
+    body?: { tipo_documento?: string; numero_documento?: string },
+  ): Promise<IEstudio> {
+    const res = await apiClient.post<IEstudio>(`/estudios/${estudioId}/ejecutar`, body || {})
     return res.data
   },
 
