@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   IExpediente,
   IExpedienteFilters,
@@ -146,9 +147,17 @@ class ExpedienteService {
 
   /**
    * Obtiene lista de analistas para dropdown de filtro
-   * (usuarios con rol operador_analista o administrador)
+   * (usuarios con rol operador_analista o administrador).
+   *
+   * Solo admin/operador tienen permiso real — para el resto evitamos la
+   * request y devolvemos [] (antes el 403 ensuciaba la consola aunque
+   * se atrapaba el error).
    */
   async getAnalistas(): Promise<IAnalistaOption[]> {
+    const rol = useAuthStore.getState().user?.rol
+    if (rol !== 'administrador' && rol !== 'operador_analista') {
+      return []
+    }
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = (await apiClient.get('/users/operators')) as any
@@ -159,7 +168,6 @@ class ExpedienteService {
         nombre: `${u.nombre} ${u.apellido || ''}`.trim(),
       }))
     } catch {
-      // Silenciar error si el endpoint falla (ej. usuario sin permiso)
       return []
     }
   }
