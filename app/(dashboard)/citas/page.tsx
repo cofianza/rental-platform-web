@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useMisCitas } from '@/hooks/useMisCitas'
 import { CitaCard } from '@/components/citas/CitaCard'
 import { inmuebleService } from '@/services/inmuebleService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { EstadoCita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
 
@@ -33,6 +34,10 @@ export default function CitasPage() {
   const isInitialized = useAuthStore((s) => s.isInitialized)
   const { citas, filters, isLoading, error, refetch, setFilters, resetFilters } = useMisCitas()
   const [inmuebles, setInmuebles] = useState<InmuebleOption[]>([])
+  // Estado del pago del estudio por expediente. Solo se consulta para citas
+  // realizadas con estudio_habilitado — ahí es donde la card muestra la pill.
+  // null = cargando, undefined = no aplica.
+  const [pagoEstudioByExp, setPagoEstudioByExp] = useState<Record<string, string | null>>({})
 
   // Guard de rol: redirige a 403 si no tiene acceso.
   useEffect(() => {
@@ -56,6 +61,51 @@ export default function CitasPage() {
         // Fallar silencioso — el filtro es opcional.
       })
   }, [isInitialized, hasRole])
+
+  // Cuando cargan las citas, fetcheamos en paralelo el estado del pago de
+  // estudio para expedientes cuyas citas ya están realizadas Y con estudio
+  // habilitado. N requests pero limitado al subset relevante.
+  useEffect(() => {
+    const expedienteIds = Array.from(
+      new Set(
+        citas
+          .filter(
+            (c) =>
+              c.estado === 'realizada' &&
+              c.expediente?.id &&
+              c.expediente?.estudio_habilitado === true,
+          )
+          .map((c) => c.expediente!.id),
+      ),
+    )
+    if (expedienteIds.length === 0) return
+
+    // Marcar como cargando los que aún no tenemos.
+    setPagoEstudioByExp((prev) => {
+      const next = { ...prev }
+      for (const id of expedienteIds) {
+        if (!(id in next)) next[id] = null
+      }
+      return next
+    })
+
+    Promise.all(
+      expedienteIds.map(async (id) => {
+        try {
+          const res = await pagoEstudioService.getEstado(id)
+          return [id, res.estado] as const
+        } catch {
+          return [id, 'sin_definir'] as const
+        }
+      }),
+    ).then((entries) => {
+      setPagoEstudioByExp((prev) => {
+        const next = { ...prev }
+        for (const [id, estado] of entries) next[id] = estado
+        return next
+      })
+    })
+  }, [citas])
 
   // Agrupar citas por estado (los filtros de fecha/inmueble se aplican server-side).
   const citasPorEstado = useMemo(() => {
@@ -202,7 +252,21 @@ export default function CitasPage() {
                       Sin citas en este estado
                     </p>
                   ) : (
-                    items.map((c) => <CitaCard key={c.id} cita={c} onAction={refetch} />)
+                    items.map((c) => {
+                      const expId = c.expediente?.id
+                      const mostrarPago =
+                        c.estado === 'realizada' && c.expediente?.estudio_habilitado === true
+                      const pagoEstudioEstado =
+                        mostrarPago && expId ? pagoEstudioByExp[expId] ?? null : undefined
+                      return (
+                        <CitaCard
+                          key={c.id}
+                          cita={c}
+                          onAction={refetch}
+                          pagoEstudioEstado={pagoEstudioEstado}
+                        />
+                      )
+                    })
                   )}
                 </div>
               </div>

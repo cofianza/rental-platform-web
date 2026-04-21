@@ -24,11 +24,15 @@ import { ESTADO_CITA_CONFIG } from '@/types/cita'
 interface CitaCardProps {
   cita: ICita
   onAction: () => void | Promise<void>
+  /** Estado del pago del estudio para este expediente. Solo relevante cuando
+   *  cita.estado === 'realizada' y expediente.estudio_habilitado === true.
+   *  Pasa null si aún no se ha consultado; undefined si no aplica. */
+  pagoEstudioEstado?: string | null
 }
 
 type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar'
 
-export function CitaCard({ cita, onAction }: CitaCardProps) {
+export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const [action, setAction] = useState<ActionState>('idle')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -225,10 +229,13 @@ export function CitaCard({ cita, onAction }: CitaCardProps) {
         {cita.estado === 'realizada' && expediente && (
           <>
             {expediente.estudio_habilitado ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 bg-green-50 border border-green-200">
-                <IconShieldCheck size={12} />
-                Estudio habilitado
-              </span>
+              <>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 bg-green-50 border border-green-200">
+                  <IconShieldCheck size={12} />
+                  Estudio habilitado
+                </span>
+                <PagoEstudioPill estado={pagoEstudioEstado} />
+              </>
             ) : (
               <button
                 onClick={() => setAction('habilitar')}
@@ -396,4 +403,58 @@ function toLocalDatetime(iso: string | null): string | null {
   if (Number.isNaN(d.getTime())) return null
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// ============================================================
+// Pill del estado del pago del estudio (mini-badge en la card)
+// ============================================================
+
+function PagoEstudioPill({ estado }: { estado?: string | null }) {
+  // null → aún cargando. undefined → no aplica. Skip render.
+  if (estado === undefined) return null
+  if (estado === null) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-50 border border-gray-200">
+        Pago: …
+      </span>
+    )
+  }
+
+  const config: Record<string, { label: string; className: string }> = {
+    completado: {
+      label: 'Pago recibido',
+      className: 'text-green-700 bg-green-50 border-green-200',
+    },
+    asumido_inmobiliaria: {
+      label: 'Pago: inmobiliaria',
+      className: 'text-green-700 bg-green-50 border-green-200',
+    },
+    pendiente: {
+      label: 'Pago pendiente',
+      className: 'text-amber-700 bg-amber-50 border-amber-200',
+    },
+    procesando: {
+      label: 'Procesando pago',
+      className: 'text-blue-700 bg-blue-50 border-blue-200',
+    },
+    fallido: {
+      label: 'Pago fallido',
+      className: 'text-red-700 bg-red-50 border-red-200',
+    },
+    cancelado: {
+      label: 'Pago cancelado',
+      className: 'text-gray-600 bg-gray-50 border-gray-200',
+    },
+    sin_definir: {
+      label: 'Aún sin pago',
+      className: 'text-gray-600 bg-gray-50 border-gray-200',
+    },
+  }
+
+  const pill = config[estado] || config.sin_definir
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${pill.className}`}>
+      {pill.label}
+    </span>
+  )
 }
