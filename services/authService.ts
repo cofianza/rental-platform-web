@@ -365,6 +365,14 @@ class AuthService {
   private handleAuthError(error: unknown): IAuthError {
     if (error instanceof ApiClientError) {
       if (error.statusCode === 401) {
+        // El backend distingue EMAIL_NOT_CONFIRMED vs INVALID_CREDENTIALS
+        // para que la UI muestre banner warning + CTA de reenvío.
+        if (error.code === 'EMAIL_NOT_CONFIRMED') {
+          return {
+            code: 'EMAIL_NOT_CONFIRMED',
+            message: AUTH_MESSAGES.EMAIL_NOT_CONFIRMED,
+          }
+        }
         return {
           code: 'INVALID_CREDENTIALS',
           message: AUTH_MESSAGES.INVALID_CREDENTIALS,

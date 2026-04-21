@@ -8,9 +8,11 @@
 import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { IconEye, IconEyeOff, IconMail, IconLock, IconGoogle, IconLoader } from '@/components/icons'
 import { cn, isValidEmail } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
 
 interface FormErrors {
@@ -32,6 +34,23 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+
+  const handleResendVerification = async () => {
+    if (!email || isResending) return
+    setIsResending(true)
+    try {
+      await authService.resendVerification(email)
+      toast.success('Enviamos un nuevo correo de verificación. Revisa tu bandeja.')
+      clearError()
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'No pudimos reenviar el correo. Intenta en un momento.'
+      toast.error(msg)
+    } finally {
+      setIsResending(false)
+    }
+  }
 
   // Redirigir si ya está autenticado (ej: navega a /login estando logueado)
   useEffect(() => {
@@ -119,12 +138,26 @@ function LoginForm() {
         <p className="text-gray-500 mt-1">Ingresa a tu cuenta para continuar</p>
       </div>
 
-      {/* Error global del servidor */}
-      {error && (
+      {/* Error global del servidor. EMAIL_NOT_CONFIRMED es un "warning"
+          (acción pendiente del usuario) con CTA de reenvío, no un error. */}
+      {error && error.code === 'EMAIL_NOT_CONFIRMED' ? (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg">
+          <p className="text-sm text-amber-900 mb-3">{error.message}</p>
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={!email || isResending}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isResending && <IconLoader size={14} className="animate-spin" />}
+            {isResending ? 'Reenviando...' : 'Reenviar correo de verificación'}
+          </button>
+        </div>
+      ) : error ? (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{error.message}</p>
         </div>
-      )}
+      ) : null}
 
       {/* Formulario */}
       <form onSubmit={(e) => { e.preventDefault(); handleLogin() }} className="space-y-5">

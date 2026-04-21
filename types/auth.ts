@@ -99,6 +99,7 @@ export interface IRefreshResponse {
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'INACTIVE_ACCOUNT'
+  | 'EMAIL_NOT_CONFIRMED'
   | 'NETWORK_ERROR'
   | 'SERVER_ERROR'
   | 'SESSION_EXPIRED'
