@@ -32,6 +32,7 @@ import {
   ContratosSection,
   CitasSection,
   EstudioSolicitanteCard,
+  ContratoSolicitanteCard,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -304,9 +305,10 @@ export default function ExpedienteDetallePage() {
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
             {/* "Siguiente paso" — solo para el solicitante, al tope.
-                Dos bloques encadenados (cada uno se auto-oculta si no aplica):
+                Tres bloques encadenados (cada uno se auto-oculta si no aplica):
                 1) Pago del estudio (CTA "Pagar ahora" o "¡Pago confirmado!").
-                2) Estudio crediticio ("Confirma cédula" / "Consultando..." / resultado). */}
+                2) Estudio crediticio ("Confirma cédula" / "Consultando..." / resultado).
+                3) Contrato ("Preparando contrato" / "Revisar y firmar" / "Activo"). */}
             {user?.rol === 'solicitante' && (
               <div className="space-y-4">
                 <PagoEstudioSection
@@ -319,6 +321,7 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   onEjecutado={fetchExpediente}
                 />
+                <ContratoSolicitanteCard expedienteId={id} />
               </div>
             )}
 

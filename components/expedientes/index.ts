@@ -41,6 +41,7 @@ export * from './AutorizacionSection'
 
 // Contratos
 export * from './ContratosSection'
+export * from './ContratoSolicitanteCard'
 export * from './GenerarContratoModal'
 export * from './ContratoDetalleModal'
 export * from './VersionHistorialSection'
