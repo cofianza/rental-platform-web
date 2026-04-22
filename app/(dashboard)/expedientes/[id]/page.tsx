@@ -33,6 +33,7 @@ import {
   CitasSection,
   EstudioSolicitanteCard,
   ContratoSolicitanteCard,
+  AccionContratoPendienteCard,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -326,8 +327,19 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   onEjecutado={fetchExpediente}
                 />
-                <ContratoSolicitanteCard expedienteId={id} />
+                <ContratoSolicitanteCard expedienteId={id} expedienteEstado={expediente.estado} />
               </div>
+            )}
+
+            {/* Propietario/inmobiliaria/admin/operador: si el expediente ya
+                está aprobado pero no hay contrato, avisamos con CTA claro. */}
+            {user?.rol !== 'solicitante' && (
+              <AccionContratoPendienteCard
+                expedienteId={id}
+                expedienteEstado={expediente.estado}
+                userRol={user?.rol}
+                onGenerarClick={() => setActiveTab('contratos')}
+              />
             )}
 
             {/* Sección Cita Previa — al tope para que el solicitante vea

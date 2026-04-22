@@ -21,9 +21,12 @@ import type { IContrato } from '@/types/contrato'
 
 interface ContratoSolicitanteCardProps {
   expedienteId: string
+  /** Estado actual del expediente. Permite mostrar "esperando contrato" cuando
+   *  el expediente ya está aprobado pero todavía no hay contrato generado. */
+  expedienteEstado?: string
 }
 
-export function ContratoSolicitanteCard({ expedienteId }: ContratoSolicitanteCardProps) {
+export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: ContratoSolicitanteCardProps) {
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -83,7 +86,31 @@ export function ContratoSolicitanteCard({ expedienteId }: ContratoSolicitanteCar
   }
 
   if (loading) return null
-  if (!contrato) return null
+
+  // Sin contrato todavía. Si el expediente ya fue aprobado, mostramos un
+  // mensaje "esperando generación" para que el solicitante sepa qué viene;
+  // si no, el siguiente paso aún no corresponde al contrato → ocultamos.
+  if (!contrato) {
+    if (expedienteEstado === 'aprobado' || expedienteEstado === 'condicionado') {
+      return (
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-blue-700 shrink-0 animate-spin mt-0.5" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando tu contrato</p>
+              <p className="text-sm text-blue-800">
+                ¡Tu estudio fue aprobado! La inmobiliaria está generando el contrato de arrendamiento — te llegará por correo y WhatsApp en cuanto esté listo para firmar.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
 
   // Borrador / en_revision / aprobado → contrato aún no listo para el solicitante.
   if (contrato.estado === 'borrador' || contrato.estado === 'en_revision' || contrato.estado === 'aprobado') {
