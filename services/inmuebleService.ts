@@ -5,6 +5,8 @@
 
 import { apiClient } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
+import { API_BASE_URL } from '@/lib/constants'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   IInmueble,
   IInmuebleFilters,
@@ -121,6 +123,57 @@ class InmuebleService {
   async deleteInmueble(id: string): Promise<IInmueble> {
     const response = (await apiClient.delete(`/inmuebles/${id}`)) as unknown as IInmuebleResponse
     return response.data
+  }
+
+  // ============================================================
+  // Contrato tipo (PDF subido por propietario/inmobiliaria)
+  // ============================================================
+
+  /** Sube un PDF de contrato tipo para el inmueble (reemplaza si existe). */
+  async subirContratoTipo(inmuebleId: string, file: File): Promise<{
+    contrato_tipo_storage_key: string | null
+    contrato_tipo_nombre_archivo: string | null
+    contrato_tipo_tamano_bytes: number | null
+    contrato_tipo_subido_en: string | null
+  }> {
+    const formData = new FormData()
+    formData.append('archivo', file)
+    const token = useAuthStore.getState().accessToken
+    const response = await fetch(`${API_BASE_URL}/inmuebles/${inmuebleId}/contrato-tipo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+    const json = await response.json()
+    if (!response.ok) {
+      throw new Error(json.message || 'Error al subir el contrato tipo')
+    }
+    return json.data
+  }
+
+  /** Obtiene URL firmada (10 min) para ver/descargar el contrato tipo. */
+  async getContratoTipoUrl(inmuebleId: string): Promise<{
+    url: string
+    nombre_archivo: string | null
+    tamano_bytes: number | null
+    subido_en: string | null
+    expires_in: number
+  }> {
+    const response = (await apiClient.get(`/inmuebles/${inmuebleId}/contrato-tipo/url`)) as unknown as {
+      data: {
+        url: string
+        nombre_archivo: string | null
+        tamano_bytes: number | null
+        subido_en: string | null
+        expires_in: number
+      }
+    }
+    return response.data
+  }
+
+  /** Elimina el contrato tipo del inmueble. */
+  async eliminarContratoTipo(inmuebleId: string): Promise<void> {
+    await apiClient.delete(`/inmuebles/${inmuebleId}/contrato-tipo`)
   }
 
   /**

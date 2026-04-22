@@ -19,6 +19,7 @@ import {
   ExpedientesSection,
   HistorialSection,
   GaleriaSection,
+  ContratoTipoSection,
 } from '@/components/inmuebles'
 import type { IExpediente } from '@/types/expediente'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
@@ -545,6 +546,13 @@ export default function InmuebleDetailPage() {
                     <h3 className="text-sm font-medium text-gray-900 mb-3">Estrato</h3>
                     <EstratoIndicator estrato={inmueble.estrato} size="md" />
                   </div>
+
+                  {/* Contrato tipo (PDF del propietario) */}
+                  <ContratoTipoSection
+                    inmueble={inmueble}
+                    canManage={canEdit}
+                    onChange={fetchInmueble}
+                  />
                 </div>
               )}
 

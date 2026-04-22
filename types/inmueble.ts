@@ -49,6 +49,11 @@ export interface IInmueble {
   updated_at: string
   // Relación con propietario (solo en detalle)
   propietario?: IPropietario
+  // Contrato tipo subido por el propietario (alternativa a plantilla con variables)
+  contrato_tipo_storage_key?: string | null
+  contrato_tipo_nombre_archivo?: string | null
+  contrato_tipo_tamano_bytes?: number | null
+  contrato_tipo_subido_en?: string | null
 }
 
 // Formulario de creación
