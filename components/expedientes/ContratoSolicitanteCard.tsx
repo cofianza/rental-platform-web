@@ -107,6 +107,7 @@ export function ContratoSolicitanteCard({ expedienteId }: ContratoSolicitanteCar
 
   // pendiente_firma → revisar + aviso de firma por correo.
   if (contrato.estado === 'pendiente_firma') {
+    const tienePdf = Boolean(contrato.contenido_pdf_url || contrato.storage_key)
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Tu contrato está listo para firmar</h3>
@@ -135,16 +136,25 @@ export function ContratoSolicitanteCard({ expedienteId }: ContratoSolicitanteCar
           )}
         </div>
 
-        <button
-          onClick={() => handleDescargar(false)}
-          disabled={downloading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-primary-700 bg-white border-2 border-primary-600 rounded-lg hover:bg-primary-50 disabled:opacity-50 transition-colors"
-        >
-          {downloading ? 'Abriendo...' : 'Revisar contrato (PDF)'}
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </button>
+        {tienePdf ? (
+          <button
+            onClick={() => handleDescargar(false)}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-primary-700 bg-white border-2 border-primary-600 rounded-lg hover:bg-primary-50 disabled:opacity-50 transition-colors"
+          >
+            {downloading ? 'Abriendo...' : 'Revisar contrato (PDF)'}
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2.5 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.76-2.93L13.76 4a2 2 0 00-3.52 0L3.17 16.07A2 2 0 004.93 19z" />
+            </svg>
+            <span>El PDF del contrato aún no está disponible. La inmobiliaria lo adjuntará en breve — te avisaremos por correo.</span>
+          </div>
+        )}
 
         <p className="text-xs text-gray-500 mt-3">
           ¿No recibiste el correo de firma? Revisa tu carpeta de spam o contacta a la inmobiliaria para reenviarlo.
