@@ -53,15 +53,20 @@ export default function ExpedienteDetallePage() {
   // Pendientes count for badge
   const [pendientesCount, setPendientesCount] = useState(0)
 
-  const tabs: Tab[] = [
-    { id: 'resumen', label: 'Resumen' },
-    { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
-    { id: 'estudios', label: 'Estudios' },
-    { id: 'contratos', label: 'Contratos' },
-    { id: 'pagos', label: 'Pagos' },
-    { id: 'comentarios', label: 'Comentarios' },
-    { id: 'timeline', label: 'Timeline' },
-  ]
+  // Para el solicitante el Resumen concentra todo el "siguiente paso" (pago,
+  // estudio, contrato, cita). Las demás pestañas son gestión interna del
+  // operador/propietario y no aportan a su experiencia.
+  const tabs: Tab[] = user?.rol === 'solicitante'
+    ? [{ id: 'resumen', label: 'Resumen' }]
+    : [
+        { id: 'resumen', label: 'Resumen' },
+        { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
+        { id: 'estudios', label: 'Estudios' },
+        { id: 'contratos', label: 'Contratos' },
+        { id: 'pagos', label: 'Pagos' },
+        { id: 'comentarios', label: 'Comentarios' },
+        { id: 'timeline', label: 'Timeline' },
+      ]
 
   // Estado principal
   const [expediente, setExpediente] = useState<IExpedienteDetalle | null>(null)
