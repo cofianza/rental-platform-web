@@ -49,7 +49,9 @@ export interface IContrato {
 }
 
 export interface IGenerarContratoInput {
-  plantilla_id: string
+  /** Opcional: si el inmueble tiene contrato_tipo subido, se usa ese PDF y
+   *  no hace falta plantilla. Si no, plantilla_id es requerido. */
+  plantilla_id?: string
   variables?: Record<string, string>
   fecha_inicio?: string
   duracion_meses?: number
