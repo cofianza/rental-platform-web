@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
@@ -33,6 +34,7 @@ interface FormErrors {
   email?: string
   telefono?: string
   numero_documento?: string
+  municipio?: string
   password?: string
   confirm_password?: string
   accept_terms?: string
@@ -64,6 +66,7 @@ function RegistroSolicitanteContent() {
   const [telefono, setTelefono] = useState('')
   const [tipoDocumento, setTipoDocumento] = useState('cc')
   const [numeroDocumento, setNumeroDocumento] = useState('')
+  const [municipio, setMunicipio] = useState<{ id: number; nombre: string } | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -88,6 +91,7 @@ function RegistroSolicitanteContent() {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalido'
     if (!telefono.trim() || !/^\+\d{1,4}[\s-]?\d{7,15}$/.test(telefono.replace(/[\s-]+/g, ' ').trim())) e.telefono = 'Telefono invalido'
     if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
+    if (!municipio) e.municipio = 'Selecciona tu municipio'
     if (password.length < 8) e.password = 'Minimo 8 caracteres'
     if (password !== confirmPassword) e.confirm_password = 'No coinciden'
     if (!acceptTerms) e.accept_terms = 'Debe aceptar los terminos'
@@ -117,6 +121,8 @@ function RegistroSolicitanteContent() {
           nombre, apellido, email, telefono,
           tipo_documento: tipoDocumento,
           numero_documento: numeroDocumento,
+          municipio_id: municipio?.id,
+          municipio_nombre: municipio?.nombre,
           password, confirm_password: confirmPassword,
           accept_terms: true, accept_data_treatment: true,
           property_interest_id: propertyId || undefined,
@@ -255,6 +261,8 @@ function RegistroSolicitanteContent() {
               <FormField label="Numero documento" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
             </div>
           </div>
+
+          <MunicipioCombobox value={municipio} onChange={setMunicipio} error={errors.municipio} />
 
           <FormField label="Contrasena" type="password" value={password} onChange={setPassword} error={errors.password} placeholder="Minimo 8 caracteres" />
           <FormField label="Confirmar contrasena" type="password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
