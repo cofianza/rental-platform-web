@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { pagoService, type IPago } from '@/services/pagoService'
+import { facturacionService } from '@/services/facturacionService'
 import { PagoManualModal } from './PagoManualModal'
 import { GenerarLinkPagoModal } from './GenerarLinkPagoModal'
 import { PagoDetalleModal } from './PagoDetalleModal'
@@ -176,6 +177,19 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
       toast.success('Link reenviado por email')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al reenviar')
+    } finally {
+      setActionLoading(null)
+    }
+  }, [])
+
+  const handleFacturar = useCallback(async (pagoId: string) => {
+    if (!confirm('¿Generar factura electrónica para este pago? Se enviará a Factus / DIAN.')) return
+    setActionLoading(pagoId)
+    try {
+      const factura = await facturacionService.facturarPago(pagoId)
+      toast.success(`Factura emitida: ${factura.numero}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al generar factura')
     } finally {
       setActionLoading(null)
     }
@@ -446,6 +460,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {pagos.map((pago) => (
               <PagoTableRow
+                onFacturar={canManage ? handleFacturar : undefined}
                 key={pago.id}
                 pago={pago}
                 canManage={canManage}
@@ -465,6 +480,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
       <div className="md:hidden space-y-4">
         {pagos.map((pago) => (
           <PagoCard
+            onFacturar={canManage ? handleFacturar : undefined}
             key={pago.id}
             pago={pago}
             canManage={canManage}
@@ -553,6 +569,7 @@ interface PagoRowProps {
   onReenviarLink: (id: string) => void
   onCancelar: (id: string) => void
   onDescargarComprobante: (id: string) => void
+  onFacturar?: (id: string) => void
 }
 
 function PagoTableRow({
@@ -564,6 +581,7 @@ function PagoTableRow({
   onReenviarLink,
   onCancelar,
   onDescargarComprobante,
+  onFacturar,
 }: PagoRowProps) {
   const isLoading = actionLoading === pago.id
   const estadoConfig = ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente
@@ -662,6 +680,18 @@ function PagoTableRow({
                   </svg>
                 </button>
               )}
+
+              {pago.estado === 'completado' && onFacturar && (
+                <button
+                  onClick={() => onFacturar(pago.id)}
+                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  title="Generar factura electrónica (Factus / DIAN)"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+              )}
             </>
           )}
         </div>
@@ -683,6 +713,7 @@ function PagoCard({
   onReenviarLink,
   onCancelar,
   onDescargarComprobante,
+  onFacturar,
 }: PagoRowProps) {
   const isLoading = actionLoading === pago.id
   const estadoConfig = ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente
@@ -772,6 +803,15 @@ function PagoCard({
                 className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               >
                 Comprobante
+              </button>
+            )}
+
+            {pago.estado === 'completado' && onFacturar && (
+              <button
+                onClick={() => onFacturar(pago.id)}
+                className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              >
+                Facturar
               </button>
             )}
           </>
