@@ -66,7 +66,7 @@ function RegistroSolicitanteContent() {
   const [telefono, setTelefono] = useState('')
   const [tipoDocumento, setTipoDocumento] = useState('cc')
   const [numeroDocumento, setNumeroDocumento] = useState('')
-  const [municipio, setMunicipio] = useState<{ id: number; nombre: string } | null>(null)
+  const [municipio, setMunicipio] = useState<{ codigo: string; nombre: string } | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -121,7 +121,7 @@ function RegistroSolicitanteContent() {
           nombre, apellido, email, telefono,
           tipo_documento: tipoDocumento,
           numero_documento: numeroDocumento,
-          municipio_id: municipio?.id,
+          municipio_id: municipio?.codigo,
           municipio_nombre: municipio?.nombre,
           password, confirm_password: confirmPassword,
           accept_terms: true, accept_data_treatment: true,

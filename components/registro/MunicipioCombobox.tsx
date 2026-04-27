@@ -18,8 +18,9 @@ export interface MunicipioOption {
 }
 
 interface Props {
-  value: { id: number; nombre: string } | null
-  onChange: (value: { id: number; nombre: string } | null) => void
+  /** V2 Factus exige código DANE (5 dígitos string, ej. "11001"). */
+  value: { codigo: string; nombre: string } | null
+  onChange: (value: { codigo: string; nombre: string } | null) => void
   error?: string
   /** Token de acceso si el endpoint requiere auth. En registro va sin token. */
   authToken?: string
@@ -83,7 +84,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
   const handleSelect = (m: MunicipioOption) => {
     const label = `${m.name}, ${m.department.name}`
     setQuery(label)
-    onChange({ id: m.id, nombre: label })
+    onChange({ codigo: m.code, nombre: label })
     setOpen(false)
   }
 
