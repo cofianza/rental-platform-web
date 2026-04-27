@@ -85,6 +85,13 @@ function formatCOP(amount: number): string {
 export function PagosSection({ expedienteId }: PagosSectionProps) {
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Facturar tiene un permiso más amplio: admin, operador, inmobiliaria y
+  // propietario pueden disparar la creación de la factura electrónica.
+  const canFacturar =
+    user?.rol === 'administrador' ||
+    user?.rol === 'operador_analista' ||
+    user?.rol === 'inmobiliaria' ||
+    user?.rol === 'propietario'
 
   // Data state
   const [pagos, setPagos] = useState<IPago[]>([])
@@ -460,7 +467,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {pagos.map((pago) => (
               <PagoTableRow
-                onFacturar={canManage ? handleFacturar : undefined}
+                onFacturar={canFacturar ? handleFacturar : undefined}
                 key={pago.id}
                 pago={pago}
                 canManage={canManage}
@@ -480,7 +487,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
       <div className="md:hidden space-y-4">
         {pagos.map((pago) => (
           <PagoCard
-            onFacturar={canManage ? handleFacturar : undefined}
+            onFacturar={canFacturar ? handleFacturar : undefined}
             key={pago.id}
             pago={pago}
             canManage={canManage}
