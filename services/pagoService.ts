@@ -33,6 +33,8 @@ export interface IPago {
   email_pagador: string | null
   nombre_pagador: string | null
   eventos?: IPagoEvento[]
+  /** Factura electrónica emitida para este pago, si ya se generó. */
+  factura?: { id: string; numero: string | null; estado: string } | null
 }
 
 export interface IPagoEvento {

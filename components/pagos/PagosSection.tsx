@@ -7,6 +7,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { pagoService, type IPago } from '@/services/pagoService'
@@ -200,6 +201,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
           try {
             const factura = await facturacionService.facturarPago(pagoId)
             toast.success(`Factura emitida: ${factura.numero}`)
+            fetchPagos()
           } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Error al generar factura')
           } finally {
@@ -212,7 +214,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
         onClick: () => {},
       },
     })
-  }, [])
+  }, [fetchPagos])
 
   const handleCancelar = useCallback((pagoId: string) => {
     toast('¿Cancelar este pago?', {
@@ -712,16 +714,28 @@ function PagoTableRow({
                 </button>
               )}
 
-              {pago.estado === 'completado' && onFacturar && (
-                <button
-                  onClick={() => onFacturar(pago.id)}
-                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                  title="Generar factura electrónica (Factus / DIAN)"
+              {pago.factura?.id ? (
+                <Link
+                  href={`/facturacion/${pago.factura.id}`}
+                  className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                  title={`Ver factura ${pago.factura.numero || ''}`.trim()}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                </button>
+                </Link>
+              ) : (
+                pago.estado === 'completado' && onFacturar && (
+                  <button
+                    onClick={() => onFacturar(pago.id)}
+                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                    title="Generar factura electrónica (Factus / DIAN)"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                )
               )}
             </>
           )}
@@ -837,13 +851,22 @@ function PagoCard({
               </button>
             )}
 
-            {pago.estado === 'completado' && onFacturar && (
-              <button
-                onClick={() => onFacturar(pago.id)}
-                className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+            {pago.factura?.id ? (
+              <Link
+                href={`/facturacion/${pago.factura.id}`}
+                className="px-3 py-1.5 text-sm text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
               >
-                Facturar
-              </button>
+                Ver factura
+              </Link>
+            ) : (
+              pago.estado === 'completado' && onFacturar && (
+                <button
+                  onClick={() => onFacturar(pago.id)}
+                  className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                >
+                  Facturar
+                </button>
+              )
             )}
           </>
         )}
