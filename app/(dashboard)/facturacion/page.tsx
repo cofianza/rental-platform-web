@@ -10,26 +10,39 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
-
-const TABS: Tab[] = [
-  { id: 'datos-fiscales', label: 'Datos Fiscales' },
-  { id: 'facturas', label: 'Facturas' },
-]
+import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
-  const [activeTab, setActiveTab] = useState('datos-fiscales')
+  const user = useAuthStore((s) => s.user)
+  const isSolicitante = user?.rol === 'solicitante'
+
+  // El solicitante solo ve la pestaña "Facturas" — los datos fiscales del
+  // emisor (Cofianza) están configurados en Factus y los datos del receptor
+  // (el solicitante mismo) salen del registro, no requieren ser editados aquí.
+  const tabs: Tab[] = isSolicitante
+    ? [{ id: 'facturas', label: 'Mis facturas' }]
+    : [
+        { id: 'datos-fiscales', label: 'Datos Fiscales' },
+        { id: 'facturas', label: 'Facturas' },
+      ]
+
+  const [activeTab, setActiveTab] = useState(isSolicitante ? 'facturas' : 'datos-fiscales')
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Facturacion"
-        subtitle="Gestiona tus datos fiscales y consulta tus facturas"
+        title={isSolicitante ? 'Mis facturas' : 'Facturación'}
+        subtitle={
+          isSolicitante
+            ? 'Aquí encuentras las facturas electrónicas emitidas por Cofianza a tu nombre.'
+            : 'Gestiona tus datos fiscales y consulta tus facturas'
+        }
       />
 
-      <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="mt-6">
-        {activeTab === 'datos-fiscales' && <DatosFiscalesSection />}
+        {activeTab === 'datos-fiscales' && !isSolicitante && <DatosFiscalesSection />}
         {activeTab === 'facturas' && <FacturasSection />}
       </div>
     </div>
