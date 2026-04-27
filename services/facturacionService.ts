@@ -237,6 +237,23 @@ class FacturacionService {
   async eliminarDocumento(_facturaId: string, _tipo: 'pdf' | 'xml'): Promise<IFactura> {
     throw new Error('No aplica para facturas electrónicas Factus.')
   }
+
+  // ── Configuración admin: tarifas de IVA por concepto ───────
+  async getTarifasIva(): Promise<{ concepto: string; tasa: number }[]> {
+    const response = (await apiClient.get('/facturas/configuracion-iva')) as unknown as {
+      data: { concepto: string; tasa: number }[]
+    }
+    return response.data
+  }
+
+  async updateTarifasIva(
+    tarifas: { concepto: string; tasa: number }[],
+  ): Promise<{ concepto: string; tasa: number }[]> {
+    const response = (await apiClient.put('/facturas/configuracion-iva', { tarifas })) as unknown as {
+      data: { concepto: string; tasa: number }[]
+    }
+    return response.data
+  }
 }
 
 export const facturacionService = new FacturacionService()

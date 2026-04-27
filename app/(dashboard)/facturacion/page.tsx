@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
+import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
@@ -41,8 +42,13 @@ export default function FacturacionPage() {
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="mt-6">
-        {activeTab === 'datos-fiscales' && !isSolicitante && <DatosFiscalesSection />}
+      <div className="mt-6 space-y-6">
+        {activeTab === 'datos-fiscales' && !isSolicitante && (
+          <>
+            <DatosFiscalesSection />
+            <TarifasIvaSection />
+          </>
+        )}
         {activeTab === 'facturas' && <FacturasSection />}
       </div>
     </div>

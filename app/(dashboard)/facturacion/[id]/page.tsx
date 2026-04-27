@@ -336,8 +336,12 @@ export default function FacturaDetallePage() {
                 <span className="font-medium text-gray-900">{formatCurrency(factura.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">IVA (19%)</span>
-                <span className="font-medium text-gray-900">{formatCurrency(factura.iva)}</span>
+                <span className="text-gray-600">
+                  IVA{factura.iva > 0 ? ` (${factura.iva_porcentaje ?? 19}%)` : ''}
+                </span>
+                <span className="font-medium text-gray-900">
+                  {factura.iva > 0 ? formatCurrency(factura.iva) : 'Exento'}
+                </span>
               </div>
               <div className="border-t border-gray-200 pt-3 flex justify-between">
                 <span className="text-lg font-semibold text-gray-900">Total</span>

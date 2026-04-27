@@ -63,7 +63,9 @@ export interface IFactura {
   fecha: string
   concepto: string
   subtotal: number
-  iva: number // 19%
+  iva: number
+  /** Porcentaje real de IVA aplicado en esta factura (0 = exento). */
+  iva_porcentaje?: number
   total: number
   estado: EstadoFactura
   // Datos del emisor
