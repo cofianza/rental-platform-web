@@ -64,21 +64,31 @@ export function ContratoTipoSection({ inmueble, canManage, onChange }: ContratoT
     }
   }
 
-  const handleEliminar = async () => {
-    if (!confirm('¿Eliminar el contrato tipo de este inmueble? Los expedientes nuevos usarán la plantilla de Cofianza en su lugar.')) {
-      return
-    }
-    setDeleting(true)
-    try {
-      await inmuebleService.eliminarContratoTipo(inmueble.id)
-      toast.success('Contrato tipo eliminado')
-      await onChange?.()
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No pudimos eliminar el archivo'
-      toast.error(msg)
-    } finally {
-      setDeleting(false)
-    }
+  const handleEliminar = () => {
+    toast('¿Eliminar el contrato tipo?', {
+      description: 'Los expedientes nuevos usarán la plantilla estándar de Cofianza.',
+      duration: 10000,
+      action: {
+        label: 'Eliminar',
+        onClick: async () => {
+          setDeleting(true)
+          try {
+            await inmuebleService.eliminarContratoTipo(inmueble.id)
+            toast.success('Contrato tipo eliminado')
+            await onChange?.()
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'No pudimos eliminar el archivo'
+            toast.error(msg)
+          } finally {
+            setDeleting(false)
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+    })
   }
 
   const fmtTamano = (bytes?: number | null) => {

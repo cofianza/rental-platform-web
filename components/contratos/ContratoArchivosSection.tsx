@@ -104,19 +104,30 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
     }
   }
 
-  async function handleEliminar(archivo: IContratoArchivo) {
-    if (!confirm(`¿Eliminar "${archivo.nombre_archivo}"?`)) return
-    setDeletingId(archivo.id)
-    try {
-      await contratoService.eliminarArchivo(contrato.id, archivo.id)
-      toast.success('Archivo eliminado')
-      setArchivos((prev) => prev.filter((a) => a.id !== archivo.id))
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al eliminar'
-      toast.error(message)
-    } finally {
-      setDeletingId(null)
-    }
+  function handleEliminar(archivo: IContratoArchivo) {
+    toast(`¿Eliminar "${archivo.nombre_archivo}"?`, {
+      duration: 10000,
+      action: {
+        label: 'Eliminar',
+        onClick: async () => {
+          setDeletingId(archivo.id)
+          try {
+            await contratoService.eliminarArchivo(contrato.id, archivo.id)
+            toast.success('Archivo eliminado')
+            setArchivos((prev) => prev.filter((a) => a.id !== archivo.id))
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Error al eliminar'
+            toast.error(message)
+          } finally {
+            setDeletingId(null)
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+    })
   }
 
   function formatBytes(bytes: number): string {

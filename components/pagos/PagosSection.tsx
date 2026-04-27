@@ -189,31 +189,55 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
     }
   }, [])
 
-  const handleFacturar = useCallback(async (pagoId: string) => {
-    if (!confirm('¿Generar factura electrónica para este pago? Se enviará a Factus / DIAN.')) return
-    setActionLoading(pagoId)
-    try {
-      const factura = await facturacionService.facturarPago(pagoId)
-      toast.success(`Factura emitida: ${factura.numero}`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al generar factura')
-    } finally {
-      setActionLoading(null)
-    }
+  const handleFacturar = useCallback((pagoId: string) => {
+    toast('¿Generar factura electrónica para este pago?', {
+      description: 'Se enviará a Factus / DIAN. La factura se emite con CUFE oficial.',
+      duration: 10000,
+      action: {
+        label: 'Generar',
+        onClick: async () => {
+          setActionLoading(pagoId)
+          try {
+            const factura = await facturacionService.facturarPago(pagoId)
+            toast.success(`Factura emitida: ${factura.numero}`)
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al generar factura')
+          } finally {
+            setActionLoading(null)
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+    })
   }, [])
 
-  const handleCancelar = useCallback(async (pagoId: string) => {
-    if (!confirm('¿Estas seguro de cancelar este pago?')) return
-    setActionLoading(pagoId)
-    try {
-      await pagoService.cancelar(pagoId)
-      toast.success('Pago cancelado')
-      fetchPagos()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al cancelar')
-    } finally {
-      setActionLoading(null)
-    }
+  const handleCancelar = useCallback((pagoId: string) => {
+    toast('¿Cancelar este pago?', {
+      description: 'Esta acción marcará el pago como cancelado. No se puede deshacer.',
+      duration: 10000,
+      action: {
+        label: 'Cancelar pago',
+        onClick: async () => {
+          setActionLoading(pagoId)
+          try {
+            await pagoService.cancelar(pagoId)
+            toast.success('Pago cancelado')
+            fetchPagos()
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al cancelar')
+          } finally {
+            setActionLoading(null)
+          }
+        },
+      },
+      cancel: {
+        label: 'Volver',
+        onClick: () => {},
+      },
+    })
   }, [fetchPagos])
 
   const handleDescargarComprobante = useCallback(async (pagoId: string) => {
