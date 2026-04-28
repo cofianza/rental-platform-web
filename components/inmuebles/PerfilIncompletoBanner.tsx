@@ -10,6 +10,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { IconAlertTriangle, IconArrowRight } from '@/components/icons'
 import type { IPerfilCompletitud } from '@/services/perfilArrendadorService'
 
@@ -20,7 +21,14 @@ interface Props {
 }
 
 export function PerfilIncompletoBanner({ completitud, compact = false }: Props) {
+  const pathname = usePathname()
   if (!completitud || completitud.completo) return null
+
+  // Pasamos el path actual como returnTo asi al terminar de completar el
+  // perfil, el usuario vuelve a donde estaba (lista o /inmuebles/nuevo).
+  const returnTo = pathname && pathname !== '/configuracion/datos-contrato'
+    ? `?returnTo=${encodeURIComponent(pathname)}`
+    : ''
 
   return (
     <div
@@ -50,7 +58,7 @@ export function PerfilIncompletoBanner({ completitud, compact = false }: Props) 
           </div>
         )}
         <Link
-          href="/configuracion/datos-contrato"
+          href={`/configuracion/datos-contrato${returnTo}`}
           className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
         >
           Completar ahora

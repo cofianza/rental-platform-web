@@ -89,7 +89,9 @@ function InmueblesContent() {
   // Handlers
   const handleCreateClick = () => {
     if (perfilIncompleto) {
-      router.push('/configuracion/datos-contrato')
+      // returnTo=/inmuebles/nuevo asi al terminar de completar el perfil
+      // el usuario aterriza en el form de nuevo inmueble.
+      router.push('/configuracion/datos-contrato?returnTo=' + encodeURIComponent('/inmuebles/nuevo'))
       return
     }
     router.push('/inmuebles/nuevo')

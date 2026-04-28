@@ -10,6 +10,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,6 +30,13 @@ const ROL_LABELS: Record<string, string> = {
 export default function DatosContratoPage() {
   const { user } = useAuth()
   const isInmobiliaria = user?.rol === 'inmobiliaria'
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  // Si vinimos redirigidos desde otra pantalla (banner perfil incompleto),
+  // al guardar volvemos a donde estabamos. Validamos que sea un path
+  // interno seguro para evitar open-redirect.
+  const returnToParam = searchParams?.get('returnTo')
+  const returnTo = returnToParam && returnToParam.startsWith('/') ? returnToParam : null
 
   const [perfil, setPerfil] = useState<IPerfilArrendador | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,6 +79,11 @@ export default function DatosContratoPage() {
       const updated = await perfilArrendadorService.updateMe(form)
       setPerfil(updated)
       toast.success('Datos actualizados')
+      // Si vinimos desde otro flujo (banner perfil incompleto), volvemos
+      // ahi para que el usuario continue lo que estaba haciendo.
+      if (returnTo) {
+        router.push(returnTo)
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar')
     } finally {
