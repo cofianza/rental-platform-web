@@ -230,8 +230,10 @@ export default function ContratoDetallePage() {
   }
 
   const estadoConfig = ESTADOS_CONTRATO[contrato.estado as EstadoContratoKey]
-  const variables = contrato.datos_variables || {}
-  const variableEntries = Object.entries(variables)
+  // datos_variables tiene shape anidado en V2 (arrendador.razon_social,
+  // canon.valor_letras, etc). Aplanamos a "padre.hijo: valor" para poder
+  // listarlo. Si fuera plano (legacy) el flatten devuelve igual.
+  const variableEntries = flattenVariables(contrato.datos_variables || {})
 
   return (
     <div className="space-y-6">
@@ -500,4 +502,28 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <dd className="font-medium text-gray-900 text-right">{value}</dd>
     </div>
   )
+}
+
+/**
+ * Aplana datos_variables del contrato para listar como tabla.
+ * V2 tiene shape anidado ({arrendador: {...}, canon: {...}}); convertimos
+ * a entries planos "padre.hijo" -> string. Boolean/null se renderizan
+ * con su representacion textual.
+ */
+function flattenVariables(
+  obj: Record<string, unknown>,
+  prefix = '',
+): [string, string][] {
+  const out: [string, string][] = []
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? `${prefix}.${k}` : k
+    if (v === null || v === undefined) {
+      out.push([key, ''])
+    } else if (typeof v === 'object' && !Array.isArray(v)) {
+      out.push(...flattenVariables(v as Record<string, unknown>, key))
+    } else {
+      out.push([key, String(v)])
+    }
+  }
+  return out
 }

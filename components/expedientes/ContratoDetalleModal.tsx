@@ -55,8 +55,9 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
 
   if (!contrato) return null
 
-  const variables = contrato.datos_variables || {}
-  const variableEntries = Object.entries(variables)
+  // Aplanamos shape anidado V2 (arrendador.razon_social, canon.valor_letras, etc)
+  // para listarlo. React #31 si renderizamos un objeto directo.
+  const variableEntries = flattenVariables(contrato.datos_variables || {})
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -259,4 +260,22 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
       />
     </div>
   )
+}
+
+function flattenVariables(
+  obj: Record<string, unknown>,
+  prefix = '',
+): [string, string][] {
+  const out: [string, string][] = []
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? `${prefix}.${k}` : k
+    if (v === null || v === undefined) {
+      out.push([key, ''])
+    } else if (typeof v === 'object' && !Array.isArray(v)) {
+      out.push(...flattenVariables(v as Record<string, unknown>, key))
+    } else {
+      out.push([key, String(v)])
+    }
+  }
+  return out
 }
