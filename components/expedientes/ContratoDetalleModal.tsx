@@ -47,7 +47,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
     setPdfError(null)
     setPdfUrl(null)
     contratoService
-      .descargarContrato(contrato.id)
+      .descargarContrato(contrato.id, { inline: true })
       .then((res) => setPdfUrl(res.url))
       .catch((err) => setPdfError(err instanceof Error ? err.message : 'No se pudo cargar el PDF'))
       .finally(() => setPdfLoading(false))

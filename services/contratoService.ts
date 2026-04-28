@@ -125,9 +125,15 @@ class ContratoService {
     return response.data
   }
 
-  async descargarContrato(id: string): Promise<IContratoDownloadResponse> {
+  async descargarContrato(
+    id: string,
+    options?: { inline?: boolean },
+  ): Promise<IContratoDownloadResponse> {
+    // inline=true para preview en iframe (sin Content-Disposition: attachment).
+    // Sin parametro, fuerza descarga (uso del boton "Descargar").
+    const qs = options?.inline ? '?inline=true' : ''
     const response = (await apiClient.get(
-      `/contratos/${id}/descargar`
+      `/contratos/${id}/descargar${qs}`
     )) as unknown as IContratoDownloadApiResponse
     return response.data
   }
