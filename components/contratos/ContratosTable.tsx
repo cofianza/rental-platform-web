@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { IconEye, IconDownload, IconArrowRight, IconLoader, IconChevronLeft, IconChevronRight } from '@/components/icons'
+import { IconEye, IconDownload, IconArrowRight, IconLoader, IconChevronLeft, IconChevronRight, IconRefresh } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
+import { RegenerarContratoModal } from './RegenerarContratoModal'
 import { useAuth } from '@/hooks/useAuth'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
 
@@ -29,6 +30,13 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
   const [transicionLoading, setTransicionLoading] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Regenerar tambien lo pueden hacer propietario e inmobiliaria sobre
+  // sus contratos en borrador (cambian fecha/duracion/canon).
+  const canRegenerar =
+    canManage || user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
+
+  // Modal de regenerar
+  const [regenerarTarget, setRegenerarTarget] = useState<IContratoListItem | null>(null)
 
   async function handleDownload(e: React.MouseEvent, contrato: IContratoListItem) {
     e.stopPropagation()
@@ -189,6 +197,18 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                             <IconDownload size={16} />
                           )}
                         </button>
+                        {canRegenerar && c.estado === 'borrador' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setRegenerarTarget(c)
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-emerald-600 rounded-md hover:bg-gray-100"
+                            title="Editar y regenerar"
+                          >
+                            <IconRefresh size={16} />
+                          </button>
+                        )}
                         {canManage && !TERMINAL_STATES.includes(c.estado) && (
                           <button
                             onClick={(e) => handleOpenTransicion(e, c)}
@@ -285,6 +305,23 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
           isLoading={transicionLoading}
         />
       )}
+
+      {/* Regenerar modal */}
+      <RegenerarContratoModal
+        isOpen={!!regenerarTarget}
+        onClose={() => setRegenerarTarget(null)}
+        contrato={
+          regenerarTarget
+            ? {
+                id: regenerarTarget.id,
+                fecha_inicio: regenerarTarget.fecha_inicio ?? null,
+                duracion_meses: regenerarTarget.duracion_meses ?? null,
+                valor_arriendo: regenerarTarget.valor_arriendo ?? null,
+              }
+            : null
+        }
+        onRegenerated={onRefetch}
+      />
     </>
   )
 }

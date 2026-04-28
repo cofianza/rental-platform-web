@@ -105,11 +105,16 @@ class ContratoService {
 
   async regenerarContrato(
     id: string,
-    variables?: Record<string, string>
+    input?: {
+      fecha_inicio?: string
+      duracion_meses?: number
+      valor_arriendo?: number
+      variables?: Record<string, string>
+    }
   ): Promise<IContrato> {
     const response = (await apiClient.post(
       `/contratos/${id}/regenerar`,
-      { variables }
+      input || {}
     )) as unknown as IContratoResponse
     return response.data
   }
