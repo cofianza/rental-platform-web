@@ -54,6 +54,11 @@ export interface IInmueble {
   contrato_tipo_nombre_archivo?: string | null
   contrato_tipo_tamano_bytes?: number | null
   contrato_tipo_subido_en?: string | null
+  // Datos para contrato (cláusulas PRIMERA y SEGUNDA del contrato).
+  // propiedad_horizontal: null = inferir por administración; true/false = explícito.
+  propiedad_horizontal?: boolean | null
+  cuarto_util?: boolean | null
+  ubicacion_detallada?: string | null
 }
 
 // Formulario de creación
@@ -84,6 +89,10 @@ export interface IInmuebleCreateData {
   descripcion?: string
   notas_internas?: string
   visible_vitrina?: boolean
+  // Datos para contrato
+  propiedad_horizontal?: boolean | null
+  cuarto_util?: boolean
+  ubicacion_detallada?: string | null
 }
 
 // Formulario de edición (todos opcionales)
@@ -113,6 +122,10 @@ export interface IInmuebleUpdateData {
   propietario_id?: string
   visible_vitrina?: boolean
   foto_fachada_url?: string
+  // Datos para contrato
+  propiedad_horizontal?: boolean | null
+  cuarto_util?: boolean | null
+  ubicacion_detallada?: string | null
 }
 
 // Filtros de listado

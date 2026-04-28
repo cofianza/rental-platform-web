@@ -185,6 +185,10 @@ interface FormData {
   descripcion: string
   notas_internas: string
   visible_vitrina: boolean
+  // Datos para contrato
+  propiedad_horizontal: 'auto' | 'si' | 'no'
+  cuarto_util: boolean
+  ubicacion_detallada: string
 }
 
 interface FormErrors {
@@ -227,6 +231,9 @@ const initialFormData: FormData = {
   descripcion: '',
   notas_internas: '',
   visible_vitrina: true,
+  propiedad_horizontal: 'auto',
+  cuarto_util: false,
+  ubicacion_detallada: '',
 }
 
 export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
@@ -279,6 +286,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         descripcion: inmueble.descripcion || '',
         notas_internas: inmueble.notas_internas || '',
         visible_vitrina: inmueble.visible_vitrina,
+        propiedad_horizontal:
+          inmueble.propiedad_horizontal === true ? 'si'
+          : inmueble.propiedad_horizontal === false ? 'no'
+          : 'auto',
+        cuarto_util: Boolean(inmueble.cuarto_util),
+        ubicacion_detallada: inmueble.ubicacion_detallada || '',
       })
 
       // Cargar datos del propietario si existen
@@ -383,6 +396,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           descripcion: formData.descripcion || undefined,
           notas_internas: formData.notas_internas || undefined,
           visible_vitrina: formData.visible_vitrina,
+          // Datos para contrato
+          propiedad_horizontal:
+            formData.propiedad_horizontal === 'auto' ? null
+            : formData.propiedad_horizontal === 'si',
+          cuarto_util: formData.cuarto_util,
+          ubicacion_detallada: formData.ubicacion_detallada || null,
         }
 
         const newInmueble = await inmuebleService.createInmueble(createData)
@@ -432,6 +451,12 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           descripcion: formData.descripcion || null,
           notas_internas: formData.notas_internas || null,
           visible_vitrina: formData.visible_vitrina,
+          // Datos para contrato
+          propiedad_horizontal:
+            formData.propiedad_horizontal === 'auto' ? null
+            : formData.propiedad_horizontal === 'si',
+          cuarto_util: formData.cuarto_util,
+          ubicacion_detallada: formData.ubicacion_detallada || null,
         }
 
         await inmuebleService.updateInmueble(inmueble.id, updateData)
@@ -1017,6 +1042,83 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               <label htmlFor="visible_vitrina" className="ml-2 text-sm text-gray-700">
                 Visible en vitrina pública
               </label>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================
+            Datos para contrato
+            Lo que aparece en las cláusulas PRIMERA y SEGUNDA del contrato
+            de arrendamiento generado para este inmueble.
+            ============================================ */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Datos para contrato</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            Estos datos aparecen en el contrato de arrendamiento generado para este inmueble.
+          </p>
+          <div className="space-y-5">
+            {/* Propiedad horizontal */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ¿Inmueble en propiedad horizontal?
+              </label>
+              <div className="flex gap-4">
+                {(['auto', 'si', 'no'] as const).map((opt) => (
+                  <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="propiedad_horizontal"
+                      value={opt}
+                      checked={formData.propiedad_horizontal === opt}
+                      onChange={() => handleChange('propiedad_horizontal', opt)}
+                      disabled={isSubmitting}
+                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {opt === 'auto' ? 'Auto-detectar' : opt === 'si' ? 'Sí' : 'No'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Auto-detectar: se infiere por el valor de administración (si paga, asume que sí).
+              </p>
+            </div>
+
+            {/* Cuarto útil */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="cuarto_util"
+                checked={formData.cuarto_util}
+                onChange={(e) => handleChange('cuarto_util', e.target.checked)}
+                disabled={isSubmitting}
+                className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="cuarto_util" className="ml-2 text-sm text-gray-700">
+                El inmueble incluye <strong>cuarto útil</strong>
+              </label>
+            </div>
+
+            {/* Ubicación detallada */}
+            <div>
+              <label htmlFor="ubicacion_detallada" className="block text-sm font-medium text-gray-700 mb-1">
+                Ubicación detallada (opcional)
+                <FieldTooltip text="Texto que aparece en la cláusula SEGUNDA del contrato. Si lo dejas vacío, se construye automáticamente con dirección + barrio + ciudad + departamento." />
+              </label>
+              <textarea
+                id="ubicacion_detallada"
+                value={formData.ubicacion_detallada}
+                onChange={(e) => handleChange('ubicacion_detallada', e.target.value)}
+                disabled={isSubmitting}
+                rows={2}
+                placeholder={
+                  [formData.direccion, formData.barrio, formData.ciudad, formData.departamento]
+                    .filter(Boolean)
+                    .join(', ') || 'Ej. Carrera 50 #20-30, barrio La Estrella, Caldas, Antioquia'
+                }
+                className={inputClasses(false)}
+              />
             </div>
           </div>
         </div>
