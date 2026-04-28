@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { IconX, IconHistory } from '@/components/icons'
+import { useEffect, useState } from 'react'
+import { IconX, IconHistory, IconLoader, IconAlertTriangle } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
+import { contratoService } from '@/services/contratoService'
 import { VersionHistorialSection } from './VersionHistorialSection'
 import { CompararVersionesModal } from './CompararVersionesModal'
 import { ContratoHistorialModal } from './ContratoHistorialModal'
@@ -28,6 +29,30 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
   const [historialOpen, setHistorialOpen] = useState(false)
 
+  // Preview del PDF embebido. Si el contrato todavia no tiene storage_key,
+  // saltamos la carga (caso de un registro recien creado por el orchestrator
+  // antes de que el PDF se genere o tras un fallo).
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!contrato?.id) return
+    if (!contrato.storage_key) {
+      setPdfUrl(null)
+      setPdfError(null)
+      return
+    }
+    setPdfLoading(true)
+    setPdfError(null)
+    setPdfUrl(null)
+    contratoService
+      .descargarContrato(contrato.id)
+      .then((res) => setPdfUrl(res.url))
+      .catch((err) => setPdfError(err instanceof Error ? err.message : 'No se pudo cargar el PDF'))
+      .finally(() => setPdfLoading(false))
+  }, [contrato?.id, contrato?.storage_key])
+
   if (!contrato) return null
 
   const variables = contrato.datos_variables || {}
@@ -36,7 +61,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
@@ -49,6 +74,41 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Preview del PDF */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Vista previa</h3>
+            {!contrato.storage_key ? (
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900">
+                    El PDF aún no ha sido generado.
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Cierra este modal y pulsa el botón <strong>Regenerar</strong> en la fila del
+                    contrato para producir el PDF con la plantilla activa.
+                  </p>
+                </div>
+              </div>
+            ) : pdfLoading ? (
+              <div className="flex items-center justify-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+                <IconLoader size={24} className="animate-spin text-gray-400" />
+              </div>
+            ) : pdfError ? (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <IconAlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-900">{pdfError}</p>
+              </div>
+            ) : pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                title="Vista previa del contrato"
+                className="w-full border border-gray-200 rounded-lg bg-white"
+                style={{ height: '70vh' }}
+              />
+            ) : null}
+          </div>
+
           {/* Info general */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
