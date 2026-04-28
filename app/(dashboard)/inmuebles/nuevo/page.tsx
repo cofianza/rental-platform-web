@@ -2,13 +2,19 @@
 
 /**
  * Página de Nuevo Inmueble - HP-174
- * Formulario para crear un nuevo inmueble
+ *
+ * Antes de mostrar el formulario, verifica que el propietario/inmobiliaria
+ * tenga su perfil de arrendador completo. Si no, muestra un banner y
+ * bloquea la creación — sin esos datos los contratos generados despues
+ * saldrian con campos vacios.
  */
 
 import { Suspense } from 'react'
-import { InmuebleForm } from '@/components/inmuebles'
+import { InmuebleForm, PerfilIncompletoBanner } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
 import { IconLoader } from '@/components/icons'
+import { useAuth } from '@/hooks/useAuth'
+import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 
 function LoadingFallback() {
   return (
@@ -21,10 +27,34 @@ function LoadingFallback() {
   )
 }
 
+function NuevoInmuebleContenido() {
+  const { user } = useAuth()
+  const { completitud, loading } = usePerfilCompletitud()
+
+  const aplica = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
+  const incompleto = aplica && completitud !== null && !completitud.completo
+
+  if (loading) return <LoadingFallback />
+
+  if (incompleto) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Nuevo Inmueble"
+          subtitle="Antes de continuar, completá tus datos para contrato"
+        />
+        <PerfilIncompletoBanner completitud={completitud} />
+      </div>
+    )
+  }
+
+  return <InmuebleForm mode="create" />
+}
+
 export default function NuevoInmueblePage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <InmuebleForm mode="create" />
+      <NuevoInmuebleContenido />
     </Suspense>
   )
 }

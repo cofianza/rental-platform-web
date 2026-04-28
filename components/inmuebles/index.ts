@@ -28,5 +28,8 @@ export { GaleriaSection } from './GaleriaSection'
 // Preview de plantilla del contrato
 export { PlantillaContratoPreview } from './PlantillaContratoPreview'
 
+// Bloqueo creacion de inmueble si perfil incompleto
+export { PerfilIncompletoBanner } from './PerfilIncompletoBanner'
+
 // Constantes
 export * from './constants'

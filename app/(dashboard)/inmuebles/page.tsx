@@ -19,6 +19,8 @@ import {
 import { ConfirmDialog } from '@/components/users'
 import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
+import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
+import { PerfilIncompletoBanner } from '@/components/inmuebles'
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 
@@ -72,13 +74,24 @@ function InmueblesContent() {
   const isPropietario = user?.rol === 'propietario'
   const isInmobiliaria = user?.rol === 'inmobiliaria'
 
+  // Completitud del perfil de arrendador (bloquea crear inmueble si falta).
+  // Admin/operador siempre pueden crear (no requiere perfil propio).
+  const { completitud } = usePerfilCompletitud()
+  const perfilIncompleto =
+    (isPropietario || isInmobiliaria) && completitud !== null && !completitud.completo
+
   // Permisos de CRUD
-  const canCreate = isAdmin || isOperador || isPropietario || isInmobiliaria
+  const canCreateRol = isAdmin || isOperador || isPropietario || isInmobiliaria
+  const canCreate = canCreateRol && !perfilIncompleto
   const canEdit = isAdmin || isOperador || isPropietario || isInmobiliaria
   const canDelete = isAdmin // Solo admin puede eliminar
 
   // Handlers
   const handleCreateClick = () => {
+    if (perfilIncompleto) {
+      router.push('/configuracion/datos-contrato')
+      return
+    }
     router.push('/inmuebles/nuevo')
   }
 
@@ -168,6 +181,9 @@ function InmueblesContent() {
           {error}
         </div>
       )}
+
+      {/* Banner: perfil de arrendador incompleto */}
+      {perfilIncompleto && <PerfilIncompletoBanner completitud={completitud} />}
 
       {/* Filtros */}
       <InmueblesFilters

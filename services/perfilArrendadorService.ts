@@ -46,10 +46,23 @@ export interface IUpdatePerfilArrendadorInput {
   cuenta_recaudo_titular_nit?: string | null
 }
 
+export interface IPerfilCompletitud {
+  completo: boolean
+  faltantes: { campo: string; etiqueta: string }[]
+  rol: string
+}
+
 class PerfilArrendadorService {
   async getMe(): Promise<IPerfilArrendador> {
     const res = (await apiClient.get('/perfil-arrendador/me')) as unknown as {
       data: IPerfilArrendador
+    }
+    return res.data
+  }
+
+  async getCompletitud(): Promise<IPerfilCompletitud> {
+    const res = (await apiClient.get('/perfil-arrendador/me/completitud')) as unknown as {
+      data: IPerfilCompletitud
     }
     return res.data
   }
