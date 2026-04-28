@@ -66,10 +66,11 @@ export default function ContratoDetallePage() {
       const data = await contratoService.getContratoById(id)
       setContrato(data)
 
-      // Fetch preview URL
+      // Fetch preview URL (inline=true para que el viewer no intente
+      // descargar el PDF en vez de mostrarlo).
       if (data.storage_key) {
         try {
-          const dl = await contratoService.descargarContrato(id)
+          const dl = await contratoService.descargarContrato(id, { inline: true })
           setPreviewUrl(dl.url)
         } catch {
           // Non-critical — PDF preview won't load
@@ -77,10 +78,10 @@ export default function ContratoDetallePage() {
       }
 
       // Fetch available transitions (non-critical)
-      if (!TERMINAL_STATES.includes(data.estado)) {
+      if (data.estado && !TERMINAL_STATES.includes(data.estado)) {
         try {
           const t = await contratoService.getTransicionesDisponibles(id)
-          setTransiciones(t.transiciones_disponibles)
+          setTransiciones(t.transiciones_disponibles ?? [])
         } catch {
           // Silent
         }
