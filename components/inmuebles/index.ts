@@ -25,8 +25,5 @@ export { HistorialSection } from './HistorialSection'
 // Galería (HP-203)
 export { GaleriaSection } from './GaleriaSection'
 
-// Contrato tipo
-export { ContratoTipoSection } from './ContratoTipoSection'
-
 // Constantes
 export * from './constants'

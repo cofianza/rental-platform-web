@@ -3,15 +3,17 @@
  * HP-57: Lista de secciones de configuración
  */
 
+import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight } from '@/components/icons'
 
 // Configuración de secciones
 const SECCIONES = [
   {
-    id: 'perfil-empresa',
-    titulo: 'Perfil de empresa',
-    descripcion: 'Información de la empresa, logo, datos de contacto y configuración fiscal.',
+    id: 'datos-contrato',
+    href: '/configuracion/datos-contrato',
+    titulo: 'Datos para contrato',
+    descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
   },
@@ -58,11 +60,8 @@ export default function ConfiguracionPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
         {SECCIONES.map((seccion) => {
           const Icon = seccion.icon
-          return (
-            <button
-              key={seccion.id}
-              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
-            >
+          const content = (
+            <>
               <div className={`p-3 rounded-lg ${seccion.color}`}>
                 <Icon size={24} />
               </div>
@@ -75,6 +74,22 @@ export default function ConfiguracionPage() {
                 </p>
               </div>
               <IconChevronRight size={20} className="text-gray-400" />
+            </>
+          )
+          return 'href' in seccion && seccion.href ? (
+            <Link
+              key={seccion.id}
+              href={seccion.href}
+              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
+            >
+              {content}
+            </Link>
+          ) : (
+            <button
+              key={seccion.id}
+              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
+            >
+              {content}
             </button>
           )
         })}
