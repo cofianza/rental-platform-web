@@ -25,5 +25,8 @@ export { HistorialSection } from './HistorialSection'
 // Galería (HP-203)
 export { GaleriaSection } from './GaleriaSection'
 
+// Preview de plantilla del contrato
+export { PlantillaContratoPreview } from './PlantillaContratoPreview'
+
 // Constantes
 export * from './constants'

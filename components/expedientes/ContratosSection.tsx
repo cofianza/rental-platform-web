@@ -49,8 +49,13 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
   const [firmaContratoId, setFirmaContratoId] = useState<string | null>(null)
 
   // Permissions
+  // El contrato se genera automaticamente al aprobar el estudio (orchestrator).
+  // Admin/operador pueden generar manualmente como fallback. Inmobiliaria y
+  // propietario pueden regenerar (refrescar PDF tras editar sus datos en
+  // /configuracion/datos-contrato o cambiar fecha/duracion).
   const canCreate = user?.rol === 'administrador' || user?.rol === 'operador_analista'
-  const canRegenerate = canCreate
+  const canRegenerate =
+    canCreate || user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
 
   const fetchContratos = useCallback(async () => {
     setIsLoading(true)
@@ -178,9 +183,14 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
       {contratos.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
           <p className="text-gray-500 mb-2">No hay contratos generados</p>
-          {canCreate && (
+          {canCreate ? (
             <p className="text-sm text-gray-400">
-              Selecciona una plantilla para generar el primer contrato
+              Pulsa &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400">
+              El contrato se generará automáticamente cuando el estudio del
+              arrendatario sea aprobado.
             </p>
           )}
         </div>

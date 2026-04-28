@@ -19,6 +19,7 @@ import {
   ExpedientesSection,
   HistorialSection,
   GaleriaSection,
+  PlantillaContratoPreview,
 } from '@/components/inmuebles'
 import type { IExpediente } from '@/types/expediente'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
@@ -42,6 +43,7 @@ import {
   IconHistory,
   IconImages,
   IconFolderOpen,
+  IconFileText,
   IconLoader,
   IconRefresh,
 } from '@/components/icons'
@@ -51,7 +53,7 @@ import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants'
 import type { IInmueble, EstadoInmueble } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 
-type TabId = 'info' | 'expedientes' | 'historial' | 'galeria'
+type TabId = 'info' | 'expedientes' | 'historial' | 'galeria' | 'contrato'
 
 export default function InmuebleDetailPage() {
   const params = useParams()
@@ -332,6 +334,7 @@ export default function InmuebleDetailPage() {
 
   const tabs = [
     { id: 'info' as TabId, label: 'Información', icon: IconInfo },
+    { id: 'contrato' as TabId, label: 'Contrato', icon: IconFileText },
     { id: 'expedientes' as TabId, label: 'Expedientes', icon: IconFolderOpen },
     { id: 'historial' as TabId, label: 'Historial', icon: IconHistory },
     { id: 'galeria' as TabId, label: 'Galería', icon: IconImages },
@@ -547,6 +550,10 @@ export default function InmuebleDetailPage() {
                   </div>
 
                 </div>
+              )}
+
+              {activeTab === 'contrato' && (
+                <PlantillaContratoPreview inmuebleId={inmueble.id} />
               )}
 
               {activeTab === 'expedientes' && (
