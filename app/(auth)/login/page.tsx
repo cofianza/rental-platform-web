@@ -52,30 +52,40 @@ function LoginForm() {
     }
   }
 
+  /**
+   * Calcula el destino post-login segun el contexto del usuario.
+   * Prioridad: invitacion externa pendiente > intent vitrina > redirect query > dashboard.
+   *
+   * Importante: tanto el useEffect (caso "ya estaba autenticado") como el
+   * handleLogin (caso "acaba de loguearse") usan este mismo destino — antes
+   * habia divergencia y `useAuth.login()` hacia hard redirect a /dashboard
+   * antes de que el useEffect pudiera correr.
+   */
+  const computePostLoginRedirect = (): string => {
+    if (typeof window !== 'undefined') {
+      const invitacionToken = sessionStorage.getItem('invitacion_token')
+      if (invitacionToken) {
+        sessionStorage.removeItem('invitacion_token')
+        return `/invitacion/${invitacionToken}`
+      }
+    }
+    const intent = searchParams.get('intent')
+    const propertyId = searchParams.get('property_id')
+    if (intent === 'interest' && propertyId) {
+      // Mismo destino que el flujo registro+auto-login: vuelve al detalle del
+      // inmueble con ?agendar=1 para que MeInteresaCTA abra el modal que crea
+      // expediente + cita en un solo paso.
+      return `/inmueble/${propertyId}?agendar=1`
+    }
+    return searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
+  }
+
   // Redirigir si ya está autenticado (ej: navega a /login estando logueado)
   useEffect(() => {
     if (isAuthenticated) {
-      // Prioridad: token de invitación externa pendiente > intent vitrina > redirect query > dashboard
-      const invitacionToken =
-        typeof window !== 'undefined' ? sessionStorage.getItem('invitacion_token') : null
-      if (invitacionToken) {
-        sessionStorage.removeItem('invitacion_token')
-        router.replace(`/invitacion/${invitacionToken}`)
-        return
-      }
-
-      const intent = searchParams.get('intent')
-      const propertyId = searchParams.get('property_id')
-      if (intent === 'interest' && propertyId) {
-        // TODO(unificación de flujos): este redirect lleva a una pantalla que crea
-        // expediente SIN cita. El flujo "solicitante autenticado en vitrina" sí crea
-        // con cita. Ver comentario en /vitrina/interest/page.tsx.
-        router.replace(`/vitrina/interest?property_id=${propertyId}`)
-      } else {
-        const redirect = searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
-        router.replace(redirect)
-      }
+      router.replace(computePostLoginRedirect())
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router, searchParams])
 
   // Limpiar error de auth cuando cambian los inputs
@@ -110,7 +120,7 @@ function LoginForm() {
       return
     }
 
-    await login({ email, password })
+    await login({ email, password }, computePostLoginRedirect())
   }
 
   const handleGoogleSignIn = async () => {

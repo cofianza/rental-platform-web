@@ -22,15 +22,21 @@ export function useAuth() {
   const clearError = useAuthStore((state) => state.clearError)
 
   /**
-   * Inicia sesión con email y contraseña
+   * Inicia sesión con email y contraseña.
+   *
    * Usa window.location.replace para garantizar redirect en producción
-   * (router.push puede fallar silenciosamente con RSC payloads en ciertos entornos)
+   * (router.push puede fallar silenciosamente con RSC payloads en ciertos entornos).
+   *
+   * `redirectTo` permite al caller decidir el destino — útil cuando el
+   * visitante venia de la vitrina con intent=interest+property_id y debe
+   * volver al inmueble en vez de aterrizar en /dashboard.
    */
   const login = useCallback(
-    async (credentials: ILoginCredentials) => {
+    async (credentials: ILoginCredentials, redirectTo?: string) => {
       try {
         await authService.login(credentials)
-        window.location.replace(AUTH_ROUTES.DASHBOARD)
+        const target = redirectTo && redirectTo.startsWith('/') ? redirectTo : AUTH_ROUTES.DASHBOARD
+        window.location.replace(target)
       } catch {
         // Error ya manejado en authService
       }
