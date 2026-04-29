@@ -1,32 +1,82 @@
 /**
- * PublicNavbar — Navbar reutilizable para paginas publicas
- * Muestra avatar+link al dashboard si hay sesion activa
+ * PublicNavbar — Navbar reutilizable para paginas publicas (landing + vitrina).
+ * Muestra links de navegacion (Vitrina, Como funciona, Para quien, Preguntas)
+ * y avatar+link al dashboard si hay sesion activa.
+ *
+ * Los links a secciones (#como-funciona, #para-quien, #preguntas) funcionan
+ * como anclas dentro de la landing. Si el usuario ya esta en otra pagina (eg.
+ * /vitrina), redirigen a la home con la ancla.
  */
 
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconUser } from '@/components/icons'
 
-export function PublicNavbar() {
+interface PublicNavbarProps {
+  /** Cuando es true, los links a secciones envian a la home (#anchor); cuando es false, los renderiza como anclas locales (#anchor). */
+  forceHomeLinks?: boolean
+}
+
+export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const pathname = usePathname()
+  const isHome = pathname === '/'
+  const useHomePrefix = forceHomeLinks ?? !isHome
+
+  const sectionLink = (anchor: string) => (useHomePrefix ? `/${anchor}` : anchor)
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2">
+    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center gap-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">C</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">Cofianza</span>
+          <span className="text-xl font-bold text-gray-900">
+            <span className="text-primary-600">co</span>fianza
+          </span>
         </Link>
 
+        {/* Nav links — desktop only */}
+        <nav className="hidden md:flex items-center gap-7">
+          <Link
+            href="/vitrina"
+            className={`text-sm font-medium transition-colors ${
+              pathname === '/vitrina' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Vitrina
+          </Link>
+          <Link
+            href={sectionLink('#como-funciona')}
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Cómo funciona
+          </Link>
+          <Link
+            href={sectionLink('#para-quien')}
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Para quién
+          </Link>
+          <Link
+            href={sectionLink('#preguntas')}
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Preguntas
+          </Link>
+        </nav>
+
+        {/* CTA */}
         {isAuthenticated && user ? (
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shrink-0"
           >
             <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
               <span className="text-sm font-semibold text-primary-700">
@@ -38,18 +88,18 @@ export function PublicNavbar() {
             </span>
           </Link>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+              className="px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
             >
-              Iniciar Sesion
+              Ingresar
             </Link>
             <Link
               href="/registro"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+              className="px-3 sm:px-5 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
             >
-              Registrarse
+              Solicitar fianza
             </Link>
           </div>
         )}
