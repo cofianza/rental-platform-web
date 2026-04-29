@@ -32,9 +32,28 @@ class FirmaService {
     return response.data
   }
 
-  async reenviarSolicitud(id: string): Promise<ISolicitudFirma> {
+  async reenviarSolicitud(
+    id: string,
+    options?: { email_alternativo?: string },
+  ): Promise<ISolicitudFirma> {
     const response = (await apiClient.post(
-      `/firma/solicitudes/${id}/reenviar`
+      `/firma/solicitudes/${id}/reenviar`,
+      options || {},
+    )) as unknown as { success: boolean; data: ISolicitudFirma }
+    return response.data
+  }
+
+  /**
+   * Reenvio "self" disponible al solicitante dueno del expediente. Permite
+   * reenviarse el correo de firma al mismo email o a otro alternativo.
+   */
+  async reenviarSolicitudSelf(
+    id: string,
+    options?: { email_alternativo?: string },
+  ): Promise<ISolicitudFirma> {
+    const response = (await apiClient.post(
+      `/firma/solicitudes/${id}/reenviar-self`,
+      options || {},
     )) as unknown as { success: boolean; data: ISolicitudFirma }
     return response.data
   }

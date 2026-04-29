@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { contratoService } from '@/services/contratoService'
+import { firmaService } from '@/services/firmaService'
 import type { IContrato } from '@/types/contrato'
 
 interface ContratoSolicitanteCardProps {
@@ -30,6 +31,10 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [solicitudId, setSolicitudId] = useState<string | null>(null)
+  const [showResendForm, setShowResendForm] = useState(false)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resending, setResending] = useState(false)
 
   const fetchContrato = useCallback(async () => {
     try {
@@ -64,6 +69,56 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     const id = setInterval(fetchContrato, 10000)
     return () => clearInterval(id)
   }, [contrato, fetchContrato])
+
+  // Cuando el contrato pasa a pendiente_firma, cargamos el id de la solicitud
+  // de firma activa para poder ofrecer "reenviar correo a otro destinatario".
+  useEffect(() => {
+    if (contrato?.estado !== 'pendiente_firma') {
+      setSolicitudId(null)
+      return
+    }
+    firmaService
+      .listarPorContrato(contrato.id)
+      .then((solicitudes) => {
+        const activa = solicitudes.find(
+          (s) => s.estado !== 'cancelado' && s.estado !== 'firmado',
+        )
+        setSolicitudId(activa?.id ?? null)
+      })
+      .catch(() => setSolicitudId(null))
+  }, [contrato])
+
+  const handleResend = async (toAlternativeEmail: boolean) => {
+    if (!solicitudId) {
+      toast.error('No se encontró la solicitud de firma activa.')
+      return
+    }
+    if (toAlternativeEmail) {
+      const email = resendEmail.trim()
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error('Ingresa un correo válido.')
+        return
+      }
+    }
+    setResending(true)
+    try {
+      await firmaService.reenviarSolicitudSelf(solicitudId, {
+        email_alternativo: toAlternativeEmail ? resendEmail.trim() : undefined,
+      })
+      toast.success(
+        toAlternativeEmail
+          ? `Correo de firma reenviado a ${resendEmail.trim()}`
+          : 'Correo de firma reenviado a tu dirección registrada.',
+      )
+      setShowResendForm(false)
+      setResendEmail('')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo reenviar el correo.'
+      toast.error(msg)
+    } finally {
+      setResending(false)
+    }
+  }
 
   const handleDescargar = async (firmado: boolean) => {
     if (!contrato) return
@@ -183,9 +238,69 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mt-3">
-          ¿No recibiste el correo de firma? Revisa tu carpeta de spam o contacta a la inmobiliaria para reenviarlo.
-        </p>
+        <div className="mt-4 pt-4 border-t border-primary-100">
+          {!showResendForm ? (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <p className="text-xs text-gray-500">
+                ¿No recibiste el correo de firma? Revisa tu carpeta de spam o reenvíalo a otra dirección.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleResend(false)}
+                  disabled={resending || !solicitudId}
+                  className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {resending ? 'Reenviando…' : 'Reenviar al correo registrado'}
+                </button>
+                <span className="text-xs text-gray-300">·</span>
+                <button
+                  onClick={() => setShowResendForm(true)}
+                  disabled={resending || !solicitudId}
+                  className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Reenviar a otro correo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Reenviar a otro correo
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="email"
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                  placeholder="otro@correo.com"
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  disabled={resending}
+                  autoFocus
+                />
+                <button
+                  onClick={() => handleResend(true)}
+                  disabled={resending || !resendEmail.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  {resending ? 'Enviando…' : 'Enviar'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowResendForm(false)
+                    setResendEmail('')
+                  }}
+                  disabled={resending}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">
+                Te enviaremos un nuevo enlace de firma a esta dirección.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
