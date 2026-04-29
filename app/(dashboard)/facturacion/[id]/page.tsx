@@ -107,13 +107,12 @@ export default function FacturaDetallePage() {
     fetchFactura()
   }, [fetchFactura])
 
-  // Handle download
+  // Handle download — descarga el archivo via blob al disco
   const handleDownload = async (tipo: 'pdf' | 'xml') => {
     try {
-      const result = await facturacionService.getDownloadUrl(id, tipo)
-      window.open(result.url, '_blank')
+      await facturacionService.descargarYGuardar(id, tipo)
     } catch (err) {
-      toast.error(`Error al descargar ${tipo.toUpperCase()}`)
+      toast.error(err instanceof Error ? err.message : `Error al descargar ${tipo.toUpperCase()}`)
     }
   }
 
@@ -240,6 +239,12 @@ export default function FacturaDetallePage() {
 
   const estadoConfig = ESTADO_FACTURA_CONFIG[factura.estado]
   const isCancelada = factura.estado === 'cancelada'
+  // Cuando la factura esta emitida y Factus le asigno numero, los archivos
+  // PDF/XML se pueden descargar bajo demanda contra Factus aun si pdf_url y
+  // xml_url estan null en BD (Factus V2 no devuelve URLs persistentes).
+  const factusDisponible = factura.estado === 'emitida' && !!factura.factus_number
+  const pdfDescargable = factusDisponible || !!factura.pdf_url
+  const xmlDescargable = factusDisponible || !!factura.xml_url
 
   return (
     <div className="space-y-6">
@@ -385,12 +390,12 @@ export default function FacturaDetallePage() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">Factura PDF</p>
                     <p className="text-xs text-gray-500">
-                      {factura.pdf_url ? 'Disponible' : 'No cargado'}
+                      {pdfDescargable ? 'Disponible' : 'No cargado'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  {factura.pdf_url ? (
+                  {pdfDescargable ? (
                     <>
                       <button
                         onClick={() => handleDownload('pdf')}
@@ -399,7 +404,7 @@ export default function FacturaDetallePage() {
                       >
                         <IconDownload size={16} />
                       </button>
-                      {isAdmin && !isCancelada && (
+                      {isAdmin && !isCancelada && factura.pdf_url && (
                         <button
                           onClick={() => handleDeleteDocument('pdf')}
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -447,12 +452,12 @@ export default function FacturaDetallePage() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">Factura XML</p>
                     <p className="text-xs text-gray-500">
-                      {factura.xml_url ? 'Disponible' : 'No cargado'}
+                      {xmlDescargable ? 'Disponible' : 'No cargado'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  {factura.xml_url ? (
+                  {xmlDescargable ? (
                     <>
                       <button
                         onClick={() => handleDownload('xml')}
@@ -461,7 +466,7 @@ export default function FacturaDetallePage() {
                       >
                         <IconDownload size={16} />
                       </button>
-                      {isAdmin && !isCancelada && (
+                      {isAdmin && !isCancelada && factura.xml_url && (
                         <button
                           onClick={() => handleDeleteDocument('xml')}
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"

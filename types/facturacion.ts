@@ -82,6 +82,13 @@ export interface IFactura {
   pdf_storage_key: string | null
   xml_url: string | null
   xml_storage_key: string | null
+  /**
+   * Numero asignado por Factus al validar la factura ante DIAN.
+   * Cuando esta presente y la factura esta emitida, los archivos PDF/XML
+   * se pueden descargar bajo demanda contra Factus aunque pdf_url/xml_url
+   * sean null en BD.
+   */
+  factus_number?: string | null
   // Relaciones
   pago_id: string | null
   datos_fiscales_id: string

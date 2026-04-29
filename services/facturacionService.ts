@@ -11,6 +11,8 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { API_BASE_URL } from '@/lib/constants'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   IDatosFiscales,
   IDatosFiscalesInput,
@@ -86,6 +88,7 @@ function adaptFactura(row: BackendFactura): IFactura {
     pdf_storage_key: null,
     xml_url: row.xml_url ?? null,
     xml_storage_key: null,
+    factus_number: row.factus_number ?? null,
     pago_id: row.pago_id || null,
     datos_fiscales_id: '',
     created_at: row.created_at,
@@ -226,11 +229,68 @@ class FacturacionService {
     throw new Error('No aplica para facturas electrónicas Factus.')
   }
 
+  /**
+   * Descarga PDF o XML de una factura emitida desde Factus.
+   * Hace fetch del endpoint backend que proxea a Factus, crea un blob URL
+   * y dispara la descarga automaticamente. El blob URL se revoca despues.
+   */
+  async descargarFactusDocumento(
+    facturaId: string,
+    tipo: 'pdf' | 'xml',
+    options?: { inline?: boolean },
+  ): Promise<{ url: string; fileName: string }> {
+    const token = useAuthStore.getState().accessToken
+    const inlineQs = options?.inline ? '?inline=true' : ''
+    const response = await fetch(
+      `${API_BASE_URL}/facturas/${facturaId}/factus/${tipo}${inlineQs}`,
+      {
+        method: 'GET',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        credentials: 'include',
+      },
+    )
+    if (!response.ok) {
+      let msg = `Error al descargar ${tipo.toUpperCase()}`
+      try {
+        const errBody = (await response.json()) as { message?: string }
+        if (errBody?.message) msg = errBody.message
+      } catch {
+        // body no JSON
+      }
+      throw new Error(msg)
+    }
+
+    // Extraer filename del Content-Disposition si esta presente
+    const cd = response.headers.get('content-disposition') || ''
+    const fileNameMatch = /filename="?([^";]+)"?/i.exec(cd)
+    const fileName = fileNameMatch?.[1] || `factura.${tipo}`
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    return { url, fileName }
+  }
+
+  /**
+   * Disparador rapido: descarga el archivo al disco con el nombre original.
+   * Usado por los botones "Descargar PDF / XML" en la UI.
+   */
+  async descargarYGuardar(facturaId: string, tipo: 'pdf' | 'xml'): Promise<void> {
+    const { url, fileName } = await this.descargarFactusDocumento(facturaId, tipo)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  /**
+   * @deprecated Mantener por compatibilidad — usa descargarYGuardar() o
+   * descargarFactusDocumento() segun necesites el blob URL.
+   */
   async getDownloadUrl(facturaId: string, tipo: 'pdf' | 'xml'): Promise<{ url: string; expires_in: number }> {
-    const factura = await this.getFacturaById(facturaId)
-    if (!factura) throw new Error('Factura no encontrada')
-    const url = tipo === 'pdf' ? factura.pdf_url : factura.xml_url
-    if (!url) throw new Error(`No hay URL ${tipo} disponible para esta factura.`)
+    const { url } = await this.descargarFactusDocumento(facturaId, tipo, { inline: true })
     return { url, expires_in: 0 }
   }
 
