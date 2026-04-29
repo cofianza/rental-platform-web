@@ -87,6 +87,23 @@ export default function CreditosEstudiosPage() {
     }
   }
 
+  const isInmobiliaria = user?.rol === 'inmobiliaria'
+  const isAdmin = user?.rol === 'administrador'
+
+  if (!isInmobiliaria && !isAdmin) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Créditos de estudios" />
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 flex gap-3">
+          <IconAlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
+          <div className="text-sm text-amber-800">
+            Esta sección está disponible únicamente para usuarios con rol Inmobiliaria.
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -94,8 +111,6 @@ export default function CreditosEstudiosPage() {
       </div>
     )
   }
-
-  const isInmobiliaria = user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
 
   return (
     <div className="space-y-6">
@@ -293,16 +308,6 @@ export default function CreditosEstudiosPage() {
         )}
       </div>
 
-      {/* Aviso */}
-      {!isInmobiliaria && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
-          <IconAlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
-          <div className="text-sm text-amber-800">
-            La compra de paquetes está disponible solo para usuarios con rol Inmobiliaria o
-            Propietario.
-          </div>
-        </div>
-      )}
     </div>
   )
 }

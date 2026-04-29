@@ -3,12 +3,23 @@
  * HP-57: Lista de secciones de configuración
  */
 
+'use client'
+
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
+import { useAuth } from '@/hooks/useAuth'
 import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt } from '@/components/icons'
 
-// Configuración de secciones
-const SECCIONES = [
+// Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
+const SECCIONES: Array<{
+  id: string
+  href?: string
+  titulo: string
+  descripcion: string
+  icon: typeof IconBuilding2
+  color: string
+  soloRoles?: string[]
+}> = [
   {
     id: 'datos-contrato',
     href: '/configuracion/datos-contrato',
@@ -24,6 +35,7 @@ const SECCIONES = [
     descripcion: 'Compre paquetes de estudios y libérelos manualmente para sus solicitantes.',
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
+    soloRoles: ['inmobiliaria', 'administrador'],
   },
   {
     id: 'plantillas-contrato',
@@ -56,6 +68,12 @@ const SECCIONES = [
 ]
 
 export default function ConfiguracionPage() {
+  const { user } = useAuth()
+  const rol = user?.rol
+  const seccionesVisibles = SECCIONES.filter(
+    (s) => !s.soloRoles || (rol && s.soloRoles.includes(rol)),
+  )
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -66,7 +84,7 @@ export default function ConfiguracionPage() {
 
       {/* Lista de secciones */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
-        {SECCIONES.map((seccion) => {
+        {seccionesVisibles.map((seccion) => {
           const Icon = seccion.icon
           const content = (
             <>

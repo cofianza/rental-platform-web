@@ -154,8 +154,8 @@ export default function DashboardPage() {
         {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio) */}
         <AccionesPendientesWidget />
 
-        {/* Creditos de estudios — solo inmobiliaria/propietario, donde tiene sentido */}
-        <SaldoCreditosCard />
+        {/* Creditos de estudios — exclusivo para inmobiliaria */}
+        {isInmobiliaria && <SaldoCreditosCard />}
 
         {/* Quick actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

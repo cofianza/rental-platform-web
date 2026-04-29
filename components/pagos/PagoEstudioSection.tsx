@@ -26,7 +26,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
 
-  const puedeUsarCreditos = userRole === 'inmobiliaria' || userRole === 'propietario'
+  const puedeUsarCreditos = userRole === 'inmobiliaria'
 
   const fetchEstado = useCallback(async () => {
     try {
