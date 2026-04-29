@@ -6,6 +6,7 @@
 'use client'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { DashboardLayoutWrapper } from './DashboardLayoutWrapper'
@@ -16,6 +17,11 @@ interface Props {
 
 export function DashboardShell({ children }: Props) {
   const isInitialized = useAuthStore((state) => state.isInitialized)
+
+  // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
+  // vez al entrar al dashboard y limpia al hacer logout (cuando isAuthenticated
+  // cambia a false) o al desmontar.
+  useNotificationsRealtime()
 
   if (!isInitialized) {
     return (

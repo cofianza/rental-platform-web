@@ -10,7 +10,8 @@ import { useUIStore } from '@/stores/ui.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { ROLES } from '@/lib/constants'
-import { IconMenu, IconBell, IconChevronRight } from '@/components/icons'
+import { IconMenu, IconChevronRight } from '@/components/icons'
+import { NotificationBell } from './NotificationBell'
 import { cn } from '@/lib/utils'
 
 const ROLE_DISPLAY: Record<string, string> = {
@@ -32,8 +33,6 @@ export function Header() {
     .toUpperCase()
     .slice(0, 2)
   const rolDisplay = user?.rol ? ROLE_DISPLAY[user.rol] ?? user.rol : ''
-
-  const notificationCount = 3 // Placeholder
 
   return (
     <header
@@ -85,18 +84,7 @@ export function Header() {
 
       {/* Zona derecha: Notificaciones + Avatar */}
       <div className="flex items-center gap-3">
-        {/* Notificaciones */}
-        <button
-          className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          aria-label="Notificaciones"
-        >
-          <IconBell size={20} className="text-gray-700" />
-          {notificationCount > 0 && (
-            <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-              {notificationCount}
-            </span>
-          )}
-        </button>
+        <NotificationBell />
 
         {/* Divisor */}
         <div className="hidden sm:block w-px h-6 bg-gray-300" />
