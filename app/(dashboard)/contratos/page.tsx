@@ -1,12 +1,20 @@
 'use client'
 
 import { Suspense } from 'react'
-import { IconAlertTriangle } from '@/components/icons'
+import Link from 'next/link'
+import { IconAlertTriangle, IconSettings } from '@/components/icons'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useContratos } from '@/hooks/useContratos'
+import { useAuthStore } from '@/stores/auth.store'
 import { ContratosFilters, ContratosTable, ContratosPageSkeleton } from '@/components/contratos'
 
 function ContratosContent() {
+  const user = useAuthStore((s) => s.user)
+  // Propietario e inmobiliaria editan en /configuracion/datos-contrato los
+  // datos que salen en sus contratos generados (domicilio, cuenta de recaudo,
+  // logo, etc.). Atajo desde la pantalla donde naturalmente miran sus contratos.
+  const canEditDatosContrato = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
+
   const {
     contratos,
     meta,
@@ -40,6 +48,17 @@ function ContratosContent() {
       <PageHeader
         title="Contratos"
         subtitle={`${meta.total} contrato${meta.total !== 1 ? 's' : ''}`}
+        actions={
+          canEditDatosContrato ? (
+            <Link
+              href="/configuracion/datos-contrato"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <IconSettings size={16} />
+              Datos para contrato
+            </Link>
+          ) : undefined
+        }
       />
 
       <ContratosFilters
