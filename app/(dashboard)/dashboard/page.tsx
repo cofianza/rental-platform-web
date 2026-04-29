@@ -22,6 +22,7 @@ import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
+import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
 
 // ── Date filter presets ─────────────────────────────────────
 
@@ -152,6 +153,9 @@ export default function DashboardPage() {
 
         {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio) */}
         <AccionesPendientesWidget />
+
+        {/* Creditos de estudios — solo inmobiliaria/propietario, donde tiene sentido */}
+        <SaldoCreditosCard />
 
         {/* Quick actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

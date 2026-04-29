@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Modal } from '@/components/ui/Modal'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
+import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 
 interface PagoEstudioSectionProps {
   expedienteId: string
@@ -22,6 +24,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
+  const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
+
+  const puedeUsarCreditos = userRole === 'inmobiliaria' || userRole === 'propietario'
 
   const fetchEstado = useCallback(async () => {
     try {
@@ -34,7 +39,32 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }, [expedienteId])
 
+  const fetchSaldo = useCallback(async () => {
+    if (!puedeUsarCreditos) return
+    try {
+      const data = await creditosEstudiosService.getMiSaldo()
+      setSaldoCreditos(data)
+    } catch {
+      setSaldoCreditos(null)
+    }
+  }, [puedeUsarCreditos])
+
   useEffect(() => { fetchEstado() }, [fetchEstado])
+  useEffect(() => { fetchSaldo() }, [fetchSaldo])
+
+  const handleLiberarCredito = async () => {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await creditosEstudiosService.liberarEstudio(expedienteId)
+      await Promise.all([fetchEstado(), fetchSaldo()])
+      onPagoCompletado?.()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al liberar el estudio con credito')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const handleAsumir = async () => {
     setIsSubmitting(true)
@@ -110,7 +140,36 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             Monto: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
           </p>
           <p className="text-sm text-gray-600 mb-5">Selecciona quien asume el costo del estudio de arrendamiento:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`grid grid-cols-1 ${puedeUsarCreditos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+            {/* Liberar con credito (inmobiliaria/propietario) */}
+            {puedeUsarCreditos && (
+              (saldoCreditos?.saldo_total ?? 0) > 0 ? (
+                <button
+                  onClick={handleLiberarCredito}
+                  disabled={isSubmitting}
+                  className="flex flex-col items-center gap-2 p-4 border-2 border-emerald-300 bg-emerald-50/40 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                >
+                  <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Liberar con crédito</span>
+                  <span className="text-xs text-emerald-700 font-medium">
+                    Saldo: {saldoCreditos?.saldo_total} estudios
+                  </span>
+                </button>
+              ) : (
+                <Link
+                  href="/configuracion/creditos-estudios"
+                  className="flex flex-col items-center gap-2 p-4 border-2 border-amber-200 bg-amber-50/40 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors"
+                >
+                  <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Comprar paquete</span>
+                  <span className="text-xs text-amber-700">Sin créditos disponibles</span>
+                </Link>
+              )
+            )}
             <button
               onClick={handleAsumir}
               disabled={isSubmitting}

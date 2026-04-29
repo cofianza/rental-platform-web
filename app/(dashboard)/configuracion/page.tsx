@@ -5,7 +5,7 @@
 
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt } from '@/components/icons'
 
 // Configuración de secciones
 const SECCIONES = [
@@ -16,6 +16,14 @@ const SECCIONES = [
     descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
+  },
+  {
+    id: 'creditos-estudios',
+    href: '/configuracion/creditos-estudios',
+    titulo: 'Créditos de estudios',
+    descripcion: 'Compre paquetes de estudios y libérelos manualmente para sus solicitantes.',
+    icon: IconReceipt,
+    color: 'bg-emerald-100 text-emerald-600',
   },
   {
     id: 'plantillas-contrato',
