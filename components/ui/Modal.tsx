@@ -71,19 +71,22 @@ export function Modal({
         aria-hidden="true"
       />
 
-      {/* Modal content */}
+      {/* Modal content. Layout flex column con max-height del viewport
+          para que cuando el contenido sea largo, el body haga scroll
+          interno y el header (titulo + boton cerrar) quede sticky. */}
       <div
         className={cn(
-          'relative bg-white rounded-lg shadow-xl w-full',
+          'relative bg-white rounded-lg shadow-xl w-full flex flex-col',
+          'max-h-[calc(100vh-2rem)]',
           'animate-in fade-in zoom-in-95 duration-200',
           SIZES[size],
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header (no se encoge) */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
             <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
               {title}
             </h2>
@@ -97,8 +100,8 @@ export function Modal({
           </div>
         )}
 
-        {/* Body */}
-        <div className="px-6 py-4">{children}</div>
+        {/* Body — scroll interno cuando el contenido excede el viewport */}
+        <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
       </div>
     </div>
   )
