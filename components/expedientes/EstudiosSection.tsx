@@ -49,6 +49,12 @@ interface EstudiosSectionProps {
 export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Propietario/inmobiliaria pueden ver el detalle completo del estudio
+  // (TransUnion report) cuando ya esta completado — pagan por el reporte
+  // y necesitan evaluar al solicitante. No pueden gestionarlo (cancelar,
+  // reenviar enlace, registrar resultado): eso queda gateado a canManage.
+  const isStakeholder = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
+  const canViewDetail = canManage || isStakeholder
 
   const [estudios, setEstudios] = useState<IEstudio[]>([])
   const [loading, setLoading] = useState(true)
@@ -262,8 +268,8 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
                 </div>
 
                 {/* Actions */}
-                {canManage && (
-                  <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  {canViewDetail && (
                     <button
                       onClick={() => setShowDetail(estudio)}
                       title="Ver detalle"
@@ -271,39 +277,39 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
                     >
                       <IconEye size={18} />
                     </button>
+                  )}
 
-                    {!ESTADOS_FINALIZADOS.includes(estudio.estado) && (
-                      <>
-                        {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) && estudio.resultado === 'pendiente' && (
-                          <button
-                            onClick={() => setResultadoTarget(estudio)}
-                            disabled={actionLoading}
-                            title="Registrar resultado"
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
-                          >
-                            <IconClipboardList size={18} />
-                          </button>
-                        )}
+                  {canManage && !ESTADOS_FINALIZADOS.includes(estudio.estado) && (
+                    <>
+                      {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) && estudio.resultado === 'pendiente' && (
                         <button
-                          onClick={() => handleSendLink(estudio)}
+                          onClick={() => setResultadoTarget(estudio)}
                           disabled={actionLoading}
-                          title="Enviar enlace al solicitante"
-                          className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
+                          title="Registrar resultado"
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
                         >
-                          <IconMail size={18} />
+                          <IconClipboardList size={18} />
                         </button>
-                        <button
-                          onClick={() => setCancelTarget(estudio)}
-                          disabled={actionLoading}
-                          title="Cancelar estudio"
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                        >
-                          <IconX size={18} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
+                      )}
+                      <button
+                        onClick={() => handleSendLink(estudio)}
+                        disabled={actionLoading}
+                        title="Enviar enlace al solicitante"
+                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
+                      >
+                        <IconMail size={18} />
+                      </button>
+                      <button
+                        onClick={() => setCancelTarget(estudio)}
+                        disabled={actionLoading}
+                        title="Cancelar estudio"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                      >
+                        <IconX size={18} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -322,6 +328,7 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
         isOpen={!!showDetail}
         onClose={() => setShowDetail(null)}
         estudio={showDetail}
+        readOnly={!canManage}
       />
 
       <RegistrarResultadoModal

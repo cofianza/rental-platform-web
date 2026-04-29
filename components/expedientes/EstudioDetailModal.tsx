@@ -27,6 +27,12 @@ interface EstudioDetailModalProps {
   isOpen: boolean
   onClose: () => void
   estudio: IEstudio | null
+  /**
+   * Si true, esconde acciones de gestion (regenerar certificado,
+   * re-evaluacion). El propietario/inmobiliaria pueden ver el reporte
+   * completo y descargar el certificado pero no operar sobre el estudio.
+   */
+  readOnly?: boolean
 }
 
 const PROVEEDOR_LABELS: Record<string, string> = {
@@ -142,7 +148,7 @@ function DocumentoPreviewItem({ doc }: { doc: IEstudioDocumento }) {
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly = false }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
@@ -150,11 +156,21 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
   const [loadingHistorial, setLoadingHistorial] = useState(false)
   const [activeTab, setActiveTab] = useState('informacion')
 
-  // Sync with prop changes
+  // Sync con cambios del prop. Ademas, al abrir el modal recargamos el
+  // estudio por id para traer `datos_formulario` (no viene en el listado;
+  // sin esto el reporte TransUnion saldria vacio para propietarios).
   useEffect(() => {
     setEstudio(initialEstudio)
     setActiveTab('informacion')
-  }, [initialEstudio])
+    if (initialEstudio?.id && isOpen) {
+      estudioService
+        .getEstudioById(initialEstudio.id)
+        .then((full) => setEstudio(full))
+        .catch(() => {
+          // Sin reload silencioso: si falla, queda el snapshot del listado.
+        })
+    }
+  }, [initialEstudio, isOpen])
 
   // Fetch historial when modal opens
   const fetchHistorial = useCallback(async (estudioId: string) => {
@@ -352,19 +368,25 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
                       )}
                       Descargar Certificado
                     </button>
-                    <button
-                      onClick={handleGenerarCertificado}
-                      disabled={generatingCert}
-                      className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                    >
-                      {generatingCert ? (
-                        <IconLoader size={14} className="animate-spin" />
-                      ) : (
-                        <IconCheck size={14} />
-                      )}
-                      Regenerar
-                    </button>
+                    {!readOnly && (
+                      <button
+                        onClick={handleGenerarCertificado}
+                        disabled={generatingCert}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        {generatingCert ? (
+                          <IconLoader size={14} className="animate-spin" />
+                        ) : (
+                          <IconCheck size={14} />
+                        )}
+                        Regenerar
+                      </button>
+                    )}
                   </div>
+                ) : readOnly ? (
+                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    El certificado aun no ha sido generado por el equipo de Cofianza.
+                  </p>
                 ) : (
                   <button
                     onClick={handleGenerarCertificado}
@@ -411,8 +433,8 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio }:
               </div>
             )}
 
-            {/* Re-evaluacion section */}
-            {isReevaluable && (
+            {/* Re-evaluacion section — solo gestores (admin/operador) */}
+            {isReevaluable && !readOnly && (
               <ReEvaluacionSection
                 estudio={estudio}
                 historial={historial}
