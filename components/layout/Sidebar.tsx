@@ -188,8 +188,7 @@ export function Sidebar() {
         {/* Vitrina publica + Cerrar sesion */}
         <div className="border-t border-gray-200 p-2 space-y-1">
           <Link
-            href="/"
-            target="_blank"
+            href="/vitrina"
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
               'text-gray-700 hover:bg-primary-50 hover:text-primary-600 group relative'
