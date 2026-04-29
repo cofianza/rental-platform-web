@@ -98,7 +98,9 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
           <IconCalendar size={16} />
           Cita Previa
         </h3>
-        {!hasNoActiveCita && !completedCita && (
+        {/* Mostrar boton compacto solo cuando hay historial (canceladas/no_asistio)
+            pero NO hay cita activa ni realizada — caso "rebote" tras cancelacion. */}
+        {!hasNoActiveCita && !completedCita && !activeCita && (
           <button
             onClick={() => setShowCrearModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
