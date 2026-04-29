@@ -14,13 +14,20 @@ import { useAuthStore } from '@/stores/auth.store'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita, EstadoCita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
+import SlotSelector, {
+  formatSlotHora,
+  formatFechaCompleta,
+} from '@/components/citas/SlotSelector'
 
 interface CitasSectionProps {
   expedienteId: string
+  /** Id del inmueble — habilita SlotSelector con disponibilidad real del
+   *  propietario. Si falta, el modal cae a un input date+time crudo. */
+  inmuebleId?: string
   onCitaRealizada?: () => void
 }
 
-export function CitasSection({ expedienteId, onCitaRealizada }: CitasSectionProps) {
+export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: CitasSectionProps) {
   const user = useAuthStore((s) => s.user)
   const [citas, setCitas] = useState<ICita[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -190,6 +197,7 @@ export function CitasSection({ expedienteId, onCitaRealizada }: CitasSectionProp
         isOpen={showCrearModal}
         onClose={() => setShowCrearModal(false)}
         expedienteId={expedienteId}
+        inmuebleId={inmuebleId}
         isOwnerOrAgency={canManageCitas}
         onCreated={() => { setShowCrearModal(false); fetchCitas() }}
       />
@@ -325,83 +333,92 @@ function CrearCitaModal({
   isOpen,
   onClose,
   expedienteId,
+  inmuebleId,
   isOwnerOrAgency,
   onCreated,
 }: {
   isOpen: boolean
   onClose: () => void
   expedienteId: string
+  inmuebleId?: string
   isOwnerOrAgency: boolean
   onCreated: () => void
 }) {
-  const [fecha, setFecha] = useState('')
-  const [hora, setHora] = useState('10:00')
+  // SlotSelector emite ISO 8601 con offset (-05:00) ya alineado al horario
+  // configurado por el propietario. No hay que componer fecha+hora a mano.
+  const [slot, setSlot] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const reset = () => {
+    setSlot(null)
+    setNotas('')
+  }
+
+  const handleClose = () => {
+    if (isSubmitting) return
+    reset()
+    onClose()
+  }
+
   const handleSubmit = async () => {
-    if (!fecha) { toast.error('Selecciona una fecha'); return }
+    if (!slot) {
+      toast.error('Selecciona un horario disponible')
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      const fechaPropuesta = new Date(`${fecha}T${hora}:00`).toISOString()
       await citaService.crearCita({
         expediente_id: expedienteId,
-        fecha_propuesta: fechaPropuesta,
+        // El slot ya es ISO con offset; el backend lo guarda tal cual.
+        // NO re-convertir con new Date().toISOString() — duplicaria el shift.
+        fecha_propuesta: slot,
         notas_solicitante: notas || undefined,
         confirmar_inmediatamente: isOwnerOrAgency,
       })
       toast.success(isOwnerOrAgency ? 'Visita agendada y confirmada' : 'Cita solicitada exitosamente')
-      setFecha('')
-      setHora('10:00')
-      setNotas('')
+      reset()
       onCreated()
-    } catch {
-      toast.error('Error al agendar la cita')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al agendar la cita'
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Min date = tomorrow
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const minDate = tomorrow.toISOString().split('T')[0]
-
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={isOwnerOrAgency ? 'Agendar Visita Confirmada' : 'Solicitar Cita de Visita'}
+      size="lg"
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
           {isOwnerOrAgency
             ? 'Programa una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo.'
-            : 'Solicita una cita para visitar el inmueble. El propietario o inmobiliaria debera confirmar la fecha.'}
+            : 'Elige un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
         </p>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              min={minDate}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+        {inmuebleId ? (
+          <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
+        ) : (
+          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-            <input
-              type="time"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+        )}
+
+        {slot && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
+            <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-primary-900">
+              Visitaras el <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
+              <strong>{formatSlotHora(slot)}</strong>
+            </p>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
@@ -409,18 +426,19 @@ function CrearCitaModal({
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
-            placeholder="Preferencias de horario, indicaciones de acceso, etc."
+            maxLength={500}
+            placeholder="Indicaciones de acceso, preguntas para el propietario, etc."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">
+          <button onClick={handleClose} disabled={isSubmitting} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50">
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || !fecha}
+            disabled={isSubmitting || !slot}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}

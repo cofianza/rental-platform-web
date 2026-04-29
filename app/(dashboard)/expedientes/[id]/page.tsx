@@ -345,7 +345,11 @@ export default function ExpedienteDetallePage() {
             {/* Sección Cita Previa — al tope para que el solicitante vea
                 de un vistazo la fecha/hora y si fue reprogramada. */}
             <div className="border border-gray-200 rounded-lg p-5">
-              <CitasSection expedienteId={id} onCitaRealizada={fetchExpediente} />
+              <CitasSection
+                expedienteId={id}
+                inmuebleId={expediente.inmueble?.id}
+                onCitaRealizada={fetchExpediente}
+              />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
