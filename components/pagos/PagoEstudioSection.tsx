@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
+import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
 
 interface PagoEstudioSectionProps {
   expedienteId: string
@@ -453,24 +455,130 @@ function EnviarLinkModal({
 
 function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) {
   const linkPago = estado.pago?.payment_link_url || null
+  const pagoId = estado.pago?.id || null
+  // Si el backend ya adjunto la factura al pago (attachFacturas), la usamos.
+  const facturaExistente = (estado.pago as unknown as { factura?: { id: string; numero?: string | null; estado: string } | null } | null)?.factura || null
 
-  // Pago completado → banner verde corto. El siguiente paso (confirmar CC
-  // y ejecutar estudio) lo maneja EstudioSolicitanteCard.
+  const [facturaModal, setFacturaModal] = useState<{
+    faltantes: string[]
+    datos: IDatosFiscalesPagoFactura
+  } | null>(null)
+  const [facturando, setFacturando] = useState(false)
+  const [facturaIdEmitida, setFacturaIdEmitida] = useState<string | null>(facturaExistente?.id || null)
+
+  const tryFacturar = async (datos?: IDatosFiscalesPagoFactura): Promise<boolean> => {
+    if (!pagoId) return false
+    try {
+      const factura = await facturacionService.facturarPago(pagoId, datos)
+      toast.success(`Factura emitida${factura.numero ? `: ${factura.numero}` : ''}`)
+      setFacturaIdEmitida(factura.id)
+      setFacturaModal(null)
+      return true
+    } catch (err: unknown) {
+      const e = err as { code?: string; details?: { faltantes?: string[] }; message?: string }
+      if (e.code === 'CLIENTE_DATOS_INCOMPLETOS' && Array.isArray(e.details?.faltantes)) {
+        setFacturaModal({ faltantes: e.details!.faltantes!, datos: datos || {} })
+        return false
+      }
+      toast.error(e.message || 'Error al emitir la factura')
+      return false
+    }
+  }
+
+  const handleFacturarClick = async () => {
+    setFacturando(true)
+    try {
+      await tryFacturar()
+    } finally {
+      setFacturando(false)
+    }
+  }
+
+  const handleSubmitFacturaModal = async () => {
+    if (!facturaModal) return
+    setFacturando(true)
+    try {
+      await tryFacturar(facturaModal.datos)
+    } finally {
+      setFacturando(false)
+    }
+  }
+
+  // Pago completado → banner verde + boton "Facturar".
   if (estado.estado === 'completado' || estado.estado === 'asumido_inmobiliaria') {
     return (
-      <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <p className="text-sm font-medium text-green-800">
-            {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
-          </p>
-          <p className="text-xs text-green-600">
-            {estado.monto_formateado} COP — Recibimos tu pago correctamente.
-          </p>
+      <>
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-green-800">
+                {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
+              </p>
+              <p className="text-xs text-green-600">
+                {estado.monto_formateado} COP — Recibimos tu pago correctamente.
+              </p>
+            </div>
+          </div>
+
+          {/* Acciones de facturacion — solo si fue un pago propio (no asumido) y hay pagoId */}
+          {estado.estado === 'completado' && pagoId && (
+            <div className="mt-3 pt-3 border-t border-green-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <p className="text-xs text-green-700">
+                {facturaIdEmitida || facturaExistente
+                  ? '¿Necesitas tu factura electrónica?'
+                  : '¿Necesitas factura electrónica de este pago?'}
+              </p>
+              {facturaIdEmitida || facturaExistente ? (
+                <Link
+                  href={`/facturacion/${facturaIdEmitida || facturaExistente!.id}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-800 bg-white border border-green-300 rounded-md hover:bg-green-50 transition"
+                >
+                  Ver factura
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              ) : (
+                <button
+                  onClick={handleFacturarClick}
+                  disabled={facturando}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition"
+                >
+                  {facturando && (
+                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+                    </svg>
+                  )}
+                  Facturar
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+
+        {/* Modal pidiendo datos fiscales que falten */}
+        <Modal
+          isOpen={!!facturaModal}
+          onClose={() => !facturando && setFacturaModal(null)}
+          title="Datos fiscales para tu factura"
+          size="md"
+        >
+          {facturaModal && (
+            <PagoFacturaDatosForm
+              faltantes={facturaModal.faltantes}
+              datos={facturaModal.datos}
+              onChange={(d) => setFacturaModal({ ...facturaModal, datos: d })}
+              onSubmit={handleSubmitFacturaModal}
+              onCancel={() => setFacturaModal(null)}
+              loading={facturando}
+            />
+          )}
+        </Modal>
+      </>
     )
   }
 
@@ -562,6 +670,149 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <p className="text-xs text-blue-600 mt-1">
         Tu estudio ya fue habilitado. Te avisaremos por correo cuando esté listo el link de pago.
       </p>
+    </div>
+  )
+}
+
+// ============================================
+// Form de datos fiscales (faltantes) — usado por el solicitante al
+// facturar su pago de estudio.
+// ============================================
+
+const PAGO_FACTURA_LABEL: Record<string, string> = {
+  numero_documento: 'Número de documento',
+  tipo_documento: 'Tipo de documento',
+  nombre_completo: 'Nombre completo',
+  direccion: 'Dirección',
+  email: 'Email',
+  telefono: 'Teléfono',
+  municipio_codigo: 'Código DANE del municipio',
+}
+
+interface PagoFacturaDatosFormProps {
+  faltantes: string[]
+  datos: IDatosFiscalesPagoFactura
+  onChange: (d: IDatosFiscalesPagoFactura) => void
+  onSubmit: () => void
+  onCancel: () => void
+  loading: boolean
+}
+
+function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading }: PagoFacturaDatosFormProps) {
+  const set = (key: keyof IDatosFiscalesPagoFactura, value: string) => {
+    onChange({ ...datos, [key]: value })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
+        Necesitamos completar tus datos para emitir la factura electrónica ante la DIAN. Solo se
+        usan en esta factura — no se guardan en tu perfil.
+      </div>
+
+      {faltantes.includes('numero_documento') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {PAGO_FACTURA_LABEL.numero_documento} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.numero_documento || ''}
+            onChange={(e) => set('numero_documento', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="1234567890"
+          />
+        </div>
+      )}
+
+      {faltantes.includes('direccion') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {PAGO_FACTURA_LABEL.direccion} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.direccion || ''}
+            onChange={(e) => set('direccion', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Calle 100 # 20-30"
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        {faltantes.includes('email') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {PAGO_FACTURA_LABEL.email} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={datos.email || ''}
+              onChange={(e) => set('email', e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="tu@correo.com"
+            />
+          </div>
+        )}
+
+        {faltantes.includes('telefono') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {PAGO_FACTURA_LABEL.telefono} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={datos.telefono || ''}
+              onChange={(e) => set('telefono', e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="3001234567"
+            />
+          </div>
+        )}
+      </div>
+
+      {faltantes.includes('municipio_codigo') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Municipio <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.municipio_codigo || ''}
+            onChange={(e) => set('municipio_codigo', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="11001 (Bogotá)"
+            maxLength={5}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Código DANE de 5 dígitos. Bogotá = 11001, Medellín = 05001, Cali = 76001.
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button
+          onClick={onCancel}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+        >
+          {loading && (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+            </svg>
+          )}
+          Emitir factura
+        </button>
+      </div>
     </div>
   )
 }

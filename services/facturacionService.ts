@@ -25,6 +25,21 @@ import type {
 } from '@/types/facturacion'
 
 // ============================================
+// Datos fiscales de override al facturar un pago
+// ============================================
+
+export interface IDatosFiscalesPagoFactura {
+  numero_documento?: string
+  tipo_documento?: string
+  nombre_completo?: string
+  direccion?: string
+  email?: string
+  telefono?: string
+  /** Codigo DANE de 5 digitos. */
+  municipio_codigo?: string
+}
+
+// ============================================
 // Tipos del backend (snake_case, shape Factus)
 // ============================================
 
@@ -200,9 +215,22 @@ class FacturacionService {
     return this.facturarPago(input.pago_id)
   }
 
-  /** Dispara la creación de factura para un pago confirmado. */
-  async facturarPago(pagoId: string): Promise<IFactura> {
-    const response = (await apiClient.post(`/pagos/${pagoId}/facturar`)) as unknown as {
+  /**
+   * Dispara la creación de factura para un pago confirmado.
+   * Si vienen `datosFiscales` en el body, el backend valida estricto y
+   * lanza CLIENTE_DATOS_INCOMPLETOS con `details.faltantes` si falta algun
+   * campo requerido (numero_documento, direccion, telefono, email,
+   * municipio_codigo). Sin override, usa los datos del solicitante con
+   * defaults silenciosos.
+   */
+  async facturarPago(
+    pagoId: string,
+    datosFiscales?: IDatosFiscalesPagoFactura,
+  ): Promise<IFactura> {
+    const response = (await apiClient.post(
+      `/pagos/${pagoId}/facturar`,
+      datosFiscales || {},
+    )) as unknown as {
       data: { id: string; factus_number: string | null; cufe: string | null; estado: string }
     }
     // El POST devuelve el ID — recargamos la factura completa.
