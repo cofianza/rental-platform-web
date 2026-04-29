@@ -26,7 +26,7 @@ export interface ICita {
     id: string
     numero: string
     estudio_habilitado: boolean
-    inmueble: { direccion: string; ciudad: string } | null
+    inmueble: { id: string; direccion: string; ciudad: string } | null
     solicitante: { nombre: string; apellido: string; telefono: string | null } | null
   } | null
 }

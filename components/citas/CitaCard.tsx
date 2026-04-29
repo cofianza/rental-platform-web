@@ -20,6 +20,10 @@ import { expedienteService } from '@/services/expedienteService'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
+import SlotSelector, {
+  formatSlotHora,
+  formatFechaCompleta,
+} from '@/components/citas/SlotSelector'
 
 interface CitaCardProps {
   cita: ICita
@@ -36,15 +40,19 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const [action, setAction] = useState<ActionState>('idle')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Estado del form para modal de confirmar
-  const [fechaConfirmada, setFechaConfirmada] = useState<string>(
-    () => toLocalDatetime(cita.fecha_propuesta) || '',
-  )
+  // Modo del modal de confirmar: 'aceptar' usa la fecha propuesta tal cual,
+  // 'reprogramar' deja al propietario elegir otro slot disponible.
+  const [confirmMode, setConfirmMode] = useState<'aceptar' | 'reprogramar'>('aceptar')
+
+  // Slot elegido cuando reprograma. ISO 8601 con offset (lo emite SlotSelector).
+  const [slotElegido, setSlotElegido] = useState<string | null>(null)
   const [notasPropietario, setNotasPropietario] = useState('')
   const [motivoCancelacion, setMotivoCancelacion] = useState('')
 
   const closeModals = () => {
     setAction('idle')
+    setConfirmMode('aceptar')
+    setSlotElegido(null)
     setNotasPropietario('')
     setMotivoCancelacion('')
   }
@@ -64,17 +72,24 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     }
   }
 
-  const handleConfirmar = () =>
-    runAction(
+  const handleConfirmar = () => {
+    // Aceptar: confirma con la fecha que propuso el solicitante (no envia
+    // fecha_confirmada — el backend usa la fecha_propuesta).
+    // Reprogramar: requiere haber elegido un slot. El backend marca como
+    // 'reprogramada' y notifica al solicitante que la fecha cambio.
+    if (confirmMode === 'reprogramar' && !slotElegido) {
+      toast.error('Selecciona un horario alternativo')
+      return
+    }
+    return runAction(
       () =>
         citaService.confirmarCita(cita.id, {
-          fecha_confirmada: fechaConfirmada
-            ? new Date(fechaConfirmada).toISOString()
-            : undefined,
+          fecha_confirmada: confirmMode === 'reprogramar' ? slotElegido ?? undefined : undefined,
           notas_propietario: notasPropietario || undefined,
         }),
-      'Cita confirmada',
+      confirmMode === 'reprogramar' ? 'Cita reprogramada' : 'Cita confirmada',
     )
+  }
 
   const handleRealizar = () =>
     runAction(() => citaService.realizarCita(cita.id), 'Cita marcada como realizada')
@@ -189,10 +204,22 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         {cita.estado === 'solicitada' && (
           <>
             <button
-              onClick={() => setAction('confirmar')}
+              onClick={() => {
+                setConfirmMode('aceptar')
+                setAction('confirmar')
+              }}
               className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700"
             >
               Confirmar
+            </button>
+            <button
+              onClick={() => {
+                setConfirmMode('reprogramar')
+                setAction('confirmar')
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-300 rounded hover:bg-amber-50"
+            >
+              Reprogramar
             </button>
             <button
               onClick={() => setAction('cancelar')}
@@ -253,31 +280,71 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         )}
       </div>
 
-      {/* Modal: Confirmar cita */}
+      {/* Modal: Confirmar / Reprogramar cita */}
       <Modal
         isOpen={action === 'confirmar'}
         onClose={closeModals}
-        title="Confirmar cita"
-        size="sm"
+        title={confirmMode === 'reprogramar' ? 'Proponer otro horario' : 'Confirmar cita'}
+        size={confirmMode === 'reprogramar' ? 'lg' : 'sm'}
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha y hora confirmada
-            </label>
-            <input
-              type="datetime-local"
-              value={fechaConfirmada}
-              onChange={(e) => setFechaConfirmada(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Pre-poblada con la fecha propuesta por el solicitante. Ajusta si es necesario.
-            </p>
+          {/* Resumen del horario propuesto por el solicitante */}
+          {cita.fecha_propuesta && (
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
+              <p className="text-xs text-gray-500">El solicitante propuso:</p>
+              <p className="font-medium text-gray-900">
+                {formatFechaCompleta(cita.fecha_propuesta)} a las {formatSlotHora(cita.fecha_propuesta)}
+              </p>
+            </div>
+          )}
+
+          {/* Toggle aceptar / reprogramar */}
+          <div className="flex gap-2 border border-gray-200 rounded-lg p-1 bg-gray-50">
+            <button
+              type="button"
+              onClick={() => setConfirmMode('aceptar')}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded ${
+                confirmMode === 'aceptar' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Aceptar este horario
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmMode('reprogramar')}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded ${
+                confirmMode === 'reprogramar' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Proponer otro horario
+            </button>
           </div>
+
+          {/* Selector de slots — solo en modo reprogramar */}
+          {confirmMode === 'reprogramar' && inmueble?.id && (
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Elige un horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha.
+              </p>
+              <SlotSelector
+                inmuebleId={inmueble.id}
+                value={slotElegido}
+                onChange={setSlotElegido}
+              />
+              {slotElegido && (
+                <p className="text-xs text-gray-700 mt-2">
+                  Nuevo horario:{' '}
+                  <strong>
+                    {formatFechaCompleta(slotElegido)} a las {formatSlotHora(slotElegido)}
+                  </strong>
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notas (opcional)
+              Notas para el solicitante (opcional)
             </label>
             <textarea
               value={notasPropietario}
@@ -285,9 +352,14 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               rows={3}
               maxLength={2000}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Instrucciones para el solicitante, punto de encuentro, etc."
+              placeholder={
+                confirmMode === 'reprogramar'
+                  ? 'Cuentale por que cambias el horario.'
+                  : 'Instrucciones, punto de encuentro, etc.'
+              }
             />
           </div>
+
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={closeModals}
@@ -298,11 +370,11 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
             </button>
             <button
               onClick={handleConfirmar}
-              disabled={isLoading}
+              disabled={isLoading || (confirmMode === 'reprogramar' && !slotElegido)}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading && <IconLoader size={14} className="animate-spin" />}
-              Confirmar cita
+              {confirmMode === 'reprogramar' ? 'Enviar nueva propuesta' : 'Confirmar cita'}
             </button>
           </div>
         </div>
@@ -387,22 +459,6 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       />
     </div>
   )
-}
-
-// ============================================================
-// Helpers
-// ============================================================
-
-/**
- * Convierte un ISO 8601 (UTC) a string "YYYY-MM-DDTHH:mm" en hora local
- * para pre-popular un input datetime-local.
- */
-function toLocalDatetime(iso: string | null): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // ============================================================
