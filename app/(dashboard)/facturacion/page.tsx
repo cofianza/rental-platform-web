@@ -16,6 +16,10 @@ import { useAuthStore } from '@/stores/auth.store'
 export default function FacturacionPage() {
   const user = useAuthStore((s) => s.user)
   const isSolicitante = user?.rol === 'solicitante'
+  // Tarifas de IVA son configuracion del emisor (Cofianza). Solo admin/operador
+  // las gestionan — propietario e inmobiliaria no necesitan verlas y ademas el
+  // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
+  const canSeeTarifasIva = user?.rol === 'administrador' || user?.rol === 'operador_analista'
 
   // El solicitante solo ve la pestaña "Facturas" — los datos fiscales del
   // emisor (Cofianza) están configurados en Factus y los datos del receptor
@@ -46,7 +50,7 @@ export default function FacturacionPage() {
         {activeTab === 'datos-fiscales' && !isSolicitante && (
           <>
             <DatosFiscalesSection />
-            <TarifasIvaSection />
+            {canSeeTarifasIva && <TarifasIvaSection />}
           </>
         )}
         {activeTab === 'facturas' && <FacturasSection />}
