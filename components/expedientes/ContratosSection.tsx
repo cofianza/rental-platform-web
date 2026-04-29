@@ -50,12 +50,14 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
 
   // Permissions
   // El contrato se genera automaticamente al aprobar el estudio (orchestrator).
-  // Admin/operador pueden generar manualmente como fallback. Inmobiliaria y
-  // propietario pueden regenerar (refrescar PDF tras editar sus datos en
-  // /configuracion/datos-contrato o cambiar fecha/duracion).
-  const canCreate = user?.rol === 'administrador' || user?.rol === 'operador_analista'
-  const canRegenerate =
-    canCreate || user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
+  // Admin/operador/inmobiliaria pueden generar manualmente como fallback
+  // (la inmobiliaria es el arrendador y necesita poder disparar la generacion
+  // si el orchestrator fallo). Propietario individual solo puede regenerar.
+  const canCreate =
+    user?.rol === 'administrador' ||
+    user?.rol === 'operador_analista' ||
+    user?.rol === 'inmobiliaria'
+  const canRegenerate = canCreate || user?.rol === 'propietario'
 
   const fetchContratos = useCallback(async () => {
     setIsLoading(true)
