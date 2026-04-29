@@ -46,6 +46,10 @@ export interface IMovimientoCredito {
   lote_id: string | null
   notas: string | null
   created_at: string
+  /** Solo presente cuando tipo='compra' — id de la compra que origino el lote. */
+  compra_id?: string | null
+  /** Si la compra ya esta facturada, viene la referencia. */
+  factura?: { id: string; factus_number: string | null; estado: string } | null
 }
 
 export interface ICompraCredito {
@@ -70,6 +74,19 @@ export interface ILiberarEstudioResponse {
   pago_id: string
   saldo_restante: number
   lote_id: string
+}
+
+export interface IDatosFiscalesFactura {
+  razon_social?: string
+  nit?: string
+  direccion?: string
+  email?: string
+  telefono?: string
+  /** Codigo DANE (5 digitos). */
+  municipio_codigo?: string
+  municipio_nombre?: string
+  /** Codigo DIAN: '13'=CC, '31'=NIT, etc. Si no se proporciona, se infiere. */
+  tipo_documento?: string
 }
 
 export interface ICreatePaqueteInput {
@@ -133,6 +150,23 @@ class CreditosEstudiosService {
     const res = (await apiClient.post(`/expedientes/${expedienteId}/liberar-estudio-credito`, {
       notas,
     })) as unknown as { data: ILiberarEstudioResponse }
+    return res.data
+  }
+
+  /**
+   * Factura una compra de paquete. Si el body es vacio, el backend
+   * lee los datos del perfil. Si faltan datos requeridos, lanza
+   * Error con `details.faltantes` (lista de campos que el frontend
+   * debe pedir en un modal y reenviar).
+   */
+  async facturarCompra(
+    compraId: string,
+    datosFiscales?: IDatosFiscalesFactura,
+  ): Promise<{ id: string; factus_number: string | null; cufe: string | null; estado: string }> {
+    const res = (await apiClient.post(
+      `/creditos-estudios/me/compras/${compraId}/facturar`,
+      datosFiscales || {},
+    )) as unknown as { data: { id: string; factus_number: string | null; cufe: string | null; estado: string } }
     return res.data
   }
 

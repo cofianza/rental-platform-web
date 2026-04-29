@@ -8,15 +8,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import {
   creditosEstudiosService,
   type IPaqueteCreditos,
   type ISaldoCreditos,
   type IMovimientoCredito,
+  type IDatosFiscalesFactura,
 } from '@/services/creditosEstudiosService'
 import {
   IconLoader,
@@ -25,6 +28,7 @@ import {
   IconReceipt,
   IconClock,
   IconDollarSign,
+  IconFileText,
 } from '@/components/icons'
 
 const TIPO_LABELS: Record<string, string> = {
@@ -46,6 +50,14 @@ export default function CreditosEstudiosPage() {
   const [movimientos, setMovimientos] = useState<IMovimientoCredito[]>([])
   const [loading, setLoading] = useState(true)
   const [comprando, setComprando] = useState<string | null>(null)
+
+  // Facturacion de compras
+  const [facturaModal, setFacturaModal] = useState<{
+    compraId: string
+    faltantes: string[]
+    datos: IDatosFiscalesFactura
+  } | null>(null)
+  const [facturando, setFacturando] = useState<string | null>(null)
 
   const fetchAll = async () => {
     try {
@@ -75,6 +87,48 @@ export default function CreditosEstudiosPage() {
       toast.info('Pago cancelado.')
     }
   }, [compraStatus])
+
+  const tryFacturarCompra = async (compraId: string, datos?: IDatosFiscalesFactura) => {
+    try {
+      const res = await creditosEstudiosService.facturarCompra(compraId, datos)
+      toast.success(`Factura emitida: ${res.factus_number || res.id}`)
+      setFacturaModal(null)
+      await fetchAll()
+      return true
+    } catch (err: unknown) {
+      const e = err as { code?: string; details?: { faltantes?: string[] }; message?: string }
+      if (e.code === 'CLIENTE_DATOS_INCOMPLETOS' && Array.isArray(e.details?.faltantes)) {
+        // Abrir modal con los campos faltantes para que el usuario los complete.
+        setFacturaModal({
+          compraId,
+          faltantes: e.details!.faltantes!,
+          datos: datos || {},
+        })
+        return false
+      }
+      toast.error(e.message || 'Error al emitir la factura')
+      return false
+    }
+  }
+
+  const handleFacturarClick = async (compraId: string) => {
+    setFacturando(compraId)
+    try {
+      await tryFacturarCompra(compraId)
+    } finally {
+      setFacturando(null)
+    }
+  }
+
+  const handleSubmitFacturaModal = async () => {
+    if (!facturaModal) return
+    setFacturando(facturaModal.compraId)
+    try {
+      await tryFacturarCompra(facturaModal.compraId, facturaModal.datos)
+    } finally {
+      setFacturando(null)
+    }
+  }
 
   const handleComprar = async (paqueteId: string) => {
     setComprando(paqueteId)
@@ -263,6 +317,9 @@ export default function CreditosEstudiosPage() {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                     Notas
                   </th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                    Factura
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -300,6 +357,34 @@ export default function CreditosEstudiosPage() {
                     <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
                       {m.notas || '—'}
                     </td>
+                    <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                      {m.tipo === 'compra' && m.compra_id ? (
+                        m.factura ? (
+                          <Link
+                            href={`/facturacion/${m.factura.id}`}
+                            className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 text-xs font-medium"
+                          >
+                            <IconFileText size={14} />
+                            {m.factura.factus_number || 'Ver factura'}
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => handleFacturarClick(m.compra_id!)}
+                            disabled={facturando === m.compra_id}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded hover:bg-primary-100 disabled:opacity-50 transition"
+                          >
+                            {facturando === m.compra_id ? (
+                              <IconLoader className="animate-spin" size={12} />
+                            ) : (
+                              <IconReceipt size={12} />
+                            )}
+                            Facturar
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -308,6 +393,180 @@ export default function CreditosEstudiosPage() {
         )}
       </div>
 
+      {/* Modal datos fiscales para facturar compra */}
+      <Modal
+        isOpen={!!facturaModal}
+        onClose={() => !facturando && setFacturaModal(null)}
+        title="Datos fiscales para la factura"
+        size="md"
+      >
+        {facturaModal && (
+          <FacturaDatosForm
+            faltantes={facturaModal.faltantes}
+            datos={facturaModal.datos}
+            onChange={(datos) => setFacturaModal({ ...facturaModal, datos })}
+            onSubmit={handleSubmitFacturaModal}
+            onCancel={() => setFacturaModal(null)}
+            loading={facturando === facturaModal.compraId}
+          />
+        )}
+      </Modal>
+    </div>
+  )
+}
+
+// ===========================================
+// Sub-componente: form de datos fiscales
+// ===========================================
+
+const CAMPO_LABEL: Record<string, string> = {
+  razon_social: 'Razón social',
+  nit: 'NIT / Documento',
+  direccion: 'Dirección',
+  email: 'Email',
+  telefono: 'Teléfono',
+  municipio_codigo: 'Código DANE del municipio',
+  municipio_nombre: 'Municipio',
+}
+
+interface FacturaDatosFormProps {
+  faltantes: string[]
+  datos: IDatosFiscalesFactura
+  onChange: (d: IDatosFiscalesFactura) => void
+  onSubmit: () => void
+  onCancel: () => void
+  loading: boolean
+}
+
+function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading }: FacturaDatosFormProps) {
+  const set = (key: keyof IDatosFiscalesFactura, value: string) => {
+    onChange({ ...datos, [key]: value })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
+        Necesitamos completar tus datos fiscales para emitir la factura electrónica ante la DIAN.
+        Estos datos se aplican solo a esta factura — para que queden guardados en tu perfil ve a{' '}
+        <Link href="/configuracion/datos-contrato" className="underline font-medium">
+          Datos para contrato
+        </Link>
+        .
+      </div>
+
+      {faltantes.includes('razon_social') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {CAMPO_LABEL.razon_social} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.razon_social || ''}
+            onChange={(e) => set('razon_social', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Razón social o nombre completo"
+          />
+        </div>
+      )}
+
+      {faltantes.includes('nit') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {CAMPO_LABEL.nit} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.nit || ''}
+            onChange={(e) => set('nit', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="900123456-7 o cédula"
+          />
+        </div>
+      )}
+
+      {faltantes.includes('direccion') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {CAMPO_LABEL.direccion} <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.direccion || ''}
+            onChange={(e) => set('direccion', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Calle 100 # 20-30"
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        {faltantes.includes('email') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {CAMPO_LABEL.email} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={datos.email || ''}
+              onChange={(e) => set('email', e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="facturacion@empresa.com"
+            />
+          </div>
+        )}
+
+        {faltantes.includes('telefono') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {CAMPO_LABEL.telefono} <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={datos.telefono || ''}
+              onChange={(e) => set('telefono', e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="3001234567"
+            />
+          </div>
+        )}
+      </div>
+
+      {faltantes.includes('municipio_codigo') && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Municipio <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={datos.municipio_codigo || ''}
+            onChange={(e) => set('municipio_codigo', e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="11001 (Bogotá)"
+            maxLength={5}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Código DANE de 5 dígitos. Bogotá = 11001, Medellín = 05001, Cali = 76001.
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button
+          onClick={onCancel}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+        >
+          {loading && <IconLoader className="animate-spin" size={14} />}
+          Emitir factura
+        </button>
+      </div>
     </div>
   )
 }
