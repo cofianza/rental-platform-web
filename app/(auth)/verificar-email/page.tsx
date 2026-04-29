@@ -80,12 +80,12 @@ function VerifyEmailContent() {
               <IconCheck size={32} className="text-green-600" />
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Email verificado</h1>
+          <h1 className="text-xl font-bold text-gray-900">Cuenta activada</h1>
           <p className="text-sm text-gray-600">
-            Tu correo electronico ha sido verificado exitosamente.
+            Tu correo fue verificado y tu cuenta quedo activa.
           </p>
-          <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600">
-            <p>Un administrador activara tu cuenta pronto. Te notificaremos cuando puedas iniciar sesion.</p>
+          <div className="bg-green-50 rounded-lg p-4 text-sm text-gray-700">
+            <p>Ya puedes iniciar sesion para continuar.</p>
           </div>
           <div className="pt-4">
             <Link
