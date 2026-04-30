@@ -7,12 +7,16 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useAuthStore } from '@/stores/auth.store'
 
 function PagoResultadoContent() {
   const searchParams = useSearchParams()
   const status = searchParams.get('status')
   const expedienteId = searchParams.get('expediente')
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isAuthInitialized = useAuthStore((s) => s.isInitialized)
 
   const [loading, setLoading] = useState(true)
 
@@ -106,7 +110,9 @@ function PagoResultadoContent() {
       {isSuccess ? (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-sm text-green-800">
-            No necesitas hacer nada mas. La inmobiliaria te contactara para los siguientes pasos del proceso de arrendamiento.
+            {isAuthenticated
+              ? 'Ya puedes regresar a tu panel para ver el avance del estudio crediticio.'
+              : 'No necesitas hacer nada mas. La inmobiliaria te contactara para los siguientes pasos del proceso de arrendamiento.'}
           </p>
         </div>
       ) : (
@@ -117,9 +123,25 @@ function PagoResultadoContent() {
         </div>
       )}
 
-      {/* Footer */}
+      {/* CTA: cuando el usuario tiene sesion, lo regresamos a su expediente
+          (o dashboard si no hay id). Si no tiene sesion, es flujo legacy de
+          invitado: mostramos solo el mensaje de cerrar ventana. */}
+      {isAuthInitialized && isAuthenticated && (
+        <div className="mt-6 flex justify-center">
+          <Link
+            href={expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'}
+            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            {expedienteId ? 'Ver mi expediente' : 'Ir a mi panel'}
+          </Link>
+        </div>
+      )}
+
+      {/* Footer — texto distinto segun haya o no sesion */}
       <p className="text-xs text-gray-400 text-center mt-8">
-        Puedes cerrar esta ventana de forma segura.
+        {isAuthInitialized && isAuthenticated
+          ? 'Tambien puedes cerrar esta ventana — el estado quedo guardado.'
+          : 'Puedes cerrar esta ventana de forma segura.'}
       </p>
     </div>
   )
