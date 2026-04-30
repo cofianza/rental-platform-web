@@ -24,12 +24,15 @@ const TIPO_DOC_OPTIONS = [
 ] as const
 
 const FALTANTE_LABEL: Record<string, string> = {
+  tipo_documento: 'Tipo de documento (debe ser CC, CE, TI o NIT — el pasaporte no aplica para facturación electrónica en Colombia)',
   numero_documento: 'Número de documento',
   email: 'Correo electrónico',
   telefono: 'Teléfono',
   direccion: 'Dirección',
   municipio_id: 'Municipio',
 }
+
+const TIPOS_FISCALES_VALIDOS = ['cc', 'ce', 'ti', 'nit']
 
 export function DatosFiscalesSolicitanteSection() {
   const accessToken = useAuthStore((s) => s.accessToken)
@@ -55,9 +58,14 @@ export function DatosFiscalesSolicitanteSection() {
       .then((res) => {
         if (cancelled) return
         setData(res)
+        // Si el tipo guardado no es tributario (eg. 'pasaporte' del registro),
+        // dejamos vacio para forzar al usuario a elegir uno valido. Tampoco
+        // prellenamos numero porque el numero del pasaporte no sirve como CC.
+        const tipoLower = (res.tipo_documento || '').toLowerCase()
+        const tipoEsFiscal = TIPOS_FISCALES_VALIDOS.includes(tipoLower)
         setForm({
-          tipo_documento: res.tipo_documento || 'cc',
-          numero_documento: res.numero_documento || '',
+          tipo_documento: tipoEsFiscal ? tipoLower : '',
+          numero_documento: tipoEsFiscal ? res.numero_documento || '' : '',
           email: res.email || '',
           telefono: res.telefono || '',
           direccion: res.direccion || '',
@@ -83,6 +91,10 @@ export function DatosFiscalesSolicitanteSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.tipo_documento || !TIPOS_FISCALES_VALIDOS.includes(form.tipo_documento)) {
+      toast.error('Selecciona un tipo de documento válido (CC, CE, TI o NIT)')
+      return
+    }
     if (!form.numero_documento.trim()) {
       toast.error('El número de documento es obligatorio')
       return
@@ -185,12 +197,16 @@ export function DatosFiscalesSolicitanteSection() {
               onChange={(e) => setField('tipo_documento', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
+              <option value="">— Selecciona —</option>
               {TIPO_DOC_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Si en el registro pusiste pasaporte, eligelo aquí como CC, CE, TI o NIT — son los únicos válidos para facturas DIAN.
+            </p>
           </div>
 
           <div>
