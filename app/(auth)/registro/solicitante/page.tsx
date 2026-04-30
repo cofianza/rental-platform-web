@@ -9,7 +9,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconHome, IconCheck } from '@/components/icons'
+import { IconLoader, IconHome, IconCheck, IconEye, IconEyeOff } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
@@ -320,18 +320,36 @@ function FormField({
   label: string; value: string; onChange: (v: string) => void; error?: string
   type?: string; placeholder?: string
 }) {
+  // Toggle local solo cuando es type="password" — no afecta al resto.
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = type === 'password'
+  const effectiveType = isPassword && showPassword ? 'text' : type
+
   return (
     <div>
       <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-          error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-        }`}
-      />
+      <div className="relative">
+        <input
+          type={effectiveType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full px-3 py-2.5 ${isPassword ? 'pr-11' : ''} border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+            error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+          }`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          >
+            {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+          </button>
+        )}
+      </div>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   )
