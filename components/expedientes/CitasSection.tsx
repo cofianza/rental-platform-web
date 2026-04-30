@@ -33,6 +33,7 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
   const [isLoading, setIsLoading] = useState(true)
   const [showCrearModal, setShowCrearModal] = useState(false)
   const [showConfirmarModal, setShowConfirmarModal] = useState<ICita | null>(null)
+  const [showReprogramarModal, setShowReprogramarModal] = useState<ICita | null>(null)
   const [showCancelarModal, setShowCancelarModal] = useState<ICita | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -170,6 +171,7 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
                 canManage={canManageCitas}
                 isLoading={actionLoading === cita.id}
                 onConfirmar={() => setShowConfirmarModal(cita)}
+                onReprogramar={() => setShowReprogramarModal(cita)}
                 onRealizar={() => handleRealizar(cita)}
                 onCancelar={() => setShowCancelarModal(cita)}
                 onNoAsistio={() => handleNoAsistio(cita)}
@@ -204,13 +206,25 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
         onCreated={() => { setShowCrearModal(false); fetchCitas() }}
       />
 
-      {/* Modal Confirmar Cita */}
+      {/* Modal Confirmar Cita — solo notas, sin cambio de fecha. Para
+          reagendar el propietario usa el boton 'Reprogramar' aparte. */}
       {showConfirmarModal && (
         <ConfirmarCitaModal
           isOpen={!!showConfirmarModal}
           onClose={() => setShowConfirmarModal(null)}
           cita={showConfirmarModal}
           onConfirmed={() => { setShowConfirmarModal(null); fetchCitas() }}
+        />
+      )}
+
+      {/* Modal Reprogramar Cita — SlotSelector con la disponibilidad real. */}
+      {showReprogramarModal && (
+        <ReprogramarCitaModal
+          isOpen={!!showReprogramarModal}
+          onClose={() => setShowReprogramarModal(null)}
+          cita={showReprogramarModal}
+          inmuebleId={inmuebleId}
+          onReprogramado={() => { setShowReprogramarModal(null); fetchCitas() }}
         />
       )}
 
@@ -234,6 +248,7 @@ function CitaCard({
   canManage,
   isLoading,
   onConfirmar,
+  onReprogramar,
   onRealizar,
   onCancelar,
   onNoAsistio,
@@ -242,6 +257,7 @@ function CitaCard({
   canManage: boolean
   isLoading: boolean
   onConfirmar?: () => void
+  onReprogramar?: () => void
   onRealizar?: () => void
   onCancelar?: () => void
   onNoAsistio?: () => void
@@ -292,6 +308,14 @@ function CitaCard({
                 className="px-2.5 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
               >
                 Confirmar
+              </button>
+            )}
+            {(cita.estado === 'solicitada' || cita.estado === 'confirmada') && onReprogramar && (
+              <button
+                onClick={onReprogramar}
+                className="px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
+              >
+                Reprogramar
               </button>
             )}
             {cita.estado === 'confirmada' && onRealizar && (
@@ -465,24 +489,22 @@ function ConfirmarCitaModal({
   cita: ICita
   onConfirmed: () => void
 }) {
-  const propuestaDate = cita.fecha_propuesta ? new Date(cita.fecha_propuesta) : new Date()
-  const [fecha, setFecha] = useState(propuestaDate.toISOString().split('T')[0])
-  const [hora, setHora] = useState(propuestaDate.toTimeString().slice(0, 5))
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      const fechaConfirmada = new Date(`${fecha}T${hora}:00`).toISOString()
+      // Sin fecha_confirmada — el backend usa la fecha_propuesta. Si el
+      // propietario quiere mover el horario, debe usar 'Reprogramar'.
       await citaService.confirmarCita(cita.id, {
-        fecha_confirmada: fechaConfirmada,
         notas_propietario: notas || undefined,
       })
       toast.success('Cita confirmada')
       onConfirmed()
-    } catch {
-      toast.error('Error al confirmar la cita')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al confirmar la cita'
+      toast.error(msg)
     } finally {
       setIsSubmitting(false)
     }
@@ -492,35 +514,16 @@ function ConfirmarCitaModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Cita">
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Confirma o ajusta la fecha propuesta por el solicitante.
+          Confirma la cita en la fecha y hora propuesta por el solicitante. Si necesitas
+          cambiar el horario, usa el boton <strong>Reprogramar</strong>.
         </p>
 
         {cita.fecha_propuesta && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-            Fecha propuesta: <strong>{formatDateTime(cita.fecha_propuesta)}</strong>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <p className="text-xs text-blue-600">Fecha y hora a confirmar:</p>
+            <p className="font-semibold mt-0.5">{formatDateTime(cita.fecha_propuesta)}</p>
           </div>
         )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha confirmada</label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-            <input
-              type="time"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
@@ -528,13 +531,18 @@ function ConfirmarCitaModal({
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
-            placeholder="Indicaciones para la visita..."
+            maxLength={2000}
+            placeholder="Indicaciones para el solicitante (punto de encuentro, etc.)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50"
+          >
             Cancelar
           </button>
           <button
@@ -544,6 +552,128 @@ function ConfirmarCitaModal({
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
             Confirmar cita
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Modal Reprogramar Cita ──────────────────────────
+
+function ReprogramarCitaModal({
+  isOpen,
+  onClose,
+  cita,
+  inmuebleId,
+  onReprogramado,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  cita: ICita
+  inmuebleId?: string
+  onReprogramado: () => void
+}) {
+  const [slot, setSlot] = useState<string | null>(null)
+  const [notas, setNotas] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const reset = () => {
+    setSlot(null)
+    setNotas('')
+  }
+
+  const handleClose = () => {
+    if (isSubmitting) return
+    reset()
+    onClose()
+  }
+
+  const handleSubmit = async () => {
+    if (!slot) {
+      toast.error('Selecciona un horario disponible')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      // Endpoint dedicado: tolera self-loop confirmada -> confirmada (no posible
+      // via /confirmar). Backend valida que el slot este en disponibilidad y
+      // dispara aviso 'reprogramada' al solicitante.
+      await citaService.reprogramarCita(cita.id, {
+        fecha_confirmada: slot,
+        notas_propietario: notas || undefined,
+      })
+      toast.success('Cita reprogramada — se notifico al solicitante')
+      reset()
+      onReprogramado()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al reprogramar la cita'
+      toast.error(msg)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Reprogramar visita" size="lg">
+      <div className="space-y-4">
+        {cita.fecha_propuesta && (
+          <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
+            <p className="text-xs text-gray-500">Horario actual:</p>
+            <p className="font-medium text-gray-900">{formatDateTime(cita.fecha_propuesta)}</p>
+          </div>
+        )}
+
+        <p className="text-sm text-gray-600">
+          Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso
+          con la nueva fecha por correo y notificacion in-app.
+        </p>
+
+        {inmuebleId ? (
+          <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
+        ) : (
+          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.
+          </div>
+        )}
+
+        {slot && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
+            <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-primary-900">
+              Nuevo horario: <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
+              <strong>{formatSlotHora(slot)}</strong>
+            </p>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            rows={2}
+            maxLength={2000}
+            placeholder="Cuentale al solicitante por que cambias el horario."
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !slot}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSubmitting && <IconLoader size={14} className="animate-spin" />}
+            Enviar nueva propuesta
           </button>
         </div>
       </div>

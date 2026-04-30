@@ -65,6 +65,19 @@ class CitaService {
     return res.data
   }
 
+  /**
+   * Reprograma una cita (solicitada o confirmada) a una nueva fecha. Distinto
+   * de confirmarCita: permite mover el horario incluso si ya estaba confirmada.
+   * Backend dispara el aviso 'reprogramada' al solicitante.
+   */
+  async reprogramarCita(
+    id: string,
+    data: { fecha_confirmada: string; notas_propietario?: string },
+  ): Promise<ICita> {
+    const res = await apiClient.post<ICita>(`${this.basePath}/${id}/reprogramar`, data)
+    return res.data
+  }
+
   async realizarCita(id: string, notas_propietario?: string): Promise<ICita> {
     const res = await apiClient.post<ICita>(`${this.basePath}/${id}/realizar`, { notas_propietario })
     return res.data

@@ -73,20 +73,23 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   }
 
   const handleConfirmar = () => {
-    // Aceptar: confirma con la fecha que propuso el solicitante (no envia
-    // fecha_confirmada — el backend usa la fecha_propuesta).
-    // Reprogramar: requiere haber elegido un slot. El backend marca como
-    // 'reprogramada' y notifica al solicitante que la fecha cambio.
+    // Aceptar: confirma con la fecha propuesta (sin fecha_confirmada — el
+    // backend usa la propuesta). Reprogramar: usa endpoint dedicado que
+    // valida disponibilidad y dispara aviso 'reprogramada' al solicitante.
     if (confirmMode === 'reprogramar' && !slotElegido) {
       toast.error('Selecciona un horario alternativo')
       return
     }
     return runAction(
       () =>
-        citaService.confirmarCita(cita.id, {
-          fecha_confirmada: confirmMode === 'reprogramar' ? slotElegido ?? undefined : undefined,
-          notas_propietario: notasPropietario || undefined,
-        }),
+        confirmMode === 'reprogramar'
+          ? citaService.reprogramarCita(cita.id, {
+              fecha_confirmada: slotElegido as string,
+              notas_propietario: notasPropietario || undefined,
+            })
+          : citaService.confirmarCita(cita.id, {
+              notas_propietario: notasPropietario || undefined,
+            }),
       confirmMode === 'reprogramar' ? 'Cita reprogramada' : 'Cita confirmada',
     )
   }
