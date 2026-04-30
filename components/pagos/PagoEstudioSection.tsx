@@ -503,7 +503,9 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   }
 
   // Click inicial: pide preview al backend y abre modal de confirmacion.
-  // Si faltan datos, abre el form de captura directamente.
+  // Si faltan datos, redirige al solicitante a /facturacion para que los
+  // complete (la pantalla dedicada es la fuente de verdad). Para otros
+  // roles abrimos el form inline como antes.
   const handleFacturarClick = async () => {
     if (!pagoId) return
     setFacturando(true)
@@ -515,8 +517,13 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         return
       }
       if (preview.faltantes.length > 0) {
-        // Faltan datos: abrir form de captura (FacturaModal existente).
-        setFacturaModal({ faltantes: preview.faltantes, datos: {} })
+        toast.error(
+          'Completa tus datos fiscales en Facturación → Datos Fiscales antes de emitir la factura.',
+        )
+        // Damos un beat para que el toast se vea antes de navegar.
+        setTimeout(() => {
+          window.location.href = '/facturacion'
+        }, 600)
         return
       }
       // Datos completos: abrir modal de confirmacion para que verifique.

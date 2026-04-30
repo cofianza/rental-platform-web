@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
+import { DatosFiscalesSolicitanteSection } from '@/components/facturacion/DatosFiscalesSolicitanteSection'
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { useAuthStore } from '@/stores/auth.store'
@@ -21,25 +22,28 @@ export default function FacturacionPage() {
   // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
   const canSeeTarifasIva = user?.rol === 'administrador' || user?.rol === 'operador_analista'
 
-  // El solicitante solo ve la pestaña "Facturas" — los datos fiscales del
-  // emisor (Cofianza) están configurados en Factus y los datos del receptor
-  // (el solicitante mismo) salen del registro, no requieren ser editados aquí.
+  // El solicitante ahora tiene tab 'Datos Fiscales' propio (vs admin que ve
+  // los datos del emisor Cofianza). Sin esos datos completos, el backend
+  // bloquea la emision con CLIENTE_DATOS_INCOMPLETOS.
   const tabs: Tab[] = isSolicitante
-    ? [{ id: 'facturas', label: 'Mis facturas' }]
+    ? [
+        { id: 'datos-fiscales', label: 'Datos Fiscales' },
+        { id: 'facturas', label: 'Mis facturas' },
+      ]
     : [
         { id: 'datos-fiscales', label: 'Datos Fiscales' },
         { id: 'facturas', label: 'Facturas' },
       ]
 
-  const [activeTab, setActiveTab] = useState(isSolicitante ? 'facturas' : 'datos-fiscales')
+  const [activeTab, setActiveTab] = useState('datos-fiscales')
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isSolicitante ? 'Mis facturas' : 'Facturación'}
+        title={isSolicitante ? 'Facturación' : 'Facturación'}
         subtitle={
           isSolicitante
-            ? 'Aquí encuentras las facturas electrónicas emitidas por Cofianza a tu nombre.'
+            ? 'Completa tus datos fiscales y consulta las facturas que Cofianza emite a tu nombre.'
             : 'Gestiona tus datos fiscales y consulta tus facturas'
         }
       />
@@ -47,10 +51,16 @@ export default function FacturacionPage() {
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="mt-6 space-y-6">
-        {activeTab === 'datos-fiscales' && !isSolicitante && (
+        {activeTab === 'datos-fiscales' && (
           <>
-            <DatosFiscalesSection />
-            {canSeeTarifasIva && <TarifasIvaSection />}
+            {isSolicitante ? (
+              <DatosFiscalesSolicitanteSection />
+            ) : (
+              <>
+                <DatosFiscalesSection />
+                {canSeeTarifasIva && <TarifasIvaSection />}
+              </>
+            )}
           </>
         )}
         {activeTab === 'facturas' && <FacturasSection />}
