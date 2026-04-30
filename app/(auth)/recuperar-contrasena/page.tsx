@@ -3,7 +3,6 @@
 import { useState, FormEvent } from 'react'
 import Link from 'next/link'
 import { IconMail, IconLoader, IconArrowLeft, IconCheck } from '@/components/icons'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -56,11 +55,6 @@ export default function ForgotPasswordPage() {
   if (isSubmitted) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-        {/* Logo (solo visible en mobile) */}
-        <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-          <CofianzaLogo size={56} />
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
-        </div>
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
@@ -91,11 +85,6 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-      {/* Logo (solo visible en mobile) */}
-      <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-        <CofianzaLogo size={56} />
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
-      </div>
 
       {/* Título */}
       <div className="text-center mb-8">

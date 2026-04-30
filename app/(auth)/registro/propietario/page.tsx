@@ -8,7 +8,6 @@ import {
   IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
@@ -209,9 +208,6 @@ export default function RegisterPropietarioPage() {
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
       {/* Logo mobile */}
-      <div className="lg:hidden flex items-center justify-center mb-6">
-        <CofianzaLogo size={36} withText textClassName="text-xl" />
-      </div>
 
       <h1 className="text-2xl font-bold text-gray-900 text-center mb-1">
         Registro Propietario

@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX } from '@/components/icons'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -133,11 +132,6 @@ function ResetPasswordForm() {
   if (!isTokenValid) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-        {/* Logo (solo visible en mobile) */}
-        <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-          <CofianzaLogo size={56} />
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
-        </div>
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
@@ -176,11 +170,6 @@ function ResetPasswordForm() {
   if (isSuccess) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-        {/* Logo (solo visible en mobile) */}
-        <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-          <CofianzaLogo size={56} />
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
-        </div>
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
@@ -212,11 +201,6 @@ function ResetPasswordForm() {
   // Formulario de nueva contraseña
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-      {/* Logo (solo visible en mobile) */}
-      <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-        <CofianzaLogo size={56} />
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
-      </div>
 
       {/* Título */}
       <div className="text-center mb-8">

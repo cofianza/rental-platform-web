@@ -9,8 +9,7 @@ import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconEye, IconEyeOff, IconMail, IconLock, IconGoogle, IconLoader } from '@/components/icons'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
+import { IconEye, IconEyeOff, IconGoogle, IconLoader } from '@/components/icons'
 import { cn, isValidEmail } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
@@ -133,24 +132,50 @@ function LoginForm() {
     }
   }
 
+  // Si veniamos del flujo "Me interesa" (vitrina), preservamos query params
+  // al apuntar a /registro para que el solicitante no pierda el inmueble.
+  const registroHref = (() => {
+    const intent = searchParams.get('intent')
+    const propertyId = searchParams.get('property_id')
+    if (intent === 'interest' && propertyId) {
+      return `/registro/solicitante?intent=${encodeURIComponent(intent)}&property_id=${encodeURIComponent(propertyId)}`
+    }
+    return AUTH_ROUTES.REGISTER
+  })()
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-      {/* Logo (solo visible en mobile) */}
-      <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
-        <CofianzaLogo size={56} />
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
+    <div className="w-full">
+      <p className="text-xs font-bold tracking-[3px] uppercase text-emerald-600 mb-2">
+        Bienvenido
+      </p>
+      <h2 className="text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
+        Inicia sesión
+      </h2>
+      <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
+        Accede a tu panel y continúa tu solicitud de fianza.
+      </p>
+
+      {/* Tabs Iniciar sesión / Crear cuenta. El segundo es un Link a /registro
+          (mantenemos el flujo existente con selector + paginas dedicadas). */}
+      <div className="grid grid-cols-2 bg-slate-50 rounded-xl p-1 mb-7">
+        <button
+          type="button"
+          className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-900 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+          aria-current="page"
+        >
+          Iniciar sesión
+        </button>
+        <Link
+          href={registroHref}
+          className="px-4 py-2.5 rounded-lg text-sm font-semibold text-center text-slate-500 hover:text-slate-700 transition-colors"
+        >
+          Crear cuenta
+        </Link>
       </div>
 
-      {/* Título */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Bienvenido</h2>
-        <p className="text-gray-500 mt-1">Ingresa a tu cuenta para continuar</p>
-      </div>
-
-      {/* Error global del servidor. EMAIL_NOT_CONFIRMED es un "warning"
-          (acción pendiente del usuario) con CTA de reenvío, no un error. */}
+      {/* Error global. EMAIL_NOT_CONFIRMED tiene CTA de reenvio. */}
       {error && error.code === 'EMAIL_NOT_CONFIRMED' ? (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg">
+        <div className="mb-5 p-4 bg-amber-50 border border-amber-300 rounded-xl">
           <p className="text-sm text-amber-900 mb-3">{error.message}</p>
           <button
             type="button"
@@ -163,63 +188,45 @@ function LoginForm() {
           </button>
         </div>
       ) : error ? (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-sm text-red-600">{error.message}</p>
         </div>
       ) : null}
 
-      {/* Formulario */}
-      <form onSubmit={(e) => { e.preventDefault(); handleLogin() }} className="space-y-5">
-        {/* Campo Email */}
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1.5"
-          >
+      <form onSubmit={(e) => { e.preventDefault(); handleLogin() }}>
+        {/* Email */}
+        <div className="mb-4">
+          <label htmlFor="email" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
             Correo electrónico
           </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconMail size={18} className="text-gray-400" />
-            </div>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                if (errors.email) setErrors({ ...errors, email: undefined })
-              }}
-              placeholder="correo@ejemplo.com"
-              disabled={isLoading}
-              autoComplete="email"
-              className={cn(
-                'block w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm',
-                'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-                'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                errors.email
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-300 bg-white'
-              )}
-            />
-          </div>
-          {errors.email && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
-          )}
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (errors.email) setErrors({ ...errors, email: undefined })
+            }}
+            placeholder="tu@correo.com"
+            disabled={isLoading}
+            autoComplete="email"
+            className={cn(
+              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
+              'placeholder:text-slate-400',
+              'focus:outline-none focus:border-emerald-600 focus:ring-[3px] focus:ring-emerald-600/10',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              errors.email ? 'border-red-500 bg-red-50' : 'border-slate-200',
+            )}
+          />
+          {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
         </div>
 
-        {/* Campo Contraseña */}
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1.5"
-          >
+        {/* Password */}
+        <div className="mb-4">
+          <label htmlFor="password" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
             Contraseña
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconLock size={18} className="text-gray-400" />
-            </div>
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -232,89 +239,91 @@ function LoginForm() {
               disabled={isLoading}
               autoComplete="current-password"
               className={cn(
-                'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm',
-                'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-                'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                errors.password
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-300 bg-white'
+                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
+                'placeholder:text-slate-400',
+                'focus:outline-none focus:border-emerald-600 focus:ring-[3px] focus:ring-emerald-600/10',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                errors.password ? 'border-red-500 bg-red-50' : 'border-slate-200',
               )}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
               tabIndex={-1}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>
-          )}
+          {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
         </div>
 
-        {/* Link de recuperación */}
-        <div className="flex justify-end">
+        {/* Recuérdame + olvidé contraseña */}
+        <div className="flex justify-between items-center text-[13px] mb-5">
+          <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 accent-emerald-600" />
+            Recordarme
+          </label>
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
-            className="text-sm text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+            className="text-emerald-600 font-semibold hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
-        {/* Botón de envío */}
+        {/* CTA primario coral */}
         <button
           type="submit"
           disabled={isLoading}
           className={cn(
-            'w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm',
-            'bg-primary-600 hover:bg-primary-700',
-            'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-            'transition-colors flex items-center justify-center gap-2',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'w-full py-3.5 rounded-xl text-white font-bold text-[15px] flex items-center justify-center gap-2',
+            'bg-orange-500 hover:bg-orange-600 hover:-translate-y-px transition-all',
+            'shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)]',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
           )}
         >
           {isLoading ? (
             <>
               <IconLoader size={18} className="animate-spin" />
-              Iniciando sesión...
+              Iniciando sesión…
             </>
           ) : (
-            'Iniciar sesión'
+            <>
+              Iniciar sesión
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </>
           )}
         </button>
       </form>
 
-      {/* Separador */}
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-white text-gray-500">O continúa con</span>
-        </div>
+      {/* Divider */}
+      <div className="flex items-center gap-3.5 my-6 text-[13px] text-slate-500">
+        <div className="flex-1 h-px bg-slate-200" />
+        o continúa con
+        <div className="flex-1 h-px bg-slate-200" />
       </div>
 
-      {/* Google Sign In */}
+      {/* Google */}
       <button
         type="button"
         onClick={handleGoogleSignIn}
         disabled={isLoading || isGoogleLoading}
         className={cn(
-          'w-full py-2.5 px-4 rounded-lg font-medium text-sm',
-          'bg-white border border-gray-300 text-gray-700',
-          'hover:bg-gray-50 hover:border-gray-400',
-          'focus:outline-hidden focus:ring-2 focus:ring-gray-500 focus:ring-offset-2',
-          'transition-colors flex items-center justify-center gap-3',
-          'disabled:opacity-50 disabled:cursor-not-allowed'
+          'w-full py-2.5 rounded-[10px] border-[1.5px] border-slate-200 bg-white',
+          'text-sm font-semibold text-slate-900 flex items-center justify-center gap-2.5',
+          'hover:border-slate-400 hover:bg-slate-50 transition-colors',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
         )}
       >
         {isGoogleLoading ? (
           <>
             <IconLoader size={18} className="animate-spin" />
-            Conectando...
+            Conectando…
           </>
         ) : (
           <>
@@ -324,18 +333,13 @@ function LoginForm() {
         )}
       </button>
 
-      {/* Link de registro */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          ¿No tienes una cuenta?{' '}
-          <Link
-            href={AUTH_ROUTES.REGISTER}
-            className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
-          >
-            Regístrate
-          </Link>
-        </p>
-      </div>
+      {/* Footer */}
+      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
+        ¿No tienes cuenta?{' '}
+        <Link href={registroHref} className="text-emerald-600 font-semibold hover:underline">
+          Crea una en segundos
+        </Link>
+      </p>
     </div>
   )
 }
@@ -345,10 +349,8 @@ function LoginForm() {
  */
 function LoginFallback() {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
+    <div className="w-full flex items-center justify-center py-12">
+      <IconLoader size={32} className="animate-spin text-emerald-600" />
     </div>
   )
 }

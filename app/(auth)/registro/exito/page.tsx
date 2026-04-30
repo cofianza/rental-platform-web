@@ -4,7 +4,6 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { IconCheck, IconMail, IconLoader } from '@/components/icons'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
 
@@ -31,11 +30,6 @@ function SuccessContent() {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
-      {/* Logo mobile */}
-      <div className="lg:hidden flex items-center justify-center mb-6">
-        <CofianzaLogo size={36} withText textClassName="text-xl" />
-      </div>
-
       <div className="flex justify-center mb-6">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
           <IconCheck size={32} className="text-green-600" />

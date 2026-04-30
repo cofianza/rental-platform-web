@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { IconCheck, IconX, IconLoader, IconMail } from '@/components/icons'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
 
@@ -57,9 +56,6 @@ function VerifyEmailContent() {
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
       {/* Logo mobile */}
-      <div className="lg:hidden flex items-center justify-center mb-6">
-        <CofianzaLogo size={36} withText textClassName="text-xl" />
-      </div>
 
       {state === 'verifying' && (
         <div className="space-y-4">
