@@ -15,6 +15,10 @@ export interface ICita {
   motivo_cancelacion: string | null
   creado_por: string | null
   confirmado_por: string | null
+  /** Timestamp en que el solicitante acuso recibo de la fecha confirmada.
+   *  NULL = pendiente. Solo relevante cuando hubo reprogramacion (fecha
+   *  confirmada distinta a la propuesta). */
+  acuse_solicitante_at: string | null
   created_at: string
   updated_at: string
   // Relaciones opcionales

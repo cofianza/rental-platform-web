@@ -78,6 +78,15 @@ class CitaService {
     return res.data
   }
 
+  /**
+   * Solicitante acepta la fecha reprogramada. Marca acuse_solicitante_at y
+   * notifica al propietario. Idempotente — si ya estaba acusada, no falla.
+   */
+  async acusarReprogramacion(id: string): Promise<ICita> {
+    const res = await apiClient.post<ICita>(`${this.basePath}/${id}/acusar-reprogramacion`, {})
+    return res.data
+  }
+
   async realizarCita(id: string, notas_propietario?: string): Promise<ICita> {
     const res = await apiClient.post<ICita>(`${this.basePath}/${id}/realizar`, { notas_propietario })
     return res.data

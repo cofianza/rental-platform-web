@@ -79,6 +79,36 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
     }
   }
 
+  const handleAcusarReprogramacion = async (cita: ICita) => {
+    setActionLoading(cita.id)
+    try {
+      await citaService.acusarReprogramacion(cita.id)
+      toast.success('Aceptaste el nuevo horario. El propietario sera notificado.')
+      fetchCitas()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al aceptar el horario'
+      toast.error(msg)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleRechazarReprogramacion = async (cita: ICita) => {
+    setActionLoading(cita.id)
+    try {
+      await citaService.cancelarCita(cita.id, {
+        motivo_cancelacion: 'El solicitante rechazo la fecha reprogramada por el propietario.',
+      })
+      toast.success('Cita cancelada. Puedes solicitar otra fecha.')
+      fetchCitas()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al rechazar el horario'
+      toast.error(msg)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const activeCita = citas.find((c) => c.estado === 'solicitada' || c.estado === 'confirmada')
   const completedCita = citas.find((c) => c.estado === 'realizada')
 
@@ -169,12 +199,15 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
                 key={cita.id}
                 cita={cita}
                 canManage={canManageCitas}
+                isSolicitante={user?.rol === 'solicitante'}
                 isLoading={actionLoading === cita.id}
                 onConfirmar={() => setShowConfirmarModal(cita)}
                 onReprogramar={() => setShowReprogramarModal(cita)}
                 onRealizar={() => handleRealizar(cita)}
                 onCancelar={() => setShowCancelarModal(cita)}
                 onNoAsistio={() => handleNoAsistio(cita)}
+                onAcusarReprogramacion={() => handleAcusarReprogramacion(cita)}
+                onRechazarReprogramacion={() => handleRechazarReprogramacion(cita)}
               />
             ))}
         </div>
@@ -246,23 +279,42 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
 function CitaCard({
   cita,
   canManage,
+  isSolicitante,
   isLoading,
   onConfirmar,
   onReprogramar,
   onRealizar,
   onCancelar,
   onNoAsistio,
+  onAcusarReprogramacion,
+  onRechazarReprogramacion,
 }: {
   cita: ICita
   canManage: boolean
+  isSolicitante?: boolean
   isLoading: boolean
   onConfirmar?: () => void
   onReprogramar?: () => void
   onRealizar?: () => void
   onCancelar?: () => void
   onNoAsistio?: () => void
+  onAcusarReprogramacion?: () => void
+  onRechazarReprogramacion?: () => void
 }) {
   const config = ESTADO_CITA_CONFIG[cita.estado]
+
+  // Reprogramacion pendiente de acuse: el propietario movio la fecha y el
+  // solicitante aun no acepto/rechazo. Se compara por timestamp para no
+  // saltarse cambios solo de zona horaria. Solo aplica si la cita esta
+  // confirmada y la fecha confirmada difiere de la propuesta original.
+  const reprogramacionPendiente =
+    cita.estado === 'confirmada'
+    && cita.fecha_confirmada
+    && cita.fecha_propuesta
+    && new Date(cita.fecha_confirmada).getTime() !== new Date(cita.fecha_propuesta).getTime()
+    && !cita.acuse_solicitante_at
+
+  const showAcuseBanner = isSolicitante && reprogramacionPendiente
 
   return (
     <div className={`border rounded-lg p-4 ${config.bgColor}`}>
@@ -272,6 +324,11 @@ function CitaCard({
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${config.color} ${config.bgColor}`}>
               {config.label}
             </span>
+            {reprogramacionPendiente && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-50 text-amber-800 border-amber-200">
+                Reprogramada — pendiente acuse
+              </span>
+            )}
           </div>
 
           <div className="space-y-1 text-sm">
@@ -297,6 +354,32 @@ function CitaCard({
               <p className="text-red-600 text-xs">Motivo: {cita.motivo_cancelacion}</p>
             )}
           </div>
+
+          {/* Banner: solicitante debe aceptar/rechazar la nueva fecha */}
+          {showAcuseBanner && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
+              <p className="text-sm text-amber-900">
+                <strong>El propietario propuso un horario diferente.</strong> Confirma si te
+                sirve la nueva fecha o rechazala para coordinar otra.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={onAcusarReprogramacion}
+                  disabled={isLoading}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  Aceptar nuevo horario
+                </button>
+                <button
+                  onClick={onRechazarReprogramacion}
+                  disabled={isLoading}
+                  className="px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50 transition-colors"
+                >
+                  Rechazar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
