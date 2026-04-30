@@ -30,6 +30,10 @@ export interface ICita {
     id: string
     numero: string
     estudio_habilitado: boolean
+    /** TRUE cuando el propietario decidio no proceder tras la visita.
+     *  Mutuamente excluyente con estudio_habilitado=true. */
+    estudio_rechazado?: boolean
+    motivo_estudio_rechazado?: string | null
     inmueble: { id: string; direccion: string; ciudad: string } | null
     solicitante: { nombre: string; apellido: string; telefono: string | null } | null
   } | null

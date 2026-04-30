@@ -17,9 +17,23 @@ import { CitaCard } from '@/components/citas/CitaCard'
 import { inmuebleService } from '@/services/inmuebleService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { EstadoCita } from '@/types/cita'
-import { ESTADO_CITA_CONFIG } from '@/types/cita'
 
-const COLUMNAS: EstadoCita[] = ['solicitada', 'confirmada', 'realizada', 'cancelada', 'no_asistio']
+/**
+ * Columnas del kanban. 'sin_estudio' es virtual (no es un EstadoCita real):
+ * agrupa citas realizadas cuyo expediente quedo con estudio_rechazado=true
+ * tras la decision del propietario de no proceder.
+ */
+type ColumnaKey = EstadoCita | 'sin_estudio'
+const COLUMNAS: ColumnaKey[] = ['solicitada', 'confirmada', 'realizada', 'sin_estudio', 'cancelada', 'no_asistio']
+
+const COLUMNA_LABELS: Record<ColumnaKey, { label: string; color: string; bgColor: string }> = {
+  solicitada: { label: 'Solicitada', color: 'text-blue-700', bgColor: 'bg-blue-50' },
+  confirmada: { label: 'Confirmada', color: 'text-amber-700', bgColor: 'bg-amber-50' },
+  realizada: { label: 'Realizada', color: 'text-green-700', bgColor: 'bg-green-50' },
+  sin_estudio: { label: 'Sin estudio', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  cancelada: { label: 'Cancelada', color: 'text-red-700', bgColor: 'bg-red-50' },
+  no_asistio: { label: 'No asistio', color: 'text-gray-700', bgColor: 'bg-gray-50' },
+}
 const ALLOWED_ROLES = ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'] as const
 
 interface InmuebleOption {
@@ -107,17 +121,25 @@ export default function CitasPage() {
     })
   }, [citas])
 
-  // Agrupar citas por estado (los filtros de fecha/inmueble se aplican server-side).
+  // Agrupar citas por columna (los filtros de fecha/inmueble se aplican server-side).
+  // 'sin_estudio' es virtual: realizadas con expediente.estudio_rechazado=true
+  // se separan en su propia columna para que el propietario las distinga de las
+  // pendientes de habilitar.
   const citasPorEstado = useMemo(() => {
-    const grupos: Record<EstadoCita, typeof citas> = {
+    const grupos: Record<ColumnaKey, typeof citas> = {
       solicitada: [],
       confirmada: [],
       realizada: [],
+      sin_estudio: [],
       cancelada: [],
       no_asistio: [],
     }
     for (const c of citas) {
-      grupos[c.estado].push(c)
+      if (c.estado === 'realizada' && c.expediente?.estudio_rechazado) {
+        grupos.sin_estudio.push(c)
+      } else {
+        grupos[c.estado].push(c)
+      }
     }
     return grupos
   }, [citas])
@@ -238,7 +260,7 @@ export default function CitasPage() {
           >
           {COLUMNAS.map((estado) => {
             const items = citasPorEstado[estado]
-            const config = ESTADO_CITA_CONFIG[estado]
+            const config = COLUMNA_LABELS[estado]
             return (
               <div key={estado} className="w-72 shrink-0">
                 <div

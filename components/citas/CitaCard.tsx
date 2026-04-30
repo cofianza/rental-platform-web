@@ -34,7 +34,7 @@ interface CitaCardProps {
   pagoEstudioEstado?: string | null
 }
 
-type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar'
+type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar' | 'no_habilitar'
 
 export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const [action, setAction] = useState<ActionState>('idle')
@@ -48,6 +48,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const [slotElegido, setSlotElegido] = useState<string | null>(null)
   const [notasPropietario, setNotasPropietario] = useState('')
   const [motivoCancelacion, setMotivoCancelacion] = useState('')
+  const [motivoNoHabilitar, setMotivoNoHabilitar] = useState('')
 
   const closeModals = () => {
     setAction('idle')
@@ -55,6 +56,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     setSlotElegido(null)
     setNotasPropietario('')
     setMotivoCancelacion('')
+    setMotivoNoHabilitar('')
   }
 
   const runAction = async (fn: () => Promise<unknown>, successMsg: string) => {
@@ -126,6 +128,14 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleNoHabilitarEstudio = () => {
+    if (!cita.expediente) return
+    return runAction(
+      () => expedienteService.rechazarEstudio(cita.expediente!.id, motivoNoHabilitar.trim() || undefined),
+      'Estudio no habilitado, se notifico al solicitante',
+    )
   }
 
   const expediente = cita.expediente
@@ -266,14 +276,29 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
                 </span>
                 <PagoEstudioPill estado={pagoEstudioEstado} />
               </>
-            ) : (
-              <button
-                onClick={() => setAction('habilitar')}
-                className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center justify-center gap-1"
+            ) : expediente.estudio_rechazado ? (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
+                title={expediente.motivo_estudio_rechazado || 'El propietario decidio no habilitar el estudio.'}
               >
-                <IconShieldCheck size={12} />
-                Habilitar estudio
-              </button>
+                Estudio no habilitado
+              </span>
+            ) : (
+              <>
+                <button
+                  onClick={() => setAction('habilitar')}
+                  className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center justify-center gap-1"
+                >
+                  <IconShieldCheck size={12} />
+                  Habilitar estudio
+                </button>
+                <button
+                  onClick={() => setAction('no_habilitar')}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  No habilitar
+                </button>
+              </>
             )}
           </>
         )}
@@ -460,6 +485,56 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         confirmLabel="Habilitar estudio"
         isLoading={isLoading}
       />
+
+      {/* Modal: No habilitar estudio */}
+      <Modal
+        isOpen={action === 'no_habilitar'}
+        onClose={closeModals}
+        title="No habilitar estudio"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Al confirmar, el solicitante recibira un aviso por correo de que decidiste
+            no continuar con el proceso. Esta accion es irreversible.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Motivo (opcional)
+            </label>
+            <textarea
+              value={motivoNoHabilitar}
+              onChange={(e) => setMotivoNoHabilitar(e.target.value)}
+              rows={3}
+              maxLength={2000}
+              placeholder="Ej: prefiero esperar otro candidato, no me convencio el perfil, etc."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Este texto aparecera en el correo al solicitante.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={closeModals}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleNoHabilitarEstudio}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isLoading && <IconLoader size={14} className="animate-spin" />}
+              Confirmar — no habilitar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

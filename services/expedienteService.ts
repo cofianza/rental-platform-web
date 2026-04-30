@@ -441,6 +441,23 @@ class ExpedienteService {
     }>(`/expedientes/${expedienteId}/habilitar-estudio`, {})
     return response.data
   }
+
+  /**
+   * Caso opuesto: el propietario decide tras la visita no proceder con el
+   * candidato. Marca el expediente como rechazado para estudio y notifica al
+   * solicitante por email + in-app.
+   */
+  async rechazarEstudio(
+    expedienteId: string,
+    motivo?: string,
+  ): Promise<{
+    expediente: { id: string; numero: string; estudio_rechazado: true; motivo: string | null }
+  }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string; estudio_rechazado: true; motivo: string | null }
+    }>(`/expedientes/${expedienteId}/rechazar-estudio`, { motivo })
+    return response.data
+  }
 }
 
 // Instancia singleton
