@@ -5,10 +5,12 @@
 
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui'
 import { IconAlertTriangle, IconRefresh } from '@/components/icons'
 import { useEstudiosList } from '@/hooks/useEstudiosList'
+import { useAuthStore } from '@/stores/auth.store'
 import {
   EstudiosBandejaTabs,
   EstudiosFilters,
@@ -18,6 +20,19 @@ import {
 } from '@/components/estudios'
 
 function EstudiosContent() {
+  const router = useRouter()
+  const userRol = useAuthStore((s) => s.user?.rol)
+  const isInitialized = useAuthStore((s) => s.isInitialized)
+
+  // El solicitante no debe entrar a este listado operativo — ve su estudio
+  // en el detalle del expediente. Si llega por URL directa, lo redirigimos.
+  useEffect(() => {
+    if (!isInitialized) return
+    if (userRol === 'solicitante') {
+      router.replace('/dashboard')
+    }
+  }, [isInitialized, userRol, router])
+
   const {
     estudios,
     meta,

@@ -74,6 +74,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'Shield',
     description: 'Estudios de riesgo crediticio',
     resource: 'estudios',
+    // Pantalla operativa (filtros/bandejas/kanban). El solicitante solo
+    // tiene un estudio — el suyo — y lo ve en el detalle del expediente
+    // donde puede reintentar si fallo.
+    requiredRoles: ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'],
   },
   {
     label: 'Reportes',
