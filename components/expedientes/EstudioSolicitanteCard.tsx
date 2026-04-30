@@ -26,7 +26,11 @@ interface EstudioSolicitanteCardProps {
   onEjecutado?: () => void
 }
 
-type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti' | 'pasaporte'
+// TransUnion Colombia solo soporta documentos colombianos. Pasaporte y otros
+// documentos extranjeros no estan en las centrales de riesgo locales — el
+// estudio falla con 'tercero no existe'. Restringimos las opciones desde
+// el dropdown para evitar el error.
+type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
 
 export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSolicitanteCardProps) {
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
@@ -44,12 +48,14 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       const elegido = activos[0] ?? null
       setEstudio(elegido)
 
-      // Prefill del form (si datos_formulario viene del backend).
+      // Prefill del form (si datos_formulario viene del backend). Si el
+      // formulario inicial trajo 'pasaporte' (registros previos a este fix),
+      // lo mapeamos a 'ce' por defecto — el solicitante puede ajustarlo.
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
       if (datos.tipo_documento) {
         const t = datos.tipo_documento.toLowerCase()
-        if (t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti' || t === 'pasaporte') {
-          setTipoDoc(t)
+        if (t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti') {
+          setTipoDoc(t as TipoDoc)
         }
       }
       if (datos.numero_documento) setNumeroDoc(datos.numero_documento)
@@ -129,7 +135,6 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
               <option value="cc">Cédula de ciudadanía (CC)</option>
               <option value="ce">Cédula de extranjería (CE)</option>
               <option value="ti">Tarjeta de identidad (TI)</option>
-              <option value="pasaporte">Pasaporte</option>
               <option value="nit">NIT</option>
             </select>
           </div>
@@ -150,9 +155,14 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
           </div>
         </div>
 
-        <p className="text-xs text-gray-500 mb-4">
-          Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en el buró de crédito.
-        </p>
+        <div className="text-xs text-gray-500 mb-4 space-y-1">
+          <p>
+            Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en el buró de crédito.
+          </p>
+          <p className="text-amber-700">
+            <strong>Importante:</strong> solo consultamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería (CE).
+          </p>
+        </div>
 
         <button
           onClick={handleEjecutar}

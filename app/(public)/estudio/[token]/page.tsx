@@ -302,9 +302,12 @@ export default function EstudioFormularioPage() {
             >
               <option value="CC">Cedula de Ciudadania</option>
               <option value="CE">Cedula de Extranjeria</option>
+              <option value="TI">Tarjeta de Identidad</option>
               <option value="NIT">NIT</option>
-              <option value="PAS">Pasaporte</option>
             </select>
+            <p className="text-xs text-amber-700 mt-1">
+              Solo aceptamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería.
+            </p>
           </div>
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
