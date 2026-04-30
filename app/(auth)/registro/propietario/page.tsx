@@ -206,13 +206,19 @@ export default function RegisterPropietarioPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-      {/* Logo mobile */}
-
-      <h1 className="text-2xl font-bold text-gray-900 text-center mb-1">
-        Registro Propietario
+    <div className="w-full">
+      <p className="text-xs font-bold tracking-[3px] uppercase text-emerald-600 mb-2">
+        Registro · Propietario
+      </p>
+      <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
+        Crea tu cuenta como Propietario
       </h1>
-      <p className="text-gray-500 text-center text-sm mb-6">Persona natural</p>
+      <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
+        Persona natural que administra sus propiedades.{' '}
+        <a href="/registro" className="text-emerald-600 font-semibold hover:underline">
+          ¿Otro tipo?
+        </a>
+      </p>
 
       <StepIndicator currentStep={step} />
 
@@ -446,14 +452,17 @@ export default function RegisterPropietarioPage() {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isLoading ? (
               <>
                 <IconLoader size={16} className="animate-spin" /> Registrando...
               </>
             ) : (
-              'Registrarme'
+              <>
+                Crear mi cuenta
+                <IconArrowRight size={16} />
+              </>
             )}
           </button>
         )}

@@ -586,6 +586,7 @@ export const AUTH_ROUTES = {
   REGISTER: '/registro',
   REGISTER_PROPIETARIO: '/registro/propietario',
   REGISTER_INMOBILIARIA: '/registro/inmobiliaria',
+  REGISTER_SOLICITANTE: '/registro/solicitante',
   REGISTER_SUCCESS: '/registro/exito',
   VERIFY_EMAIL: '/verificar-email',
   FORGOT_PASSWORD: '/recuperar-contrasena',
