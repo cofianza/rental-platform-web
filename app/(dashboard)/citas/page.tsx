@@ -228,9 +228,14 @@ export default function CitasPage() {
         />
       )}
 
-      {/* Kanban */}
+      {/* Kanban — scroll horizontal forzado para que se vean los 5 estados.
+          Wrapper con fade en el borde derecho para indicar visualmente que
+          hay mas contenido fuera del viewport en pantallas angostas. */}
       {!isLoading && totalCitas > 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
+        <div className="relative -mx-4">
+          <div
+            className="flex gap-4 overflow-x-scroll pb-3 px-4 [scrollbar-color:theme(colors.gray.300)_theme(colors.gray.100)] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+          >
           {COLUMNAS.map((estado) => {
             const items = citasPorEstado[estado]
             const config = ESTADO_CITA_CONFIG[estado]
@@ -272,6 +277,11 @@ export default function CitasPage() {
               </div>
             )
           })}
+          </div>
+          {/* Fade en el borde derecho para hint visual de scroll. pointer-events-none
+              evita que tape los clicks de las cards. Solo en >= sm (mobile usa el
+              swipe nativo y no necesita ayuda visual). */}
+          <div className="hidden sm:block absolute top-0 right-0 bottom-3 w-12 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none" />
         </div>
       )}
     </div>
