@@ -48,17 +48,17 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       const elegido = activos[0] ?? null
       setEstudio(elegido)
 
-      // Prefill del form (si datos_formulario viene del backend). Si el
-      // formulario inicial trajo 'pasaporte' (registros previos a este fix),
-      // lo mapeamos a 'ce' por defecto — el solicitante puede ajustarlo.
+      // Prefill del form (si datos_formulario viene del backend). Si el tipo
+      // anterior era no soportado (eg. 'pasaporte' de registros previos a la
+      // restriccion CO), NO prefilamos ni el tipo ni el numero — forzamos al
+      // solicitante a elegir un documento valido en el reintento.
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
-      if (datos.tipo_documento) {
-        const t = datos.tipo_documento.toLowerCase()
-        if (t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti') {
-          setTipoDoc(t as TipoDoc)
-        }
+      const t = datos.tipo_documento?.toLowerCase()
+      const tipoValido = t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti'
+      if (tipoValido) {
+        setTipoDoc(t as TipoDoc)
+        if (datos.numero_documento) setNumeroDoc(datos.numero_documento)
       }
-      if (datos.numero_documento) setNumeroDoc(datos.numero_documento)
     } catch {
       setEstudio(null)
     } finally {
@@ -111,12 +111,31 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
     return null
   }
 
-  // Form "Confirma tu cédula y envía".
-  if (estudio.estado === 'formulario_completado' || estudio.estado === 'formulario_enviado' || estudio.estado === 'documentos_cargados') {
+  // Form "Confirma tu cédula y envía". Tambien aplica a 'fallido' para que
+  // el solicitante pueda corregir el documento (eg. uso pasaporte extranjero
+  // y necesita cambiar a CC) y reintentar sobre el mismo estudio.
+  const enFormulario = estudio.estado === 'formulario_completado'
+    || estudio.estado === 'formulario_enviado'
+    || estudio.estado === 'documentos_cargados'
+    || estudio.estado === 'fallido'
+
+  if (enFormulario) {
     const canSubmit = numeroDoc.trim().length >= 5 && !submitting
+    const esReintento = estudio.estado === 'fallido'
     return (
-      <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-1">Confirma tus datos para el estudio crediticio</h3>
+      <div className={`border-2 rounded-lg p-6 ${esReintento ? 'border-red-200 bg-red-50/40' : 'border-primary-200 bg-primary-50/40'}`}>
+        {esReintento && (
+          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior fallo</p>
+            <p className="text-sm text-red-800">
+              Verifica que tu tipo y numero de documento sean correctos. Cofianza solo
+              consulta documentos colombianos (CC, CE, TI, NIT).
+            </p>
+          </div>
+        )}
+        <h3 className="text-base font-semibold text-gray-900 mb-1">
+          {esReintento ? 'Corrige tus datos y reintenta' : 'Confirma tus datos para el estudio crediticio'}
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
           Al hacer click en <strong>Enviar</strong>, consultaremos tu historial crediticio con <strong>TransUnion</strong>. El resultado llega en unos minutos.
         </p>
@@ -175,7 +194,9 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
               <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
             </svg>
           )}
-          {submitting ? 'Enviando...' : 'Enviar para estudio'}
+          {submitting
+            ? (esReintento ? 'Reintentando...' : 'Enviando...')
+            : (esReintento ? 'Reintentar estudio' : 'Enviar para estudio')}
         </button>
       </div>
     )
@@ -257,23 +278,7 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
   }
 
   // Fallido → ofrecer reintento.
-  if (estudio.estado === 'fallido') {
-    return (
-      <div className="border border-red-200 bg-red-50 rounded-lg p-5">
-        <p className="text-sm font-semibold text-red-900 mb-1">No pudimos completar el estudio</p>
-        <p className="text-sm text-red-800 mb-3">
-          Hubo un problema técnico consultando TransUnion. Puedes intentarlo de nuevo.
-        </p>
-        <button
-          onClick={handleEjecutar}
-          disabled={submitting}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-        >
-          {submitting ? 'Reintentando...' : 'Reintentar estudio'}
-        </button>
-      </div>
-    )
-  }
+  // 'fallido' ya se maneja en el bloque de formulario arriba (enFormulario).
 
   return null
 }
