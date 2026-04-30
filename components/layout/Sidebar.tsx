@@ -14,6 +14,7 @@ import { ICON_MAP } from '@/components/icons'
 import { IconChevronRight, IconChevronDown, IconX, IconLogOut, IconGlobe } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn } from '@/lib/utils'
 
 export function Sidebar() {
@@ -98,12 +99,10 @@ export function Sidebar() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           {/* Logo - Completo en mobile y desktop expandido, solo icono en tablet y desktop colapsado */}
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0">
-              HP
-            </div>
+            <CofianzaLogo size={28} />
             <span
               className={cn(
-                'font-semibold text-gray-900 truncate',
+                'font-bold text-gray-900 truncate text-lg tracking-tight',
                 // Mobile: siempre visible
                 // Tablet (md:): oculto
                 // Desktop (lg:): visible solo si expandido
@@ -111,7 +110,7 @@ export function Sidebar() {
                 sidebarExpanded && 'lg:block'
               )}
             >
-              Cofianza
+              cofianza
             </span>
           </div>
 

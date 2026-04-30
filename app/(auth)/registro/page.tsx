@@ -2,19 +2,15 @@
 
 import Link from 'next/link'
 import { IconUser, IconBuilding2 } from '@/components/icons'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { AUTH_ROUTES } from '@/lib/constants'
 
 export default function RegisterTypeSelectorPage() {
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
       {/* Logo mobile */}
-      <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-        <div className="w-10 h-10 bg-primary-700 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">HP</span>
-        </div>
-        <span className="text-xl font-semibold text-primary-700">
-          Cofianza
-        </span>
+      <div className="lg:hidden flex items-center justify-center mb-8">
+        <CofianzaLogo size={36} withText textClassName="text-xl" />
       </div>
 
       <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">

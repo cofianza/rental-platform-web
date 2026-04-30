@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 
 export default function AuthLayout({
   children,
@@ -16,13 +17,8 @@ export default function AuthLayout({
       {/* Columna izquierda - Branding (oculta en mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary-700 flex-col justify-between p-12">
         {/* Logo — click vuelve a la landing */}
-        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-700 font-bold text-xl">
-            C
-          </div>
-          <span className="text-white font-semibold text-xl">
-            Cofianza
-          </span>
+        <Link href="/" className="hover:opacity-90 transition-opacity">
+          <CofianzaLogo size={36} withText invert textClassName="text-2xl" />
         </Link>
 
         {/* Contenido hero */}

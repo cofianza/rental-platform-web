@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX } from '@/components/icons'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -133,11 +134,9 @@ function ResetPasswordForm() {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full">
         {/* Logo (solo visible en mobile) */}
-        <div className="text-center mb-8 lg:hidden">
-          <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-4">
-            HP
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Cofianza</h1>
+        <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
+          <CofianzaLogo size={56} />
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
         </div>
 
         <div className="text-center">
@@ -178,11 +177,9 @@ function ResetPasswordForm() {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full">
         {/* Logo (solo visible en mobile) */}
-        <div className="text-center mb-8 lg:hidden">
-          <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-4">
-            HP
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Cofianza</h1>
+        <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
+          <CofianzaLogo size={56} />
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
         </div>
 
         <div className="text-center">
@@ -216,11 +213,9 @@ function ResetPasswordForm() {
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
       {/* Logo (solo visible en mobile) */}
-      <div className="text-center mb-8 lg:hidden">
-        <div className="mx-auto w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mb-4">
-          HP
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Cofianza</h1>
+      <div className="text-center mb-8 lg:hidden flex flex-col items-center gap-2">
+        <CofianzaLogo size={56} />
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">cofianza</h1>
       </div>
 
       {/* Título */}

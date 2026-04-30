@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconUser } from '@/components/icons'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 
 interface PublicNavbarProps {
   /** Cuando es true, los links a secciones envian a la home (#anchor); cuando es false, los renderiza como anclas locales (#anchor). */
@@ -34,12 +35,7 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">C</span>
-          </div>
-          <span className="text-xl font-bold text-gray-900">
-            <span className="text-primary-600">co</span>fianza
-          </span>
+          <CofianzaLogo size={32} withText textClassName="text-xl" />
         </Link>
 
         {/* Nav links — desktop only */}

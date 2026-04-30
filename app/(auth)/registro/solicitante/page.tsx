@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
@@ -179,10 +180,7 @@ function RegistroSolicitanteContent() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
-            </div>
-            <span className="text-lg font-semibold text-gray-900">Cofianza</span>
+            <CofianzaLogo size={32} withText textClassName="text-lg" />
           </Link>
         </div>
       </header>

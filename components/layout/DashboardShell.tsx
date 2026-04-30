@@ -7,6 +7,7 @@
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
+import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { DashboardLayoutWrapper } from './DashboardLayoutWrapper'
@@ -27,9 +28,7 @@ export function DashboardShell({ children }: Props) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-            HP
-          </div>
+          <CofianzaLogo size={48} />
           <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
         </div>
       </div>
