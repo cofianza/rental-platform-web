@@ -463,6 +463,21 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     faltantes: string[]
     datos: IDatosFiscalesPagoFactura
   } | null>(null)
+  /** Modal de confirmacion previo a emitir: muestra los datos que se usaran
+   *  para que el solicitante verifique o ajuste antes de tocar Factus. */
+  const [confirmModal, setConfirmModal] = useState<{
+    datos: {
+      nombre_completo: string
+      tipo_documento: string
+      numero_documento: string
+      email: string
+      telefono: string
+      direccion: string
+      municipio_codigo: string
+      municipio_nombre: string
+    }
+    monto: number
+  } | null>(null)
   const [facturando, setFacturando] = useState(false)
   const [facturaIdEmitida, setFacturaIdEmitida] = useState<string | null>(facturaExistente?.id || null)
 
@@ -473,11 +488,13 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       toast.success(`Factura emitida${factura.numero ? `: ${factura.numero}` : ''}`)
       setFacturaIdEmitida(factura.id)
       setFacturaModal(null)
+      setConfirmModal(null)
       return true
     } catch (err: unknown) {
       const e = err as { code?: string; details?: { faltantes?: string[] }; message?: string }
       if (e.code === 'CLIENTE_DATOS_INCOMPLETOS' && Array.isArray(e.details?.faltantes)) {
         setFacturaModal({ faltantes: e.details!.faltantes!, datos: datos || {} })
+        setConfirmModal(null)
         return false
       }
       toast.error(e.message || 'Error al emitir la factura')
@@ -485,13 +502,60 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     }
   }
 
+  // Click inicial: pide preview al backend y abre modal de confirmacion.
+  // Si faltan datos, abre el form de captura directamente.
   const handleFacturarClick = async () => {
+    if (!pagoId) return
     setFacturando(true)
     try {
+      const preview = await facturacionService.previewFacturaPago(pagoId)
+      if (preview.ya_emitida && preview.factura_id) {
+        setFacturaIdEmitida(preview.factura_id)
+        toast.message('La factura ya estaba emitida.')
+        return
+      }
+      if (preview.faltantes.length > 0) {
+        // Faltan datos: abrir form de captura (FacturaModal existente).
+        setFacturaModal({ faltantes: preview.faltantes, datos: {} })
+        return
+      }
+      // Datos completos: abrir modal de confirmacion para que verifique.
+      setConfirmModal({ datos: preview.datos_actuales, monto: preview.monto })
+    } catch (err: unknown) {
+      const e = err as { message?: string }
+      toast.error(e.message || 'No pudimos cargar los datos de facturacion')
+    } finally {
+      setFacturando(false)
+    }
+  }
+
+  const handleConfirmEmitir = async () => {
+    setFacturando(true)
+    try {
+      // Sin datos -> backend usa los del solicitante (mismos del preview).
       await tryFacturar()
     } finally {
       setFacturando(false)
     }
+  }
+
+  const handleAjustarDesdeConfirm = () => {
+    // Permite editar los datos antes de emitir. Usamos FacturaModal con
+    // todos los campos como "faltantes" para que el form los muestre todos.
+    if (!confirmModal) return
+    setFacturaModal({
+      faltantes: ['numero_documento', 'email', 'telefono', 'direccion', 'municipio_codigo'],
+      datos: {
+        numero_documento: confirmModal.datos.numero_documento,
+        tipo_documento: confirmModal.datos.tipo_documento,
+        nombre_completo: confirmModal.datos.nombre_completo,
+        direccion: confirmModal.datos.direccion,
+        email: confirmModal.datos.email,
+        telefono: confirmModal.datos.telefono,
+        municipio_codigo: confirmModal.datos.municipio_codigo,
+      },
+    })
+    setConfirmModal(null)
   }
 
   const handleSubmitFacturaModal = async () => {
@@ -574,6 +638,25 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
               onChange={(d) => setFacturaModal({ ...facturaModal, datos: d })}
               onSubmit={handleSubmitFacturaModal}
               onCancel={() => setFacturaModal(null)}
+              loading={facturando}
+            />
+          )}
+        </Modal>
+
+        {/* Modal de confirmacion previo a emitir — muestra los datos y permite ajustar */}
+        <Modal
+          isOpen={!!confirmModal}
+          onClose={() => !facturando && setConfirmModal(null)}
+          title="Confirma los datos de tu factura"
+          size="md"
+        >
+          {confirmModal && (
+            <ConfirmFacturaModal
+              datos={confirmModal.datos}
+              monto={confirmModal.monto}
+              onConfirmar={handleConfirmEmitir}
+              onAjustar={handleAjustarDesdeConfirm}
+              onCancelar={() => setConfirmModal(null)}
               loading={facturando}
             />
           )}
@@ -813,6 +896,120 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
           Emitir factura
         </button>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// Modal de confirmacion previo a emitir factura
+// ============================================
+
+const TIPO_DOC_LABEL: Record<string, string> = {
+  cc: 'Cédula de Ciudadanía',
+  ce: 'Cédula de Extranjería',
+  ti: 'Tarjeta de Identidad',
+  nit: 'NIT',
+  pasaporte: 'Pasaporte',
+}
+
+function ConfirmFacturaModal({
+  datos,
+  monto,
+  onConfirmar,
+  onAjustar,
+  onCancelar,
+  loading,
+}: {
+  datos: {
+    nombre_completo: string
+    tipo_documento: string
+    numero_documento: string
+    email: string
+    telefono: string
+    direccion: string
+    municipio_codigo: string
+    municipio_nombre: string
+  }
+  monto: number
+  onConfirmar: () => void | Promise<void>
+  onAjustar: () => void
+  onCancelar: () => void
+  loading: boolean
+}) {
+  const tipoDocLabel = TIPO_DOC_LABEL[datos.tipo_documento?.toLowerCase()] || datos.tipo_documento || '—'
+  const formattedMonto = monto > 0
+    ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(monto)
+    : ''
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600">
+        Vamos a emitir tu factura electrónica con los datos de tu registro.
+        Verifica que sean correctos — la factura no puede modificarse después de emitirse.
+      </p>
+
+      {formattedMonto && (
+        <div className="px-3 py-2 bg-primary-50 border border-primary-200 rounded text-sm">
+          <p className="text-xs text-primary-700">Monto a facturar:</p>
+          <p className="font-semibold text-primary-900">{formattedMonto}</p>
+        </div>
+      )}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg divide-y divide-gray-200">
+        <DataRow label="Nombre" value={datos.nombre_completo || '—'} />
+        <DataRow label="Tipo de documento" value={tipoDocLabel} />
+        <DataRow label="Número de documento" value={datos.numero_documento || '—'} />
+        <DataRow label="Email" value={datos.email || '—'} />
+        <DataRow label="Teléfono" value={datos.telefono || '—'} />
+        <DataRow label="Dirección" value={datos.direccion || '—'} />
+        <DataRow
+          label="Municipio"
+          value={
+            datos.municipio_nombre
+              ? `${datos.municipio_nombre}${datos.municipio_codigo ? ` (${datos.municipio_codigo})` : ''}`
+              : datos.municipio_codigo || '—'
+          }
+        />
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
+        <button
+          onClick={onCancelar}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={onAjustar}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+        >
+          Ajustar datos
+        </button>
+        <button
+          onClick={onConfirmar}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading && (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+            </svg>
+          )}
+          Confirmar y emitir
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function DataRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 px-3 py-2 text-sm">
+      <span className="text-gray-500 shrink-0">{label}</span>
+      <span className="text-gray-900 font-medium text-right break-words">{value}</span>
     </div>
   )
 }

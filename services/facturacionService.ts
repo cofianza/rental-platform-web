@@ -216,6 +216,52 @@ class FacturacionService {
   }
 
   /**
+   * Devuelve los datos fiscales que se usarian para emitir la factura, sin
+   * tocar Factus. El frontend los muestra en un modal de confirmacion para
+   * que el usuario verifique o ajuste antes de la emision real.
+   */
+  async previewFacturaPago(pagoId: string): Promise<{
+    ya_emitida: boolean
+    factura_id?: string
+    factura_numero?: string | null
+    datos_actuales: {
+      nombre_completo: string
+      tipo_documento: string
+      numero_documento: string
+      email: string
+      telefono: string
+      direccion: string
+      municipio_codigo: string
+      municipio_nombre: string
+    }
+    faltantes: string[]
+    monto: number
+    concepto: string
+  }> {
+    const response = (await apiClient.get(`/pagos/${pagoId}/factura/preview`)) as unknown as {
+      data: {
+        ya_emitida: boolean
+        factura_id?: string
+        factura_numero?: string | null
+        datos_actuales: {
+          nombre_completo: string
+          tipo_documento: string
+          numero_documento: string
+          email: string
+          telefono: string
+          direccion: string
+          municipio_codigo: string
+          municipio_nombre: string
+        }
+        faltantes: string[]
+        monto: number
+        concepto: string
+      }
+    }
+    return response.data
+  }
+
+  /**
    * Dispara la creación de factura para un pago confirmado.
    * Si vienen `datosFiscales` en el body, el backend valida estricto y
    * lanza CLIENTE_DATOS_INCOMPLETOS con `details.faltantes` si falta algun
