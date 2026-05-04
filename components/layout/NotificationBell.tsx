@@ -21,10 +21,15 @@ const TIPO_ICON: Record<string, string> = {
   'cita.solicitada': '📅',
   'cita.confirmada': '✅',
   'cita.reprogramada': '🔁',
+  'cita.cancelada': '❌',
+  'cita.acuse_solicitante': '👍',
+  'estudio.habilitado': '🛡️',
   'estudio.aprobado': '🎉',
   'estudio.rechazado': '⚠️',
-  'contrato.vigente': '📄',
+  'pago.disponible': '💳',
   'pago.confirmado': '💳',
+  'contrato.pendiente_firma': '✍️',
+  'contrato.vigente': '📄',
 }
 
 function formatRelativeTime(iso: string): string {
