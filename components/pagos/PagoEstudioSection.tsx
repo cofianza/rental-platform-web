@@ -481,6 +481,18 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   const [facturando, setFacturando] = useState(false)
   const [facturaIdEmitida, setFacturaIdEmitida] = useState<string | null>(facturaExistente?.id || null)
 
+  // Sincronizar el state local cuando el backend reporta una factura emitida.
+  // Sin este efecto, useState(facturaExistente?.id) solo evalua al montar — si
+  // estado.pago.factura llega despues del primer render (lo normal: el padre
+  // hace fetch async), el boton seguia mostrando "Facturar" hasta que el usuario
+  // lo presionaba y recibia "La factura ya estaba emitida". Ahora la UI se
+  // ajusta sola en cuanto el backend trae el dato.
+  useEffect(() => {
+    if (facturaExistente?.id && facturaExistente.id !== facturaIdEmitida) {
+      setFacturaIdEmitida(facturaExistente.id)
+    }
+  }, [facturaExistente?.id, facturaIdEmitida])
+
   const tryFacturar = async (datos?: IDatosFiscalesPagoFactura): Promise<boolean> => {
     if (!pagoId) return false
     try {
