@@ -61,13 +61,10 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'disponibilidad',
     requiredRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
-  {
-    label: 'Contratos',
-    href: '/contratos',
-    icon: 'FileText',
-    description: 'Gestion de contratos',
-    resource: 'contratos',
-  },
+  // 'Contratos' como tab del sidebar quedo deprecado: el detalle de cada
+  // contrato (PDF, version, estado, firma) ya esta en la pestana 'Contratos'
+  // del expediente, donde se ve en el contexto correcto. La ruta /contratos
+  // sigue accesible directo via URL pero no la exponemos en navegacion.
   {
     label: 'Estudios',
     href: '/estudios',
