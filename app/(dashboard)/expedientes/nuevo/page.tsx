@@ -5,7 +5,9 @@
 
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   WizardStepIndicator,
   WizardNavigation,
@@ -15,9 +17,29 @@ import {
   Step4Confirmation,
 } from '@/components/expedientes/wizard'
 import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
+import { inmuebleService } from '@/services/inmuebleService'
+import { expedienteService } from '@/services/expedienteService'
 
+// useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
+// el render bloqueante no rompa el static export. Wrapper minimo.
 export default function NuevoExpedientePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <NuevoExpedienteContent />
+    </Suspense>
+  )
+}
+
+function NuevoExpedienteContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const inmueblePreseleccionId = searchParams.get('inmueble_id')
 
   const {
     currentStep,
@@ -27,6 +49,7 @@ export default function NuevoExpedientePage() {
     submitError,
     nextStep,
     prevStep,
+    goToStep,
     updateStep1,
     updateStep2,
     updateStep2Field,
@@ -34,6 +57,38 @@ export default function NuevoExpedientePage() {
     canProceed,
     submitExpediente,
   } = useExpedienteWizard()
+
+  // Pre-seleccion del inmueble cuando se llega via /expedientes/nuevo?inmueble_id=X
+  // (eg. desde la pagina de detalle de inmueble). Hace fetch del inmueble +
+  // check de expediente activo y avanza al step 2 — el usuario no tiene que
+  // volver a buscar lo que ya eligio.
+  const prefillRanRef = useRef(false)
+  const [prefillLoading, setPrefillLoading] = useState(false)
+  useEffect(() => {
+    if (!inmueblePreseleccionId || prefillRanRef.current) return
+    prefillRanRef.current = true
+    setPrefillLoading(true)
+    ;(async () => {
+      try {
+        const inmueble = await inmuebleService.getInmuebleById(inmueblePreseleccionId)
+        let hasActiveExpediente = false
+        try {
+          const check = await expedienteService.checkActiveExpediente(inmueble.id)
+          hasActiveExpediente = !!check.hasActiveExpediente
+        } catch {
+          // Falla no bloqueante: el step 1 ya valida.
+        }
+        updateStep1({ inmueble, hasActiveExpediente })
+        goToStep(2)
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : 'No pudimos cargar el inmueble seleccionado',
+        )
+      } finally {
+        setPrefillLoading(false)
+      }
+    })()
+  }, [inmueblePreseleccionId, updateStep1, goToStep])
 
   // Manejar cancelar
   const handleCancel = () => {
@@ -104,7 +159,14 @@ export default function NuevoExpedientePage() {
 
         {/* Contenido del paso */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          {renderStep()}
+          {prefillLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-500">Cargando inmueble seleccionado...</p>
+            </div>
+          ) : (
+            renderStep()
+          )}
         </div>
 
         {/* Navegacion (no mostrar en paso 4 porque tiene su propio boton) */}
