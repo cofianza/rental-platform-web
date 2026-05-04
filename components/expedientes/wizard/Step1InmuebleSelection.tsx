@@ -18,6 +18,7 @@ import {
 import { formatCurrency } from '@/lib/constants'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
@@ -31,12 +32,20 @@ interface Step1InmuebleSelectionProps {
 
 const DEBOUNCE_MS = 300
 const MIN_SEARCH_CHARS = 2
+// Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
+// mas, los excedentes se encuentran via el buscador como antes.
+const MIS_INMUEBLES_LIMIT = 50
 
 export function Step1InmuebleSelection({
   data,
   errors,
   onUpdate,
 }: Step1InmuebleSelectionProps) {
+  const userRol = useAuthStore((s) => s.user?.rol)
+  // Propietario/inmobiliaria ven dropdown directo con sus propios inmuebles.
+  // Admin/operador siempre usan el buscador (catalogo completo).
+  const usaDropdownPropios = userRol === 'propietario' || userRol === 'inmobiliaria'
+
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<IInmueble[]>([])
@@ -47,8 +56,34 @@ export function Step1InmuebleSelection({
     estado: string
   } | null>(null)
 
+  // "Mis inmuebles" — solo para propietario/inmobiliaria. El backend ya
+  // filtra automaticamente por propietario_id = req.user.id en este rol.
+  const [misInmuebles, setMisInmuebles] = useState<IInmueble[]>([])
+  const [isLoadingMios, setIsLoadingMios] = useState(false)
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Fetch de "mis inmuebles" al montar (solo si aplica al rol).
+  useEffect(() => {
+    if (!usaDropdownPropios) return
+    let cancelled = false
+    setIsLoadingMios(true)
+    inmuebleService
+      .getInmuebles({ estado: 'disponible', limit: MIS_INMUEBLES_LIMIT })
+      .then((res) => {
+        if (!cancelled) setMisInmuebles(res.data)
+      })
+      .catch(() => {
+        // Falla no bloqueante — el buscador sigue funcionando como fallback.
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingMios(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [usaDropdownPropios])
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -155,9 +190,49 @@ export function Step1InmuebleSelection({
         </p>
       </div>
 
-      {/* Si no hay inmueble seleccionado, mostrar buscador */}
+      {/* Si no hay inmueble seleccionado, mostrar selector */}
       {!data.inmueble ? (
-        <div className="relative" ref={dropdownRef}>
+        <div className="space-y-4">
+          {/* Quick-pick: dropdown nativo con "Mis inmuebles" para propietario
+              e inmobiliaria. Aparece arriba del buscador para que en el caso
+              comun (pocos inmuebles propios) elijan en un solo click. */}
+          {usaDropdownPropios && (
+            <div>
+              <label htmlFor="mis-inmuebles-select" className="block text-sm font-medium text-gray-700 mb-1">
+                Mis inmuebles disponibles
+              </label>
+              <select
+                id="mis-inmuebles-select"
+                disabled={isLoadingMios || misInmuebles.length === 0}
+                value=""
+                onChange={(e) => {
+                  const id = e.target.value
+                  if (!id) return
+                  const inmueble = misInmuebles.find((i) => i.id === id)
+                  if (inmueble) handleSelectInmueble(inmueble)
+                }}
+                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+              >
+                <option value="">
+                  {isLoadingMios
+                    ? 'Cargando tus inmuebles...'
+                    : misInmuebles.length === 0
+                      ? 'No tienes inmuebles disponibles'
+                      : `Selecciona uno de tus ${misInmuebles.length} inmuebles disponibles...`}
+                </option>
+                {misInmuebles.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.codigo} — {i.direccion}, {i.ciudad}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1.5">
+                ¿No lo encuentras aquí? Usa el buscador de abajo para ver el catálogo completo.
+              </p>
+            </div>
+          )}
+
+          <div className="relative" ref={dropdownRef}>
           {/* Input de busqueda */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -244,6 +319,7 @@ export function Step1InmuebleSelection({
           {errors.inmueble && (
             <p className="mt-2 text-sm text-red-600">{errors.inmueble}</p>
           )}
+          </div>
         </div>
       ) : (
         // Inmueble seleccionado - mostrar card
