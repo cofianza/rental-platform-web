@@ -53,7 +53,6 @@ export default function ContratoDetallePage() {
   const [transicionLoading, setTransicionLoading] = useState(false)
   const [historialOpen, setHistorialOpen] = useState(false)
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
-  const [variablesOpen, setVariablesOpen] = useState(false)
   const [renewLoading, setRenewLoading] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
@@ -230,10 +229,6 @@ export default function ContratoDetallePage() {
   }
 
   const estadoConfig = ESTADOS_CONTRATO[contrato.estado as EstadoContratoKey]
-  // datos_variables tiene shape anidado en V2 (arrendador.razon_social,
-  // canon.valor_letras, etc). Aplanamos a "padre.hijo: valor" para poder
-  // listarlo. Si fuera plano (legacy) el flatten devuelve igual.
-  const variableEntries = flattenVariables(contrato.datos_variables || {})
 
   return (
     <div className="space-y-6">
@@ -421,39 +416,9 @@ export default function ContratoDetallePage() {
         </div>
       </div>
 
-      {/* Variables section (collapsible) */}
-      {variableEntries.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200">
-          <button
-            onClick={() => setVariablesOpen(!variablesOpen)}
-            className="w-full flex items-center justify-between px-5 py-4"
-          >
-            <h3 className="text-sm font-semibold text-gray-900">
-              Variables Utilizadas ({variableEntries.length})
-            </h3>
-            <IconChevronRight
-              size={16}
-              className={`text-gray-400 transition-transform ${variablesOpen ? 'rotate-90' : ''}`}
-            />
-          </button>
-          {variablesOpen && (
-            <div className="px-5 pb-5">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <dl className="grid grid-cols-1 gap-2 text-sm">
-                  {variableEntries.map(([key, value]) => (
-                    <div key={key} className="flex items-start gap-3">
-                      <dt className="font-mono text-xs px-2 py-0.5 rounded bg-teal-100 text-teal-800 shrink-0">
-                        {`{{${key}}}`}
-                      </dt>
-                      <dd className="text-gray-700">{value || '(vacio)'}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Variables section eliminada — eran info interna del template
+          (placeholders {{...}}) que no aporta al usuario final que ve el
+          contrato renderizado en el PDF. */}
 
       {/* Version history section */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -504,26 +469,3 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-/**
- * Aplana datos_variables del contrato para listar como tabla.
- * V2 tiene shape anidado ({arrendador: {...}, canon: {...}}); convertimos
- * a entries planos "padre.hijo" -> string. Boolean/null se renderizan
- * con su representacion textual.
- */
-function flattenVariables(
-  obj: Record<string, unknown>,
-  prefix = '',
-): [string, string][] {
-  const out: [string, string][] = []
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k
-    if (v === null || v === undefined) {
-      out.push([key, ''])
-    } else if (typeof v === 'object' && !Array.isArray(v)) {
-      out.push(...flattenVariables(v as Record<string, unknown>, key))
-    } else {
-      out.push([key, String(v)])
-    }
-  }
-  return out
-}

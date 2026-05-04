@@ -35,7 +35,12 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
   const [verificacion, setVerificacion] = useState<IContratoVerificacionIntegridad | null>(null)
   const [verificacionLoading, setVerificacionLoading] = useState(false)
 
-  const tieneFirmado = !!contrato.firmado_storage_key
+  // Estados donde Auco ya firmo (o el admin subio firmado manual). Aunque
+  // firmado_storage_key este vacio, el backend lo genera al vuelo combinando
+  // el contrato original + acuses de Auco en la primera descarga.
+  const FIRMADO_ESTADOS = ['firmado', 'vigente', 'finalizado']
+  const contratoFirmado = FIRMADO_ESTADOS.includes(contrato.estado)
+  const tieneFirmado = !!contrato.firmado_storage_key || contratoFirmado
 
   async function handleDescargar() {
     setDownloadLoading(true)
@@ -47,6 +52,12 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
+      // Si era la primera descarga (Auco firmo pero no habia firmado_storage_key
+      // hasta este momento), refrescamos para que la card muestre el detalle
+      // completo (hash, tamano, etc.) en lugar del mensaje generico.
+      if (!contrato.firmado_storage_key) {
+        onContratoUpdated()
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al descargar'
       toast.error(message)
@@ -81,13 +92,16 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
     }
   }
 
-  // Auto-load info when firmado exists
+  // Auto-load info when firmado_storage_key exists. Si el estado es firmado
+  // pero firmado_storage_key esta vacio (Auco firmo, aun no se descarga),
+  // saltamos el load — getInfoFirma devolveria nada util hasta que la
+  // descarga genere el combinado.
   useEffect(() => {
-    if (tieneFirmado && !infoFirma && !infoLoading) {
+    if (contrato.firmado_storage_key && !infoFirma && !infoLoading) {
       handleLoadInfo()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tieneFirmado])
+  }, [contrato.firmado_storage_key])
 
   function formatBytes(bytes: number | null): string {
     if (!bytes) return '—'
@@ -110,35 +124,56 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
 
       {tieneFirmado ? (
         <div className="space-y-4">
-          {/* File info */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Archivo</span>
-              <span className="font-medium text-gray-900 text-right max-w-[200px] truncate">
-                {contrato.firmado_nombre_archivo || 'firmado.pdf'}
-              </span>
+          {/* Caso 1: Auco firmo pero aun no se ha generado el PDF combinado.
+              Mostramos un banner verde con CTA para descargar. La descarga
+              dispara la generacion lazy en backend y refresca la vista. */}
+          {!contrato.firmado_storage_key && contratoFirmado && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <IconCheck size={18} className="text-green-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-900">
+                    Contrato firmado electrónicamente con Auco
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    El documento con los acuses de firma está listo para descargar.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Tamaño</span>
-              <span className="font-medium text-gray-900">
-                {formatBytes(contrato.firmado_tamano_bytes)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Subido</span>
-              <span className="font-medium text-gray-900">
-                {contrato.firmado_subido_en ? formatDateTime(contrato.firmado_subido_en) : '—'}
-              </span>
-            </div>
-            {infoFirma?.firmado_subido_por && (
+          )}
+
+          {/* File info — solo cuando ya tenemos el PDF combinado generado */}
+          {contrato.firmado_storage_key && (
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Subido por</span>
-                <span className="font-medium text-gray-900">
-                  {infoFirma.firmado_subido_por.nombre} {infoFirma.firmado_subido_por.apellido}
+                <span className="text-gray-500">Archivo</span>
+                <span className="font-medium text-gray-900 text-right max-w-[200px] truncate">
+                  {contrato.firmado_nombre_archivo || 'firmado.pdf'}
                 </span>
               </div>
-            )}
-          </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Tamaño</span>
+                <span className="font-medium text-gray-900">
+                  {formatBytes(contrato.firmado_tamano_bytes)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Subido</span>
+                <span className="font-medium text-gray-900">
+                  {contrato.firmado_subido_en ? formatDateTime(contrato.firmado_subido_en) : '—'}
+                </span>
+              </div>
+              {infoFirma?.firmado_subido_por && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Subido por</span>
+                  <span className="font-medium text-gray-900">
+                    {infoFirma.firmado_subido_por.nombre} {infoFirma.firmado_subido_por.apellido}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Hash */}
           {contrato.firmado_hash_integridad && (
@@ -199,7 +234,9 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
               Descargar
             </button>
 
-            {isAdmin && (
+            {/* Verificar/accesos solo despues de tener el PDF combinado: sin
+                hash o sin archivo en storage estos endpoints fallarian. */}
+            {isAdmin && contrato.firmado_storage_key && (
               <>
                 <button
                   onClick={handleVerificar}
@@ -221,7 +258,9 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
         </div>
       ) : (
         <div className="text-center py-4">
-          <p className="text-sm text-gray-500 mb-3">No se ha subido el contrato firmado</p>
+          <p className="text-sm text-gray-500 mb-3">
+            El contrato aún no ha sido firmado
+          </p>
           {canManage && (
             <button
               onClick={() => setSubirOpen(true)}
