@@ -46,7 +46,11 @@ export function getProcessStep(
     case 'aprobado': return 4
     case 'condicionado': return 3
     case 'rechazado': return 3
-    case 'cerrado': return 6
+    // 'cerrado' = expediente finalizado: TODOS los pasos completados,
+    // incluido "Listo". Devolver 7 (fuera de rango) hace que el stepper
+    // marque idx 0-6 como complete (verdes) en lugar de dejar "Listo"
+    // en amarillo "current".
+    case 'cerrado': return 7
     default: return 0
   }
 }

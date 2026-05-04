@@ -324,6 +324,28 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
+            {/* Banner "Expediente finalizado" — al tope cuando todos los pasos
+                estan completados (estado=cerrado). Comun para todos los roles. */}
+            {expediente.estado === 'cerrado' && (
+              <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-green-200/40 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white shadow-md border border-green-200 flex items-center justify-center shrink-0">
+                    <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">¡Expediente finalizado!</h3>
+                    <p className="text-sm text-gray-700">
+                      Todos los pasos del proceso se completaron exitosamente. El expediente queda cerrado para consulta.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* "Siguiente paso" — solo para el solicitante, al tope.
                 Tres bloques encadenados (cada uno se auto-oculta si no aplica):
                 1) Pago del estudio (CTA "Pagar ahora" o "¡Pago confirmado!").
