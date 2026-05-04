@@ -104,13 +104,10 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Plantillas de contrato',
     resource: 'plantillas',
   },
-  {
-    label: 'Tipos Documento',
-    href: '/tipos-documento',
-    icon: 'FileText',
-    description: 'Administrar tipos de documento',
-    resource: 'configuracion',
-  },
+  // 'Tipos Documento' eliminado del sidebar para todos los roles. La gestion
+  // de tipos es configuracion interna que vive en /configuracion (admin).
+  // La ruta /tipos-documento sigue accesible via URL si alguien la abre
+  // directo, pero ya no aparece en navegacion.
   {
     label: 'Configuración',
     href: '/configuracion',
