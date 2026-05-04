@@ -45,7 +45,7 @@ export function NotificationBell() {
   const unreadCount = useNotificationStore((s) => s.unreadCount)
   const isLoading = useNotificationStore((s) => s.isLoading)
   const markRead = useNotificationStore((s) => s.markRead)
-  const markAllRead = useNotificationStore((s) => s.markAllRead)
+  const clearAll = useNotificationStore((s) => s.clearAll)
 
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -78,10 +78,16 @@ export function NotificationBell() {
     }
   }
 
-  const handleMarkAll = async () => {
-    if (unreadCount === 0) return
-    const now = new Date().toISOString()
-    markAllRead(now) // optimistic
+  // "Limpiar" hace dos cosas en un solo click:
+  //   1. Backend: marca todas las no-leidas como leidas (markAllAsRead).
+  //   2. Local: vacia el dropdown — las notificaciones siguen accesibles
+  //      en /notificaciones (historial completo), pero el campanario se
+  //      libera. Sin el step 2, las notificaciones leidas seguian visibles
+  //      atenuadas y el usuario no entendia como "cerrarlas".
+  const handleLimpiar = async () => {
+    const tieneNoLeidas = unreadCount > 0
+    clearAll() // optimistic — cierra el dropdown del campanario.
+    if (!tieneNoLeidas) return
     try {
       await notificacionService.markAllAsRead()
     } catch {
@@ -111,15 +117,17 @@ export function NotificationBell() {
             'max-h-[28rem] flex flex-col',
           )}
         >
-          {/* Header del dropdown */}
+          {/* Header del dropdown — boton "Limpiar" siempre visible cuando
+              hay items, sin importar si tienen no-leidas. Marca + oculta de
+              un solo click. */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <span className="text-sm font-semibold text-gray-900">Notificaciones</span>
-            {unreadCount > 0 && (
+            {items.length > 0 && (
               <button
-                onClick={handleMarkAll}
+                onClick={handleLimpiar}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700"
               >
-                Marcar todas como leidas
+                {unreadCount > 0 ? 'Marcar todas como leidas' : 'Limpiar'}
               </button>
             )}
           </div>

@@ -31,6 +31,9 @@ interface NotificationState {
   // User actions
   markRead: (id: string, leidaAt: string) => void
   markAllRead: (leidaAt: string) => void
+  /** Vacia el dropdown sin afectar el historial en backend. Usado por el
+   *  boton "Limpiar campana" para marcar+ocultar de un solo click. */
+  clearAll: () => void
   reset: () => void
 }
 
@@ -83,6 +86,8 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       items: state.items.map((n) => (n.leida_at ? n : { ...n, leida_at: leidaAt })),
       unreadCount: 0,
     })),
+
+  clearAll: () => set({ items: [], unreadCount: 0 }),
 
   reset: () => set({ items: [], unreadCount: 0, isLoading: false }),
 }))
