@@ -197,8 +197,12 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
   const isTransUnion = estudio.proveedor === 'transunion'
   const isTransUnionCompleted = isTransUnion && estudio.estado === 'completado'
+  // El detalle del buró se persiste en `respuesta_proveedor` (JSON crudo del
+  // proveedor). Antes leíamos de `datos_formulario`, que en realidad solo
+  // contiene los inputs del form — por eso el modal aparecía vacío para los
+  // estudios completados antes del fix.
   const transunionData = isTransUnionCompleted
-    ? (estudio.datos_formulario as TransUnionResponse | null)
+    ? (estudio.respuesta_proveedor as TransUnionResponse | null)
     : null
 
   const isReevaluable =
@@ -410,10 +414,18 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             )}
 
             {/* TransUnion Report Detail */}
-            {transunionData && (
+            {isTransUnionCompleted && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte TransUnion</h4>
-                <TransUnionReportDetail data={transunionData} />
+                {transunionData ? (
+                  <TransUnionReportDetail data={transunionData} />
+                ) : (
+                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    El reporte detallado del buró no se persistió para este estudio.
+                    Las consultas más recientes incluyen el detalle completo;
+                    para este caso, las observaciones del estudio resumen el resultado.
+                  </p>
+                )}
               </div>
             )}
 
