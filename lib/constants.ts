@@ -462,6 +462,7 @@ export function formatCurrency(value: number): string {
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -469,13 +470,18 @@ export function formatDate(date: Date | string): string {
 }
 
 /**
- * Formatea fechas con hora al formato colombiano
- * @param date - Fecha a formatear
- * @returns String con formato dd/mm/yyyy hh:mm
+ * Formatea fechas con hora al formato colombiano.
+ *
+ * Forzamos `timeZone: 'America/Bogota'` (UTC-5) porque sin él Intl usa la
+ * timezone del browser y los propietarios fuera de Colombia (p. ej. en
+ * México UTC-6) veían las citas con 1 hora menos que el solicitante. La
+ * regla del negocio: las horas son siempre Colombia, sin importar dónde
+ * viva el usuario.
  */
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
