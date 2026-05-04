@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight, IconMail } from '@/components/icons'
 import { GenerarContratoModal } from './GenerarContratoModal'
-import { ContratoDetalleModal } from './ContratoDetalleModal'
 import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { contratoService } from '@/services/contratoService'
@@ -31,6 +31,7 @@ interface ContratosSectionProps {
 
 export function ContratosSection({ expedienteId }: ContratosSectionProps) {
   const { user } = useAuth()
+  const router = useRouter()
 
   const [contratos, setContratos] = useState<IContrato[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -38,7 +39,6 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
 
   // Modals
   const [generarOpen, setGenerarOpen] = useState(false)
-  const [detalleContrato, setDetalleContrato] = useState<IContrato | null>(null)
   const [transicionContrato, setTransicionContrato] = useState<IContrato | null>(null)
   const [transicionesDisponibles, setTransicionesDisponibles] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
   const [transicionLoading, setTransicionLoading] = useState(false)
@@ -224,7 +224,11 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
                 {contratos.map((c) => {
                   const estadoStyle = ESTADO_STYLES[c.estado] || ESTADO_STYLES.borrador
                   return (
-                    <tr key={c.id} className="hover:bg-gray-50">
+                    <tr
+                      key={c.id}
+                      onClick={() => router.push(`/contratos/${c.id}`)}
+                      className="hover:bg-gray-50 cursor-pointer"
+                    >
                       <td className="px-6 py-4">
                         <p className="text-sm font-medium text-gray-900">
                           {c.nombre_archivo || 'contrato.pdf'}
@@ -248,10 +252,13 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td
+                        className="px-6 py-4 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => setDetalleContrato(c)}
+                            onClick={() => router.push(`/contratos/${c.id}`)}
                             className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
                             title="Ver detalle"
                           >
@@ -329,12 +336,6 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
         expedienteId={expedienteId}
         onClose={() => setGenerarOpen(false)}
         onGenerated={handleGenerated}
-      />
-
-      {/* Detalle Modal */}
-      <ContratoDetalleModal
-        contrato={detalleContrato}
-        onClose={() => setDetalleContrato(null)}
       />
 
       {/* Transicion Modal */}
