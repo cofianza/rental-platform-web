@@ -107,8 +107,8 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
       })
       toast.success(
         toAlternativeEmail
-          ? `Correo de firma reenviado a ${resendEmail.trim()}`
-          : 'Correo de firma reenviado a tu dirección registrada.',
+          ? `Link de firma reenviado a ${resendEmail.trim()}`
+          : 'Link de firma reenviado a tu WhatsApp/correo registrado.',
       )
       setShowResendForm(false)
       setResendEmail('')
@@ -242,15 +242,15 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           {!showResendForm ? (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-xs text-gray-500">
-                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo o reenvíalo a otro número/correo.
+                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo (Auco lo reenvía al mismo canal — WhatsApp + correo) o redirígelo a otra dirección.
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => handleResend(false)}
                   disabled={resending || !solicitudId}
                   className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {resending ? 'Reenviando…' : 'Reenviar al correo registrado'}
+                  {resending ? 'Reenviando…' : 'Reenviar WhatsApp / correo'}
                 </button>
                 <span className="text-xs text-gray-300">·</span>
                 <button
