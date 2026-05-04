@@ -11,6 +11,7 @@ import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
 import { DatosFiscalesSolicitanteSection } from '@/components/facturacion/DatosFiscalesSolicitanteSection'
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
+import { PendientesFacturarSection } from '@/components/facturacion/PendientesFacturarSection'
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -25,17 +26,24 @@ export default function FacturacionPage() {
   // El solicitante ahora tiene tab 'Datos Fiscales' propio (vs admin que ve
   // los datos del emisor Cofianza). Sin esos datos completos, el backend
   // bloquea la emision con CLIENTE_DATOS_INCOMPLETOS.
+  // Pendientes-facturar entre Datos y Facturas: lista pagos completados sin
+  // factura emitida con boton para emitirla.
   const tabs: Tab[] = isSolicitante
     ? [
         { id: 'datos-fiscales', label: 'Datos Fiscales' },
+        { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Mis facturas' },
       ]
     : [
         { id: 'datos-fiscales', label: 'Datos Fiscales' },
+        { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
       ]
 
   const [activeTab, setActiveTab] = useState('datos-fiscales')
+  // Bump cuando se emite una factura para forzar refresh del tab Mis facturas
+  // si el usuario navega despues. FacturasSection no expone refetch directo.
+  const [facturasReloadKey, setFacturasReloadKey] = useState(0)
 
   return (
     <div className="space-y-6">
@@ -43,8 +51,8 @@ export default function FacturacionPage() {
         title={isSolicitante ? 'Facturación' : 'Facturación'}
         subtitle={
           isSolicitante
-            ? 'Completa tus datos fiscales y consulta las facturas que Cofianza emite a tu nombre.'
-            : 'Gestiona tus datos fiscales y consulta tus facturas'
+            ? 'Completa tus datos fiscales, factura tus pagos pendientes y consulta tu historial.'
+            : 'Gestiona tus datos fiscales, factura pagos pendientes y consulta tu historial.'
         }
       />
 
@@ -63,7 +71,13 @@ export default function FacturacionPage() {
             )}
           </>
         )}
-        {activeTab === 'facturas' && <FacturasSection />}
+        {activeTab === 'pendientes' && (
+          <PendientesFacturarSection
+            onFacturaEmitida={() => setFacturasReloadKey((k) => k + 1)}
+            onDatosFiscalesIncompletos={() => setActiveTab('datos-fiscales')}
+          />
+        )}
+        {activeTab === 'facturas' && <FacturasSection key={facturasReloadKey} />}
       </div>
     </div>
   )

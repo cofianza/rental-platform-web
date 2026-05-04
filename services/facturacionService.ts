@@ -40,6 +40,22 @@ export interface IDatosFiscalesPagoFactura {
 }
 
 // ============================================
+// Pago pendiente de facturar — vista del listado
+// ============================================
+
+export interface IPagoPendienteFacturar {
+  pago_id: string
+  expediente_id: string
+  expediente_numero: string
+  concepto: string
+  monto: number
+  fecha_pago: string | null
+  /** Estado de un intento previo de factura (null si no hay). */
+  factura_estado: string | null
+  factura_error: string | null
+}
+
+// ============================================
 // Tipos del backend (snake_case, shape Factus)
 // ============================================
 
@@ -147,6 +163,15 @@ class FacturacionService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
+  }
+
+  // ── Pendientes de facturar (pagos completados sin factura) ────────
+
+  async listPendientesFacturar(): Promise<IPagoPendienteFacturar[]> {
+    const response = (await apiClient.get('/facturas/pendientes-facturar')) as unknown as {
+      data: IPagoPendienteFacturar[]
+    }
+    return response.data || []
   }
 
   // ── Facturas
