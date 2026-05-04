@@ -78,6 +78,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'Receipt',
     description: 'Facturacion y datos fiscales',
     resource: 'facturas',
+    // Excluido propietario: la facturacion la maneja la inmobiliaria a su
+    // nombre, no el propietario individual. El propietario consulta los
+    // pagos y contratos en su expediente; no necesita el panel fiscal.
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria', 'solicitante'],
   },
   {
     label: 'Usuarios',
