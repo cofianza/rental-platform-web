@@ -30,14 +30,11 @@ export function PropertyDetailClient({ property, similares }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [selectedPhoto, setSelectedPhoto] = useState(0)
 
-  // Sort fotos so fachada (matching foto_fachada_url) is first
-  const rawFotos = property.fotos ?? []
-  const fotos = rawFotos.length > 0 && property.foto_fachada_url
-    ? [
-        ...rawFotos.filter((f) => f.url === property.foto_fachada_url),
-        ...rawFotos.filter((f) => f.url !== property.foto_fachada_url),
-      ]
-    : rawFotos
+  // El backend ya ordena: es_fachada DESC, orden ASC (ver
+  // public-properties.service.ts). Antes intentabamos reordenar aqui
+  // comparando URLs con foto_fachada_url, pero las signed URLs tienen
+  // timestamps distintos y nunca matcheaban → la fachada caia al final.
+  const fotos = property.fotos ?? []
   const hasPhotos = fotos.length > 0
   const mainImage = hasPhotos ? fotos[selectedPhoto]?.url : property.foto_fachada_url
   const lightboxImages = hasPhotos
