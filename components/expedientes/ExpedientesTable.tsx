@@ -7,7 +7,7 @@
 
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
-import { ExpedienteBadge } from './ExpedienteBadges'
+import { ExpedienteBadge, ProcessStepBadge } from './ExpedienteBadges'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import {
@@ -190,7 +190,13 @@ export function ExpedientesTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <ExpedienteBadge estado={expediente.estado} />
+                  <div className="flex flex-col items-start gap-1">
+                    <ProcessStepBadge
+                      estado={expediente.estado}
+                      citaRealizada={expediente.cita_realizada ?? false}
+                    />
+                    <ExpedienteBadge estado={expediente.estado} size="sm" />
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   {expediente.analista ? (
@@ -236,11 +242,17 @@ export function ExpedientesTable({
             className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
           >
             {/* Header: código y estado */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-start justify-between gap-2 mb-3">
               <span className="font-mono text-sm font-medium text-primary-600">
                 {expediente.numero_expediente}
               </span>
-              <ExpedienteBadge estado={expediente.estado} size="sm" />
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <ProcessStepBadge
+                  estado={expediente.estado}
+                  citaRealizada={expediente.cita_realizada ?? false}
+                />
+                <ExpedienteBadge estado={expediente.estado} size="sm" />
+              </div>
             </div>
 
             {/* Inmueble */}

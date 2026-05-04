@@ -34,6 +34,8 @@ import {
   EstudioSolicitanteCard,
   ContratoSolicitanteCard,
   AccionContratoPendienteCard,
+  ContratoEstadoCard,
+  EstudioEstadoCard,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -54,9 +56,17 @@ export default function ExpedienteDetallePage() {
   // Pendientes count for badge
   const [pendientesCount, setPendientesCount] = useState(0)
 
-  // Para el solicitante el Resumen concentra todo el "siguiente paso" (pago,
-  // estudio, contrato, cita). Las demás pestañas son gestión interna del
-  // operador/propietario y no aportan a su experiencia.
+  // Tabs por rol:
+  // - solicitante: solo Resumen (concentra todo el "siguiente paso").
+  // - propietario / inmobiliaria: gestion del expediente sin las herramientas
+  //   internas del operador (Comentarios y Timeline son notas/eventos que
+  //   el backend restringe a administrador/operador_analista).
+  // - admin/operador/gerencia: todas las pestañas.
+  const isInternalRole =
+    user?.rol === 'administrador'
+    || user?.rol === 'operador_analista'
+    || user?.rol === 'gerencia_consulta'
+
   const tabs: Tab[] = user?.rol === 'solicitante'
     ? [{ id: 'resumen', label: 'Resumen' }]
     : [
@@ -65,8 +75,12 @@ export default function ExpedienteDetallePage() {
         { id: 'estudios', label: 'Estudios' },
         { id: 'contratos', label: 'Contratos' },
         { id: 'pagos', label: 'Pagos' },
-        { id: 'comentarios', label: 'Comentarios' },
-        { id: 'timeline', label: 'Timeline' },
+        ...(isInternalRole
+          ? [
+              { id: 'comentarios', label: 'Comentarios' },
+              { id: 'timeline', label: 'Timeline' },
+            ]
+          : []),
       ]
 
   // Estado principal
@@ -331,15 +345,26 @@ export default function ExpedienteDetallePage() {
               </div>
             )}
 
-            {/* Propietario/inmobiliaria/admin/operador: si el expediente ya
-                está aprobado pero no hay contrato, avisamos con CTA claro. */}
+            {/* Propietario/inmobiliaria/admin/operador: cards informativas
+                del estado del estudio y del contrato (cada una se auto-oculta
+                si no aplica). El orden refleja el flujo: estudio → contrato. */}
             {user?.rol !== 'solicitante' && (
-              <AccionContratoPendienteCard
-                expedienteId={id}
-                expedienteEstado={expediente.estado}
-                userRol={user?.rol}
-                onGenerarClick={() => setActiveTab('contratos')}
-              />
+              <>
+                <EstudioEstadoCard
+                  expedienteId={id}
+                  onVerEstudios={() => setActiveTab('estudios')}
+                />
+                <AccionContratoPendienteCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
+                  onGenerarClick={() => setActiveTab('contratos')}
+                />
+                <ContratoEstadoCard
+                  expedienteId={id}
+                  onVerContratos={() => setActiveTab('contratos')}
+                />
+              </>
             )}
 
             {/* Sección Cita Previa — al tope para que el solicitante vea

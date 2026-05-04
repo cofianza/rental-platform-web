@@ -7,9 +7,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconLoader, IconPlus, IconCheck, IconCalendar, IconClock } from '@/components/icons'
+import { IconLoader, IconPlus, IconCheck, IconCalendar, IconClock, IconShieldCheck } from '@/components/icons'
 import { Modal } from '@/components/ui'
 import { citaService } from '@/services/citaService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita, EstadoCita } from '@/types/cita'
@@ -39,6 +40,11 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
 
   const canManageCitas = user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador'
 
+  // Estado del pago del estudio. Se consulta solo cuando hay una cita
+  // realizada con estudio_habilitado=true. null = cargando, undefined =
+  // no aplica (sin estudio o sin permiso de lectura).
+  const [pagoEstudioEstado, setPagoEstudioEstado] = useState<string | null | undefined>(undefined)
+
   const fetchCitas = useCallback(async () => {
     try {
       const data = await citaService.getCitasByExpediente(expedienteId)
@@ -51,6 +57,24 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
   }, [expedienteId])
 
   useEffect(() => { fetchCitas() }, [fetchCitas])
+
+  // Disparar fetch del pago de estudio cuando la cita realizada tenga el
+  // estudio habilitado. Si el endpoint falla (ej. solicitante sin permisos
+  // sobre /pago-estudio/estado), degrada a 'sin_definir' silenciosamente.
+  useEffect(() => {
+    const realizada = citas.find(
+      (c) => c.estado === 'realizada' && c.expediente?.estudio_habilitado === true,
+    )
+    if (!realizada?.expediente?.id) {
+      setPagoEstudioEstado(undefined)
+      return
+    }
+    setPagoEstudioEstado(null)
+    pagoEstudioService
+      .getEstado(realizada.expediente.id)
+      .then((res) => setPagoEstudioEstado(res.estado))
+      .catch(() => setPagoEstudioEstado('sin_definir'))
+  }, [citas])
 
   const handleRealizar = async (cita: ICita) => {
     setActionLoading(cita.id)
@@ -143,16 +167,42 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
       </div>
 
       {completedCita && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-            <IconCheck size={16} className="text-green-600" />
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <IconCheck size={16} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-green-800">Cita realizada</p>
+              <p className="text-xs text-green-600">
+                {completedCita.fecha_confirmada ? formatDateTime(completedCita.fecha_confirmada) : formatDateTime(completedCita.fecha_propuesta || completedCita.created_at)}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-green-800">Cita realizada</p>
-            <p className="text-xs text-green-600">
-              {completedCita.fecha_confirmada ? formatDateTime(completedCita.fecha_confirmada) : formatDateTime(completedCita.fecha_propuesta || completedCita.created_at)}
-            </p>
-          </div>
+
+          {/* Badges del estudio + pago — refleja el mismo estado que la kanban
+              de /citas: si el propietario habilitó el estudio, mostramos el
+              estado del pago para que ambos roles vean en qué punto está. */}
+          {(completedCita.expediente?.estudio_habilitado || completedCita.expediente?.estudio_rechazado) && (
+            <div className="mt-3 pt-3 border-t border-green-200 flex flex-wrap gap-2">
+              {completedCita.expediente?.estudio_habilitado ? (
+                <>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 bg-white border border-green-200">
+                    <IconShieldCheck size={12} />
+                    Estudio habilitado
+                  </span>
+                  <PagoEstudioPill estado={pagoEstudioEstado} />
+                </>
+              ) : completedCita.expediente?.estudio_rechazado ? (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
+                  title={completedCita.expediente?.motivo_estudio_rechazado || 'El propietario decidio no habilitar el estudio.'}
+                >
+                  Estudio no habilitado
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
 
@@ -257,6 +307,7 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
           onClose={() => setShowReprogramarModal(null)}
           cita={showReprogramarModal}
           inmuebleId={inmuebleId}
+          isSolicitante={user?.rol === 'solicitante'}
           onReprogramado={() => { setShowReprogramarModal(null); fetchCitas() }}
         />
       )}
@@ -382,7 +433,7 @@ function CitaCard({
           )}
         </div>
 
-        {/* Actions */}
+        {/* Actions — propietario/inmobiliaria/admin */}
         {canManage && !isLoading && (
           <div className="flex items-center gap-1.5 shrink-0">
             {cita.estado === 'solicitada' && onConfirmar && (
@@ -418,6 +469,31 @@ function CitaCard({
               </button>
             )}
             {(cita.estado === 'solicitada' || cita.estado === 'confirmada') && onCancelar && (
+              <button
+                onClick={onCancelar}
+                className="px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Actions — solicitante: solo cuando la cita esta confirmada y no hay
+            reprogramacion pendiente del propietario (en ese caso se ofrece el
+            banner de aceptar/rechazar). Reprogramar manda la cita a 'solicitada'
+            esperando que el propietario re-confirme. */}
+        {isSolicitante && !canManage && !isLoading && cita.estado === 'confirmada' && !reprogramacionPendiente && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onReprogramar && (
+              <button
+                onClick={onReprogramar}
+                className="px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
+              >
+                Reprogramar
+              </button>
+            )}
+            {onCancelar && (
               <button
                 onClick={onCancelar}
                 className="px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
@@ -649,12 +725,14 @@ function ReprogramarCitaModal({
   onClose,
   cita,
   inmuebleId,
+  isSolicitante,
   onReprogramado,
 }: {
   isOpen: boolean
   onClose: () => void
   cita: ICita
   inmuebleId?: string
+  isSolicitante?: boolean
   onReprogramado: () => void
 }) {
   const [slot, setSlot] = useState<string | null>(null)
@@ -679,14 +757,20 @@ function ReprogramarCitaModal({
     }
     setIsSubmitting(true)
     try {
-      // Endpoint dedicado: tolera self-loop confirmada -> confirmada (no posible
-      // via /confirmar). Backend valida que el slot este en disponibilidad y
-      // dispara aviso 'reprogramada' al solicitante.
+      // Endpoint unico — el backend decide la transicion segun el rol:
+      //   propietario: confirmada -> confirmada (cambio de fecha unilateral)
+      //   solicitante: confirmada -> solicitada (propuesta para re-confirmar)
+      // El campo notas_propietario se usa como contenedor neutro; el backend
+      // lo persiste en notas_propietario o notas_solicitante segun el rol.
       await citaService.reprogramarCita(cita.id, {
         fecha_confirmada: slot,
         notas_propietario: notas || undefined,
       })
-      toast.success('Cita reprogramada — se notifico al solicitante')
+      toast.success(
+        isSolicitante
+          ? 'Propuesta enviada — el propietario debe confirmar la nueva fecha.'
+          : 'Cita reprogramada — se notifico al solicitante',
+      )
       reset()
       onReprogramado()
     } catch (err) {
@@ -697,20 +781,30 @@ function ReprogramarCitaModal({
     }
   }
 
+  // Texto y placeholders adaptados al actor.
+  const descripcion = isSolicitante
+    ? 'Elige un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmacion del propietario.'
+    : 'Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo y notificacion in-app.'
+
+  const notasPlaceholder = isSolicitante
+    ? 'Cuentale al propietario por que necesitas cambiar el horario.'
+    : 'Cuentale al solicitante por que cambias el horario.'
+
+  const ctaLabel = isSolicitante ? 'Enviar propuesta' : 'Enviar nueva propuesta'
+
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Reprogramar visita" size="lg">
       <div className="space-y-4">
-        {cita.fecha_propuesta && (
+        {(cita.fecha_confirmada || cita.fecha_propuesta) && (
           <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
             <p className="text-xs text-gray-500">Horario actual:</p>
-            <p className="font-medium text-gray-900">{formatDateTime(cita.fecha_propuesta)}</p>
+            <p className="font-medium text-gray-900">
+              {formatDateTime((cita.fecha_confirmada || cita.fecha_propuesta) as string)}
+            </p>
           </div>
         )}
 
-        <p className="text-sm text-gray-600">
-          Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso
-          con la nueva fecha por correo y notificacion in-app.
-        </p>
+        <p className="text-sm text-gray-600">{descripcion}</p>
 
         {inmuebleId ? (
           <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
@@ -737,7 +831,7 @@ function ReprogramarCitaModal({
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={2000}
-            placeholder="Cuentale al solicitante por que cambias el horario."
+            placeholder={notasPlaceholder}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -756,7 +850,7 @@ function ReprogramarCitaModal({
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
-            Enviar nueva propuesta
+            {ctaLabel}
           </button>
         </div>
       </div>
@@ -826,5 +920,60 @@ function CancelarCitaModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+// ── Pill del estado del pago del estudio ──────────────────────
+// Mismo contrato visual que el componente equivalente en
+// components/citas/CitaCard.tsx (kanban de /citas). Duplicado a proposito
+// hasta que extraigamos un componente compartido.
+
+function PagoEstudioPill({ estado }: { estado?: string | null }) {
+  // undefined → no aplica (sin estudio habilitado o sin permiso). null → cargando.
+  if (estado === undefined) return null
+  if (estado === null) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-50 border border-gray-200">
+        Pago: …
+      </span>
+    )
+  }
+
+  const config: Record<string, { label: string; className: string }> = {
+    completado: {
+      label: 'Pago recibido',
+      className: 'text-green-700 bg-white border-green-200',
+    },
+    asumido_inmobiliaria: {
+      label: 'Pago: inmobiliaria',
+      className: 'text-green-700 bg-white border-green-200',
+    },
+    pendiente: {
+      label: 'Pago pendiente',
+      className: 'text-amber-700 bg-amber-50 border-amber-200',
+    },
+    procesando: {
+      label: 'Procesando pago',
+      className: 'text-blue-700 bg-blue-50 border-blue-200',
+    },
+    fallido: {
+      label: 'Pago fallido',
+      className: 'text-red-700 bg-red-50 border-red-200',
+    },
+    cancelado: {
+      label: 'Pago cancelado',
+      className: 'text-gray-600 bg-gray-50 border-gray-200',
+    },
+    sin_definir: {
+      label: 'Aún sin pago',
+      className: 'text-gray-600 bg-gray-50 border-gray-200',
+    },
+  }
+
+  const pill = config[estado] || config.sin_definir
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${pill.className}`}>
+      {pill.label}
+    </span>
   )
 }

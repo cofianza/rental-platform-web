@@ -14,35 +14,7 @@ import { IconCheck } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-
-const PROCESS_STEPS = [
-  { id: 'solicitud', label: 'Solicitud' },
-  { id: 'cita', label: 'Cita previa' },
-  { id: 'estudio', label: 'Estudio' },
-  { id: 'aprobacion', label: 'Aprobacion' },
-  { id: 'contrato', label: 'Contrato' },
-  { id: 'firma', label: 'Firma' },
-  { id: 'listo', label: 'Listo' },
-]
-
-function getProcessStep(estado: EstadoExpediente, citaRealizada: boolean): number {
-  // Si todavia no hay cita realizada y el expediente esta en fase inicial,
-  // estamos en "Cita previa"
-  if (!citaRealizada && (estado === 'borrador' || estado === 'en_revision' || estado === 'informacion_incompleta')) {
-    return 1
-  }
-
-  switch (estado) {
-    case 'borrador': return 2
-    case 'en_revision': return 2
-    case 'informacion_incompleta': return 2
-    case 'aprobado': return 4
-    case 'condicionado': return 3
-    case 'rechazado': return 3
-    case 'cerrado': return 6
-    default: return 0
-  }
-}
+import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 
 export interface ExpedienteProgressBarProps {
   expedienteId: string

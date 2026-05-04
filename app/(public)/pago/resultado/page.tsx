@@ -8,10 +8,15 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 
+// Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
+// a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
+const AUTO_CLOSE_SECONDS = 4
+
 function PagoResultadoContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const status = searchParams.get('status')
   const expedienteId = searchParams.get('expediente')
@@ -19,12 +24,44 @@ function PagoResultadoContent() {
   const isAuthInitialized = useAuthStore((s) => s.isInitialized)
 
   const [loading, setLoading] = useState(true)
+  const [secondsLeft, setSecondsLeft] = useState(AUTO_CLOSE_SECONDS)
 
   useEffect(() => {
     // Small delay to let the page render with branding before showing result
     const timer = setTimeout(() => setLoading(false), 600)
     return () => clearTimeout(timer)
   }, [])
+
+  // Auto-cierre tras pago exitoso. Stripe se abrio en una pestaña nueva
+  // (target="_blank" desde el CTA "Pagar ahora"), asi que `window.close()`
+  // nos devuelve a la pestaña original donde el usuario tenia su expediente.
+  // Si el browser bloquea el close (politica de seguridad cuando no podemos
+  // probar window.opener) y hay sesion activa, hacemos fallback a redirect.
+  useEffect(() => {
+    if (loading) return
+    if (status !== 'success') return
+
+    setSecondsLeft(AUTO_CLOSE_SECONDS)
+    const tick = setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0))
+    }, 1000)
+
+    const closeTimer = setTimeout(() => {
+      window.close()
+      // Fallback: si seguimos aqui despues de intentar cerrar, redirigir
+      // (solo tiene sentido cuando hay sesion — invitados no tienen panel).
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && !window.closed && isAuthenticated) {
+          router.push(expedienteId ? `/expedientes/${expedienteId}` : '/dashboard')
+        }
+      }, 600)
+    }, AUTO_CLOSE_SECONDS * 1000)
+
+    return () => {
+      clearInterval(tick)
+      clearTimeout(closeTimer)
+    }
+  }, [loading, status, isAuthenticated, expedienteId, router])
 
   if (loading) {
     return (
@@ -123,10 +160,36 @@ function PagoResultadoContent() {
         </div>
       )}
 
-      {/* CTA: cuando el usuario tiene sesion, lo regresamos a su expediente
-          (o dashboard si no hay id). Si no tiene sesion, es flujo legacy de
-          invitado: mostramos solo el mensaje de cerrar ventana. */}
-      {isAuthInitialized && isAuthenticated && (
+      {/* CTA en pago exitoso: countdown de auto-cierre + boton "Cerrar ahora".
+          Si el browser bloquea window.close() y hay sesion, el effect hace
+          fallback a redirect al expediente. */}
+      {isSuccess && (
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              window.close()
+              setTimeout(() => {
+                if (typeof window !== 'undefined' && !window.closed && isAuthenticated) {
+                  window.location.href = expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'
+                }
+              }, 300)
+            }}
+            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            {isAuthenticated ? 'Cerrar y volver al expediente' : 'Cerrar ventana'}
+          </button>
+          <p className="text-xs text-gray-500">
+            {secondsLeft > 0
+              ? `Esta ventana se cerrara automaticamente en ${secondsLeft} ${secondsLeft === 1 ? 'segundo' : 'segundos'}.`
+              : 'Cerrando...'}
+          </p>
+        </div>
+      )}
+
+      {/* CTA en pago cancelado/fallido (sin auto-cierre): permitir volver al
+          expediente si hay sesion, para reintentar el pago. */}
+      {!isSuccess && isAuthInitialized && isAuthenticated && (
         <div className="mt-6 flex justify-center">
           <Link
             href={expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'}
@@ -137,12 +200,14 @@ function PagoResultadoContent() {
         </div>
       )}
 
-      {/* Footer — texto distinto segun haya o no sesion */}
-      <p className="text-xs text-gray-400 text-center mt-8">
-        {isAuthInitialized && isAuthenticated
-          ? 'Tambien puedes cerrar esta ventana — el estado quedo guardado.'
-          : 'Puedes cerrar esta ventana de forma segura.'}
-      </p>
+      {/* Footer — solo cuando no hay auto-cierre activo */}
+      {!isSuccess && (
+        <p className="text-xs text-gray-400 text-center mt-8">
+          {isAuthInitialized && isAuthenticated
+            ? 'Tambien puedes cerrar esta ventana — el estado quedo guardado.'
+            : 'Puedes cerrar esta ventana de forma segura.'}
+        </p>
+      )}
     </div>
   )
 }

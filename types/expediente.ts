@@ -57,6 +57,10 @@ export interface IExpediente {
   } | null
   estado: EstadoExpediente
   notas: string | null
+  /** Computed por el backend (RPC list_expedientes_with_relations): TRUE si
+   *  existe al menos una cita en estado='realizada'. Permite mapear el paso
+   *  del proceso (Cita previa vs Estudio) cuando estado='borrador'. */
+  cita_realizada?: boolean
   created_at: string
   updated_at: string
 }
