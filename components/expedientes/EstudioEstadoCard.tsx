@@ -48,6 +48,48 @@ const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
   condicionado: 'Condicionado',
 }
 
+/**
+ * Texto que explica al observador (propietario/inmobiliaria/admin) que falta
+ * para que el estudio avance. Cambia segun estado + resultado, y siempre va
+ * por encima de los detalles tecnicos en la card.
+ */
+function getSiguientePaso(estudio: IEstudio): string {
+  if (estudio.estado === 'completado') {
+    if (estudio.resultado === 'aprobado') return 'Estudio aprobado por TransUnion. Siguiente paso: generar contrato.'
+    if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
+    if (estudio.resultado === 'rechazado') return 'Estudio rechazado. El expediente no avanza al contrato.'
+    return 'Estudio completado, esperando resultado.'
+  }
+  if (estudio.estado === 'fallido') {
+    return 'La consulta a TransUnion falló. El solicitante puede reintentarla desde su panel.'
+  }
+  if (estudio.estado === 'cancelado') {
+    return 'Estudio cancelado.'
+  }
+  if (estudio.estado === 'en_proceso') {
+    return 'Consultando con el buró de crédito. El resultado llega en minutos.'
+  }
+  if (estudio.estado === 'pago_pendiente' || estudio.estado === 'solicitado') {
+    return 'Esperando que el solicitante realice el pago del estudio.'
+  }
+  if (estudio.estado === 'pagado') {
+    return 'Pago recibido. Esperando que el solicitante autorice el tratamiento de datos.'
+  }
+  if (estudio.estado === 'autorizado') {
+    return 'Autorizado. Esperando que el solicitante complete el formulario con sus datos.'
+  }
+  if (estudio.estado === 'formulario_enviado') {
+    return 'Esperando que el solicitante termine de llenar el formulario.'
+  }
+  if (estudio.estado === 'formulario_completado') {
+    return 'Formulario listo. El solicitante puede ejecutar la consulta a TransUnion desde su panel.'
+  }
+  if (estudio.estado === 'documentos_cargados') {
+    return 'Documentos cargados. Listo para ejecutar la consulta.'
+  }
+  return ''
+}
+
 // Tono de la card por bloque de progreso. Para 'completado' depende del
 // resultado del estudio.
 function getTone(estudio: IEstudio) {
@@ -143,6 +185,8 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios }: EstudioEstado
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
+  const siguientePaso = getSiguientePaso(estudio)
+
   return (
     <div className={`border rounded-lg p-4 ${styles.card}`}>
       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -164,6 +208,10 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios }: EstudioEstado
               </span>
             )}
           </div>
+
+          {siguientePaso && (
+            <p className="text-sm text-gray-800 font-medium mb-2">{siguientePaso}</p>
+          )}
 
           <div className="space-y-0.5 text-sm">
             <p className="text-xs text-gray-600">
