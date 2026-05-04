@@ -42,10 +42,13 @@ export function AccionContratoPendienteCard({
 
   useEffect(() => { fetchContratos() }, [fetchContratos])
 
-  // Solo relevante cuando el expediente está aprobado y no hay contrato aún.
+  // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
+  // En 'condicionado' no mostramos nada — el propietario primero debe aprobar
+  // manualmente (ver AprobarCondicionadoCard) y solo entonces se genera el
+  // contrato.
   if (loading) return null
   if (hasContrato) return null
-  if (expedienteEstado !== 'aprobado' && expedienteEstado !== 'condicionado') return null
+  if (expedienteEstado !== 'aprobado') return null
 
   const puedeGenerar = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'inmobiliaria'
 

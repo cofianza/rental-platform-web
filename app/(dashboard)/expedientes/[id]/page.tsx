@@ -35,6 +35,7 @@ import {
   ContratoSolicitanteCard,
   AccionContratoPendienteCard,
   AccionHabilitarEstudioCard,
+  AprobarCondicionadoCard,
   ContratoEstadoCard,
   EstudioEstadoCard,
 } from '@/components/expedientes'
@@ -386,6 +387,12 @@ export default function ExpedienteDetallePage() {
                 <EstudioEstadoCard
                   expedienteId={id}
                   onVerEstudios={() => setActiveTab('estudios')}
+                />
+                <AprobarCondicionadoCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
+                  onAprobado={fetchExpediente}
                 />
                 <AccionContratoPendienteCard
                   expedienteId={id}

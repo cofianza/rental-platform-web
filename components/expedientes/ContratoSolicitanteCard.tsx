@@ -142,11 +142,17 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
 
   if (loading) return null
 
-  // Sin contrato todavía. Si el expediente ya fue aprobado, mostramos un
-  // mensaje "esperando generación" para que el solicitante sepa qué viene;
-  // si no, el siguiente paso aún no corresponde al contrato → ocultamos.
+  // Sin contrato todavía.
+  //   - Si el expediente está APROBADO → aviso "preparando contrato".
+  //   - Si está CONDICIONADO → no mostramos nada del contrato. El propietario
+  //     debe revisar la documentación adicional y aprobar manualmente; recién
+  //     ahí pasa a 'aprobado' y se genera el contrato. La card "Estudio
+  //     condicionado" (mostrada en otro componente) ya explica el siguiente
+  //     paso al solicitante, así que aquí ocultamos para no confundirlo con
+  //     un mensaje incorrecto que promete contrato inminente.
+  //   - Otros estados → el siguiente paso aún no es contrato.
   if (!contrato) {
-    if (expedienteEstado === 'aprobado' || expedienteEstado === 'condicionado') {
+    if (expedienteEstado === 'aprobado') {
       return (
         <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
           <div className="flex items-start gap-3">

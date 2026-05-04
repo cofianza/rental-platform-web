@@ -463,6 +463,25 @@ class ExpedienteService {
     }>(`/expedientes/${expedienteId}/rechazar-estudio`, { motivo })
     return response.data
   }
+
+  /**
+   * Aprobar manualmente un expediente que el buró dejó condicionado: el
+   * propietario revisa la documentación adicional pedida (codeudor, póliza,
+   * etc.) y, si decide proceder, llama a este endpoint. Transiciona el
+   * expediente a 'aprobado' y dispara la generación automática del contrato.
+   */
+  async aprobarCondicionado(
+    expedienteId: string,
+  ): Promise<{
+    expediente: { id: string; numero: string; estado: 'aprobado' }
+    contrato_id: string | null
+  }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string; estado: 'aprobado' }
+      contrato_id: string | null
+    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, {})
+    return response.data
+  }
 }
 
 // Instancia singleton
