@@ -301,7 +301,11 @@ export function InmueblesTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {inmuebles.map((inmueble) => (
-              <tr key={inmueble.id} className="hover:bg-gray-50 transition-colors">
+              <tr
+                key={inmueble.id}
+                onClick={() => onView(inmueble)}
+                className="hover:bg-gray-50 transition-colors cursor-pointer"
+              >
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="text-sm font-medium text-primary-600">{inmueble.codigo}</span>
                 </td>
@@ -332,13 +336,19 @@ export function InmueblesTable({
                   <EstadoBadge estado={inmueble.estado} />
                 </td>
                 {isAdmin && onToggleVitrina && (
-                  <td className="px-4 py-3 whitespace-nowrap text-center">
+                  <td
+                    className="px-4 py-3 whitespace-nowrap text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex justify-center">
                       <VitrinaToggle inmueble={inmueble} onToggle={onToggleVitrina} />
                     </div>
                   </td>
                 )}
-                <td className="px-4 py-3 whitespace-nowrap text-right">
+                <td
+                  className="px-4 py-3 whitespace-nowrap text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => onView(inmueble)}
@@ -376,7 +386,11 @@ export function InmueblesTable({
       {/* Vista Mobile/Tablet - Cards */}
       <div className="lg:hidden divide-y divide-gray-200">
         {inmuebles.map((inmueble) => (
-          <div key={inmueble.id} className="p-4 space-y-3">
+          <div
+            key={inmueble.id}
+            onClick={() => onView(inmueble)}
+            className="p-4 space-y-3 cursor-pointer hover:bg-gray-50 transition-colors"
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -388,7 +402,10 @@ export function InmueblesTable({
                   {inmueble.ciudad}, {inmueble.departamento}
                 </div>
               </div>
-              <div className="flex items-center gap-1 ml-2">
+              <div
+                className="flex items-center gap-1 ml-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => onView(inmueble)}
                   className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
