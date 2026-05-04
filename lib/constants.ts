@@ -61,21 +61,10 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'disponibilidad',
     requiredRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
-  // 'Contratos' como tab del sidebar quedo deprecado: el detalle de cada
-  // contrato (PDF, version, estado, firma) ya esta en la pestana 'Contratos'
-  // del expediente, donde se ve en el contexto correcto. La ruta /contratos
-  // sigue accesible directo via URL pero no la exponemos en navegacion.
-  {
-    label: 'Estudios',
-    href: '/estudios',
-    icon: 'Shield',
-    description: 'Estudios de riesgo crediticio',
-    resource: 'estudios',
-    // Pantalla operativa (filtros/bandejas/kanban). El solicitante solo
-    // tiene un estudio — el suyo — y lo ve en el detalle del expediente
-    // donde puede reintentar si fallo.
-    requiredRoles: ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'],
-  },
+  // 'Contratos' y 'Estudios' como tabs del sidebar quedaron deprecados:
+  // ambos viven dentro del expediente (pestanas 'Contratos' y 'Estudios')
+  // donde tienen contexto. Las rutas /contratos y /estudios siguen
+  // accesibles via URL pero ya no aparecen en navegacion.
   {
     label: 'Reportes',
     href: '/reportes',
