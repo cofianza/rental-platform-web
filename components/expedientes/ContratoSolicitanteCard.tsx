@@ -3,7 +3,7 @@
  *
  * Estados visibles:
  *   - borrador / en_revision / aprobado → "Preparando tu contrato..." (no accionable)
- *   - pendiente_firma → CTA revisar PDF + aviso "te enviamos el link de firma por correo"
+ *   - pendiente_firma → CTA revisar PDF + aviso "te enviamos el link de firma por WhatsApp"
  *   - firmado (por ambas partes, pendiente activación) → "Contrato firmado, esperando activación"
  *   - vigente → "¡Contrato activo!" con botón descargar firmado
  *   - cancelado / finalizado → banner informativo
@@ -157,7 +157,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             <div>
               <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando tu contrato</p>
               <p className="text-sm text-blue-800">
-                ¡Tu estudio fue aprobado! La inmobiliaria está generando el contrato de arrendamiento — te llegará por correo y WhatsApp en cuanto esté listo para firmar.
+                ¡Tu estudio fue aprobado! La inmobiliaria está generando el contrato de arrendamiento — te llegará por WhatsApp en cuanto esté listo para firmar.
               </p>
             </div>
           </div>
@@ -179,7 +179,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           <div>
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando tu contrato</p>
             <p className="text-sm text-blue-800">
-              La inmobiliaria está generando y revisando tu contrato de arrendamiento. Te avisaremos por correo cuando esté listo para firmar.
+              La inmobiliaria está generando y revisando tu contrato de arrendamiento. Te avisaremos por WhatsApp cuando esté listo para firmar.
             </p>
           </div>
         </div>
@@ -187,14 +187,14 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     )
   }
 
-  // pendiente_firma → revisar + aviso de firma por correo.
+  // pendiente_firma → revisar + aviso de firma por WhatsApp.
   if (contrato.estado === 'pendiente_firma') {
     const tienePdf = Boolean(contrato.contenido_pdf_url || contrato.storage_key)
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Tu contrato está listo para firmar</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Revisa el contrato antes de firmar. Enviamos a tu correo un enlace seguro con instrucciones — abre el correo desde el mismo dispositivo donde quieras firmar.
+          Revisa el contrato antes de firmar. Te enviamos un mensaje por WhatsApp con el link seguro para firmar — ábrelo y sigue las instrucciones.
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">
@@ -234,7 +234,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.76-2.93L13.76 4a2 2 0 00-3.52 0L3.17 16.07A2 2 0 004.93 19z" />
             </svg>
-            <span>El PDF del contrato aún no está disponible. La inmobiliaria lo adjuntará en breve — te avisaremos por correo.</span>
+            <span>El PDF del contrato aún no está disponible. La inmobiliaria lo adjuntará en breve — te avisaremos por WhatsApp.</span>
           </div>
         )}
 
@@ -242,7 +242,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           {!showResendForm ? (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-xs text-gray-500">
-                ¿No recibiste el correo de firma? Revisa tu carpeta de spam o reenvíalo a otra dirección.
+                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo o reenvíalo a otro número/correo.
               </p>
               <div className="flex gap-2">
                 <button

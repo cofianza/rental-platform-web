@@ -1,31 +1,41 @@
 /**
  * DatosFiscalesSolicitanteSection — pestana 'Datos Fiscales' para el solicitante
  * en /facturacion. Muestra los datos que se usaran al emitir la factura
- * electronica y permite editarlos. Si faltan campos requeridos por Factus
- * (CC, email, telefono, direccion, municipio), bloquea con un banner ambar
- * — la emision desde el expediente esta gateada por la misma validacion en
+ * electronica y permite editarlos.
+ *
+ * Soporta persona natural (CC/CE/TI + nombre completo) y persona juridica
+ * (NIT + razon social + DV) — la facturacion DIAN exige campos distintos
+ * segun el tipo. El toggle al inicio del form decide que campos se piden.
+ *
+ * Si faltan campos requeridos por Factus bloquea con un banner ambar — la
+ * emision desde el expediente esta gateada por la misma validacion en
  * backend, asi que aqui solo informamos al usuario.
  */
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { misDatosFiscalesService, type IMisDatosFiscales } from '@/services/misDatosFiscalesService'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconLoader, IconCheck, IconAlertTriangle } from '@/components/icons'
 
-const TIPO_DOC_OPTIONS = [
+const TIPO_DOC_NATURAL = [
   { value: 'cc', label: 'Cédula de Ciudadanía (CC)' },
   { value: 'ce', label: 'Cédula de Extranjería (CE)' },
   { value: 'ti', label: 'Tarjeta de Identidad (TI)' },
+] as const
+
+const TIPO_DOC_JURIDICA = [
   { value: 'nit', label: 'NIT' },
 ] as const
 
 const FALTANTE_LABEL: Record<string, string> = {
   tipo_documento: 'Tipo de documento (debe ser CC, CE, TI o NIT — el pasaporte no aplica para facturación electrónica en Colombia)',
   numero_documento: 'Número de documento',
+  digito_verificacion: 'Dígito de verificación del NIT',
+  razon_social: 'Razón social de la empresa',
   email: 'Correo electrónico',
   telefono: 'Teléfono',
   direccion: 'Dirección',
@@ -34,13 +44,29 @@ const FALTANTE_LABEL: Record<string, string> = {
 
 const TIPOS_FISCALES_VALIDOS = ['cc', 'ce', 'ti', 'nit']
 
+type Form = {
+  tipo_persona: 'natural' | 'juridica'
+  razon_social: string
+  tipo_documento: string
+  numero_documento: string
+  digito_verificacion: string
+  email: string
+  telefono: string
+  direccion: string
+  municipio_id: string
+  municipio_nombre: string
+}
+
 export function DatosFiscalesSolicitanteSection() {
   const accessToken = useAuthStore((s) => s.accessToken)
 
   const [data, setData] = useState<IMisDatosFiscales | null>(null)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<Form>({
+    tipo_persona: 'natural',
+    razon_social: '',
     tipo_documento: '',
     numero_documento: '',
+    digito_verificacion: '',
     email: '',
     telefono: '',
     direccion: '',
@@ -59,13 +85,15 @@ export function DatosFiscalesSolicitanteSection() {
         if (cancelled) return
         setData(res)
         // Si el tipo guardado no es tributario (eg. 'pasaporte' del registro),
-        // dejamos vacio para forzar al usuario a elegir uno valido. Tampoco
-        // prellenamos numero porque el numero del pasaporte no sirve como CC.
+        // dejamos vacio para forzar al usuario a elegir uno valido.
         const tipoLower = (res.tipo_documento || '').toLowerCase()
         const tipoEsFiscal = TIPOS_FISCALES_VALIDOS.includes(tipoLower)
         setForm({
+          tipo_persona: res.tipo_persona ?? 'natural',
+          razon_social: res.razon_social ?? '',
           tipo_documento: tipoEsFiscal ? tipoLower : '',
           numero_documento: tipoEsFiscal ? res.numero_documento || '' : '',
+          digito_verificacion: res.digito_verificacion ?? '',
           email: res.email || '',
           telefono: res.telefono || '',
           direccion: res.direccion || '',
@@ -84,17 +112,51 @@ export function DatosFiscalesSolicitanteSection() {
     }
   }, [])
 
-  const setField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+  const setField = <K extends keyof Form>(key: K, value: Form[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+    setDirty(true)
+  }
+
+  const handleTipoPersonaChange = (next: 'natural' | 'juridica') => {
+    setForm((prev) => ({
+      ...prev,
+      tipo_persona: next,
+      // Persona juridica: forzamos NIT como tipo_documento. Si el usuario
+      // cambia de juridica -> natural y tenia NIT, vaciamos para que elija
+      // CC/CE/TI manualmente (NIT no aplica a persona natural en este flujo).
+      tipo_documento: next === 'juridica' ? 'nit' : (prev.tipo_documento === 'nit' ? '' : prev.tipo_documento),
+      // Si pasa a natural, limpiamos campos exclusivos de juridica.
+      ...(next === 'natural'
+        ? { razon_social: '', digito_verificacion: '' }
+        : {}),
+    }))
     setDirty(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.tipo_documento || !TIPOS_FISCALES_VALIDOS.includes(form.tipo_documento)) {
-      toast.error('Selecciona un tipo de documento válido (CC, CE, TI o NIT)')
-      return
+
+    // Validaciones cliente — el backend tambien valida y bloquea.
+    if (form.tipo_persona === 'juridica') {
+      if (!form.razon_social.trim()) {
+        toast.error('Ingresa la razón social de la empresa')
+        return
+      }
+      if (form.tipo_documento !== 'nit') {
+        toast.error('Persona jurídica requiere NIT')
+        return
+      }
+      if (!/^\d$/.test(form.digito_verificacion)) {
+        toast.error('Ingresa el dígito de verificación del NIT (1 dígito)')
+        return
+      }
+    } else {
+      if (!form.tipo_documento || form.tipo_documento === 'nit') {
+        toast.error('Selecciona un tipo de documento válido (CC, CE o TI)')
+        return
+      }
     }
+
     if (!form.numero_documento.trim()) {
       toast.error('El número de documento es obligatorio')
       return
@@ -103,11 +165,15 @@ export function DatosFiscalesSolicitanteSection() {
       toast.error('Ingresa un correo electrónico válido')
       return
     }
+
     setSaving(true)
     try {
       const updated = await misDatosFiscalesService.update({
+        tipo_persona: form.tipo_persona,
+        razon_social: form.razon_social,
         tipo_documento: form.tipo_documento,
         numero_documento: form.numero_documento,
+        digito_verificacion: form.digito_verificacion,
         email: form.email,
         telefono: form.telefono,
         direccion: form.direccion,
@@ -123,6 +189,11 @@ export function DatosFiscalesSolicitanteSection() {
       setSaving(false)
     }
   }
+
+  const tipoDocOptions = useMemo(
+    () => (form.tipo_persona === 'juridica' ? TIPO_DOC_JURIDICA : TIPO_DOC_NATURAL),
+    [form.tipo_persona],
+  )
 
   if (loading) {
     return (
@@ -173,20 +244,76 @@ export function DatosFiscalesSolicitanteSection() {
           Estos datos aparecerán en las facturas electrónicas que Cofianza emita a tu nombre.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Nombre (readonly — viene del registro) */}
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-            <input
-              type="text"
-              value={`${data?.nombre || ''} ${data?.apellido || ''}`.trim()}
-              disabled
-              className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-700"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Para cambiar tu nombre, contacta soporte.
-            </p>
+        {/* Toggle Persona Natural / Jurídica */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            ¿Facturas como persona natural o como empresa?
+          </label>
+          <div className="flex gap-2 border border-gray-200 rounded-lg p-1 bg-gray-50">
+            <button
+              type="button"
+              onClick={() => handleTipoPersonaChange('natural')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                form.tipo_persona === 'natural'
+                  ? 'bg-white shadow-sm text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Persona natural
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTipoPersonaChange('juridica')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                form.tipo_persona === 'juridica'
+                  ? 'bg-white shadow-sm text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Empresa (Persona jurídica)
+            </button>
           </div>
+          <p className="text-xs text-gray-500 mt-1.5">
+            {form.tipo_persona === 'natural'
+              ? 'La factura saldrá a tu nombre con tu Cédula de Ciudadanía.'
+              : 'La factura saldrá a nombre de la empresa con su NIT y dígito de verificación.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {form.tipo_persona === 'natural' ? (
+            // Persona natural: nombre completo viene del registro (readonly)
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+              <input
+                type="text"
+                value={`${data?.nombre || ''} ${data?.apellido || ''}`.trim()}
+                disabled
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-700"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Para cambiar tu nombre, contacta soporte.
+              </p>
+            </div>
+          ) : (
+            // Persona jurídica: razón social editable
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Razón social <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.razon_social}
+                onChange={(e) => setField('razon_social', e.target.value)}
+                placeholder="Ej. CONSTRUCTORA Y ARRENDAMIENTOS DE ANTIOQUIA S.A.S."
+                maxLength={300}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Nombre legal completo de la empresa, tal como aparece en el RUT.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -195,23 +322,26 @@ export function DatosFiscalesSolicitanteSection() {
             <select
               value={form.tipo_documento}
               onChange={(e) => setField('tipo_documento', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              disabled={form.tipo_persona === 'juridica'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-700"
             >
               <option value="">— Selecciona —</option>
-              {TIPO_DOC_OPTIONS.map((opt) => (
+              {tipoDocOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Si en el registro pusiste pasaporte, eligelo aquí como CC, CE, TI o NIT — son los únicos válidos para facturas DIAN.
+              {form.tipo_persona === 'juridica'
+                ? 'Las empresas en Colombia facturan con NIT.'
+                : 'Si en el registro pusiste pasaporte, eligelo aquí como CC, CE o TI — son los únicos válidos para facturas DIAN de persona natural.'}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número de documento <span className="text-red-500">*</span>
+              {form.tipo_persona === 'juridica' ? 'NIT' : 'Número de documento'} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -222,6 +352,27 @@ export function DatosFiscalesSolicitanteSection() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+
+          {/* Dígito de verificación — solo persona jurídica */}
+          {form.tipo_persona === 'juridica' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dígito de verificación <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.digito_verificacion}
+                onChange={(e) => setField('digito_verificacion', e.target.value.replace(/\D/g, '').slice(0, 1))}
+                placeholder="Ej. 7"
+                maxLength={1}
+                inputMode="numeric"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                El último dígito que aparece en el NIT (ej. 900.123.456-<strong>7</strong>).
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
