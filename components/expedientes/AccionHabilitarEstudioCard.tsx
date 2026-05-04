@@ -24,14 +24,33 @@ interface AccionHabilitarEstudioCardProps {
   expedienteId: string
   estudioHabilitado: boolean
   estudioRechazado: boolean | null | undefined
+  /** Datos del contrato pre-existentes en el expediente. Si vienen, prefilamos
+   *  el modal con esos valores; si no, defaults razonables (12 meses + hoy). */
+  duracionContratoMeses?: number | null
+  fechaInicioContrato?: string | null
   userRol?: string
   onAction: () => void | Promise<void>
+}
+
+const DURACION_OPCIONES = [
+  1, 2, 3, 6, 9, 12, 18, 24, 36, 48, 60,
+] as const
+
+function todayISO(): string {
+  // Fecha local en formato YYYY-MM-DD, sin afectacion de zona horaria.
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function AccionHabilitarEstudioCard({
   expedienteId,
   estudioHabilitado,
   estudioRechazado,
+  duracionContratoMeses,
+  fechaInicioContrato,
   userRol,
   onAction,
 }: AccionHabilitarEstudioCardProps) {
@@ -46,6 +65,11 @@ export function AccionHabilitarEstudioCard({
   const [showRechazar, setShowRechazar] = useState(false)
   const [motivoRechazo, setMotivoRechazo] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Modal de captura de datos del contrato — paso previo a habilitar.
+  const [showHabilitar, setShowHabilitar] = useState(false)
+  const [duracionMeses, setDuracionMeses] = useState<number>(duracionContratoMeses ?? 12)
+  const [fechaInicio, setFechaInicio] = useState<string>(fechaInicioContrato ?? todayISO())
 
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
   // casos (estudio ya decidido o usuario sin permiso) salimos sin gasto.
@@ -67,16 +91,29 @@ export function AccionHabilitarEstudioCard({
 
   useEffect(() => { fetchCitas() }, [fetchCitas])
 
-  const handleHabilitar = async () => {
+  const handleConfirmarHabilitar = async () => {
+    if (!duracionMeses || duracionMeses < 1) {
+      toast.error('Selecciona la duración del contrato (al menos 1 mes)')
+      return
+    }
+    if (!fechaInicio || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
+      toast.error('Selecciona la fecha de inicio del contrato')
+      return
+    }
     setSubmitting(true)
     try {
-      await expedienteService.habilitarEstudio(expedienteId)
+      await expedienteService.habilitarEstudio(expedienteId, {
+        duracion_contrato_meses: duracionMeses,
+        fecha_inicio_contrato: fechaInicio,
+      })
       toast.success('Estudio habilitado, se notifico al solicitante')
+      setShowHabilitar(false)
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
       if (errObj.code === 'ESTUDIO_YA_HABILITADO') {
         toast.message('El estudio ya estaba habilitado. Refrescando...')
+        setShowHabilitar(false)
         await onAction()
       } else {
         toast.error(errObj.message || 'Error al habilitar el estudio')
@@ -125,15 +162,11 @@ export function AccionHabilitarEstudioCard({
             </p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={handleHabilitar}
+                onClick={() => setShowHabilitar(true)}
                 disabled={submitting}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
               >
-                {submitting ? (
-                  <IconLoader size={14} className="animate-spin" />
-                ) : (
-                  <IconShieldCheck size={14} />
-                )}
+                <IconShieldCheck size={14} />
                 Habilitar estudio
               </button>
               <button
@@ -147,6 +180,74 @@ export function AccionHabilitarEstudioCard({
           </div>
         </div>
       </div>
+
+      {/* Modal de datos del contrato — paso previo al estudio. Estos datos
+          quedan en el expediente y alimentan el contrato cuando se genere. */}
+      <Modal
+        isOpen={showHabilitar}
+        onClose={() => !submitting && setShowHabilitar(false)}
+        title="Datos del contrato"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Antes de habilitar el estudio, captura los datos del contrato. Estos datos podrán editarse hasta que se ejecute el estudio; después quedan congelados y se usan al generar el contrato.
+          </p>
+
+          <div>
+            <label htmlFor="duracion-meses-select" className="block text-sm font-medium text-gray-700 mb-1">
+              Duración del contrato (meses) <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="duracion-meses-select"
+              value={duracionMeses}
+              onChange={(e) => setDuracionMeses(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {DURACION_OPCIONES.map((m) => (
+                <option key={m} value={m}>
+                  {m === 1 ? '1 mes' : `${m} meses`}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Lo más común es 12 meses. Si necesitas otra duración no listada, escríbeme y la agregamos.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="fecha-inicio-input" className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de inicio del contrato <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="fecha-inicio-input"
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setShowHabilitar(false)}
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmarHabilitar}
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {submitting && <IconLoader size={14} className="animate-spin" />}
+              <IconShieldCheck size={14} />
+              Confirmar y habilitar estudio
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={showRechazar}

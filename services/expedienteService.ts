@@ -429,16 +429,21 @@ class ExpedienteService {
   /**
    * Habilita el estudio crediticio para un expediente — Paso 3 del flujo.
    * Dispara el RPC fn_habilitar_estudio_expediente (crea placeholder en
-   * estudios + timeline + email al solicitante).
+   * estudios + timeline + email al solicitante). Recibe los datos del
+   * contrato que se persisten en el expediente para alimentar el contrato
+   * mas adelante.
    */
-  async habilitarEstudio(expedienteId: string): Promise<{
+  async habilitarEstudio(
+    expedienteId: string,
+    datosContrato: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
+  ): Promise<{
     expediente: { id: string; numero: string; estudio_habilitado: true }
     estudio: { id: string; estado: string; resultado: string }
   }> {
     const response = await apiClient.patch<{
       expediente: { id: string; numero: string; estudio_habilitado: true }
       estudio: { id: string; estado: string; resultado: string }
-    }>(`/expedientes/${expedienteId}/habilitar-estudio`, {})
+    }>(`/expedientes/${expedienteId}/habilitar-estudio`, datosContrato)
     return response.data
   }
 

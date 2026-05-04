@@ -67,6 +67,10 @@ export interface IExpediente {
    *  excluyente con estudio_habilitado=true. */
   estudio_rechazado?: boolean | null
   motivo_estudio_rechazado?: string | null
+  /** Datos del contrato capturados al habilitar el estudio. Editables hasta
+   *  esa habilitacion; despues quedan congelados y alimentan el contrato. */
+  duracion_contrato_meses?: number | null
+  fecha_inicio_contrato?: string | null
   created_at: string
   updated_at: string
 }
