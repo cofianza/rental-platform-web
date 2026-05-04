@@ -34,6 +34,7 @@ import {
   EstudioSolicitanteCard,
   ContratoSolicitanteCard,
   AccionContratoPendienteCard,
+  AccionHabilitarEstudioCard,
   ContratoEstadoCard,
   EstudioEstadoCard,
 } from '@/components/expedientes'
@@ -369,9 +370,17 @@ export default function ExpedienteDetallePage() {
 
             {/* Propietario/inmobiliaria/admin/operador: cards informativas
                 del estado del estudio y del contrato (cada una se auto-oculta
-                si no aplica). El orden refleja el flujo: estudio → contrato. */}
+                si no aplica). El orden refleja el flujo: cita realizada →
+                habilitar estudio → estudio en curso → contrato. */}
             {user?.rol !== 'solicitante' && (
               <>
+                <AccionHabilitarEstudioCard
+                  expedienteId={id}
+                  estudioHabilitado={expediente.estudio_habilitado ?? false}
+                  estudioRechazado={expediente.estudio_rechazado}
+                  userRol={user?.rol}
+                  onAction={fetchExpediente}
+                />
                 <EstudioEstadoCard
                   expedienteId={id}
                   onVerEstudios={() => setActiveTab('estudios')}

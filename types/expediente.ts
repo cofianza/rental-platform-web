@@ -61,6 +61,12 @@ export interface IExpediente {
    *  existe al menos una cita en estado='realizada'. Permite mapear el paso
    *  del proceso (Cita previa vs Estudio) cuando estado='borrador'. */
   cita_realizada?: boolean
+  /** Flag del workflow paso 3: el propietario habilito el estudio crediticio. */
+  estudio_habilitado?: boolean
+  /** Flag del workflow paso 3: el propietario decidio NO proceder. Mutuamente
+   *  excluyente con estudio_habilitado=true. */
+  estudio_rechazado?: boolean | null
+  motivo_estudio_rechazado?: string | null
   created_at: string
   updated_at: string
 }
