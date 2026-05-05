@@ -429,13 +429,11 @@ class ExpedienteService {
   /**
    * Habilita el estudio crediticio para un expediente — Paso 3 del flujo.
    * Dispara el RPC fn_habilitar_estudio_expediente (crea placeholder en
-   * estudios + timeline + email al solicitante). Recibe los datos del
-   * contrato que se persisten en el expediente para alimentar el contrato
-   * mas adelante.
+   * estudios + timeline + email al solicitante). No requiere body — los
+   * datos del contrato (duracion + fecha) se piden post-aprobacion.
    */
   async habilitarEstudio(
     expedienteId: string,
-    datosContrato: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estudio_habilitado: true }
     estudio: { id: string; estado: string; resultado: string }
@@ -443,7 +441,7 @@ class ExpedienteService {
     const response = await apiClient.patch<{
       expediente: { id: string; numero: string; estudio_habilitado: true }
       estudio: { id: string; estado: string; resultado: string }
-    }>(`/expedientes/${expedienteId}/habilitar-estudio`, datosContrato)
+    }>(`/expedientes/${expedienteId}/habilitar-estudio`, {})
     return response.data
   }
 
@@ -467,11 +465,13 @@ class ExpedienteService {
   /**
    * Aprobar manualmente un expediente que el buró dejó condicionado: el
    * propietario revisa la documentación adicional pedida (codeudor, póliza,
-   * etc.) y, si decide proceder, llama a este endpoint. Transiciona el
-   * expediente a 'aprobado' y dispara la generación automática del contrato.
+   * etc.) y, si decide proceder, llama a este endpoint con la duración +
+   * fecha de inicio del contrato. Transiciona el expediente a 'aprobado'
+   * y dispara la generación del contrato.
    */
   async aprobarCondicionado(
     expedienteId: string,
+    datosContrato: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estado: 'aprobado' }
     contrato_id: string | null
@@ -479,7 +479,26 @@ class ExpedienteService {
     const response = await apiClient.post<{
       expediente: { id: string; numero: string; estado: 'aprobado' }
       contrato_id: string | null
-    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, {})
+    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, datosContrato)
+    return response.data
+  }
+
+  /**
+   * Genera el contrato para un expediente ya aprobado por el buró.
+   * Recibe los datos del contrato (duración + fecha) — antes los pedía
+   * el orchestrator con defaults; ahora los decide el propietario.
+   */
+  async generarContratoExpediente(
+    expedienteId: string,
+    datosContrato: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
+  ): Promise<{
+    expediente: { id: string; numero: string; estado: 'aprobado' }
+    contrato_id: string | null
+  }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string; estado: 'aprobado' }
+      contrato_id: string | null
+    }>(`/expedientes/${expedienteId}/generar-contrato`, datosContrato)
     return response.data
   }
 }

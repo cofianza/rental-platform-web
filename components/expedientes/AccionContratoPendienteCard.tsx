@@ -1,32 +1,52 @@
 /**
- * AccionContratoPendienteCard — señaliza al admin/operador/inmobiliaria
+ * AccionContratoPendienteCard — señaliza al propietario/inmobiliaria/admin/operador
  * cuando un expediente está aprobado pero aún no tiene contrato generado.
  *
- * El propietario ve el mismo aviso pero en modo "informativo" (no tiene
- * permiso para generar contratos — la inmobiliaria es quien los genera).
+ * El propietario captura aquí la duración del contrato y la fecha de inicio.
+ * Al hacer clic, el backend genera el contrato y queda en 'borrador' listo
+ * para enviar a firma desde la pestaña Contratos.
+ *
+ * Flujo: estudio aprobado por el buró → expediente queda en 'aprobado'
+ * SIN contrato (el orchestrator ya no lo auto-genera, decisión Mario
+ * 5-may-2026) → este card pide los datos y dispara la generación.
  */
 
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { contratoService } from '@/services/contratoService'
+import { expedienteService } from '@/services/expedienteService'
 
 interface AccionContratoPendienteCardProps {
   expedienteId: string
   expedienteEstado: string
   userRol?: string
-  /** Callback para abrir el modal "Generar contrato" desde el Resumen. */
-  onGenerarClick?: () => void
+  onGenerated?: () => void
+}
+
+const DURACION_OPCIONES = [1, 2, 3, 6, 9, 12, 18, 24, 36, 48, 60] as const
+
+function todayISO(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function AccionContratoPendienteCard({
   expedienteId,
   expedienteEstado,
   userRol,
-  onGenerarClick,
+  onGenerated,
 }: AccionContratoPendienteCardProps) {
   const [loading, setLoading] = useState(true)
   const [hasContrato, setHasContrato] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [duracionMeses, setDuracionMeses] = useState<number>(12)
+  const [fechaInicio, setFechaInicio] = useState<string>(todayISO())
 
   const fetchContratos = useCallback(async () => {
     try {
@@ -43,14 +63,46 @@ export function AccionContratoPendienteCard({
   useEffect(() => { fetchContratos() }, [fetchContratos])
 
   // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
-  // En 'condicionado' no mostramos nada — el propietario primero debe aprobar
-  // manualmente (ver AprobarCondicionadoCard) y solo entonces se genera el
-  // contrato.
+  // En 'condicionado' se muestra AprobarCondicionadoCard, no este card.
   if (loading) return null
   if (hasContrato) return null
   if (expedienteEstado !== 'aprobado') return null
 
-  const puedeGenerar = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'inmobiliaria'
+  const puedeGenerar =
+    userRol === 'administrador' ||
+    userRol === 'operador_analista' ||
+    userRol === 'inmobiliaria' ||
+    userRol === 'propietario'
+
+  const handleGenerar = async () => {
+    if (!duracionMeses || duracionMeses < 1) {
+      toast.error('Selecciona la duración del contrato (al menos 1 mes)')
+      return
+    }
+    if (!fechaInicio || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
+      toast.error('Selecciona la fecha de inicio del contrato')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const result = await expedienteService.generarContratoExpediente(expedienteId, {
+        duracion_contrato_meses: duracionMeses,
+        fecha_inicio_contrato: fechaInicio,
+      })
+      if (result.contrato_id) {
+        toast.success('Contrato generado. Revísalo desde la pestaña Contratos antes de enviarlo a firma.')
+      } else {
+        toast.message('El expediente quedó listo. Genera el contrato desde la pestaña Contratos si no aparece en breve.')
+      }
+      setShowForm(false)
+      onGenerated?.()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo generar el contrato.'
+      toast.error(msg)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   if (puedeGenerar) {
     return (
@@ -64,11 +116,12 @@ export function AccionContratoPendienteCard({
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-0.5">Acción requerida: generar contrato</h3>
             <p className="text-sm text-gray-600 mb-3">
-              El expediente está aprobado. El siguiente paso es generar el contrato de arrendamiento (desde el PDF del propietario o una plantilla de Cofianza) y enviarlo a firma.
+              El expediente está aprobado. Captura la duración del contrato y la fecha de inicio para generarlo y dejarlo listo para enviar a firma.
             </p>
-            {onGenerarClick ? (
+
+            {!showForm ? (
               <button
-                onClick={onGenerarClick}
+                onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
               >
                 Generar contrato
@@ -77,7 +130,53 @@ export function AccionContratoPendienteCard({
                 </svg>
               </button>
             ) : (
-              <p className="text-sm text-primary-700 font-medium">Ve a la pestaña <strong>Contratos</strong> para generarlo.</p>
+              <div className="bg-white border border-primary-200 rounded-lg p-4 space-y-4">
+                <div>
+                  <label htmlFor="generar-contrato-duracion" className="block text-sm font-medium text-gray-700 mb-1">
+                    Duración del contrato (meses) <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="generar-contrato-duracion"
+                    value={duracionMeses}
+                    onChange={(e) => setDuracionMeses(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    {DURACION_OPCIONES.map((m) => (
+                      <option key={m} value={m}>{m === 1 ? '1 mes' : `${m} meses`}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="generar-contrato-fecha" className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de inicio del contrato <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="generar-contrato-fecha"
+                    type="date"
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    onClick={handleGenerar}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  >
+                    {submitting ? 'Generando…' : 'Confirmar y generar'}
+                  </button>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -85,7 +184,7 @@ export function AccionContratoPendienteCard({
     )
   }
 
-  // Propietario: avisar informativo (no tiene permiso para generar).
+  // Otros roles (solicitante, gerencia_consulta) — informativo.
   return (
     <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
       <div className="flex items-start gap-3">

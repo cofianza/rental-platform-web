@@ -379,8 +379,6 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   estudioHabilitado={expediente.estudio_habilitado ?? false}
                   estudioRechazado={expediente.estudio_rechazado}
-                  duracionContratoMeses={expediente.duracion_contrato_meses}
-                  fechaInicioContrato={expediente.fecha_inicio_contrato}
                   userRol={user?.rol}
                   onAction={fetchExpediente}
                 />
@@ -398,7 +396,7 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
-                  onGenerarClick={() => setActiveTab('contratos')}
+                  onGenerated={fetchExpediente}
                 />
                 <ContratoEstadoCard
                   expedienteId={id}
