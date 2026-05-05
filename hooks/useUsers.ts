@@ -250,6 +250,46 @@ export function useUsers() {
   )
 
   /**
+   * Borrado completo de un usuario (super-admin). Si el backend reporta
+   * relaciones bloqueantes, devuelve el detalle para que la UI ofrezca
+   * "eliminar de todos modos" (force=true). Resuelve a true si el usuario
+   * fue eliminado, false si la operación falló.
+   */
+  const deleteUser = useCallback(
+    async (
+      user: IUserProfile,
+      options: { force?: boolean } = {},
+    ): Promise<{ ok: boolean; blockers?: Record<string, number>; message?: string }> => {
+      setError(null)
+
+      try {
+        await userService.deleteUser(user.id, options)
+        await fetchUsers()
+        toast.success(`Usuario ${user.email} eliminado correctamente`)
+        return { ok: true }
+      } catch (err) {
+        // Errores AppError vienen serializados por apiClient.
+        const errObj = err as {
+          message?: string
+          errorCode?: string
+          details?: { blockers?: Record<string, number> }
+        }
+        const message = errObj.message || 'Error al eliminar el usuario'
+
+        // Si fue por dependencias y no veníamos con force, devolvemos el
+        // detalle al caller para que decida si reintentar.
+        if (errObj.errorCode === 'USER_HAS_DEPENDENCIES') {
+          return { ok: false, blockers: errObj.details?.blockers, message }
+        }
+
+        toast.error(message)
+        return { ok: false, message }
+      }
+    },
+    [fetchUsers, setError],
+  )
+
+  /**
    * Limpia filtros y recarga
    */
   const clearFilters = useCallback(() => {
@@ -281,5 +321,6 @@ export function useUsers() {
     updateUser,
     activateUser,
     deactivateUser,
+    deleteUser,
   }
 }

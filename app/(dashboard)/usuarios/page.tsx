@@ -15,6 +15,7 @@ import {
   UsersSkeleton,
   UserForm,
   ConfirmDialog,
+  DeleteUserDialog,
   USER_MESSAGES,
 } from '@/components/users'
 import { useUsers } from '@/hooks/useUsers'
@@ -41,6 +42,7 @@ function UsuariosContent() {
     updateUser,
     activateUser,
     deactivateUser,
+    deleteUser,
   } = useUsers()
 
   // Estado local para diálogo de confirmación
@@ -54,6 +56,9 @@ function UsuariosContent() {
     action: 'deactivate',
   })
   const [isConfirmLoading, setIsConfirmLoading] = useState(false)
+
+  // Estado para el dialog de borrado completo (super-admin).
+  const [deleteDialogUser, setDeleteDialogUser] = useState<IUserProfile | null>(null)
 
   // Verificar si es administrador
   const isAdmin = user?.rol === 'administrador'
@@ -150,6 +155,7 @@ function UsuariosContent() {
           onFilterChange={setFilters}
           onEdit={openEditModal}
           onToggleStatus={handleToggleStatus}
+          onDelete={(u) => setDeleteDialogUser(u)}
           isLoading={isLoading}
         />
       )}
@@ -183,6 +189,14 @@ function UsuariosContent() {
         confirmText={confirmDialog.action === 'deactivate' ? 'Desactivar' : 'Activar'}
         variant={confirmDialog.action === 'deactivate' ? 'danger' : 'default'}
         isLoading={isConfirmLoading}
+      />
+
+      {/* Diálogo de borrado completo (super-admin). */}
+      <DeleteUserDialog
+        isOpen={deleteDialogUser !== null}
+        user={deleteDialogUser}
+        onDelete={deleteUser}
+        onClose={() => setDeleteDialogUser(null)}
       />
     </div>
   )

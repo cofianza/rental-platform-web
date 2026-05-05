@@ -5,7 +5,7 @@
  * Tabla responsive con paginación
  */
 
-import { IconEdit, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader } from '@/components/icons'
+import { IconEdit, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash } from '@/components/icons'
 import { RoleBadge, StatusBadge } from './UserBadges'
 import { ITEMS_PER_PAGE_OPTIONS, USER_MESSAGES } from './constants'
 import type { IUserProfile, IUserFilters, IUsersMeta } from '@/types/user'
@@ -17,6 +17,8 @@ interface UsersTableProps {
   onFilterChange: (filters: Partial<IUserFilters>) => void
   onEdit: (user: IUserProfile) => void
   onToggleStatus: (user: IUserProfile) => void
+  /** Borrado completo (super-admin). Cuando se omite, no se muestra el botón. */
+  onDelete?: (user: IUserProfile) => void
   isLoading?: boolean
 }
 
@@ -27,6 +29,7 @@ export function UsersTable({
   onFilterChange,
   onEdit,
   onToggleStatus,
+  onDelete,
   isLoading = false,
 }: UsersTableProps) {
   const handlePageChange = (newPage: number) => {
@@ -123,6 +126,15 @@ export function UsersTable({
                     >
                       {user.estado === 'activo' ? <IconUserX size={18} /> : <IconUserCheck size={18} />}
                     </button>
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(user)}
+                        className="p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Eliminar usuario (irreversible)"
+                      >
+                        <IconTrash size={18} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -161,6 +173,15 @@ export function UsersTable({
                 >
                   {user.estado === 'activo' ? <IconUserX size={18} /> : <IconUserCheck size={18} />}
                 </button>
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(user)}
+                    className="p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar usuario"
+                  >
+                    <IconTrash size={18} />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">

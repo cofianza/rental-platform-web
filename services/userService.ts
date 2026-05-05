@@ -117,6 +117,22 @@ class UserService {
     const response = (await apiClient.patch(`/users/${id}/deactivate`)) as unknown as IUserResponse
     return response.data
   }
+
+  /**
+   * Borra un usuario por completo (super-admin). Si tiene relaciones
+   * bloqueantes, el backend responde 400 con `details.blockers` (mapa
+   * tabla → cantidad). Reintenta con force=true para forzar.
+   */
+  async deleteUser(
+    id: string,
+    options: { force?: boolean } = {},
+  ): Promise<{ deleted: true; user_id: string; email: string | null }> {
+    const qs = options.force ? '?force=true' : ''
+    const response = (await apiClient.delete(`/users/${id}${qs}`)) as unknown as {
+      data: { deleted: true; user_id: string; email: string | null }
+    }
+    return response.data
+  }
 }
 
 // Instancia singleton
