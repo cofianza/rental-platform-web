@@ -188,11 +188,13 @@ export function Sidebar() {
         <div className="border-t border-gray-200 p-2 space-y-1">
           <Link
             href="/vitrina"
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
               'text-gray-700 hover:bg-primary-50 hover:text-primary-600 group relative'
             )}
-            title="Ver vitrina publica"
+            title="Ver vitrina publica (abre en nueva pestaña)"
           >
             <IconGlobe size={20} className="shrink-0 text-gray-600 group-hover:text-primary-600" />
             <span
