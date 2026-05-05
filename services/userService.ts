@@ -10,6 +10,7 @@ import type {
   IUsersResponse,
   IUserResponse,
   IUserProfile,
+  IOrphanAuthUser,
 } from '@/types/user'
 
 /**
@@ -115,6 +116,17 @@ class UserService {
    */
   async deactivateUser(id: string): Promise<IUserProfile> {
     const response = (await apiClient.patch(`/users/${id}/deactivate`)) as unknown as IUserResponse
+    return response.data
+  }
+
+  /**
+   * Lista usuarios huérfanos: filas en auth.users sin entrada en perfiles.
+   * Quedan cuando un registro falla a mitad de camino. Solo admin.
+   */
+  async listOrphans(): Promise<IOrphanAuthUser[]> {
+    const response = (await apiClient.get('/users/orphans')) as unknown as {
+      data: IOrphanAuthUser[]
+    }
     return response.data
   }
 

@@ -7,6 +7,7 @@
 
 import { useState, Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { IconLoader } from '@/components/icons'
 import {
@@ -122,11 +123,19 @@ function UsuariosContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <PageHeader
-        title="Usuarios"
-        subtitle={meta ? `${meta.total} usuarios registrados` : 'Cargando...'}
-      />
+      {/* Header con link al panel super-admin de huérfanos */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <PageHeader
+          title="Usuarios"
+          subtitle={meta ? `${meta.total} usuarios registrados` : 'Cargando...'}
+        />
+        <Link
+          href="/usuarios/huerfanos"
+          className="text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
+        >
+          Limpiar cuentas huérfanas →
+        </Link>
+      </div>
 
       {/* Error global */}
       {error && (

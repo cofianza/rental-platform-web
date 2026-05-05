@@ -60,6 +60,18 @@ export interface IUserResponse {
 }
 
 /**
+ * Usuario huérfano: existe en auth.users pero NO en perfiles. Sucede cuando
+ * un registro falla a la mitad. Lo lista el panel super-admin de limpieza.
+ */
+export interface IOrphanAuthUser {
+  id: string
+  email: string | null
+  created_at: string
+  last_sign_in_at: string | null
+  user_metadata: Record<string, unknown>
+}
+
+/**
  * Estado del modal de usuario
  */
 export type UserModalMode = 'create' | 'edit' | null
