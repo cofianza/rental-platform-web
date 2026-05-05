@@ -30,6 +30,7 @@ const TIPO_ICON: Record<string, string> = {
   'pago.confirmado': '💳',
   'contrato.pendiente_firma': '✍️',
   'contrato.vigente': '📄',
+  'soporte.subido': '📎',
 }
 
 function formatRelativeTime(iso: string): string {
