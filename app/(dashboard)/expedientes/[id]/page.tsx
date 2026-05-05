@@ -36,6 +36,7 @@ import {
   AccionContratoPendienteCard,
   AccionHabilitarEstudioCard,
   AprobarCondicionadoCard,
+  SoportesCondicionadoSolicitanteCard,
   ContratoEstadoCard,
   EstudioEstadoCard,
 } from '@/components/expedientes'
@@ -364,6 +365,11 @@ export default function ExpedienteDetallePage() {
                 <EstudioSolicitanteCard
                   expedienteId={id}
                   onEjecutado={fetchExpediente}
+                />
+                <SoportesCondicionadoSolicitanteCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
                 />
                 <ContratoSolicitanteCard expedienteId={id} expedienteEstado={expediente.estado} />
               </div>

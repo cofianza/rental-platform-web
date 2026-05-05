@@ -174,6 +174,8 @@ export type PropositoSoporte =
   | 'extractos_bancarios'
   | 'declaracion_renta'
   | 'carta_referencia'
+  | 'codeudor'
+  | 'poliza'
   | 'otros_soportes'
 
 export interface IDocumentoSoporte {

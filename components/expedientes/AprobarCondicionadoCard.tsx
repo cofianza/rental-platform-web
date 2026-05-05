@@ -16,6 +16,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { expedienteService } from '@/services/expedienteService'
+import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -99,9 +100,14 @@ export function AprobarCondicionadoCard({
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
           <p className="text-sm text-gray-700 mb-3">
-            El buró marcó la solicitud como condicionada. Revisa la documentación adicional que pediste al solicitante (codeudor, póliza, etc.).
+            El buró marcó la solicitud como condicionada. Revisa la documentación adicional que el solicitante haya subido (codeudor, póliza, etc.).
             Si decides proceder, captura los datos del contrato y se generará automáticamente.
           </p>
+
+          <div className="mb-4 pb-4 border-b border-amber-200">
+            <p className="text-sm font-medium text-gray-700 mb-2">Documentación adicional del solicitante</p>
+            <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
+          </div>
 
           {!showForm ? (
             <div className="flex flex-wrap gap-2">
