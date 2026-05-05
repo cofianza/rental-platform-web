@@ -1,11 +1,12 @@
 /**
- * Politica de Privacidad — pagina publica linkada desde el registro
- * (form del solicitante: checkbox "Autorizo el tratamiento de mis datos
- * personales conforme a la politica de privacidad (Ley 1581/2012)").
+ * Política de Tratamiento de Datos Personales — versión oficial v1.0
+ * entregada por el equipo legal de COFIANZA S.A.S. Página pública linkada
+ * desde el checkbox "Autorizo el tratamiento de mis datos personales..."
+ * en el form de registro del solicitante. Conforme a Ley 1581/2012 y
+ * Decreto 1377/2013 (Colombia).
  *
- * Contenido placeholder alineado con la Ley 1581 de 2012 + Decreto 1377
- * de 2013 (proteccion de datos personales en Colombia). El equipo legal
- * del cliente reemplazara el texto con la version final.
+ * Los placeholders [NIT_PENDIENTE] y [DIRECCION_PENDIENTE] se reemplazarán
+ * cuando salgan los datos definitivos de Cámara de Comercio.
  */
 
 import type { Metadata } from 'next'
@@ -14,8 +15,9 @@ import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidad — Cofianza',
-  description: 'Política de tratamiento de datos personales de Cofianza, conforme a la Ley 1581 de 2012 de Colombia.',
+  title: 'Política de Tratamiento de Datos Personales — Cofianza',
+  description:
+    'Política de tratamiento de datos personales de Cofianza S.A.S., conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013 de Colombia.',
 }
 
 export default function PrivacidadPage() {
@@ -25,97 +27,147 @@ export default function PrivacidadPage() {
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Política de Privacidad y Tratamiento de Datos</h1>
-          <p className="text-sm text-gray-500 mt-2">Última actualización: mayo de 2026 · Conforme a la Ley 1581 de 2012</p>
+          <h1 className="text-3xl font-bold text-gray-900">Política de Tratamiento de Datos Personales</h1>
+          <p className="text-base text-gray-700 mt-1">COFIANZA S.A.S.</p>
+          <p className="text-sm text-gray-500 mt-2">Versión 1.0 · Conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013</p>
         </header>
 
-        <article className="prose prose-sm max-w-none text-gray-700 space-y-6">
+        <article className="prose prose-sm max-w-none text-gray-700 space-y-7 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Responsable del tratamiento</h2>
-            <p>
-              <strong>CONSTRUCTORA Y ARRENDAMIENTOS DE ANTIOQUIA S.A.S.</strong>, operadora de la plataforma Cofianza, es el responsable del tratamiento de los datos personales recabados a través de este sitio.
+            <ul className="list-none pl-0 space-y-1">
+              <li><strong>COFIANZA S.A.S.</strong></li>
+              <li>NIT: [pendiente de inscripción en Cámara de Comercio]</li>
+              <li>Correo: <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a></li>
+              <li>Dirección: [pendiente de definición de domicilio principal]</li>
+            </ul>
+            <p className="mt-3">
+              COFIANZA S.A.S. actúa como responsable del tratamiento de datos personales en el desarrollo de sus actividades de evaluación de riesgo, estructuración y gestión de soluciones financieras, tecnológicas y servicios asociados.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">2. Datos que recolectamos</h2>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Datos de identificación (nombre, apellido, tipo y número de documento).</li>
-              <li>Datos de contacto (correo, teléfono, dirección).</li>
-              <li>Datos socioeconómicos relevantes para el estudio crediticio (ingresos, ocupación, etc.).</li>
-              <li>Datos del inmueble y del contrato (en caso de propietarios o inmobiliarias).</li>
-              <li>Datos de pagos (a través de Stripe — Cofianza no almacena información completa de tarjetas).</li>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">2. Alcance</h2>
+            <p>
+              La presente política aplica al tratamiento de datos personales recolectados por COFIANZA a través de canales físicos, digitales, telefónicos o electrónicos, así como a su almacenamiento, uso, circulación, transferencia, transmisión, análisis o cualquier otra forma de tratamiento, en Colombia o en el exterior.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">3. Datos que tratamos</h2>
+            <p>COFIANZA podrá tratar, entre otros:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Datos de identificación y contacto.</li>
+              <li>Información laboral, económica y patrimonial.</li>
+              <li>Información financiera, comercial y crediticia.</li>
+              <li>Historial de pagos y comportamiento de obligaciones.</li>
+              <li>Información de interacción digital, navegación o dispositivos.</li>
+              <li>Datos biométricos o de validación de identidad, cuando sea necesario.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">3. Finalidad</h2>
-            <p>Los datos se tratan para:</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Finalidades del tratamiento</h2>
+            <p>Los datos personales serán utilizados para:</p>
+
+            <h3 className="text-base font-semibold text-gray-900 mt-4 mb-1">Operación y prestación del servicio</h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Gestionar el proceso de arrendamiento (publicación, visitas, contrato, firma, pagos).</li>
-              <li>Realizar estudios crediticios a través de proveedores autorizados (TransUnion, etc.).</li>
-              <li>Emitir facturación electrónica DIAN.</li>
-              <li>Cumplir obligaciones legales y contractuales.</li>
-              <li>Comunicaciones operativas (correo, WhatsApp y notificaciones in-app).</li>
+              <li>Evaluar el perfil de riesgo, comportamiento y capacidad de pago.</li>
+              <li>Analizar, aprobar o rechazar solicitudes de productos o servicios.</li>
+              <li>Administrar relaciones contractuales y obligaciones derivadas.</li>
+              <li>Realizar procesos de facturación, recaudo y gestión de cartera.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-gray-900 mt-4 mb-1">Información financiera</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Consultar, verificar, reportar y actualizar información ante operadores de información como Datacrédito y TransUnion.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-gray-900 mt-4 mb-1">Gestión de riesgos</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Prevenir fraude, suplantación de identidad, lavado de activos y otros riesgos financieros u operativos.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-gray-900 mt-4 mb-1">Gestión comercial y analítica</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Realizar análisis estadísticos, segmentación y perfilamiento.</li>
+              <li>Desarrollar modelos de riesgo, comportamiento y analítica de datos.</li>
+              <li>Diseñar, estructurar y ofrecer productos o servicios propios.</li>
+              <li>Enviar información comercial, promociones y ofertas.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Transferencia a terceros</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Circulación, transferencia y uso comercial de la información</h2>
             <p>
-              Tus datos podrán ser compartidos con: Auco.ai (firma electrónica), Factus (facturación DIAN), TransUnion (estudio crediticio), Stripe (procesamiento de pagos), Resend (envío de correos transaccionales) y Supabase (almacenamiento). Todos estos terceros operan bajo acuerdos de confidencialidad y cumplen estándares de protección de datos.
+              El titular autoriza a COFIANZA S.A.S. para compartir, transferir, transmitir, ceder o poner a disposición sus datos personales, de manera parcial o total, con:
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Derechos del titular (habeas data)</h2>
-            <p>Como titular de los datos, tienes derecho a:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Conocer, actualizar y rectificar tus datos.</li>
-              <li>Solicitar copia de la autorización otorgada.</li>
-              <li>Ser informado sobre el uso de tus datos.</li>
-              <li>Revocar la autorización y/o solicitar la supresión cuando proceda.</li>
-              <li>Acceder gratuitamente a los datos tratados.</li>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Aliados comerciales y estratégicos.</li>
+              <li>Proveedores tecnológicos o de analítica.</li>
+              <li>Entidades financieras o del sector real.</li>
+              <li>Empresas interesadas en la estructuración, comercialización u operación de productos o servicios.</li>
+              <li>Inversionistas, compradores potenciales de activos, unidades de negocio o portafolios de clientes.</li>
+              <li>Terceros con quienes se desarrollen modelos de negocio basados en información, analítica, segmentación o perfilamiento.</li>
             </ul>
-            <p className="mt-2">
-              Para ejercer estos derechos, escribe a soporte de Cofianza.
+            <p className="mt-3">Esta circulación podrá realizarse en Colombia o en el exterior, para fines:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Operativos.</li>
+              <li>Comerciales.</li>
+              <li>Estadísticos o analíticos.</li>
+              <li>Estratégicos o de estructuración de negocios.</li>
+            </ul>
+            <p className="mt-3">
+              COFIANZA podrá utilizar la información para generar valor económico mediante modelos de analítica, segmentación, estructuración de portafolios o desarrollo de negocios basados en datos, siempre dentro del marco de la autorización otorgada por el titular y la normativa vigente.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Conservación</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Datos sensibles</h2>
             <p>
-              Los datos se conservan mientras exista una relación contractual con Cofianza y por los plazos exigidos por la legislación colombiana en materia tributaria, comercial y de protección al consumidor.
+              Cuando se recolecten datos sensibles (por ejemplo, biométricos o de autenticación), su suministro será facultativo y su tratamiento se realizará únicamente para las finalidades informadas.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Seguridad</h2>
-            <p>
-              Implementamos medidas técnicas y administrativas razonables para proteger tus datos: cifrado en tránsito (HTTPS), control de acceso por roles, almacenamiento en infraestructura con certificaciones de seguridad reconocidas y auditoría de accesos.
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Derechos del titular</h2>
+            <p>El titular tiene derecho a:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Conocer, actualizar y rectificar sus datos personales.</li>
+              <li>Solicitar prueba de la autorización otorgada.</li>
+              <li>Revocar la autorización cuando sea procedente.</li>
+              <li>Solicitar la supresión de sus datos.</li>
+              <li>Presentar consultas o reclamos sobre el tratamiento de su información.</li>
+              <li>Presentar quejas ante la Superintendencia de Industria y Comercio.</li>
+            </ul>
+            <p className="mt-3">
+              <strong>Canal de atención:</strong> Correo <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Cookies</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Seguridad de la información</h2>
             <p>
-              La Plataforma utiliza cookies técnicas estrictamente necesarias para la sesión del usuario. No utilizamos cookies de seguimiento publicitario.
+              COFIANZA implementa medidas técnicas, administrativas y organizacionales razonables para proteger la información contra pérdida, uso indebido, acceso no autorizado, alteración o fraude.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Cambios a esta política</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Vigencia de la información</h2>
             <p>
-              Cualquier cambio sustancial será notificado a través de la Plataforma. La fecha de última actualización aparece al inicio de este documento.
+              Los datos personales serán conservados durante el tiempo necesario para el cumplimiento de las finalidades autorizadas, las obligaciones legales y la gestión de riesgos, incluso después de terminada la relación contractual, cuando sea necesario.
             </p>
           </section>
 
-          <p className="mt-8">
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">10. Actualizaciones</h2>
+            <p>
+              COFIANZA podrá modificar esta política en cualquier momento. La versión vigente estará disponible en su sitio web o en los canales de atención.
+            </p>
+          </section>
+
+          <p className="mt-8 text-sm">
             Ver también: <Link href="/terminos" className="text-primary-600 underline">Términos y Condiciones</Link>.
-          </p>
-
-          <p className="text-xs text-gray-500 mt-4 italic">
-            Documento en revisión por el equipo legal. La versión definitiva podrá ampliarse.
           </p>
         </article>
       </main>
