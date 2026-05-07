@@ -45,8 +45,11 @@ export * from './ContratoSolicitanteCard'
 export * from './AccionContratoPendienteCard'
 export * from './AccionHabilitarEstudioCard'
 export * from './AprobarCondicionadoCard'
+export * from './CoarrendatarioCard'
+// SoportesCondicionadoSection se mantiene exportado solo para uso del flujo de
+// re-evaluación (admin/operador). Ya NO se usa en el flujo del solicitante en
+// estado condicionado — Mario (5-may-2026) movió a un flujo de co-arrendatario.
 export * from './SoportesCondicionadoSection'
-export * from './SoportesCondicionadoSolicitanteCard'
 export * from './ContratoEstadoCard'
 export * from './EstudioEstadoCard'
 export * from './GenerarContratoModal'

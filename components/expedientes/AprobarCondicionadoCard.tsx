@@ -2,13 +2,16 @@
  * AprobarCondicionadoCard — visible para propietario/inmobiliaria/admin/operador
  * cuando el expediente está en 'condicionado'.
  *
- * Flujo: el buró devolvió el estudio como condicionado (necesita codeudor,
- * póliza extra, etc.). El propietario revisa la documentación adicional
- * y, si decide proceder, llena la duración del contrato + fecha de inicio
- * y hace clic. El backend transiciona expediente a 'aprobado' y genera
- * el contrato.
+ * Flujo: el buró devolvió el estudio como condicionado. El propietario decide
+ * si quiere proceder de todos modos (caso típico: invitó co-arrendatario y
+ * el ponderado sigue marginal pero quiere darle salida positiva). Captura
+ * duración + fecha del contrato y aprueba — el backend transiciona el
+ * expediente a 'aprobado' y genera el contrato.
  *
- * El solicitante no ve esta card; ve EstudioEstadoCard (informativa).
+ * Mario (5-may-2026): este card YA NO muestra docs subidos por el solicitante
+ * (codeudor/póliza). El nuevo paradigma es co-arrendatario: el solicitante
+ * invita a un co-titular en lugar de subir papeles. El propietario aquí solo
+ * decide aprobar manualmente o no.
  */
 
 'use client'
@@ -16,7 +19,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { expedienteService } from '@/services/expedienteService'
-import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -100,14 +102,10 @@ export function AprobarCondicionadoCard({
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
           <p className="text-sm text-gray-700 mb-3">
-            El buró marcó la solicitud como condicionada. Revisa la documentación adicional que el solicitante haya subido (codeudor, póliza, etc.).
-            Si decides proceder, captura los datos del contrato y se generará automáticamente.
+            El buró marcó la solicitud como condicionada. El solicitante puede invitar a un co-arrendatario para
+            mejorar el perfil combinado. Si quieres aprobar manualmente sin esperar al co-arrendatario, captura los
+            datos del contrato y se generará automáticamente.
           </p>
-
-          <div className="mb-4 pb-4 border-b border-amber-200">
-            <p className="text-sm font-medium text-gray-700 mb-2">Documentación adicional del solicitante</p>
-            <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
-          </div>
 
           {!showForm ? (
             <div className="flex flex-wrap gap-2">
