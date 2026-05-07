@@ -137,35 +137,37 @@ function CitaItemRow({ cita, ctaLabel }: { cita: ICita; ctaLabel: string }) {
   const fecha = cita.fecha_confirmada || cita.fecha_propuesta
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono text-primary-700">{expediente?.numero ?? '—'}</span>
-          {inmueble && (
-            <span className="text-gray-600 truncate" title={inmueble.direccion}>
-              · {inmueble.direccion}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-          {solicitante && (
-            <span>
-              {solicitante.nombre} {solicitante.apellido}
-            </span>
-          )}
-          {fecha && (
-            <>
-              <span>·</span>
-              <span>{formatDateTime(fecha)}</span>
-            </>
-          )}
-        </div>
-      </div>
+    <li>
       <Link
         href="/citas"
-        className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded hover:bg-primary-100"
+        className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors"
       >
-        {ctaLabel}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-mono text-primary-700">{expediente?.numero ?? '—'}</span>
+            {inmueble && (
+              <span className="text-gray-600 truncate" title={inmueble.direccion}>
+                · {inmueble.direccion}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+            {solicitante && (
+              <span>
+                {solicitante.nombre} {solicitante.apellido}
+              </span>
+            )}
+            {fecha && (
+              <>
+                <span>·</span>
+                <span>{formatDateTime(fecha)}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <span className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded">
+          {ctaLabel}
+        </span>
       </Link>
     </li>
   )
