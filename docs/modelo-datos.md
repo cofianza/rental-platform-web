@@ -225,10 +225,10 @@ Caso de arrendamiento que vincula un inmueble con un solicitante. Nucleo del flu
 | numero | VARCHAR(20) | SI | Auto (EXP-YYYY-XXXX) | Numero unico auto-generado |
 | inmueble_id | UUID | NO | - | Inmueble asociado |
 | solicitante_id | UUID | NO | - | Solicitante principal |
-| codeudor_nombre | VARCHAR(200) | SI | NULL | Nombre del codeudor (si aplica) |
-| codeudor_tipo_documento | tipo_documento_id | SI | NULL | Tipo de documento del codeudor |
-| codeudor_documento | VARCHAR(20) | SI | NULL | Numero de documento del codeudor |
-| codeudor_parentesco | VARCHAR(50) | SI | NULL | Parentesco del codeudor con solicitante |
+| coarrendatario_nombre | VARCHAR(200) | SI | NULL | Nombre del co-arrendatario (si aplica) |
+| coarrendatario_tipo_documento | tipo_documento_id | SI | NULL | Tipo de documento del co-arrendatario |
+| coarrendatario_documento | VARCHAR(20) | SI | NULL | Numero de documento del co-arrendatario |
+| coarrendatario_parentesco | VARCHAR(50) | SI | NULL | Parentesco del co-arrendatario con solicitante |
 | estado | estado_expediente | NO | 'borrador' | Estado actual del expediente |
 | analista_id | UUID | SI | NULL | Analista asignado al caso |
 | created_at | TIMESTAMPTZ | NO | NOW() | Fecha de creacion |
