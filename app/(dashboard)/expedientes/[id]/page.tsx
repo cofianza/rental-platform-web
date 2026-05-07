@@ -365,6 +365,8 @@ export default function ExpedienteDetallePage() {
                 <EstudioSolicitanteCard
                   expedienteId={id}
                   onEjecutado={fetchExpediente}
+                  prefillTipoDocumento={expediente.solicitante?.tipo_documento ?? null}
+                  prefillNumeroDocumento={expediente.solicitante?.numero_documento ?? null}
                 />
                 <CoarrendatarioCard
                   expedienteId={id}

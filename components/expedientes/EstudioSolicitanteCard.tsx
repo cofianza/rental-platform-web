@@ -24,6 +24,12 @@ import type { IEstudio } from '@/types/estudio'
 interface EstudioSolicitanteCardProps {
   expedienteId: string
   onEjecutado?: () => void
+  /** Documento del solicitante segun la tabla `solicitantes`. Se usa como
+   *  prefill cuando `datos_formulario` aun no tiene un documento (primer
+   *  intento). Si despues escribe otro CC y envia, el backend sincroniza
+   *  el solicitante con lo nuevo (ver estudios.service.ejecutarEstudio). */
+  prefillTipoDocumento?: string | null
+  prefillNumeroDocumento?: string | null
 }
 
 // TransUnion Colombia solo soporta documentos colombianos. Pasaporte y otros
@@ -32,7 +38,12 @@ interface EstudioSolicitanteCardProps {
 // el dropdown para evitar el error.
 type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
 
-export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSolicitanteCardProps) {
+export function EstudioSolicitanteCard({
+  expedienteId,
+  onEjecutado,
+  prefillTipoDocumento,
+  prefillNumeroDocumento,
+}: EstudioSolicitanteCardProps) {
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -48,23 +59,37 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       const elegido = activos[0] ?? null
       setEstudio(elegido)
 
-      // Prefill del form (si datos_formulario viene del backend). Si el tipo
-      // anterior era no soportado (eg. 'pasaporte' de registros previos a la
-      // restriccion CO), NO prefilamos ni el tipo ni el numero — forzamos al
-      // solicitante a elegir un documento valido en el reintento.
+      // Prefill del form, en orden de prioridad:
+      //   1. datos_formulario del estudio (lo ultimo que el solicitante escribio).
+      //   2. solicitante.tipo_documento + numero_documento (lo del registro).
+      // Si el tipo no esta en el set soportado por TransUnion CO, lo ignoramos
+      // y forzamos al solicitante a elegir uno valido (cc/ce/ti/nit).
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
-      const t = datos.tipo_documento?.toLowerCase()
-      const tipoValido = t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti'
-      if (tipoValido) {
-        setTipoDoc(t as TipoDoc)
-        if (datos.numero_documento) setNumeroDoc(datos.numero_documento)
+      const tipoFromDatos = datos.tipo_documento?.toLowerCase()
+      const tipoFromPrefill = prefillTipoDocumento?.toLowerCase()
+      const numeroFromDatos = datos.numero_documento?.trim() || ''
+      const numeroFromPrefill = prefillNumeroDocumento?.trim() || ''
+
+      const isTipoValido = (t: string | undefined): t is TipoDoc =>
+        t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti'
+
+      if (isTipoValido(tipoFromDatos)) {
+        setTipoDoc(tipoFromDatos)
+      } else if (isTipoValido(tipoFromPrefill)) {
+        setTipoDoc(tipoFromPrefill)
+      }
+
+      if (numeroFromDatos) {
+        setNumeroDoc(numeroFromDatos)
+      } else if (numeroFromPrefill) {
+        setNumeroDoc(numeroFromPrefill)
       }
     } catch {
       setEstudio(null)
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, prefillTipoDocumento, prefillNumeroDocumento])
 
   useEffect(() => {
     fetchEstudio()
