@@ -276,7 +276,7 @@ export function EstudioSolicitanteCard({
             <div>
               <p className="text-sm font-semibold text-green-900 mb-0.5">¡Estudio aprobado!</p>
               <p className="text-sm text-green-800">
-                Tu solicitud avanza al siguiente paso: generación del contrato. Te notificaremos cuando esté listo para revisar.
+                Pronto el propietario te liberará el contrato para firmar. Te avisaremos en cuanto esté listo.
               </p>
             </div>
           </div>
