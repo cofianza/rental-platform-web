@@ -141,13 +141,15 @@ export default function ExpedienteDetallePage() {
   // Ejecutar transición
   const handleEjecutarTransicion = async (
     estadoDestino: EstadoExpediente,
-    comentario: string
+    comentario: string,
+    etiqueta?: string,
   ) => {
     setIsExecutingTransicion(true)
     try {
       const expedienteActualizado = await expedienteService.ejecutarTransicion(id, {
         estado_destino: estadoDestino,
         comentario,
+        etiqueta,
       })
       setExpediente(expedienteActualizado)
 
@@ -252,7 +254,13 @@ export default function ExpedienteDetallePage() {
               <h1 className="text-2xl font-bold text-gray-900">
                 {expediente.numero_expediente}
               </h1>
-              <Badge estado={expediente.estado} />
+              {expediente.cancelado_at ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                  Cancelado
+                </span>
+              ) : (
+                <Badge estado={expediente.estado} />
+              )}
             </div>
 
             {/* Info del inmueble y solicitante */}
@@ -316,7 +324,11 @@ export default function ExpedienteDetallePage() {
 
       {/* Barra de progreso */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <ExpedienteProgressBar expedienteId={id} estadoActual={expediente.estado} />
+        <ExpedienteProgressBar
+          expedienteId={id}
+          estadoActual={expediente.estado}
+          estadoPreCancelacion={expediente.estado_pre_cancelacion}
+        />
       </div>
 
       {/* Tabs */}
@@ -327,9 +339,30 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
-            {/* Banner "Expediente finalizado" — al tope cuando todos los pasos
-                estan completados (estado=cerrado). Comun para todos los roles. */}
-            {expediente.estado === 'cerrado' && (
+            {/* Banner del cierre del expediente — distinto si fue cancelado
+                vs cierre natural. Aplica a todos los roles. */}
+            {expediente.estado === 'cerrado' && expediente.cancelado_at ? (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
+                    <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-red-900 mb-0.5">Expediente cancelado</h3>
+                    <p className="text-sm text-red-800">
+                      El expediente fue cancelado y no continuara con el proceso.
+                    </p>
+                    {expediente.motivo_cancelacion && (
+                      <p className="text-sm text-red-700 mt-2">
+                        <span className="font-semibold">Motivo:</span> {expediente.motivo_cancelacion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : expediente.estado === 'cerrado' && (
               <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
                 <div className="absolute -top-6 -right-6 w-24 h-24 bg-green-200/40 rounded-full blur-2xl pointer-events-none" />
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none" />

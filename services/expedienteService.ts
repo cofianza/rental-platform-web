@@ -223,6 +223,7 @@ class ExpedienteService {
       {
         nuevo_estado: data.estado_destino,
         comentario: data.comentario,
+        ...(data.etiqueta ? { etiqueta: data.etiqueta } : {}),
       }
     )) as any
 

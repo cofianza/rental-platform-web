@@ -742,7 +742,13 @@ function SolicitanteDashboard() {
         <div className="space-y-4">
           {expedientes.map((exp) => {
             const citaRealizada = citasByExpediente[exp.id]?.estado === 'realizada'
-            const currentStep = getProcessStep(exp.estado, citaRealizada)
+            const isCancelled = exp.estado === 'cerrado' && !!exp.cancelado_at
+            // Si fue cancelado, calculamos los pasos completados desde el
+            // estado pre-cancelacion. Asi el solicitante ve hasta donde
+            // llego el proceso antes de que el propietario lo cancelara.
+            const currentStep = isCancelled && exp.estado_pre_cancelacion
+              ? getProcessStep(exp.estado_pre_cancelacion, citaRealizada)
+              : getProcessStep(exp.estado, citaRealizada)
             const isRejected = exp.estado === 'rechazado'
             const isConditioned = exp.estado === 'condicionado'
 
@@ -757,7 +763,13 @@ function SolicitanteDashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-gray-900">{exp.numero_expediente || 'Expediente'}</span>
-                      <Badge estado={exp.estado} />
+                      {isCancelled ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                          Cancelado
+                        </span>
+                      ) : (
+                        <Badge estado={exp.estado} />
+                      )}
                     </div>
                     <p className="text-sm text-gray-500">
                       {exp.inmueble?.direccion || exp.inmueble?.titulo || 'Inmueble'}
@@ -783,6 +795,7 @@ function SolicitanteDashboard() {
                     {PROCESS_STEPS.map((step, idx) => {
                       const isComplete = idx < currentStep
                       const isCurrent = idx === currentStep
+                      const isFailed = isCancelled && !isComplete
                       return (
                         <div key={step.id} className="flex items-center flex-1">
                           <div className="flex flex-col items-center flex-1">
@@ -790,23 +803,37 @@ function SolicitanteDashboard() {
                               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                                 isComplete
                                   ? 'bg-primary-600 text-white'
-                                  : isCurrent
+                                  : isCurrent && !isFailed
                                     ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-600'
-                                    : 'bg-gray-100 text-gray-400'
+                                    : isFailed
+                                      ? 'bg-red-100 text-red-600 ring-2 ring-red-300'
+                                      : 'bg-gray-100 text-gray-400'
                               }`}
                             >
                               {isComplete ? (
                                 <IconCheck size={14} />
+                              ) : isFailed ? (
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               ) : (
                                 idx + 1
                               )}
                             </div>
-                            <span className={`text-[9px] mt-1 text-center leading-tight ${isCurrent ? 'text-primary-700 font-semibold' : 'text-gray-400'}`}>
+                            <span className={`text-[9px] mt-1 text-center leading-tight ${
+                              isCurrent && !isFailed ? 'text-primary-700 font-semibold'
+                                : isFailed ? 'text-red-600 font-medium'
+                                : 'text-gray-400'
+                            }`}>
                               {step.label}
                             </span>
                           </div>
                           {idx < PROCESS_STEPS.length - 1 && (
-                            <div className={`h-0.5 w-full mx-0.5 mt-[-12px] ${isComplete ? 'bg-primary-600' : 'bg-gray-200'}`} />
+                            <div className={`h-0.5 w-full mx-0.5 mt-[-12px] ${
+                              isComplete ? 'bg-primary-600'
+                                : isFailed ? 'bg-red-200'
+                                : 'bg-gray-200'
+                            }`} />
                           )}
                         </div>
                       )

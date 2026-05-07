@@ -19,12 +19,18 @@ import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 export interface ExpedienteProgressBarProps {
   expedienteId: string
   estadoActual: EstadoExpediente
+  /** Estado anterior a la cancelacion. Cuando esta presente, el stepper marca
+   *  los pasos hasta ese estado como completados y los siguientes en rojo
+   *  (no completados). Sin esto, un expediente cancelado se ve identico a uno
+   *  cerrado naturalmente — todos los pasos en verde. */
+  estadoPreCancelacion?: EstadoExpediente | null
   className?: string
 }
 
 export function ExpedienteProgressBar({
   expedienteId,
   estadoActual,
+  estadoPreCancelacion,
   className,
 }: ExpedienteProgressBarProps) {
   const [citaRealizada, setCitaRealizada] = useState(false)
@@ -43,7 +49,12 @@ export function ExpedienteProgressBar({
 
   const isRejected = estadoActual === 'rechazado'
   const isConditioned = estadoActual === 'condicionado'
-  const currentStep = getProcessStep(estadoActual, citaRealizada)
+  const isCancelled = estadoActual === 'cerrado' && !!estadoPreCancelacion
+  // Si fue cancelado, "currentStep" se calcula desde el estado pre-cancelacion
+  // — los pasos completados son hasta ahi, no hasta el final.
+  const currentStep = isCancelled
+    ? getProcessStep(estadoPreCancelacion!, citaRealizada)
+    : getProcessStep(estadoActual, citaRealizada)
 
   if (isRejected) {
     return (
@@ -69,6 +80,10 @@ export function ExpedienteProgressBar({
         {PROCESS_STEPS.map((step, idx) => {
           const isComplete = idx < currentStep
           const isCurrent = idx === currentStep
+          // Si fue cancelado, los pasos no completados se marcan en rojo en
+          // lugar de gris claro — comunica visualmente "este paso no se
+          // alcanzo porque el expediente fue cancelado".
+          const isFailed = isCancelled && !isComplete
           return (
             <div key={step.id} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
@@ -76,16 +91,28 @@ export function ExpedienteProgressBar({
                   className={cn(
                     'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
                     isComplete && 'bg-primary-600 text-white',
-                    isCurrent && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
-                    !isComplete && !isCurrent && 'bg-gray-100 text-gray-400',
+                    isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
+                    isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
+                    !isComplete && !isCurrent && !isFailed && 'bg-gray-100 text-gray-400',
                   )}
                 >
-                  {isComplete ? <IconCheck size={18} /> : idx + 1}
+                  {isComplete ? (
+                    <IconCheck size={18} />
+                  ) : isFailed ? (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    idx + 1
+                  )}
                 </div>
                 <span
                   className={cn(
                     'text-[10px] mt-1.5 text-center leading-tight max-w-16',
-                    isCurrent ? 'text-amber-700 font-semibold' : isComplete ? 'text-primary-700 font-medium' : 'text-gray-400',
+                    isCurrent && !isFailed ? 'text-amber-700 font-semibold'
+                      : isFailed ? 'text-red-600 font-medium'
+                      : isComplete ? 'text-primary-700 font-medium'
+                      : 'text-gray-400',
                   )}
                 >
                   {step.label}
@@ -95,7 +122,9 @@ export function ExpedienteProgressBar({
                 <div
                   className={cn(
                     'h-0.5 flex-1 mx-1 mt-[-18px] rounded',
-                    isComplete ? 'bg-primary-600' : 'bg-gray-200',
+                    isComplete ? 'bg-primary-600'
+                      : isFailed ? 'bg-red-200'
+                      : 'bg-gray-200',
                   )}
                 />
               )}

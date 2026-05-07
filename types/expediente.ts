@@ -71,6 +71,12 @@ export interface IExpediente {
    *  esa habilitacion; despues quedan congelados y alimentan el contrato. */
   duracion_contrato_meses?: number | null
   fecha_inicio_contrato?: string | null
+  /** Marca de cancelacion. NULL = no fue cancelado (cierre natural o aun activo).
+   *  Cuando NOT NULL, la UI debe mostrar el expediente como cancelado y los
+   *  pasos despues de estado_pre_cancelacion como pendientes/no completados. */
+  cancelado_at?: string | null
+  motivo_cancelacion?: string | null
+  estado_pre_cancelacion?: EstadoExpediente | null
   created_at: string
   updated_at: string
 }
@@ -251,6 +257,11 @@ export interface ITransicionDisponible {
 export interface IEjecutarTransicion {
   estado_destino: EstadoExpediente
   comentario: string
+  /** Etiqueta de la transicion seleccionada en el modal. Permite distinguir
+   *  intenciones cuando dos transiciones convergen al mismo destino (eg.
+   *  aprobado → cerrado puede ser "Cerrar expediente" o "Cancelar
+   *  expediente"). El backend la usa para marcar columnas de cancelacion. */
+  etiqueta?: string
 }
 
 /**

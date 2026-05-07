@@ -17,7 +17,7 @@ export interface TransicionModalProps {
   onClose: () => void
   estadoActual: EstadoExpediente
   transicionesDisponibles: ITransicionDisponible[]
-  onConfirmar: (estadoDestino: EstadoExpediente, comentario: string) => Promise<void>
+  onConfirmar: (estadoDestino: EstadoExpediente, comentario: string, etiqueta?: string) => Promise<void>
   isLoading?: boolean
 }
 
@@ -63,7 +63,7 @@ export function TransicionModal({
     }
 
     setError(null)
-    await onConfirmar(estadoSeleccionado, comentario.trim())
+    await onConfirmar(estadoSeleccionado, comentario.trim(), transicionSeleccionada?.etiqueta)
     handleClose()
   }
 
