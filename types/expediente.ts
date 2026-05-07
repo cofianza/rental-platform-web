@@ -77,6 +77,10 @@ export interface IExpediente {
   cancelado_at?: string | null
   motivo_cancelacion?: string | null
   estado_pre_cancelacion?: EstadoExpediente | null
+  /** Motivo legible cuando el expediente termina en estado='rechazado'. Lo
+   *  escribe el orchestrator/coarrendatarios.service automáticamente. Lo lee
+   *  el banner de cierre en el detalle del expediente. */
+  motivo_rechazo?: string | null
   created_at: string
   updated_at: string
 }

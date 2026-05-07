@@ -37,6 +37,8 @@ import {
   AccionHabilitarEstudioCard,
   AprobarCondicionadoCard,
   CoarrendatarioCard,
+  CoarrendatarioPropietarioCard,
+  ExpedienteRechazadoBanner,
   ContratoEstadoCard,
   EstudioEstadoCard,
 } from '@/components/expedientes'
@@ -340,8 +342,10 @@ export default function ExpedienteDetallePage() {
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
             {/* Banner del cierre del expediente — distinto si fue cancelado
-                vs cierre natural. Aplica a todos los roles. */}
-            {expediente.estado === 'cerrado' && expediente.cancelado_at ? (
+                vs cierre natural vs rechazado. Aplica a todos los roles. */}
+            {expediente.estado === 'rechazado' ? (
+              <ExpedienteRechazadoBanner motivo={expediente.motivo_rechazo} />
+            ) : expediente.estado === 'cerrado' && expediente.cancelado_at ? (
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
@@ -434,6 +438,11 @@ export default function ExpedienteDetallePage() {
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onAprobado={fetchExpediente}
+                />
+                <CoarrendatarioPropietarioCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
                 />
                 <AccionContratoPendienteCard
                   expedienteId={id}

@@ -12,6 +12,15 @@ export type CoarrendatarioEstado =
   | 'rechazado_invitacion'
   | 'estudio_completado'
 
+export interface ICoarrendatarioEstudio {
+  id: string
+  estado: string
+  resultado: string | null
+  score: number | null
+  observaciones: string | null
+  fecha_completado: string | null
+}
+
 export interface ICoarrendatario {
   id: string
   expediente_id: string
@@ -27,6 +36,8 @@ export interface ICoarrendatario {
   rechazado_at: string | null
   created_at: string
   updated_at: string
+  /** Estudio TransUnion del coarrendatario (embebido por el backend). */
+  estudio?: ICoarrendatarioEstudio | null
 }
 
 export interface IInvitarCoarrendatarioInput {
