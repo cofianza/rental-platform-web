@@ -148,59 +148,120 @@ const TONE_STYLES: Record<string, { card: string; icon: string; pill: string }> 
 }
 
 export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: EstudioEstadoCardProps) {
-  const [estudio, setEstudio] = useState<IEstudio | null>(null)
+  // Guardamos hasta 2 estudios: el del titular (tipo='individual') y el del
+  // coarrendatario (tipo='con_coarrendatario'). Cuando existen los dos, los
+  // mostramos en paneles separados para que cada uno muestre los datos y el
+  // resultado de la persona correcta — antes el card pintaba la cedula del
+  // titular sobre el score del coarrendatario y se confundian.
+  const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
+  const [estudioCoa, setEstudioCoa] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchEstudio = useCallback(async () => {
+  const fetchEstudios = useCallback(async () => {
     try {
-      const res = await estudioService.getEstudiosForExpediente(expedienteId, 1, 5)
-      // Tomamos el estudio activo más reciente (ignoramos cancelados salvo que
-      // sea el unico). Mismo criterio que EstudioSolicitanteCard.
+      const res = await estudioService.getEstudiosForExpediente(expedienteId, 1, 10)
       const activos = res.data.filter((e) => e.estado !== 'cancelado')
       const candidatos = activos.length > 0 ? activos : res.data
-      candidatos.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-      setEstudio(candidatos[0] ?? null)
+
+      const masReciente = (lista: IEstudio[]) =>
+        lista
+          .slice()
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+          ?? null
+
+      setEstudioTitular(masReciente(candidatos.filter((e) => e.tipo !== 'con_coarrendatario')))
+      setEstudioCoa(masReciente(candidatos.filter((e) => e.tipo === 'con_coarrendatario')))
     } catch {
-      setEstudio(null)
+      setEstudioTitular(null)
+      setEstudioCoa(null)
     } finally {
       setLoading(false)
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchEstudio() }, [fetchEstudio])
+  useEffect(() => { fetchEstudios() }, [fetchEstudios])
 
-  // Polling suave mientras esta en_proceso para que el propietario vea el
-  // resultado en cuanto entre, sin recargar la pagina.
+  // Polling suave mientras alguno este en_proceso para que el propietario vea
+  // el resultado en cuanto entre, sin recargar la pagina.
   useEffect(() => {
-    if (estudio?.estado !== 'en_proceso') return
-    const id = setInterval(fetchEstudio, 8000)
+    const enProceso = estudioTitular?.estado === 'en_proceso' || estudioCoa?.estado === 'en_proceso'
+    if (!enProceso) return
+    const id = setInterval(fetchEstudios, 8000)
     return () => clearInterval(id)
-  }, [estudio?.estado, fetchEstudio])
+  }, [estudioTitular?.estado, estudioCoa?.estado, fetchEstudios])
 
   if (loading) return null
-  if (!estudio) return null
+  if (!estudioTitular && !estudioCoa) return null
 
+  const titularSolicitante = solicitante ?? null
+  const coaSolicitante = estudioCoa ? getCoarrendatarioFromEstudio(estudioCoa) : null
+
+  return (
+    <div className="space-y-3">
+      {estudioTitular && (
+        <EstudioPanel
+          estudio={estudioTitular}
+          etiqueta="Titular"
+          persona={titularSolicitante}
+          onVerEstudios={onVerEstudios}
+        />
+      )}
+      {estudioCoa && (
+        <EstudioPanel
+          estudio={estudioCoa}
+          etiqueta="Co-arrendatario"
+          persona={coaSolicitante}
+          onVerEstudios={onVerEstudios}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Panel individual (titular o coarrendatario) ────────────────────
+
+interface EstudioPanelProps {
+  estudio: IEstudio
+  etiqueta: 'Titular' | 'Co-arrendatario'
+  persona: {
+    nombre: string
+    apellido?: string
+    tipo_documento?: string | null
+    numero_documento?: string | null
+  } | null
+  onVerEstudios?: () => void
+}
+
+function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios }: EstudioPanelProps) {
   const tone = getTone(estudio)
   const styles = TONE_STYLES[tone]
   const estadoLabel = ESTADO_LABEL[estudio.estado] ?? estudio.estado
   const resultadoLabel =
     estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
-  // Cuando esta en_proceso preferimos un icono de reloj/spinner. En otros
-  // casos un check (avance), excepto los terminales en error que usan rojo.
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
   const siguientePaso = getSiguientePaso(estudio)
+  const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
 
   return (
     <div className={`border rounded-lg p-4 ${styles.card}`}>
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-        Estudio crediticio
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+          Estudio crediticio
+        </h3>
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${
+            etiqueta === 'Co-arrendatario'
+              ? 'bg-amber-100 text-amber-800 border-amber-200'
+              : 'bg-primary-50 text-primary-700 border-primary-200'
+          }`}
+        >
+          {etiqueta}
+        </span>
+      </div>
 
       <div className="flex items-start gap-3">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${styles.icon}`}>
@@ -223,14 +284,14 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: 
           )}
 
           <div className="space-y-0.5 text-sm">
-            {solicitante && (
+            {persona && (
               <p className="text-xs text-gray-600">
-                Evaluado: <span className="font-medium text-gray-800">{`${solicitante.nombre} ${solicitante.apellido}`.trim()}</span>
-                {solicitante.numero_documento && (
+                Evaluado: <span className="font-medium text-gray-800">{nombreCompleto}</span>
+                {persona.numero_documento && (
                   <>
                     {' · '}
-                    {solicitante.tipo_documento ? `${solicitante.tipo_documento} ` : ''}
-                    <span className="font-medium text-gray-800">{solicitante.numero_documento}</span>
+                    {persona.tipo_documento ? `${persona.tipo_documento} ` : ''}
+                    <span className="font-medium text-gray-800">{persona.numero_documento}</span>
                   </>
                 )}
               </p>
@@ -276,4 +337,28 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: 
       )}
     </div>
   )
+}
+
+/**
+ * Para estudios tipo='con_coarrendatario' los datos de la persona evaluada
+ * viajan en `datos_formulario` (los escribe el backend al disparar el estudio
+ * tras la aceptacion). Mismo patron que EstudiosSection.
+ */
+function getCoarrendatarioFromEstudio(
+  estudio: IEstudio,
+): { nombre: string; apellido?: string; tipo_documento?: string | null; numero_documento?: string | null } | null {
+  const datos = (estudio.datos_formulario || {}) as {
+    nombre_completo?: string
+    tipo_documento?: string
+    numero_documento?: string
+  }
+  const completo = (datos.nombre_completo || '').trim()
+  if (!completo && !datos.numero_documento) return null
+  const idx = completo.indexOf(' ')
+  return {
+    nombre: idx === -1 ? completo : completo.slice(0, idx),
+    apellido: idx === -1 ? '' : completo.slice(idx + 1),
+    tipo_documento: datos.tipo_documento ?? null,
+    numero_documento: datos.numero_documento ?? null,
+  }
 }
