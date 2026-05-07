@@ -204,29 +204,29 @@ function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; 
   const solicitante = expediente.solicitante
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono text-primary-700">{expediente.numero_expediente ?? '—'}</span>
-          {inmueble && (
-            <span className="text-gray-600 truncate" title={inmueble.direccion}>
-              · {inmueble.direccion}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-          {solicitante && (
-            <span className="truncate">{solicitante.nombre}</span>
-          )}
-          <span>·</span>
-          <span className="text-green-700 shrink-0">Estudio aprobado</span>
-        </div>
-      </div>
+    <li>
       <Link
         href={`/expedientes/${expediente.id}`}
-        className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded hover:bg-primary-100"
+        className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors"
       >
-        {ctaLabel}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-mono text-primary-700">{expediente.numero_expediente ?? '—'}</span>
+            {inmueble && (
+              <span className="text-gray-600 truncate" title={inmueble.direccion}>
+                · {inmueble.direccion}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+            {solicitante && <span className="truncate">{solicitante.nombre}</span>}
+            <span>·</span>
+            <span className="text-green-700 shrink-0">Estudio aprobado</span>
+          </div>
+        </div>
+        <span className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded">
+          {ctaLabel}
+        </span>
       </Link>
     </li>
   )
