@@ -12,12 +12,29 @@ export interface ExpedienteBadgeProps {
   estado: EstadoExpediente
   className?: string
   size?: 'sm' | 'md'
+  /** Cuando true, el badge muestra "Cancelado" rojo en lugar del estado
+   *  formal. Aplica para expedientes con `cancelado_at` poblado en BD —
+   *  fueron cancelados mid-flow, no cerrados naturalmente. */
+  cancelado?: boolean
 }
 
 /**
  * Badge de estado de expediente
  */
-export function ExpedienteBadge({ estado, className, size = 'md' }: ExpedienteBadgeProps) {
+export function ExpedienteBadge({ estado, className, size = 'md', cancelado = false }: ExpedienteBadgeProps) {
+  if (cancelado) {
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center rounded-full text-xs font-medium border bg-red-100 text-red-700 border-red-200',
+          size === 'sm' ? 'text-[10px] px-2 py-0.5' : 'px-2.5 py-0.5',
+          className,
+        )}
+      >
+        Cancelado
+      </span>
+    )
+  }
   return (
     <Badge
       estado={estado}
@@ -30,6 +47,11 @@ export interface ProcessStepBadgeProps {
   estado: EstadoExpediente
   citaRealizada: boolean
   className?: string
+  /** Igual que ExpedienteBadge: si fue cancelado mostramos un pill rojo en
+   *  lugar del paso del flujo. Si tambien viene `estadoPreCancelacion`,
+   *  mostramos el paso donde se detuvo el proceso entre parentesis. */
+  cancelado?: boolean
+  estadoPreCancelacion?: EstadoExpediente | null
 }
 
 /**
@@ -38,11 +60,36 @@ export interface ProcessStepBadgeProps {
  * usa el ExpedienteProgressBar full.
  *
  * Estados especiales:
+ * - cancelado → pill rojo "Cancelado en <paso>".
  * - rechazado → pill rojo "Rechazado".
  * - condicionado → pill amber "Condicionado".
  * - cualquier otro → "Paso N · Label" con tinte segun avance.
  */
-export function ProcessStepBadge({ estado, citaRealizada, className }: ProcessStepBadgeProps) {
+export function ProcessStepBadge({ estado, citaRealizada, className, cancelado = false, estadoPreCancelacion }: ProcessStepBadgeProps) {
+  if (cancelado) {
+    // Si tenemos estadoPreCancelacion, mostramos en que paso se detuvo
+    // ("Cancelado en Contrato"). Sin esa info, solo "Cancelado".
+    let label = 'Cancelado'
+    if (estadoPreCancelacion) {
+      const idx = getProcessStep(estadoPreCancelacion, citaRealizada)
+      const stepLabel = PROCESS_STEPS[idx]?.label
+      // El "siguiente" paso es el que quedo pendiente (idx). Para
+      // 'aprobado' getProcessStep devuelve 4 (Contrato), que es donde
+      // quedo el flujo cuando lo cancelaron.
+      if (stepLabel) label = `Cancelado en ${stepLabel}`
+    }
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-700 border-red-200',
+          className,
+        )}
+      >
+        {label}
+      </span>
+    )
+  }
+
   if (estado === 'rechazado') {
     return (
       <span

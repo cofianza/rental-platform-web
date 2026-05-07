@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import { IconFolderOpen, IconPlus, IconExternalLink, IconLoader } from '@/components/icons'
-import { Badge } from '@/components/ui'
+import { ExpedienteBadge } from '@/components/expedientes/ExpedienteBadges'
 import { formatDate } from '@/lib/constants'
 import type { IExpediente } from '@/types/expediente'
 
@@ -86,7 +86,10 @@ export function ExpedientesSection({
                   <span className="font-medium text-primary-600 group-hover:text-primary-700">
                     {expediente.numero_expediente}
                   </span>
-                  <Badge estado={expediente.estado} />
+                  <ExpedienteBadge
+                    estado={expediente.estado}
+                    cancelado={!!expediente.cancelado_at}
+                  />
                 </div>
                 <p className="text-sm text-gray-500 truncate mt-0.5">
                   {solicitanteNombre}

@@ -194,8 +194,14 @@ export function ExpedientesTable({
                     <ProcessStepBadge
                       estado={expediente.estado}
                       citaRealizada={expediente.cita_realizada ?? false}
+                      cancelado={!!expediente.cancelado_at}
+                      estadoPreCancelacion={expediente.estado_pre_cancelacion}
                     />
-                    <ExpedienteBadge estado={expediente.estado} size="sm" />
+                    <ExpedienteBadge
+                      estado={expediente.estado}
+                      size="sm"
+                      cancelado={!!expediente.cancelado_at}
+                    />
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -250,8 +256,14 @@ export function ExpedientesTable({
                 <ProcessStepBadge
                   estado={expediente.estado}
                   citaRealizada={expediente.cita_realizada ?? false}
+                  cancelado={!!expediente.cancelado_at}
+                  estadoPreCancelacion={expediente.estado_pre_cancelacion}
                 />
-                <ExpedienteBadge estado={expediente.estado} size="sm" />
+                <ExpedienteBadge
+                  estado={expediente.estado}
+                  size="sm"
+                  cancelado={!!expediente.cancelado_at}
+                />
               </div>
             </div>
 
