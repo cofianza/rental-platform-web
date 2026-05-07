@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import {
   coarrendatarioService,
   type ICoarrendatarioPublicView,
@@ -91,7 +90,7 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'cargando') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -99,50 +98,44 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'error') {
     return (
-      <Layout>
-        <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
-          <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir tu invitación</h1>
-          <p className="text-sm text-gray-600">{errorMsg}</p>
-          <p className="text-xs text-gray-400 mt-4">
-            Si crees que es un error, escribe a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
-          </p>
-        </div>
-      </Layout>
+      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
+        <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir tu invitación</h1>
+        <p className="text-sm text-gray-600">{errorMsg}</p>
+        <p className="text-xs text-gray-400 mt-4">
+          Si crees que es un error, escribe a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
+        </p>
+      </div>
     )
   }
 
   if (phase === 'rechazado') {
     return (
-      <Layout>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
-          <p className="text-sm text-gray-600 mb-4">
-            Le avisamos a {view?.expediente.titular_nombre} que no continuarás como co-arrendatario.
-          </p>
-          <p className="text-xs text-gray-400">Puedes cerrar esta página.</p>
-        </div>
-      </Layout>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
+        <p className="text-sm text-gray-600 mb-4">
+          Le avisamos a {view?.expediente.titular_nombre} que no continuarás como co-arrendatario.
+        </p>
+        <p className="text-xs text-gray-400">Puedes cerrar esta página.</p>
+      </div>
     )
   }
 
   if (phase === 'aceptado') {
     return (
-      <Layout>
-        <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 text-center">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-            <svg className="h-7 w-7 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
-          <p className="text-sm text-gray-700">
-            {resultMsg || 'Aceptación registrada. Estamos procesando tu estudio.'}
-          </p>
-          <p className="text-xs text-gray-400 mt-4">
-            Te enviaremos a {view?.email} el resultado del estudio cuando esté listo.
-          </p>
+      <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 text-center">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="h-7 w-7 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
         </div>
-      </Layout>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
+        <p className="text-sm text-gray-700">
+          {resultMsg || 'Aceptación registrada. Estamos procesando tu estudio.'}
+        </p>
+        <p className="text-xs text-gray-400 mt-4">
+          Te enviaremos a {view?.email} el resultado del estudio cuando esté listo.
+        </p>
+      </div>
     )
   }
 
@@ -152,8 +145,7 @@ export default function CoarrendatarioPublicPage() {
   const procesando = phase === 'aceptando' || phase === 'rechazando'
 
   return (
-    <Layout>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6">
           <h1 className="text-xl font-bold mb-1">{titular} te invita a co-arrendar</h1>
           <p className="text-primary-100 text-sm">
@@ -232,19 +224,5 @@ export default function CoarrendatarioPublicPage() {
           </div>
         </div>
       </div>
-    </Layout>
-  )
-}
-
-function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center">
-          <CofianzaLogo size={32} withText textClassName="text-lg" />
-        </div>
-      </header>
-      <main className="max-w-2xl mx-auto px-4 py-10">{children}</main>
-    </div>
   )
 }
