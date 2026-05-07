@@ -33,6 +33,14 @@ interface EstudioDetailModalProps {
    * completo y descargar el certificado pero no operar sobre el estudio.
    */
   readOnly?: boolean
+  /** Solicitante (persona evaluada) — viene del expediente padre. Se muestra
+   *  en la seccion de informacion como nombre + tipo + numero de documento. */
+  solicitante?: {
+    nombre: string
+    apellido: string
+    tipo_documento?: string | null
+    numero_documento?: string | null
+  } | null
 }
 
 const PROVEEDOR_LABELS: Record<string, string> = {
@@ -148,7 +156,7 @@ function DocumentoPreviewItem({ doc }: { doc: IEstudioDocumento }) {
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly = false }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly = false, solicitante }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
@@ -296,6 +304,22 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
         {/* Tab: Información */}
         {activeTab === 'informacion' && (
           <div className="space-y-4">
+            {/* Persona evaluada — primero por relevancia */}
+            {solicitante && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <DetailRow
+                  label="Persona evaluada"
+                  value={`${solicitante.nombre} ${solicitante.apellido}`.trim() || '—'}
+                />
+                {solicitante.numero_documento && (
+                  <DetailRow
+                    label="Documento"
+                    value={`${solicitante.tipo_documento || ''} ${solicitante.numero_documento}`.trim()}
+                  />
+                )}
+              </div>
+            )}
+
             {/* Info principal */}
             <div className="bg-gray-50 rounded-lg p-4">
               <DetailRow label="Tipo" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />

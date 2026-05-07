@@ -22,6 +22,15 @@ interface EstudioEstadoCardProps {
   expedienteId: string
   /** Callback para llevar al usuario a la pestaña Estudios. */
   onVerEstudios?: () => void
+  /** Datos del solicitante (persona evaluada) para mostrar nombre + cedula
+   *  en la card. Viene del expediente padre — opcional para tolerar contextos
+   *  donde aun no se cargo. */
+  solicitante?: {
+    nombre: string
+    apellido: string
+    tipo_documento?: string | null
+    numero_documento?: string | null
+  } | null
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -138,7 +147,7 @@ const TONE_STYLES: Record<string, { card: string; icon: string; pill: string }> 
   },
 }
 
-export function EstudioEstadoCard({ expedienteId, onVerEstudios }: EstudioEstadoCardProps) {
+export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: EstudioEstadoCardProps) {
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -214,6 +223,18 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios }: EstudioEstado
           )}
 
           <div className="space-y-0.5 text-sm">
+            {solicitante && (
+              <p className="text-xs text-gray-600">
+                Evaluado: <span className="font-medium text-gray-800">{`${solicitante.nombre} ${solicitante.apellido}`.trim()}</span>
+                {solicitante.numero_documento && (
+                  <>
+                    {' · '}
+                    {solicitante.tipo_documento ? `${solicitante.tipo_documento} ` : ''}
+                    <span className="font-medium text-gray-800">{solicitante.numero_documento}</span>
+                  </>
+                )}
+              </p>
+            )}
             <p className="text-xs text-gray-600">
               Proveedor: <span className="font-medium text-gray-800">{estudio.proveedor}</span>
               {' · '}

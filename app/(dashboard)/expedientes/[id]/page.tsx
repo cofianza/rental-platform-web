@@ -392,6 +392,7 @@ export default function ExpedienteDetallePage() {
                 <EstudioEstadoCard
                   expedienteId={id}
                   onVerEstudios={() => setActiveTab('estudios')}
+                  solicitante={expediente.solicitante}
                 />
                 <AprobarCondicionadoCard
                   expedienteId={id}
@@ -570,7 +571,7 @@ export default function ExpedienteDetallePage() {
           <div className="p-6 space-y-6">
             <PagoEstudioSection expedienteId={id} userRole={user?.rol} onPagoCompletado={fetchExpediente} />
             <AutorizacionSection expedienteId={id} />
-            <EstudiosSection expedienteId={id} />
+            <EstudiosSection expedienteId={id} solicitante={expediente.solicitante} />
           </div>
         )}
 

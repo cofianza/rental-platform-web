@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { IconLoader, IconPlus, IconEye, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
+import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
@@ -44,9 +44,18 @@ function formatDate(dateStr: string): string {
 
 interface EstudiosSectionProps {
   expedienteId: string
+  /** Solicitante (persona evaluada) — viene del expediente padre y se muestra
+   *  en cada card del listado y en el modal de detalle. Opcional para tolerar
+   *  contextos donde aun no se cargo. */
+  solicitante?: {
+    nombre: string
+    apellido: string
+    tipo_documento?: string | null
+    numero_documento?: string | null
+  } | null
 }
 
-export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
+export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionProps) {
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Propietario/inmobiliaria pueden ver el detalle completo del estudio
@@ -218,69 +227,94 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
       {/* List */}
       {estudios.length > 0 && (
         <div className="space-y-3">
-          {estudios.map((estudio) => (
-            <div
-              key={estudio.id}
-              className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-4">
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                        estudio.proveedor === 'transunion'
-                          ? 'bg-blue-100 text-blue-700'
-                          : estudio.proveedor === 'manual'
-                            ? 'bg-gray-100 text-gray-600'
-                            : 'bg-purple-100 text-purple-700'
-                      }`}
-                    >
-                      {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
-                    </span>
-                    <Badge estado={estudio.estado} />
-                    <Badge estado={estudio.resultado} />
-                  </div>
-                  <div className="text-sm text-gray-500 space-x-3">
-                    <span>{formatDate(estudio.fecha_solicitud || estudio.created_at)}</span>
-                    <span>{estudio.duracion_contrato_meses} meses</span>
-                    {estudio.solicitado_por && (
-                      <span>
-                        por {estudio.solicitado_por.nombre} {estudio.solicitado_por.apellido}
-                      </span>
-                    )}
-                  </div>
-                  {estudio.score != null && (
-                    <div className="mt-1">
+          {estudios.map((estudio) => {
+            const cardClickable = canViewDetail
+            return (
+              <div
+                key={estudio.id}
+                onClick={cardClickable ? () => setShowDetail(estudio) : undefined}
+                role={cardClickable ? 'button' : undefined}
+                tabIndex={cardClickable ? 0 : undefined}
+                onKeyDown={
+                  cardClickable
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setShowDetail(estudio)
+                        }
+                      }
+                    : undefined
+                }
+                className={`border border-gray-200 rounded-lg p-4 transition-colors ${
+                  cardClickable ? 'hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer' : 'hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          estudio.score >= 600
-                            ? 'bg-green-100 text-green-700'
-                            : estudio.score >= 400
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-red-100 text-red-700'
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                          estudio.proveedor === 'transunion'
+                            ? 'bg-blue-100 text-blue-700'
+                            : estudio.proveedor === 'manual'
+                              ? 'bg-gray-100 text-gray-600'
+                              : 'bg-purple-100 text-purple-700'
                         }`}
                       >
-                        Score: {estudio.score}
+                        {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
                       </span>
+                      <Badge estado={estudio.estado} />
+                      <Badge estado={estudio.resultado} />
                     </div>
-                  )}
-                </div>
+                    {solicitante && (
+                      <div className="text-sm text-gray-700 mb-1">
+                        <span className="font-medium">
+                          {`${solicitante.nombre} ${solicitante.apellido}`.trim()}
+                        </span>
+                        {solicitante.numero_documento && (
+                          <span className="text-gray-500">
+                            {' · '}
+                            {solicitante.tipo_documento ? `${solicitante.tipo_documento} ` : ''}
+                            {solicitante.numero_documento}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-500 space-x-3">
+                      <span>{formatDate(estudio.fecha_solicitud || estudio.created_at)}</span>
+                      <span>{estudio.duracion_contrato_meses} meses</span>
+                      {estudio.solicitado_por && (
+                        <span>
+                          por {estudio.solicitado_por.nombre} {estudio.solicitado_por.apellido}
+                        </span>
+                      )}
+                    </div>
+                    {estudio.score != null && (
+                      <div className="mt-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            estudio.score >= 600
+                              ? 'bg-green-100 text-green-700'
+                              : estudio.score >= 400
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          Score: {estudio.score}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  {canViewDetail && (
-                    <button
-                      onClick={() => setShowDetail(estudio)}
-                      title="Ver detalle"
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                    >
-                      <IconEye size={18} />
-                    </button>
-                  )}
-
+                  {/* Actions — solo gestion (admin/operador). El click "ver detalle"
+                      ahora es la card entera. stopPropagation evita disparar el
+                      modal de detalle al accionar sobre estos botones. */}
                   {canManage && !ESTADOS_FINALIZADOS.includes(estudio.estado) && (
-                    <>
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) && estudio.resultado === 'pendiente' && (
                         <button
                           onClick={() => setResultadoTarget(estudio)}
@@ -307,12 +341,12 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
                       >
                         <IconX size={18} />
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -329,6 +363,7 @@ export function EstudiosSection({ expedienteId }: EstudiosSectionProps) {
         onClose={() => setShowDetail(null)}
         estudio={showDetail}
         readOnly={!canManage}
+        solicitante={solicitante}
       />
 
       <RegistrarResultadoModal
