@@ -22,6 +22,7 @@ import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
+import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
 import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
 
 // ── Date filter presets ─────────────────────────────────────
@@ -151,8 +152,11 @@ export default function DashboardPage() {
           subtitle={isPropietario ? 'Gestiona tus inmuebles y solicitudes' : 'Gestiona inmuebles y expedientes'}
         />
 
-        {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio) */}
+        {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio, generar contrato) */}
         <AccionesPendientesWidget />
+
+        {/* Listado de expedientes activos: visibilidad pasiva del estado de cada solicitud */}
+        <MisExpedientesActivosWidget />
 
         {/* Creditos de estudios — exclusivo para inmobiliaria */}
         {isInmobiliaria && <SaldoCreditosCard />}
