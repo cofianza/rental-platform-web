@@ -29,17 +29,27 @@ export function TransicionModal({
   onConfirmar,
   isLoading = false,
 }: TransicionModalProps) {
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoExpediente | null>(null)
+  // Identificamos la transicion seleccionada por su label, no solo por
+  // estado destino — pueden existir dos transiciones al mismo destino con
+  // labels distintos (ej. aprobado → cerrado tiene "Cerrar expediente" y
+  // "Cancelar expediente"). Trackear por label evita seleccionar las dos
+  // a la vez y permite key-uniqueness en el .map.
+  const [labelSeleccionado, setLabelSeleccionado] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const handleClose = () => {
     if (isLoading) return
-    setEstadoSeleccionado(null)
+    setLabelSeleccionado(null)
     setComentario('')
     setError(null)
     onClose()
   }
+
+  const transicionSeleccionada = transicionesDisponibles.find(
+    (t) => t.etiqueta === labelSeleccionado,
+  )
+  const estadoSeleccionado = transicionSeleccionada?.estado_destino ?? null
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
@@ -86,13 +96,13 @@ export function TransicionModal({
           <div className="grid grid-cols-2 gap-2">
             {transiciones.map((transicion) => {
               const config = ESTADOS_EXPEDIENTE[transicion.estado_destino]
-              const isSelected = estadoSeleccionado === transicion.estado_destino
+              const isSelected = labelSeleccionado === transicion.etiqueta
 
               return (
                 <button
-                  key={transicion.estado_destino}
+                  key={`${transicion.estado_destino}-${transicion.etiqueta}`}
                   type="button"
-                  onClick={() => setEstadoSeleccionado(transicion.estado_destino)}
+                  onClick={() => setLabelSeleccionado(transicion.etiqueta)}
                   disabled={isLoading}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 text-left transition-all ${
                     isSelected
