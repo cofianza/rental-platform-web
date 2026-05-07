@@ -1,14 +1,24 @@
 /**
  * useNotificationsRealtime — Suscribe el frontend al stream de notificaciones.
  *
- * Flujo:
- *   1. Al montar (con user autenticado): fetch inicial del backend para
- *      poblar el store y obtener el unread count exacto.
- *   2. Establece la sesion en supabase-js usando el JWT del store de auth
- *      para que la suscripcion Realtime respete RLS (filtra por user_id).
- *   3. Suscribe a INSERT y UPDATE de la tabla notificaciones filtrado por
- *      user_id. Cada evento empuja al store via `pushIncoming`.
- *   4. Al desmontar / cambiar de usuario: cleanup del canal.
+ * Estructura en DOS efectos para evitar re-suscripciones cuando solo se
+ * refresca el token:
+ *
+ *   Effect 1 (canal): depende de [isAuthenticated, userId]. Mientras el
+ *   usuario sea el mismo, el canal vive — no se cierra y vuelve a abrir
+ *   cada vez que Supabase rota el access token (cada hora). Antes lo
+ *   teníamos en un solo effect con accessToken en deps; eso provocaba
+ *   churn de WebSockets y a veces el push en vivo se perdía hasta el
+ *   siguiente refresh manual de la página.
+ *
+ *   Effect 2 (auth del realtime): depende de [accessToken]. Solo llama
+ *   `realtime.setAuth(token)` para que el cliente Realtime tenga el JWT
+ *   fresco. RLS auth.uid() resuelve correctamente y los eventos
+ *   postgres_changes propagan.
+ *
+ * Adicionalmente escuchamos onAuthStateChange para captar TOKEN_REFRESHED
+ * incluso si el store no actualizó accessToken (defensa contra desincronía
+ * entre auth.store y supabase.auth).
  */
 
 'use client'
@@ -29,10 +39,12 @@ export function useNotificationsRealtime() {
   const pushIncoming = useNotificationStore((s) => s.pushIncoming)
   const reset = useNotificationStore((s) => s.reset)
 
-  // Para evitar montar dos canales si el componente re-renderiza sin
-  // que cambie el userId (StrictMode, fast refresh, etc.).
+  // Guardar canal entre renders para limpiar bien al desmontar.
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
+  // ── Effect 1: fetch inicial + canal Realtime ────────────────────
+  // Solo depende del usuario. NO incluimos accessToken aquí; eso lo
+  // maneja el Effect 2 sin recrear el canal.
   useEffect(() => {
     if (!isAuthenticated || !userId) {
       reset()
@@ -41,7 +53,6 @@ export function useNotificationsRealtime() {
 
     let cancelled = false
 
-    // 1. Fetch inicial.
     setLoading(true)
     notificacionService
       .list({ limit: 30 })
@@ -50,8 +61,6 @@ export function useNotificationsRealtime() {
         setItems(res.data)
       })
       .catch((err) => {
-        // No bloqueante: aunque falle el fetch, el realtime puede empezar
-        // a empujar nuevas. Logueamos para debugging.
         // eslint-disable-next-line no-console
         console.error('[useNotificationsRealtime] fetch inicial fallo:', err)
       })
@@ -59,12 +68,6 @@ export function useNotificationsRealtime() {
         if (!cancelled) setLoading(false)
       })
 
-    // 2. JWT en el cliente realtime para que RLS (auth.uid()) resuelva.
-    if (accessToken) {
-      supabase.realtime.setAuth(accessToken)
-    }
-
-    // 3. Canal por usuario. El nombre es arbitrario pero util para debugging.
     const channel = supabase
       .channel(`notif:${userId}`)
       .on(
@@ -93,11 +96,18 @@ export function useNotificationsRealtime() {
           pushIncoming(payload.new)
         },
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        // Log explícito del estado del canal para debug. Si dice
+        // 'CHANNEL_ERROR' sabemos que el join falló (típicamente RLS o
+        // token vencido). Antes esto era silencioso.
+        if (status !== 'SUBSCRIBED' && status !== 'CLOSED') {
+          // eslint-disable-next-line no-console
+          console.warn('[notif realtime] channel status:', status, err)
+        }
+      })
 
     channelRef.current = channel
 
-    // 4. Cleanup al desmontar o al cambiar el usuario.
     return () => {
       cancelled = true
       if (channelRef.current) {
@@ -105,5 +115,26 @@ export function useNotificationsRealtime() {
         channelRef.current = null
       }
     }
-  }, [isAuthenticated, userId, accessToken, setItems, setLoading, pushIncoming, reset])
+  }, [isAuthenticated, userId, setItems, setLoading, pushIncoming, reset])
+
+  // ── Effect 2: setAuth del realtime cuando cambia el token ───────
+  // Solo refresca el JWT del cliente Realtime. NO toca el canal.
+  useEffect(() => {
+    if (!accessToken) return
+    supabase.realtime.setAuth(accessToken)
+  }, [accessToken])
+
+  // ── Effect 3: defensa contra desincronía entre auth.store y supabase.auth.
+  // Si supabase rota el token internamente y nuestro store no se entera
+  // a tiempo, captamos TOKEN_REFRESHED y re-autenticamos el realtime.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED' && session?.access_token) {
+        supabase.realtime.setAuth(session.access_token)
+      }
+    })
+    return () => {
+      data.subscription.unsubscribe()
+    }
+  }, [])
 }
