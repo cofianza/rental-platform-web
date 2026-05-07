@@ -251,7 +251,8 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
             <div>
               <p className="text-sm font-semibold text-amber-900 mb-0.5">Estudio condicionado</p>
               <p className="text-sm text-amber-800">
-                Necesitamos información adicional (codeudor, póliza o documentos extra). La inmobiliaria te contactará con los próximos pasos.
+                Tu perfil quedó marginal. En Cofianza no pedimos fiador — para continuar, invita a un co-arrendatario
+                (la persona con quien vas a vivir) y los respaldamos juntos como un solo arrendatario.
               </p>
             </div>
           </div>

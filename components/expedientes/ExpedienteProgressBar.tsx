@@ -57,8 +57,8 @@ export function ExpedienteProgressBar({
   if (isConditioned) {
     return (
       <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
-        <p className="text-sm font-semibold text-amber-700">Se requieren documentos adicionales</p>
-        <p className="text-xs text-amber-600 mt-0.5">Sube los documentos solicitados para continuar con la evaluacion.</p>
+        <p className="text-sm font-semibold text-amber-700">Estudio condicionado</p>
+        <p className="text-xs text-amber-600 mt-0.5">Invita a un co-arrendatario para que los respaldemos juntos.</p>
       </div>
     )
   }

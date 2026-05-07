@@ -767,12 +767,12 @@ function SolicitanteDashboard() {
                 {isRejected ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <p className="text-sm text-red-700 font-medium">Estudio no aprobado</p>
-                    <p className="text-xs text-red-600 mt-0.5">Puedes solicitar una re-evaluacion con documentos adicionales.</p>
+                    <p className="text-xs text-red-600 mt-0.5">El expediente fue rechazado tras el estudio crediticio.</p>
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm text-amber-700 font-medium">Se requieren documentos adicionales</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Sube los documentos solicitados para continuar con la evaluacion.</p>
+                    <p className="text-sm text-amber-700 font-medium">Estudio condicionado</p>
+                    <p className="text-xs text-amber-600 mt-0.5">Invita a un co-arrendatario para que los respaldemos juntos.</p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
