@@ -394,7 +394,17 @@ export default function RegisterPropietarioPage() {
               />
               <div>
                 <span className="text-sm text-gray-700">
-                  Acepto los <span className="text-primary-600 font-medium">terminos y condiciones</span> del servicio
+                  Acepto los{' '}
+                  <Link
+                    href="/terminos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary-600 font-medium underline hover:text-primary-700"
+                  >
+                    términos y condiciones
+                  </Link>{' '}
+                  del servicio
                 </span>
                 {errors.accept_terms && <p className="mt-1 text-xs text-red-600">{errors.accept_terms}</p>}
               </div>
@@ -409,7 +419,17 @@ export default function RegisterPropietarioPage() {
               />
               <div>
                 <span className="text-sm text-gray-700">
-                  Autorizo el <span className="text-primary-600 font-medium">tratamiento de mis datos personales</span> conforme a la Ley 1581 de 2012
+                  Autorizo el{' '}
+                  <Link
+                    href="/privacidad"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-primary-600 font-medium underline hover:text-primary-700"
+                  >
+                    tratamiento de mis datos personales
+                  </Link>{' '}
+                  conforme a la Ley 1581 de 2012
                 </span>
                 {errors.accept_data_treatment && <p className="mt-1 text-xs text-red-600">{errors.accept_data_treatment}</p>}
               </div>

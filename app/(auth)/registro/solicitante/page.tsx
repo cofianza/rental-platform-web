@@ -262,7 +262,17 @@ function RegistroSolicitanteContent() {
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-xs text-gray-600">
-                Acepto los <Link href="/terminos" className="text-primary-600 underline">terminos y condiciones</Link> del servicio
+                Acepto los{' '}
+                <Link
+                  href="/terminos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-primary-600 underline hover:text-primary-700"
+                >
+                  términos y condiciones
+                </Link>{' '}
+                del servicio
               </span>
             </label>
             {errors.accept_terms && <p className="text-xs text-red-500 ml-6">{errors.accept_terms}</p>}
@@ -270,7 +280,17 @@ function RegistroSolicitanteContent() {
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={acceptData} onChange={(e) => setAcceptData(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-xs text-gray-600">
-                Autorizo el tratamiento de mis datos personales conforme a la <Link href="/privacidad" className="text-primary-600 underline">politica de privacidad</Link> (Ley 1581/2012)
+                Autorizo el{' '}
+                <Link
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-primary-600 underline hover:text-primary-700"
+                >
+                  tratamiento de mis datos personales
+                </Link>{' '}
+                conforme a la Ley 1581 de 2012
               </span>
             </label>
             {errors.accept_data_treatment && <p className="text-xs text-red-500 ml-6">{errors.accept_data_treatment}</p>}
