@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 export interface ConfirmDialogProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => void | Promise<unknown>
   title: string
   message: string
   confirmLabel?: string
@@ -31,9 +31,18 @@ export function ConfirmDialog({
   variant = 'default',
   isLoading = false,
 }: ConfirmDialogProps) {
-  const handleConfirm = () => {
-    onConfirm()
-    if (!isLoading) {
+  // Esperamos a que onConfirm termine antes de cerrar. Asi:
+  //   - Si el padre setea isLoading=true al inicio de la accion, el boton
+  //     muestra "Procesando..." mientras dura la operacion (antes el dialog
+  //     se cerraba inmediato porque la lectura de isLoading era stale).
+  //   - Si onConfirm es sincrono (no devuelve promise), await resuelve
+  //     instantaneo y el cierre se ve igual que antes.
+  // El padre tambien puede cerrar el dialog cambiando isOpen — onClose()
+  // aqui es idempotente por seguridad.
+  const handleConfirm = async () => {
+    try {
+      await onConfirm()
+    } finally {
       onClose()
     }
   }
