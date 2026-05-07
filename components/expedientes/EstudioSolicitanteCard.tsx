@@ -86,18 +86,35 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       return
     }
     setSubmitting(true)
+
+    // Safety net: si la llamada tarda más de 90s (TransUnion intermitente,
+    // Railway timeout, etc.), bajamos el spinner y refrescamos el estudio
+    // desde BD para ver el estado real. Si el backend ya completó la
+    // consulta pero la respuesta HTTP se perdió, el polling lo va a captar.
+    const safetyTimer = setTimeout(async () => {
+      toast.message('Está tomando más de lo esperado. Verificando estado…')
+      await fetchEstudio()
+      setSubmitting(false)
+    }, 90000)
+
     try {
       await estudioService.ejecutarEstudio(estudio.id, {
         tipo_documento: tipoDoc,
         numero_documento: numero,
       })
+      clearTimeout(safetyTimer)
       toast.success('Estudio enviado a TransUnion. Te avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
       onEjecutado?.()
     } catch (err) {
+      clearTimeout(safetyTimer)
+      // Aunque haya error, refrescamos: el backend puede haber procesado
+      // y el error venir del HTTP layer. Si el estado ya cambió, es éxito.
+      await fetchEstudio()
       const msg = err instanceof Error ? err.message : 'No pudimos ejecutar el estudio. Intenta de nuevo.'
       toast.error(msg)
     } finally {
+      clearTimeout(safetyTimer)
       setSubmitting(false)
     }
   }
@@ -126,10 +143,10 @@ export function EstudioSolicitanteCard({ expedienteId, onEjecutado }: EstudioSol
       <div className={`border-2 rounded-lg p-6 ${esReintento ? 'border-red-200 bg-red-50/40' : 'border-primary-200 bg-primary-50/40'}`}>
         {esReintento && (
           <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior fallo</p>
+            <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior falló</p>
             <p className="text-sm text-red-800">
-              Verifica que tu tipo y numero de documento sean correctos. Cofianza solo
-              consulta documentos colombianos (CC, CE, TI, NIT).
+              {estudio.observaciones
+                || 'Verifica que tu tipo y número de documento sean correctos. Cofianza solo consulta documentos colombianos (CC, CE, TI, NIT).'}
             </p>
           </div>
         )}
