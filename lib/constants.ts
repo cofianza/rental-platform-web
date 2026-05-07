@@ -456,11 +456,24 @@ export function formatCurrency(value: number): string {
 
 /**
  * Formatea fechas al formato colombiano
- * @param date - Fecha a formatear
+ * @param date - Fecha a formatear (ISO con hora o "YYYY-MM-DD" date-only)
  * @returns String con formato dd/mm/yyyy
+ *
+ * Cuidado: las strings "YYYY-MM-DD" (date-only, ej. fecha_inicio del contrato)
+ * `new Date()` las parsea como UTC midnight. Al formatear con timeZone
+ * America/Bogota (UTC-5) se restan 5h y termina mostrando el dia ANTERIOR
+ * (ej. "2026-06-02" sale como "01/06/2026"). Para esas, detectamos el patron
+ * y construimos la fecha al mediodia UTC, que en cualquier zona horaria de
+ * America cae el mismo dia calendario.
  */
 export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  let d: Date
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, day] = date.split('-').map(Number)
+    d = new Date(Date.UTC(y, m - 1, day, 12, 0, 0))
+  } else {
+    d = typeof date === 'string' ? new Date(date) : date
+  }
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     day: '2-digit',

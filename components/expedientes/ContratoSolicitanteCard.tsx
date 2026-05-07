@@ -20,6 +20,17 @@ import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import type { IContrato } from '@/types/contrato'
 
+// Fechas date-only (YYYY-MM-DD): construir al mediodia UTC para que toLocaleDateString
+// con cualquier zona horaria America no reste un dia. Sin esto, "2026-06-02" sale
+// como "1 de junio" en Colombia (UTC-5) porque Date('2026-06-02') es UTC midnight.
+function parseDateOnly(s: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (m) {
+    return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0))
+  }
+  return new Date(s)
+}
+
 interface ContratoSolicitanteCardProps {
   expedienteId: string
   /** Estado actual del expediente. Permite mostrar "esperando contrato" cuando
@@ -218,7 +229,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Inicio:</span>
               <span className="font-medium text-gray-900">
-                {new Date(contrato.fecha_inicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {parseDateOnly(contrato.fecha_inicio).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
             </div>
           )}
