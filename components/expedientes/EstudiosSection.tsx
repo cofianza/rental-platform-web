@@ -38,6 +38,64 @@ function formatDate(dateStr: string): string {
   })
 }
 
+/**
+ * Persona evaluada por el estudio. Para tipo='individual' es el titular del
+ * expediente (prop solicitante). Para tipo='con_coarrendatario' es el
+ * co-arrendatario, cuyos datos viajan en estudio.datos_formulario.
+ */
+function getPersonaEvaluada(
+  estudio: IEstudio,
+  titular: { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined,
+): { nombre: string; tipo_documento?: string | null; numero_documento?: string | null; etiqueta: 'Titular' | 'Co-arrendatario' } | null {
+  if (estudio.tipo === 'con_coarrendatario') {
+    const datos = (estudio.datos_formulario || {}) as {
+      nombre_completo?: string
+      tipo_documento?: string
+      numero_documento?: string
+    }
+    if (!datos.nombre_completo && !datos.numero_documento) return null
+    return {
+      nombre: (datos.nombre_completo || '').trim(),
+      tipo_documento: datos.tipo_documento ?? null,
+      numero_documento: datos.numero_documento ?? null,
+      etiqueta: 'Co-arrendatario',
+    }
+  }
+  if (!titular) return null
+  return {
+    nombre: `${titular.nombre} ${titular.apellido}`.trim(),
+    tipo_documento: titular.tipo_documento ?? null,
+    numero_documento: titular.numero_documento ?? null,
+    etiqueta: 'Titular',
+  }
+}
+
+/**
+ * Adaptador para EstudioDetailModal: el modal espera nombre/apellido por
+ * separado. Para coarrendatario tomamos `nombre_completo` y lo partimos por
+ * el primer espacio.
+ */
+function getSolicitanteParaModal(
+  estudio: IEstudio,
+  titular: { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined,
+): { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined {
+  if (estudio.tipo !== 'con_coarrendatario') return titular
+  const datos = (estudio.datos_formulario || {}) as {
+    nombre_completo?: string
+    tipo_documento?: string
+    numero_documento?: string
+  }
+  const completo = (datos.nombre_completo || '').trim()
+  if (!completo) return titular
+  const idx = completo.indexOf(' ')
+  return {
+    nombre: idx === -1 ? completo : completo.slice(0, idx),
+    apellido: idx === -1 ? '' : completo.slice(idx + 1),
+    tipo_documento: datos.tipo_documento ?? null,
+    numero_documento: datos.numero_documento ?? null,
+  }
+}
+
 // ============================================
 // Props
 // ============================================
@@ -229,6 +287,7 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
         <div className="space-y-3">
           {estudios.map((estudio) => {
             const cardClickable = canViewDetail
+            const persona = getPersonaEvaluada(estudio, solicitante)
             return (
               <div
                 key={estudio.id}
@@ -266,17 +325,20 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
                       </span>
                       <Badge estado={estudio.estado} />
                       <Badge estado={estudio.resultado} />
-                    </div>
-                    {solicitante && (
-                      <div className="text-sm text-gray-700 mb-1">
-                        <span className="font-medium">
-                          {`${solicitante.nombre} ${solicitante.apellido}`.trim()}
+                      {persona?.etiqueta === 'Co-arrendatario' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                          Co-arrendatario
                         </span>
-                        {solicitante.numero_documento && (
+                      )}
+                    </div>
+                    {persona && (
+                      <div className="text-sm text-gray-700 mb-1">
+                        <span className="font-medium">{persona.nombre}</span>
+                        {persona.numero_documento && (
                           <span className="text-gray-500">
                             {' · '}
-                            {solicitante.tipo_documento ? `${solicitante.tipo_documento} ` : ''}
-                            {solicitante.numero_documento}
+                            {persona.tipo_documento ? `${persona.tipo_documento} ` : ''}
+                            {persona.numero_documento}
                           </span>
                         )}
                       </div>
@@ -365,7 +427,7 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
         onClose={() => setShowDetail(null)}
         estudio={showDetail}
         readOnly={!canManage}
-        solicitante={solicitante}
+        solicitante={showDetail ? getSolicitanteParaModal(showDetail, solicitante) : solicitante}
       />
 
       <RegistrarResultadoModal
