@@ -34,7 +34,7 @@ interface CitaCardProps {
   pagoEstudioEstado?: string | null
 }
 
-type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio'
+type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar_estudio'
 
 export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const [action, setAction] = useState<ActionState>('idle')
@@ -106,15 +106,19 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       'Cita cancelada',
     )
 
-  // Habilitar / no-habilitar estudio se decide en el Resumen del expediente
-  // (necesita capturar duracion + fecha de inicio del contrato). El kanban
-  // solo redirige al expediente.
-
   const expediente = cita.expediente
   const inmueble = expediente?.inmueble
   const solicitante = expediente?.solicitante
   const estadoConfig = ESTADO_CITA_CONFIG[cita.estado]
   const fechaRelevante = cita.fecha_confirmada || cita.fecha_propuesta
+
+  const handleHabilitarEstudio = () => {
+    if (!expediente) return
+    return runAction(
+      () => expedienteService.habilitarEstudio(expediente.id),
+      'Estudio habilitado, se notifico al solicitante',
+    )
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -256,18 +260,13 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
                 Estudio no habilitado
               </span>
             ) : expediente ? (
-              // Decidir habilitar/no habilitar requiere capturar datos del
-              // contrato (duracion + fecha de inicio). Esa captura vive en
-              // el modal del Resumen del expediente, asi que desde el
-              // kanban redirigimos al expediente en lugar de duplicar el
-              // formulario.
-              <Link
-                href={`/expedientes/${expediente.id}`}
+              <button
+                onClick={() => setAction('habilitar_estudio')}
                 className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center justify-center gap-1"
               >
                 <IconShieldCheck size={12} />
-                Decidir estudio
-              </Link>
+                Habilitar estudio
+              </button>
             ) : null}
           </>
         )}
@@ -444,9 +443,16 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         isLoading={isLoading}
       />
 
-      {/* Habilitar/no-habilitar estudio se maneja desde el Resumen del
-          expediente (necesita captura de duracion + fecha de inicio del
-          contrato). El kanban solo redirige via "Decidir estudio". */}
+      {/* ConfirmDialog: Habilitar estudio */}
+      <ConfirmDialog
+        isOpen={action === 'habilitar_estudio'}
+        onClose={closeModals}
+        onConfirm={handleHabilitarEstudio}
+        title="Habilitar estudio crediticio"
+        message="Se habilitara el estudio para este solicitante y se le enviara el link de pago. ¿Continuar?"
+        confirmLabel="Habilitar estudio"
+        isLoading={isLoading}
+      />
     </div>
   )
 }
