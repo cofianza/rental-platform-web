@@ -283,7 +283,9 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
                     )}
                     <div className="text-sm text-gray-500 space-x-3">
                       <span>{formatDate(estudio.fecha_solicitud || estudio.created_at)}</span>
-                      <span>{estudio.duracion_contrato_meses} meses</span>
+                      {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
+                        <span>{estudio.duracion_contrato_meses} meses</span>
+                      )}
                       {estudio.solicitado_por && (
                         <span>
                           por {estudio.solicitado_por.nombre} {estudio.solicitado_por.apellido}
