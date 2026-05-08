@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
+import { useAuthStore } from '@/stores/auth.store'
 import {
   BandejaTabs,
   ExpedientesFilters,
@@ -20,6 +21,10 @@ import {
 
 function ExpedientesContent() {
   const router = useRouter()
+  const user = useAuthStore((s) => s.user)
+  // El solicitante no crea expedientes — el flujo arranca con la cita previa
+  // que dispara el propietario/inmobiliaria desde su panel. Ocultamos el CTA.
+  const puedeCrearExpediente = user?.rol !== 'solicitante'
   const {
     expedientes,
     meta,
@@ -76,13 +81,15 @@ function ExpedientesContent() {
               }}
               entityName="Expedientes"
             />
-            <button
-              onClick={() => router.push('/expedientes/nuevo')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-            >
-              <IconPlus size={18} />
-              {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
-            </button>
+            {puedeCrearExpediente && (
+              <button
+                onClick={() => router.push('/expedientes/nuevo')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+              >
+                <IconPlus size={18} />
+                {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
+              </button>
+            )}
           </div>
         }
       />
