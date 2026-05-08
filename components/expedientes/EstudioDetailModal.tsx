@@ -311,7 +311,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   </div>
                 ) : readOnly ? (
                   <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                    El certificado aun no ha sido generado por el equipo de Cofianza.
+                    El certificado aún no ha sido generado por el equipo de Cofianza.
                   </p>
                 ) : (
                   <button

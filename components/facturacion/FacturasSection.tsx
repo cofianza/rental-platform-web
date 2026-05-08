@@ -153,7 +153,7 @@ export function FacturasSection() {
         <IconFileText size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Sin facturas</h3>
         <p className="text-sm text-gray-500 mb-6">
-          Aun no tienes facturas registradas en el sistema.
+          Aún no tienes facturas registradas en el sistema.
         </p>
         {isAdmin && (
           <button

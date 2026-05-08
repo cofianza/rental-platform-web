@@ -251,7 +251,7 @@ export function RegistrarResultadoModal({
                 onChange={(e) => setCondiciones(e.target.value)}
                 rows={3}
                 maxLength={2000}
-                placeholder="Especifique las condiciones para la aprobacion..."
+                placeholder="Especifica las condiciones para la aprobación..."
                 className="w-full px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
               />
             </div>

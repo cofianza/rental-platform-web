@@ -187,7 +187,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           {/* Motivo cancelacion */}
           {contrato.motivo_cancelacion && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-xs font-medium text-red-700 mb-1">Motivo de cancelacion</p>
+              <p className="text-xs font-medium text-red-700 mb-1">Motivo de cancelación</p>
               <p className="text-sm text-red-600">{contrato.motivo_cancelacion}</p>
             </div>
           )}

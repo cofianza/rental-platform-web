@@ -634,7 +634,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               </div>
 
               {fotosAdicionales.length >= 10 && (
-                <p className="text-xs text-amber-600 mt-2">Maximo 10 fotos adicionales</p>
+                <p className="text-xs text-amber-600 mt-2">Máximo 10 fotos adicionales</p>
               )}
             </div>
           </>
@@ -970,8 +970,8 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               </p>
               <p className="text-xs text-green-600">
                 {isPropietarioUser
-                  ? 'El inmueble se registrara a tu nombre automaticamente'
-                  : 'El inmueble quedara vinculado a tu inmobiliaria'}
+                  ? 'El inmueble se registrará a tu nombre automáticamente'
+                  : 'El inmueble quedará vinculado a tu inmobiliaria'}
               </p>
             </div>
           </div>

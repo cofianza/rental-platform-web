@@ -39,9 +39,9 @@ const VARIABLE_GROUPS = [
       { key: 'canon_mensual', label: 'Canon mensual' },
       { key: 'fecha_inicio', label: 'Fecha de inicio' },
       { key: 'fecha_fin', label: 'Fecha de fin' },
-      { key: 'duracion_meses', label: 'Duracion en meses' },
-      { key: 'deposito', label: 'Deposito' },
-      { key: 'clausulas_adicionales', label: 'Clausulas adicionales' },
+      { key: 'duracion_meses', label: 'Duración en meses' },
+      { key: 'deposito', label: 'Depósito' },
+      { key: 'clausulas_adicionales', label: 'Cláusulas adicionales' },
     ],
   },
 ]

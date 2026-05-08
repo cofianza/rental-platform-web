@@ -892,7 +892,7 @@ function CancelarCitaModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Cancelar Cita">
       <div className="space-y-4">
-        <p className="text-sm text-gray-500">Indica el motivo de la cancelacion.</p>
+        <p className="text-sm text-gray-500">Indica el motivo de la cancelación.</p>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
@@ -900,7 +900,7 @@ function CancelarCitaModal({
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             rows={3}
-            placeholder="Motivo de la cancelacion..."
+            placeholder="Motivo de la cancelación..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>

@@ -181,8 +181,8 @@ export function ContratoTransicionModal({
               onChange={(e) => setMotivo(e.target.value)}
               placeholder={
                 estadoSeleccionado === 'cancelado'
-                  ? 'Motivo de la cancelacion del contrato...'
-                  : 'Motivo de la finalizacion del contrato...'
+                  ? 'Motivo de la cancelación del contrato...'
+                  : 'Motivo de la finalización del contrato...'
               }
               rows={2}
               disabled={isLoading}

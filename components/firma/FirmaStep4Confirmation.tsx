@@ -85,7 +85,7 @@ export function FirmaStep4Confirmation({
           )}
         </div>
         <p className="text-sm text-gray-500">
-          Recibiras una copia del contrato firmado en tu correo electronico.
+          Recibirás una copia del contrato firmado en tu correo electrónico.
         </p>
         <div className="pt-4">
           <a
@@ -168,7 +168,7 @@ export function FirmaStep4Confirmation({
             </p>
             <ul className="text-xs text-blue-700 mt-2 space-y-1">
               <li>• Confirmo que he leido y entiendo el contenido del contrato</li>
-              <li>• Acepto que mi firma electronica tiene validez legal</li>
+              <li>• Acepto que mi firma electrónica tiene validez legal</li>
               <li>• Autorizo el uso de mis datos para este proceso</li>
             </ul>
           </div>
@@ -241,8 +241,8 @@ export function FirmaStep4Confirmation({
 
       {/* Additional info */}
       <p className="text-xs text-gray-400 text-center">
-        Al firmar, recibiras una copia del contrato firmado en tu correo electronico.
-        Este proceso cumple con la normativa colombiana de firma electronica.
+        Al firmar, recibirás una copia del contrato firmado en tu correo electrónico.
+        Este proceso cumple con la normativa colombiana de firma electrónica.
       </p>
     </div>
   )

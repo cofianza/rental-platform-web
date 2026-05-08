@@ -47,9 +47,9 @@ interface WizardState {
 
 const STEP_LABELS = [
   'Resumen',
-  'Verificacion',
+  'Verificación',
   'Firma',
-  'Confirmacion',
+  'Confirmación',
 ]
 
 // ============================================

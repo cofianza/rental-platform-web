@@ -233,11 +233,11 @@ export default function CitasPage() {
       {!isLoading && totalCitas === 0 && (
         <EmptyState
           icon={IconCalendar}
-          title={hasActiveFilters ? 'Sin resultados' : 'Aun no tienes citas'}
+          title={hasActiveFilters ? 'Sin resultados' : 'Aún no tienes citas'}
           description={
             hasActiveFilters
               ? 'Ajusta los filtros para ver otras citas.'
-              : 'Cuando un solicitante pida una visita a uno de tus inmuebles, aparecera aqui.'
+              : 'Cuando un solicitante pida una visita a uno de tus inmuebles, aparecerá aquí.'
           }
           action={
             !hasActiveFilters

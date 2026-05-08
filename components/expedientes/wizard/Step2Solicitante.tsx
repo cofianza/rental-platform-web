@@ -49,7 +49,7 @@ export function Step2Solicitante({
   // Buscar solicitante por documento
   const handleSearch = useCallback(async () => {
     if (!searchTipoDoc || !searchNumDoc.trim()) {
-      setSearchError('Ingrese tipo y numero de documento')
+      setSearchError('Ingresa tipo y número de documento')
       return
     }
 
@@ -232,7 +232,7 @@ export function Step2Solicitante({
           {/* Numero de documento */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Numero de documento
+              Número de documento
             </label>
             <input
               type="text"

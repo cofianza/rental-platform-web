@@ -218,8 +218,8 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-primary-800">
               {isPropietario
-                ? 'Publica tus inmuebles en la vitrina para recibir solicitudes de arrendatarios automaticamente.'
-                : 'Gestiona los inmuebles de tus clientes y recibe solicitudes de arrendatarios desde la vitrina publica.'}
+                ? 'Publica tus inmuebles en la vitrina para recibir solicitudes de arrendatarios automáticamente.'
+                : 'Gestiona los inmuebles de tus clientes y recibe solicitudes de arrendatarios desde la vitrina pública.'}
             </p>
             <Link href="/inmuebles" className="text-sm text-primary-600 font-medium hover:underline mt-1 inline-block">
               Ir a Inmuebles →
@@ -398,9 +398,9 @@ const PROCESS_STEPS = [
   { id: 'expediente', label: 'Solicitud', description: 'Tu expediente esta registrado' },
   { id: 'cita', label: 'Cita previa', description: 'Agenda una visita al inmueble' },
   { id: 'estudio', label: 'Estudio', description: 'Evaluacion de riesgo en proceso' },
-  { id: 'aprobado', label: 'Aprobacion', description: 'Resultado del estudio' },
+  { id: 'aprobado', label: 'Aprobación', description: 'Resultado del estudio' },
   { id: 'contrato', label: 'Contrato', description: 'Generacion y revision del contrato' },
-  { id: 'firma', label: 'Firma', description: 'Firma electronica del contrato' },
+  { id: 'firma', label: 'Firma', description: 'Firma electrónica del contrato' },
   { id: 'vigente', label: 'Listo', description: 'Contrato vigente' },
 ]
 

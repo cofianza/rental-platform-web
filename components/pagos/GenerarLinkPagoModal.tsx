@@ -241,7 +241,7 @@ export function GenerarLinkPagoModal({
             disabled={isSubmitting}
           />
           <label htmlFor="enviarEmail" className="text-sm text-gray-700">
-            Enviar link por email automaticamente
+            Enviar link por email automáticamente
           </label>
         </div>
 

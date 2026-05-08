@@ -385,7 +385,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Por favor indica el motivo de la cancelacion. El solicitante recibira esta informacion.
+            Por favor indica el motivo de la cancelación. El solicitante recibirá esta información.
           </p>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

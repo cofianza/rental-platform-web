@@ -166,7 +166,7 @@ function EmptyChart() {
   return (
     <div className="text-center py-12">
       <p className="text-gray-500 text-sm">
-        No hay datos de aprobacion para el periodo seleccionado.
+        No hay datos de aprobación para el periodo seleccionado.
       </p>
       <p className="text-gray-400 text-xs mt-1">
         Intenta ajustar los filtros de fecha.
@@ -203,7 +203,7 @@ export default function AprobacionExpedientesPage() {
       setData(result)
     } catch (err) {
       console.error('Error cargando aprobacion de expedientes:', err)
-      toast.error('Error al cargar el reporte de aprobacion')
+      toast.error('Error al cargar el reporte de aprobación')
     } finally {
       setLoading(false)
     }
@@ -224,7 +224,7 @@ export default function AprobacionExpedientesPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Tasa de Aprobacion"
+        title="Tasa de Aprobación"
         subtitle="Aprobados vs rechazados por periodo"
         actions={
           <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function AprobacionExpedientesPage() {
                 ...(filters.dateFrom ? { dateFrom: filters.dateFrom } : {}),
                 ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
               }}
-              entityName="Aprobacion"
+              entityName="Aprobación"
             />
             <Link
               href="/reportes"

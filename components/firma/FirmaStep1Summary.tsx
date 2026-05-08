@@ -144,10 +144,10 @@ export function FirmaStep1Summary({ data, token, onContinue }: FirmaStep1Summary
         <IconShieldCheck size={24} className="text-green-600 shrink-0 mt-0.5" />
         <div>
           <p className="font-medium text-green-800 text-sm">
-            Proceso seguro de firma electronica
+            Proceso seguro de firma electrónica
           </p>
           <p className="text-xs text-green-700 mt-1">
-            Se enviara un codigo de verificacion a tu correo electronico para confirmar tu identidad antes de firmar.
+            Se enviará un código de verificación a tu correo electrónico para confirmar tu identidad antes de firmar.
           </p>
         </div>
       </div>

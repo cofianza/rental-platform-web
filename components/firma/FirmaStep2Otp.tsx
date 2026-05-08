@@ -203,12 +203,12 @@ export function FirmaStep2Otp({
           {phase === 'sending' ? (
             <>
               <IconLoader size={20} className="animate-spin" />
-              Enviando codigo...
+              Enviando código...
             </>
           ) : (
             <>
               <IconMail size={20} />
-              Enviar codigo de verificacion
+              Enviar código de verificación
             </>
           )}
         </button>

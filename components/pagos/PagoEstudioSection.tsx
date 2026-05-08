@@ -431,7 +431,7 @@ function EnviarLinkModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Telefono <span className="text-xs text-gray-400">(opcional)</span>
+            Teléfono <span className="text-xs text-gray-400">(opcional)</span>
           </label>
           <input
             type="tel"

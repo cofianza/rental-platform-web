@@ -56,10 +56,10 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
 
         {/* Title */}
         <h3 className="text-xl font-semibold text-white mb-2">
-          Captura de Selfie con Identificacion
+          Captura de Selfie con Identificación
         </h3>
         <p className="text-gray-400 text-sm mb-8">
-          Sigue las instrucciones para completar la verificacion de identidad
+          Sigue las instrucciones para completar la verificación de identidad
         </p>
 
         {/* Instructions list */}

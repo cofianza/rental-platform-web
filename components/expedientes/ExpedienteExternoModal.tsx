@@ -40,7 +40,7 @@ export function ExpedienteExternoModal({
       return
     }
     if (!isValidEmail(email)) {
-      setError('Email invalido')
+      setError('Email inválido')
       return
     }
 
@@ -51,7 +51,7 @@ export function ExpedienteExternoModal({
         email_invitacion: email,
         notas: notas || undefined,
       })
-      toast.success('Invitacion enviada exitosamente')
+      toast.success('Invitación enviada exitosamente')
       setEmail('')
       setNotas('')
       onClose()

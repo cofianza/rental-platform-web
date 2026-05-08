@@ -319,7 +319,7 @@ export default function EstudioFormularioPage() {
               onChange={(e) => setNumDoc(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Ingrese su numero de documento"
+              placeholder="Ingresa tu número de documento"
             />
           </div>
         </div>
@@ -328,7 +328,7 @@ export default function EstudioFormularioPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Correo electronico <span className="text-red-500">*</span>
+              Correo electrónico <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -341,7 +341,7 @@ export default function EstudioFormularioPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefono <span className="text-red-500">*</span>
+              Teléfono <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -371,7 +371,7 @@ export default function EstudioFormularioPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ocupacion <span className="text-gray-400">(opcional)</span>
+              Ocupación <span className="text-gray-400">(opcional)</span>
             </label>
             <input
               type="text"
@@ -400,14 +400,14 @@ export default function EstudioFormularioPage() {
         {/* Direccion */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Direccion de residencia <span className="text-gray-400">(opcional)</span>
+            Dirección de residencia <span className="text-gray-400">(opcional)</span>
           </label>
           <input
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Calle, numero, barrio, ciudad"
+            placeholder="Calle, número, barrio, ciudad"
           />
         </div>
 

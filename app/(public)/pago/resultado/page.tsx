@@ -181,7 +181,7 @@ function PagoResultadoContent() {
           </button>
           <p className="text-xs text-gray-500">
             {secondsLeft > 0
-              ? `Esta ventana se cerrara automaticamente en ${secondsLeft} ${secondsLeft === 1 ? 'segundo' : 'segundos'}.`
+              ? `Esta ventana se cerrará automáticamente en ${secondsLeft} ${secondsLeft === 1 ? 'segundo' : 'segundos'}.`
               : 'Cerrando...'}
           </p>
         </div>
@@ -204,7 +204,7 @@ function PagoResultadoContent() {
       {!isSuccess && (
         <p className="text-xs text-gray-400 text-center mt-8">
           {isAuthInitialized && isAuthenticated
-            ? 'Tambien puedes cerrar esta ventana — el estado quedo guardado.'
+            ? 'También puedes cerrar esta ventana — el estado quedó guardado.'
             : 'Puedes cerrar esta ventana de forma segura.'}
         </p>
       )}

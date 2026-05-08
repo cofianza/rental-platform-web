@@ -320,7 +320,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
         <IconDollarSign size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Sin pagos registrados</h3>
         <p className="text-sm text-gray-500 mb-6">
-          Aun no hay pagos en este expediente. Puedes generar un link de pago o registrar un pago manual.
+          Aún no hay pagos en este expediente. Puedes generar un link de pago o registrar un pago manual.
         </p>
         {canManage && (
           <div className="flex justify-center gap-3">

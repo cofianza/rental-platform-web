@@ -144,11 +144,11 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
 
         {/* Details */}
         <div className="px-5 py-2">
-          <InfoRow label="Codigo" value={data.codigo} />
+          <InfoRow label="Código" value={data.codigo} />
           <InfoRow label="Nombre" value={data.nombre_masked} />
           <InfoRow label="Documento" value={data.numero_documento_masked} />
-          <InfoRow label="Direccion" value={data.direccion_masked} />
-          <InfoRow label="Fecha emision" value={formatDate(data.fecha_emision)} />
+          <InfoRow label="Dirección" value={data.direccion_masked} />
+          <InfoRow label="Fecha emisión" value={formatDate(data.fecha_emision)} />
           <InfoRow label="Fecha vencimiento" value={formatDate(data.fecha_vencimiento)} />
         </div>
 
@@ -162,8 +162,8 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
 
       {/* Disclaimer */}
       <p className="text-xs text-gray-400 text-center mt-6 px-4">
-        Este certificado fue generado electronicamente. La informacion mostrada ha sido parcialmente
-        enmascarada por privacidad. Para mas informacion, contacte a {data.empresa}.
+        Este certificado fue generado electrónicamente. La información mostrada ha sido parcialmente
+        enmascarada por privacidad. Para más información, contacta a {data.empresa}.
       </p>
     </div>
   )

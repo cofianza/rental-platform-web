@@ -140,17 +140,17 @@ export function DatosFiscalesSection() {
     const newErrors: FormErrors = {}
 
     if (!formData.numero_documento.trim()) {
-      newErrors.numero_documento = 'El numero de documento es requerido'
+      newErrors.numero_documento = 'El número de documento es requerido'
     } else if (formData.tipo_documento === 'NIT' && !validarNIT(formData.numero_documento)) {
-      newErrors.numero_documento = 'Formato de NIT invalido'
+      newErrors.numero_documento = 'Formato de NIT inválido'
     }
 
     if (!formData.razon_social.trim()) {
-      newErrors.razon_social = 'La razon social es requerida'
+      newErrors.razon_social = 'La razón social es requerida'
     }
 
     if (!formData.direccion_fiscal.trim()) {
-      newErrors.direccion_fiscal = 'La direccion fiscal es requerida'
+      newErrors.direccion_fiscal = 'La dirección fiscal es requerida'
     }
 
     if (!formData.ciudad.trim()) {
@@ -164,11 +164,11 @@ export function DatosFiscalesSection() {
     if (!formData.email_fiscal.trim()) {
       newErrors.email_fiscal = 'El email fiscal es requerido'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email_fiscal)) {
-      newErrors.email_fiscal = 'Email invalido'
+      newErrors.email_fiscal = 'Email inválido'
     }
 
     if (!formData.telefono_fiscal.trim()) {
-      newErrors.telefono_fiscal = 'El telefono fiscal es requerido'
+      newErrors.telefono_fiscal = 'El teléfono fiscal es requerido'
     }
 
     setErrors(newErrors)

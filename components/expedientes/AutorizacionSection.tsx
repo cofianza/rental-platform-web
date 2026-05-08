@@ -30,7 +30,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 const METODO_LABELS: Record<string, string> = {
   canvas: 'Firma manuscrita digital',
-  otp: 'Verificacion por codigo OTP',
+  otp: 'Verificación por código OTP',
 }
 
 export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) {
@@ -89,7 +89,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
     setRevocando(true)
     try {
       await autorizacionService.revocar(expedienteId, { motivo: revocarMotivo })
-      toast.success('Autorizacion revocada')
+      toast.success('Autorización revocada')
       setShowRevocar(false)
       setRevocarMotivo('')
       fetchStatus()
@@ -119,7 +119,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
-          <h3 className="text-base font-semibold text-gray-900">Autorizacion Habeas Data</h3>
+          <h3 className="text-base font-semibold text-gray-900">Autorización Habeas Data</h3>
         </div>
         {estado && <Badge estado={estado} />}
       </div>
@@ -211,7 +211,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
               <textarea
                 value={revocarMotivo}
                 onChange={(e) => setRevocarMotivo(e.target.value)}
-                placeholder="Ingrese el motivo de la revocacion (min. 10 caracteres)"
+                placeholder="Ingresa el motivo de la revocación (mín. 10 caracteres)"
                 rows={3}
                 className="w-full rounded-lg border border-red-300 p-2 text-sm focus:ring-red-500 focus:border-red-500"
               />
@@ -222,7 +222,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
                   className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
                   {revocando && <IconLoader size={14} className="animate-spin" />}
-                  Confirmar revocacion
+                  Confirmar revocación
                 </button>
                 <button
                   onClick={() => { setShowRevocar(false); setRevocarMotivo('') }}
@@ -242,7 +242,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
             <IconAlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-red-800">Autorizacion revocada</p>
+              <p className="text-sm font-medium text-red-800">Autorización revocada</p>
               {autorizacion?.motivo_revocacion && (
                 <p className="text-xs text-red-600 mt-1">Motivo: {autorizacion.motivo_revocacion}</p>
               )}
