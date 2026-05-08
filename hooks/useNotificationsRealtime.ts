@@ -137,4 +137,26 @@ export function useNotificationsRealtime() {
       data.subscription.unsubscribe()
     }
   }, [])
+
+  // ── Effect 4: polling cada 60s como red de seguridad ────────────
+  // Realtime via postgres_changes es la via principal, pero si la WS se
+  // cae (red intermitente, idle prolongado, evento perdido), el badge se
+  // queda desactualizado. Cada 60 segundos refrescamos la lista desde el
+  // backend para garantizar que las notificaciones lleguen incluso si el
+  // canal Realtime esta inactivo. La pestaña en background pausa el
+  // setInterval (browser throttling), asi que el costo es bajo.
+  useEffect(() => {
+    if (!isAuthenticated || !userId) return
+    const tick = () => {
+      notificacionService
+        .list({ limit: 30 })
+        .then((res) => setItems(res.data))
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn('[notif polling] fetch fallo:', err)
+        })
+    }
+    const intervalId = setInterval(tick, 60_000)
+    return () => clearInterval(intervalId)
+  }, [isAuthenticated, userId, setItems])
 }
