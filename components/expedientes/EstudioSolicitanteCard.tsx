@@ -16,7 +16,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import type { IEstudio } from '@/types/estudio'
@@ -102,6 +102,21 @@ export function EstudioSolicitanteCard({
     const id = setInterval(fetchEstudio, 5000)
     return () => clearInterval(id)
   }, [estudio?.estado, fetchEstudio])
+
+  // Cuando el estudio transiciona de en_proceso a completado/fallido, le
+  // avisamos al padre via onEjecutado para que recargue el expediente. Si
+  // no hacemos esto, el expediente.estado se queda en 'borrador' y la
+  // CoarrendatarioCard (que depende de estado='condicionado') no aparece
+  // hasta que el solicitante refresque manualmente.
+  const prevEstadoRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const prev = prevEstadoRef.current
+    const curr = estudio?.estado
+    prevEstadoRef.current = curr
+    if (prev === 'en_proceso' && (curr === 'completado' || curr === 'fallido')) {
+      onEjecutado?.()
+    }
+  }, [estudio?.estado, onEjecutado])
 
   const handleEjecutar = async () => {
     if (!estudio) return
