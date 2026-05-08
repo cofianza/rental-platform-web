@@ -24,6 +24,9 @@ import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
 import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
+// TEMPORAL (Mario, 7-may-2026): herramienta de QA para limpiar la BD entre
+// rondas de prueba. Eliminar antes de produccion.
+import { WipeTestDataCard } from '@/components/dashboard/WipeTestDataCard'
 
 // ── Date filter presets ─────────────────────────────────────
 
@@ -381,6 +384,10 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* TEMPORAL: herramienta de QA "Borrar datos de prueba" — solo admin.
+          Eliminar antes de produccion. */}
+      {hasRole('administrador') && <WipeTestDataCard />}
     </div>
   )
 }
