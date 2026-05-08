@@ -20,9 +20,9 @@ function SuccessContent() {
 
     try {
       await authService.resendVerification(email)
-      setResendMessage('Correo de verificacion reenviado. Revisa tu bandeja de entrada.')
+      setResendMessage('Correo de verificación reenviado. Revisa tu bandeja de entrada.')
     } catch {
-      setResendMessage('No se pudo reenviar el correo. Intenta de nuevo mas tarde.')
+      setResendMessage('No se pudo reenviar el correo. Intenta de nuevo más tarde.')
     } finally {
       setResending(false)
     }
@@ -42,14 +42,14 @@ function SuccessContent() {
         <div className="flex items-center justify-center gap-2 text-gray-600">
           <IconMail size={20} className="text-primary-600" />
           <p className="text-sm">
-            Hemos enviado un enlace de verificacion a{' '}
+            Hemos enviado un enlace de verificación a{' '}
             <span className="font-medium text-gray-900">{email}</span>
           </p>
         </div>
 
         <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
           <p>Revisa tu <span className="font-medium">bandeja de entrada</span> y la carpeta de <span className="font-medium">spam</span>.</p>
-          <p>Una vez verificado tu email, un administrador activara tu cuenta para que puedas acceder a la plataforma.</p>
+          <p>Una vez verificado tu email, un administrador activará tu cuenta para que puedas acceder a la plataforma.</p>
         </div>
 
         {resendMessage && (
@@ -68,7 +68,7 @@ function SuccessContent() {
               <IconLoader size={16} className="animate-spin" /> Reenviando...
             </>
           ) : (
-            'Reenviar correo de verificacion'
+            'Reenviar correo de verificación'
           )}
         </button>
       </div>
@@ -78,7 +78,7 @@ function SuccessContent() {
           href={AUTH_ROUTES.LOGIN}
           className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
         >
-          Volver a inicio de sesion
+          Volver a inicio de sesión
         </Link>
       </div>
     </div>

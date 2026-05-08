@@ -73,10 +73,10 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'reportes',
   },
   {
-    label: 'Facturacion',
+    label: 'Facturación',
     href: '/facturacion',
     icon: 'Receipt',
-    description: 'Facturacion y datos fiscales',
+    description: 'Facturación y datos fiscales',
     resource: 'facturas',
     // Excluido propietario: la facturacion la maneja la inmobiliaria a su
     // nombre, no el propietario individual. El propietario consulta los
@@ -91,7 +91,7 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'usuarios',
   },
   {
-    label: 'Bitacora',
+    label: 'Bitácora',
     href: '/bitacora',
     icon: 'ClipboardList',
     description: 'Registro de actividad',
@@ -250,7 +250,7 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     borderColor: 'border-gray-300',
   },
   en_revision: {
-    label: 'En Revision',
+    label: 'En Revisión',
     color: 'amber',
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-700',

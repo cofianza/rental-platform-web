@@ -266,10 +266,10 @@ export function TipoDocumentoForm({
           </p>
         )}
         {!isCheckingCodigo && codigoDisponible === false && !errors.codigo && (
-          <p className="mt-1 text-xs text-red-600">Este codigo ya esta en uso</p>
+          <p className="mt-1 text-xs text-red-600">Este código ya está en uso</p>
         )}
         {!isCheckingCodigo && codigoDisponible === true && formData.codigo.length >= 2 && !errors.codigo && (
-          <p className="mt-1 text-xs text-green-600">Codigo disponible</p>
+          <p className="mt-1 text-xs text-green-600">Código disponible</p>
         )}
         {errors.codigo && <p className="mt-1 text-xs text-red-600">{errors.codigo}</p>}
       </div>

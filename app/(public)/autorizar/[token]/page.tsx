@@ -153,16 +153,16 @@ export default function AutorizarPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Autorizacion firmada exitosamente</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Autorización firmada exitosamente</h2>
         <p className="text-sm text-gray-500">
-          Tu autorizacion para consulta en centrales de riesgo ha sido registrada.
+          Tu autorización para consulta en centrales de riesgo ha sido registrada.
         </p>
         {hashDocumento && (
           <p className="text-xs text-gray-400 font-mono break-all">
-            Hash de verificacion: {hashDocumento}
+            Hash de verificación: {hashDocumento}
           </p>
         )}
-        <p className="text-sm text-gray-500">Puedes cerrar esta pagina.</p>
+        <p className="text-sm text-gray-500">Puedes cerrar esta página.</p>
       </div>
     )
   }

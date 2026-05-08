@@ -17,8 +17,8 @@ import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 
 const TIPO_DOC_OPTIONS = [
-  { value: 'cc', label: 'Cedula de Ciudadania' },
-  { value: 'ce', label: 'Cedula de Extranjeria' },
+  { value: 'cc', label: 'Cédula de Ciudadanía' },
+  { value: 'ce', label: 'Cédula de Extranjería' },
   { value: 'ti', label: 'Tarjeta de Identidad' },
   { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'nit', label: 'NIT' },
@@ -86,19 +86,19 @@ function RegistroSolicitanteContent() {
     const e: FormErrors = {}
     if (!nombre.trim()) e.nombre = 'Requerido'
     if (!apellido.trim()) e.apellido = 'Requerido'
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalido'
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido'
     if (!telefono.trim()) {
-      e.telefono = 'Telefono requerido'
+      e.telefono = 'Teléfono requerido'
     } else {
       // PhoneInput emite el formato "+<dial> <local>". El numero local debe
       // tener exactamente 10 digitos sin espacios.
       const localDigits = telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-      if (localDigits.length !== 10) e.telefono = 'El telefono debe tener 10 digitos'
+      if (localDigits.length !== 10) e.telefono = 'El teléfono debe tener 10 dígitos'
     }
     if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
-    if (password.length < 8) e.password = 'Minimo 8 caracteres'
+    if (password.length < 8) e.password = 'Mínimo 8 caracteres'
     if (password !== confirmPassword) e.confirm_password = 'No coinciden'
-    if (!acceptTerms) e.accept_terms = 'Debe aceptar los terminos'
+    if (!acceptTerms) e.accept_terms = 'Debe aceptar los términos'
     if (!acceptData) e.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
     setErrors(e)
     return Object.keys(e).length === 0
@@ -237,7 +237,7 @@ function RegistroSolicitanteContent() {
 
           <FormField label="Email" type="email" value={email} onChange={setEmail} error={errors.email} />
           <PhoneInput
-            label="Telefono"
+            label="Teléfono"
             value={telefono}
             onChange={setTelefono}
             error={errors.telefono}
@@ -257,12 +257,12 @@ function RegistroSolicitanteContent() {
               </select>
             </div>
             <div className="col-span-3">
-              <FormField label="Numero documento" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
+              <FormField label="Número de documento" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
             </div>
           </div>
 
-          <FormField label="Contrasena" type="password" value={password} onChange={setPassword} error={errors.password} placeholder="Minimo 8 caracteres" />
-          <FormField label="Confirmar contrasena" type="password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
+          <FormField label="Contraseña" type="password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres" />
+          <FormField label="Confirmar contraseña" type="password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
 
           {/* Checkboxes */}
           <div className="space-y-3">
@@ -318,12 +318,12 @@ function RegistroSolicitanteContent() {
 
         {/* Login link */}
         <p className="text-center text-sm text-gray-500 mt-6">
-          Ya tienes cuenta?{' '}
+          ¿Ya tienes cuenta?{' '}
           <Link
             href={`/login${propertyId ? `?property_id=${propertyId}&intent=interest` : ''}`}
             className="text-primary-600 font-medium hover:text-primary-700"
           >
-            Inicia sesion
+            Inicia sesión
           </Link>
         </p>
       </main>

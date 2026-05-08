@@ -30,7 +30,7 @@ function VerifyEmailContent() {
       setState('success')
     } catch {
       setState('error')
-      setErrorMessage('El enlace de verificacion es invalido o ha expirado.')
+      setErrorMessage('El enlace de verificación es inválido o ha expirado.')
     }
   }, [token])
 
@@ -45,9 +45,9 @@ function VerifyEmailContent() {
 
     try {
       await authService.resendVerification(resendEmail)
-      setResendMessage('Si el email esta registrado, recibiras un nuevo enlace de verificacion.')
+      setResendMessage('Si el email está registrado, recibirás un nuevo enlace de verificación.')
     } catch {
-      setResendMessage('No se pudo enviar el correo. Intenta de nuevo mas tarde.')
+      setResendMessage('No se pudo enviar el correo. Intenta de nuevo más tarde.')
     } finally {
       setResending(false)
     }
@@ -63,7 +63,7 @@ function VerifyEmailContent() {
             <IconLoader size={40} className="animate-spin text-primary-600" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">Verificando tu email...</h1>
-          <p className="text-sm text-gray-500">Esto solo tomara un momento.</p>
+          <p className="text-sm text-gray-500">Esto solo tomará un momento.</p>
         </div>
       )}
 
@@ -76,17 +76,17 @@ function VerifyEmailContent() {
           </div>
           <h1 className="text-xl font-bold text-gray-900">Cuenta activada</h1>
           <p className="text-sm text-gray-600">
-            Tu correo fue verificado y tu cuenta quedo activa.
+            Tu correo fue verificado y tu cuenta quedó activa.
           </p>
           <div className="bg-green-50 rounded-lg p-4 text-sm text-gray-700">
-            <p>Ya puedes iniciar sesion para continuar.</p>
+            <p>Ya puedes iniciar sesión para continuar.</p>
           </div>
           <div className="pt-4">
             <Link
               href={AUTH_ROUTES.LOGIN}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Ir a inicio de sesion
+              Ir a inicio de sesión
             </Link>
           </div>
         </div>
@@ -99,7 +99,7 @@ function VerifyEmailContent() {
               <IconX size={32} className="text-red-600" />
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Verificacion fallida</h1>
+          <h1 className="text-xl font-bold text-gray-900">Verificación fallida</h1>
           <p className="text-sm text-gray-600">{errorMessage}</p>
 
           <div className="bg-gray-50 rounded-lg p-4 space-y-3">
@@ -133,7 +133,7 @@ function VerifyEmailContent() {
               href={AUTH_ROUTES.LOGIN}
               className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
             >
-              Volver a inicio de sesion
+              Volver a inicio de sesión
             </Link>
           </div>
         </div>

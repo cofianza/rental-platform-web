@@ -70,7 +70,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
             </div>
             <div>
               <p className="text-white font-medium">Ten a la mano tu documento</p>
-              <p className="text-gray-400 text-sm">Cedula de ciudadania o documento de identidad vigente</p>
+              <p className="text-gray-400 text-sm">Cédula de ciudadanía o documento de identidad vigente</p>
             </div>
           </div>
 

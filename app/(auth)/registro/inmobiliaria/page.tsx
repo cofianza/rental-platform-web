@@ -43,7 +43,7 @@ const initialFormData: FormData = {
   accept_data_treatment: false,
 }
 
-const STEP_LABELS = ['Datos Empresa', 'Representante', 'Terminos']
+const STEP_LABELS = ['Datos Empresa', 'Representante', 'Términos']
 
 /**
  * Valida el digito de verificacion del NIT colombiano con algoritmo modulo-11.
@@ -106,9 +106,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 function PasswordRequirements({ password }: { password: string }) {
   const checks = [
     { label: 'Al menos 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayuscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minuscula', met: /[a-z]/.test(password) },
-    { label: 'Un numero', met: /\d/.test(password) },
+    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
+    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
+    { label: 'Un número', met: /\d/.test(password) },
   ]
 
   return (
@@ -152,15 +152,15 @@ export default function RegisterInmobiliariaPage() {
     const newErrors: Record<string, string> = {}
 
     if (stepNum === 1) {
-      if (!formData.razon_social.trim()) newErrors.razon_social = 'Razon social requerida'
+      if (!formData.razon_social.trim()) newErrors.razon_social = 'Razón social requerida'
       if (!formData.nit.trim()) {
         newErrors.nit = 'NIT requerido'
       } else if (!/^\d{1,15}-\d$/.test(formData.nit)) {
-        newErrors.nit = 'Formato invalido. Ejemplo: 900123456-9'
+        newErrors.nit = 'Formato inválido. Ejemplo: 900123456-9'
       } else if (!validateNitModulo11(formData.nit)) {
-        newErrors.nit = 'Digito de verificacion del NIT invalido'
+        newErrors.nit = 'Dígito de verificación del NIT inválido'
       }
-      if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Direccion comercial requerida'
+      if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Dirección comercial requerida'
       if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
     }
 
@@ -168,34 +168,34 @@ export default function RegisterInmobiliariaPage() {
       if (!formData.nombre_representante_nombre.trim()) newErrors.nombre_representante_nombre = 'Nombre del representante requerido'
       if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
       if (!formData.telefono.trim()) {
-        newErrors.telefono = 'Telefono requerido'
+        newErrors.telefono = 'Teléfono requerido'
       } else {
         // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
         // en el numero local.
         const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
         if (localDigits.length !== 10) {
-          newErrors.telefono = 'El telefono debe tener 10 digitos'
+          newErrors.telefono = 'El teléfono debe tener 10 dígitos'
         }
       }
       if (!formData.email.trim()) {
         newErrors.email = 'Email requerido'
       } else if (!isValidEmail(formData.email)) {
-        newErrors.email = 'Email invalido'
+        newErrors.email = 'Email inválido'
       }
       if (!formData.password) {
-        newErrors.password = 'Contrasena requerida'
+        newErrors.password = 'Contraseña requerida'
       } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-        newErrors.password = 'La contrasena no cumple los requisitos'
+        newErrors.password = 'La contraseña no cumple los requisitos'
       }
       if (!formData.confirm_password) {
-        newErrors.confirm_password = 'Confirma tu contrasena'
+        newErrors.confirm_password = 'Confirma tu contraseña'
       } else if (formData.password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Las contrasenas no coinciden'
+        newErrors.confirm_password = 'Las contraseñas no coinciden'
       }
     }
 
     if (stepNum === 3) {
-      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los terminos y condiciones'
+      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
       if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
     }
 
@@ -273,7 +273,7 @@ export default function RegisterInmobiliariaPage() {
       {step === 1 && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Razon social</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Razón social</label>
             <div className="relative">
               <IconBuilding2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -298,18 +298,18 @@ export default function RegisterInmobiliariaPage() {
               />
             </div>
             {errors.nit && <p className="mt-1.5 text-sm text-red-600">{errors.nit}</p>}
-            <p className="mt-1 text-xs text-gray-400">Ejemplo: 900123456-9 (9 digitos, guion, digito de verificacion)</p>
+            <p className="mt-1 text-xs text-gray-400">Ejemplo: 900123456-9 (9 dígitos, guion, dígito de verificación)</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Direccion comercial</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial</label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
                 className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.direccion_comercial ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Direccion de la sede principal"
+                placeholder="Dirección de la sede principal"
               />
             </div>
             {errors.direccion_comercial && <p className="mt-1.5 text-sm text-red-600">{errors.direccion_comercial}</p>}
@@ -364,7 +364,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <PhoneInput
-            label="Telefono de contacto"
+            label="Teléfono de contacto"
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
@@ -385,7 +385,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -393,7 +393,7 @@ export default function RegisterInmobiliariaPage() {
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -404,7 +404,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contrasena</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -412,7 +412,7 @@ export default function RegisterInmobiliariaPage() {
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Repite tu contrasena"
+                placeholder="Repite tu contraseña"
               />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -430,10 +430,10 @@ export default function RegisterInmobiliariaPage() {
             <p className="font-medium text-gray-900">Resumen de tu registro:</p>
             <p><span className="font-medium">Empresa:</span> {formData.razon_social}</p>
             <p><span className="font-medium">NIT:</span> {formData.nit}</p>
-            <p><span className="font-medium">Direccion:</span> {formData.direccion_comercial}, {formData.ciudad}</p>
+            <p><span className="font-medium">Dirección:</span> {formData.direccion_comercial}, {formData.ciudad}</p>
             <p><span className="font-medium">Representante:</span> {formData.nombre_representante_nombre} {formData.nombre_representante_apellido}</p>
             <p><span className="font-medium">Email:</span> {formData.email}</p>
-            <p><span className="font-medium">Telefono:</span> {formData.telefono}</p>
+            <p><span className="font-medium">Teléfono:</span> {formData.telefono}</p>
           </div>
 
           <div className="space-y-4">

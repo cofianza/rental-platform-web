@@ -740,7 +740,7 @@ function SolicitanteDashboard() {
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin solicitudes activas</h3>
-          <p className="text-sm text-gray-500 mb-4">Aun no tienes solicitudes de arrendamiento. Explora la vitrina para encontrar tu proximo hogar.</p>
+          <p className="text-sm text-gray-500 mb-4">Aún no tienes solicitudes de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
             Explorar inmuebles
           </Link>

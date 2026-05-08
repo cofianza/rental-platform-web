@@ -178,7 +178,7 @@ export default function EstudioFormularioPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Formulario completado</h3>
-              <p className="text-sm text-gray-500">Tu informacion fue enviada exitosamente. A continuacion un resumen de los datos registrados.</p>
+              <p className="text-sm text-gray-500">Tu información fue enviada exitosamente. A continuación un resumen de los datos registrados.</p>
             </div>
           </div>
 
@@ -203,7 +203,7 @@ export default function EstudioFormularioPage() {
             )}
             {datos.telefono && (
               <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm text-gray-500">Telefono</span>
+                <span className="text-sm text-gray-500">Teléfono</span>
                 <span className="text-sm text-gray-900 col-span-2">{datos.telefono}</span>
               </div>
             )}
@@ -217,7 +217,7 @@ export default function EstudioFormularioPage() {
             )}
             {datos.ocupacion && (
               <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm text-gray-500">Ocupacion</span>
+                <span className="text-sm text-gray-500">Ocupación</span>
                 <span className="text-sm text-gray-900 col-span-2">{datos.ocupacion}</span>
               </div>
             )}
@@ -229,14 +229,14 @@ export default function EstudioFormularioPage() {
             )}
             {datos.direccion_residencia && (
               <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm text-gray-500">Direccion</span>
+                <span className="text-sm text-gray-500">Dirección</span>
                 <span className="text-sm text-gray-900 col-span-2">{datos.direccion_residencia}</span>
               </div>
             )}
           </div>
 
           <p className="text-xs text-gray-400 pt-2">
-            Tu estudio de riesgo crediticio esta siendo procesado. Puedes cerrar esta ventana.
+            Tu estudio de riesgo crediticio está siendo procesado. Puedes cerrar esta ventana.
           </p>
         </div>
       </div>
@@ -300,8 +300,8 @@ export default function EstudioFormularioPage() {
               onChange={(e) => setTipoDoc(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="CC">Cedula de Ciudadania</option>
-              <option value="CE">Cedula de Extranjeria</option>
+              <option value="CC">Cédula de Ciudadanía</option>
+              <option value="CE">Cédula de Extranjería</option>
               <option value="TI">Tarjeta de Identidad</option>
               <option value="NIT">NIT</option>
             </select>
@@ -311,7 +311,7 @@ export default function EstudioFormularioPage() {
           </div>
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Numero de documento <span className="text-red-500">*</span>
+              Número de documento <span className="text-red-500">*</span>
             </label>
             <input
               type="text"

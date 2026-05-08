@@ -41,7 +41,7 @@ const initialFormData: FormData = {
   accept_data_treatment: false,
 }
 
-const STEP_LABELS = ['Datos Personales', 'Credenciales', 'Terminos']
+const STEP_LABELS = ['Datos Personales', 'Credenciales', 'Términos']
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -80,9 +80,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 function PasswordRequirements({ password }: { password: string }) {
   const checks = [
     { label: 'Al menos 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayuscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minuscula', met: /[a-z]/.test(password) },
-    { label: 'Un numero', met: /\d/.test(password) },
+    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
+    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
+    { label: 'Un número', met: /\d/.test(password) },
   ]
 
   return (
@@ -129,40 +129,40 @@ export default function RegisterPropietarioPage() {
       if (!formData.nombre.trim()) newErrors.nombre = 'Nombre requerido'
       if (!formData.apellido.trim()) newErrors.apellido = 'Apellido requerido'
       if (!formData.tipo_documento) newErrors.tipo_documento = 'Selecciona un tipo de documento'
-      if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Numero de documento requerido'
+      if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Número de documento requerido'
       if (!formData.telefono.trim()) {
-        newErrors.telefono = 'Telefono requerido'
+        newErrors.telefono = 'Teléfono requerido'
       } else {
         // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
         // en el numero local.
         const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
         if (localDigits.length !== 10) {
-          newErrors.telefono = 'El telefono debe tener 10 digitos'
+          newErrors.telefono = 'El teléfono debe tener 10 dígitos'
         }
       }
-      if (!formData.direccion.trim()) newErrors.direccion = 'Direccion requerida'
+      if (!formData.direccion.trim()) newErrors.direccion = 'Dirección requerida'
     }
 
     if (stepNum === 2) {
       if (!formData.email.trim()) {
         newErrors.email = 'Email requerido'
       } else if (!isValidEmail(formData.email)) {
-        newErrors.email = 'Email invalido'
+        newErrors.email = 'Email inválido'
       }
       if (!formData.password) {
-        newErrors.password = 'Contrasena requerida'
+        newErrors.password = 'Contraseña requerida'
       } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-        newErrors.password = 'La contrasena no cumple los requisitos'
+        newErrors.password = 'La contraseña no cumple los requisitos'
       }
       if (!formData.confirm_password) {
-        newErrors.confirm_password = 'Confirma tu contrasena'
+        newErrors.confirm_password = 'Confirma tu contraseña'
       } else if (formData.password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Las contrasenas no coinciden'
+        newErrors.confirm_password = 'Las contraseñas no coinciden'
       }
     }
 
     if (stepNum === 3) {
-      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los terminos y condiciones'
+      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
       if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
     }
 
@@ -276,22 +276,22 @@ export default function RegisterPropietarioPage() {
                   className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="cc">Cedula de Ciudadania</option>
-                  <option value="ce">Cedula de Extranjeria</option>
+                  <option value="cc">Cédula de Ciudadanía</option>
+                  <option value="ce">Cédula de Extranjería</option>
                   <option value="pasaporte">Pasaporte</option>
                 </select>
               </div>
               {errors.tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.tipo_documento}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Numero de documento</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.numero_documento ? 'border-red-500' : 'border-gray-300')}
-                  placeholder="Numero de documento"
+                  placeholder="Número de documento"
                 />
               </div>
               {errors.numero_documento && <p className="mt-1.5 text-sm text-red-600">{errors.numero_documento}</p>}
@@ -299,21 +299,21 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <PhoneInput
-            label="Telefono celular"
+            label="Teléfono celular"
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Direccion de residencia</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de residencia</label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
                 className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.direccion ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Tu direccion"
+                placeholder="Tu dirección"
               />
             </div>
             {errors.direccion && <p className="mt-1.5 text-sm text-red-600">{errors.direccion}</p>}
@@ -339,7 +339,7 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -347,7 +347,7 @@ export default function RegisterPropietarioPage() {
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -358,7 +358,7 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contrasena</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -366,7 +366,7 @@ export default function RegisterPropietarioPage() {
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
-                placeholder="Repite tu contrasena"
+                placeholder="Repite tu contraseña"
               />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}

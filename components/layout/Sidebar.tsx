@@ -194,7 +194,7 @@ export function Sidebar() {
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
               'text-gray-700 hover:bg-primary-50 hover:text-primary-600 group relative'
             )}
-            title="Ver vitrina publica (abre en nueva pestaña)"
+            title="Ver vitrina pública (abre en nueva pestaña)"
           >
             <IconGlobe size={20} className="shrink-0 text-gray-600 group-hover:text-primary-600" />
             <span

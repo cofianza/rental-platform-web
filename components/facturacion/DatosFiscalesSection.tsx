@@ -254,21 +254,21 @@ export function DatosFiscalesSection() {
             <p className="text-sm font-medium text-gray-900">{datosFiscales.tipo_documento}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Numero de Documento</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Número de Documento</p>
             <p className="text-sm font-medium text-gray-900">{datosFiscales.numero_documento}</p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Razon Social</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Razón Social</p>
             <p className="text-sm font-medium text-gray-900">{datosFiscales.razon_social}</p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Regimen Tributario</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Régimen Tributario</p>
             <p className="text-sm font-medium text-gray-900">
               {REGIMEN_TRIBUTARIO_LABELS[datosFiscales.regimen_tributario]}
             </p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Direccion Fiscal</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Dirección Fiscal</p>
             <p className="text-sm font-medium text-gray-900">{datosFiscales.direccion_fiscal}</p>
           </div>
           <div>
@@ -284,7 +284,7 @@ export function DatosFiscalesSection() {
             <p className="text-sm font-medium text-gray-900">{datosFiscales.email_fiscal}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Telefono Fiscal</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Teléfono Fiscal</p>
             <p className="text-sm font-medium text-gray-900">{datosFiscales.telefono_fiscal}</p>
           </div>
         </div>
@@ -309,8 +309,8 @@ export function DatosFiscalesSection() {
             </h3>
             <p className="text-sm text-gray-500">
               {pageState === 'empty'
-                ? 'Completa la informacion para poder generar facturas'
-                : 'Actualiza tu informacion fiscal'}
+                ? 'Completa la información para poder generar facturas'
+                : 'Actualiza tu información fiscal'}
             </p>
           </div>
         </div>
@@ -330,15 +330,15 @@ export function DatosFiscalesSection() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             >
               <option value="NIT">NIT</option>
-              <option value="CC">Cedula de Ciudadania</option>
-              <option value="CE">Cedula de Extranjeria</option>
+              <option value="CC">Cédula de Ciudadanía</option>
+              <option value="CE">Cédula de Extranjería</option>
             </select>
           </div>
 
           {/* Numero de Documento */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Numero de Documento *
+              Número de Documento *
             </label>
             <input
               type="text"
@@ -359,7 +359,7 @@ export function DatosFiscalesSection() {
           {/* Razon Social */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Razon Social / Nombre Completo *
+              Razón Social / Nombre Completo *
             </label>
             <input
               type="text"
@@ -380,7 +380,7 @@ export function DatosFiscalesSection() {
           {/* Regimen Tributario */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Regimen Tributario *
+              Régimen Tributario *
             </label>
             <select
               value={formData.regimen_tributario}
@@ -398,7 +398,7 @@ export function DatosFiscalesSection() {
           {/* Direccion Fiscal */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Direccion Fiscal *
+              Dirección Fiscal *
             </label>
             <input
               type="text"
@@ -480,7 +480,7 @@ export function DatosFiscalesSection() {
           {/* Telefono Fiscal */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefono Fiscal *
+              Teléfono Fiscal *
             </label>
             <input
               type="tel"

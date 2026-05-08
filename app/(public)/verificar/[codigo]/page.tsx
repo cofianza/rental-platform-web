@@ -74,8 +74,8 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de Verificacion</h1>
-        <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intente nuevamente.</p>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de Verificación</h1>
+        <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intenta nuevamente.</p>
       </div>
     )
   }
