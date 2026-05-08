@@ -855,7 +855,7 @@ function SolicitanteDashboard() {
             <p className="text-xs text-gray-500">Ver todas mis solicitudes</p>
           </div>
         </Link>
-        <Link href="/" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">
+        <Link href="/vitrina" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">
           <IconFolderOpen size={20} className="text-primary-600" />
           <div>
             <p className="text-sm font-medium text-gray-900">Explorar vitrina</p>
