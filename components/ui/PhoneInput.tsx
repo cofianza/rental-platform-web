@@ -216,7 +216,8 @@ export function PhoneInput({
             value={localNumber}
             onChange={handleLocalChange}
             disabled={disabled}
-            placeholder={placeholder || '300 123 4567'}
+            placeholder={placeholder || '3001234567'}
+            maxLength={10}
             className={cn(
               'w-full py-2.5 border rounded-r-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500',
               icon ? 'pl-10 pr-4' : 'px-3',

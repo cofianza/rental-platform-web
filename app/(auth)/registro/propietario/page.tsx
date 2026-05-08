@@ -132,8 +132,13 @@ export default function RegisterPropietarioPage() {
       if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Numero de documento requerido'
       if (!formData.telefono.trim()) {
         newErrors.telefono = 'Telefono requerido'
-      } else if (!/^\+\d{1,4}[\s-]?\d{7,15}$/.test(formData.telefono.replace(/[\s-]+/g, ' ').trim())) {
-        newErrors.telefono = 'Ingresa un numero de telefono valido con lada'
+      } else {
+        // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
+        // en el numero local.
+        const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
+        if (localDigits.length !== 10) {
+          newErrors.telefono = 'El telefono debe tener 10 digitos'
+        }
       }
       if (!formData.direccion.trim()) newErrors.direccion = 'Direccion requerida'
     }

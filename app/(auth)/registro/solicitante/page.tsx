@@ -87,7 +87,14 @@ function RegistroSolicitanteContent() {
     if (!nombre.trim()) e.nombre = 'Requerido'
     if (!apellido.trim()) e.apellido = 'Requerido'
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalido'
-    if (!telefono.trim() || !/^\+\d{1,4}[\s-]?\d{7,15}$/.test(telefono.replace(/[\s-]+/g, ' ').trim())) e.telefono = 'Telefono invalido'
+    if (!telefono.trim()) {
+      e.telefono = 'Telefono requerido'
+    } else {
+      // PhoneInput emite el formato "+<dial> <local>". El numero local debe
+      // tener exactamente 10 digitos sin espacios.
+      const localDigits = telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
+      if (localDigits.length !== 10) e.telefono = 'El telefono debe tener 10 digitos'
+    }
     if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
     if (password.length < 8) e.password = 'Minimo 8 caracteres'
     if (password !== confirmPassword) e.confirm_password = 'No coinciden'

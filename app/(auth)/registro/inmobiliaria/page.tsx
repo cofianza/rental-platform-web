@@ -169,8 +169,13 @@ export default function RegisterInmobiliariaPage() {
       if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
       if (!formData.telefono.trim()) {
         newErrors.telefono = 'Telefono requerido'
-      } else if (!/^\+\d{1,4}[\s-]?\d{7,15}$/.test(formData.telefono.replace(/[\s-]+/g, ' ').trim())) {
-        newErrors.telefono = 'Ingresa un numero de telefono valido con lada'
+      } else {
+        // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
+        // en el numero local.
+        const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
+        if (localDigits.length !== 10) {
+          newErrors.telefono = 'El telefono debe tener 10 digitos'
+        }
       }
       if (!formData.email.trim()) {
         newErrors.email = 'Email requerido'
