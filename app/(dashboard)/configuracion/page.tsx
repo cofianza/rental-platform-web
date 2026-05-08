@@ -8,7 +8,7 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -21,12 +21,21 @@ const SECCIONES: Array<{
   soloRoles?: string[]
 }> = [
   {
+    id: 'cuenta',
+    href: '/configuracion/cuenta',
+    titulo: 'Mi cuenta',
+    descripcion: 'Edita tu nombre, teléfono, documento de identidad y demás datos personales.',
+    icon: IconUser,
+    color: 'bg-sky-100 text-sky-600',
+  },
+  {
     id: 'datos-contrato',
     href: '/configuracion/datos-contrato',
     titulo: 'Datos para contrato',
     descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
+    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
     id: 'creditos-estudios',
@@ -43,6 +52,7 @@ const SECCIONES: Array<{
     descripcion: 'Gestiona las plantillas de contratos de arrendamiento y documentos legales.',
     icon: IconFileText,
     color: 'bg-blue-100 text-blue-600',
+    soloRoles: ['administrador', 'operador_analista', 'inmobiliaria', 'propietario'],
   },
   {
     id: 'notificaciones',
@@ -57,6 +67,7 @@ const SECCIONES: Array<{
     descripcion: 'Conecta con pasarelas de pago, centrales de riesgo y servicios externos.',
     icon: IconSettings,
     color: 'bg-purple-100 text-purple-600',
+    soloRoles: ['administrador'],
   },
   {
     id: 'usuarios-permisos',
@@ -64,6 +75,7 @@ const SECCIONES: Array<{
     descripcion: 'Administra roles, permisos y accesos de los usuarios del sistema.',
     icon: IconUsers,
     color: 'bg-green-100 text-green-600',
+    soloRoles: ['administrador'],
   },
 ]
 

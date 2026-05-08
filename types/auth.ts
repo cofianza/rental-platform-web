@@ -85,6 +85,36 @@ export interface ILoginResponse {
 export type IMeResponse = IUserProfile
 
 /**
+ * Perfil extendido — datos editables por el propio usuario en la pantalla
+ * "Mi cuenta" (/auth/me/perfil). Para rol='solicitante' merge con la fila
+ * vinculada en `solicitantes` (donde el documento es autoritativo).
+ */
+export interface IMyProfile {
+  id: string
+  email: string
+  nombre: string
+  apellido: string
+  telefono: string | null
+  tipo_documento: 'cc' | 'ce' | 'ti' | 'nit' | 'pasaporte' | null
+  numero_documento: string | null
+  rol: UserRole
+  avatar_url: string | null
+  nombre_representante: string | null
+  activo: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface IUpdateMyProfilePayload {
+  nombre: string
+  apellido: string
+  telefono: string | null
+  tipo_documento?: 'cc' | 'ce' | 'ti' | 'nit' | 'pasaporte' | null
+  numero_documento?: string | null
+  nombre_representante?: string | null
+}
+
+/**
  * Respuesta del endpoint /auth/refresh
  */
 export interface IRefreshResponse {

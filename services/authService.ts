@@ -7,7 +7,7 @@ import { apiClient, ApiClientError } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth.store'
 import { AUTH_MESSAGES, AUTH_ROUTES } from '@/lib/constants'
-import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse } from '@/types/auth'
+import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse, IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
 import type { PermissionsResponse } from '@/types/permissions'
 
 // Nombre de la cookie de sesión para el middleware
@@ -311,6 +311,20 @@ class AuthService {
 
   async resendVerification(email: string): Promise<{ message: string }> {
     const response = await apiClient.post<{ message: string }>('/auth/register/resend-verification', { email })
+    return response.data
+  }
+
+  // ============================================
+  // MI CUENTA — perfil extendido editable por el usuario
+  // ============================================
+
+  async getMyProfile(): Promise<IMyProfile> {
+    const response = await apiClient.get<IMyProfile>('/auth/me/perfil')
+    return response.data
+  }
+
+  async updateMyProfile(payload: IUpdateMyProfilePayload): Promise<IMyProfile> {
+    const response = await apiClient.patch<IMyProfile>('/auth/me/perfil', payload)
     return response.data
   }
 
