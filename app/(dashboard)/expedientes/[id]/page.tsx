@@ -41,6 +41,7 @@ import {
   ExpedienteRechazadoBanner,
   ContratoEstadoCard,
   EstudioEstadoCard,
+  AuditoriaScoreCard,
 } from '@/components/expedientes'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -456,6 +457,11 @@ export default function ExpedienteDetallePage() {
                 />
               </>
             )}
+
+            {/* Auditoria de score — solo administrador. Muestra el cumplimiento
+                con la politica de evaluacion por score (modelo v0.1 simplificado).
+                Si el expediente no tiene estudio aun, el card se oculta solo. */}
+            {user?.rol === 'administrador' && <AuditoriaScoreCard expedienteId={id} />}
 
             {/* Sección Cita Previa — al tope para que el solicitante vea
                 de un vistazo la fecha/hora y si fue reprogramada. */}

@@ -502,6 +502,90 @@ class ExpedienteService {
     }>(`/expedientes/${expedienteId}/generar-contrato`, datosContrato)
     return response.data
   }
+
+  /**
+   * Auditoria de cumplimiento con la politica de score (solo admin).
+   * Devuelve la comparacion entre la decision del sistema y la politica.
+   */
+  async getAuditoriaScore(id: string): Promise<IAuditoriaScoreReporte> {
+    const response = await apiClient.get<IAuditoriaScoreReporte>(`/expedientes/${id}/auditoria-score`)
+    return response.data
+  }
+}
+
+// ============================================================
+// Tipos del reporte de auditoria — mirror del backend
+// (expediente-auditoria.service.ts)
+// ============================================================
+
+export type AuditoriaScoreRangoId =
+  | 'rango_800_mas'
+  | 'rango_700_799'
+  | 'rango_650_699'
+  | 'rango_599_649'
+  | 'rango_450_598'
+  | 'rango_menor_450'
+
+export interface IAuditoriaScoreRango {
+  id: AuditoriaScoreRangoId
+  etiqueta: string
+  puntos: number
+  observacion: string
+}
+
+export type AuditoriaDecisionPolitica = 'aprobado_automatico' | 'revision_manual' | 'rechazado'
+export type AuditoriaResultadoSistema = 'aprobado' | 'condicionado' | 'rechazado' | 'pendiente'
+
+export type AuditoriaFactorId =
+  | 'score_externo'
+  | 'endeudamiento'
+  | 'experiencia_crediticia'
+  | 'comportamiento_reciente'
+  | 'estabilidad_laboral'
+  | 'antiguedad_historial'
+
+export interface IAuditoriaFactor {
+  id: AuditoriaFactorId
+  nombre: string
+  maximo: number
+  capturado: boolean
+  puntos: number | null
+  detalle: string
+}
+
+export interface IAuditoriaScoreReporte {
+  estudio: {
+    id: string
+    score: number | null
+    resultado: AuditoriaResultadoSistema
+    fecha_solicitud: string | null
+    fecha_completado: string | null
+    proveedor: string
+  }
+  scoreExterno: {
+    valor: number | null
+    rango: IAuditoriaScoreRango | null
+    cumple_regla_dura: boolean
+    motivo_regla_dura: string | null
+  }
+  decisionPolitica: {
+    resultado: AuditoriaDecisionPolitica
+    explicacion: string
+  }
+  decisionSistema: {
+    resultado: AuditoriaResultadoSistema
+    logica_aplicada: string
+  }
+  cumplimiento: {
+    coincide: boolean
+    observacion: string
+  }
+  factores: IAuditoriaFactor[]
+  modelo: {
+    version: string
+    referencia_politica: string
+    nota: string
+  }
 }
 
 // Instancia singleton

@@ -54,6 +54,8 @@ export * from './ExpedienteRechazadoBanner'
 export * from './SoportesCondicionadoSection'
 export * from './ContratoEstadoCard'
 export * from './EstudioEstadoCard'
+// Auditoria de cumplimiento con la politica de score (solo admin).
+export * from './AuditoriaScoreCard'
 export * from './GenerarContratoModal'
 export * from './ContratoDetalleModal'
 export * from './VersionHistorialSection'
