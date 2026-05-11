@@ -17,6 +17,7 @@ import {
   UserForm,
   ConfirmDialog,
   DeleteUserDialog,
+  ResetPasswordDialog,
   USER_MESSAGES,
 } from '@/components/users'
 import { useUsers } from '@/hooks/useUsers'
@@ -60,6 +61,9 @@ function UsuariosContent() {
 
   // Estado para el dialog de borrado completo (super-admin).
   const [deleteDialogUser, setDeleteDialogUser] = useState<IUserProfile | null>(null)
+
+  // Estado para el dialog de restablecer contraseña (admin).
+  const [resetPasswordUser, setResetPasswordUser] = useState<IUserProfile | null>(null)
 
   // Verificar si es administrador
   const isAdmin = user?.rol === 'administrador'
@@ -165,6 +169,7 @@ function UsuariosContent() {
           onEdit={openEditModal}
           onToggleStatus={handleToggleStatus}
           onDelete={(u) => setDeleteDialogUser(u)}
+          onResetPassword={(u) => setResetPasswordUser(u)}
           isLoading={isLoading}
         />
       )}
@@ -206,6 +211,13 @@ function UsuariosContent() {
         user={deleteDialogUser}
         onDelete={deleteUser}
         onClose={() => setDeleteDialogUser(null)}
+      />
+
+      {/* Diálogo de restablecer contraseña (admin). */}
+      <ResetPasswordDialog
+        isOpen={resetPasswordUser !== null}
+        user={resetPasswordUser}
+        onClose={() => setResetPasswordUser(null)}
       />
     </div>
   )

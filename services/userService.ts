@@ -145,6 +145,21 @@ class UserService {
     }
     return response.data
   }
+
+  /**
+   * Restablece la contrasena de un usuario con una contrasena especifica
+   * que el admin elige. Solo admin. Backend valida fuerza (8+ chars,
+   * mayuscula, minuscula, numero) y registra audit log.
+   */
+  async resetPassword(
+    id: string,
+    password: string,
+  ): Promise<{ id: string; email: string; reset: true }> {
+    const response = (await apiClient.post(`/users/${id}/reset-password`, { password })) as unknown as {
+      data: { id: string; email: string; reset: true }
+    }
+    return response.data
+  }
 }
 
 // Instancia singleton

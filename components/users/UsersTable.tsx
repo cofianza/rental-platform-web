@@ -5,7 +5,7 @@
  * Tabla responsive con paginación
  */
 
-import { IconEdit, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash } from '@/components/icons'
+import { IconEdit, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash, IconLock } from '@/components/icons'
 import { RoleBadge, StatusBadge } from './UserBadges'
 import { ITEMS_PER_PAGE_OPTIONS, USER_MESSAGES } from './constants'
 import type { IUserProfile, IUserFilters, IUsersMeta } from '@/types/user'
@@ -19,6 +19,8 @@ interface UsersTableProps {
   onToggleStatus: (user: IUserProfile) => void
   /** Borrado completo (super-admin). Cuando se omite, no se muestra el botón. */
   onDelete?: (user: IUserProfile) => void
+  /** Restablecer contraseña (admin). Cuando se omite, no se muestra el botón. */
+  onResetPassword?: (user: IUserProfile) => void
   isLoading?: boolean
 }
 
@@ -30,6 +32,7 @@ export function UsersTable({
   onEdit,
   onToggleStatus,
   onDelete,
+  onResetPassword,
   isLoading = false,
 }: UsersTableProps) {
   const handlePageChange = (newPage: number) => {
@@ -126,6 +129,15 @@ export function UsersTable({
                     >
                       {user.estado === 'activo' ? <IconUserX size={18} /> : <IconUserCheck size={18} />}
                     </button>
+                    {onResetPassword && (
+                      <button
+                        onClick={() => onResetPassword(user)}
+                        className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                        title="Restablecer contraseña"
+                      >
+                        <IconLock size={18} />
+                      </button>
+                    )}
                     {onDelete && (
                       <button
                         onClick={() => onDelete(user)}
@@ -173,6 +185,15 @@ export function UsersTable({
                 >
                   {user.estado === 'activo' ? <IconUserX size={18} /> : <IconUserCheck size={18} />}
                 </button>
+                {onResetPassword && (
+                  <button
+                    onClick={() => onResetPassword(user)}
+                    className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                    title="Restablecer contraseña"
+                  >
+                    <IconLock size={18} />
+                  </button>
+                )}
                 {onDelete && (
                   <button
                     onClick={() => onDelete(user)}
