@@ -32,10 +32,14 @@ export const NAV_ITEMS: NavItem[] = [
     resource: 'dashboard',
   },
   {
-    label: 'Inmuebles',
+    // Rename Mario 12-may-2026: "Inmuebles" -> "Propiedades y Vitrina".
+    // En la nueva propuesta UI ambas funcionalidades viven en una sola
+    // pantalla con filter-chips (Todas/En vitrina/Pausadas/Sin publicar).
+    // La ruta sigue siendo /inmuebles para preservar deep-links.
+    label: 'Propiedades y Vitrina',
     href: '/inmuebles',
     icon: 'Building2',
-    description: 'Gestión de propiedades',
+    description: 'Gestión de propiedades y publicación en la vitrina',
     resource: 'inmuebles',
   },
   {
@@ -66,17 +70,21 @@ export const NAV_ITEMS: NavItem[] = [
   // donde tienen contexto. Las rutas /contratos y /estudios siguen
   // accesibles via URL pero ya no aparecen en navegacion.
   {
-    label: 'Reportes',
+    // Rename Mario 12-may-2026: "Reportes" -> "Analítica".
+    label: 'Analítica',
     href: '/reportes',
     icon: 'BarChart3',
-    description: 'Reportes y estadísticas',
+    description: 'Reportes y analítica de tu operación',
     resource: 'reportes',
   },
   {
-    label: 'Facturación',
+    // Rename Mario 12-may-2026: "Facturación" -> "Pagos a Cofianza".
+    // El alcance se mantiene (comisiones, facturas Factus, datos fiscales);
+    // el label refleja la lógica de negocio (la inmobiliaria le paga a Cofianza).
+    label: 'Pagos a Cofianza',
     href: '/facturacion',
     icon: 'Receipt',
-    description: 'Facturación y datos fiscales',
+    description: 'Comisiones y facturación con Cofianza',
     resource: 'facturas',
     // Excluido propietario: la facturacion la maneja la inmobiliaria a su
     // nombre, no el propietario individual. El propietario consulta los

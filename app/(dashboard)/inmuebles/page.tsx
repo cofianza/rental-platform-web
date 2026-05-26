@@ -160,8 +160,8 @@ function InmueblesContent() {
 
       {/* Header */}
       <PageHeader
-        title="Inmuebles"
-        subtitle={meta ? `${meta.total} inmuebles registrados` : 'Cargando...'}
+        title="Propiedades y Vitrina"
+        subtitle={meta ? `${meta.total} propiedades · gestiona el catálogo y publica en la vitrina` : 'Cargando...'}
         actions={
           <ExportButton
             endpoint="/export/inmuebles"
@@ -186,6 +186,16 @@ function InmueblesContent() {
 
       {/* Banner: perfil de arrendador incompleto */}
       {perfilIncompleto && <PerfilIncompletoBanner completitud={completitud} />}
+
+      {/* Filter-chips de la nueva propuesta UI (Mario 12-may-2026): la
+          inmobiliaria/propietario filtra rapidamente entre Todas / En
+          vitrina / Pausadas / Sin publicar sin abrir el panel completo
+          de filtros. Cada chip dispara setFilters con la combinacion
+          correspondiente. */}
+      <VitrinaFilterChips
+        filters={filters}
+        onSelect={(patch) => setFilters({ ...filters, ...patch, page: 1 })}
+      />
 
       {/* Filtros */}
       <InmueblesFilters
@@ -238,11 +248,63 @@ function InmueblesContent() {
   )
 }
 
+// ============================================================
+// Filter-chips: Todas / En vitrina / Pausadas / Sin publicar
+// ============================================================
+
+type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'sin_publicar'
+
+interface VitrinaFilterChipsProps {
+  filters: { visible_vitrina: boolean | ''; estado: '' | 'disponible' | 'en_estudio' | 'ocupado' | 'inactivo' }
+  onSelect: (patch: Partial<{ visible_vitrina: boolean | ''; estado: '' | 'disponible' | 'en_estudio' | 'ocupado' | 'inactivo' }>) => void
+}
+
+function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
+  // Determinar cual chip esta activo basado en el filter actual. Si hay
+  // otros filtros aplicados encima (search, tipo, ciudad), igual marcamos
+  // el chip principal — los chips son solo de "modo de vista".
+  const active: ChipKey = (() => {
+    if (filters.visible_vitrina === true) return 'vitrina'
+    if (filters.visible_vitrina === false) return 'sin_publicar'
+    if (filters.estado === 'inactivo') return 'pausadas'
+    return 'todas'
+  })()
+
+  const chips: Array<{ key: ChipKey; label: string; patch: VitrinaFilterChipsProps['filters'] }> = [
+    { key: 'todas',        label: 'Todas',        patch: { visible_vitrina: '', estado: '' } },
+    { key: 'vitrina',      label: 'En vitrina',   patch: { visible_vitrina: true, estado: '' } },
+    { key: 'pausadas',     label: 'Pausadas',     patch: { visible_vitrina: '', estado: 'inactivo' } },
+    { key: 'sin_publicar', label: 'Sin publicar', patch: { visible_vitrina: false, estado: '' } },
+  ]
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {chips.map((c) => {
+        const isActive = active === c.key
+        return (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => onSelect(c.patch)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+              isActive
+                ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {c.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // Loading fallback
 function LoadingFallback() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Inmuebles" subtitle="Cargando..." />
+      <PageHeader title="Propiedades y Vitrina" subtitle="Cargando..." />
       <div className="flex items-center justify-center h-64">
         <IconLoader size={32} className="text-primary-600 animate-spin" />
       </div>
