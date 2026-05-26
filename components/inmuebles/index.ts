@@ -25,6 +25,9 @@ export { HistorialSection } from './HistorialSection'
 // Galería (HP-203)
 export { GaleriaSection } from './GaleriaSection'
 
+// Widget de solicitudes de visita pendientes (nueva propuesta UI Mario 12-may-2026)
+export { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
+
 // Preview de plantilla del contrato
 export { PlantillaContratoPreview } from './PlantillaContratoPreview'
 

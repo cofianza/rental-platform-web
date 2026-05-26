@@ -15,6 +15,7 @@ import {
   InmueblesFilters,
   InmueblesTable,
   InmueblesSkeleton,
+  SolicitudesVisitaWidget,
 } from '@/components/inmuebles'
 import { ConfirmDialog } from '@/components/users'
 import { useInmuebles } from '@/hooks/useInmuebles'
@@ -186,6 +187,13 @@ function InmueblesContent() {
 
       {/* Banner: perfil de arrendador incompleto */}
       {perfilIncompleto && <PerfilIncompletoBanner completitud={completitud} />}
+
+      {/* Widget de solicitudes de visita pendientes — arriba para que el
+          propietario/inmobiliaria vea las decisiones que tiene que tomar
+          antes de scrollear sus inmuebles. Solo aparece si hay >=1. */}
+      {(isPropietario || isInmobiliaria || isAdmin || isOperador) && (
+        <SolicitudesVisitaWidget />
+      )}
 
       {/* Filter-chips de la nueva propuesta UI (Mario 12-may-2026): la
           inmobiliaria/propietario filtra rapidamente entre Todas / En
