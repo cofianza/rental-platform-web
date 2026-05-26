@@ -31,13 +31,13 @@ export function SaldoCreditosCard() {
       className={`relative overflow-hidden rounded-xl p-5 shadow-sm border ${
         sinSaldo
           ? 'bg-amber-50 border-amber-200'
-          : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200'
+          : 'bg-gradient-to-br from-primary-50 to-primary-100/40 border-primary-200'
       }`}
     >
       <div className="flex items-start gap-4">
         <div
           className={`p-3 rounded-full shrink-0 ${
-            sinSaldo ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+            sinSaldo ? 'bg-amber-100 text-amber-700' : 'bg-primary-100 text-primary-700'
           }`}
         >
           <IconReceipt size={24} />
@@ -53,7 +53,7 @@ export function SaldoCreditosCard() {
             <>
               <p
                 className={`text-3xl font-bold mt-0.5 ${
-                  sinSaldo ? 'text-amber-700' : 'text-emerald-700'
+                  sinSaldo ? 'text-amber-700' : 'text-primary-700'
                 }`}
               >
                 {saldoTotal}
@@ -83,7 +83,7 @@ export function SaldoCreditosCard() {
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
             sinSaldo
               ? 'bg-amber-600 text-white hover:bg-amber-700'
-              : 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-primary-600 text-white hover:bg-primary-700'
           }`}
         >
           <IconPlus size={14} />
@@ -92,7 +92,7 @@ export function SaldoCreditosCard() {
         {!sinSaldo && (
           <Link
             href="/configuracion/creditos-estudios"
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-200 rounded-md hover:bg-emerald-50 transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-700 bg-white border border-primary-200 rounded-md hover:bg-primary-50 transition"
           >
             Ver detalle
             <IconChevronRight size={14} />

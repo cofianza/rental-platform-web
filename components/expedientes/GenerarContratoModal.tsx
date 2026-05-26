@@ -11,9 +11,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconX, IconLoader, IconFileText } from '@/components/icons'
+import { IconX, IconLoader, IconFileText, IconUpload } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+
+type TipoGeneracion = 'cofianza' | 'otrosi'
 
 interface GenerarContratoModalProps {
   isOpen: boolean
@@ -28,12 +31,15 @@ export function GenerarContratoModal({
   onClose,
   onGenerated,
 }: GenerarContratoModalProps) {
+  const router = useRouter()
+  const [tipo, setTipo] = useState<TipoGeneracion>('cofianza')
   const [fechaInicio, setFechaInicio] = useState('')
   const [duracionMeses, setDuracionMeses] = useState('12')
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
+      setTipo('cofianza')
       setFechaInicio(new Date().toISOString().split('T')[0])
       setDuracionMeses('12')
       setGenerating(false)
@@ -43,12 +49,21 @@ export function GenerarContratoModal({
   async function handleGenerar() {
     setGenerating(true)
     try {
-      await contratoService.generarContrato(expedienteId, {
+      const contrato = await contratoService.generarContrato(expedienteId, {
         fecha_inicio: fechaInicio || undefined,
         duracion_meses: duracionMeses ? Number(duracionMeses) : undefined,
       })
-      toast.success('Contrato generado correctamente')
-      onGenerated()
+      if (tipo === 'otrosi') {
+        // Para el flujo Otrosí + PDF propio reusamos el contrato base como
+        // contenedor y redirigimos al detalle, donde está el botón "Subir
+        // Contrato Firmado" (Mario 12-may-2026 — reusa upload existente).
+        toast.success('Contrato base creado. Sube ahora tu PDF firmado.')
+        onGenerated()
+        router.push(`/contratos/${contrato.id}#firmado`)
+      } else {
+        toast.success('Contrato generado correctamente')
+        onGenerated()
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al generar el contrato')
     } finally {
@@ -74,15 +89,66 @@ export function GenerarContratoModal({
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="flex items-start gap-3 bg-primary-50 border border-primary-100 rounded-lg p-3">
-            <IconFileText size={20} className="text-primary-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Plantilla de Cofianza</p>
-              <p className="text-xs text-gray-600 mt-0.5">
-                Se usa la plantilla activa, con los datos del arrendador, inmueble y arrendatario
-                del expediente. El logo y datos de cuenta se toman de tu perfil.
-              </p>
-            </div>
+          {/* Tipo de generación — radio Cofianza vs Otrosí (Mario 12-may-2026) */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+              ¿Cómo generamos el contrato?
+            </label>
+            <button
+              type="button"
+              onClick={() => setTipo('cofianza')}
+              disabled={generating}
+              className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                tipo === 'cofianza'
+                  ? 'bg-primary-50 border-primary-400 ring-1 ring-primary-300'
+                  : 'bg-white border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                checked={tipo === 'cofianza'}
+                onChange={() => setTipo('cofianza')}
+                className="mt-1 accent-primary-600 shrink-0"
+                tabIndex={-1}
+              />
+              <IconFileText size={20} className="text-primary-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Contrato con plantilla Cofianza{' '}
+                  <span className="text-[11px] font-normal text-primary-700">Recomendado</span>
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Se usa la plantilla activa con los datos del expediente. Cofianza queda como
+                  fiador. Listo para firma electrónica vía Auco.
+                </p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipo('otrosi')}
+              disabled={generating}
+              className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                tipo === 'otrosi'
+                  ? 'bg-coral-50 border-coral-400 ring-1 ring-coral-300'
+                  : 'bg-white border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <input
+                type="radio"
+                checked={tipo === 'otrosi'}
+                onChange={() => setTipo('otrosi')}
+                className="mt-1 accent-coral-500 shrink-0"
+                tabIndex={-1}
+              />
+              <IconUpload size={20} className="text-coral-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Otrosí + PDF propio</p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Tienes tu propio modelo de contrato. Creamos el registro y te llevamos directo a
+                  subir tu PDF firmado — Cofianza queda vinculada como fiador vía Otrosí.
+                </p>
+              </div>
+            </button>
           </div>
 
           <div>
@@ -132,10 +198,18 @@ export function GenerarContratoModal({
           >
             {generating ? (
               <IconLoader size={16} className="animate-spin" />
+            ) : tipo === 'otrosi' ? (
+              <IconUpload size={16} />
             ) : (
               <IconFileText size={16} />
             )}
-            {generating ? 'Generando…' : 'Generar contrato PDF'}
+            {generating
+              ? tipo === 'otrosi'
+                ? 'Creando…'
+                : 'Generando…'
+              : tipo === 'otrosi'
+                ? 'Crear y subir mi PDF →'
+                : 'Generar contrato PDF'}
           </button>
         </div>
       </div>

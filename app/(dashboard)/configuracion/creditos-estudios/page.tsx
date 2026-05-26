@@ -234,60 +234,105 @@ export default function CreditosEstudiosPage() {
             <div className="text-center py-8 text-gray-500 text-sm">
               No hay paquetes disponibles. Contacte al administrador.
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {paquetes.map((p) => {
-                const precioPorEstudio = Math.round(p.precio_cop / p.cantidad_estudios)
-                return (
-                  <div
-                    key={p.id}
-                    className="border border-gray-200 rounded-lg p-5 hover:border-primary-400 hover:shadow-md transition"
-                  >
-                    <h3 className="text-base font-semibold text-gray-900">{p.nombre}</h3>
-                    <p className="text-3xl font-bold text-primary-600 mt-2">
-                      {p.cantidad_estudios}
-                      <span className="text-sm font-normal text-gray-500"> estudios</span>
-                    </p>
-                    <p className="text-2xl font-semibold text-gray-900 mt-3">
-                      {formatCOP(p.precio_cop)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatCOP(precioPorEstudio)} c/u
-                    </p>
-                    {p.vence_en_dias && (
-                      <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                        <IconClock size={14} />
-                        Vence en {p.vence_en_dias} días
-                      </p>
-                    )}
-                    {!p.vence_en_dias && (
-                      <p className="text-xs text-green-600 mt-2">Sin vencimiento</p>
-                    )}
-                    {p.descripcion && (
-                      <p className="text-xs text-gray-500 mt-2">{p.descripcion}</p>
-                    )}
-                    <button
-                      onClick={() => handleComprar(p.id)}
-                      disabled={comprando !== null}
-                      className="w-full mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition flex items-center justify-center gap-2"
+          ) : (() => {
+            // Calcular el paquete "Más popular": el que ofrece el mejor descuento
+            // por estudio respecto al paquete más pequeño (Mario 12-may-2026).
+            const sortedByQty = [...paquetes].sort((a, b) => a.cantidad_estudios - b.cantidad_estudios)
+            const baseUnit = sortedByQty[0].precio_cop / sortedByQty[0].cantidad_estudios
+            let popularId: string | null = null
+            if (paquetes.length >= 2) {
+              let mejorAhorro = 0
+              for (const pkg of paquetes.slice(1)) {
+                const unitario = pkg.precio_cop / pkg.cantidad_estudios
+                const ahorro = (baseUnit - unitario) / baseUnit
+                // Preferimos un descuento intermedio (no el más caro), por eso
+                // damos un pequeño boost al middle-tier vs el más grande.
+                if (ahorro > mejorAhorro && pkg.id !== sortedByQty[sortedByQty.length - 1].id) {
+                  mejorAhorro = ahorro
+                  popularId = pkg.id
+                }
+              }
+              // Fallback: si no hay un middle-tier claro, marcar el segundo.
+              if (!popularId && sortedByQty.length >= 2) {
+                popularId = sortedByQty[Math.min(1, sortedByQty.length - 1)].id
+              }
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {paquetes.map((p) => {
+                  const precioPorEstudio = Math.round(p.precio_cop / p.cantidad_estudios)
+                  const ahorroPct = Math.round(((baseUnit - precioPorEstudio) / baseUnit) * 100)
+                  const esPopular = p.id === popularId
+                  return (
+                    <div
+                      key={p.id}
+                      className={`relative border rounded-lg p-5 transition ${
+                        esPopular
+                          ? 'border-2 border-coral-500 shadow-md md:scale-[1.02]'
+                          : 'border-gray-200 hover:border-primary-400 hover:shadow-md'
+                      }`}
                     >
-                      {comprando === p.id ? (
-                        <>
-                          <IconLoader className="animate-spin" size={16} />
-                          Redirigiendo…
-                        </>
-                      ) : (
-                        <>
-                          <IconDollarSign size={16} />
-                          Comprar
-                        </>
+                      {esPopular && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-coral-500 text-white shadow-sm whitespace-nowrap">
+                          ⭐ Más popular
+                        </span>
                       )}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                      <h3 className="text-base font-semibold text-gray-900">{p.nombre}</h3>
+                      <p className="text-3xl font-bold text-primary-600 mt-2">
+                        {p.cantidad_estudios}
+                        <span className="text-sm font-normal text-gray-500"> estudios</span>
+                      </p>
+                      <p className="text-2xl font-semibold text-gray-900 mt-3">
+                        {formatCOP(p.precio_cop)}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formatCOP(precioPorEstudio)} c/u
+                        {ahorroPct > 0 && (
+                          <span className="ml-1 font-semibold text-primary-700">
+                            · Ahorro {ahorroPct}%
+                          </span>
+                        )}
+                      </p>
+                      {p.vence_en_dias && (
+                        <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                          <IconClock size={14} />
+                          Vence en {p.vence_en_dias} días
+                        </p>
+                      )}
+                      {!p.vence_en_dias && (
+                        <p className="text-xs text-green-600 mt-2">Sin vencimiento</p>
+                      )}
+                      {p.descripcion && (
+                        <p className="text-xs text-gray-500 mt-2">{p.descripcion}</p>
+                      )}
+                      <button
+                        onClick={() => handleComprar(p.id)}
+                        disabled={comprando !== null}
+                        className={`w-full mt-4 px-4 py-2 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition flex items-center justify-center gap-2 ${
+                          esPopular
+                            ? 'bg-coral-500 hover:bg-coral-600'
+                            : 'bg-primary-600 hover:bg-primary-700'
+                        }`}
+                      >
+                        {comprando === p.id ? (
+                          <>
+                            <IconLoader className="animate-spin" size={16} />
+                            Redirigiendo…
+                          </>
+                        ) : (
+                          <>
+                            <IconDollarSign size={16} />
+                            Comprar
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
       )}
 

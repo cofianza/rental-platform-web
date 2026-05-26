@@ -11,6 +11,7 @@ import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { DashboardLayoutWrapper } from './DashboardLayoutWrapper'
+import { OficinaVirtualShell } from './OficinaVirtualShell'
 
 interface Props {
   children: React.ReactNode
@@ -18,6 +19,7 @@ interface Props {
 
 export function DashboardShell({ children }: Props) {
   const isInitialized = useAuthStore((state) => state.isInitialized)
+  const rol = useAuthStore((state) => state.user?.rol)
 
   // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
   // vez al entrar al dashboard y limpia al hacer logout (cuando isAuthenticated
@@ -35,6 +37,13 @@ export function DashboardShell({ children }: Props) {
     )
   }
 
+  // Layout "Oficina Virtual" con tab bar superior — propietario e inmobiliaria.
+  // (Mario 12-may-2026, mockups 13_*).
+  if (rol === 'propietario' || rol === 'inmobiliaria') {
+    return <OficinaVirtualShell rol={rol}>{children}</OficinaVirtualShell>
+  }
+
+  // Layout clásico para admin/operador/gerencia/solicitante.
   return (
     <>
       <Sidebar />

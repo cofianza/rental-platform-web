@@ -24,6 +24,7 @@ import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
 import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
+import { OficinaVirtualHero } from '@/components/dashboard/OficinaVirtualHero'
 // TEMPORAL (Mario, 7-may-2026): herramienta de QA para limpiar la BD entre
 // rondas de prueba. Eliminar antes de produccion.
 import { WipeTestDataCard } from '@/components/dashboard/WipeTestDataCard'
@@ -150,10 +151,9 @@ export default function DashboardPage() {
   if (isExternalUser) {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title={isPropietario ? 'Mi Panel' : 'Panel Inmobiliaria'}
-          subtitle={isPropietario ? 'Gestiona tus inmuebles y solicitudes' : 'Gestiona inmuebles y expedientes'}
-        />
+        {/* Hero "Tu Oficina Virtual" con stats reales del portafolio
+            (Mario 12-may-2026, mockup 13_*propietario.html) */}
+        <OficinaVirtualHero rol={isInmobiliaria ? 'inmobiliaria' : 'propietario'} />
 
         {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio, generar contrato) */}
         <AccionesPendientesWidget />

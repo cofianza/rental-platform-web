@@ -13,6 +13,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
+import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
 
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Te pidieron fiador? Soy yo. Llámanos.',
@@ -57,12 +58,12 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-3 mb-12">
-                <Link
-                  href="/registro"
+                <a
+                  href="#vitrina"
                   className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
-                  Iniciar mi solicitud →
-                </Link>
+                  Ver inmuebles disponibles →
+                </a>
                 <a
                   href="#como-funciona"
                   className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
@@ -189,6 +190,12 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          VITRINA PREVIEW — 3 inmuebles destacados con CTA #vitrina
+          (Mario 12-may-2026, mockup 01_COFIANZA_Landing.html)
+          ════════════════════════════════════════════════════════════ */}
+      <VitrinaPreview />
 
       {/* ════════════════════════════════════════════════════════════
           PROBLEMA

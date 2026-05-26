@@ -25,6 +25,12 @@ export interface DashboardFilters {
   dateTo?: string
 }
 
+export interface PortfolioStats {
+  propiedades_activas: number
+  inquilinos_cartera: number
+  canon_mensual: number
+}
+
 // ── Service ─────────────────────────────────
 
 class DashboardService {
@@ -47,6 +53,11 @@ class DashboardService {
     const query = params.toString()
     const url = `/dashboard/expedientes-por-estado${query ? `?${query}` : ''}`
     const res = await apiClient.get<ExpedientePorEstado[]>(url)
+    return res.data
+  }
+
+  async getPortfolioStats(): Promise<PortfolioStats> {
+    const res = await apiClient.get<PortfolioStats>('/dashboard/portfolio-stats')
     return res.data
   }
 }

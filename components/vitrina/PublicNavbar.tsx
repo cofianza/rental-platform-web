@@ -13,7 +13,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
-import { IconUser } from '@/components/icons'
+import { IconUser, IconHome } from '@/components/icons'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 
 interface PublicNavbarProps {
@@ -42,11 +42,11 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
         <nav className="hidden md:flex items-center gap-7">
           <Link
             href="/vitrina"
-            className={`text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
               pathname === '/vitrina' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Vitrina
+            <IconHome size={16} /> Ver inmuebles
           </Link>
           <Link
             href={sectionLink('#como-funciona')}

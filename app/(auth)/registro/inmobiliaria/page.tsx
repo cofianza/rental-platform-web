@@ -15,11 +15,15 @@ import { AUTH_ROUTES } from '@/lib/constants'
 
 interface FormData {
   razon_social: string
-  nit: string
+  // NIT separado en dos campos (mockup nueva propuesta UI, Mario 12-may-2026)
+  // — al enviar se concatenan como "XXXXXXXXX-D" para mantener contrato API.
+  nit_numero: string
+  nit_dv: string
   direccion_comercial: string
   ciudad: string
   nombre_representante_nombre: string
   nombre_representante_apellido: string
+  cargo_representante: string
   telefono: string
   email: string
   password: string
@@ -30,11 +34,13 @@ interface FormData {
 
 const initialFormData: FormData = {
   razon_social: '',
-  nit: '',
+  nit_numero: '',
+  nit_dv: '',
   direccion_comercial: '',
   ciudad: '',
   nombre_representante_nombre: '',
   nombre_representante_apellido: '',
+  cargo_representante: '',
   telefono: '',
   email: '',
   password: '',
@@ -153,12 +159,19 @@ export default function RegisterInmobiliariaPage() {
 
     if (stepNum === 1) {
       if (!formData.razon_social.trim()) newErrors.razon_social = 'Razón social requerida'
-      if (!formData.nit.trim()) {
-        newErrors.nit = 'NIT requerido'
-      } else if (!/^\d{1,15}-\d$/.test(formData.nit)) {
-        newErrors.nit = 'Formato inválido. Ejemplo: 900123456-9'
-      } else if (!validateNitModulo11(formData.nit)) {
-        newErrors.nit = 'Dígito de verificación del NIT inválido'
+      const numero = formData.nit_numero.trim()
+      const dv = formData.nit_dv.trim()
+      if (!numero) {
+        newErrors.nit_numero = 'Número de NIT requerido'
+      } else if (!/^\d{1,15}$/.test(numero)) {
+        newErrors.nit_numero = 'Sólo dígitos (máx 15)'
+      }
+      if (!dv) {
+        newErrors.nit_dv = 'DV'
+      } else if (!/^\d$/.test(dv)) {
+        newErrors.nit_dv = 'Un dígito'
+      } else if (numero && /^\d{1,15}$/.test(numero) && !validateNitModulo11(`${numero}-${dv}`)) {
+        newErrors.nit_dv = 'DV inválido'
       }
       if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Dirección comercial requerida'
       if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
@@ -216,11 +229,14 @@ export default function RegisterInmobiliariaPage() {
     try {
       await authService.registerInmobiliaria({
         razon_social: formData.razon_social,
-        nit: formData.nit,
+        nit: `${formData.nit_numero.trim()}-${formData.nit_dv.trim()}`,
         direccion_comercial: formData.direccion_comercial,
         ciudad: formData.ciudad,
         nombre_representante_nombre: formData.nombre_representante_nombre,
         nombre_representante_apellido: formData.nombre_representante_apellido,
+        ...(formData.cargo_representante.trim()
+          ? { cargo_representante: formData.cargo_representante.trim() }
+          : {}),
         email: formData.email,
         telefono: formData.telefono,
         password: formData.password,
@@ -288,17 +304,46 @@ export default function RegisterInmobiliariaPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">NIT</label>
-            <div className="relative">
-              <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text" value={formData.nit}
-                onChange={(e) => updateField('nit', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.nit ? 'border-red-500' : 'border-gray-300')}
-                placeholder="XXXXXXXXX-D"
-              />
+            <div className="flex items-stretch gap-2">
+              <div className="relative flex-1">
+                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.nit_numero}
+                  onChange={(e) => updateField('nit_numero', e.target.value.replace(/\D/g, '').slice(0, 15))}
+                  className={cn(
+                    'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+                    errors.nit_numero ? 'border-red-500' : 'border-gray-300',
+                  )}
+                  placeholder="900123456"
+                />
+              </div>
+              <span className="self-center text-gray-400 font-bold">−</span>
+              <div className="w-20">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.nit_dv}
+                  onChange={(e) => updateField('nit_dv', e.target.value.replace(/\D/g, '').slice(0, 1))}
+                  className={cn(
+                    'w-full px-3 py-2.5 border rounded-lg text-sm font-bold text-center focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+                    errors.nit_dv ? 'border-red-500' : 'border-gray-300',
+                  )}
+                  placeholder="DV"
+                  maxLength={1}
+                  aria-label="Dígito de verificación"
+                />
+              </div>
             </div>
-            {errors.nit && <p className="mt-1.5 text-sm text-red-600">{errors.nit}</p>}
-            <p className="mt-1 text-xs text-gray-400">Ejemplo: 900123456-9 (9 dígitos, guion, dígito de verificación)</p>
+            {(errors.nit_numero || errors.nit_dv) && (
+              <p className="mt-1.5 text-sm text-red-600">
+                {errors.nit_numero || errors.nit_dv}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-400">
+              Número (sin puntos) y dígito de verificación. Ejemplo: 900123456 - 9
+            </p>
           </div>
 
           <div>
@@ -360,6 +405,23 @@ export default function RegisterInmobiliariaPage() {
                 />
               </div>
               {errors.nombre_representante_apellido && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cargo del representante <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <div className="relative">
+              <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={formData.cargo_representante}
+                onChange={(e) => updateField('cargo_representante', e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                placeholder="Ej: Representante Legal, Gerente, Director Comercial"
+                maxLength={100}
+              />
             </div>
           </div>
 
@@ -429,9 +491,13 @@ export default function RegisterInmobiliariaPage() {
           <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-600">
             <p className="font-medium text-gray-900">Resumen de tu registro:</p>
             <p><span className="font-medium">Empresa:</span> {formData.razon_social}</p>
-            <p><span className="font-medium">NIT:</span> {formData.nit}</p>
+            <p><span className="font-medium">NIT:</span> {formData.nit_numero}-{formData.nit_dv}</p>
             <p><span className="font-medium">Dirección:</span> {formData.direccion_comercial}, {formData.ciudad}</p>
-            <p><span className="font-medium">Representante:</span> {formData.nombre_representante_nombre} {formData.nombre_representante_apellido}</p>
+            <p>
+              <span className="font-medium">Representante:</span>{' '}
+              {formData.nombre_representante_nombre} {formData.nombre_representante_apellido}
+              {formData.cargo_representante.trim() ? ` · ${formData.cargo_representante.trim()}` : ''}
+            </p>
             <p><span className="font-medium">Email:</span> {formData.email}</p>
             <p><span className="font-medium">Teléfono:</span> {formData.telefono}</p>
           </div>
