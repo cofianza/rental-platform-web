@@ -95,7 +95,7 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
               href="/registro"
               className="px-3 sm:px-5 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
             >
-              Solicitar fianza
+              Solicita tu fiador
             </Link>
           </div>
         )}

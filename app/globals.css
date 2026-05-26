@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  /* Theme tokens */
+  /* Theme tokens — rebrand Cofianza 2026 (Mario, 12-may-2026).
+     Paleta principal pasa de teal a esmeralda. Coral entra como accent
+     para CTAs principales. Ink (slate-900) es el negro del mockup. */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0F172A;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
   --border: #e5e7eb;
@@ -16,21 +18,56 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
 
-  /* Paleta primary (teal) */
-  --color-primary-50: #f0fdfa;
-  --color-primary-100: #ccfbf1;
-  --color-primary-200: #99f6e4;
-  --color-primary-300: #5eead4;
-  --color-primary-400: #2dd4bf;
-  --color-primary-500: #14b8a6;
-  --color-primary-600: #0d9488;
-  --color-primary-700: #0f766e;
-  --color-primary-800: #115e59;
-  --color-primary-900: #134e4a;
-  --color-primary-950: #042f2e;
+  /* Paleta primary (esmeralda) — el "verde Cofianza" del rebrand.
+     Mismo set de shade-keys que la anterior (teal) para que toda la UI
+     existente que usa primary-* migre sin tocar componentes. */
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+  --color-primary-950: #022c22;
+
+  /* Paleta coral — accent para CTAs (botones principales tipo
+     "Iniciar sesión", "Comenzar"). Mismo set de shades que orange. */
+  --color-coral-50: #fff7ed;
+  --color-coral-100: #ffedd5;
+  --color-coral-200: #fed7aa;
+  --color-coral-300: #fdba74;
+  --color-coral-400: #fb923c;
+  --color-coral-500: #f97316;
+  --color-coral-600: #ea580c;
+  --color-coral-700: #c2410c;
+  --color-coral-800: #9a3412;
+  --color-coral-900: #7c2d12;
+  --color-coral-950: #431407;
+
+  /* Ink — el "negro" del mockup (slate-900). Usar para hero dark de
+     landing/login y dark surfaces. */
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0F172A;
+  --color-ink-950: #020617;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Outfit para display/títulos del rebrand (landing hero, headings
+     grandes). Fraunces italic para frases-acento ("Soy yo. Llámanos."). */
+  --font-display: var(--font-outfit);
+  --font-script: var(--font-fraunces);
 }
 
 body {

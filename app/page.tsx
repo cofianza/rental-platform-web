@@ -387,7 +387,7 @@ export default function HomePage() {
               {
                 tag: 'Para arrendatarios',
                 title: '¿Buscas dónde vivir?',
-                body: 'Evita pedir codeudor. Solicita tu fianza, paga el estudio, y firma desde tu celular.',
+                body: 'Evita pedir codeudor. Solicita tu fiador, paga el estudio, y firma desde tu celular.',
                 items: [
                   'Sin codeudor ni fiador humano',
                   'Respuesta en segundos',
