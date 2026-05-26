@@ -38,6 +38,15 @@ const SECCIONES: Array<{
     soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
+    id: 'mi-inmobiliaria',
+    href: '/configuracion/mi-inmobiliaria',
+    titulo: 'Mi Inmobiliaria',
+    descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL, Póliza y Contrato Marco.',
+    icon: IconFileText,
+    color: 'bg-amber-100 text-amber-700',
+    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
+  },
+  {
     id: 'creditos-estudios',
     href: '/configuracion/creditos-estudios',
     titulo: 'Créditos de estudios',
