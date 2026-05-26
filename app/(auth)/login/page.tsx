@@ -145,7 +145,7 @@ function LoginForm() {
 
   return (
     <div className="w-full">
-      <p className="text-xs font-bold tracking-[3px] uppercase text-emerald-600 mb-2">
+      <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
         Bienvenido
       </p>
       <h2 className="text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
@@ -213,7 +213,7 @@ function LoginForm() {
             className={cn(
               'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
               'placeholder:text-slate-400',
-              'focus:outline-none focus:border-emerald-600 focus:ring-[3px] focus:ring-emerald-600/10',
+              'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               errors.email ? 'border-red-500 bg-red-50' : 'border-slate-200',
             )}
@@ -241,7 +241,7 @@ function LoginForm() {
               className={cn(
                 'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
                 'placeholder:text-slate-400',
-                'focus:outline-none focus:border-emerald-600 focus:ring-[3px] focus:ring-emerald-600/10',
+                'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.password ? 'border-red-500 bg-red-50' : 'border-slate-200',
               )}
@@ -262,12 +262,12 @@ function LoginForm() {
         {/* Recuérdame + olvidé contraseña */}
         <div className="flex justify-between items-center text-[13px] mb-5">
           <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 accent-emerald-600" />
+            <input type="checkbox" className="w-4 h-4 accent-primary-600" />
             Recordarme
           </label>
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
-            className="text-emerald-600 font-semibold hover:underline"
+            className="text-primary-600 font-semibold hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
@@ -279,7 +279,7 @@ function LoginForm() {
           disabled={isLoading}
           className={cn(
             'w-full py-3.5 rounded-xl text-white font-bold text-[15px] flex items-center justify-center gap-2',
-            'bg-orange-500 hover:bg-orange-600 hover:-translate-y-px transition-all',
+            'bg-coral-500 hover:bg-coral-600 hover:-translate-y-px transition-all',
             'shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)]',
             'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
           )}
@@ -336,7 +336,7 @@ function LoginForm() {
       {/* Footer */}
       <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
         ¿No tienes cuenta?{' '}
-        <Link href={registroHref} className="text-emerald-600 font-semibold hover:underline">
+        <Link href={registroHref} className="text-primary-600 font-semibold hover:underline">
           Crea una en segundos
         </Link>
       </p>
@@ -350,7 +350,7 @@ function LoginForm() {
 function LoginFallback() {
   return (
     <div className="w-full flex items-center justify-center py-12">
-      <IconLoader size={32} className="animate-spin text-emerald-600" />
+      <IconLoader size={32} className="animate-spin text-primary-600" />
     </div>
   )
 }

@@ -248,7 +248,7 @@ export default function RegisterInmobiliariaPage() {
 
   return (
     <div className="w-full">
-      <p className="text-xs font-bold tracking-[3px] uppercase text-emerald-600 mb-2">
+      <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
         Registro · Inmobiliaria
       </p>
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
@@ -256,7 +256,7 @@ export default function RegisterInmobiliariaPage() {
       </h1>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
         Empresa o agencia que administra propiedades.{' '}
-        <a href="/registro" className="text-emerald-600 font-semibold hover:underline">
+        <a href="/registro" className="text-primary-600 font-semibold hover:underline">
           ¿Otro tipo?
         </a>
       </p>
@@ -488,6 +488,19 @@ export default function RegisterInmobiliariaPage() {
             </label>
           </div>
 
+          {/* Banner: contrato marco con Cofianza. Aclara al firmante de la
+              inmobiliaria que esta cuenta es solo el primer paso, y que el
+              alta operativa se completa cuando se firma el contrato marco. */}
+          <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg">
+            <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
+            <span>
+              <strong className="font-semibold">Siguiente paso después del registro:</strong> nuestro
+              equipo te contactará para firmar el <strong>contrato marco</strong> con Cofianza, donde
+              se establecen las condiciones comerciales (tarifas, modalidades de pago y términos
+              operativos). Hasta entonces tu cuenta queda en estado pre-activa.
+            </span>
+          </div>
+
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
             <IconShield size={16} className="text-blue-500 shrink-0" />
             <span>Tus datos estan protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
@@ -524,7 +537,7 @@ export default function RegisterInmobiliariaPage() {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-white text-sm font-bold rounded-xl hover:bg-coral-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isLoading ? (
               <>

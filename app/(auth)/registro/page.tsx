@@ -34,7 +34,7 @@ const OPCIONES = [
 export default function RegisterTypeSelectorPage() {
   return (
     <div className="w-full">
-      <p className="text-xs font-bold tracking-[3px] uppercase text-emerald-600 mb-2">
+      <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
         Bienvenido
       </p>
       <h2 className="text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
@@ -68,13 +68,13 @@ export default function RegisterTypeSelectorPage() {
           <Link
             key={op.href}
             href={op.href}
-            className="group flex items-center gap-4 p-4 border-[1.5px] border-slate-200 rounded-xl bg-white hover:border-emerald-600 hover:bg-emerald-50/40 transition-all"
+            className="group flex items-center gap-4 p-4 border-[1.5px] border-slate-200 rounded-xl bg-white hover:border-primary-600 hover:bg-primary-50/40 transition-all"
           >
             <div className="text-2xl shrink-0" aria-hidden>
               {op.icono}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">
+              <p className="text-[15px] font-semibold text-slate-900 group-hover:text-primary-700 transition-colors">
                 {op.titulo}
               </p>
               <p className="text-[13px] text-slate-500 mt-0.5 leading-[1.5]">{op.desc}</p>
@@ -87,7 +87,7 @@ export default function RegisterTypeSelectorPage() {
               stroke="currentColor"
               strokeWidth="2.2"
               strokeLinecap="round"
-              className="text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0"
+              className="text-slate-400 group-hover:text-primary-600 transition-colors shrink-0"
             >
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
@@ -98,7 +98,7 @@ export default function RegisterTypeSelectorPage() {
 
       <p className="text-[13px] text-slate-500 text-center leading-[1.6]">
         ¿Ya tienes cuenta?{' '}
-        <Link href={AUTH_ROUTES.LOGIN} className="text-emerald-600 font-semibold hover:underline">
+        <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
           Inicia sesión
         </Link>
       </p>
