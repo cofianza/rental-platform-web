@@ -31,7 +31,26 @@ import type {
   TipoArchivoContrato,
 } from '@/types/contrato'
 
+// KPI cards del listado global. Devuelto por GET /contratos/stats.
+export interface IContratosStats {
+  total: number
+  pendientes_generar: number
+  en_proceso_firma: number
+  activos: number
+  finalizados: number
+  cancelados: number
+  por_estado: Record<string, number>
+}
+
 class ContratoService {
+  async getStats(): Promise<IContratosStats> {
+    const response = (await apiClient.get('/contratos/stats')) as unknown as {
+      success: boolean
+      data: IContratosStats
+    }
+    return response.data
+  }
+
   async getAllContratos(
     filters: Partial<IContratoListFilters> = {}
   ): Promise<{ data: IContratoListItem[]; meta: IContratoMeta }> {

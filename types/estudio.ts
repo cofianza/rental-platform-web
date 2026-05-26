@@ -165,6 +165,20 @@ export interface IEstudiosMeta {
   totalPages: number
 }
 
+// KPI cards del listado global. Devuelto por GET /estudios/stats.
+export interface IEstudiosStats {
+  total: number
+  este_mes: number
+  aprobados: number
+  rechazados: number
+  condicionados: number
+  en_proceso: number
+  pendientes: number
+  completados: number
+  por_estado: Record<string, number>
+  por_resultado: Record<string, number>
+}
+
 // ============================================
 // Re-evaluacion
 // ============================================

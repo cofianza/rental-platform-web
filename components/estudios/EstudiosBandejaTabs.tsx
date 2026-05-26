@@ -1,13 +1,18 @@
 /**
  * EstudiosBandejaTabs - HP-331
- * Tabs con contadores por estado y KPI cards para estudios
+ * Tabs con contadores por estado y KPI cards para estudios.
+ *
+ * Los KPI cards se llenan con GET /estudios/stats (counts reales por
+ * estado/resultado), no con la meta del listado paginado.
  */
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import { ESTADOS_ESTUDIO, type EstadoEstudioType } from '@/lib/constants'
-import type { IEstudiosMeta } from '@/types/estudio'
+import type { IEstudiosMeta, IEstudiosStats } from '@/types/estudio'
 import type { EstadoEstudio } from '@/types/estudio'
+import { estudioService } from '@/services/estudioService'
 import { cn } from '@/lib/utils'
 
 const BANDEJAS: Array<{
@@ -34,13 +39,28 @@ export function EstudiosBandejaTabs({
   meta,
   onBandejaChange,
 }: EstudiosBandejaTabsProps) {
+  const [stats, setStats] = useState<IEstudiosStats | null>(null)
+
+  useEffect(() => {
+    estudioService
+      .getStats()
+      .then(setStats)
+      .catch(() => setStats(null))
+  }, [])
+
   return (
     <div className="space-y-4">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPIMini label="Total estudios" value={meta?.total ?? 0} color="bg-primary-600" />
-        <KPIMini label="En proceso" value={0} color="bg-amber-500" />
-        <KPIMini label="Completados" value={0} color="bg-green-500" />
+      {/* KPI Cards — 4 cards segun nueva propuesta UI Mario (12-may-2026):
+          Este mes / Aprobados / En proceso / Rechazados. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KPIMini
+          label="Este mes"
+          value={stats?.este_mes ?? meta?.total ?? 0}
+          color="bg-primary-600"
+        />
+        <KPIMini label="Aprobados" value={stats?.aprobados ?? 0} color="bg-green-500" />
+        <KPIMini label="En proceso" value={stats?.en_proceso ?? 0} color="bg-blue-500" />
+        <KPIMini label="Rechazados" value={stats?.rechazados ?? 0} color="bg-red-500" />
       </div>
 
       {/* Tabs */}

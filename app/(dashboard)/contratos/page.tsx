@@ -1,12 +1,13 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconAlertTriangle, IconSettings } from '@/components/icons'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useContratos } from '@/hooks/useContratos'
 import { useAuthStore } from '@/stores/auth.store'
 import { ContratosFilters, ContratosTable, ContratosPageSkeleton } from '@/components/contratos'
+import { contratoService, type IContratosStats } from '@/services/contratoService'
 
 function ContratosContent() {
   const user = useAuthStore((s) => s.user)
@@ -26,6 +27,17 @@ function ContratosContent() {
     hasActiveFilters,
     refetch,
   } = useContratos()
+
+  // KPI cards (Mario 12-may-2026: Pendientes de generar / En proceso de
+  // firma / Activos). Se refresca al cambiar la lista de contratos para
+  // que los contadores no queden desactualizados luego de generar/firmar.
+  const [stats, setStats] = useState<IContratosStats | null>(null)
+  useEffect(() => {
+    contratoService
+      .getStats()
+      .then(setStats)
+      .catch(() => setStats(null))
+  }, [contratos.length])
 
   if (error) {
     return (
@@ -60,6 +72,27 @@ function ContratosContent() {
           ) : undefined
         }
       />
+
+      {/* KPI cards de la nueva propuesta UI (Mario 12-may-2026):
+          Pendientes de generar (coral) / En proceso de firma (azul) /
+          Activos (verde). */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KPIMini
+          label="Pendientes de generar"
+          value={stats?.pendientes_generar ?? 0}
+          color="bg-coral-500"
+        />
+        <KPIMini
+          label="En proceso de firma"
+          value={stats?.en_proceso_firma ?? 0}
+          color="bg-blue-500"
+        />
+        <KPIMini
+          label="Activos"
+          value={stats?.activos ?? 0}
+          color="bg-primary-600"
+        />
+      </div>
 
       <ContratosFilters
         filters={filters}
@@ -114,5 +147,16 @@ export default function ContratosPage() {
     <Suspense fallback={<ContratosPageSkeleton />}>
       <ContratosContent />
     </Suspense>
+  )
+}
+
+// KPI card pequeno reutilizado para los stats arriba del listado.
+function KPIMini({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 relative overflow-hidden">
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${color}`} />
+      <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+    </div>
   )
 }

@@ -23,6 +23,7 @@ import type {
   ICertificadoGenerateResponse,
   ICertificadoDownloadResponse,
   IVerificacionCertificado,
+  IEstudiosStats,
 } from '@/types/estudio'
 
 // ============================================
@@ -50,6 +51,14 @@ export const estudioService = {
 
     const res = await apiClient.get<IEstudioListItem[]>(`/estudios?${params.toString()}`)
     return res as unknown as { data: IEstudioListItem[]; pagination: IEstudiosMeta }
+  },
+
+  /**
+   * Stats globales para los KPI cards del listado.
+   */
+  async getStats(): Promise<IEstudiosStats> {
+    const res = await apiClient.get<IEstudiosStats>('/estudios/stats')
+    return res.data
   },
 
   /**
