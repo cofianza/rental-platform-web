@@ -28,26 +28,26 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           HERO
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gray-950 text-white">
+      <section className="relative overflow-hidden bg-ink-950 text-white">
         {/* Glow blobs */}
-        <div className="absolute -top-1/4 -right-1/12 w-[700px] h-[700px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-1/4 -right-1/12 w-[700px] h-[700px] bg-primary-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 md:py-28 lg:py-32">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
             {/* Copy izquierdo */}
             <div className="flex-1 max-w-2xl">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60 mb-7">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-primary-400 animate-pulse" />
                 Disponible en toda Colombia · 100% digital
               </span>
 
               <h1 className="font-black text-5xl sm:text-6xl lg:text-[80px] leading-none tracking-[-0.04em] mb-3">
-                <span className="text-emerald-400">co</span>fianza
+                <span className="text-primary-400">co</span>fianza
               </h1>
 
-              <p className="font-serif italic text-2xl sm:text-3xl lg:text-[38px] leading-tight text-white/55 mb-5">
-                ¿Te pidieron fiador? <strong className="text-orange-500 not-italic font-normal">Soy yo.</strong>{' '}
+              <p className="font-script italic text-2xl sm:text-3xl lg:text-[38px] leading-tight text-white/55 mb-5">
+                ¿Te pidieron fiador? <strong className="text-coral-500 not-italic font-normal">Soy yo.</strong>{' '}
                 Llámanos.
               </p>
 
@@ -59,7 +59,7 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-3 mb-12">
                 <Link
                   href="/registro"
-                  className="inline-flex items-center gap-2 px-9 py-4 bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-px"
+                  className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
                   Iniciar mi solicitud →
                 </Link>
@@ -73,13 +73,13 @@ export default function HomePage() {
 
               <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">✓</span> Respuesta en segundos
+                  <span className="text-primary-400 font-bold">✓</span> Respuesta en segundos
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">✓</span> Cashback del 30%
+                  <span className="text-primary-400 font-bold">✓</span> Cashback del 30%
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">✓</span> Reporte positivo
+                  <span className="text-primary-400 font-bold">✓</span> Reporte positivo
                 </span>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function HomePage() {
                     <div className="text-base font-bold text-white">Hola, María</div>
                     <div className="text-xs text-white/35">EXP-2026-0014</div>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold">
+                  <span className="px-3 py-1 rounded-full bg-primary-500/15 text-primary-400 text-[11px] font-semibold">
                     Activo
                   </span>
                 </div>
@@ -107,13 +107,13 @@ export default function HomePage() {
                       key={step.name}
                       className={`flex items-center gap-3 px-3.5 py-3 rounded-xl ${
                         step.state === 'done'
-                          ? 'bg-emerald-500/[0.06] border border-emerald-500/10'
-                          : 'bg-emerald-500/10 border-2 border-emerald-500/30'
+                          ? 'bg-primary-500/[0.06] border border-primary-500/10'
+                          : 'bg-primary-500/10 border-2 border-primary-500/30'
                       }`}
                     >
                       <span
-                        className={`w-2 h-2 rounded-full bg-emerald-400 ${
-                          step.state === 'active' ? 'ring-4 ring-emerald-500/20' : ''
+                        className={`w-2 h-2 rounded-full bg-primary-400 ${
+                          step.state === 'active' ? 'ring-4 ring-primary-500/20' : ''
                         }`}
                       />
                       <span
@@ -127,7 +127,7 @@ export default function HomePage() {
                       </span>
                       <span
                         className={`text-[11px] font-semibold ${
-                          step.state === 'active' ? 'text-orange-500' : 'text-emerald-400'
+                          step.state === 'active' ? 'text-coral-500' : 'text-primary-400'
                         }`}
                       >
                         {step.status}
@@ -135,10 +135,10 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 p-3.5 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/10 flex justify-between items-center">
+                <div className="mt-3 p-3.5 rounded-xl bg-primary-500/[0.06] border border-primary-500/10 flex justify-between items-center">
                   <div>
                     <div className="text-xs text-white/35">Score TransUnion</div>
-                    <div className="text-lg font-bold text-emerald-400">632 · Aprobado</div>
+                    <div className="text-lg font-bold text-primary-400">632 · Aprobado</div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-white/35">Firma por</div>
@@ -176,7 +176,7 @@ export default function HomePage() {
                 {Array.isArray(s.val) ? (
                   <>
                     {s.val[0]}
-                    <span className={s.accent === 'orange' ? 'text-orange-500' : 'text-primary-600'}>
+                    <span className={s.accent === 'orange' ? 'text-coral-500' : 'text-primary-600'}>
                       {s.val[1]}
                     </span>
                   </>
@@ -240,7 +240,7 @@ export default function HomePage() {
                   c.variant === 'green'
                     ? 'bg-primary-600 border-primary-600 text-white hover:bg-primary-700'
                     : c.variant === 'orange'
-                      ? 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600'
+                      ? 'bg-coral-500 border-coral-500 text-white hover:bg-coral-600'
                       : 'bg-white border-gray-200 hover:border-primary-600 hover:shadow-xl hover:shadow-primary-600/10'
                 }`}
               >
@@ -430,13 +430,13 @@ export default function HomePage() {
                 key={a.tag}
                 className={`p-9 rounded-3xl border flex flex-col transition-all ${
                   a.featured
-                    ? 'bg-gray-950 border-gray-950 shadow-2xl md:scale-[1.03]'
+                    ? 'bg-ink-950 border-gray-950 shadow-2xl md:scale-[1.03]'
                     : 'bg-white border-gray-200 hover:shadow-xl'
                 }`}
               >
                 <div
                   className={`text-[11px] font-bold tracking-[2px] uppercase mb-3.5 ${
-                    a.featured ? 'text-emerald-400' : 'text-gray-500'
+                    a.featured ? 'text-primary-400' : 'text-gray-500'
                   }`}
                 >
                   {a.tag}
@@ -457,7 +457,7 @@ export default function HomePage() {
                           : 'text-gray-700 border-gray-100'
                       }`}
                     >
-                      <span className="text-emerald-400 font-bold shrink-0">→</span>
+                      <span className="text-primary-400 font-bold shrink-0">→</span>
                       {item}
                     </li>
                   ))}
@@ -465,7 +465,7 @@ export default function HomePage() {
                 <Link
                   href={a.href}
                   className={`text-sm font-bold inline-flex items-center gap-1.5 transition-all hover:gap-2.5 mt-auto ${
-                    a.featured ? 'text-orange-400' : 'text-primary-600'
+                    a.featured ? 'text-coral-400' : 'text-primary-600'
                   }`}
                 >
                   {a.cta}
@@ -479,7 +479,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           COMPARACIÓN
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-gray-950 text-white py-32 px-5 sm:px-8">
+      <section className="bg-ink-950 text-white py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
@@ -529,7 +529,7 @@ export default function HomePage() {
                     key={item}
                     className="flex items-start gap-2.5 text-sm text-white/90 py-2 border-b border-white/15"
                   >
-                    <span className="text-emerald-300 shrink-0">✓</span>
+                    <span className="text-primary-300 shrink-0">✓</span>
                     {item}
                   </li>
                 ))}
@@ -593,13 +593,13 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CTA FINAL
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gray-950 text-white py-32 px-5 sm:px-8 text-center">
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/[0.12] blur-3xl rounded-full pointer-events-none" />
+      <section className="relative overflow-hidden bg-ink-950 text-white py-32 px-5 sm:px-8 text-center">
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white">
             ¿Te pidieron fiador?
             <br />
-            <span className="text-orange-500">Soy yo.</span> Llámanos.
+            <span className="text-coral-500">Soy yo.</span> Llámanos.
           </h2>
           <p className="text-lg text-white/45 mb-10">
             <strong className="text-white">Sin codeudor. Sin pedirle el favor a nadie.</strong>{' '}
@@ -608,7 +608,7 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 px-9 py-4 bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-px"
+              className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
               Iniciar mi solicitud →
             </Link>
