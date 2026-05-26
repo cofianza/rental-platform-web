@@ -64,6 +64,7 @@ export interface IInmueble {
 // Formulario de creación
 export interface IInmuebleCreateData {
   // Básicos (requeridos)
+  codigo: string
   direccion: string
   ciudad: string
   departamento: string
@@ -97,6 +98,7 @@ export interface IInmuebleCreateData {
 
 // Formulario de edición (todos opcionales)
 export interface IInmuebleUpdateData {
+  codigo?: string
   direccion?: string
   ciudad?: string
   departamento?: string

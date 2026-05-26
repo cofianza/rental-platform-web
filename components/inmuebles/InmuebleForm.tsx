@@ -162,6 +162,7 @@ interface InmuebleFormProps {
 
 interface FormData {
   // Requeridos
+  codigo: string
   direccion: string
   ciudad: string
   departamento: string
@@ -192,6 +193,7 @@ interface FormData {
 }
 
 interface FormErrors {
+  codigo?: string
   direccion?: string
   ciudad?: string
   departamento?: string
@@ -209,6 +211,7 @@ interface FormErrors {
 }
 
 const initialFormData: FormData = {
+  codigo: '',
   direccion: '',
   ciudad: '',
   departamento: '',
@@ -264,6 +267,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   useEffect(() => {
     if (mode === 'edit' && inmueble) {
       setFormData({
+        codigo: inmueble.codigo || '',
         direccion: inmueble.direccion,
         ciudad: inmueble.ciudad,
         departamento: inmueble.departamento,
@@ -307,6 +311,15 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
+
+    const codigoTrim = formData.codigo.trim()
+    if (!codigoTrim) {
+      newErrors.codigo = 'El código del inmueble es obligatorio'
+    } else if (codigoTrim.length > 30) {
+      newErrors.codigo = 'El código no puede superar 30 caracteres'
+    } else if (!/^[A-Za-z0-9][A-Za-z0-9 _-]*$/.test(codigoTrim)) {
+      newErrors.codigo = 'Solo letras, números, guiones, guiones bajos y espacios'
+    }
 
     if (!formData.direccion.trim()) {
       newErrors.direccion = INMUEBLE_MESSAGES.DIRECCION_REQUIRED
@@ -373,6 +386,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     try {
       if (mode === 'create') {
         const createData: IInmuebleCreateData = {
+          codigo: formData.codigo.trim(),
           direccion: formData.direccion,
           ciudad: formData.ciudad,
           departamento: formData.departamento,
@@ -429,6 +443,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS)
       } else if (inmueble) {
         const updateData: IInmuebleUpdateData = {
+          codigo: formData.codigo.trim(),
           direccion: formData.direccion,
           ciudad: formData.ciudad,
           departamento: formData.departamento,
@@ -487,14 +502,27 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
       router.push('/inmuebles')
     } catch (err: unknown) {
       console.error('Error saving inmueble:', err)
-      // Intentar mostrar el detalle del error del backend
-      const apiError = err as { response?: { data?: { message?: string; details?: Array<{ field: string; message: string }> } } }
+      // Caso especifico: codigo duplicado para el mismo propietario. Asi el
+      // mensaje queda visible en el input + toast, no perdido en un toast generico.
+      const apiError = err as {
+        code?: string
+        message?: string
+        response?: { data?: { errorCode?: string; message?: string; details?: Array<{ field: string; message: string }> } }
+      }
+      const errorCode = apiError?.code || apiError?.response?.data?.errorCode
+      if (errorCode === 'CODIGO_DUPLICADO') {
+        const msg = apiError?.message || apiError?.response?.data?.message || 'Ese código ya está en uso para otro inmueble tuyo.'
+        setErrors((prev) => ({ ...prev, codigo: msg }))
+        toast.error(msg)
+        return
+      }
+
       const details = apiError?.response?.data?.details
       if (details && details.length > 0) {
         // Mostrar errores por campo del backend
         const backendErrors: FormErrors = {}
         for (const d of details) {
-          if (d.field in backendErrors || d.field === 'direccion' || d.field === 'ciudad' || d.field === 'tipo' || d.field === 'area_m2' || d.field === 'valor_arriendo' || d.field === 'valor_comercial' || d.field === 'administracion' || d.field === 'habitaciones' || d.field === 'banos' || d.field === 'parqueaderos') {
+          if (d.field in backendErrors || d.field === 'codigo' || d.field === 'direccion' || d.field === 'ciudad' || d.field === 'tipo' || d.field === 'area_m2' || d.field === 'valor_arriendo' || d.field === 'valor_comercial' || d.field === 'administracion' || d.field === 'habitaciones' || d.field === 'banos' || d.field === 'parqueaderos') {
             backendErrors[d.field as keyof FormErrors] = d.message
           }
         }
@@ -733,9 +761,38 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           </div>
         </div>
 
-        {/* Ubicación */}
+        {/* Identificación + Ubicación */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ubicación</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Identificación y ubicación</h3>
+
+          {/* Código de propiedad — campo destacado, obligatorio. Cada
+              inmobiliaria/propietario define su sistema (APT-001, etc).
+              Es único por propietario. */}
+          <div className="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
+            <label htmlFor="codigo" className="block text-sm font-semibold text-primary-900 mb-1.5">
+              Código de la propiedad *
+            </label>
+            <input
+              type="text"
+              id="codigo"
+              value={formData.codigo}
+              onChange={(e) => handleChange('codigo', e.target.value)}
+              disabled={isSubmitting}
+              placeholder="Ej: APT-001, CASA-SAB, OF-302"
+              maxLength={30}
+              className={`w-full px-3 py-2 text-base font-mono font-semibold bg-white border rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${
+                errors.codigo ? 'border-red-400' : 'border-primary-300'
+              }`}
+            />
+            {errors.codigo ? (
+              <p className="mt-1.5 text-xs text-red-600">{errors.codigo}</p>
+            ) : (
+              <p className="mt-1.5 text-xs text-primary-700">
+                Identificador interno que usas para tus reportes. Letras, números, guiones, máx 30 caracteres.
+                Debe ser único dentro de tus inmuebles.
+              </p>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Dirección */}
