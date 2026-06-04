@@ -183,7 +183,7 @@ function EstadoBlock({ coa }: { coa: ICoarrendatario }) {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
       mensaje: coa.estudio?.estado === 'en_proceso'
-        ? 'Estamos consultando su historial crediticio en TransUnion. Te avisaremos cuando termine.'
+        ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
         : 'Procesando su estudio crediticio.',
     },
     rechazado_invitacion: {

@@ -3,7 +3,7 @@
  *
  * Flujo:
  *   - formulario_completado  → formulario "Confirma tu cédula y envía".
- *   - en_proceso             → "Consultando TransUnion...".
+ *   - en_proceso             → "Consultando tu historial...".
  *   - completado + aprobado  → banner verde.
  *   - completado + condicionado → banner ámbar.
  *   - completado + rechazado → banner rojo.
@@ -143,7 +143,7 @@ export function EstudioSolicitanteCard({
         numero_documento: numero,
       })
       clearTimeout(safetyTimer)
-      toast.success('Estudio enviado a TransUnion. Te avisaremos cuando tengamos el resultado.')
+      toast.success('Estudio enviado. Te avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
       onEjecutado?.()
     } catch (err) {
@@ -194,7 +194,7 @@ export function EstudioSolicitanteCard({
           {esReintento ? 'Corrige tus datos y reintenta' : 'Confirma tus datos para el estudio crediticio'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Al hacer click en <strong>Enviar</strong>, consultaremos tu historial crediticio con <strong>TransUnion</strong>. El resultado llega en unos minutos.
+          Al hacer click en <strong>Enviar</strong>, consultaremos tu historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 mb-4">
@@ -269,7 +269,7 @@ export function EstudioSolicitanteCard({
             <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando TransUnion...</p>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando tu historial...</p>
             <p className="text-sm text-blue-800">
               Estamos evaluando tu historial crediticio. Esto suele tardar menos de un minuto — te avisaremos por correo cuando termine.
             </p>
