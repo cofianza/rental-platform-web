@@ -102,6 +102,22 @@ export async function getPublicPropertyFilters(): Promise<PublicPropertyFilters>
   return result.data ?? { ciudades: [], tipos: [], estratos: [] }
 }
 
+/**
+ * Registra una visita anónima al detalle de un inmueble público. Best-effort:
+ * el backend devuelve 204 y si falla (red, BD), no propagamos el error porque
+ * es analítica y no debe afectar la UX del visitante.
+ */
+export async function registrarVisitaInmueble(propertyId: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/public/properties/${propertyId}/visita`, {
+      method: 'POST',
+      keepalive: true, // permite enviar aunque el usuario navegue rápido
+    })
+  } catch {
+    // Silencio intencional: analítica no debe romper el detalle del inmueble.
+  }
+}
+
 // ── Interés (autenticado, rol solicitante) ────
 
 export interface RegistrarInteresResult {

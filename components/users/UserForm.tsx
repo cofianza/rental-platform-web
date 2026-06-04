@@ -19,6 +19,11 @@ interface UserFormProps {
   user: IUserProfile | null
   isLoading?: boolean
   error?: string | null
+  // Si se define, el rol queda fijo (oculta el selector). Útil para páginas
+  // dedicadas como /inmobiliarias o /propietarios.
+  lockedRol?: UserRole
+  // Título y etiqueta de botón personalizados (ej. "Nueva inmobiliaria").
+  titleCreate?: string
 }
 
 interface FormErrors {
@@ -36,13 +41,15 @@ export function UserForm({
   user,
   isLoading = false,
   error,
+  lockedRol,
+  titleCreate,
 }: UserFormProps) {
   const [formData, setFormData] = useState<IUserFormData>({
     email: '',
     nombre: '',
     apellido: '',
     telefono: '',
-    rol: 'operador_analista',
+    rol: lockedRol ?? 'operador_analista',
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
@@ -62,11 +69,11 @@ export function UserForm({
         nombre: '',
         apellido: '',
         telefono: '',
-        rol: 'operador_analista',
+        rol: lockedRol ?? 'operador_analista',
       })
     }
     setErrors({})
-  }, [mode, user])
+  }, [mode, user, lockedRol])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -116,7 +123,7 @@ export function UserForm({
     }
   }
 
-  const title = mode === 'create' ? 'Nuevo Usuario' : 'Editar Usuario'
+  const title = mode === 'create' ? (titleCreate ?? 'Nuevo Usuario') : 'Editar Usuario'
 
   // Filtrar opciones de rol (excluir opción vacía "Todos los roles")
   const roleOptionsFiltered = ROLE_OPTIONS.filter((opt) => opt.value)
@@ -207,28 +214,30 @@ export function UserForm({
           />
         </div>
 
-        {/* Rol */}
-        <div>
-          <label htmlFor="rol" className="block text-sm font-medium text-gray-700 mb-1">
-            Rol *
-          </label>
-          <select
-            id="rol"
-            value={formData.rol}
-            onChange={(e) => handleChange('rol', e.target.value as UserRole)}
-            disabled={isLoading}
-            className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
-              errors.rol ? 'border-red-300' : 'border-gray-300'
-            }`}
-          >
-            {roleOptionsFiltered.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {errors.rol && <p className="mt-1 text-xs text-red-600">{errors.rol}</p>}
-        </div>
+        {/* Rol — oculto si lockedRol está definido (página dedicada por rol) */}
+        {!lockedRol && (
+          <div>
+            <label htmlFor="rol" className="block text-sm font-medium text-gray-700 mb-1">
+              Rol *
+            </label>
+            <select
+              id="rol"
+              value={formData.rol}
+              onChange={(e) => handleChange('rol', e.target.value as UserRole)}
+              disabled={isLoading}
+              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
+                errors.rol ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              {roleOptionsFiltered.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {errors.rol && <p className="mt-1 text-xs text-red-600">{errors.rol}</p>}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">

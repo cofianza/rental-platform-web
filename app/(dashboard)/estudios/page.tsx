@@ -18,6 +18,8 @@ import {
   EstudiosSkeleton,
   ESTUDIO_UI_MESSAGES,
 } from '@/components/estudios'
+import { EstudiosInmobiliariaView } from '@/components/estudios/EstudiosInmobiliariaView'
+import { EstudiosPropietarioView } from '@/components/estudios/EstudiosPropietarioView'
 
 function EstudiosContent() {
   const router = useRouter()
@@ -33,6 +35,32 @@ function EstudiosContent() {
     }
   }, [isInitialized, userRol, router])
 
+  // La inmobiliaria ve la vista con el diseño del mockup 13_v2; admin/operador
+  // conservan la bandeja/tabla operativa de siempre.
+  if (userRol === 'inmobiliaria') {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Estudios" subtitle="Inicia y consulta tus estudios de crédito" />
+        <EstudiosInmobiliariaView />
+      </div>
+    )
+  }
+
+  // Propietario: "Evaluar candidato" (mockup 14) — mismo historial re-skineado,
+  // sin saldo/paquetes; "Nuevo estudio" lleva al flujo real (expediente).
+  if (userRol === 'propietario') {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Evaluar candidato" subtitle="Envía a un prospecto a estudio crediticio y consulta tus evaluaciones." />
+        <EstudiosPropietarioView />
+      </div>
+    )
+  }
+
+  return <EstudiosAdminView />
+}
+
+function EstudiosAdminView() {
   const {
     estudios,
     meta,

@@ -1080,6 +1080,59 @@ export function IconCheckCircle({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Bank — para "Capital libre" / tesorería
+export function IconBank({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <line x1="3" y1="22" x2="21" y2="22" />
+      <line x1="6" y1="18" x2="6" y2="11" />
+      <line x1="10" y1="18" x2="10" y2="11" />
+      <line x1="14" y1="18" x2="14" y2="11" />
+      <line x1="18" y1="18" x2="18" y2="11" />
+      <polygon points="12 2 20 7 4 7" />
+    </svg>
+  )
+}
+
+// TrendingUp — para "Exposición máxima" / análisis
+export function IconTrendingUp({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  )
+}
+
+// TrendingDown — variación a la baja (deltas de KPIs)
+export function IconTrendingDown({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+      <polyline points="17 18 23 18 23 12" />
+    </svg>
+  )
+}
+
+// Activity — para "Actividad reciente" / log
+export function IconActivity({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </svg>
+  )
+}
+
+// Inbox — para "Tickets" / soporte
+export function IconInbox({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  )
+}
+
 // Receipt (HP-357: Facturacion)
 export function IconReceipt({ className, size = defaultSize }: IconProps) {
   return (
@@ -1163,6 +1216,11 @@ export const ICON_MAP = {
   FileCheck: IconFileCheck,
   CheckCircle: IconCheckCircle,
   Receipt: IconReceipt,
+  Bank: IconBank,
+  TrendingUp: IconTrendingUp,
+  TrendingDown: IconTrendingDown,
+  Activity: IconActivity,
+  Inbox: IconInbox,
 } as const
 
 export type IconName = keyof typeof ICON_MAP

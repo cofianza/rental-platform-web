@@ -29,7 +29,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           HERO
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink-950 text-white">
+      <section className="relative overflow-hidden bg-ink-900 text-white">
         {/* Glow blobs */}
         <div className="absolute -top-1/4 -right-1/12 w-[700px] h-[700px] bg-primary-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -54,7 +54,7 @@ export default function HomePage() {
 
               <p className="text-base text-white/45 leading-relaxed max-w-lg mb-9">
                 Evaluamos tu perfil en segundos y firmamos como tu fiador en el contrato de
-                arrendamiento. Sin codeudor. Sin pedirle el favor a nadie.
+                arrendamiento. Sin codeudor humano. Sin deberle el favor a nadie.
               </p>
 
               <div className="flex flex-wrap gap-3 mb-12">
@@ -64,12 +64,12 @@ export default function HomePage() {
                 >
                   Ver inmuebles disponibles →
                 </a>
-                <a
-                  href="#como-funciona"
+                <Link
+                  href="/registro"
                   className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
                 >
-                  Ver cómo funciona
-                </a>
+                  Soy propietario / inmobiliaria
+                </Link>
               </div>
 
               <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium">
@@ -80,7 +80,7 @@ export default function HomePage() {
                   <span className="text-primary-400 font-bold">✓</span> Cashback del 30%
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-primary-400 font-bold">✓</span> Reporte positivo
+                  <span className="text-primary-400 font-bold">✓</span> Reporte positivo a centrales
                 </span>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function HomePage() {
                 </div>
                 <div className="mt-3 p-3.5 rounded-xl bg-primary-500/[0.06] border border-primary-500/10 flex justify-between items-center">
                   <div>
-                    <div className="text-xs text-white/35">Score TransUnion</div>
+                    <div className="text-xs text-white/35">Score crediticio</div>
                     <div className="text-lg font-bold text-primary-400">632 · Aprobado</div>
                   </div>
                   <div className="text-right">
@@ -158,7 +158,7 @@ export default function HomePage() {
       <div className="px-5 sm:px-8 -mt-11 relative z-10">
         <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 grid grid-cols-2 md:grid-cols-4">
           {[
-            { val: '100%', lbl: 'Digital' },
+            { val: ['100', '%'], lbl: 'Digital' },
             { val: '⚡', lbl: 'Respuesta en segundos' },
             { val: '0', lbl: 'Codeudores' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir', accent: 'orange' as const },
@@ -190,12 +190,6 @@ export default function HomePage() {
           ))}
         </div>
       </div>
-
-      {/* ════════════════════════════════════════════════════════════
-          VITRINA PREVIEW — 3 inmuebles destacados con CTA #vitrina
-          (Mario 12-may-2026, mockup 01_COFIANZA_Landing.html)
-          ════════════════════════════════════════════════════════════ */}
-      <VitrinaPreview />
 
       {/* ════════════════════════════════════════════════════════════
           PROBLEMA
@@ -231,7 +225,7 @@ export default function HomePage() {
               {
                 tag: 'Reporte positivo',
                 title: 'Pagando a tiempo construyes tu historial crediticio.',
-                body: 'Cofianza reporta tu buen comportamiento a Datacrédito y TransUnion. Cada mes que pagas a tiempo mejora tu score y te abre puertas.',
+                body: 'Cofianza reporta tu buen comportamiento a centrales de riesgo. Cada mes que pagas a tiempo mejora tu score y te abre puertas.',
                 variant: 'plain',
               },
               {
@@ -315,7 +309,7 @@ export default function HomePage() {
                   </svg>
                 ),
                 title: 'Te evaluamos en segundos',
-                body: 'Pagas el estudio de crédito. Lo consultamos en bases de datos. Si apruebas, firmamos como tu fiador. Sin papeles, sin filas, sin codeudor.',
+                body: 'Pagas el estudio de crédito. Lo consultamos en múltiples bases de datos. Si apruebas, firmamos como tu fiador. Sin papeles, sin filas, sin codeudor.',
               },
               {
                 n: '03',
@@ -354,7 +348,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
-            { val: ['24', 'h'], lbl: 'De estudio a firma' },
+            { val: '⚡', lbl: 'De solicitud a respuesta en segundos' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
@@ -384,9 +378,9 @@ export default function HomePage() {
             Para quién es Cofianza
           </div>
           <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
-            Diseñado para los tres
+            Diseñado para las tres
             <br />
-            lados del arriendo.
+            partes del arriendo.
           </h2>
 
           <div className="grid md:grid-cols-3 gap-4 mt-14">
@@ -394,15 +388,15 @@ export default function HomePage() {
               {
                 tag: 'Para arrendatarios',
                 title: '¿Buscas dónde vivir?',
-                body: 'Evita pedir codeudor. Solicita tu fiador, paga el estudio, y firma desde tu celular.',
+                body: '¿Te pidieron fiador? Nosotros firmamos. Paga el estudio y firma desde tu celular.',
                 items: [
                   'Sin codeudor ni fiador humano',
                   'Respuesta en segundos',
                   'Firma por WhatsApp',
                   'Cashback del 30% si cumples',
-                  'Reporte positivo a Datacrédito',
+                  'Reporte positivo a centrales de riesgo',
                 ],
-                cta: 'Iniciar solicitud →',
+                cta: 'Ver inmuebles disponibles →',
                 href: '/vitrina',
                 featured: true,
               },
@@ -422,9 +416,9 @@ export default function HomePage() {
               {
                 tag: 'Para inmobiliarias',
                 title: '¿Gestionas cartera?',
-                body: 'Usa Cofianza como fiador. Panel de gestión, estudios en lote y $60.000 por cada estudio.',
+                body: 'Usa Cofianza como fiador. Panel de gestión, estudios en lote y gana por cada estudio que gestiones.',
                 items: [
-                  '$60.000 por cada estudio gestionado',
+                  'Gana por cada estudio que gestiones',
                   'Panel de expedientes en tiempo real',
                   'Cofianza firma en tus contratos',
                   'Protocolo de cobro profesional incluido',
@@ -437,7 +431,7 @@ export default function HomePage() {
                 key={a.tag}
                 className={`p-9 rounded-3xl border flex flex-col transition-all ${
                   a.featured
-                    ? 'bg-ink-950 border-gray-950 shadow-2xl md:scale-[1.03]'
+                    ? 'bg-ink-900 border-gray-800 shadow-2xl md:scale-[1.03]'
                     : 'bg-white border-gray-200 hover:shadow-xl'
                 }`}
               >
@@ -484,9 +478,15 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════
+          VITRINA PREVIEW — 3 inmuebles destacados (#vitrina).
+          Ubicada debajo de "Para quién" (mockup 01_*).
+          ════════════════════════════════════════════════════════════ */}
+      <VitrinaPreview />
+
+      {/* ════════════════════════════════════════════════════════════
           COMPARACIÓN
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-ink-950 text-white py-32 px-5 sm:px-8">
+      <section className="bg-ink-900 text-white py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
@@ -529,7 +529,7 @@ export default function HomePage() {
                   'Respuesta en segundos',
                   'Todo desde tu celular',
                   'Firma electrónica legal por WhatsApp',
-                  'Reporte positivo a Datacrédito y TransUnion',
+                  'Reporte positivo a centrales de riesgo',
                   'Cashback del 30% al cumplir el contrato',
                 ].map((item) => (
                   <li
@@ -577,8 +577,8 @@ export default function HomePage() {
                 a: 'Al terminar tu contrato sin moras y con el inmueble en buen estado, te devolvemos el 30% de todas las comisiones mensuales pagadas. Es nuestra manera de reconocer a los buenos arrendatarios.',
               },
               {
-                q: '¿Operan en toda Colombia?',
-                a: 'Sí. El proceso es 100% digital, por lo que tanto el arrendatario como el propietario y la inmobiliaria pueden estar en cualquier ciudad. Arrancamos con fuerza en el Área Metropolitana de Medellín.',
+                q: '¿Necesito registrarme para ver inmuebles?',
+                a: 'No. La vitrina es pública. Puedes explorar todos los inmuebles disponibles sin crear cuenta. Cuando encuentres uno que te guste, solo dejas tu nombre y celular para que el propietario o inmobiliaria te contacte y agendes la visita.',
               },
               {
                 q: '¿Qué pasa si me atraso en el pago?',
@@ -600,7 +600,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CTA FINAL
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink-950 text-white py-32 px-5 sm:px-8 text-center">
+      <section className="relative overflow-hidden bg-ink-900 text-white py-32 px-5 sm:px-8 text-center">
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white">
@@ -609,21 +609,21 @@ export default function HomePage() {
             <span className="text-coral-500">Soy yo.</span> Llámanos.
           </h2>
           <p className="text-lg text-white/45 mb-10">
-            <strong className="text-white">Sin codeudor. Sin pedirle el favor a nadie.</strong>{' '}
-            Tu fianza digital en segundos.
+            <strong className="text-white">Sin codeudor humano. Sin deberle el favor a nadie.</strong>{' '}
+            Tu fiador profesional en segundos.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
-              href="/registro"
+              href="/vitrina"
               className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
-              Iniciar mi solicitud →
+              Ver inmuebles disponibles →
             </Link>
             <Link
               href="/registro"
               className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
             >
-              Soy propietario o inmobiliaria
+              Soy propietario / inmobiliaria →
             </Link>
           </div>
         </div>

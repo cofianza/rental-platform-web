@@ -12,6 +12,7 @@ import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { DashboardLayoutWrapper } from './DashboardLayoutWrapper'
 import { OficinaVirtualShell } from './OficinaVirtualShell'
+import { PropietarioShell } from './PropietarioShell'
 
 interface Props {
   children: React.ReactNode
@@ -19,6 +20,7 @@ interface Props {
 
 export function DashboardShell({ children }: Props) {
   const isInitialized = useAuthStore((state) => state.isInitialized)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const rol = useAuthStore((state) => state.user?.rol)
 
   // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
@@ -26,7 +28,11 @@ export function DashboardShell({ children }: Props) {
   // cambia a false) o al desmontar.
   useNotificationsRealtime()
 
-  if (!isInitialized) {
+  // Loader hasta inicializar; y también mientras se cierra sesión (el store ya
+  // se limpió pero el redirect a /login todavía no completa). Así evitamos el
+  // flash del layout admin (rol queda undefined → caería al Sidebar) y los
+  // errores de "Token de acceso requerido" de los fetch de los hijos.
+  if (!isInitialized || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -37,9 +43,13 @@ export function DashboardShell({ children }: Props) {
     )
   }
 
-  // Layout "Oficina Virtual" con tab bar superior — propietario e inmobiliaria.
-  // (Mario 12-may-2026, mockups 13_*).
-  if (rol === 'propietario' || rol === 'inmobiliaria') {
+  // Propietario — layout con sidebar (Gestión · Financiero), mockup 14.
+  if (rol === 'propietario') {
+    return <PropietarioShell>{children}</PropietarioShell>
+  }
+
+  // Inmobiliaria — conserva el shell "Oficina Virtual" con tab bar superior.
+  if (rol === 'inmobiliaria') {
     return <OficinaVirtualShell rol={rol}>{children}</OficinaVirtualShell>
   }
 

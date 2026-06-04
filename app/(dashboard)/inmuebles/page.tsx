@@ -16,12 +16,14 @@ import {
   InmueblesTable,
   InmueblesSkeleton,
   SolicitudesVisitaWidget,
+  PropiedadesInmobiliariaView,
 } from '@/components/inmuebles'
 import { ConfirmDialog } from '@/components/users'
 import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { PerfilIncompletoBanner } from '@/components/inmuebles'
+import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesPropietario'
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 
@@ -133,6 +135,38 @@ function InmueblesContent() {
     },
     [inmuebles, updateInmuebleInList]
   )
+
+  // Propietario: misma vista "Mis inmuebles" del /dashboard (mockup 14), para
+  // que no caiga a la tabla operativa de admin si entra a /inmuebles.
+  if (isPropietario) {
+    return <MisInmueblesPropietario />
+  }
+
+  // Inmobiliaria: vista re-skineada (mockup 13_v2). El resto de roles
+  // (admin/operador) conserva el render compartido (InmueblesTable).
+  // Va DESPUÉS de todos los hooks para no romper las rules-of-hooks.
+  if (isInmobiliaria) {
+    return (
+      <div className="space-y-6">
+        <Breadcrumbs />
+        <PageHeader
+          title="Propiedades y Vitrina"
+          subtitle={
+            meta
+              ? `${meta.total} propiedades · gestiona el catálogo y publica en la vitrina`
+              : 'Cargando...'
+          }
+        />
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        {perfilIncompleto && <PerfilIncompletoBanner completitud={completitud} />}
+        <PropiedadesInmobiliariaView />
+      </div>
+    )
+  }
 
   const handleDeleteClick = (inmueble: IInmueble) => {
     setDeleteDialog({ isOpen: true, inmueble })

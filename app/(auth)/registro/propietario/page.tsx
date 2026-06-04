@@ -41,38 +41,17 @@ const initialFormData: FormData = {
   accept_data_treatment: false,
 }
 
-const STEP_LABELS = ['Datos Personales', 'Credenciales', 'Términos']
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
+// Encabezado de sección numerado (estilo mockup htmls/02_*).
+function FormSection({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-2 mb-8">
-      {STEP_LABELS.map((label, i) => {
-        const stepNum = i + 1
-        const isCompleted = stepNum < currentStep
-        const isCurrent = stepNum === currentStep
-        return (
-          <div key={label} className="flex items-center gap-2">
-            {i > 0 && (
-              <div className={cn('w-8 h-0.5', isCompleted ? 'bg-green-500' : 'bg-gray-200')} />
-            )}
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-                  isCompleted && 'bg-green-500 text-white',
-                  isCurrent && 'bg-primary-600 text-white',
-                  !isCompleted && !isCurrent && 'bg-gray-200 text-gray-500'
-                )}
-              >
-                {isCompleted ? <IconCheck size={16} /> : stepNum}
-              </div>
-              <span className={cn('text-xs', isCurrent ? 'text-primary-600 font-medium' : 'text-gray-400')}>
-                {label}
-              </span>
-            </div>
-          </div>
-        )
-      })}
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">
+          {num}
+        </span>
+        <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
+      </div>
+      {children}
     </div>
   )
 }
@@ -89,10 +68,7 @@ function PasswordRequirements({ password }: { password: string }) {
     <div className="mt-2 space-y-1">
       {checks.map((check) => (
         <div key={check.label} className="flex items-center gap-2">
-          <IconCheck
-            size={14}
-            className={check.met ? 'text-green-500' : 'text-gray-300'}
-          />
+          <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
           <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-400')}>
             {check.label}
           </span>
@@ -104,7 +80,6 @@ function PasswordRequirements({ password }: { password: string }) {
 
 export default function RegisterPropietarioPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
@@ -122,60 +97,47 @@ export default function RegisterPropietarioPage() {
     setServerError(null)
   }
 
-  const validateStep = (stepNum: number): boolean => {
+  // Valida TODOS los campos de una vez (sin pasos).
+  const validateAll = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (stepNum === 1) {
-      if (!formData.nombre.trim()) newErrors.nombre = 'Nombre requerido'
-      if (!formData.apellido.trim()) newErrors.apellido = 'Apellido requerido'
-      if (!formData.tipo_documento) newErrors.tipo_documento = 'Selecciona un tipo de documento'
-      if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Número de documento requerido'
-      if (!formData.telefono.trim()) {
-        newErrors.telefono = 'Teléfono requerido'
-      } else {
-        // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
-        // en el numero local.
-        const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-        if (localDigits.length !== 10) {
-          newErrors.telefono = 'El teléfono debe tener 10 dígitos'
-        }
-      }
-      if (!formData.direccion.trim()) newErrors.direccion = 'Dirección requerida'
+    if (!formData.nombre.trim()) newErrors.nombre = 'Nombre requerido'
+    if (!formData.apellido.trim()) newErrors.apellido = 'Apellido requerido'
+    if (!formData.tipo_documento) newErrors.tipo_documento = 'Selecciona un tipo de documento'
+    if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Número de documento requerido'
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'Teléfono requerido'
+    } else {
+      const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
+      if (localDigits.length !== 10) newErrors.telefono = 'El teléfono debe tener 10 dígitos'
+    }
+    if (!formData.direccion.trim()) newErrors.direccion = 'Dirección requerida'
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email requerido'
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Email inválido'
+    }
+    if (!formData.password) {
+      newErrors.password = 'Contraseña requerida'
+    } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'La contraseña no cumple los requisitos'
+    }
+    if (!formData.confirm_password) {
+      newErrors.confirm_password = 'Confirma tu contraseña'
+    } else if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = 'Las contraseñas no coinciden'
     }
 
-    if (stepNum === 2) {
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email requerido'
-      } else if (!isValidEmail(formData.email)) {
-        newErrors.email = 'Email inválido'
-      }
-      if (!formData.password) {
-        newErrors.password = 'Contraseña requerida'
-      } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-        newErrors.password = 'La contraseña no cumple los requisitos'
-      }
-      if (!formData.confirm_password) {
-        newErrors.confirm_password = 'Confirma tu contraseña'
-      } else if (formData.password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Las contraseñas no coinciden'
-      }
-    }
-
-    if (stepNum === 3) {
-      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
-      if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
-    }
+    if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
+    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep(step + 1)
-  }
-
   const handleSubmit = async () => {
-    if (!validateStep(3)) return
+    if (!validateAll()) return
 
     setIsLoading(true)
     setServerError(null)
@@ -210,6 +172,12 @@ export default function RegisterPropietarioPage() {
     }
   }
 
+  const inputCls = (hasError?: boolean) =>
+    cn(
+      'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+      hasError ? 'border-red-500' : 'border-gray-300',
+    )
+
   return (
     <div className="w-full">
       <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
@@ -225,17 +193,21 @@ export default function RegisterPropietarioPage() {
         </a>
       </p>
 
-      <StepIndicator currentStep={step} />
-
       {serverError && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
 
-      {/* Step 1: Datos Personales */}
-      {step === 1 && (
-        <div className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleSubmit()
+        }}
+        className="space-y-7"
+      >
+        {/* 1. Datos personales */}
+        <FormSection num={1} title="Datos personales">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -244,7 +216,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.nombre ? 'border-red-500' : 'border-gray-300')}
+                  className={inputCls(!!errors.nombre)}
                   placeholder="Tu nombre"
                 />
               </div>
@@ -257,7 +229,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.apellido ? 'border-red-500' : 'border-gray-300')}
+                  className={inputCls(!!errors.apellido)}
                   placeholder="Tu apellido"
                 />
               </div>
@@ -290,7 +262,7 @@ export default function RegisterPropietarioPage() {
                 <input
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.numero_documento ? 'border-red-500' : 'border-gray-300')}
+                  className={inputCls(!!errors.numero_documento)}
                   placeholder="Número de documento"
                 />
               </div>
@@ -312,18 +284,16 @@ export default function RegisterPropietarioPage() {
               <input
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.direccion ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.direccion)}
                 placeholder="Tu dirección"
               />
             </div>
             {errors.direccion && <p className="mt-1.5 text-sm text-red-600">{errors.direccion}</p>}
           </div>
-        </div>
-      )}
+        </FormSection>
 
-      {/* Step 2: Credenciales */}
-      {step === 2 && (
-        <div className="space-y-4">
+        {/* 2. Acceso a la plataforma */}
+        <FormSection num={2} title="Acceso a la plataforma">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <div className="relative">
@@ -331,7 +301,7 @@ export default function RegisterPropietarioPage() {
               <input
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.email ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.email)}
                 placeholder="tu@email.com"
               />
             </div>
@@ -374,108 +344,65 @@ export default function RegisterPropietarioPage() {
             </div>
             {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
           </div>
-        </div>
-      )}
+        </FormSection>
 
-      {/* Step 3: Terminos */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-600">
-            <p className="font-medium text-gray-900">Resumen de tu registro:</p>
-            <p>{formData.nombre} {formData.apellido}</p>
-            <p>{formData.email}</p>
-            <p>{formData.telefono}</p>
-            <p>{formData.tipo_documento.toUpperCase()}: {formData.numero_documento}</p>
-            <p>{formData.direccion}</p>
-          </div>
+        {/* 3. Términos */}
+        <FormSection num={3} title="Términos">
+          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+            <input
+              type="checkbox"
+              checked={formData.accept_terms}
+              onChange={(e) => updateField('accept_terms', e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div>
+              <span className="text-sm text-gray-700">
+                Acepto los{' '}
+                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                  términos y condiciones
+                </Link>{' '}
+                del servicio
+              </span>
+              {errors.accept_terms && <p className="mt-1 text-xs text-red-600">{errors.accept_terms}</p>}
+            </div>
+          </label>
 
-          <div className="space-y-4">
-            <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
-              <input
-                type="checkbox"
-                checked={formData.accept_terms}
-                onChange={(e) => updateField('accept_terms', e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <div>
-                <span className="text-sm text-gray-700">
-                  Acepto los{' '}
-                  <Link
-                    href="/terminos"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary-600 font-medium underline hover:text-primary-700"
-                  >
-                    términos y condiciones
-                  </Link>{' '}
-                  del servicio
-                </span>
-                {errors.accept_terms && <p className="mt-1 text-xs text-red-600">{errors.accept_terms}</p>}
-              </div>
-            </label>
-
-            <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
-              <input
-                type="checkbox"
-                checked={formData.accept_data_treatment}
-                onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <div>
-                <span className="text-sm text-gray-700">
-                  Autorizo el{' '}
-                  <Link
-                    href="/privacidad"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary-600 font-medium underline hover:text-primary-700"
-                  >
-                    tratamiento de mis datos personales
-                  </Link>{' '}
-                  conforme a la Ley 1581 de 2012
-                </span>
-                {errors.accept_data_treatment && <p className="mt-1 text-xs text-red-600">{errors.accept_data_treatment}</p>}
-              </div>
-            </label>
-          </div>
+          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+            <input
+              type="checkbox"
+              checked={formData.accept_data_treatment}
+              onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div>
+              <span className="text-sm text-gray-700">
+                Autorizo el{' '}
+                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                  tratamiento de mis datos personales
+                </Link>{' '}
+                conforme a la Ley 1581 de 2012
+              </span>
+              {errors.accept_data_treatment && <p className="mt-1 text-xs text-red-600">{errors.accept_data_treatment}</p>}
+            </div>
+          </label>
 
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
             <IconShield size={16} className="text-blue-500 shrink-0" />
             <span>Tus datos estan protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
           </div>
-        </div>
-      )}
+        </FormSection>
 
-      {/* Navigation buttons */}
-      <div className="flex justify-between mt-8">
-        {step > 1 ? (
-          <button
-            onClick={() => setStep(step - 1)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <IconArrowLeft size={16} /> Anterior
-          </button>
-        ) : (
+        {/* Acciones */}
+        <div className="flex items-center justify-between pt-1">
           <Link
             href={AUTH_ROUTES.REGISTER}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             <IconArrowLeft size={16} /> Volver
           </Link>
-        )}
 
-        {step < 3 ? (
           <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Siguiente <IconArrowRight size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={isLoading}
             className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-white text-sm font-bold rounded-xl hover:bg-coral-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
@@ -490,8 +417,8 @@ export default function RegisterPropietarioPage() {
               </>
             )}
           </button>
-        )}
-      </div>
+        </div>
+      </form>
     </div>
   )
 }

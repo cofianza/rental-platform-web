@@ -7,11 +7,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 import { PageHeader, KPICard, Badge } from '@/components/ui'
 import {
   IconFolderOpen, IconCheck, IconClock, IconDollarSign,
-  IconChevronRight, IconRefresh, IconLoader, IconCalendar,
+  IconChevronRight, IconRefresh, IconCalendar,
 } from '@/components/icons'
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
@@ -24,10 +23,11 @@ import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
 import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
-import { OficinaVirtualHero } from '@/components/dashboard/OficinaVirtualHero'
-// TEMPORAL (Mario, 7-may-2026): herramienta de QA para limpiar la BD entre
-// rondas de prueba. Eliminar antes de produccion.
-import { WipeTestDataCard } from '@/components/dashboard/WipeTestDataCard'
+import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesPropietario'
+// Vista "Centro de Control" (Resumen) del administrador, mockup
+// htmls/15_COFIANZA_Dashboard_Interno_v2.html. Las demás secciones se movieron
+// a rutas del sidebar; el dashboard del admin muestra solo el Resumen.
+import { ResumenSection } from '@/components/dashboard/secciones/ResumenSection'
 
 // ── Date filter presets ─────────────────────────────────────
 
@@ -59,12 +59,16 @@ const AUTO_REFRESH_MS = 5 * 60 * 1000 // 5 minutes
 // ── Page Component ──────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { canAccess, hasRole } = usePermissions()
-  const canDoActions = hasRole('administrador') || hasRole('operador_analista')
+  const { hasRole } = usePermissions()
+  const isAdmin = hasRole('administrador')
   const isPropietario = hasRole('propietario')
   const isInmobiliaria = hasRole('inmobiliaria')
   const isSolicitante = hasRole('solicitante')
   const isExternalUser = isPropietario || isInmobiliaria || isSolicitante
+  // La vista operativa (KPIs + dona + pendientes) solo se renderiza para
+  // operador_analista / gerencia_consulta. Admin, solicitante y externos
+  // retornan antes, así que NO deben disparar los fetches ni el auto-refresh.
+  const needsOperativo = !isAdmin && !isSolicitante && !isExternalUser
 
   // State
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
@@ -120,18 +124,20 @@ export default function DashboardPage() {
   }, [filters])
 
   useEffect(() => {
+    if (!needsOperativo) return
     fetchAll()
-  }, [fetchAll])
+  }, [fetchAll, needsOperativo])
 
-  // Auto-refresh every 5 minutes
+  // Auto-refresh every 5 minutes (solo para la vista operativa)
   useEffect(() => {
+    if (!needsOperativo) return
     refreshTimer.current = setInterval(() => {
       fetchAll(false) // silent refresh without loading skeleton
     }, AUTO_REFRESH_MS)
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
-  }, [fetchAll])
+  }, [fetchAll, needsOperativo])
 
   // ── Filter handlers ─────────────────────────────────────
 
@@ -142,18 +148,30 @@ export default function DashboardPage() {
 
   // ── Render ──────────────────────────────────────────────
 
+  // Vista "Centro de Control" para administrador (mockup 15_*): solo el
+  // Resumen. Las demás secciones (Inmobiliarias, Propietarios, etc.) ahora
+  // viven como rutas del sidebar, no como tabs.
+  if (isAdmin) {
+    return <ResumenSection />
+  }
+
   // Vista simplificada para solicitante
   if (isSolicitante) {
     return <SolicitanteDashboard />
   }
 
-  // Vista simplificada para propietario/inmobiliaria
+  // Propietario: vista "Mis inmuebles" con sidebar (mockup 14) — tarjetas de
+  // propiedad con inquilino/contrato/pago reales + solicitudes de visita.
+  if (isPropietario) {
+    return <MisInmueblesPropietario />
+  }
+
+  // Vista simplificada para inmobiliaria (conserva el hero "Oficina Virtual")
   if (isExternalUser) {
     return (
       <div className="space-y-6">
-        {/* Hero "Tu Oficina Virtual" con stats reales del portafolio
-            (Mario 12-may-2026, mockup 13_*propietario.html) */}
-        <OficinaVirtualHero rol={isInmobiliaria ? 'inmobiliaria' : 'propietario'} />
+        {/* El hero "Oficina Virtual" ahora es persistente en el shell (sobre los
+            tabs), igual al mockup 13_v2 — ya no se renderiza aquí. */}
 
         {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio, generar contrato) */}
         <AccionesPendientesWidget />
@@ -385,9 +403,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* TEMPORAL: herramienta de QA "Borrar datos de prueba" — solo admin.
-          Eliminar antes de produccion. */}
-      {hasRole('administrador') && <WipeTestDataCard />}
     </div>
   )
 }

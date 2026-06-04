@@ -12,6 +12,7 @@
 import Link from 'next/link'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 
+// Beneficios del panel izquierdo — alineados al mockup htmls/02_*.
 const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = [
   {
     icon: (
@@ -20,8 +21,8 @@ const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = 
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
     ),
-    title: 'Sin codeudor humano',
-    desc: 'Nosotros firmamos como tu fiador. Tú no le debes el favor a nadie.',
+    title: 'Fiador solidario en cada contrato',
+    desc: 'Un codeudor profesional que siempre cumple. Sin excusas, sin demoras.',
   },
   {
     icon: (
@@ -30,8 +31,8 @@ const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = 
         <polyline points="12 6 12 12 16 14" />
       </svg>
     ),
-    title: 'Respuesta en segundos',
-    desc: 'Pagas el estudio, lo consultamos en bases de datos y firmamos.',
+    title: 'Evaluación crediticia en segundos',
+    desc: 'Tu candidato paga el estudio, nosotros lo evaluamos al instante.',
   },
   {
     icon: (
@@ -39,18 +40,18 @@ const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = 
         <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
     ),
-    title: 'Cashback del 30%',
-    desc: 'Si cumples sin moras, recuperas el 30% de las comisiones pagadas.',
+    title: 'Pago garantizado desde día 20',
+    desc: 'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
   },
   {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round">
-        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-        <polyline points="16 7 22 7 22 13" />
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
-    title: 'Reporte positivo a centrales',
-    desc: 'Cada mes que pagas a tiempo construye tu historial crediticio.',
+    title: 'Vitrina + prospectos gratis',
+    desc: 'Publica tus inmuebles disponibles y recibe interesados sin costo.',
   },
 ]
 
@@ -90,16 +91,17 @@ export default function AuthLayout({
         <div className="relative z-10 flex-1 flex flex-col justify-center mt-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 pl-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-white/60 w-fit mb-6">
             <span className="w-[7px] h-[7px] rounded-full bg-primary-400 animate-pulse" />
-            Tu fianza digital, en segundos
+            Tu aliado para arrendar sin riesgo
           </div>
 
           <h1 className="font-black leading-[1.05] tracking-[-2.5px] text-[clamp(36px,4.5vw,56px)] mb-3.5">
-            ¿Te pidieron fiador?
+            Tu inmueble, nuestro respaldo.
           </h1>
           <p
             className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(18px,2.2vw,26px)] tracking-[-0.5px] text-white/55 leading-[1.3] mb-8"
           >
-            <strong className="text-coral-500 font-normal">Soy yo.</strong> Llámanos.
+            Cofianza firma como fiador en tus contratos.{' '}
+            <strong className="text-coral-500 font-normal">Tú arriendas tranquilo.</strong>
           </p>
 
           <ul className="list-none space-y-0">

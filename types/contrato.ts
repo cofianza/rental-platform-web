@@ -187,7 +187,8 @@ export interface IContratoTransitionInput {
 export interface IContratoListItem extends IContrato {
   expedientes?: {
     numero: string
-    inmuebles?: { direccion: string; ciudad: string } | null
+    inmuebles?: { codigo?: string | null; direccion: string; ciudad: string } | null
+    solicitantes?: { nombre: string | null; apellido: string | null } | null
   } | null
 }
 

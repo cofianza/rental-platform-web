@@ -8,7 +8,7 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -54,6 +54,15 @@ const SECCIONES: Array<{
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['inmobiliaria', 'administrador'],
+  },
+  {
+    id: 'tesoreria',
+    href: '/configuracion/tesoreria',
+    titulo: 'Tesorería',
+    descripcion: 'Capital disponible y reserva mínima de Cofianza. Alimenta el "Capital libre" del Centro de Control.',
+    icon: IconBank,
+    color: 'bg-blue-100 text-blue-600',
+    soloRoles: ['administrador'],
   },
   {
     id: 'plantillas-contrato',

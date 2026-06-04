@@ -152,7 +152,7 @@ function LoginForm() {
         Inicia sesión
       </h2>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
-        Accede a tu panel y continúa tu solicitud de fianza.
+        Accede a tu oficina virtual.
       </p>
 
       {/* Tabs Iniciar sesión / Crear cuenta. El segundo es un Link a /registro

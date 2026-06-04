@@ -10,6 +10,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
 import {
@@ -72,10 +73,10 @@ const FASE_CONFIG: Record<MoraEstado, { label: string; chip: string; chipText: s
 
 const FILTROS: Array<{ key: 'todas' | MoraEstado; label: string }> = [
   { key: 'todas', label: 'Todas' },
-  { key: 'fase_1', label: '⏳ Fase 1' },
-  { key: 'fase_2', label: '🔶 Fase 2' },
-  { key: 'fase_3', label: '🔴 Fase 3' },
-  { key: 'pagada', label: '✅ Pagadas' },
+  { key: 'fase_1', label: 'Fase 1' },
+  { key: 'fase_2', label: 'Fase 2' },
+  { key: 'fase_3', label: 'Fase 3' },
+  { key: 'pagada', label: 'Pagadas' },
 ]
 
 export default function ReportarMoraPage() {
@@ -124,15 +125,19 @@ export default function ReportarMoraPage() {
   useEffect(() => {
     contratoService
       .getAllContratos({ estado: 'vigente', limit: 100 })
-      .then(async (res) => {
-        // Para mostrar inquilino + monto necesitamos detalle por contrato.
-        // En este MVP basta con número + monto del listado.
-        const items: ContratoSelectItem[] = res.data.map((c: { id: string; numero?: string | null; valor_arriendo?: number | null }) => ({
-          id: c.id,
-          numero: c.numero ?? c.id.slice(0, 8),
-          inquilino: '—',
-          monto: c.valor_arriendo ?? 0,
-        }))
+      .then((res) => {
+        // El listado embebe expedientes.solicitantes + inmuebles.codigo, así
+        // que mostramos arrendatario + código del inmueble (auto-llenado).
+        const items: ContratoSelectItem[] = res.data.map((c) => {
+          const sol = c.expedientes?.solicitantes
+          const inquilino = sol ? `${sol.nombre ?? ''} ${sol.apellido ?? ''}`.trim() : ''
+          return {
+            id: c.id,
+            numero: c.expedientes?.inmuebles?.codigo || c.expedientes?.numero || c.id.slice(0, 8),
+            inquilino: inquilino || '—',
+            monto: c.valor_arriendo ?? 0,
+          }
+        })
         setContratos(items)
       })
       .catch(() => setContratos([]))
@@ -187,13 +192,14 @@ export default function ReportarMoraPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Reportadas este mes" value={stats?.reportadas_mes ?? 0} />
-        <KpiCard label="Resueltas" value={stats?.resueltas ?? 0} color="primary" />
-        <KpiCard label="En gestión" value={stats?.en_gestion ?? 0} color="coral" />
+        <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? 0} sub="Este mes" />
+        <KpiCard label="Resueltas" value={stats?.resueltas ?? 0} color="primary" sub="Pagadas" />
+        <KpiCard label="En gestión" value={stats?.en_gestion ?? 0} color="coral" sub="Activas" />
         <KpiCard
           label="Monto en mora"
           value={formatCompactCOP(stats?.monto_total ?? 0)}
           color="red"
+          sub="Total adeudado"
         />
       </div>
 
@@ -225,7 +231,8 @@ export default function ReportarMoraPage() {
               <option value="">— Selecciona contrato —</option>
               {contratos.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.numero} · {formatCurrency(c.monto)}
+                  {c.numero}
+                  {c.inquilino !== '—' ? ` — ${c.inquilino}` : ''} · {formatCurrency(c.monto)}
                 </option>
               ))}
             </select>
@@ -248,6 +255,32 @@ export default function ReportarMoraPage() {
             />
           </div>
         </div>
+
+        {/* Datos auto-llenados del contrato seleccionado (mockup 13_v2). */}
+        {contratoId && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Inquilino</label>
+              <input
+                type="text"
+                readOnly
+                value={contratoSeleccionado?.inquilino ?? '—'}
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-50 text-gray-600 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fecha del reporte <span className="text-gray-400 font-normal">(hoy)</span>
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-50 text-gray-600 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -296,18 +329,29 @@ export default function ReportarMoraPage() {
 
       {/* Tabla de moras */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-bold text-gray-900 mr-auto">Seguimiento de moras</h3>
+        <div className="px-6 py-5 border-b border-gray-200 flex flex-wrap items-center gap-3">
+          <div className="mr-auto">
+            <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+              <span className="inline-block h-2 w-2 rounded-full bg-coral-500" />
+              Seguimiento de moras
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Haz clic en una fila para ver el detalle y el chat del inquilino.
+            </p>
+          </div>
           {FILTROS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFiltro(f.key)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors ${
                 filtro === f.key
-                  ? 'bg-primary-50 border-primary-400 text-primary-700'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-primary-300'
+                  ? 'border-primary-600 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
               }`}
             >
+              {f.key !== 'todas' && (
+                <span className={`h-1.5 w-1.5 rounded-full ${FASE_CONFIG[f.key as MoraEstado].bdot}`} />
+              )}
               {f.label}
             </button>
           ))}
@@ -324,7 +368,8 @@ export default function ReportarMoraPage() {
               : 'Sin resultados para este filtro.'}
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-max text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
@@ -342,10 +387,15 @@ export default function ReportarMoraPage() {
                 <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
                   Días
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Estado
+                <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                  Coa.
                 </th>
-                <th className="px-4 py-3 w-10" />
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                  Fase
+                </th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                  Expediente
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -376,6 +426,15 @@ export default function ReportarMoraPage() {
                       {formatCurrency(m.monto_mora)}
                     </td>
                     <td className="px-4 py-3 text-center text-gray-700">{dias}</td>
+                    <td className="px-4 py-3 text-center">
+                      {m.coarrendatario_nombre ? (
+                        <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+                          Sí
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border ${cfg.chip} ${cfg.chipText}`}
@@ -384,14 +443,20 @@ export default function ReportarMoraPage() {
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-400">
-                      <IconChevronRight size={16} />
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        href={`/expedientes/${m.expediente_id}`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900 whitespace-nowrap"
+                      >
+                        Ver expediente <IconChevronRight size={14} />
+                      </Link>
                     </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -414,26 +479,27 @@ export default function ReportarMoraPage() {
 function KpiCard({
   label,
   value,
+  sub,
   color,
 }: {
   label: string
   value: number | string
+  sub?: string
   color?: 'primary' | 'coral' | 'red'
 }) {
   const colorClass =
     color === 'primary'
-      ? 'text-primary-700'
+      ? 'text-primary-600'
       : color === 'coral'
-        ? 'text-coral-600'
+        ? 'text-coral-500'
         : color === 'red'
-          ? 'text-red-600'
+          ? 'text-red-500'
           : 'text-gray-900'
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
-        {label}
-      </p>
-      <p className={`text-3xl font-extrabold leading-none ${colorClass}`}>{value}</p>
+    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
+      <p className={`text-3xl font-black leading-none tracking-tight ${colorClass}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 /**
- * Hero gradient esmeralda con stats reales del portafolio del propietario/
- * inmobiliaria — sustituye al PageHeader plano en `/dashboard` cuando el
- * usuario es external (Mario 12-may-2026, mockup 13_*propietario.html).
+ * Hero gradient esmeralda (full-width) con stats reales del portafolio de la
+ * inmobiliaria. Persistente en el shell, sobre los tabs (mockup
+ * htmls/13_COFIANZA_Oficina_Virtual_v2.html).
  */
 
 'use client'
@@ -10,10 +10,6 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
-
-interface Props {
-  rol: 'propietario' | 'inmobiliaria'
-}
 
 function formatCompactCOP(monto: number): string {
   if (monto >= 1_000_000) {
@@ -26,7 +22,7 @@ function formatCompactCOP(monto: number): string {
   return formatCurrency(monto)
 }
 
-export function OficinaVirtualHero({ rol }: Props) {
+export function OficinaVirtualHero() {
   const [stats, setStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -37,17 +33,15 @@ export function OficinaVirtualHero({ rol }: Props) {
       .finally(() => setLoading(false))
   }, [])
 
-  const titulo = rol === 'inmobiliaria' ? 'Oficina Virtual Inmobiliaria' : 'Tu Oficina Virtual'
-  const subtitulo = rol === 'inmobiliaria'
-    ? 'Gestiona inmuebles, expedientes y recaudos de tu cartera con Cofianza.'
-    : 'Gestiona propiedades, inquilinos y recaudos con seguridad y control total.'
+  const titulo = 'Tu Oficina Virtual'
+  const subtitulo = 'Gestiona propiedades, inquilinos y recaudos con seguridad y control total.'
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg">
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 to-primary-700 text-white">
       <div className="absolute -top-12 -right-12 w-56 h-56 bg-white/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-8 -left-8 w-44 h-44 bg-coral-300/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto]">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
             {titulo}
@@ -70,7 +64,7 @@ export function OficinaVirtualHero({ rol }: Props) {
           />
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

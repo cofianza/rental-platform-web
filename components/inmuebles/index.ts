@@ -28,6 +28,9 @@ export { GaleriaSection } from './GaleriaSection'
 // Widget de solicitudes de visita pendientes (nueva propuesta UI Mario 12-may-2026)
 export { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
 
+// Vista re-skineada de Propiedades y Vitrina para la inmobiliaria (mockup 13_v2)
+export { PropiedadesInmobiliariaView } from './PropiedadesInmobiliariaView'
+
 // Preview de plantilla del contrato
 export { PlantillaContratoPreview } from './PlantillaContratoPreview'
 

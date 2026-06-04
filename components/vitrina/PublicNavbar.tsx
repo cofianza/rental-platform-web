@@ -32,22 +32,16 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
 
   return (
     <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center gap-6">
+      {/* Full-width con padding 40px (mockup 01_*: nav padding 12px 40px),
+          no se constriñe a un contenedor centrado. */}
+      <div className="px-5 sm:px-8 lg:px-10 py-3 flex justify-between items-center gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <CofianzaLogo size={32} withText textClassName="text-xl" />
         </Link>
 
-        {/* Nav links — desktop only */}
+        {/* Nav links — desktop only (orden del mockup 01_*) */}
         <nav className="hidden md:flex items-center gap-7">
-          <Link
-            href="/vitrina"
-            className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
-              pathname === '/vitrina' ? 'text-primary-700' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <IconHome size={16} /> Ver inmuebles
-          </Link>
           <Link
             href={sectionLink('#como-funciona')}
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
@@ -59,6 +53,12 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Para quién
+          </Link>
+          <Link
+            href={sectionLink('#vitrina')}
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Inmuebles
           </Link>
           <Link
             href={sectionLink('#preguntas')}
@@ -86,6 +86,16 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
         ) : (
           <div className="flex items-center gap-2 shrink-0">
             <Link
+              href="/vitrina"
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                pathname === '/vitrina'
+                  ? 'text-primary-700 bg-primary-50'
+                  : 'text-primary-600 hover:bg-primary-50'
+              }`}
+            >
+              <IconHome size={16} /> Ver inmuebles
+            </Link>
+            <Link
               href="/login"
               className="px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
             >
@@ -95,7 +105,7 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
               href="/registro"
               className="px-3 sm:px-5 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
             >
-              Solicita tu fiador
+              Registrarme
             </Link>
           </div>
         )}

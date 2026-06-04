@@ -21,15 +21,56 @@ export interface NavItem {
   // roles que técnicamente tienen `read` pero no deben verlas en la nav
   // (ej: solicitante tiene citas.read pero el kanban es solo operativo).
   requiredRoles?: UserRole[]
+  // Grupo del sidebar (mockup 15_*: Principal / Operación / Financiero /
+  // Administración). El Sidebar renderiza un encabezado por grupo. Ítems sin
+  // grupo se muestran planos arriba.
+  group?: string
 }
 
+// Grupos del sidebar en el orden de aparición (mockup 15_*).
+export const NAV_GROUPS = ['Principal', 'Operación', 'Financiero', 'Administración'] as const
+
 export const NAV_ITEMS: NavItem[] = [
+  // ── Principal ──────────────────────────────────────────────
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: 'LayoutDashboard',
     description: 'Vista general y KPIs',
     resource: 'dashboard',
+    group: 'Principal',
+  },
+
+  // ── Operación ──────────────────────────────────────────────
+  // Gestión de aliados (perfiles) — solo administrador. Reusan el recurso
+  // 'usuarios' para el chequeo RBAC (el admin lo tiene); el CRUD real se
+  // apoya en userService filtrando por rol.
+  {
+    label: 'Inmobiliarias',
+    href: '/inmobiliarias',
+    icon: 'Building2',
+    description: 'Aliados inmobiliarios: contratos, canon y estado',
+    resource: 'usuarios',
+    requiredRoles: ['administrador'],
+    group: 'Operación',
+  },
+  {
+    label: 'Propietarios',
+    href: '/propietarios',
+    icon: 'User',
+    description: 'Propietarios directos y su portafolio',
+    resource: 'usuarios',
+    requiredRoles: ['administrador'],
+    group: 'Operación',
+  },
+  {
+    label: 'Inquilinos',
+    href: '/inquilinos',
+    icon: 'UserCheck',
+    description: 'Arrendatarios con contrato activo',
+    resource: 'usuarios',
+    requiredRoles: ['administrador'],
+    group: 'Operación',
   },
   {
     // Rename Mario 12-may-2026: "Inmuebles" -> "Propiedades y Vitrina".
@@ -38,9 +79,10 @@ export const NAV_ITEMS: NavItem[] = [
     // La ruta sigue siendo /inmuebles para preservar deep-links.
     label: 'Propiedades y Vitrina',
     href: '/inmuebles',
-    icon: 'Building2',
+    icon: 'Home',
     description: 'Gestión de propiedades y publicación en la vitrina',
     resource: 'inmuebles',
+    group: 'Operación',
   },
   {
     label: 'Expedientes',
@@ -48,6 +90,18 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'FolderOpen',
     description: 'Casos de arrendamiento',
     resource: 'expedientes',
+    group: 'Operación',
+  },
+  {
+    // Contratos: la ruta /contratos ya existe con su flujo. Se expone en el
+    // sidebar para los roles operativos (antes solo se accedía vía expediente).
+    label: 'Contratos',
+    href: '/contratos',
+    icon: 'FileText',
+    description: 'Contratos de arrendamiento',
+    resource: 'contratos',
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta'],
+    group: 'Operación',
   },
   {
     label: 'Citas',
@@ -56,6 +110,7 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Gestiona visitas a tus inmuebles',
     resource: 'citas',
     requiredRoles: ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'],
+    group: 'Operación',
   },
   {
     label: 'Disponibilidad',
@@ -64,18 +119,28 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'Horarios para agendar visitas',
     resource: 'disponibilidad',
     requiredRoles: ['propietario', 'inmobiliaria', 'administrador'],
+    group: 'Operación',
   },
-  // 'Contratos' y 'Estudios' como tabs del sidebar quedaron deprecados:
-  // ambos viven dentro del expediente (pestanas 'Contratos' y 'Estudios')
-  // donde tienen contexto. Las rutas /contratos y /estudios siguen
-  // accesibles via URL pero ya no aparecen en navegacion.
+
+  // ── Financiero ─────────────────────────────────────────────
   {
-    // Rename Mario 12-may-2026: "Reportes" -> "Analítica".
-    label: 'Analítica',
-    href: '/reportes',
-    icon: 'BarChart3',
-    description: 'Reportes y analítica de tu operación',
+    label: 'Ingresos',
+    href: '/ingresos',
+    icon: 'DollarSign',
+    description: 'Ingresos por afianzamiento e IVA',
     resource: 'reportes',
+    requiredRoles: ['administrador'],
+    group: 'Financiero',
+  },
+  {
+    // Mora: la ruta /moras ya existe. No hay Resource 'moras', así que se
+    // gatea solo por rol.
+    label: 'Mora',
+    href: '/moras',
+    icon: 'AlertTriangle',
+    description: 'Cobranza y gestión de mora',
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta'],
+    group: 'Financiero',
   },
   {
     // Rename Mario 12-may-2026: "Facturación" -> "Pagos a Cofianza".
@@ -90,6 +155,27 @@ export const NAV_ITEMS: NavItem[] = [
     // nombre, no el propietario individual. El propietario consulta los
     // pagos y contratos en su expediente; no necesita el panel fiscal.
     requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria', 'solicitante'],
+    group: 'Financiero',
+  },
+  {
+    // Rename Mario 12-may-2026: "Reportes" -> "Analítica".
+    label: 'Analítica',
+    href: '/reportes',
+    icon: 'BarChart3',
+    description: 'Reportes y analítica de tu operación',
+    resource: 'reportes',
+    group: 'Financiero',
+  },
+
+  // ── Administración ─────────────────────────────────────────
+  {
+    label: 'Soporte',
+    href: '/soporte',
+    icon: 'Inbox',
+    description: 'Tickets de soporte funcional',
+    resource: 'dashboard',
+    requiredRoles: ['administrador'],
+    group: 'Administración',
   },
   {
     label: 'Usuarios',
@@ -97,6 +183,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'Users',
     description: 'Gestión de usuarios',
     resource: 'usuarios',
+    group: 'Administración',
   },
   {
     label: 'Bitácora',
@@ -104,6 +191,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'ClipboardList',
     description: 'Registro de actividad',
     resource: 'bitacora',
+    group: 'Administración',
   },
   {
     label: 'Plantillas',
@@ -111,17 +199,15 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'ScrollText',
     description: 'Plantillas de contrato',
     resource: 'plantillas',
+    group: 'Administración',
   },
-  // 'Tipos Documento' eliminado del sidebar para todos los roles. La gestion
-  // de tipos es configuracion interna que vive en /configuracion (admin).
-  // La ruta /tipos-documento sigue accesible via URL si alguien la abre
-  // directo, pero ya no aparece en navegacion.
   {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',
     description: 'Configuración del sistema',
     resource: 'configuracion',
+    group: 'Administración',
   },
 ]
 

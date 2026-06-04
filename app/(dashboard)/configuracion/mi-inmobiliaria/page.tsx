@@ -18,6 +18,14 @@ import {
   IconTrash,
   IconAlertTriangle,
   IconChevronLeft,
+  IconDownload,
+  IconFileText,
+  IconBuilding2,
+  IconReceipt,
+  IconFileCheck,
+  IconId,
+  IconScrollText,
+  IconShieldCheck,
 } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -25,12 +33,15 @@ import {
   type IDocumentoLegalResumen,
   type TipoDocumentoLegal,
 } from '@/services/documentosLegalesService'
+import { perfilArrendadorService, type IPerfilArrendador } from '@/services/perfilArrendadorService'
 
 interface TipoConfig {
   tipo: TipoDocumentoLegal
   titulo: string
   descripcion: string
   obligatorio: boolean
+  // Icono de la librería (@/components/icons) para el icon-wrap de la card.
+  icon: typeof IconFileText
   // Si aplica solo a inmobiliarias (no propietarios individuales).
   soloInmobiliaria?: boolean
 }
@@ -41,6 +52,7 @@ const TIPOS: TipoConfig[] = [
     titulo: 'Cámara de Comercio',
     descripcion: 'Certificado de existencia y representación legal vigente (menos de 30 días).',
     obligatorio: true,
+    icon: IconBuilding2,
     soloInmobiliaria: true,
   },
   {
@@ -48,12 +60,14 @@ const TIPOS: TipoConfig[] = [
     titulo: 'RUT',
     descripcion: 'Registro Único Tributario actualizado por la DIAN.',
     obligatorio: true,
+    icon: IconReceipt,
   },
   {
     tipo: 'matricula_arrendador',
     titulo: 'Matrícula de Arrendador',
     descripcion: 'Matrícula otorgada por la alcaldía para operar como arrendador.',
     obligatorio: true,
+    icon: IconFileCheck,
     soloInmobiliaria: true,
   },
   {
@@ -61,24 +75,28 @@ const TIPOS: TipoConfig[] = [
     titulo: 'Cédula del Representante Legal',
     descripcion: 'Cédula de ciudadanía del representante legal por ambos lados.',
     obligatorio: true,
+    icon: IconId,
   },
   {
     tipo: 'poder_notarial',
     titulo: 'Poder Notarial',
     descripcion: 'Solo si actúa con poder otorgado por el propietario.',
     obligatorio: false,
+    icon: IconScrollText,
   },
   {
     tipo: 'poliza',
     titulo: 'Póliza de Seguros',
     descripcion: 'Póliza de responsabilidad civil o cumplimiento, según aplique.',
     obligatorio: false,
+    icon: IconShieldCheck,
   },
   {
     tipo: 'contrato_marco',
     titulo: 'Contrato Marco con Cofianza',
     descripcion: 'Contrato firmado entre tu inmobiliaria/propietario y Cofianza. Lo gestiona nuestro equipo.',
     obligatorio: true,
+    icon: IconFileText,
     soloInmobiliaria: true,
   },
 ]
@@ -90,6 +108,7 @@ export default function MiInmobiliariaPage() {
 
   const [docs, setDocs] = useState<IDocumentoLegalResumen[]>([])
   const [loading, setLoading] = useState(true)
+  const [perfil, setPerfil] = useState<IPerfilArrendador | null>(null)
 
   const fetchDocs = async () => {
     setLoading(true)
@@ -105,6 +124,12 @@ export default function MiInmobiliariaPage() {
 
   useEffect(() => {
     fetchDocs()
+  }, [])
+
+  // Identidad (logo / nombre / NIT / dirección) — se edita en datos-contrato;
+  // aquí solo la mostramos para que esta pantalla refleje el mockup.
+  useEffect(() => {
+    perfilArrendadorService.getMe().then(setPerfil).catch(() => {})
   }, [])
 
   // Filtrar tipos según rol: el propietario no necesita Cámara de Comercio,
@@ -168,26 +193,89 @@ export default function MiInmobiliariaPage() {
         </div>
       )}
 
-      {/* Grid de documentos */}
-      {loading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <IconLoader size={16} className="animate-spin" /> Cargando documentos...
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tiposVisibles.map((cfg) => {
-            const doc = docs.find((d) => d.tipo === cfg.tipo)
-            return (
-              <DocumentoCard
-                key={cfg.tipo}
-                config={cfg}
-                resumen={doc}
-                onChange={fetchDocs}
-              />
-            )
-          })}
+      {/* Identidad de la inmobiliaria (solo lectura; editar en datos-contrato) */}
+      {perfil && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">
+            Identidad de {isInmobiliaria ? 'la inmobiliaria' : 'tu perfil'}
+          </h3>
+          <div className="flex flex-col sm:flex-row gap-5">
+            <div className="shrink-0">
+              {perfil.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={perfil.logo_url}
+                  alt="Logo"
+                  className="h-20 w-20 rounded-lg object-contain border border-gray-200 bg-gray-50"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-[11px] text-gray-400 text-center px-2">
+                  Sin logo
+                </div>
+              )}
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-400">Nombre comercial</div>
+                <div className="font-medium text-gray-900">
+                  {perfil.razon_social || `${perfil.nombre} ${perfil.apellido}`.trim() || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-400">NIT / Documento</div>
+                <div className="font-medium text-gray-900">{perfil.numero_documento || '—'}</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-400">Dirección</div>
+                <div className="font-medium text-gray-900">
+                  {[perfil.domicilio_direccion, perfil.domicilio_ciudad].filter(Boolean).join(', ') || '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-400">Contacto</div>
+                <div className="font-medium text-gray-900">
+                  {perfil.whatsapp_recaudo || perfil.email_recaudo || '—'}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 text-right">
+            <Link
+              href="/configuracion/datos-contrato"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline"
+            >
+              Editar datos →
+            </Link>
+          </div>
         </div>
       )}
+
+      {/* Documentos legales */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
+            Documentos legales requeridos
+          </h3>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Requeridos por Cofianza para el vínculo. La validación la hace nuestro equipo tras cargar cada uno.
+          </p>
+        </div>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <IconLoader size={16} className="animate-spin" /> Cargando documentos...
+          </div>
+        ) : (
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+            {tiposVisibles.map((cfg) => {
+              const doc = docs.find((d) => d.tipo === cfg.tipo)
+              return (
+                <DocumentoCard key={cfg.tipo} config={cfg} resumen={doc} onChange={fetchDocs} />
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -261,40 +349,54 @@ function DocumentoCard({
     })
   }
 
+  const Icon = config.icon
+
   return (
     <div
-      className={`border rounded-lg p-5 transition-colors ${
+      className={`flex flex-col rounded-xl border p-5 transition-colors ${
         cargado ? 'border-primary-200 bg-primary-50/40' : 'border-gray-200 bg-white'
       }`}
     >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div>
-          <h3 className="font-semibold text-gray-900 mb-0.5">{config.titulo}</h3>
-          {config.obligatorio ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
-              Obligatorio
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-              Opcional
-            </span>
-          )}
+      {/* Icon-wrap + estado (Cargado / Pendiente) con puntito */}
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+            cargado ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          <Icon size={22} />
         </div>
-        {cargado && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800 whitespace-nowrap">
-            <IconCheck size={12} /> Cargado
-          </span>
-        )}
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+            cargado ? 'bg-primary-50 text-primary-700' : 'bg-amber-50 text-amber-700'
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${cargado ? 'bg-primary-500' : 'bg-amber-500'}`} />
+          {cargado ? 'Cargado' : 'Pendiente'}
+        </span>
       </div>
 
-      <p className="text-xs text-gray-600 mb-3 leading-relaxed">{config.descripcion}</p>
+      <h3 className="text-sm font-bold text-gray-900">{config.titulo}</h3>
+      <span
+        className={`mt-1 inline-flex w-fit items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+          config.obligatorio ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'
+        }`}
+      >
+        {config.obligatorio ? 'Obligatorio' : 'Opcional'}
+      </span>
+
+      <p className="mt-2 text-xs leading-relaxed text-gray-600">{config.descripcion}</p>
 
       {cargado && documento && (
-        <div className="mb-3 text-xs text-gray-600 bg-white border border-gray-200 rounded p-2">
-          <p className="font-medium text-gray-800 truncate" title={documento.nombre_archivo}>
-            📄 {documento.nombre_archivo}
+        <div className="mt-3 rounded-lg border border-gray-200 bg-white p-2 text-xs text-gray-600">
+          <p
+            className="flex items-center gap-1.5 font-medium text-gray-800"
+            title={documento.nombre_archivo}
+          >
+            <IconFileText size={13} className="shrink-0 text-gray-400" />
+            <span className="truncate">{documento.nombre_archivo}</span>
           </p>
-          <p className="text-gray-500 mt-0.5">
+          <p className="mt-0.5 text-gray-500">
             {(documento.tamano_bytes / 1024).toFixed(0)} KB ·{' '}
             {new Date(documento.subido_en).toLocaleDateString('es-CO', {
               day: '2-digit',
@@ -305,41 +407,42 @@ function DocumentoCard({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      {/* Acciones — botón de subida ancho (dashed → solid verde cuando cargado) */}
+      <div className="mt-auto space-y-2 pt-4">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading || removing}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+          className={`flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] px-3 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+            cargado
+              ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100'
+              : 'border-dashed border-gray-300 text-gray-600 hover:border-primary-500 hover:text-primary-700'
+          }`}
         >
-          {uploading ? (
-            <IconLoader size={14} className="animate-spin" />
-          ) : (
-            <IconUpload size={14} />
-          )}
-          {cargado ? 'Reemplazar' : 'Subir'}
+          {uploading ? <IconLoader size={14} className="animate-spin" /> : <IconUpload size={14} />}
+          {cargado ? 'Reemplazar documento' : 'Subir documento'}
         </button>
 
         {cargado && (
-          <>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={handleDownload}
               disabled={uploading || removing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
-              Descargar
+              <IconDownload size={14} /> Descargar
             </button>
             <button
               type="button"
               onClick={handleDelete}
               disabled={uploading || removing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50"
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
             >
               {removing ? <IconLoader size={14} className="animate-spin" /> : <IconTrash size={14} />}
               Eliminar
             </button>
-          </>
+          </div>
         )}
 
         <input

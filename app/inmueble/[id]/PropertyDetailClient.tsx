@@ -5,15 +5,16 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Lightbox } from '@/components/ui/Lightbox'
 import {
   IconHome, IconBed, IconBath, IconCar, IconRuler, IconMapPin,
-  IconChevronLeft, IconChevronRight, IconCalendar,
+  IconCalendar,
 } from '@/components/icons'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { MeInteresaCTA } from '@/components/vitrina/MeInteresaCTA'
+import { registrarVisitaInmueble } from '@/services/publicPropertiesService'
 import type { PublicProperty } from '@/services/publicPropertiesService'
 
 const TIPO_LABELS: Record<string, string> = {
@@ -29,6 +30,12 @@ export function PropertyDetailClient({ property, similares }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [selectedPhoto, setSelectedPhoto] = useState(0)
+
+  // Registra una visita anónima al detalle del inmueble. Se ejecuta una sola
+  // vez al montar y NO bloquea ni propaga errores (analítica best-effort).
+  useEffect(() => {
+    registrarVisitaInmueble(property.id)
+  }, [property.id])
 
   // El backend ya ordena: es_fachada DESC, orden ASC (ver
   // public-properties.service.ts). Antes intentabamos reordenar aqui

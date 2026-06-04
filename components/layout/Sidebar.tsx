@@ -33,6 +33,16 @@ export function Sidebar() {
     return true
   })
 
+  // Agrupar los ítems visibles por `group`, preservando el orden de aparición.
+  // Los ítems sin grupo caen en un primer bloque sin encabezado.
+  const groupedNav: Array<{ group: string; items: typeof visibleNavItems }> = []
+  for (const item of visibleNavItems) {
+    const g = item.group ?? ''
+    const existing = groupedNav.find((x) => x.group === g)
+    if (existing) existing.items.push(item)
+    else groupedNav.push({ group: g, items: [item] })
+  }
+
   // Cerrar sidebar en mobile al navegar
   useEffect(() => {
     closeSidebar()
@@ -123,65 +133,92 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Items de navegación */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {visibleNavItems.map((item) => {
-            const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP]
-            const active = isActive(item.href)
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                  'group relative',
-                  active
-                    ? 'bg-primary-700 text-white hover:bg-primary-800'
-                    : 'text-gray-700 hover:bg-gray-100'
-                )}
-                aria-current={active ? 'page' : undefined}
-              >
-                {Icon && (
-                  <Icon
-                    size={20}
+        {/* Items de navegación (agrupados — mockup 15_*) */}
+        <nav className="flex-1 px-2 py-4 overflow-y-auto">
+          {groupedNav.map((grp, gi) => (
+            <div key={grp.group || `_${gi}`} className={cn(gi > 0 && 'mt-4')}>
+              {/* Encabezado de grupo: texto en modo expandido; separador sutil
+                  en modo colapsado (tablet / desktop colapsado). */}
+              {grp.group && (
+                <>
+                  <div
                     className={cn(
-                      'shrink-0',
-                      active ? 'text-white' : 'text-gray-600 group-hover:text-gray-900'
+                      'px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400',
+                      'md:hidden',
+                      sidebarExpanded && 'lg:block'
                     )}
-                  />
-                )}
-
-                {/* Texto del item - visible en mobile y desktop expandido, oculto en tablet */}
-                <span
-                  className={cn(
-                    'font-medium text-sm truncate',
-                    // Mobile: siempre visible
-                    // Tablet (md:): oculto
-                    // Desktop (lg:): visible solo si expandido
-                    'md:hidden',
-                    sidebarExpanded && 'lg:inline'
+                  >
+                    {grp.group}
+                  </div>
+                  {gi > 0 && (
+                    <div
+                      className={cn(
+                        'mx-3 mb-2 border-t border-gray-100',
+                        'hidden md:block',
+                        sidebarExpanded && 'lg:hidden'
+                      )}
+                    />
                   )}
-                >
-                  {item.label}
-                </span>
+                </>
+              )}
 
-                {/* Tooltip para modo colapsado (tablet y desktop colapsado) */}
-                <div
-                  className={cn(
-                    'absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md',
-                    'opacity-0 invisible group-hover:opacity-100 group-hover:visible',
-                    'transition-all whitespace-nowrap z-50 pointer-events-none',
-                    // Mostrar tooltip solo en tablet o desktop colapsado
-                    'hidden md:block',
-                    sidebarExpanded && 'lg:hidden'
-                  )}
-                >
-                  {item.label}
-                </div>
-              </Link>
-            )
-          })}
+              <div className="space-y-1">
+                {grp.items.map((item) => {
+                  const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP]
+                  const active = isActive(item.href)
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                        'group relative',
+                        active
+                          ? 'bg-primary-700 text-white hover:bg-primary-800'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      )}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {Icon && (
+                        <Icon
+                          size={20}
+                          className={cn(
+                            'shrink-0',
+                            active ? 'text-white' : 'text-gray-600 group-hover:text-gray-900'
+                          )}
+                        />
+                      )}
+
+                      {/* Texto del item - visible en mobile y desktop expandido, oculto en tablet */}
+                      <span
+                        className={cn(
+                          'font-medium text-sm truncate',
+                          'md:hidden',
+                          sidebarExpanded && 'lg:inline'
+                        )}
+                      >
+                        {item.label}
+                      </span>
+
+                      {/* Tooltip para modo colapsado (tablet y desktop colapsado) */}
+                      <div
+                        className={cn(
+                          'absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md',
+                          'opacity-0 invisible group-hover:opacity-100 group-hover:visible',
+                          'transition-all whitespace-nowrap z-50 pointer-events-none',
+                          'hidden md:block',
+                          sidebarExpanded && 'lg:hidden'
+                        )}
+                      >
+                        {item.label}
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Vitrina publica + Cerrar sesion */}

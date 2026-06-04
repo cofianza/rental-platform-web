@@ -27,7 +27,9 @@ export interface IAutorizacionPublicData {
   solicitante: {
     nombre: string
     apellido: string
-    email: string
+    // El backend ya NO expone el email al portador del token (PII minimizada).
+    email?: string
+    telefono_masked?: string | null
   }
   expediente: {
     numero_expediente: string
@@ -49,6 +51,11 @@ export interface IFirmarInput {
   metodo_firma: MetodoFirma
   datos_firma?: string
   codigo_otp?: string
+  consentimientos_opcionales?: {
+    analitica?: boolean
+    comercial?: boolean
+    historial_referencia?: boolean
+  }
 }
 
 export interface IFirmarResponse {

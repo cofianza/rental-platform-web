@@ -71,7 +71,7 @@ const TABS: TabDef[] = [
   },
   {
     label: 'Mi Inmobiliaria',
-    href: '/configuracion',
+    href: '/configuracion/mi-inmobiliaria',
     icon: IconFolderOpen,
     matchers: ['/configuracion'],
   },

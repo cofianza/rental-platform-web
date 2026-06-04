@@ -30,6 +30,10 @@ export interface IMoraTicket {
   pagada_at: string | null
   cancelada_at: string | null
   cancelado_motivo: string | null
+  // Desembolso de Cofianza al propietario (migración 20260528000001).
+  cofianza_pago_realizado: boolean | null
+  cofianza_pago_monto: number | null
+  cofianza_pago_fecha: string | null
   created_at: string
   updated_at: string
 }

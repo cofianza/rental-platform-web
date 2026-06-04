@@ -139,3 +139,61 @@ body {
   height: 0;
   pointer-events: none;
 }
+
+/* ============================================================
+   Accesibilidad (WCAG 2.2) — reglas transversales
+   ============================================================ */
+
+/* 2.4.7 Foco visible: anillo de foco consistente para navegación por teclado.
+   Con :focus-visible solo aparece al tabular (no al hacer click con mouse),
+   así que no ensucia la UI pero garantiza que el teclado siempre ve el foco. */
+:focus-visible {
+  outline: 2px solid var(--color-primary-600, #059669);
+  outline-offset: 2px;
+}
+
+/* 2.3 Movimiento: respeta la preferencia del SO de reducir animaciones
+   (transiciones de hover, spinners, reveals del dashboard, etc.). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Dashboard — reveal escalonado de KPIs al montar la sección.
+   Un solo momento orquestado en la carga (no micro-animaciones
+   dispersas). El bloque reduced-motion de arriba lo neutraliza
+   para quienes lo prefieren.
+   ============================================================ */
+@keyframes dash-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-reveal > * {
+  animation: dash-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.dash-reveal > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.dash-reveal > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.dash-reveal > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.dash-reveal > *:nth-child(5) {
+  animation-delay: 240ms;
+}

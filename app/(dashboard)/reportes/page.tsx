@@ -7,9 +7,14 @@
  * HP-363: Agregado reporte de tiempos por etapa
  */
 
+'use client'
+
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { IconBarChart3, IconUsers, IconDollarSign, IconClock, IconCheckCircle } from '@/components/icons'
+import { CarteraAnaliticaSection } from '@/components/dashboard/CarteraAnaliticaSection'
+import { RentabilidadPropietarioSection } from '@/components/dashboard/RentabilidadPropietarioSection'
+import { useAuthStore } from '@/stores/auth.store'
 
 // Configuración de reportes
 const REPORTES = [
@@ -64,6 +69,22 @@ const REPORTES = [
 ]
 
 export default function ReportesPage() {
+  const rol = useAuthStore((s) => s.user?.rol)
+
+  // Propietario: "Mi rentabilidad" (mockup 14) — calculadora con canon real +
+  // gastos locales. No ve el grid de reportes operativos del sistema.
+  if (rol === 'propietario') {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Mi rentabilidad"
+          subtitle="Analiza el rendimiento de cada inmueble. Edita gastos para ver el impacto en tu rentabilidad."
+        />
+        <RentabilidadPropietarioSection />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -71,6 +92,10 @@ export default function ReportesPage() {
         title="Reportes"
         subtitle="Estadísticas y métricas del sistema"
       />
+
+      {/* Analítica de cartera — solo inmobiliaria (mockup 13_v2). El componente
+          se auto-restringe por rol; para otros roles no renderiza nada. */}
+      <CarteraAnaliticaSection />
 
       {/* Grid de reportes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

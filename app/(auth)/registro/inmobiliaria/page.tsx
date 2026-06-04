@@ -49,8 +49,6 @@ const initialFormData: FormData = {
   accept_data_treatment: false,
 }
 
-const STEP_LABELS = ['Datos Empresa', 'Representante', 'Términos']
-
 /**
  * Valida el digito de verificacion del NIT colombiano con algoritmo modulo-11.
  */
@@ -75,36 +73,17 @@ function validateNitModulo11(nit: string): boolean {
   return checkDigit === expectedCheck
 }
 
-function StepIndicator({ currentStep }: { currentStep: number }) {
+// Encabezado de sección numerado (estilo mockup htmls/02_*).
+function FormSection({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-2 mb-8">
-      {STEP_LABELS.map((label, i) => {
-        const stepNum = i + 1
-        const isCompleted = stepNum < currentStep
-        const isCurrent = stepNum === currentStep
-        return (
-          <div key={label} className="flex items-center gap-2">
-            {i > 0 && (
-              <div className={cn('w-8 h-0.5', isCompleted ? 'bg-green-500' : 'bg-gray-200')} />
-            )}
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-                  isCompleted && 'bg-green-500 text-white',
-                  isCurrent && 'bg-primary-600 text-white',
-                  !isCompleted && !isCurrent && 'bg-gray-200 text-gray-500'
-                )}
-              >
-                {isCompleted ? <IconCheck size={16} /> : stepNum}
-              </div>
-              <span className={cn('text-xs', isCurrent ? 'text-primary-600 font-medium' : 'text-gray-400')}>
-                {label}
-              </span>
-            </div>
-          </div>
-        )
-      })}
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">
+          {num}
+        </span>
+        <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
+      </div>
+      {children}
     </div>
   )
 }
@@ -121,10 +100,7 @@ function PasswordRequirements({ password }: { password: string }) {
     <div className="mt-2 space-y-1">
       {checks.map((check) => (
         <div key={check.label} className="flex items-center gap-2">
-          <IconCheck
-            size={14}
-            className={check.met ? 'text-green-500' : 'text-gray-300'}
-          />
+          <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
           <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-400')}>
             {check.label}
           </span>
@@ -136,7 +112,6 @@ function PasswordRequirements({ password }: { password: string }) {
 
 export default function RegisterInmobiliariaPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
@@ -154,74 +129,64 @@ export default function RegisterInmobiliariaPage() {
     setServerError(null)
   }
 
-  const validateStep = (stepNum: number): boolean => {
+  // Valida TODOS los campos de una vez (sin pasos).
+  const validateAll = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (stepNum === 1) {
-      if (!formData.razon_social.trim()) newErrors.razon_social = 'Razón social requerida'
-      const numero = formData.nit_numero.trim()
-      const dv = formData.nit_dv.trim()
-      if (!numero) {
-        newErrors.nit_numero = 'Número de NIT requerido'
-      } else if (!/^\d{1,15}$/.test(numero)) {
-        newErrors.nit_numero = 'Sólo dígitos (máx 15)'
-      }
-      if (!dv) {
-        newErrors.nit_dv = 'DV'
-      } else if (!/^\d$/.test(dv)) {
-        newErrors.nit_dv = 'Un dígito'
-      } else if (numero && /^\d{1,15}$/.test(numero) && !validateNitModulo11(`${numero}-${dv}`)) {
-        newErrors.nit_dv = 'DV inválido'
-      }
-      if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Dirección comercial requerida'
-      if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
+    // Datos de la inmobiliaria
+    if (!formData.razon_social.trim()) newErrors.razon_social = 'Razón social requerida'
+    const numero = formData.nit_numero.trim()
+    const dv = formData.nit_dv.trim()
+    if (!numero) {
+      newErrors.nit_numero = 'Número de NIT requerido'
+    } else if (!/^\d{1,15}$/.test(numero)) {
+      newErrors.nit_numero = 'Sólo dígitos (máx 15)'
+    }
+    if (!dv) {
+      newErrors.nit_dv = 'DV'
+    } else if (!/^\d$/.test(dv)) {
+      newErrors.nit_dv = 'Un dígito'
+    } else if (numero && /^\d{1,15}$/.test(numero) && !validateNitModulo11(`${numero}-${dv}`)) {
+      newErrors.nit_dv = 'DV inválido'
+    }
+    if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Dirección comercial requerida'
+    if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
+
+    // Representante legal
+    if (!formData.nombre_representante_nombre.trim()) newErrors.nombre_representante_nombre = 'Nombre del representante requerido'
+    if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'Teléfono requerido'
+    } else {
+      const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
+      if (localDigits.length !== 10) newErrors.telefono = 'El teléfono debe tener 10 dígitos'
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email requerido'
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Email inválido'
     }
 
-    if (stepNum === 2) {
-      if (!formData.nombre_representante_nombre.trim()) newErrors.nombre_representante_nombre = 'Nombre del representante requerido'
-      if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
-      if (!formData.telefono.trim()) {
-        newErrors.telefono = 'Teléfono requerido'
-      } else {
-        // PhoneInput emite "+<dial> <local>"; exigimos 10 digitos sin espacios
-        // en el numero local.
-        const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-        if (localDigits.length !== 10) {
-          newErrors.telefono = 'El teléfono debe tener 10 dígitos'
-        }
-      }
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email requerido'
-      } else if (!isValidEmail(formData.email)) {
-        newErrors.email = 'Email inválido'
-      }
-      if (!formData.password) {
-        newErrors.password = 'Contraseña requerida'
-      } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-        newErrors.password = 'La contraseña no cumple los requisitos'
-      }
-      if (!formData.confirm_password) {
-        newErrors.confirm_password = 'Confirma tu contraseña'
-      } else if (formData.password !== formData.confirm_password) {
-        newErrors.confirm_password = 'Las contraseñas no coinciden'
-      }
+    // Acceso
+    if (!formData.password) {
+      newErrors.password = 'Contraseña requerida'
+    } else if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'La contraseña no cumple los requisitos'
     }
-
-    if (stepNum === 3) {
-      if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
-      if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
+    if (!formData.confirm_password) {
+      newErrors.confirm_password = 'Confirma tu contraseña'
+    } else if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = 'Las contraseñas no coinciden'
     }
+    if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
+    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep(step + 1)
-  }
-
   const handleSubmit = async () => {
-    if (!validateStep(3)) return
+    if (!validateAll()) return
 
     setIsLoading(true)
     setServerError(null)
@@ -262,6 +227,12 @@ export default function RegisterInmobiliariaPage() {
     }
   }
 
+  const inputCls = (hasError?: boolean) =>
+    cn(
+      'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+      hasError ? 'border-red-500' : 'border-gray-300',
+    )
+
   return (
     <div className="w-full">
       <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
@@ -270,14 +241,22 @@ export default function RegisterInmobiliariaPage() {
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
         Crea tu cuenta como Inmobiliaria
       </h1>
-      <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
+      <p className="text-[15px] text-slate-500 leading-[1.6] mb-6">
         Empresa o agencia que administra propiedades.{' '}
         <a href="/registro" className="text-primary-600 font-semibold hover:underline">
           ¿Otro tipo?
         </a>
       </p>
 
-      <StepIndicator currentStep={step} />
+      {/* Banner: contrato marco con Cofianza (primer paso tras el registro). */}
+      <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg mb-7">
+        <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
+        <span>
+          <strong className="font-semibold">Registro empresarial:</strong> una vez creada tu cuenta, te
+          contactaremos para firmar el <strong>contrato marco</strong> de vinculación y activar el panel
+          de gestión. Hasta entonces tu cuenta queda pre-activa.
+        </span>
+      </div>
 
       {serverError && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -285,9 +264,15 @@ export default function RegisterInmobiliariaPage() {
         </div>
       )}
 
-      {/* Step 1: Datos Empresa */}
-      {step === 1 && (
-        <div className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleSubmit()
+        }}
+        className="space-y-7"
+      >
+        {/* 1. Datos de la inmobiliaria */}
+        <FormSection num={1} title="Datos de la inmobiliaria">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Razón social</label>
             <div className="relative">
@@ -295,7 +280,7 @@ export default function RegisterInmobiliariaPage() {
               <input
                 type="text" value={formData.razon_social}
                 onChange={(e) => updateField('razon_social', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.razon_social ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.razon_social)}
                 placeholder="Nombre de la empresa"
               />
             </div>
@@ -312,10 +297,7 @@ export default function RegisterInmobiliariaPage() {
                   inputMode="numeric"
                   value={formData.nit_numero}
                   onChange={(e) => updateField('nit_numero', e.target.value.replace(/\D/g, '').slice(0, 15))}
-                  className={cn(
-                    'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-                    errors.nit_numero ? 'border-red-500' : 'border-gray-300',
-                  )}
+                  className={inputCls(!!errors.nit_numero)}
                   placeholder="900123456"
                 />
               </div>
@@ -337,9 +319,7 @@ export default function RegisterInmobiliariaPage() {
               </div>
             </div>
             {(errors.nit_numero || errors.nit_dv) && (
-              <p className="mt-1.5 text-sm text-red-600">
-                {errors.nit_numero || errors.nit_dv}
-              </p>
+              <p className="mt-1.5 text-sm text-red-600">{errors.nit_numero || errors.nit_dv}</p>
             )}
             <p className="mt-1 text-xs text-gray-400">
               Número (sin puntos) y dígito de verificación. Ejemplo: 900123456 - 9
@@ -353,7 +333,7 @@ export default function RegisterInmobiliariaPage() {
               <input
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.direccion_comercial ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.direccion_comercial)}
                 placeholder="Dirección de la sede principal"
               />
             </div>
@@ -367,18 +347,16 @@ export default function RegisterInmobiliariaPage() {
               <input
                 type="text" value={formData.ciudad}
                 onChange={(e) => updateField('ciudad', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.ciudad ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.ciudad)}
                 placeholder="Ciudad"
               />
             </div>
             {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
           </div>
-        </div>
-      )}
+        </FormSection>
 
-      {/* Step 2: Representante y Credenciales */}
-      {step === 2 && (
-        <div className="space-y-4">
+        {/* 2. Datos del representante legal */}
+        <FormSection num={2} title="Datos del representante legal">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del representante</label>
@@ -387,7 +365,7 @@ export default function RegisterInmobiliariaPage() {
                 <input
                   type="text" value={formData.nombre_representante_nombre}
                   onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.nombre_representante_nombre ? 'border-red-500' : 'border-gray-300')}
+                  className={inputCls(!!errors.nombre_representante_nombre)}
                   placeholder="Nombre"
                 />
               </div>
@@ -400,7 +378,7 @@ export default function RegisterInmobiliariaPage() {
                 <input
                   type="text" value={formData.nombre_representante_apellido}
                   onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.nombre_representante_apellido ? 'border-red-500' : 'border-gray-300')}
+                  className={inputCls(!!errors.nombre_representante_apellido)}
                   placeholder="Apellido"
                 />
               </div>
@@ -439,13 +417,16 @@ export default function RegisterInmobiliariaPage() {
               <input
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.email ? 'border-red-500' : 'border-gray-300')}
+                className={inputCls(!!errors.email)}
                 placeholder="contacto@empresa.com"
               />
             </div>
             {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
+        </FormSection>
 
+        {/* 3. Acceso a la plataforma */}
+        <FormSection num={3} title="Acceso a la plataforma">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
@@ -482,126 +463,57 @@ export default function RegisterInmobiliariaPage() {
             </div>
             {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
           </div>
-        </div>
-      )}
 
-      {/* Step 3: Terminos */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-600">
-            <p className="font-medium text-gray-900">Resumen de tu registro:</p>
-            <p><span className="font-medium">Empresa:</span> {formData.razon_social}</p>
-            <p><span className="font-medium">NIT:</span> {formData.nit_numero}-{formData.nit_dv}</p>
-            <p><span className="font-medium">Dirección:</span> {formData.direccion_comercial}, {formData.ciudad}</p>
-            <p>
-              <span className="font-medium">Representante:</span>{' '}
-              {formData.nombre_representante_nombre} {formData.nombre_representante_apellido}
-              {formData.cargo_representante.trim() ? ` · ${formData.cargo_representante.trim()}` : ''}
-            </p>
-            <p><span className="font-medium">Email:</span> {formData.email}</p>
-            <p><span className="font-medium">Teléfono:</span> {formData.telefono}</p>
-          </div>
+          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+            <input
+              type="checkbox"
+              checked={formData.accept_terms}
+              onChange={(e) => updateField('accept_terms', e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div>
+              <span className="text-sm text-gray-700">
+                Como representante legal, acepto los{' '}
+                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                  términos y condiciones
+                </Link>{' '}
+                del servicio
+              </span>
+              {errors.accept_terms && <p className="mt-1 text-xs text-red-600">{errors.accept_terms}</p>}
+            </div>
+          </label>
 
-          <div className="space-y-4">
-            <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
-              <input
-                type="checkbox"
-                checked={formData.accept_terms}
-                onChange={(e) => updateField('accept_terms', e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <div>
-                <span className="text-sm text-gray-700">
-                  Acepto los{' '}
-                  <Link
-                    href="/terminos"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary-600 font-medium underline hover:text-primary-700"
-                  >
-                    términos y condiciones
-                  </Link>{' '}
-                  del servicio
-                </span>
-                {errors.accept_terms && <p className="mt-1 text-xs text-red-600">{errors.accept_terms}</p>}
-              </div>
-            </label>
+          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+            <input
+              type="checkbox"
+              checked={formData.accept_data_treatment}
+              onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <div>
+              <span className="text-sm text-gray-700">
+                Autorizo el{' '}
+                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                  tratamiento de los datos personales
+                </Link>{' '}
+                conforme a la Ley 1581 de 2012, y declaro que la información suministrada es veraz
+              </span>
+              {errors.accept_data_treatment && <p className="mt-1 text-xs text-red-600">{errors.accept_data_treatment}</p>}
+            </div>
+          </label>
+        </FormSection>
 
-            <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
-              <input
-                type="checkbox"
-                checked={formData.accept_data_treatment}
-                onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <div>
-                <span className="text-sm text-gray-700">
-                  Autorizo el{' '}
-                  <Link
-                    href="/privacidad"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-primary-600 font-medium underline hover:text-primary-700"
-                  >
-                    tratamiento de mis datos personales
-                  </Link>{' '}
-                  conforme a la Ley 1581 de 2012
-                </span>
-                {errors.accept_data_treatment && <p className="mt-1 text-xs text-red-600">{errors.accept_data_treatment}</p>}
-              </div>
-            </label>
-          </div>
-
-          {/* Banner: contrato marco con Cofianza. Aclara al firmante de la
-              inmobiliaria que esta cuenta es solo el primer paso, y que el
-              alta operativa se completa cuando se firma el contrato marco. */}
-          <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg">
-            <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
-            <span>
-              <strong className="font-semibold">Siguiente paso después del registro:</strong> nuestro
-              equipo te contactará para firmar el <strong>contrato marco</strong> con Cofianza, donde
-              se establecen las condiciones comerciales (tarifas, modalidades de pago y términos
-              operativos). Hasta entonces tu cuenta queda en estado pre-activa.
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
-            <IconShield size={16} className="text-blue-500 shrink-0" />
-            <span>Tus datos estan protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
-          </div>
-        </div>
-      )}
-
-      {/* Navigation buttons */}
-      <div className="flex justify-between mt-8">
-        {step > 1 ? (
-          <button
-            onClick={() => setStep(step - 1)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <IconArrowLeft size={16} /> Anterior
-          </button>
-        ) : (
+        {/* Acciones */}
+        <div className="flex items-center justify-between pt-1">
           <Link
             href={AUTH_ROUTES.REGISTER}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             <IconArrowLeft size={16} /> Volver
           </Link>
-        )}
 
-        {step < 3 ? (
           <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            Siguiente <IconArrowRight size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={isLoading}
             className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-white text-sm font-bold rounded-xl hover:bg-coral-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
@@ -611,13 +523,13 @@ export default function RegisterInmobiliariaPage() {
               </>
             ) : (
               <>
-                Crear mi cuenta
+                Crear cuenta empresarial
                 <IconArrowRight size={16} />
               </>
             )}
           </button>
-        )}
-      </div>
+        </div>
+      </form>
     </div>
   )
 }
