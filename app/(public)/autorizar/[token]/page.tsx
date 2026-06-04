@@ -519,13 +519,18 @@ export default function AutorizarPage() {
               </div>
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Firma con tu código</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Te enviamos un código de 6 dígitos a tu{' '}
-                <strong className="text-gray-700">
-                  {data?.solicitante.telefono_masked
-                    ? `WhatsApp ${data.solicitante.telefono_masked}`
-                    : 'WhatsApp'}
-                </strong>{' '}
-                y a tu correo. Ingrésalo para firmar.
+                {data?.solicitante.telefono_masked ? (
+                  <>
+                    Te enviamos un código de 6 dígitos a tu{' '}
+                    <strong className="text-gray-700">WhatsApp {data.solicitante.telefono_masked}</strong>{' '}
+                    y a tu correo. Ingrésalo para firmar.
+                  </>
+                ) : (
+                  <>
+                    Te enviamos un código de 6 dígitos a tu{' '}
+                    <strong className="text-gray-700">correo</strong>. Ingrésalo para firmar.
+                  </>
+                )}
               </p>
             </div>
 
