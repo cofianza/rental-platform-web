@@ -15,8 +15,29 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconFileText, IconUpload } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/contrato'
 
 type TipoGeneracion = 'cofianza' | 'otrosi'
+
+const MODALIDADES: { value: ModalidadFianza; label: string }[] = [
+  { value: 'plena', label: 'Cofianza Plena' },
+  { value: 'compartida', label: 'Cofianza Compartida' },
+  { value: 'plus', label: 'Cofianza Plus' },
+]
+
+const SERVICIOS: { key: string; label: string }[] = [
+  { key: 'agua', label: 'Agua y alcantarillado' },
+  { key: 'energia', label: 'Energía eléctrica' },
+  { key: 'gas', label: 'Gas natural' },
+  { key: 'basuras', label: 'Recolección de basuras' },
+  { key: 'alumbrado', label: 'Alumbrado público' },
+  { key: 'internet', label: 'Internet / TV / Telefonía' },
+  { key: 'admin_ph', label: 'Administración PH' },
+]
+
+const SERVICIOS_DEFAULT: Record<string, CargoServicio> = Object.fromEntries(
+  SERVICIOS.map((s) => [s.key, 'arrendatario' as CargoServicio]),
+)
 
 interface GenerarContratoModalProps {
   isOpen: boolean
@@ -35,6 +56,9 @@ export function GenerarContratoModal({
   const [tipo, setTipo] = useState<TipoGeneracion>('cofianza')
   const [fechaInicio, setFechaInicio] = useState('')
   const [duracionMeses, setDuracionMeses] = useState('12')
+  const [modalidad, setModalidad] = useState<ModalidadFianza>('plena')
+  const [cotitular, setCotitular] = useState<ICotitularFianza>({})
+  const [servicios, setServicios] = useState<Record<string, CargoServicio>>(SERVICIOS_DEFAULT)
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
@@ -42,6 +66,9 @@ export function GenerarContratoModal({
       setTipo('cofianza')
       setFechaInicio(new Date().toISOString().split('T')[0])
       setDuracionMeses('12')
+      setModalidad('plena')
+      setCotitular({})
+      setServicios(SERVICIOS_DEFAULT)
       setGenerating(false)
     }
   }, [isOpen])
@@ -52,6 +79,14 @@ export function GenerarContratoModal({
       const contrato = await contratoService.generarContrato(expedienteId, {
         fecha_inicio: fechaInicio || undefined,
         duracion_meses: duracionMeses ? Number(duracionMeses) : undefined,
+        // Las condiciones de fianza solo aplican a la plantilla Cofianza.
+        ...(tipo === 'cofianza'
+          ? {
+              modalidad_fianza: modalidad,
+              servicios_reparto: servicios,
+              ...(modalidad === 'compartida' ? { cotitular } : {}),
+            }
+          : {}),
       })
       if (tipo === 'otrosi') {
         // Para el flujo Otrosí + PDF propio reusamos el contrato base como
@@ -88,7 +123,7 @@ export function GenerarContratoModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
           {/* Tipo de generación — radio Cofianza vs Otrosí (Mario 12-may-2026) */}
           <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -181,6 +216,87 @@ export function GenerarContratoModal({
               Por defecto 12 meses, prorrogables tácitamente segun la cláusula QUINTA.
             </p>
           </div>
+
+          {tipo === 'cofianza' && (
+            <div className="space-y-4 pt-3 border-t border-gray-200">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Condiciones de la fianza
+              </p>
+
+              {/* Modalidad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad de fianza</label>
+                <select
+                  value={modalidad}
+                  onChange={(e) => setModalidad(e.target.value as ModalidadFianza)}
+                  disabled={generating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+                >
+                  {MODALIDADES.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Co-titular — solo en Cofianza Compartida */}
+              {modalidad === 'compartida' && (
+                <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-xs font-semibold text-gray-700">Co-titular de la fianza</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input placeholder="Nombre completo" value={cotitular.nombre || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, nombre: e.target.value })} disabled={generating}
+                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                    <select value={cotitular.tipo_documento || 'CC'}
+                      onChange={(e) => setCotitular({ ...cotitular, tipo_documento: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50">
+                      <option value="CC">C.C.</option>
+                      <option value="CE">C.E.</option>
+                      <option value="NIT">NIT</option>
+                      <option value="PA">Pasaporte</option>
+                    </select>
+                    <input placeholder="N° de documento" value={cotitular.documento || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, documento: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                    <input placeholder="Celular" value={cotitular.celular || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, celular: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                    <input placeholder="Correo" value={cotitular.correo || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, correo: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                    <input placeholder="Dirección de notificación" value={cotitular.direccion || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, direccion: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                    <input placeholder="Municipio" value={cotitular.municipio || ''}
+                      onChange={(e) => setCotitular({ ...cotitular, municipio: e.target.value })} disabled={generating}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                  </div>
+                </div>
+              )}
+
+              {/* Reparto de servicios públicos */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Servicios públicos — ¿quién paga?
+                </label>
+                <div className="space-y-1.5">
+                  {SERVICIOS.map((s) => (
+                    <div key={s.key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600">{s.label}</span>
+                      <select
+                        value={servicios[s.key]}
+                        onChange={(e) => setServicios({ ...servicios, [s.key]: e.target.value as CargoServicio })}
+                        disabled={generating}
+                        className="px-2 py-1 border border-gray-300 rounded-md text-xs disabled:bg-gray-50"
+                      >
+                        <option value="arrendatario">Arrendatario</option>
+                        <option value="arrendador">Arrendador</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
