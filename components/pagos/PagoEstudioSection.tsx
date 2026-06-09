@@ -214,7 +214,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span className="text-sm font-medium text-gray-900">Enviar link al arrendatario</span>
-              <span className="text-xs text-gray-500">Pago via Stripe por correo</span>
+              <span className="text-xs text-gray-500">Pago con tarjeta por correo</span>
             </button>
           </div>
         </div>
@@ -722,7 +722,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
               Monto a pagar: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
             </p>
             <p className="text-xs text-gray-500 mb-4">
-              Serás redirigido a Stripe (pasarela segura). Al completar el pago, tu estudio se ejecuta automáticamente.
+              Serás redirigido a la pasarela de pago segura. Al completar el pago, tu estudio se ejecuta automáticamente.
             </p>
             <a
               href={linkPago}

@@ -226,8 +226,8 @@ export default function CreditosEstudiosPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Comprar paquete</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Pague con tarjeta de crédito vía Stripe. Los créditos se acreditan automáticamente
-            tras la confirmación del pago.
+            Pague con tarjeta de crédito por la pasarela de pago segura. Los créditos se acreditan
+            automáticamente tras la confirmación del pago.
           </p>
 
           {paquetes.length === 0 ? (
