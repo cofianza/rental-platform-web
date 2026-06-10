@@ -10,6 +10,7 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
+import { apiClient } from '@/lib/api'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -20,6 +21,9 @@ function PagoResultadoContent() {
   const searchParams = useSearchParams()
   const status = searchParams.get('status')
   const expedienteId = searchParams.get('expediente')
+  // MP/pasarela agrega el id del pago a la URL de retorno; lo usamos para
+  // confirmar el pago en el backend (red de seguridad por si el webhook no llega).
+  const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id')
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isAuthInitialized = useAuthStore((s) => s.isInitialized)
 
@@ -31,6 +35,16 @@ function PagoResultadoContent() {
     const timer = setTimeout(() => setLoading(false), 600)
     return () => clearTimeout(timer)
   }, [])
+
+  // Reconciliación: confirma el pago en el backend consultando la pasarela con el
+  // payment_id de la URL. Red de seguridad por si el webhook no llega — sin esto,
+  // el pago podría quedar 'pendiente' aunque la pasarela lo haya aprobado.
+  useEffect(() => {
+    if (status !== 'success' || !paymentId) return
+    apiClient
+      .post('/publico/pago-resultado/reconciliar', { payment_id: paymentId })
+      .catch(() => { /* el webhook es el camino primario; esto es solo respaldo */ })
+  }, [status, paymentId])
 
   // Auto-cierre tras pago exitoso. Stripe se abrio en una pestaña nueva
   // (target="_blank" desde el CTA "Pagar ahora"), asi que `window.close()`
