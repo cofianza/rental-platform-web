@@ -324,14 +324,19 @@ export function EstudioSolicitanteCard({
     if (estudio.estado !== 'pago_pendiente') {
       if (esperandoInicio) return cardIniciandoEstudio
       if (autorizacionPendiente) return cardFirmaAutorizacion
-      // Enlace vencido sin firmar: sin este aviso el solicitante quedaba ante
-      // una pantalla vacía sin saber que debe pedir un reenvío.
-      if (autorizacion?.estado === 'pendiente' && tokenVencido) {
+      // Enlace vencido/invalidado sin firmar: cubre también 'expirado'/'revocado'
+      // (el backend marca 'expirado' lazy al abrir el link) — sin este aviso el
+      // solicitante quedaba ante una pantalla vacía sin saber que debe pedir reenvío.
+      if (
+        (autorizacion?.estado === 'pendiente' && tokenVencido)
+        || autorizacion?.estado === 'expirado'
+        || autorizacion?.estado === 'revocado'
+      ) {
         return (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm font-semibold text-amber-900 mb-0.5">Tu enlace de autorización venció</p>
+            <p className="text-sm font-semibold text-amber-900 mb-0.5">Tu enlace de autorización ya no está vigente</p>
             <p className="text-sm text-amber-800">
-              El enlace para autorizar la consulta a centrales de riesgo venció sin firmarse.
+              El enlace para autorizar la consulta a centrales de riesgo venció o fue reemplazado sin firmarse.
               Pide al propietario o a tu asesor que te lo reenvíe desde el expediente.
             </p>
           </div>

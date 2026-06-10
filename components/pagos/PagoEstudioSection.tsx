@@ -277,6 +277,31 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         </div>
       )}
 
+      {/* Procesando — PSE/efectivo en proceso en la pasarela */}
+      {estado.estado === 'procesando' && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 text-blue-600 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-blue-800">Pago en proceso</p>
+              <p className="text-xs text-blue-600">
+                {estado.monto_formateado} COP — el arrendatario inició el pago (PSE/efectivo); se confirma automáticamente.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleCancelarYAsumir}
+            disabled={isSubmitting}
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Cancelar y asumir costo
+          </button>
+        </div>
+      )}
+
       {/* Fallido */}
       {estado.estado === 'fallido' && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -703,6 +728,28 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           )}
         </Modal>
       </>
+    )
+  }
+
+  // Procesando (PSE/efectivo): el pago está en manos del medio de pago — no
+  // ofrecer "Pagar ahora" de nuevo ni decir que falta definir la forma de pago.
+  if (estado.estado === 'procesando') {
+    return (
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start gap-3">
+          <svg className="h-5 w-5 text-blue-700 shrink-0 animate-spin mt-0.5" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Tu pago está en proceso</p>
+            <p className="text-sm text-blue-800">
+              El medio de pago está procesando tu transacción (PSE/efectivo puede tardar desde minutos hasta horas).
+              Te avisaremos cuando se confirme — no necesitas volver a pagar.
+            </p>
+          </div>
+        </div>
+      </div>
     )
   }
 

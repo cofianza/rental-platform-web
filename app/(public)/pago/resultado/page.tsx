@@ -154,12 +154,14 @@ function PagoResultadoContent() {
               className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${
                 isSuccess
                   ? 'bg-green-100 text-green-800'
-                  : isCancelled
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'bg-red-100 text-red-800'
+                  : isPending
+                    ? 'bg-amber-100 text-amber-800'
+                    : isCancelled
+                      ? 'bg-gray-100 text-gray-800'
+                      : 'bg-red-100 text-red-800'
               }`}
             >
-              {isSuccess ? 'Completado' : isCancelled ? 'Cancelado' : 'Fallido'}
+              {isSuccess ? 'Completado' : isPending ? 'En proceso' : isCancelled ? 'Cancelado' : 'Fallido'}
             </span>
           </div>
           {expedienteId && (
