@@ -3,8 +3,9 @@
  *
  * Boton "Borrar datos de prueba" en el dashboard del administrador. Sirve
  * para limpiar el ambiente entre rondas de QA: borra todos los expedientes,
- * inmuebles, solicitantes, contratos, estudios, citas, pagos, notificaciones,
- * coarrendatarios, fotos, etc., y todas las cuentas que NO son administrador.
+ * inmuebles, solicitantes, contratos, estudios, citas, pagos, moras, tickets,
+ * notificaciones, coarrendatarios, fotos, etc. Desde 2026-06-10 CONSERVA
+ * TODAS las cuentas (cualquier rol) — solo se borran los datos.
  *
  * ELIMINAR este componente, su uso en page.tsx, el endpoint backend
  * /api/v1/admin-tools/wipe-test-data y la migracion 20260507000005 antes
@@ -73,8 +74,8 @@ export function WipeTestDataCard() {
           <h3 className="text-sm font-semibold text-red-900">Herramienta temporal de QA</h3>
           <p className="text-xs text-red-800 mt-0.5">
             Borra <strong>todos los datos de prueba</strong> (expedientes, inmuebles, solicitantes, contratos,
-            estudios, citas, pagos, notificaciones, etc.) y <strong>todas las cuentas no-administrador</strong>.
-            Las cuentas de administrador y los datos de configuración se conservan.
+            estudios, citas, pagos, moras, tickets, notificaciones, etc.).
+            <strong> Todas las cuentas se conservan</strong> (de cualquier rol), junto con los datos de configuración.
           </p>
           <button
             onClick={() => setShowModal(true)}
@@ -99,8 +100,8 @@ export function WipeTestDataCard() {
                 <h2 className="text-lg font-bold text-gray-900 mb-2">Borrar datos de prueba</h2>
                 <p className="text-sm text-gray-700 mb-3">
                   Esta acción borra <strong>de forma irreversible</strong> todos los expedientes, inmuebles,
-                  solicitantes, contratos, estudios, citas, pagos, notificaciones, fotos y todas las cuentas
-                  excepto las de <strong>administrador</strong>.
+                  solicitantes, contratos, estudios, citas, pagos, moras, tickets, notificaciones y fotos.
+                  <strong> Ninguna cuenta se borra</strong> — todos los usuarios conservan su acceso.
                 </p>
                 <p className="text-sm text-gray-700 mb-4">
                   Las plantillas de contrato, configuración del sistema y catálogos de referencia <strong>no</strong> se
