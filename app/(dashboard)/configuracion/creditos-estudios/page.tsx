@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { apiClient } from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,6 +45,9 @@ export default function CreditosEstudiosPage() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const compraStatus = searchParams?.get('status')
+  // MP agrega el id del pago a la URL de retorno — lo usamos para confirmar la
+  // compra directo con la pasarela (el webhook puede no llegar, p. ej. sandbox).
+  const paymentId = searchParams?.get('payment_id') || searchParams?.get('collection_id')
 
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [paquetes, setPaquetes] = useState<IPaqueteCreditos[]>([])
@@ -83,10 +87,19 @@ export default function CreditosEstudiosPage() {
   useEffect(() => {
     if (compraStatus === 'success') {
       toast.success('Pago confirmado — los créditos se acreditarán en unos segundos.')
+      // Reconciliación: confirma la compra consultando la pasarela con el
+      // payment_id (red de seguridad si el webhook no llega) y refresca el saldo.
+      if (paymentId) {
+        apiClient
+          .post('/publico/pago-resultado/reconciliar', { payment_id: paymentId })
+          .catch(() => { /* el webhook es el camino primario */ })
+          .finally(() => { fetchAll() })
+      }
     } else if (compraStatus === 'cancelled') {
       toast.info('Pago cancelado.')
     }
-  }, [compraStatus])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compraStatus, paymentId])
 
   const tryFacturarCompra = async (compraId: string, datos?: IDatosFiscalesFactura) => {
     try {
