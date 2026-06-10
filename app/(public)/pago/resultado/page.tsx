@@ -29,6 +29,9 @@ function PagoResultadoContent() {
 
   const [loading, setLoading] = useState(true)
   const [secondsLeft, setSecondsLeft] = useState(AUTO_CLOSE_SECONDS)
+  // El auto-cierre espera a que la reconciliación termine: cerrar la pestaña
+  // a mitad del POST podía abortar la confirmación del pago.
+  const [reconcileDone, setReconcileDone] = useState(false)
 
   useEffect(() => {
     // Small delay to let the page render with branding before showing result
@@ -39,11 +42,16 @@ function PagoResultadoContent() {
   // Reconciliación: confirma el pago en el backend consultando la pasarela con el
   // payment_id de la URL. Red de seguridad por si el webhook no llega — sin esto,
   // el pago podría quedar 'pendiente' aunque la pasarela lo haya aprobado.
+  // También corre para 'pending' (PSE/efectivo): si MP ya lo aprobó, confirma.
   useEffect(() => {
-    if (status !== 'success' || !paymentId) return
+    if ((status !== 'success' && status !== 'pending') || !paymentId) {
+      setReconcileDone(true)
+      return
+    }
     apiClient
       .post('/publico/pago-resultado/reconciliar', { payment_id: paymentId })
       .catch(() => { /* el webhook es el camino primario; esto es solo respaldo */ })
+      .finally(() => setReconcileDone(true))
   }, [status, paymentId])
 
   // Auto-cierre tras pago exitoso. Stripe se abrio en una pestaña nueva
@@ -52,7 +60,7 @@ function PagoResultadoContent() {
   // Si el browser bloquea el close (politica de seguridad cuando no podemos
   // probar window.opener) y hay sesion activa, hacemos fallback a redirect.
   useEffect(() => {
-    if (loading) return
+    if (loading || !reconcileDone) return
     if (status !== 'success') return
 
     setSecondsLeft(AUTO_CLOSE_SECONDS)
@@ -75,7 +83,7 @@ function PagoResultadoContent() {
       clearInterval(tick)
       clearTimeout(closeTimer)
     }
-  }, [loading, status, isAuthenticated, expedienteId, router])
+  }, [loading, reconcileDone, status, isAuthenticated, expedienteId, router])
 
   if (loading) {
     return (
@@ -88,6 +96,8 @@ function PagoResultadoContent() {
 
   const isSuccess = status === 'success'
   const isCancelled = status === 'cancelled'
+  // PSE/efectivo: el pago quedó en proceso en la pasarela — NO es éxito todavía.
+  const isPending = status === 'pending'
 
   return (
     <div className="max-w-md mx-auto py-8">
@@ -95,12 +105,16 @@ function PagoResultadoContent() {
       <div className="text-center mb-8">
         <div
           className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${
-            isSuccess ? 'bg-green-100' : 'bg-red-100'
+            isSuccess ? 'bg-green-100' : isPending ? 'bg-amber-100' : 'bg-red-100'
           }`}
         >
           {isSuccess ? (
             <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : isPending ? (
+            <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
             <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -110,15 +124,17 @@ function PagoResultadoContent() {
         </div>
 
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-          {isSuccess ? 'Pago exitoso' : isCancelled ? 'Pago cancelado' : 'Pago fallido'}
+          {isSuccess ? 'Pago exitoso' : isPending ? 'Pago en proceso' : isCancelled ? 'Pago cancelado' : 'Pago fallido'}
         </h1>
 
         <p className="text-sm text-gray-600 max-w-sm mx-auto">
           {isSuccess
             ? 'Tu pago del estudio de arrendamiento ha sido procesado correctamente. El equipo de la inmobiliaria continuara con el proceso.'
-            : isCancelled
-              ? 'Has cancelado el proceso de pago. Puedes volver a intentarlo usando el link que recibiste por correo.'
-              : 'Hubo un problema al procesar tu pago. Por favor intenta nuevamente usando el link que recibiste por correo.'}
+            : isPending
+              ? 'Tu pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Te avisaremos cuando se confirme — no necesitas volver a pagar.'
+              : isCancelled
+                ? 'Has cancelado el proceso de pago. Puedes volver a intentarlo usando el link que recibiste por correo.'
+                : 'Hubo un problema al procesar tu pago. Por favor intenta nuevamente usando el link que recibiste por correo.'}
         </p>
       </div>
 

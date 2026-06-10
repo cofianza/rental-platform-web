@@ -66,6 +66,10 @@ export function EstudioSolicitanteCard({
   // pisarían lo que el solicitante está escribiendo en el input (p. ej. al
   // corregir su cédula tras un estudio fallido).
   const prefillAppliedRef = useRef(false)
+  // Igual que authLoadedRef: tras el primer load exitoso, un error transitorio
+  // de un tick del polling NO debe poner estudio=null (dejaría la card en
+  // blanco y mataría el polling sin recuperación).
+  const estudioLoadedRef = useRef(false)
 
   const fetchEstudio = useCallback(async () => {
     try {
@@ -75,6 +79,7 @@ export function EstudioSolicitanteCard({
       activos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       const elegido = activos[0] ?? null
       setEstudio(elegido)
+      estudioLoadedRef.current = true
 
       if (prefillAppliedRef.current) return
       prefillAppliedRef.current = true
@@ -105,7 +110,8 @@ export function EstudioSolicitanteCard({
         setNumeroDoc(numeroFromPrefill)
       }
     } catch {
-      setEstudio(null)
+      // Solo en el primer load tratamos el error como "sin estudio".
+      if (!estudioLoadedRef.current) setEstudio(null)
     } finally {
       setLoading(false)
     }
@@ -318,6 +324,33 @@ export function EstudioSolicitanteCard({
     if (estudio.estado !== 'pago_pendiente') {
       if (esperandoInicio) return cardIniciandoEstudio
       if (autorizacionPendiente) return cardFirmaAutorizacion
+      // Enlace vencido sin firmar: sin este aviso el solicitante quedaba ante
+      // una pantalla vacía sin saber que debe pedir un reenvío.
+      if (autorizacion?.estado === 'pendiente' && tokenVencido) {
+        return (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm font-semibold text-amber-900 mb-0.5">Tu enlace de autorización venció</p>
+            <p className="text-sm text-amber-800">
+              El enlace para autorizar la consulta a centrales de riesgo venció sin firmarse.
+              Pide al propietario o a tu asesor que te lo reenvíe desde el expediente.
+            </p>
+          </div>
+        )
+      }
+      // Firmó pero el estudio no avanzó (el inicio automático falló): mensaje
+      // honesto en lugar de pantalla vacía — el equipo ya tiene el evento en
+      // el timeline para retomarlo.
+      if (autorizacion?.estado === 'autorizado') {
+        return (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Autorización recibida</p>
+            <p className="text-sm text-blue-800">
+              Recibimos tu autorización. Tu estudio se está preparando — si no avanza en unos
+              minutos, contacta al propietario o a tu asesor para iniciarlo.
+            </p>
+          </div>
+        )
+      }
     }
     return null
   }

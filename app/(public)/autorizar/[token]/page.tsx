@@ -227,10 +227,17 @@ export default function AutorizarPage() {
       setPageState('signed')
     } catch (err) {
       const code = (err as { code?: string })?.code
-      // Ya firmada/procesada (doble submit o reintento sobre una firma exitosa):
-      // mostramos la pantalla de éxito en vez de un error confuso.
-      if (code === 'AUTORIZACION_ESTADO_INVALIDO') {
+      // Ya firmada (doble submit o reintento sobre una firma exitosa): pantalla
+      // de éxito. OJO: solo para YA_FIRMADA — un enlace invalidado/expirado
+      // (NO_VIGENTE) NO es éxito: mostrar "firmado" haría creer al solicitante
+      // que terminó cuando nada va a correr.
+      if (code === 'AUTORIZACION_YA_FIRMADA' || code === 'AUTORIZACION_ESTADO_INVALIDO') {
         setPageState('signed')
+        return
+      }
+      if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
+        setErrorMessage('Este enlace ya no está vigente. Pide que te reenvíen uno nuevo desde el expediente.')
+        setPageState('error')
         return
       }
       // El OTP ya no sirve (expiró / no hay pendiente): forzamos re-verificación
