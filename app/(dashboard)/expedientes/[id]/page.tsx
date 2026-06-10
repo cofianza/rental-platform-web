@@ -14,7 +14,6 @@ import type { Tab } from '@/components/ui/Tabs'
 import {
   IconArrowLeft,
   IconEdit,
-  IconLoader,
   IconRefresh,
   IconUser,
   IconFolderOpen,
@@ -405,6 +404,7 @@ export default function ExpedienteDetallePage() {
                   onEjecutado={fetchExpediente}
                   prefillTipoDocumento={expediente.solicitante?.tipo_documento ?? null}
                   prefillNumeroDocumento={expediente.solicitante?.numero_documento ?? null}
+                  solicitanteTelefono={expediente.solicitante?.telefono ?? null}
                 />
                 <CoarrendatarioCard
                   expedienteId={id}
