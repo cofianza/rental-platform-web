@@ -31,7 +31,10 @@ export function PlantillaFormModal({
     if (plantilla) {
       setNombre(plantilla.nombre)
       setDescripcion(plantilla.descripcion || '')
-      setContenido(plantilla.contenido)
+      // `|| ''`: las plantillas HTML (V1/V4) pueden llegar sin `contenido` de
+      // un backend desactualizado — sin la defensa, .trim() sobre null
+      // tumbaba toda la página.
+      setContenido(plantilla.contenido || '')
       setActiva(plantilla.activa)
     } else {
       setNombre('')
