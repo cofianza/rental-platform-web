@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle } from '@/components/icons'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { IAutorizacion } from '@/types/autorizacion'
@@ -40,6 +39,9 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
   const [showRevocar, setShowRevocar] = useState(false)
   const [revocarMotivo, setRevocarMotivo] = useState('')
   const [revocando, setRevocando] = useState(false)
+  // Detalle de la firma: evidencia legal y texto literal firmado (colapsables).
+  const [showEvidencia, setShowEvidencia] = useState(false)
+  const [showTexto, setShowTexto] = useState(false)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -196,6 +198,88 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
               )}
             </div>
           </div>
+
+          {/* Consentimientos del solicitante: los 3 obligatorios van implícitos
+              en la firma; los 3 opcionales quedan tal como él los eligió. */}
+          <div className="border border-gray-200 rounded-lg p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Consentimientos otorgados
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+              {[
+                { txt: 'Tratamiento de datos personales', on: true, oblig: true },
+                { txt: 'Consulta y reporte a centrales de riesgo', on: true, oblig: true },
+                { txt: 'Historial de comportamiento de pago', on: true, oblig: true },
+                { txt: 'Analítica y personalización', on: !!autorizacion?.consent_analitica, oblig: false },
+                { txt: 'Ofertas y comunicaciones comerciales', on: !!autorizacion?.consent_comercial, oblig: false },
+                { txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false },
+              ].map((c) => (
+                <div key={c.txt} className="flex items-center justify-between gap-2">
+                  <span className={`flex items-center gap-1.5 ${c.on ? 'text-gray-800' : 'text-gray-400'}`}>
+                    <IconCheck size={14} className={c.on ? 'text-green-600' : 'text-gray-300'} />
+                    {c.txt}
+                  </span>
+                  <span className={`text-[10px] font-semibold uppercase ${c.oblig ? 'text-gray-400' : c.on ? 'text-green-600' : 'text-gray-400'}`}>
+                    {c.oblig ? 'Obligatorio' : c.on ? 'Aceptado' : 'No aceptado'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Evidencia legal de la firma (colapsable) */}
+          <div className="border border-gray-200 rounded-lg">
+            <button
+              onClick={() => setShowEvidencia((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <span className="flex items-center gap-2"><IconShield size={14} /> Evidencia de la firma</span>
+              <span className="text-xs text-gray-400">{showEvidencia ? 'Ocultar' : 'Ver'}</span>
+            </button>
+            {showEvidencia && (
+              <dl className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                <div>
+                  <dt className="text-gray-500">Método</dt>
+                  <dd className="text-gray-900 font-medium">{METODO_LABELS[autorizacion?.metodo_firma || ''] || autorizacion?.metodo_firma || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Versión de términos</dt>
+                  <dd className="text-gray-900 font-medium">{autorizacion?.version_terminos || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Dirección IP</dt>
+                  <dd className="text-gray-900 font-mono">{autorizacion?.ip_autorizacion || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Dispositivo (user-agent)</dt>
+                  <dd className="text-gray-900 break-all">{autorizacion?.user_agent || '—'}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-gray-500">Hash SHA-256 del documento</dt>
+                  <dd className="text-gray-900 font-mono break-all select-all">{autorizacion?.hash_documento || '—'}</dd>
+                </div>
+              </dl>
+            )}
+          </div>
+
+          {/* Texto legal literal que el solicitante firmó */}
+          {autorizacion?.texto_autorizado && (
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => setShowTexto((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <span>Texto de la autorización firmada</span>
+                <span className="text-xs text-gray-400">{showTexto ? 'Ocultar' : 'Ver'}</span>
+              </button>
+              {showTexto && (
+                <div className="px-4 pb-4 max-h-72 overflow-y-auto">
+                  <p className="text-xs text-gray-600 whitespace-pre-wrap">{autorizacion.texto_autorizado}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             onClick={() => setShowRevocar(true)}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"

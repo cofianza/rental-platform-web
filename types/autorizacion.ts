@@ -17,6 +17,15 @@ export interface IAutorizacion {
   motivo_revocacion: string | null
   token_expiracion: string | null
   created_at: string
+  // Consentimientos opcionales elegidos al firmar (Paso 2 "Beneficios").
+  consent_analitica?: boolean
+  consent_comercial?: boolean
+  consent_historial_referencia?: boolean
+  // Evidencia de la firma (soporte legal Ley 527/1999).
+  ip_autorizacion?: string | null
+  user_agent?: string | null
+  version_terminos?: string | null
+  texto_autorizado?: string | null
 }
 
 export interface IAutorizacionPublicData {
