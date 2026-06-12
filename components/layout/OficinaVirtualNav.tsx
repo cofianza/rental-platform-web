@@ -19,6 +19,7 @@ import {
   IconReceipt,
   IconBarChart3,
   IconFolderOpen,
+  IconClipboardList,
 } from '@/components/icons'
 
 interface TabDef {
@@ -39,6 +40,15 @@ const TABS: TabDef[] = [
     matchers: ['/inmuebles', '/vitrina', '/disponibilidad'],
   },
   {
+    // Lista scopeada en el backend: la inmobiliaria/propietario solo ve
+    // expedientes de SUS inmuebles. Antes /expedientes no tenía link directo
+    // (solo se llegaba por enlaces indirectos) y el matcher vivía en Contratos.
+    label: 'Expedientes',
+    href: '/expedientes',
+    icon: IconClipboardList,
+    matchers: ['/expedientes'],
+  },
+  {
     label: 'Estudios',
     href: '/estudios',
     icon: IconSearch,
@@ -48,7 +58,7 @@ const TABS: TabDef[] = [
     label: 'Contratos',
     href: '/contratos',
     icon: IconFileText,
-    matchers: ['/contratos', '/expedientes'],
+    matchers: ['/contratos'],
   },
   {
     label: 'Reportar Mora',
