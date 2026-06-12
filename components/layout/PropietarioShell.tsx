@@ -19,6 +19,7 @@ import {
   IconBarChart3,
   IconLogOut,
   IconSettings,
+  IconClipboardList,
 } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -43,6 +44,9 @@ const NAV: NavGroup[] = [
     group: 'Gestión',
     items: [
       { label: 'Mis inmuebles', href: '/dashboard', Icon: IconHome, exact: true },
+      // Lista scopeada en el backend: el propietario solo ve expedientes de
+      // SUS inmuebles. Orden del flujo: inmueble → expediente → estudio → contrato.
+      { label: 'Expedientes', href: '/expedientes', Icon: IconClipboardList },
       { label: 'Evaluar candidato', href: '/estudios', Icon: IconSearch },
       { label: 'Contratos', href: '/contratos', Icon: IconFileText },
     ],
