@@ -135,7 +135,12 @@ export function ContratosInmobiliariaView() {
     )
   }
 
-  const pendientes = contratos.filter((c) => c.estado === 'borrador')
+  // 'en_revision' y 'aprobado' van con los pendientes: aún no están en
+  // firma — sin esto, un contrato en esos estados no aparecía en NINGUNA
+  // sección (hueco silencioso).
+  const pendientes = contratos.filter(
+    (c) => c.estado === 'borrador' || c.estado === 'en_revision' || c.estado === 'aprobado',
+  )
   const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma')
   const activos = contratos.filter((c) => c.estado === 'firmado' || c.estado === 'vigente')
 

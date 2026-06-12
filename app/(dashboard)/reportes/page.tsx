@@ -85,6 +85,21 @@ export default function ReportesPage() {
     )
   }
 
+  // Inmobiliaria: SOLO la analítica de su cartera (endpoints de dashboard
+  // scopeados). El grid de reportes operativos es interno — muestra datos
+  // GLOBALES de la plataforma y el backend ahora se lo niega (reportes: []).
+  if (rol === 'inmobiliaria') {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Analítica de mi cartera"
+          subtitle="Métricas de tus propiedades, estudios y recaudo."
+        />
+        <CarteraAnaliticaSection />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,8 +108,8 @@ export default function ReportesPage() {
         subtitle="Estadísticas y métricas del sistema"
       />
 
-      {/* Analítica de cartera — solo inmobiliaria (mockup 13_v2). El componente
-          se auto-restringe por rol; para otros roles no renderiza nada. */}
+      {/* Analítica de cartera: el componente se auto-restringe por rol
+          (inmobiliaria ya retornó arriba; para roles internos no renderiza). */}
       <CarteraAnaliticaSection />
 
       {/* Grid de reportes */}

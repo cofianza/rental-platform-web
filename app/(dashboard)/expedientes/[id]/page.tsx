@@ -429,6 +429,17 @@ export default function ExpedienteDetallePage() {
                   userRol={user?.rol}
                   onAction={fetchExpediente}
                 />
+                {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
+                    estudio, la inmobiliaria/propietario decide aquí quién
+                    asume el costo (crédito / asumir / link al arrendatario)
+                    sin tener que descubrir el tab Pagos. */}
+                {(expediente.estudio_habilitado ?? false) && (
+                  <PagoEstudioSection
+                    expedienteId={id}
+                    userRole={user?.rol}
+                    onPagoCompletado={fetchExpediente}
+                  />
+                )}
                 <EstudioEstadoCard
                   expedienteId={id}
                   onVerEstudios={() => setActiveTab('estudios')}
