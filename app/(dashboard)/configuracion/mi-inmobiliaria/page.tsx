@@ -34,6 +34,7 @@ import {
   type TipoDocumentoLegal,
 } from '@/services/documentosLegalesService'
 import { perfilArrendadorService, type IPerfilArrendador } from '@/services/perfilArrendadorService'
+import { authService } from '@/services/authService'
 
 interface TipoConfig {
   tipo: TipoDocumentoLegal
@@ -109,6 +110,16 @@ export default function MiInmobiliariaPage() {
   const [docs, setDocs] = useState<IDocumentoLegalResumen[]>([])
   const [loading, setLoading] = useState(true)
   const [perfil, setPerfil] = useState<IPerfilArrendador | null>(null)
+  // Teléfono de contacto (a dónde llegan los WhatsApp) — viene del perfil
+  // completo (/auth/me), no del user del store que solo trae lo básico.
+  const [telefonoContacto, setTelefonoContacto] = useState<string | null>(null)
+
+  useEffect(() => {
+    authService
+      .getMyProfile()
+      .then((p) => setTelefonoContacto(p.telefono ?? null))
+      .catch(() => setTelefonoContacto(null))
+  }, [])
 
   const fetchDocs = async () => {
     setLoading(true)
@@ -163,6 +174,36 @@ export default function MiInmobiliariaPage() {
             : 'Documentos legales de tu perfil como propietario.'
         }
       />
+
+      {/* Contacto y notificaciones: a dónde llegan los mensajes de Cofianza
+          (correo + WhatsApp). Editable desde Mi cuenta. */}
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 mb-1">Contacto y notificaciones</h3>
+            <p className="text-sm text-gray-600">
+              Las notificaciones de Cofianza (estudios, contratos, pagos) te llegan a:
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-gray-700">
+                Correo: <span className="font-semibold text-gray-900">{user?.email || '—'}</span>
+              </span>
+              <span className="text-gray-700">
+                WhatsApp/Tel: <span className="font-semibold text-gray-900">{telefonoContacto || 'sin registrar'}</span>
+                {!telefonoContacto && (
+                  <span className="ml-1.5 text-xs text-amber-700 font-medium">agrega tu número para recibir avisos por WhatsApp</span>
+                )}
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/configuracion/cuenta"
+            className="shrink-0 px-3 py-1.5 text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-md hover:bg-primary-100 transition-colors"
+          >
+            Editar en Mi cuenta
+          </Link>
+        </div>
+      </div>
 
       {/* Resumen completitud */}
       {!loading && (

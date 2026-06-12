@@ -18,6 +18,7 @@ import {
   IconBank,
   IconBarChart3,
   IconLogOut,
+  IconSettings,
 } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -52,6 +53,15 @@ const NAV: NavGroup[] = [
       { label: 'Reportar mora', href: '/moras', Icon: IconAlertTriangle },
       { label: 'Mis pagos', href: '/facturacion', Icon: IconBank },
       { label: 'Mi rentabilidad', href: '/reportes', Icon: IconBarChart3 },
+    ],
+  },
+  {
+    group: 'Cuenta',
+    items: [
+      // Acceso a Mi cuenta (correo/teléfono donde llegan las notificaciones),
+      // Datos para contrato y documentos legales — antes el propietario no
+      // tenía cómo llegar a /configuracion desde su panel.
+      { label: 'Configuración', href: '/configuracion', Icon: IconSettings },
     ],
   },
 ]

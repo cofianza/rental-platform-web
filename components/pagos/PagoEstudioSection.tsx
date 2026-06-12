@@ -27,6 +27,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [error, setError] = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
+  // Confirmación inline de "La inmobiliaria paga": antes de registrar, se
+  // explica qué va a pasar (registro interno + autorización auto-enviada).
+  const [confirmAsumir, setConfirmAsumir] = useState(false)
 
   const puedeUsarCreditos = userRole === 'inmobiliaria'
 
@@ -156,67 +159,113 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      {/* Sin definir — mostrar selector */}
+      {/* Sin definir — mostrar selector (acción requerida) */}
       {estado.estado === 'sin_definir' && (
-        <div className="border border-gray-200 rounded-lg p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Pago del estudio</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Monto: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
-          </p>
-          <p className="text-sm text-gray-600 mb-5">Selecciona quien asume el costo del estudio de arrendamiento:</p>
-          <div className={`grid grid-cols-1 ${puedeUsarCreditos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
-            {/* Liberar con credito (inmobiliaria/propietario) */}
-            {puedeUsarCreditos && (
-              (saldoCreditos?.saldo_total ?? 0) > 0 ? (
-                <button
-                  onClick={handleLiberarCredito}
-                  disabled={isSubmitting}
-                  className="flex flex-col items-center gap-2 p-4 border-2 border-emerald-300 bg-emerald-50/40 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                >
-                  <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900">Liberar con crédito</span>
-                  <span className="text-xs text-emerald-700 font-medium">
-                    Saldo: {saldoCreditos?.saldo_total} estudios
-                  </span>
-                </button>
-              ) : (
-                <Link
-                  href="/configuracion/creditos-estudios"
-                  className="flex flex-col items-center gap-2 p-4 border-2 border-amber-200 bg-amber-50/40 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors"
-                >
-                  <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900">Comprar paquete</span>
-                  <span className="text-xs text-amber-700">Sin créditos disponibles</span>
-                </Link>
-              )
-            )}
-            <button
-              onClick={handleAsumir}
-              disabled={isSubmitting}
-              className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50"
-            >
-              <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        <div className="border-2 border-amber-300 bg-amber-50/30 rounded-lg p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <span className="shrink-0 mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
-              <span className="text-sm font-medium text-gray-900">La inmobiliaria paga</span>
-              <span className="text-xs text-gray-500">Se registra internamente</span>
-            </button>
-            <button
-              onClick={() => setShowLinkModal(true)}
-              disabled={isSubmitting}
-              className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50"
-            >
-              <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-900">Enviar link al arrendatario</span>
-              <span className="text-xs text-gray-500">Pago con tarjeta por correo</span>
-            </button>
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">
+                Acción requerida: define quién paga el estudio
+                <span className="ml-2 inline-flex px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-200 text-amber-900">paso obligatorio</span>
+              </h3>
+              <p className="text-sm text-gray-600 mt-0.5">
+                El estudio crediticio <span className="font-semibold">no puede ejecutarse</span> hasta que elijas una de
+                estas opciones. Monto: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>.
+              </p>
+            </div>
           </div>
+
+          {!confirmAsumir ? (
+            <div className={`grid grid-cols-1 ${puedeUsarCreditos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+              {/* Liberar con credito (inmobiliaria) */}
+              {puedeUsarCreditos && (
+                (saldoCreditos?.saldo_total ?? 0) > 0 ? (
+                  <button
+                    onClick={handleLiberarCredito}
+                    disabled={isSubmitting}
+                    className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-emerald-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50 text-center"
+                  >
+                    <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
+                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoCreditos?.saldo_total} estudios</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
+                  </button>
+                ) : (
+                  <Link
+                    href="/configuracion/creditos-estudios"
+                    className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-amber-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors text-center"
+                  >
+                    <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900">Comprar paquete</span>
+                    <span className="text-xs text-amber-700">Sin créditos disponibles</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">Compra créditos con descuento por volumen.</span>
+                  </Link>
+                )
+              )}
+              <button
+                onClick={() => setConfirmAsumir(true)}
+                disabled={isSubmitting}
+                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
+              >
+                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-900">{puedeUsarCreditos ? 'La inmobiliaria paga' : 'Yo asumo el costo'}</span>
+                <span className="text-xs text-gray-500">Se registra internamente</span>
+                <span className="text-[11px] text-gray-500 leading-snug">Sin cobro en línea; el costo queda a tu cargo.</span>
+              </button>
+              <button
+                onClick={() => setShowLinkModal(true)}
+                disabled={isSubmitting}
+                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
+              >
+                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-900">Enviar link al arrendatario</span>
+                <span className="text-xs text-gray-500">Él paga con tarjeta o PSE</span>
+                <span className="text-[11px] text-gray-500 leading-snug">Le llega por correo y WhatsApp; al pagar, el proceso sigue solo.</span>
+              </button>
+            </div>
+          ) : (
+            /* Confirmación de "La inmobiliaria paga": explica las consecuencias
+               ANTES de registrar — evita clicks a ciegas. */
+            <div className="bg-white border-2 border-primary-200 rounded-lg p-5">
+              <p className="text-sm font-semibold text-gray-900 mb-2">
+                ¿Confirmas que {puedeUsarCreditos ? 'la inmobiliaria asume' : 'asumes'} el costo del estudio ({estado.monto_formateado} COP)?
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1.5 mb-4 list-disc pl-5">
+                <li>El pago se registra internamente — <span className="font-medium">no hay cobro en línea</span>.</li>
+                <li>Le enviaremos <span className="font-medium">automáticamente</span> el enlace de autorización al arrendatario (correo y WhatsApp).</li>
+                <li>Cuando él firme la autorización, el estudio crediticio corre solo y te avisamos del resultado.</li>
+              </ul>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setConfirmAsumir(false); void handleAsumir() }}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50"
+                >
+                  Sí, registrar y continuar
+                </button>
+                <button
+                  onClick={() => setConfirmAsumir(false)}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Volver
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -228,7 +277,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           </svg>
           <div>
             <p className="text-sm font-medium text-green-800">Cubierto por inmobiliaria</p>
-            <p className="text-xs text-green-600">{estado.monto_formateado} COP — Siguiente paso desbloqueado</p>
+            <p className="text-xs text-green-600">
+              {estado.monto_formateado} COP — el enlace de autorización ya se envió al arrendatario; el estudio corre cuando firme.
+            </p>
           </div>
         </div>
       )}
