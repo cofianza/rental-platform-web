@@ -32,6 +32,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [confirmAsumir, setConfirmAsumir] = useState(false)
 
   const puedeUsarCreditos = userRole === 'inmobiliaria'
+  // La inmobiliaria NO ve "asumir el costo": ya paga al comprar créditos, así
+  // que esa opción era redundante. Le quedan crédito + enviar link. Los demás
+  // roles (propietario/admin) sí pueden asumir el costo internamente.
+  const mostrarAsumir = userRole !== 'inmobiliaria'
+  const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (mostrarAsumir ? 1 : 0) + 1
 
   const fetchEstado = useCallback(async () => {
     try {
@@ -181,7 +186,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           </div>
 
           {!confirmAsumir ? (
-            <div className={`grid grid-cols-1 ${puedeUsarCreditos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+            <div className={`grid grid-cols-1 ${numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
               {/* Liberar con credito (inmobiliaria) */}
               {puedeUsarCreditos && (
                 (saldoCreditos?.saldo_total ?? 0) > 0 ? (
@@ -211,18 +216,20 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   </Link>
                 )
               )}
-              <button
-                onClick={() => setConfirmAsumir(true)}
-                disabled={isSubmitting}
-                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
-              >
-                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="text-sm font-semibold text-gray-900">{puedeUsarCreditos ? 'La inmobiliaria paga' : 'Yo asumo el costo'}</span>
-                <span className="text-xs text-gray-500">Se registra internamente</span>
-                <span className="text-[11px] text-gray-500 leading-snug">Sin cobro en línea; el costo queda a tu cargo.</span>
-              </button>
+              {mostrarAsumir && (
+                <button
+                  onClick={() => setConfirmAsumir(true)}
+                  disabled={isSubmitting}
+                  className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
+                >
+                  <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-900">Yo asumo el costo</span>
+                  <span className="text-xs text-gray-500">Se registra internamente</span>
+                  <span className="text-[11px] text-gray-500 leading-snug">Sin cobro en línea; el costo queda a tu cargo.</span>
+                </button>
+              )}
               <button
                 onClick={() => setShowLinkModal(true)}
                 disabled={isSubmitting}
@@ -237,11 +244,12 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               </button>
             </div>
           ) : (
-            /* Confirmación de "La inmobiliaria paga": explica las consecuencias
-               ANTES de registrar — evita clicks a ciegas. */
+            /* Confirmación de "Yo asumo el costo": explica las consecuencias
+               ANTES de registrar — evita clicks a ciegas. Solo la alcanzan
+               propietario/admin (la inmobiliaria no tiene esta opción). */
             <div className="bg-white border-2 border-primary-200 rounded-lg p-5">
               <p className="text-sm font-semibold text-gray-900 mb-2">
-                ¿Confirmas que {puedeUsarCreditos ? 'la inmobiliaria asume' : 'asumes'} el costo del estudio ({estado.monto_formateado} COP)?
+                ¿Confirmas que asumes el costo del estudio ({estado.monto_formateado} COP)?
               </p>
               <ul className="text-sm text-gray-600 space-y-1.5 mb-4 list-disc pl-5">
                 <li>El pago se registra internamente — <span className="font-medium">no hay cobro en línea</span>.</li>
