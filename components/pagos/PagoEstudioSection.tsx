@@ -32,10 +32,13 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [confirmAsumir, setConfirmAsumir] = useState(false)
 
   const puedeUsarCreditos = userRole === 'inmobiliaria'
-  // La inmobiliaria NO ve "asumir el costo": ya paga al comprar créditos, así
-  // que esa opción era redundante. Le quedan crédito + enviar link. Los demás
-  // roles (propietario/admin) sí pueden asumir el costo internamente.
-  const mostrarAsumir = userRole !== 'inmobiliaria'
+  // "Yo asumo el costo" queda OCULTO (no eliminado — el botón y su flujo siguen
+  // abajo intactos) para:
+  //   - inmobiliaria → ya paga al comprar créditos (sería redundante)
+  //   - propietario  → decisión: el propietario solo envía link al solicitante
+  // Para reactivarlo en alguno de los dos, quita su rol de esta condición.
+  // Sigue disponible para admin/operador.
+  const mostrarAsumir = userRole !== 'inmobiliaria' && userRole !== 'propietario'
   const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (mostrarAsumir ? 1 : 0) + 1
 
   const fetchEstado = useCallback(async () => {
