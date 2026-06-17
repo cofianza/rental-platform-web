@@ -484,6 +484,7 @@ export default function ExpedienteDetallePage() {
             <div className="border border-gray-200 rounded-lg p-5">
               <CitasSection
                 expedienteId={id}
+                expedienteEstado={expediente.estado}
                 inmuebleId={expediente.inmueble?.id}
                 onCitaRealizada={fetchExpediente}
               />

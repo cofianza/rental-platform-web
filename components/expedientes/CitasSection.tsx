@@ -13,7 +13,7 @@ import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatDateTime } from '@/lib/constants'
-import type { ICita, EstadoCita } from '@/types/cita'
+import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
 import SlotSelector, {
   formatSlotHora,
@@ -22,13 +22,19 @@ import SlotSelector, {
 
 interface CitasSectionProps {
   expedienteId: string
+  /** Estado del expediente — para ocultar el pill de pago cuando el estudio ya
+   *  corrió (en expedientes finalizados no tiene sentido "Aún sin pago"). */
+  expedienteEstado?: string
   /** Id del inmueble — habilita SlotSelector con disponibilidad real del
    *  propietario. Si falta, el modal cae a un input date+time crudo. */
   inmuebleId?: string
   onCitaRealizada?: () => void
 }
 
-export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: CitasSectionProps) {
+export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, onCitaRealizada }: CitasSectionProps) {
+  // El estudio ya corrió (o el expediente cerró): el pago del estudio ya no es
+  // accionable, así que no mostramos el pill "Aún sin pago"/"Pago pendiente".
+  const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
   const user = useAuthStore((s) => s.user)
   const [citas, setCitas] = useState<ICita[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -191,7 +197,7 @@ export function CitasSection({ expedienteId, inmuebleId, onCitaRealizada }: Cita
                     <IconShieldCheck size={12} />
                     Estudio habilitado
                   </span>
-                  <PagoEstudioPill estado={pagoEstudioEstado} />
+                  {!estudioYaCorrio && <PagoEstudioPill estado={pagoEstudioEstado} />}
                 </>
               ) : completedCita.expediente?.estudio_rechazado ? (
                 <span
