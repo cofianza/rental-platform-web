@@ -143,6 +143,26 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }
 
+  // Inmobiliaria: el "cancelar" del estado pendiente cobra con crédito (no asume gratis).
+  const handleCancelarYLiberar = async () => {
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await pagoEstudioService.cancelarYLiberarCredito(expedienteId)
+      await Promise.all([fetchEstado(), fetchSaldo()])
+      onPagoCompletado?.()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cancelar y liberar con crédito')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Inmobiliaria paga con crédito; los demás (propietario/admin) asumen el costo.
+  const cancelarConCredito = userRole === 'inmobiliaria'
+  const onCancelar = cancelarConCredito ? handleCancelarYLiberar : handleCancelarYAsumir
+  const labelCancelar = cancelarConCredito ? 'Cancelar y liberar con crédito' : 'Cancelar y asumir costo'
+
   if (isLoading) {
     return (
       <div className="animate-pulse bg-gray-100 rounded-lg p-6 h-32" />
@@ -329,11 +349,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               Reenviar correo
             </button>
             <button
-              onClick={handleCancelarYAsumir}
+              onClick={onCancelar}
               disabled={isSubmitting}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              Cancelar y asumir costo
+              {labelCancelar}
             </button>
           </div>
         </div>
@@ -355,11 +375,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             </div>
           </div>
           <button
-            onClick={handleCancelarYAsumir}
+            onClick={onCancelar}
             disabled={isSubmitting}
             className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
-            Cancelar y asumir costo
+            {labelCancelar}
           </button>
         </div>
       )}

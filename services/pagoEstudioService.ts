@@ -56,6 +56,14 @@ class PagoEstudioService {
     const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pago-estudio/cancelar-y-asumir`)
     return response.data
   }
+
+  // Inmobiliaria: cancela el link y paga con 1 crédito.
+  async cancelarYLiberarCredito(expedienteId: string): Promise<{ pago_id: string; saldo_restante: number }> {
+    const response = await apiClient.post<{ pago_id: string; saldo_restante: number }>(
+      `/expedientes/${expedienteId}/pago-estudio/cancelar-y-liberar-credito`,
+    )
+    return response.data
+  }
 }
 
 export const pagoEstudioService = new PagoEstudioService()
