@@ -432,8 +432,13 @@ export default function ExpedienteDetallePage() {
                 {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
                     estudio, la inmobiliaria/propietario decide aquí quién
                     asume el costo (crédito / asumir / link al arrendatario)
-                    sin tener que descubrir el tab Pagos. */}
-                {(expediente.estudio_habilitado ?? false) && (
+                    sin tener que descubrir el tab Pagos.
+                    Solo mientras el estudio NO haya corrido: una vez el
+                    expediente pasa a revisión/aprobado/cerrado, el estudio ya
+                    se ejecutó y pedir pago no tiene sentido (era el bug del
+                    expediente cerrado mostrando "define quién paga"). */}
+                {(expediente.estudio_habilitado ?? false) &&
+                  !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
                   <PagoEstudioSection
                     expedienteId={id}
                     userRole={user?.rol}
