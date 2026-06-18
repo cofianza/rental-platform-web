@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   IconSearch,
   IconLoader,
@@ -108,10 +109,13 @@ export function Step2Solicitante({
       onUpdate({ solicitante: updated, isNewSolicitante: false, formData: null })
       setEditingId(null)
       setEditForm(null)
+      toast.success('Solicitante actualizado')
       // Refrescar el quick-pick para que muestre los datos actualizados.
       solicitanteService.list({ limit: 6 }).then(setRecientes).catch(() => {})
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'No se pudieron guardar los cambios')
+      const msg = err instanceof Error ? err.message : 'No se pudieron guardar los cambios'
+      setEditError(msg)
+      toast.error(msg)
     } finally {
       setIsSavingEdit(false)
     }
