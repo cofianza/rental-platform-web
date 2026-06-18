@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   IconSearch,
   IconLoader,
@@ -43,6 +43,22 @@ export function Step2Solicitante({
   const [searchNumDoc, setSearchNumDoc] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  // Solicitantes que esta inmobiliaria/propietario ya registró — para elegir
+  // rápido sin escribir el documento. El backend los scopea por creado_por.
+  const [recientes, setRecientes] = useState<ISolicitante[]>([])
+
+  useEffect(() => {
+    let active = true
+    solicitanteService
+      .list({ limit: 6 })
+      .then((rows) => { if (active) setRecientes(rows) })
+      .catch(() => { /* silencioso: el quick-pick es opcional */ })
+    return () => { active = false }
+  }, [])
+
+  const handleSelectReciente = (s: ISolicitante) => {
+    onUpdate({ solicitante: s, isNewSolicitante: false, formData: null })
+  }
 
   // Buscar solicitante por documento
   const handleSearch = useCallback(async () => {
@@ -237,6 +253,42 @@ export function Step2Solicitante({
           <p className="text-sm text-red-600 mt-3">{searchError}</p>
         )}
       </div>
+
+      {/* Quick-pick: solicitantes ya registrados por este usuario */}
+      {recientes.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+            O elige uno que ya registraste
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {recientes.map((s) => {
+              const docLabel = TIPO_DOCUMENTO_OPTIONS.find((t) => t.value === s.tipo_documento)?.label
+                || s.tipo_documento.toUpperCase()
+              const iniciales = `${s.nombre?.[0] ?? ''}${s.apellido?.[0] ?? ''}`.toUpperCase() || '?'
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => handleSelectReciente(s)}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/40 text-left transition-colors"
+                >
+                  <span className="shrink-0 h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center text-sm font-semibold text-primary-700">
+                    {iniciales}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-gray-900 truncate">
+                      {s.nombre} {s.apellido}
+                    </span>
+                    <span className="block text-xs text-gray-500 truncate">
+                      {docLabel}: {s.numero_documento}
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Error de validacion */}
       {errors.solicitante && (

@@ -36,6 +36,18 @@ class SolicitanteService {
   }
 
   /**
+   * Lista solicitantes (backend scopea: inmobiliaria/propietario solo ven los
+   * que registraron). Usado para el quick-pick de "ya registrados".
+   */
+  async list(params?: { limit?: number; search?: string }): Promise<ISolicitante[]> {
+    const qs = new URLSearchParams()
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.search) qs.set('search', params.search)
+    const response = await apiClient.get<ISolicitante[]>(`/applicants?${qs.toString()}`)
+    return response.data ?? []
+  }
+
+  /**
    * Crea un nuevo solicitante
    */
   async createSolicitante(data: ISolicitanteCreateData): Promise<ISolicitante> {
