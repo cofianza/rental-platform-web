@@ -12,6 +12,7 @@ import {
   IconCheck,
   IconX,
   IconPlus,
+  IconPencil,
 } from '@/components/icons'
 import { solicitanteService } from '@/services/solicitanteService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
@@ -59,6 +60,61 @@ export function Step2Solicitante({
 
   const handleSelectReciente = (s: ISolicitante) => {
     onUpdate({ solicitante: s, isNewSolicitante: false, formData: null })
+  }
+
+  // Edición de un solicitante existente (PATCH inmediato). Estado local: no toca
+  // el wizard hasta guardar; al guardar, reemplaza el solicitante seleccionado.
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<ISolicitanteCreateData | null>(null)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  const handleEditExisting = (s: ISolicitante) => {
+    setEditError(null)
+    setEditingId(s.id)
+    setEditForm({
+      tipo_persona: s.tipo_persona,
+      nombre: s.nombre,
+      apellido: s.apellido,
+      tipo_documento: s.tipo_documento,
+      numero_documento: s.numero_documento,
+      email: s.email,
+      telefono: s.telefono ?? undefined,
+      direccion: s.direccion ?? undefined,
+      departamento: s.departamento ?? undefined,
+      ciudad: s.ciudad ?? undefined,
+      ocupacion: s.ocupacion ?? undefined,
+      actividad_economica: s.actividad_economica ?? undefined,
+      empresa: s.empresa ?? undefined,
+      ingresos_mensuales: s.ingresos_mensuales ?? undefined,
+      nivel_educativo: s.nivel_educativo ?? undefined,
+      parentesco: s.parentesco ?? undefined,
+      habitara_inmueble: s.habitara_inmueble,
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditForm(null)
+    setEditError(null)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editForm) return
+    setIsSavingEdit(true)
+    setEditError(null)
+    try {
+      const updated = await solicitanteService.updateSolicitante(editingId, editForm)
+      onUpdate({ solicitante: updated, isNewSolicitante: false, formData: null })
+      setEditingId(null)
+      setEditForm(null)
+      // Refrescar el quick-pick para que muestre los datos actualizados.
+      solicitanteService.list({ limit: 6 }).then(setRecientes).catch(() => {})
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'No se pudieron guardar los cambios')
+    } finally {
+      setIsSavingEdit(false)
+    }
   }
 
   // Crear directo, sin tener que buscar primero. Si ya escribió tipo/número,
@@ -147,6 +203,51 @@ export function Step2Solicitante({
     })
   }
 
+  // Editando un solicitante existente — reusa el formulario completo.
+  if (editingId && editForm) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Editar solicitante</h2>
+            <p className="mt-1 text-sm text-gray-500">Actualiza los datos y guarda los cambios.</p>
+          </div>
+          <button type="button" onClick={handleCancelEdit} className="text-sm text-gray-500 hover:text-gray-700">
+            Cancelar
+          </button>
+        </div>
+
+        {editError && <p className="text-sm text-red-600">{editError}</p>}
+
+        <SolicitanteForm
+          formData={editForm}
+          errors={{}}
+          onUpdateField={(field, value) => setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev))}
+        />
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleSaveEdit}
+            disabled={isSavingEdit}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+          >
+            {isSavingEdit && <IconLoader size={16} className="animate-spin" />}
+            Guardar cambios
+          </button>
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            disabled={isSavingEdit}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // Si hay solicitante seleccionado, mostrar card
   if (data.solicitante) {
     return (
@@ -163,6 +264,7 @@ export function Step2Solicitante({
         <SolicitanteCard
           solicitante={data.solicitante}
           onClear={handleClearSelection}
+          onEdit={() => handleEditExisting(data.solicitante!)}
         />
       </div>
     )
@@ -337,9 +439,11 @@ export function Step2Solicitante({
 function SolicitanteCard({
   solicitante,
   onClear,
+  onEdit,
 }: {
   solicitante: ISolicitante
   onClear: () => void
+  onEdit?: () => void
 }) {
   const tipoDocLabel = TIPO_DOCUMENTO_OPTIONS.find(
     (t) => t.value === solicitante.tipo_documento
@@ -365,13 +469,26 @@ function SolicitanteCard({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClear}
-          className="p-1 text-gray-400 hover:text-gray-600"
-        >
-          <IconX size={20} />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              title="Editar datos del solicitante"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:text-primary-700 hover:bg-white rounded-md"
+            >
+              <IconPencil size={14} /> Editar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClear}
+            title="Quitar selección"
+            className="p-1 text-gray-400 hover:text-gray-600"
+          >
+            <IconX size={20} />
+          </button>
+        </div>
       </div>
     </div>
   )

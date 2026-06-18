@@ -48,6 +48,18 @@ class SolicitanteService {
   }
 
   /**
+   * Actualiza un solicitante existente (PATCH). El backend valida que
+   * inmobiliaria/propietario solo editen los que registraron.
+   */
+  async updateSolicitante(id: string, data: Partial<ISolicitanteCreateData>): Promise<ISolicitante> {
+    const response = (await apiClient.patch(
+      `/applicants/${id}`,
+      data
+    )) as unknown as ISolicitanteResponse
+    return response.data as ISolicitante
+  }
+
+  /**
    * Crea un nuevo solicitante
    */
   async createSolicitante(data: ISolicitanteCreateData): Promise<ISolicitante> {
