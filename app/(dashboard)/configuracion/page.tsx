@@ -8,7 +8,7 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -54,6 +54,15 @@ const SECCIONES: Array<{
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['inmobiliaria', 'administrador'],
+  },
+  {
+    id: 'disponibilidad',
+    href: '/disponibilidad',
+    titulo: 'Disponibilidad de visitas',
+    descripcion: 'Define tus horarios para que los interesados agenden visitas solo en los espacios libres.',
+    icon: IconCalendar,
+    color: 'bg-cyan-100 text-cyan-600',
+    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
     id: 'tesoreria',

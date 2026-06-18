@@ -18,8 +18,8 @@ import {
   IconAlertTriangle,
   IconReceipt,
   IconBarChart3,
-  IconFolderOpen,
   IconClipboardList,
+  IconSettings,
 } from '@/components/icons'
 
 interface TabDef {
@@ -80,10 +80,13 @@ const TABS: TabDef[] = [
     matchers: ['/reportes'],
   },
   {
-    label: 'Mi Inmobiliaria',
-    href: '/configuracion/mi-inmobiliaria',
-    icon: IconFolderOpen,
-    matchers: ['/configuracion'],
+    // Apunta al HUB de configuración (no directo a documentos): así la
+    // inmobiliaria/propietario ve TODAS sus opciones (Mi cuenta, Datos para
+    // contrato, Mi Inmobiliaria, Créditos, Disponibilidad, Notificaciones).
+    label: 'Configuración',
+    href: '/configuracion',
+    icon: IconSettings,
+    matchers: ['/configuracion', '/disponibilidad'],
   },
 ]
 
