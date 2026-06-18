@@ -14,7 +14,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Modal, ConfirmDialog } from '@/components/ui'
-import { IconLoader, IconCalendar, IconPhone, IconShieldCheck } from '@/components/icons'
+import { IconLoader, IconCalendar, IconPhone, IconShieldCheck, IconMail, IconId, IconUser } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
 import { formatDateTime } from '@/lib/constants'
@@ -154,15 +154,39 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       {/* Solicitante */}
       {solicitante && (
         <div className="mb-3 text-sm">
-          <p className="text-gray-700 truncate">
+          <p className="text-gray-700 truncate font-medium">
             {solicitante.nombre} {solicitante.apellido}
           </p>
-          {solicitante.telefono && (
-            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-              <IconPhone size={12} />
-              {solicitante.telefono}
-            </p>
-          )}
+          <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+            {solicitante.telefono && (
+              <p className="flex items-center gap-1">
+                <IconPhone size={12} />
+                <a href={`tel:${solicitante.telefono}`} className="hover:text-primary-600 hover:underline">
+                  {solicitante.telefono}
+                </a>
+              </p>
+            )}
+            {solicitante.email && (
+              <p className="flex items-center gap-1 truncate">
+                <IconMail size={12} className="shrink-0" />
+                <a href={`mailto:${solicitante.email}`} className="truncate hover:text-primary-600 hover:underline">
+                  {solicitante.email}
+                </a>
+              </p>
+            )}
+            {solicitante.numero_documento && (
+              <p className="flex items-center gap-1">
+                <IconId size={12} className="shrink-0" />
+                {(solicitante.tipo_documento ?? '').toUpperCase()} {solicitante.numero_documento}
+              </p>
+            )}
+            {solicitante.ocupacion && (
+              <p className="flex items-center gap-1 truncate">
+                <IconUser size={12} className="shrink-0" />
+                <span className="truncate">{solicitante.ocupacion}</span>
+              </p>
+            )}
+          </div>
         </div>
       )}
 

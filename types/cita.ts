@@ -35,7 +35,16 @@ export interface ICita {
     estudio_rechazado?: boolean
     motivo_estudio_rechazado?: string | null
     inmueble: { id: string; direccion: string; ciudad: string } | null
-    solicitante: { nombre: string; apellido: string; telefono: string | null } | null
+    solicitante: {
+      nombre: string
+      apellido: string
+      telefono: string | null
+      email?: string | null
+      tipo_documento?: string | null
+      numero_documento?: string | null
+      ciudad?: string | null
+      ocupacion?: string | null
+    } | null
   } | null
 }
 
