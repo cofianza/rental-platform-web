@@ -11,6 +11,7 @@ import {
   IconLoader,
   IconCheck,
   IconX,
+  IconPlus,
 } from '@/components/icons'
 import { solicitanteService } from '@/services/solicitanteService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
@@ -58,6 +59,24 @@ export function Step2Solicitante({
 
   const handleSelectReciente = (s: ISolicitante) => {
     onUpdate({ solicitante: s, isNewSolicitante: false, formData: null })
+  }
+
+  // Crear directo, sin tener que buscar primero. Si ya escribió tipo/número,
+  // los arrastra al formulario.
+  const handleStartCreate = () => {
+    onUpdate({
+      solicitante: null,
+      isNewSolicitante: true,
+      formData: {
+        tipo_persona: 'natural',
+        nombre: '',
+        apellido: '',
+        tipo_documento: searchTipoDoc || 'cc',
+        numero_documento: searchNumDoc.trim(),
+        email: '',
+        telefono: '',
+      },
+    })
   }
 
   // Buscar solicitante por documento
@@ -252,6 +271,19 @@ export function Step2Solicitante({
         {searchError && (
           <p className="text-sm text-red-600 mt-3">{searchError}</p>
         )}
+
+        {/* Atajo: crear directo sin buscar */}
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+          <span className="text-sm text-gray-500">¿Es un solicitante nuevo?</span>
+          <button
+            type="button"
+            onClick={handleStartCreate}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
+          >
+            <IconPlus size={16} />
+            Crear solicitante
+          </button>
+        </div>
       </div>
 
       {/* Quick-pick: solicitantes ya registrados por este usuario */}
