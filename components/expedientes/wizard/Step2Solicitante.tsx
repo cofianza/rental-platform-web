@@ -112,21 +112,6 @@ export function Step2Solicitante({
     })
   }
 
-  // Clases para inputs
-  const inputClasses = (hasError: boolean) =>
-    cn(
-      'block w-full px-3 py-2 border rounded-lg text-sm',
-      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-      hasError ? 'border-red-300' : 'border-gray-300'
-    )
-
-  const selectClasses = (hasError: boolean) =>
-    cn(
-      'block w-full px-3 py-2 border rounded-lg text-sm bg-white',
-      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-      hasError ? 'border-red-300' : 'border-gray-300'
-    )
-
   // Si hay solicitante seleccionado, mostrar card
   if (data.solicitante) {
     return (
@@ -191,78 +176,65 @@ export function Step2Solicitante({
         </p>
       </div>
 
-      {/* Formulario de busqueda */}
-      <div className="p-6 bg-gray-50 rounded-lg space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-700">
-            {WIZARD_MESSAGES.USE_EXISTING_SOLICITANTE}
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Escribe el documento y busca. Si no existe, abrimos el formulario para crearlo al instante.
-          </p>
+      {/* Búsqueda — barra unificada (tipo + número + buscar en un solo grupo) */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start gap-3 mb-4">
+          <span className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-50">
+            <IconSearch size={20} className="text-primary-600" />
+          </span>
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Buscar solicitante</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Escribe el documento. Si no existe, abrimos el formulario para crearlo al instante.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Tipo de documento */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Tipo de documento
-            </label>
-            <select
-              value={searchTipoDoc}
-              onChange={(e) => setSearchTipoDoc(e.target.value as TipoDocumento | '')}
-              className={selectClasses(false)}
-            >
-              <option value="">Seleccionar...</option>
-              {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Input group: select de tipo + número + botón, unidos */}
+        <div className="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-0">
+          <select
+            aria-label="Tipo de documento"
+            value={searchTipoDoc}
+            onChange={(e) => setSearchTipoDoc(e.target.value as TipoDocumento | '')}
+            className="sm:w-44 rounded-lg sm:rounded-r-none sm:border-r-0 border border-gray-300 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:z-10"
+          >
+            {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
 
-          {/* Numero de documento */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Número de documento
-            </label>
-            <input
-              type="text"
-              value={searchNumDoc}
-              onChange={(e) => setSearchNumDoc(e.target.value)}
-              placeholder={WIZARD_MESSAGES.PLACEHOLDER_DOCUMENTO}
-              className={inputClasses(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleSearch()
-                }
-              }}
-            />
-          </div>
+          <input
+            type="text"
+            autoFocus
+            inputMode="numeric"
+            value={searchNumDoc}
+            onChange={(e) => setSearchNumDoc(e.target.value)}
+            placeholder="Número de documento"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleSearch()
+              }
+            }}
+            className="flex-1 min-w-0 rounded-lg sm:rounded-none border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:z-10"
+          />
 
-          {/* Boton buscar */}
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={handleSearch}
-              disabled={isSearching || !searchTipoDoc || !searchNumDoc.trim()}
-              className="w-full sm:w-auto px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-            >
-              {isSearching ? (
-                <IconLoader size={16} className="animate-spin" />
-              ) : (
-                <IconSearch size={16} />
-              )}
-              Buscar
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={isSearching || !searchTipoDoc || !searchNumDoc.trim()}
+            className="rounded-lg sm:rounded-l-none px-6 py-3 bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+          >
+            {isSearching ? <IconLoader size={18} className="animate-spin" /> : <IconSearch size={18} />}
+            Buscar
+          </button>
         </div>
 
         {/* Error de busqueda */}
         {searchError && (
-          <p className="text-sm text-red-600">{searchError}</p>
+          <p className="text-sm text-red-600 mt-3">{searchError}</p>
         )}
       </div>
 
