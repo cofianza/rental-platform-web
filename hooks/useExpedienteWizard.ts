@@ -82,7 +82,16 @@ const initialErrors: WizardErrors = {
 // ============================================
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_REGEX = /^(\+57\s?)?3\d{9}$/
+// Celular colombiano (con o sin +57) — atajo local.
+const PHONE_CO_REGEX = /^(\+57)?3\d{9}$/
+// Cualquier número internacional en E.164: '+' + código de país + 7 a 14 dígitos.
+const PHONE_INTL_REGEX = /^\+\d{8,15}$/
+
+/** Acepta celular CO local (3XXXXXXXXX) o internacional con código de país (+52...). */
+function isValidPhone(raw: string): boolean {
+  const limpio = raw.replace(/[\s-]/g, '')
+  return PHONE_CO_REGEX.test(limpio) || PHONE_INTL_REGEX.test(limpio)
+}
 
 function validateStep1(data: WizardStep1Data): Record<string, string> {
   const errors: Record<string, string> = {}
@@ -127,8 +136,8 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
     } else if (!EMAIL_REGEX.test(form.email)) {
       errors.email = 'Email invalido'
     }
-    if (form.telefono?.trim() && !PHONE_REGEX.test(form.telefono.replace(/\s/g, ''))) {
-      errors.telefono = 'Formato: +57 3XXXXXXXXX o 3XXXXXXXXX'
+    if (form.telefono?.trim() && !isValidPhone(form.telefono)) {
+      errors.telefono = 'Celular colombiano (3XXXXXXXXX) o internacional con código de país (ej. +52 1234567890)'
     }
   }
 
