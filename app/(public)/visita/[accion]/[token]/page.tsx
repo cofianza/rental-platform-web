@@ -56,7 +56,11 @@ function fmtHora(iso: string): string {
 
 export default function GestionarVisitaPage() {
   const params = useParams()
-  const token = String(params.token ?? '')
+  // Meta antepone el placeholder "{{1}}" literal al sufijo dinámico del botón
+  // (no lo sustituye), así que el token llega como "{{1}}<token>". Extraemos el
+  // token real (64 hex) de lo que venga en la URL.
+  const rawToken = String(params.token ?? '')
+  const token = rawToken.match(/[a-f0-9]{64}/i)?.[0] ?? rawToken
   const accion = String(params.accion ?? '') === 'cancelar' ? 'cancelar' : 'reprogramar'
 
   const [visita, setVisita] = useState<IVisitaPublica | null>(null)
