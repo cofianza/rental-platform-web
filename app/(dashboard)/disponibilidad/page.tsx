@@ -41,6 +41,22 @@ const DURACIONES: { value: 30 | 60 | 120; label: string }[] = [
   { value: 120, label: '2 horas' },
 ]
 
+// Anticipación mínima con la que un arrendatario puede agendar (horas).
+// 0 = puede agendar el mismo día. Se persiste en antelacion_minima_horas.
+const ANTELACIONES: { value: number; label: string }[] = [
+  { value: 0, label: 'Mismo día' },
+  { value: 2, label: '2 horas antes' },
+  { value: 24, label: '1 día (24 h)' },
+  { value: 48, label: '2 días (48 h)' },
+]
+
+function antelacionLabel(horas: number): string {
+  if (horas <= 0) return 'el mismo día (sin anticipación)'
+  if (horas < 24) return `${horas} horas antes`
+  const dias = Math.round(horas / 24)
+  return dias === 1 ? '1 día antes' : `${dias} días antes`
+}
+
 function makeDefaultHorarios(): IHorarioDia[] {
   return DIAS_LABELS.map(({ value }) => ({
     dia_semana: value,
@@ -103,6 +119,7 @@ export default function DisponibilidadPage() {
 
   const [horarios, setHorarios] = useState<IHorarioDia[]>(makeDefaultHorarios())
   const [duracion, setDuracion] = useState<30 | 60 | 120>(60)
+  const [antelacion, setAntelacion] = useState<number>(24)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [initial, setInitial] = useState<string>('')
@@ -132,10 +149,12 @@ export default function DisponibilidadPage() {
             ? completarDias(data.horarios)
             : makeDefaultHorarios()
         const duracionUI = (data.configuracion?.slot_duracion_minutos ?? 60) as 30 | 60 | 120
+        const antelacionUI = data.configuracion?.antelacion_minima_horas ?? 24
 
         setHorarios(horariosUI)
         setDuracion(duracionUI)
-        setInitial(JSON.stringify({ horarios: horariosUI, duracion: duracionUI }))
+        setAntelacion(antelacionUI)
+        setInitial(JSON.stringify({ horarios: horariosUI, duracion: duracionUI, antelacion: antelacionUI }))
       })
       .catch(() => {
         if (!cancelled) toast.error('No se pudieron cargar tus horarios.')
@@ -150,8 +169,8 @@ export default function DisponibilidadPage() {
   }, [isInitialized, isAuthenticated])
 
   const isDirty = useMemo(
-    () => JSON.stringify({ horarios, duracion }) !== initial,
-    [horarios, duracion, initial],
+    () => JSON.stringify({ horarios, duracion, antelacion }) !== initial,
+    [horarios, duracion, antelacion, initial],
   )
 
   function updateDia(dia: number, patch: Partial<IHorarioDia>) {
@@ -173,10 +192,11 @@ export default function DisponibilidadPage() {
       const horariosActivos = horarios.filter((h) => h.activo)
       await disponibilidadService.updateMiDisponibilidad({
         slot_duracion_minutos: duracion,
+        antelacion_minima_horas: antelacion,
         horarios: horariosActivos,
       })
       toast.success('Horarios actualizados.')
-      setInitial(JSON.stringify({ horarios, duracion }))
+      setInitial(JSON.stringify({ horarios, duracion, antelacion }))
     } catch (err: unknown) {
       const errObj = err as { message?: string }
       toast.error(errObj.message || 'No se pudieron guardar los cambios.')
@@ -232,6 +252,34 @@ export default function DisponibilidadPage() {
           </div>
           <p className="text-xs text-gray-500 mt-1">
             Duración de cada slot que verán los arrendatarios al agendar.
+          </p>
+        </div>
+
+        {/* Selector de anticipación mínima */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Anticipación mínima para agendar
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {ANTELACIONES.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setAntelacion(value)}
+                className={
+                  'px-4 py-2 rounded-lg border text-sm font-medium transition ' +
+                  (antelacion === value
+                    ? 'bg-primary-600 text-white border-primary-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Con cuánta antelación debe agendar el arrendatario. Elige{' '}
+            <strong>Mismo día</strong> para permitir visitas el mismo día.
           </p>
         </div>
 
@@ -302,8 +350,9 @@ export default function DisponibilidadPage() {
       <div className="max-w-3xl p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-900">
           <strong>Cómo funciona:</strong> Los arrendatarios solo podrán agendar visitas en los
-          horarios que marques como disponibles. La antelación mínima es de 24 horas. Si no
-          configuras nada, se aplican horarios por defecto Lunes a Viernes de 9:00 a 17:00.
+          horarios que marques como disponibles, con una anticipación mínima de{' '}
+          <strong>{antelacionLabel(antelacion)}</strong>. Si no configuras nada, se aplican
+          horarios por defecto Lunes a Viernes de 9:00 a 17:00.
         </p>
       </div>
     </div>
