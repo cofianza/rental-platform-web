@@ -75,14 +75,18 @@ const SECCIONES: Array<{
   },
   {
     id: 'plantillas-contrato',
+    href: '/plantillas-contrato',
     titulo: 'Plantillas de contrato',
     descripcion: 'Gestiona las plantillas de contratos de arrendamiento y documentos legales.',
     icon: IconFileText,
     color: 'bg-blue-100 text-blue-600',
-    soloRoles: ['administrador', 'operador_analista', 'inmobiliaria', 'propietario'],
+    // Solo roles internos: inmobiliaria/propietario tienen plantillas:['read'],
+    // no pueden gestionarlas — mostrarles esta card era engañoso.
+    soloRoles: ['administrador', 'operador_analista'],
   },
   {
     id: 'notificaciones',
+    href: '/notificaciones',
     titulo: 'Notificaciones',
     descripcion: 'Configura alertas por email, SMS y notificaciones push del sistema.',
     icon: IconBell,
@@ -98,6 +102,7 @@ const SECCIONES: Array<{
   },
   {
     id: 'usuarios-permisos',
+    href: '/usuarios',
     titulo: 'Usuarios y permisos',
     descripcion: 'Administra roles, permisos y accesos de los usuarios del sistema.',
     icon: IconUsers,

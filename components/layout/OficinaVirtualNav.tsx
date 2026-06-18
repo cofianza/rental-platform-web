@@ -20,6 +20,7 @@ import {
   IconBarChart3,
   IconClipboardList,
   IconSettings,
+  IconCalendar,
 } from '@/components/icons'
 
 interface TabDef {
@@ -37,7 +38,7 @@ const TABS: TabDef[] = [
     label: 'Propiedades y Vitrina',
     href: '/inmuebles',
     icon: IconBuilding2,
-    matchers: ['/inmuebles', '/vitrina', '/disponibilidad'],
+    matchers: ['/inmuebles', '/vitrina'],
   },
   {
     // Lista scopeada en el backend: la inmobiliaria/propietario solo ve
@@ -47,6 +48,14 @@ const TABS: TabDef[] = [
     href: '/expedientes',
     icon: IconClipboardList,
     matchers: ['/expedientes'],
+  },
+  {
+    // Kanban de visitas (scopeado por rol en el backend). Antes solo se
+    // gestionaban las citas dentro de cada expediente; faltaba la agenda global.
+    label: 'Visitas',
+    href: '/citas',
+    icon: IconCalendar,
+    matchers: ['/citas'],
   },
   {
     label: 'Estudios',
