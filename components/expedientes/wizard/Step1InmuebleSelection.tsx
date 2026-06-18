@@ -63,6 +63,8 @@ export function Step1InmuebleSelection({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  // Marca para auto-seleccionar el único inmueble solo una vez.
+  const autoSelectedRef = useRef(false)
 
   // Fetch de "mis inmuebles" al montar (solo si aplica al rol).
   useEffect(() => {
@@ -171,12 +173,27 @@ export function Step1InmuebleSelection({
 
   // Limpiar seleccion
   const handleClearSelection = () => {
+    autoSelectedRef.current = true // no volver a auto-seleccionar tras limpiar a propósito
     setActiveExpedienteInfo(null)
     onUpdate({
       inmueble: null,
       hasActiveExpediente: false,
     })
   }
+
+  // Auto-seleccionar cuando el usuario tiene exactamente 1 inmueble disponible:
+  // en ese caso elegirlo a mano es un paso de más. Solo una vez (ref) y si no
+  // hay nada seleccionado; si lo quita con la X, no se vuelve a forzar.
+  useEffect(() => {
+    if (autoSelectedRef.current || !usaDropdownPropios || data.inmueble) return
+    if (misInmuebles.length === 1) {
+      autoSelectedRef.current = true
+      void handleSelectInmueble(misInmuebles[0])
+    }
+    // handleSelectInmueble se omite a propósito de las deps (no memoizado);
+    // el ref evita re-disparos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [misInmuebles, usaDropdownPropios, data.inmueble])
 
   return (
     <div className="space-y-6">
@@ -198,35 +215,55 @@ export function Step1InmuebleSelection({
               comun (pocos inmuebles propios) elijan en un solo click. */}
           {usaDropdownPropios && (
             <div>
-              <label htmlFor="mis-inmuebles-select" className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Mis inmuebles disponibles
               </label>
-              <select
-                id="mis-inmuebles-select"
-                disabled={isLoadingMios || misInmuebles.length === 0}
-                value=""
-                onChange={(e) => {
-                  const id = e.target.value
-                  if (!id) return
-                  const inmueble = misInmuebles.find((i) => i.id === id)
-                  if (inmueble) handleSelectInmueble(inmueble)
-                }}
-                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-              >
-                <option value="">
-                  {isLoadingMios
-                    ? 'Cargando tus inmuebles...'
-                    : misInmuebles.length === 0
-                      ? 'No tienes inmuebles disponibles'
-                      : `Selecciona uno de tus ${misInmuebles.length} inmuebles disponibles...`}
-                </option>
-                {misInmuebles.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.codigo} — {i.direccion}, {i.ciudad}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1.5">
+              {isLoadingMios ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <IconLoader size={16} className="animate-spin" /> Cargando tus inmuebles...
+                </div>
+              ) : misInmuebles.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No tienes inmuebles disponibles. Usa el buscador de abajo para ver el catálogo completo.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {misInmuebles.map((i) => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => handleSelectInmueble(i)}
+                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/40 text-left transition-colors"
+                    >
+                      <div className="shrink-0 w-14 h-14 bg-gray-100 rounded-lg overflow-hidden">
+                        {i.foto_fachada_url ? (
+                          <Image
+                            src={i.foto_fachada_url}
+                            alt={i.direccion}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <IconHome size={20} className="text-gray-300" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {i.codigo} · {i.direccion}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
+                        <p className="text-sm font-semibold text-primary-600">
+                          {formatCurrency(i.valor_arriendo)}/mes
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
                 ¿No lo encuentras aquí? Usa el buscador de abajo para ver el catálogo completo.
               </p>
             </div>

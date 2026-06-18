@@ -13,6 +13,7 @@ import {
   IconAlertTriangle,
 } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { WizardStep3Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
@@ -35,12 +36,19 @@ export function Step3Configuration({
   errors,
   onUpdate,
 }: Step3ConfigurationProps) {
+  // "Asignar responsable" (analista) es asignación INTERNA de Cofianza — no
+  // aplica a inmobiliaria/propietario, así que para ellos se oculta el bloque
+  // y ni siquiera se piden los analistas.
+  const userRol = useAuthStore((s) => s.user?.rol)
+  const esInterno = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
+
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
   const [analistasError, setAnalistasError] = useState<string | null>(null)
 
-  // Cargar analistas al montar (con manejo de error defensivo)
+  // Cargar analistas al montar (solo roles internos; con manejo de error defensivo)
   useEffect(() => {
+    if (!esInterno) return
     async function loadAnalistas() {
       setIsLoadingAnalistas(true)
       setAnalistasError(null)
@@ -56,7 +64,7 @@ export function Step3Configuration({
       }
     }
     loadAnalistas()
-  }, [])
+  }, [esInterno])
 
   // Manejar cambio de notas
   const handleNotasChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -122,7 +130,8 @@ export function Step3Configuration({
         </div>
       </div>
 
-      {/* Asignar responsable */}
+      {/* Asignar responsable — solo roles internos (no inmobiliaria/propietario) */}
+      {esInterno && (
       <div className="space-y-2">
         <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <IconUser size={16} className="text-gray-400" />
@@ -172,6 +181,7 @@ export function Step3Configuration({
           El responsable asignado recibira notificaciones del expediente
         </p>
       </div>
+      )}
 
       {/* Informacion adicional */}
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
