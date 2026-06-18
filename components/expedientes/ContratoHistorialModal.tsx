@@ -88,9 +88,12 @@ export function ContratoHistorialModal({
                 {/* Meta */}
                 <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
                   <span>{formatDateTime(entry.created_at)}</span>
-                  {entry.usuario && (
-                    <span>por {entry.usuario.nombre} {entry.usuario.apellido}</span>
-                  )}
+                  {/* Sin usuario = acción del sistema (vencimiento automático, post-firma). */}
+                  <span>
+                    {entry.usuario
+                      ? `por ${entry.usuario.nombre} ${entry.usuario.apellido}`
+                      : 'por el Sistema (automático)'}
+                  </span>
                 </div>
 
                 {/* Comentario */}
