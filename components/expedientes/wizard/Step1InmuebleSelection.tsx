@@ -32,6 +32,18 @@ interface Step1InmuebleSelectionProps {
 
 const DEBOUNCE_MS = 300
 const MIN_SEARCH_CHARS = 2
+
+// Estado del inmueble → badge visual. Solo 'disponible' es seleccionable para
+// un nuevo expediente; los demás muestran por qué está bloqueado.
+const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
+  disponible: { label: 'Disponible', cls: 'bg-green-100 text-green-700' },
+  en_estudio: { label: 'En estudio', cls: 'bg-amber-100 text-amber-700' },
+  ocupado: { label: 'Arrendado', cls: 'bg-gray-200 text-gray-700' },
+  inactivo: { label: 'Inactivo', cls: 'bg-gray-100 text-gray-500' },
+}
+function estadoBadge(estado: string) {
+  return ESTADO_BADGE[estado] ?? { label: estado, cls: 'bg-gray-100 text-gray-600' }
+}
 // Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
 // mas, los excedentes se encuentran via el buscador como antes.
 const MIS_INMUEBLES_LIMIT = 50
@@ -70,7 +82,10 @@ export function Step1InmuebleSelection({
     let cancelled = false
     setIsLoadingMios(true)
     inmuebleService
-      .getInmuebles({ estado: 'disponible', limit: MIS_INMUEBLES_LIMIT })
+      // Sin filtro de estado: mostramos TODOS sus inmuebles con su badge de
+      // estado (disponible / en estudio / arrendado) para que vea cuáles están
+      // bloqueados; solo los 'disponible' se pueden seleccionar.
+      .getInmuebles({ limit: MIS_INMUEBLES_LIMIT })
       .then((res) => {
         if (!cancelled) setMisInmuebles(res.data)
       })
@@ -199,7 +214,7 @@ export function Step1InmuebleSelection({
           {usaDropdownPropios && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mis inmuebles disponibles
+                Mis inmuebles
               </label>
               {isLoadingMios ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -207,47 +222,69 @@ export function Step1InmuebleSelection({
                 </div>
               ) : misInmuebles.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No tienes inmuebles disponibles. Usa el buscador de abajo para ver el catálogo completo.
+                  No tienes inmuebles. Usa el buscador de abajo para ver el catálogo completo.
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {misInmuebles.map((i) => (
-                    <button
-                      key={i.id}
-                      type="button"
-                      onClick={() => handleSelectInmueble(i)}
-                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/40 text-left transition-colors"
-                    >
-                      <div className="shrink-0 w-14 h-14 bg-gray-100 rounded-lg overflow-hidden">
-                        {i.foto_fachada_url ? (
-                          <Image
-                            src={i.foto_fachada_url}
-                            alt={i.direccion}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <IconHome size={20} className="text-gray-300" />
+                  {misInmuebles.map((i) => {
+                    const seleccionable = i.estado === 'disponible'
+                    const badge = estadoBadge(i.estado)
+                    const motivoBloqueo =
+                      i.estado === 'ocupado'
+                        ? 'Ya está arrendado (contrato firmado)'
+                        : i.estado === 'en_estudio'
+                          ? 'Reservado: otro candidato está en estudio'
+                          : 'No disponible'
+                    const card = (
+                      <>
+                        <div className="shrink-0 w-14 h-14 bg-gray-100 rounded-lg overflow-hidden">
+                          {i.foto_fachada_url ? (
+                            <Image src={i.foto_fachada_url} alt={i.direccion} width={56} height={56} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IconHome size={20} className="text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 truncate">{i.codigo} · {i.direccion}</p>
+                            <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', badge.cls)}>
+                              {badge.label}
+                            </span>
                           </div>
-                        )}
+                          <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
+                          {seleccionable ? (
+                            <p className="text-sm font-semibold text-primary-600">{formatCurrency(i.valor_arriendo)}/mes</p>
+                          ) : (
+                            <p className="text-xs text-gray-500">{motivoBloqueo}</p>
+                          )}
+                        </div>
+                      </>
+                    )
+                    return seleccionable ? (
+                      <button
+                        key={i.id}
+                        type="button"
+                        onClick={() => handleSelectInmueble(i)}
+                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/40 text-left transition-colors"
+                      >
+                        {card}
+                      </button>
+                    ) : (
+                      <div
+                        key={i.id}
+                        title={motivoBloqueo}
+                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 opacity-70 cursor-not-allowed"
+                      >
+                        {card}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {i.codigo} · {i.direccion}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
-                        <p className="text-sm font-semibold text-primary-600">
-                          {formatCurrency(i.valor_arriendo)}/mes
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                ¿No lo encuentras aquí? Usa el buscador de abajo para ver el catálogo completo.
+                Solo los inmuebles <span className="font-medium">disponibles</span> se pueden seleccionar. ¿No lo encuentras? Usa el buscador.
               </p>
             </div>
           )}
@@ -401,12 +438,17 @@ export function Step1InmuebleSelection({
 
             {/* Info */}
             <div className="p-4 space-y-3">
-              {/* Codigo y tipo */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-500">
-                  {data.inmueble.codigo}
+              {/* Codigo + estado + tipo */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-medium text-gray-500 truncate">
+                    {data.inmueble.codigo}
+                  </span>
+                  <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', estadoBadge(data.inmueble.estado).cls)}>
+                    {estadoBadge(data.inmueble.estado).label}
+                  </span>
                 </span>
-                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full capitalize">
+                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full capitalize shrink-0">
                   {data.inmueble.tipo}
                 </span>
               </div>
