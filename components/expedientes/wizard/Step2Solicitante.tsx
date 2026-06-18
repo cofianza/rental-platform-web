@@ -9,10 +9,8 @@ import { useState, useCallback } from 'react'
 import {
   IconSearch,
   IconLoader,
-  IconUser,
   IconCheck,
   IconX,
-  IconPlus,
 } from '@/components/icons'
 import { solicitanteService } from '@/services/solicitanteService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
@@ -39,12 +37,12 @@ export function Step2Solicitante({
   onUpdate,
   onUpdateField,
 }: Step2SolicitanteProps) {
-  // Estado local para busqueda
-  const [searchTipoDoc, setSearchTipoDoc] = useState<TipoDocumento | ''>('')
+  // Estado local para busqueda. Default 'cc' (cédula): el caso 90% en Colombia,
+  // así el usuario solo escribe el número y busca — un clic menos.
+  const [searchTipoDoc, setSearchTipoDoc] = useState<TipoDocumento | ''>('cc')
   const [searchNumDoc, setSearchNumDoc] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [searched, setSearched] = useState(false)
 
   // Buscar solicitante por documento
   const handleSearch = useCallback(async () => {
@@ -55,7 +53,6 @@ export function Step2Solicitante({
 
     setIsSearching(true)
     setSearchError(null)
-    setSearched(true)
 
     try {
       const solicitante = await solicitanteService.searchByDocument(
@@ -70,11 +67,21 @@ export function Step2Solicitante({
           formData: null,
         })
       } else {
-        // No encontrado - ofrecer crear nuevo
+        // No encontrado → abrir directo el formulario de creación, prellenado
+        // con lo que ya escribió. Antes había un paso intermedio "Crear nuevo"
+        // (un clic extra); ahora fluye solo.
         onUpdate({
           solicitante: null,
-          isNewSolicitante: false,
-          formData: null,
+          isNewSolicitante: true,
+          formData: {
+            tipo_persona: 'natural',
+            nombre: '',
+            apellido: '',
+            tipo_documento: searchTipoDoc || 'cc',
+            numero_documento: searchNumDoc.trim(),
+            email: '',
+            telefono: '',
+          },
         })
       }
     } catch (err) {
@@ -85,23 +92,6 @@ export function Step2Solicitante({
     }
   }, [searchTipoDoc, searchNumDoc, onUpdate])
 
-  // Iniciar creacion de nuevo solicitante
-  const handleStartCreate = () => {
-    onUpdate({
-      solicitante: null,
-      isNewSolicitante: true,
-      formData: {
-        tipo_persona: 'natural',
-        nombre: '',
-        apellido: '',
-        tipo_documento: searchTipoDoc || 'cc',
-        numero_documento: searchNumDoc,
-        email: '',
-        telefono: '',
-      },
-    })
-  }
-
   // Cancelar y volver a busqueda
   const handleCancelCreate = () => {
     onUpdate({
@@ -109,8 +99,7 @@ export function Step2Solicitante({
       isNewSolicitante: false,
       formData: null,
     })
-    setSearched(false)
-    setSearchTipoDoc('')
+    setSearchTipoDoc('cc')
     setSearchNumDoc('')
   }
 
@@ -121,7 +110,6 @@ export function Step2Solicitante({
       isNewSolicitante: false,
       formData: null,
     })
-    setSearched(false)
   }
 
   // Clases para inputs
@@ -205,9 +193,14 @@ export function Step2Solicitante({
 
       {/* Formulario de busqueda */}
       <div className="p-6 bg-gray-50 rounded-lg space-y-4">
-        <h3 className="text-sm font-medium text-gray-700">
-          {WIZARD_MESSAGES.USE_EXISTING_SOLICITANTE}
-        </h3>
+        <div>
+          <h3 className="text-sm font-medium text-gray-700">
+            {WIZARD_MESSAGES.USE_EXISTING_SOLICITANTE}
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Escribe el documento y busca. Si no existe, abrimos el formulario para crearlo al instante.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Tipo de documento */}
@@ -272,24 +265,6 @@ export function Step2Solicitante({
           <p className="text-sm text-red-600">{searchError}</p>
         )}
       </div>
-
-      {/* Resultado: no encontrado */}
-      {searched && !data.solicitante && !isSearching && (
-        <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center">
-          <IconUser size={32} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-sm text-gray-600 mb-4">
-            {WIZARD_MESSAGES.SOLICITANTE_NOT_FOUND}
-          </p>
-          <button
-            type="button"
-            onClick={handleStartCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
-          >
-            <IconPlus size={16} />
-            {WIZARD_MESSAGES.CREATE_NEW_SOLICITANTE}
-          </button>
-        </div>
-      )}
 
       {/* Error de validacion */}
       {errors.solicitante && (
@@ -359,6 +334,10 @@ function SolicitanteForm({
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
 }) {
+  // Solo lo esencial (básicos + contacto) visible; el resto es opcional y se
+  // despliega bajo demanda para no abrumar con un formulario gigante.
+  const [showMore, setShowMore] = useState(false)
+
   const inputClasses = (hasError: boolean) =>
     cn(
       'block w-full px-3 py-2 border rounded-lg text-sm',
@@ -523,6 +502,18 @@ function SolicitanteForm({
         </div>
       </section>
 
+      {/* Toggle: el resto (ubicación, laboral, adicional) es OPCIONAL — oculto
+          por defecto para que el formulario no abrume. */}
+      <button
+        type="button"
+        onClick={() => setShowMore((v) => !v)}
+        className="text-sm font-medium text-primary-700 hover:text-primary-800"
+      >
+        {showMore ? '− Ocultar datos adicionales' : '+ Agregar datos adicionales (opcional)'}
+      </button>
+
+      {showMore && (
+        <>
       {/* Seccion: Ubicacion */}
       <section>
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
@@ -703,6 +694,8 @@ function SolicitanteForm({
           </div>
         </div>
       </section>
+        </>
+      )}
     </div>
   )
 }
