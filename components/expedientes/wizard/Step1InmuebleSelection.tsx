@@ -63,8 +63,6 @@ export function Step1InmuebleSelection({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  // Marca para auto-seleccionar el único inmueble solo una vez.
-  const autoSelectedRef = useRef(false)
 
   // Fetch de "mis inmuebles" al montar (solo si aplica al rol).
   useEffect(() => {
@@ -173,27 +171,12 @@ export function Step1InmuebleSelection({
 
   // Limpiar seleccion
   const handleClearSelection = () => {
-    autoSelectedRef.current = true // no volver a auto-seleccionar tras limpiar a propósito
     setActiveExpedienteInfo(null)
     onUpdate({
       inmueble: null,
       hasActiveExpediente: false,
     })
   }
-
-  // Auto-seleccionar cuando el usuario tiene exactamente 1 inmueble disponible:
-  // en ese caso elegirlo a mano es un paso de más. Solo una vez (ref) y si no
-  // hay nada seleccionado; si lo quita con la X, no se vuelve a forzar.
-  useEffect(() => {
-    if (autoSelectedRef.current || !usaDropdownPropios || data.inmueble) return
-    if (misInmuebles.length === 1) {
-      autoSelectedRef.current = true
-      void handleSelectInmueble(misInmuebles[0])
-    }
-    // handleSelectInmueble se omite a propósito de las deps (no memoizado);
-    // el ref evita re-disparos.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [misInmuebles, usaDropdownPropios, data.inmueble])
 
   return (
     <div className="space-y-6">
