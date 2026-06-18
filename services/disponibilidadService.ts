@@ -35,12 +35,21 @@ export interface IHorarioDia {
 export interface IConfiguracionDisponibilidad {
   slot_duracion_minutos: 30 | 60 | 120
   antelacion_minima_horas: number
+  /** Tope de citas por día civil Bogotá. 0 = sin límite. */
+  max_citas_por_dia: number
   activa?: boolean
+}
+
+/** Fecha puntual bloqueada (feriado/vacaciones). */
+export interface IFechaBloqueada {
+  fecha: string // YYYY-MM-DD
+  motivo?: string | null
 }
 
 export interface IMiDisponibilidad {
   horarios: IHorarioDia[]
   configuracion: IConfiguracionDisponibilidad | null
+  fechas_bloqueadas: IFechaBloqueada[]
   /** Flag backend: `true` si el propietario tiene al menos 1 fila persistida. */
   tiene_config_explicita?: boolean
 }
@@ -66,14 +75,18 @@ async function getMiDisponibilidad(): Promise<IMiDisponibilidad> {
 async function updateMiDisponibilidad(payload: {
   slot_duracion_minutos: 30 | 60 | 120
   antelacion_minima_horas?: number
+  max_citas_por_dia?: number
   horarios: IHorarioDia[]
+  fechas_bloqueadas?: IFechaBloqueada[]
 }): Promise<IMiDisponibilidad> {
   // Backend espera `antelacion_minima_horas` en el body; si el caller no lo pasa
   // forzamos 24h (default del proyecto) para que Zod no rechace por campo faltante.
   const body = {
     slot_duracion_minutos: payload.slot_duracion_minutos,
     antelacion_minima_horas: payload.antelacion_minima_horas ?? 24,
+    max_citas_por_dia: payload.max_citas_por_dia ?? 0,
     horarios: payload.horarios,
+    fechas_bloqueadas: payload.fechas_bloqueadas ?? [],
   }
   const res = await apiClient.put<IMiDisponibilidad>('/disponibilidad/mi-disponibilidad', body)
   return res.data
