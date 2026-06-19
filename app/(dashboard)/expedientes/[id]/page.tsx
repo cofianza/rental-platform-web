@@ -284,9 +284,11 @@ export default function ExpedienteDetallePage() {
               )}
             </div>
 
-            {/* Responsable — solo interno (admin/operador/propietario/inmobiliaria).
-                El solicitante no gestiona analistas, así que ocultamos el control. */}
-            {user?.rol !== 'solicitante' && (
+            {/* Responsable ANALISTA interno (personal Cofianza). Solo lo asignan
+                admin/operador, así que se muestra únicamente a roles internos.
+                Para inmobiliaria/propietario el responsable relevante es el
+                "Responsable del expediente" (miembro) del tab Resumen. */}
+            {isInternalRole && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Responsable:</span>
                 {nombreAnalista ? (
