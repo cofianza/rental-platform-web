@@ -79,18 +79,19 @@ function makeDefaultHorarios(): IHorarioDia[] {
   }))
 }
 
-/** Completa el array del backend con todos los 7 días (inactivos faltantes). */
+/** Completa el array del backend con todos los 7 días (inactivos faltantes).
+ *  El backend devuelve las horas como "HH:MM:SS" (TIME de Postgres); las
+ *  normalizamos a "HH:MM" para el <input type="time"> y para reenviar. */
 function completarDias(fromBackend: IHorarioDia[]): IHorarioDia[] {
   return DIAS_LABELS.map(({ value }) => {
     const existing = fromBackend.find((h) => h.dia_semana === value)
-    return (
-      existing ?? {
-        dia_semana: value,
-        hora_inicio: '09:00',
-        hora_fin: '17:00',
-        activo: false,
-      }
-    )
+    return existing
+      ? {
+          ...existing,
+          hora_inicio: existing.hora_inicio.slice(0, 5),
+          hora_fin: existing.hora_fin.slice(0, 5),
+        }
+      : { dia_semana: value, hora_inicio: '09:00', hora_fin: '17:00', activo: false }
   })
 }
 
