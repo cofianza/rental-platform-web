@@ -47,6 +47,15 @@ const SECCIONES: Array<{
     soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
+    id: 'equipo',
+    href: '/configuracion/equipo',
+    titulo: 'Equipo',
+    descripcion: 'Invita a tu equipo a gestionar la cartera de la inmobiliaria en conjunto.',
+    icon: IconUsers,
+    color: 'bg-violet-100 text-violet-600',
+    soloRoles: ['inmobiliaria'],
+  },
+  {
     id: 'creditos-estudios',
     href: '/configuracion/creditos-estudios',
     titulo: 'Créditos de estudios',
