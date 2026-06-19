@@ -68,6 +68,14 @@ function LoginForm() {
         sessionStorage.removeItem('invitacion_token')
         return `/invitacion/${invitacionToken}`
       }
+      // Invitación de miembro a inmobiliaria (multi-tenant Fase 2): el invitado
+      // guardó el token al elegir "Iniciar sesión" y debe volver al enlace para
+      // aceptar (el botón "Aceptar invitación" aparece cuando el email coincide).
+      const miembroToken = sessionStorage.getItem('invitacion_miembro_token')
+      if (miembroToken) {
+        sessionStorage.removeItem('invitacion_miembro_token')
+        return `/invitacion-miembro/${miembroToken}`
+      }
     }
     const intent = searchParams.get('intent')
     const propertyId = searchParams.get('property_id')
