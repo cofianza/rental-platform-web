@@ -25,6 +25,7 @@ import {
   invitarMiembro,
   reenviarMiembro,
   revocarMiembro,
+  setMiembrosVenTodo,
   type MiembrosResponse,
   type Miembro,
 } from '@/services/miembrosService'
@@ -35,6 +36,7 @@ export default function EquipoPage() {
   const [email, setEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [savingVenTodo, setSavingVenTodo] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -67,6 +69,24 @@ export default function EquipoPage() {
       toast.error(ex.message || 'No se pudo enviar la invitación')
     } finally {
       setInviting(false)
+    }
+  }
+
+  const handleToggleVenTodo = async (value: boolean) => {
+    setSavingVenTodo(true)
+    try {
+      await setMiembrosVenTodo(value)
+      toast.success(
+        value
+          ? 'Ahora los miembros ven toda la cartera'
+          : 'Ahora cada miembro ve solo lo suyo',
+      )
+      await cargar()
+    } catch (err: unknown) {
+      const ex = err as { message?: string }
+      toast.error(ex.message || 'No se pudo actualizar la configuración')
+    } finally {
+      setSavingVenTodo(false)
     }
   }
 
@@ -155,6 +175,37 @@ export default function EquipoPage() {
                 El miembro recibirá un enlace para unirse. Si no tiene cuenta, podrá crearla; si ya
                 la tiene, solo deberá aceptar. Tendrá acceso a la cartera de la inmobiliaria.
               </p>
+            </div>
+          )}
+
+          {/* Acceso de los miembros (owner-only) */}
+          {data.soy_owner && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-gray-900">
+                    Acceso de los miembros a la cartera
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1 max-w-xl">
+                    {data.miembros_ven_todo
+                      ? 'Los miembros ven TODA la cartera de la inmobiliaria (inmuebles, expedientes, moras).'
+                      : 'Cada miembro ve solo lo que creó o lo que le asignes. El titular siempre ve todo.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={data.miembros_ven_todo}
+                  disabled={savingVenTodo}
+                  onClick={() => handleToggleVenTodo(!data.miembros_ven_todo)}
+                  title={data.miembros_ven_todo ? 'Ven todo' : 'Ven solo lo suyo'}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${data.miembros_ven_todo ? 'bg-primary-600' : 'bg-gray-300'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${data.miembros_ven_todo ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
+              </div>
             </div>
           )}
 

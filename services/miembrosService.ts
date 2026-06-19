@@ -6,6 +6,8 @@ import { apiClient } from '@/lib/api'
 
 export interface Miembro {
   id: string
+  /** perfil_id (null si la invitación está pendiente). */
+  perfil_id: string | null
   email: string | null
   rol_miembro: 'owner' | 'miembro'
   estado: 'activo' | 'invitado' | 'revocado'
@@ -18,6 +20,8 @@ export interface Miembro {
 export interface MiembrosResponse {
   organizacion: { id: string; nombre: string }
   soy_owner: boolean
+  /** Si true, todos los miembros ven toda la cartera; si false, cada miembro ve solo lo suyo. */
+  miembros_ven_todo: boolean
   miembros: Miembro[]
 }
 
@@ -52,6 +56,14 @@ export async function reenviarMiembro(id: string): Promise<{ message: string }> 
 
 export async function revocarMiembro(id: string): Promise<{ message: string }> {
   const res = await apiClient.delete<{ message: string }>(`/inmobiliaria/miembros/${id}`)
+  return res.data
+}
+
+export async function setMiembrosVenTodo(value: boolean): Promise<{ miembros_ven_todo: boolean }> {
+  const res = await apiClient.patch<{ miembros_ven_todo: boolean }>(
+    '/inmobiliaria/miembros/config',
+    { miembros_ven_todo: value },
+  )
   return res.data
 }
 
