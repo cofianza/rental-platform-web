@@ -186,6 +186,22 @@ class ExpedienteService {
   }
 
   /**
+   * Asigna (o quita, con miembroId=null) el MIEMBRO responsable del expediente
+   * (multi-tenant Fase 3.1, owner-only). Distinto de asignarResponsable, que
+   * asigna el ANALISTA interno (analista_id). Backend valida owner + miembro.
+   */
+  async asignarMiembroResponsable(
+    id: string,
+    miembroId: string | null,
+  ): Promise<{ expediente_id: string; miembro_responsable_id: string | null }> {
+    const res = await apiClient.patch<{
+      expediente_id: string
+      miembro_responsable_id: string | null
+    }>(`/expedientes/${id}/responsable`, { miembro_id: miembroId })
+    return res.data
+  }
+
+  /**
    * Obtiene las transiciones disponibles para el estado actual del expediente
    * Backend retorna: { transiciones_disponibles: [{ estado, label }] }
    * Frontend espera: ITransicionDisponible[] con { estado_destino, etiqueta }

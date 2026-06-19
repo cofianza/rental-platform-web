@@ -45,6 +45,7 @@ import {
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
+import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type {
   IExpedienteDetalle,
@@ -343,6 +344,18 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
+            {/* Responsable del expediente (miembro) — solo inmobiliaria (Fase 3.1) */}
+            {user?.rol === 'inmobiliaria' && (
+              <ResponsableMiembroCard
+                titulo="Responsable del expediente"
+                ayuda='Si desactivaste "los miembros ven todo", el responsable verá este expediente aunque el inmueble no sea suyo.'
+                miembroResponsableId={expediente.miembro_responsable_id}
+                onAssign={async (miembroId) => {
+                  await expedienteService.asignarMiembroResponsable(id, miembroId)
+                  setExpediente((prev) => (prev ? { ...prev, miembro_responsable_id: miembroId } : prev))
+                }}
+              />
+            )}
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ? (
