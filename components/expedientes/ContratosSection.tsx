@@ -27,9 +27,11 @@ const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
 interface ContratosSectionProps {
   expedienteId: string
+  /** Estado del expediente — el contrato solo se genera tras la aprobación. */
+  expedienteEstado?: string
 }
 
-export function ContratosSection({ expedienteId }: ContratosSectionProps) {
+export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSectionProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -58,6 +60,9 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
     user?.rol === 'operador_analista' ||
     user?.rol === 'inmobiliaria'
   const canRegenerate = canCreate || user?.rol === 'propietario'
+  // El contrato (paso 5) solo se genera cuando el estudio fue aprobado o
+  // condicionado. Mismo gate que el backend (generarContrato).
+  const expedienteAprobado = expedienteEstado === 'aprobado' || expedienteEstado === 'condicionado'
 
   const fetchContratos = useCallback(async () => {
     setIsLoading(true)
@@ -170,7 +175,7 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
         <h3 className="text-lg font-semibold text-gray-900">
           Contratos ({contratos.length})
         </h3>
-        {canCreate && (
+        {canCreate && expedienteAprobado && (
           <button
             onClick={() => setGenerarOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
@@ -185,14 +190,19 @@ export function ContratosSection({ expedienteId }: ContratosSectionProps) {
       {contratos.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
           <p className="text-gray-500 mb-2">No hay contratos generados</p>
-          {canCreate ? (
+          {!expedienteAprobado ? (
+            <p className="text-sm text-gray-400">
+              El contrato se podrá generar cuando el estudio del arrendatario
+              esté aprobado.
+            </p>
+          ) : canCreate ? (
             <p className="text-sm text-gray-400">
               Pulsa &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
             </p>
           ) : (
             <p className="text-sm text-gray-400">
-              El contrato se generará automáticamente cuando el estudio del
-              arrendatario sea aprobado.
+              El contrato se generará cuando el propietario lo emita, ahora que el
+              estudio fue aprobado.
             </p>
           )}
         </div>

@@ -664,7 +664,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Contratos */}
         {activeTab === 'contratos' && (
           <div className="p-6">
-            <ContratosSection expedienteId={id} />
+            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} />
           </div>
         )}
 
