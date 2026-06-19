@@ -357,6 +357,21 @@ class InmuebleService {
     return response.data
   }
 
+  /**
+   * Asigna (o quita, con miembroId=null) el miembro responsable del inmueble
+   * (multi-tenant Fase 3, owner-only). Backend valida owner + miembro de la org.
+   */
+  async asignarResponsable(
+    id: string,
+    miembroId: string | null,
+  ): Promise<{ inmueble_id: string; miembro_responsable_id: string | null }> {
+    const res = await apiClient.patch<{
+      inmueble_id: string
+      miembro_responsable_id: string | null
+    }>(`/inmuebles/${id}/responsable`, { miembro_id: miembroId })
+    return res.data
+  }
+
   // ============================================
   // FOTOS DEL INMUEBLE - HP-203
   // ============================================

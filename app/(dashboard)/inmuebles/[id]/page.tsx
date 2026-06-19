@@ -23,6 +23,7 @@ import {
 } from '@/components/inmuebles'
 import type { IExpediente } from '@/types/expediente'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
+import { InmuebleResponsableCard } from '@/components/inmuebles/InmuebleResponsableCard'
 import {
   IconArrowLeft,
   IconEdit,
@@ -426,6 +427,16 @@ export default function InmuebleDetailPage() {
             <div className="p-4">
               {activeTab === 'info' && (
                 <div className="space-y-6">
+                  {/* Responsable (multi-tenant Fase 3) — solo inmobiliaria */}
+                  {isInmobiliaria && (
+                    <InmuebleResponsableCard
+                      inmuebleId={inmueble.id}
+                      miembroResponsableId={inmueble.miembro_responsable_id}
+                      onChange={(nuevo) =>
+                        setInmueble((prev) => (prev ? { ...prev, miembro_responsable_id: nuevo } : prev))
+                      }
+                    />
+                  )}
                   {/* Basic info */}
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 mb-3">Información Básica</h3>

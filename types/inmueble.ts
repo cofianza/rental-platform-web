@@ -43,6 +43,8 @@ export interface IInmueble {
   notas_internas?: string | null
   estado: EstadoInmueble
   propietario_id: string
+  /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3). */
+  miembro_responsable_id?: string | null
   visible_vitrina: boolean
   foto_fachada_url: string
   created_at: string
