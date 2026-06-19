@@ -249,8 +249,15 @@ export default function DisponibilidadPage() {
       toast.success('Horarios actualizados.')
       setInitial(JSON.stringify({ horarios, duracion, antelacion, maxCitas, bloqueadas }))
     } catch (err: unknown) {
-      const errObj = err as { message?: string }
-      toast.error(errObj.message || 'No se pudieron guardar los cambios.')
+      const errObj = err as { message?: string; details?: unknown }
+      let msg = errObj.message || 'No se pudieron guardar los cambios.'
+      // Si el backend devolvió errores de validación por campo, mostrar el primero
+      // (p.ej. "antelacion_minima_horas: ...") para saber exactamente qué falla.
+      if (Array.isArray(errObj.details) && errObj.details.length > 0) {
+        const d = errObj.details[0] as { field?: string; message?: string }
+        if (d?.field) msg = `${d.field}: ${d.message ?? msg}`
+      }
+      toast.error(msg)
     } finally {
       setIsSaving(false)
     }
