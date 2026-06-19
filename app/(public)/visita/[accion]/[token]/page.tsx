@@ -59,8 +59,12 @@ export default function GestionarVisitaPage() {
   // Meta antepone el placeholder "{{1}}" literal al sufijo dinámico del botón
   // (no lo sustituye), así que el token llega como "{{1}}<token>". Extraemos el
   // token real (64 hex) de lo que venga en la URL.
+  // useParams puede devolver el segmento URL-codificado (p.ej.
+  // "%7B%7B1%7D%7D<token>") porque Meta antepone el placeholder literal "{{1}}".
+  // Limpiamos todo lo no-hex y tomamos los ÚLTIMOS 64 chars (el token va al
+  // final): robusto tanto para la forma codificada como decodificada.
   const rawToken = String(params.token ?? '')
-  const token = rawToken.match(/[a-f0-9]{64}/i)?.[0] ?? rawToken
+  const token = rawToken.replace(/[^a-f0-9]/gi, '').slice(-64) || rawToken
   const accion = String(params.accion ?? '') === 'cancelar' ? 'cancelar' : 'reprogramar'
 
   const [visita, setVisita] = useState<IVisitaPublica | null>(null)
