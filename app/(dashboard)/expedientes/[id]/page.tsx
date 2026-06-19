@@ -638,12 +638,23 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
-            <PagoEstudioSection
-              expedienteId={id}
-              userRole={user?.rol}
-              onPagoCompletado={fetchExpediente}
-              onPagadoChange={setEstudioPagado}
-            />
+            {/* El pago del estudio recién se habilita tras confirmar/realizar la
+                cita y habilitar el estudio (paso 3 del flujo). Mismo gate que el
+                Resumen; antes de eso, solo un aviso. */}
+            {!(expediente.estudio_habilitado ?? false) ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+                El pago del estudio estará disponible cuando la visita esté confirmada y el estudio habilitado.
+              </div>
+            ) : (
+              !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
+                <PagoEstudioSection
+                  expedienteId={id}
+                  userRole={user?.rol}
+                  onPagoCompletado={fetchExpediente}
+                  onPagadoChange={setEstudioPagado}
+                />
+              )
+            )}
             {/* La autorización Habeas Data solo aparece una vez pagado/resuelto el estudio. */}
             {estudioPagado && <AutorizacionSection expedienteId={id} />}
             <EstudiosSection expedienteId={id} solicitante={expediente.solicitante} />
