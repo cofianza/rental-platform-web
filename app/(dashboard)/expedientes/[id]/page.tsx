@@ -97,6 +97,8 @@ export default function ExpedienteDetallePage() {
 
   // Estado de tabs
   const [activeTab, setActiveTab] = useState('resumen')
+  // El estudio quedó pagado/resuelto → recién ahí se muestra la autorización Habeas Data.
+  const [estudioPagado, setEstudioPagado] = useState(false)
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -636,8 +638,14 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
-            <PagoEstudioSection expedienteId={id} userRole={user?.rol} onPagoCompletado={fetchExpediente} />
-            <AutorizacionSection expedienteId={id} />
+            <PagoEstudioSection
+              expedienteId={id}
+              userRole={user?.rol}
+              onPagoCompletado={fetchExpediente}
+              onPagadoChange={setEstudioPagado}
+            />
+            {/* La autorización Habeas Data solo aparece una vez pagado/resuelto el estudio. */}
+            {estudioPagado && <AutorizacionSection expedienteId={id} />}
             <EstudiosSection expedienteId={id} solicitante={expediente.solicitante} />
           </div>
         )}

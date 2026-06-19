@@ -11,6 +11,10 @@ import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/f
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
+  /** Reporta al padre si el estudio ya está pagado/resuelto (completado o
+   *  asumido por la inmobiliaria), para gatear pasos posteriores como la
+   *  autorización Habeas Data. Debe ser una función estable (p.ej. un setState). */
+  onPagadoChange?: (pagado: boolean) => void
   /** Rol del usuario actual — el solicitante ve un CTA "Pagar ahora" en lugar
    *  de los controles admin (enviar link / asumir costo). */
   userRole?: string
@@ -20,7 +24,7 @@ interface PagoEstudioSectionProps {
   hideIfNoAction?: boolean
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoChange, userRole, hideIfNoAction }: PagoEstudioSectionProps) {
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -64,6 +68,12 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
 
   useEffect(() => { fetchEstado() }, [fetchEstado])
   useEffect(() => { fetchSaldo() }, [fetchSaldo])
+
+  // Reportar al padre si el estudio quedó pagado/resuelto (para gatear la
+  // autorización Habeas Data, que solo debe aparecer tras el pago).
+  useEffect(() => {
+    onPagadoChange?.(estado?.estado === 'completado' || estado?.estado === 'asumido_inmobiliaria')
+  }, [estado, onPagadoChange])
 
   // Polling automático mientras esperamos pago. Cuando el solicitante paga
   // por Stripe, el webhook tarda 1-3 seg en marcar el pago como 'completado'
