@@ -45,6 +45,7 @@ import {
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
+import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type {
   IExpedienteDetalle,
@@ -283,9 +284,11 @@ export default function ExpedienteDetallePage() {
               )}
             </div>
 
-            {/* Responsable — solo interno (admin/operador/propietario/inmobiliaria).
-                El solicitante no gestiona analistas, así que ocultamos el control. */}
-            {user?.rol !== 'solicitante' && (
+            {/* Responsable ANALISTA interno (personal Cofianza). Solo lo asignan
+                admin/operador, así que se muestra únicamente a roles internos.
+                Para inmobiliaria/propietario el responsable relevante es el
+                "Responsable del expediente" (miembro) del tab Resumen. */}
+            {isInternalRole && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Responsable:</span>
                 {nombreAnalista ? (
@@ -334,6 +337,20 @@ export default function ExpedienteDetallePage() {
           estadoPreCancelacion={expediente.estado_pre_cancelacion}
         />
       </div>
+
+      {/* Responsable del expediente (miembro) — SIEMPRE visible (en cualquier
+          tab), solo inmobiliaria (Fase 3.1). El analista interno va en el header. */}
+      {user?.rol === 'inmobiliaria' && (
+        <ResponsableMiembroCard
+          titulo="Responsable del expediente"
+          ayuda='Si desactivaste "los miembros ven todo", el responsable verá este expediente aunque el inmueble no sea suyo.'
+          miembroResponsableId={expediente.miembro_responsable_id}
+          onAssign={async (miembroId) => {
+            await expedienteService.asignarMiembroResponsable(id, miembroId)
+            setExpediente((prev) => (prev ? { ...prev, miembro_responsable_id: miembroId } : prev))
+          }}
+        />
+      )}
 
       {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />

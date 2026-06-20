@@ -1,8 +1,8 @@
 /**
- * Asignar el miembro responsable de un inmueble (multi-tenant Fase 3).
- * Solo el TITULAR de la inmobiliaria ve el selector; los demás ven el dato en
- * solo-lectura. Relevante cuando "miembros ven todo" está desactivado: el
- * miembro asignado pasa a ver ese inmueble.
+ * Card reutilizable para asignar el miembro responsable de un recurso
+ * (inmueble o expediente) — multi-tenant Fase 3. Solo el TITULAR ve el selector;
+ * los demás ven el responsable en solo-lectura. El padre provee `onAssign`
+ * (la llamada al API correspondiente) y refresca su estado en el callback.
  */
 
 'use client'
@@ -11,15 +11,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { IconUserCheck, IconLoader } from '@/components/icons'
 import { listMiembros, type Miembro } from '@/services/miembrosService'
-import { inmuebleService } from '@/services/inmuebleService'
 
 interface Props {
-  inmuebleId: string
   miembroResponsableId?: string | null
-  onChange?: (nuevo: string | null) => void
+  /** Llama al API y resuelve cuando se guardó. Recibe el perfil_id o null. */
+  onAssign: (miembroId: string | null) => Promise<void>
+  titulo: string
+  ayuda?: string
 }
 
-export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onChange }: Props) {
+export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo, ayuda }: Props) {
   const [miembros, setMiembros] = useState<Miembro[]>([])
   const [soyOwner, setSoyOwner] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -34,7 +35,6 @@ export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onCh
     listMiembros()
       .then((r) => {
         setSoyOwner(r.soy_owner)
-        // Sólo miembros activos con perfil (las invitaciones pendientes no pueden ser responsables).
         setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id))
       })
       .catch(() => {
@@ -58,9 +58,8 @@ export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onCh
     setValue(nuevo)
     setSaving(true)
     try {
-      await inmuebleService.asignarResponsable(inmuebleId, miembroId)
+      await onAssign(miembroId)
       toast.success(miembroId ? 'Responsable asignado' : 'Responsable removido')
-      onChange?.(miembroId)
     } catch (err: unknown) {
       const e = err as { message?: string }
       toast.error(e.message || 'No se pudo asignar el responsable')
@@ -70,8 +69,6 @@ export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onCh
     }
   }
 
-  // Mientras carga, o si no pertenece a una organización con equipo, no
-  // mostramos nada (no aplica a propietarios individuales).
   if (loading) return null
   if (miembros.length === 0 && !soyOwner) return null
 
@@ -79,7 +76,7 @@ export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onCh
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <div className="flex items-center gap-2 mb-2">
         <IconUserCheck size={16} className="text-primary-600" />
-        <h3 className="text-sm font-semibold text-gray-900">Responsable del inmueble</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{titulo}</h3>
         {saving && <IconLoader size={14} className="animate-spin text-gray-400" />}
       </div>
 
@@ -99,9 +96,7 @@ export function InmuebleResponsableCard({ inmuebleId, miembroResponsableId, onCh
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-2">
-            Si desactivaste &quot;los miembros ven todo&quot;, el responsable verá este inmueble y sus expedientes.
-          </p>
+          {ayuda && <p className="text-xs text-gray-500 mt-2">{ayuda}</p>}
         </>
       ) : (
         <p className="text-sm text-gray-700">
