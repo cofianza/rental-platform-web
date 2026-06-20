@@ -13,6 +13,7 @@ import {
   IconAlertTriangle,
 } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
+import { listMiembros, type Miembro } from '@/services/miembrosService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { WizardStep3Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
@@ -41,10 +42,35 @@ export function Step3Configuration({
   // y ni siquiera se piden los analistas.
   const userRol = useAuthStore((s) => s.user?.rol)
   const esInterno = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
+  // El responsable-MIEMBRO (multi-tenant Fase 3.1) aplica a la inmobiliaria.
+  const esInmobiliaria = userRol === 'inmobiliaria'
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
   const [analistasError, setAnalistasError] = useState<string | null>(null)
+
+  const [miembros, setMiembros] = useState<Miembro[]>([])
+  const [isLoadingMiembros, setIsLoadingMiembros] = useState(false)
+
+  // Cargar miembros activos de la inmobiliaria (para asignar responsable al crear).
+  useEffect(() => {
+    if (!esInmobiliaria) return
+    let cancel = false
+    setIsLoadingMiembros(true)
+    listMiembros()
+      .then((r) => {
+        if (!cancel) setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id))
+      })
+      .catch(() => {
+        if (!cancel) setMiembros([])
+      })
+      .finally(() => {
+        if (!cancel) setIsLoadingMiembros(false)
+      })
+    return () => {
+      cancel = true
+    }
+  }, [esInmobiliaria])
 
   // Cargar analistas al montar (solo roles internos; con manejo de error defensivo)
   useEffect(() => {
@@ -181,6 +207,45 @@ export function Step3Configuration({
           El responsable asignado recibira notificaciones del expediente
         </p>
       </div>
+      )}
+
+      {/* Responsable (miembro) — solo inmobiliaria (multi-tenant Fase 3.1) */}
+      {esInmobiliaria && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <IconUser size={16} className="text-gray-400" />
+            Responsable del expediente
+            <span className="text-gray-400 font-normal">(opcional)</span>
+          </label>
+          {isLoadingMiembros ? (
+            <div className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-500">
+              <IconLoader size={16} className="animate-spin" />
+              <span>Cargando equipo...</span>
+            </div>
+          ) : (
+            <select
+              value={data.miembro_responsable_id}
+              onChange={(e) => onUpdate({ miembro_responsable_id: e.target.value })}
+              className={cn(
+                'block w-full px-4 py-3 border rounded-lg text-sm',
+                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                'border-gray-300',
+                !data.miembro_responsable_id && 'text-gray-500',
+              )}
+            >
+              <option value="">Sin asignar</option>
+              {miembros.map((m) => (
+                <option key={m.perfil_id ?? m.id} value={m.perfil_id ?? ''}>
+                  {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
+                  {m.rol_miembro === 'owner' ? ' (titular)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+          <p className="text-xs text-gray-400">
+            El miembro asignado será responsable del expediente y recibirá una notificación.
+          </p>
+        </div>
       )}
 
       {/* Informacion adicional */}

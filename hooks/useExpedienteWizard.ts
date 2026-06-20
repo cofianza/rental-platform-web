@@ -31,6 +31,8 @@ export interface WizardStep2Data {
 export interface WizardStep3Data {
   notas: string
   analista_id: string
+  /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3.1). '' = sin asignar/auto. */
+  miembro_responsable_id: string
 }
 
 export interface WizardData {
@@ -63,6 +65,7 @@ const initialStep2: WizardStep2Data = {
 const initialStep3: WizardStep3Data = {
   notas: '',
   analista_id: '',
+  miembro_responsable_id: '',
 }
 
 const initialData: WizardData = {
@@ -336,6 +339,7 @@ export function useExpedienteWizard() {
         inmueble_id: data.step1.inmueble!.id,
         solicitante_id: solicitanteId,
         analista_id: data.step3.analista_id || undefined,
+        miembro_responsable_id: data.step3.miembro_responsable_id || undefined,
         notas: data.step3.notas || undefined,
       })
 

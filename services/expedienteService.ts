@@ -424,6 +424,7 @@ class ExpedienteService {
     inmueble_id: string
     solicitante_id: string
     analista_id?: string
+    miembro_responsable_id?: string
     notas?: string
   }): Promise<IExpedienteDetalle> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
