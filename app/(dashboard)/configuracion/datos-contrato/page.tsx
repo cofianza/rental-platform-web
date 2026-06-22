@@ -20,6 +20,7 @@ import {
   type IUpdatePerfilArrendadorInput,
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 
 const ROL_LABELS: Record<string, string> = {
   inmobiliaria: 'Inmobiliaria',
@@ -75,14 +76,15 @@ export default function DatosContratoPage() {
 
   const handleSave = async () => {
     // El WhatsApp del arrendador es obligatorio: es a donde llega el enlace de
-    // firma del contrato. Sin él, no se puede firmar.
-    if (!form.whatsapp_recaudo?.trim()) {
-      toast.error('Falta el WhatsApp del arrendador: es donde recibes el enlace para firmar el contrato.')
+    // firma del contrato. PhoneInput emite "+57 301..."; validamos sin espacios.
+    const waRecaudo = (form.whatsapp_recaudo ?? '').replace(/\s+/g, '').trim()
+    if (!waRecaudo || !/^\+?\d{7,15}$/.test(waRecaudo)) {
+      toast.error('Falta un WhatsApp válido del arrendador: es donde recibes el enlace para firmar el contrato.')
       return
     }
     setSaving(true)
     try {
-      const updated = await perfilArrendadorService.updateMe(form)
+      const updated = await perfilArrendadorService.updateMe({ ...form, whatsapp_recaudo: waRecaudo })
       setPerfil(updated)
       toast.success('Datos actualizados')
       // Si vinimos desde otro flujo (banner perfil incompleto), volvemos
@@ -330,14 +332,18 @@ export default function DatosContratoPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label="WhatsApp"
-            value={form.whatsapp_recaudo}
-            onChange={(v) => onChange('whatsapp_recaudo', v)}
-            placeholder="+57 301 597 6919"
-            required
-            help="Obligatorio. Aquí recibes el enlace de firma del contrato. Debe ser un WhatsApp real, con código de país (ej. +57…)."
-          />
+          <div>
+            <PhoneInput
+              label="WhatsApp"
+              required
+              value={form.whatsapp_recaudo ?? ''}
+              onChange={(v) => onChange('whatsapp_recaudo', v)}
+              placeholder="301 597 6919"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Obligatorio. Aquí recibes el enlace de firma del contrato. Debe ser un WhatsApp real.
+            </p>
+          </div>
           <Field
             label="Email"
             type="email"

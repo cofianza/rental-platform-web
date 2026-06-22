@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
 import { IconLoader, IconBuilding2 } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getEmpresa, updateEmpresa, type EmpresaInfo } from '@/services/empresaService'
 
 const CAMPOS: Array<{ key: keyof EmpresaInfo; label: string; type?: string; help?: string; required?: boolean }> = [
@@ -59,13 +60,15 @@ export default function EmpresaPage() {
       toast.error('La razón social y el email de Cofianza son obligatorios.')
       return
     }
-    if (!form.phone?.trim()) {
-      toast.error('Falta el WhatsApp de Cofianza: es donde recibe el enlace para firmar el contrato.')
+    // PhoneInput emite "+57 301..."; validamos y guardamos sin espacios.
+    const phone = (form.phone ?? '').replace(/\s+/g, '').trim()
+    if (!phone || !/^\+?\d{7,15}$/.test(phone)) {
+      toast.error('Falta un WhatsApp válido de Cofianza: es donde recibe el enlace para firmar el contrato.')
       return
     }
     setSaving(true)
     try {
-      const updated = await updateEmpresa(form)
+      const updated = await updateEmpresa({ ...form, phone })
       setForm(updated)
       toast.success('Datos de la empresa actualizados')
     } catch (err: unknown) {
@@ -99,16 +102,28 @@ export default function EmpresaPage() {
 
           {CAMPOS.map((c) => (
             <div key={c.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {c.label}
-                {c.required && <span className="text-coral-500"> *</span>}
-              </label>
-              <input
-                type={c.type ?? 'text'}
-                value={String(form[c.key] ?? '')}
-                onChange={(e) => setCampo(c.key, e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
+              {c.key === 'phone' ? (
+                <PhoneInput
+                  label={c.label}
+                  required={c.required}
+                  value={String(form[c.key] ?? '')}
+                  onChange={(v) => setCampo(c.key, v)}
+                  placeholder="301 597 6919"
+                />
+              ) : (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {c.label}
+                    {c.required && <span className="text-coral-500"> *</span>}
+                  </label>
+                  <input
+                    type={c.type ?? 'text'}
+                    value={String(form[c.key] ?? '')}
+                    onChange={(e) => setCampo(c.key, e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </>
+              )}
               {c.help && <p className="text-xs text-gray-500 mt-1">{c.help}</p>}
             </div>
           ))}
