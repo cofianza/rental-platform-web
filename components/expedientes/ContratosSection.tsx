@@ -384,7 +384,7 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
       {firmaContratoId && (
         <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
           {/* Progreso multi-parte (solo si el contrato tiene firmantes). */}
-          <FirmantesContratoSection contratoId={firmaContratoId} />
+          <FirmantesContratoSection contratoId={firmaContratoId} onAllSigned={fetchContratos} />
           <FirmaSolicitudesSection
             contratoId={firmaContratoId}
             estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}

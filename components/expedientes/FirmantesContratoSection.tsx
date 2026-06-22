@@ -3,13 +3,14 @@
 /**
  * Panel de progreso de firma multi-parte de un contrato.
  * Muestra las partes (arrendatario / arrendador / Cofianza) en su orden de
- * firma, con el estado de cada una. Si el contrato no tiene firmantes
- * (flujo de un solo firmante / firma multi-parte desactivada), no renderiza
- * nada.
+ * firma, con el estado de cada una, una barra de progreso y auto-refresco
+ * mientras haya firmas pendientes (se actualiza solo cuando llega el webhook de
+ * Auco). Si el contrato no tiene firmantes (flujo de un solo firmante / firma
+ * multi-parte desactivada), no renderiza nada.
  */
 
-import { useEffect, useState, useCallback } from 'react'
-import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock } from '@/components/icons'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoFirmante, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
@@ -22,27 +23,42 @@ const ROL_META: Record<RolFirmante, { label: string; icon: typeof IconUser }> = 
 
 const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; text: string }> = {
   pendiente: { label: 'Pendiente', bg: 'bg-gray-100', text: 'text-gray-700' },
-  enviado: { label: 'Enviado', bg: 'bg-blue-100', text: 'text-blue-700' },
-  abierto: { label: 'Abierto', bg: 'bg-amber-100', text: 'text-amber-700' },
+  enviado: { label: 'Enviado · esperando firma', bg: 'bg-blue-100', text: 'text-blue-700' },
+  abierto: { label: 'Abrió el enlace', bg: 'bg-amber-100', text: 'text-amber-700' },
   otp_validado: { label: 'OTP validado', bg: 'bg-purple-100', text: 'text-purple-700' },
   firmado: { label: 'Firmado', bg: 'bg-green-100', text: 'text-green-700' },
   expirado: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700' },
-  cancelado: { label: 'Cancelado', bg: 'bg-slate-100', text: 'text-slate-700' },
+  cancelado: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700' },
 }
 
-export function FirmantesContratoSection({ contratoId }: { contratoId: string }) {
+// Cada cuánto re-consultamos el estado de las firmas mientras haya pendientes.
+const POLL_MS = 15000
+
+export function FirmantesContratoSection({
+  contratoId,
+  onAllSigned,
+}: {
+  contratoId: string
+  /** Se dispara (una vez) cuando todas las partes quedan firmadas, para que el
+   *  padre refresque el estado del contrato (badge "Enviado a Firma" → "Firmado"). */
+  onAllSigned?: () => void
+}) {
   const [firmantes, setFirmantes] = useState<IContratoFirmante[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const cargar = useCallback(async () => {
-    setIsLoading(true)
+  // `silencioso` = no mostramos el spinner grande (para el auto-poll y el botón).
+  const cargar = useCallback(async (silencioso = false) => {
+    if (silencioso) setRefreshing(true)
+    else setIsLoading(true)
     try {
       setFirmantes(await firmaService.listarFirmantes(contratoId))
     } catch {
       // Silencioso: si el contrato no es multi-parte, no hay panel que mostrar.
-      setFirmantes([])
+      if (!silencioso) setFirmantes([])
     } finally {
       setIsLoading(false)
+      setRefreshing(false)
     }
   }, [contratoId])
 
@@ -50,21 +66,74 @@ export function FirmantesContratoSection({ contratoId }: { contratoId: string })
     cargar()
   }, [cargar])
 
-  // Sin firmantes registrados → flujo de un solo firmante: no mostramos nada.
-  if (!isLoading && firmantes.length === 0) return null
-
   const firmados = firmantes.filter((f) => f.estado === 'firmado').length
+  const total = firmantes.length
+  const todasFirmaron = total > 0 && firmados === total
+  const pendientes = total > 0 && !todasFirmaron
+
+  // Auto-refresco mientras haya firmas pendientes: cuando llega el webhook de
+  // Auco, la BD cambia y el panel se actualiza solo sin recargar la página.
+  const pendientesRef = useRef(pendientes)
+  pendientesRef.current = pendientes
+  useEffect(() => {
+    if (!pendientes) return
+    const id = setInterval(() => {
+      if (pendientesRef.current) cargar(true)
+    }, POLL_MS)
+    return () => clearInterval(id)
+  }, [pendientes, cargar])
+
+  // Cuando todas firman, avisamos al padre (una vez) para que refresque el
+  // estado del contrato.
+  const allSignedFiredRef = useRef(false)
+  useEffect(() => {
+    if (todasFirmaron && !allSignedFiredRef.current) {
+      allSignedFiredRef.current = true
+      onAllSigned?.()
+    }
+  }, [todasFirmaron, onAllSigned])
+
+  // Sin firmantes registrados → flujo de un solo firmante: no mostramos nada.
+  if (!isLoading && total === 0) return null
+
+  const pct = total > 0 ? Math.round((firmados / total) * 100) : 0
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-semibold text-gray-900">Firmantes del contrato</h4>
-        {!isLoading && (
-          <span className="text-xs text-gray-500">
-            {firmados}/{firmantes.length} firmaron
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {!isLoading && (
+            <span className={`text-xs font-medium ${todasFirmaron ? 'text-green-700' : 'text-gray-500'}`}>
+              {firmados}/{total} firmaron
+            </span>
+          )}
+          <button
+            onClick={() => cargar(true)}
+            disabled={refreshing || isLoading}
+            className="p-1 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+            title="Actualizar estado de firmas"
+          >
+            <IconRefresh size={14} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
+
+      {/* Barra de progreso */}
+      {!isLoading && total > 0 && (
+        <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${todasFirmaron ? 'bg-green-500' : 'bg-primary-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+
+      {todasFirmaron && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+          <IconCheck size={16} /> Todas las partes firmaron el contrato.
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
@@ -80,34 +149,42 @@ export function FirmantesContratoSection({ contratoId }: { contratoId: string })
             return (
               <li
                 key={f.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2"
+                className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${firmado ? 'border-green-200 bg-green-50/40' : 'border-gray-100'}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600">
-                    {f.orden}
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${firmado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {firmado ? <IconCheck size={14} /> : f.orden}
                   </span>
-                  <span className={`flex-shrink-0 ${firmado ? 'text-green-600' : 'text-gray-400'}`}>
-                    {firmado ? <IconCheck size={16} /> : <Icon size={16} />}
+                  <span className={`shrink-0 ${firmado ? 'text-green-600' : 'text-gray-400'}`}>
+                    <Icon size={16} />
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {meta?.label ?? f.rol_firmante}
                       <span className="font-normal text-gray-500"> · {f.nombre}</span>
                     </p>
-                    {f.firmado_en && (
+                    {f.firmado_en ? (
                       <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <IconClock size={11} /> {formatDateTime(f.firmado_en)}
+                        <IconClock size={11} /> Firmó el {formatDateTime(f.firmado_en)}
                       </p>
+                    ) : (
+                      <p className="text-xs text-gray-400 truncate">{f.email}</p>
                     )}
                   </div>
                 </div>
-                <span className={`inline-flex flex-shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${estado.bg} ${estado.text}`}>
+                <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${estado.bg} ${estado.text}`}>
                   {estado.label}
                 </span>
               </li>
             )
           })}
         </ol>
+      )}
+
+      {pendientes && !isLoading && (
+        <p className="mt-3 text-xs text-gray-400">
+          Se actualiza solo cuando cada parte firma. También puedes refrescar con ↻.
+        </p>
       )}
     </div>
   )
