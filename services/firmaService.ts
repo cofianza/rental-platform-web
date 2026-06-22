@@ -5,6 +5,7 @@
 import { apiClient } from '@/lib/api'
 import type {
   ISolicitudFirma,
+  IContratoFirmante,
   ICrearSolicitudFirmaInput,
   ISolicitudFirmaPublic,
   IOtpSolicitarResponse,
@@ -67,6 +68,14 @@ class FirmaService {
       `/contratos/${contratoId}/firma/solicitudes`
     )) as unknown as { success: boolean; data: { solicitudes: ISolicitudFirma[] } }
     return response.data.solicitudes
+  }
+
+  // Firmantes multi-parte (arrendatario/arrendador/cofianza) del contrato.
+  async listarFirmantes(contratoId: string): Promise<IContratoFirmante[]> {
+    const response = (await apiClient.get(
+      `/contratos/${contratoId}/firma/firmantes`
+    )) as unknown as { success: boolean; data: { firmantes: IContratoFirmante[] } }
+    return response.data.firmantes
   }
 
   async validarToken(token: string): Promise<ISolicitudFirmaPublic> {

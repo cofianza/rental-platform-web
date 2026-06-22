@@ -7,6 +7,7 @@ import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRigh
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
+import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
@@ -332,6 +333,8 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
       {/* Firma Solicitudes */}
       {firmaContratoId && (
         <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+          {/* Progreso multi-parte (solo si el contrato tiene firmantes). */}
+          <FirmantesContratoSection contratoId={firmaContratoId} />
           <FirmaSolicitudesSection
             contratoId={firmaContratoId}
             estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}

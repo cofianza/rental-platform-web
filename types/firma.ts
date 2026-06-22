@@ -11,6 +11,21 @@ export type EstadoSolicitudFirma =
   | 'expirado'
   | 'cancelado'
 
+export type RolFirmante = 'arrendatario' | 'arrendador' | 'cofianza'
+
+// Firmante multi-parte de un contrato (arrendatario/arrendador/cofianza).
+export interface IContratoFirmante {
+  id: string
+  rol_firmante: RolFirmante
+  nombre: string
+  email: string
+  telefono: string | null
+  orden: number
+  estado: EstadoSolicitudFirma
+  firmado_en: string | null
+  created_at: string
+}
+
 export interface ISolicitudFirma {
   id: string
   contrato_id: string
