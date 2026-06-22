@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh } from '@/components/icons'
+import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoFirmante, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
@@ -163,6 +163,12 @@ export function FirmantesContratoSection({
                       {meta?.label ?? f.rol_firmante}
                       <span className="font-normal text-gray-500"> · {f.nombre}</span>
                     </p>
+                    {f.telefono && (
+                      <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                        <IconWhatsapp size={11} className="text-green-600 shrink-0" />
+                        <span className="truncate">{firmado ? 'Firmó vía' : 'Le llega a'} {f.telefono}</span>
+                      </p>
+                    )}
                     {f.firmado_en ? (
                       <p className="text-xs text-gray-400 flex items-center gap-1">
                         <IconClock size={11} /> Firmó el {formatDateTime(f.firmado_en)}
