@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, ConfirmDialog } from '@/components/ui'
 import { IconLoader, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { userService } from '@/services/userService'
 import { useAuth } from '@/hooks/useAuth'
@@ -37,6 +37,7 @@ export default function HuerfanosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<IOrphanAuthUser | null>(null)
   const fetchedRef = useRef(false)
 
   const isAdmin = user?.rol === 'administrador'
@@ -68,10 +69,9 @@ export default function HuerfanosPage() {
     fetchOrphans()
   }, [isAdmin, fetchOrphans])
 
-  const handleDelete = async (orphan: IOrphanAuthUser) => {
-    if (!confirm(`¿Eliminar definitivamente ${orphan.email || orphan.id}? Esta acción es irreversible.`)) {
-      return
-    }
+  const handleDelete = (orphan: IOrphanAuthUser) => setDeleteTarget(orphan)
+
+  const doDelete = async (orphan: IOrphanAuthUser) => {
     setDeleting(orphan.id)
     try {
       // Sin force — los huérfanos no tienen relaciones en perfiles, así que
@@ -241,6 +241,19 @@ export default function HuerfanosPage() {
           {loading ? 'Recargando…' : 'Recargar lista'}
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) await doDelete(deleteTarget)
+        }}
+        title="Eliminar usuario huérfano"
+        message={`¿Eliminar definitivamente ${deleteTarget?.email || deleteTarget?.id || 'este usuario'}? Esta acción es irreversible.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={!!deleteTarget && deleting === deleteTarget.id}
+      />
     </div>
   )
 }

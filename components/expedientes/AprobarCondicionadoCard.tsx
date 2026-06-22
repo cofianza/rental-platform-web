@@ -13,6 +13,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/ui'
 import { expedienteService } from '@/services/expedienteService'
 
 interface AprobarCondicionadoCardProps {
@@ -30,6 +31,7 @@ export function AprobarCondicionadoCard({
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
+  const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
 
   const puedeAprobar =
     userRol === 'administrador' ||
@@ -52,9 +54,6 @@ export function AprobarCondicionadoCard({
   }
 
   const handleAprobar = async () => {
-    if (!window.confirm('¿Aprobar este expediente condicionado? Pasará a Aprobado y podrás generar el contrato.')) {
-      return
-    }
     setLoading(true)
     try {
       // Sin datos de contrato: solo aprueba. El contrato se genera después en
@@ -71,6 +70,7 @@ export function AprobarCondicionadoCard({
   }
 
   return (
+    <>
     <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -94,7 +94,7 @@ export function AprobarCondicionadoCard({
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={handleAprobar}
+              onClick={() => setConfirmAprobarOpen(true)}
               disabled={loading || enviandoEnlace}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
             >
@@ -116,5 +116,16 @@ export function AprobarCondicionadoCard({
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      isOpen={confirmAprobarOpen}
+      onClose={() => setConfirmAprobarOpen(false)}
+      onConfirm={handleAprobar}
+      title="Aprobar expediente condicionado"
+      message="El expediente pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. ¿Continuar?"
+      confirmLabel="Aprobar expediente"
+      isLoading={loading}
+    />
+    </>
   )
 }

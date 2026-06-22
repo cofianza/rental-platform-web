@@ -9,7 +9,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, ConfirmDialog } from '@/components/ui'
 import {
   IconUsers,
   IconLoader,
@@ -66,6 +66,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
   const [data, setData] = useState<AdminMiembrosResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [revocarTarget, setRevocarTarget] = useState<Miembro | null>(null)
 
   const cargar = useCallback(async () => {
     try {
@@ -96,8 +97,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
     }
   }
 
-  const handleRevocar = async (m: Miembro) => {
-    if (!window.confirm(`Quitar a ${m.nombre || m.email} de esta inmobiliaria?`)) return
+  const doRevocar = async (m: Miembro) => {
     setBusyId(m.id)
     try {
       await adminRevocarMiembro(orgId, m.id)
@@ -122,6 +122,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
   }
 
   return (
+    <>
     <ul className="divide-y divide-gray-100 bg-gray-50/50">
       {data.miembros.map((m) => (
         <li key={m.id} className="px-5 py-3 flex items-center justify-between gap-4">
@@ -152,7 +153,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
                 <option value="solo_lectura">Sólo lectura</option>
               </select>
               <button
-                onClick={() => handleRevocar(m)}
+                onClick={() => setRevocarTarget(m)}
                 disabled={busyId === m.id}
                 title="Quitar miembro"
                 className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
@@ -164,6 +165,19 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
         </li>
       ))}
     </ul>
+    <ConfirmDialog
+      isOpen={!!revocarTarget}
+      onClose={() => setRevocarTarget(null)}
+      onConfirm={async () => {
+        if (revocarTarget) await doRevocar(revocarTarget)
+      }}
+      title="Quitar miembro"
+      message={`¿Quitar a ${revocarTarget?.nombre || revocarTarget?.email || 'este miembro'} de la inmobiliaria? Perderá el acceso a la cartera.`}
+      confirmLabel="Quitar"
+      variant="danger"
+      isLoading={!!revocarTarget && busyId === revocarTarget.id}
+    />
+    </>
   )
 }
 

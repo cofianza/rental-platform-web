@@ -11,7 +11,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, ConfirmDialog } from '@/components/ui'
 import {
   IconUsers,
   IconMail,
@@ -80,6 +80,14 @@ export default function EquipoPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [savingVenTodo, setSavingVenTodo] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [confirm, setConfirm] = useState<{
+    title: string
+    message: string
+    confirmLabel?: string
+    variant?: 'default' | 'danger'
+    onConfirm: () => void | Promise<void>
+  } | null>(null)
+  const [procesandoConfirm, setProcesandoConfirm] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -145,61 +153,76 @@ export default function EquipoPage() {
     }
   }
 
-  const handleRevocar = async (m: Miembro) => {
-    const etiqueta = m.estado === 'invitado' ? 'Cancelar esta invitación' : `Quitar a ${m.email}`
-    if (!window.confirm(`${etiqueta}?`)) return
+  const doRevocar = async (m: Miembro) => {
     setBusyId(m.id)
     try {
       await revocarMiembro(m.id)
       toast.success(m.estado === 'invitado' ? 'Invitación cancelada' : 'Miembro removido')
       await cargar()
     } catch (err: unknown) {
-      const ex = err as { message?: string }
-      toast.error(ex.message || 'No se pudo completar la acción')
+      toast.error((err as { message?: string }).message || 'No se pudo completar la acción')
     } finally {
       setBusyId(null)
     }
   }
+  const handleRevocar = (m: Miembro) => {
+    const esInvit = m.estado === 'invitado'
+    setConfirm({
+      title: esInvit ? 'Cancelar invitación' : 'Quitar miembro',
+      message: esInvit
+        ? `¿Cancelar la invitación enviada a ${m.email}?`
+        : `¿Quitar a ${m.nombre || m.email} del equipo? Perderá el acceso a la cartera de la inmobiliaria.`,
+      confirmLabel: esInvit ? 'Cancelar invitación' : 'Quitar',
+      variant: 'danger',
+      onConfirm: () => doRevocar(m),
+    })
+  }
 
-  const handleCambiarRol = async (m: Miembro, nuevoRol: RolMiembro) => {
-    if (nuevoRol === m.rol_miembro) return
-    if (
-      nuevoRol === 'owner' &&
-      !window.confirm(`Promover a ${m.nombre || m.email} como titular (co-titular)?`)
-    ) {
-      return
-    }
+  const doCambiarRol = async (m: Miembro, nuevoRol: RolMiembro) => {
     setBusyId(m.id)
     try {
       await cambiarRolMiembro(m.id, nuevoRol)
       toast.success(`Rol actualizado a ${ROL_LABEL[nuevoRol]}`)
       await cargar()
     } catch (err: unknown) {
-      const ex = err as { message?: string }
-      toast.error(ex.message || 'No se pudo cambiar el rol')
+      toast.error((err as { message?: string }).message || 'No se pudo cambiar el rol')
     } finally {
       setBusyId(null)
     }
   }
-
-  const handleSalir = async () => {
-    if (
-      !window.confirm(
-        '¿Salir de la inmobiliaria? Perderás el acceso a su cartera (inmuebles, expedientes, etc.).',
-      )
-    ) {
+  const handleCambiarRol = (m: Miembro, nuevoRol: RolMiembro) => {
+    if (nuevoRol === m.rol_miembro) return
+    if (nuevoRol === 'owner') {
+      setConfirm({
+        title: 'Promover a titular',
+        message: `¿Promover a ${m.nombre || m.email} como titular (co-titular)? Podrá gestionar el equipo y los datos de la inmobiliaria.`,
+        confirmLabel: 'Promover',
+        onConfirm: () => doCambiarRol(m, nuevoRol),
+      })
       return
     }
+    void doCambiarRol(m, nuevoRol)
+  }
+
+  const doSalir = async () => {
     setLeaving(true)
     try {
       await salirDeMiInmobiliaria()
       toast.success('Saliste de la inmobiliaria')
       router.push('/dashboard')
     } catch (err: unknown) {
-      const ex = err as { message?: string }
-      toast.error(ex.message || 'No se pudo procesar la salida')
+      toast.error((err as { message?: string }).message || 'No se pudo procesar la salida')
       setLeaving(false)
     }
+  }
+  const handleSalir = () => {
+    setConfirm({
+      title: 'Salir de la inmobiliaria',
+      message: 'Perderás el acceso a su cartera (inmuebles, expedientes, etc.). ¿Continuar?',
+      confirmLabel: 'Salir',
+      variant: 'danger',
+      onConfirm: doSalir,
+    })
   }
 
   return (
@@ -411,6 +434,25 @@ export default function EquipoPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={async () => {
+          if (!confirm) return
+          setProcesandoConfirm(true)
+          try {
+            await confirm.onConfirm()
+          } finally {
+            setProcesandoConfirm(false)
+          }
+        }}
+        title={confirm?.title ?? ''}
+        message={confirm?.message ?? ''}
+        confirmLabel={confirm?.confirmLabel}
+        variant={confirm?.variant}
+        isLoading={procesandoConfirm}
+      />
     </div>
   )
 }

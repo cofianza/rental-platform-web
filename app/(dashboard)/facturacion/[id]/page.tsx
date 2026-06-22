@@ -81,6 +81,7 @@ export default function FacturaDetallePage() {
   // Upload states
   const [uploadingPdf, setUploadingPdf] = useState(false)
   const [uploadingXml, setUploadingXml] = useState(false)
+  const [deleteDocTarget, setDeleteDocTarget] = useState<'pdf' | 'xml' | null>(null)
   const pdfInputRef = useRef<HTMLInputElement>(null)
   const xmlInputRef = useRef<HTMLInputElement>(null)
 
@@ -163,14 +164,14 @@ export default function FacturaDetallePage() {
   }
 
   // Handle delete document
-  const handleDeleteDocument = async (tipo: 'pdf' | 'xml') => {
-    if (!confirm(`¿Estas seguro de eliminar el archivo ${tipo.toUpperCase()}?`)) return
+  const handleDeleteDocument = (tipo: 'pdf' | 'xml') => setDeleteDocTarget(tipo)
 
+  const doDeleteDocument = async (tipo: 'pdf' | 'xml') => {
     try {
       const updated = await facturacionService.eliminarDocumento(id, tipo)
       setFactura(updated)
       toast.success(`${tipo.toUpperCase()} eliminado`)
-    } catch (err) {
+    } catch {
       toast.error(`Error al eliminar ${tipo.toUpperCase()}`)
     }
   }
@@ -551,6 +552,18 @@ export default function FacturaDetallePage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteDocTarget}
+        onClose={() => setDeleteDocTarget(null)}
+        onConfirm={async () => {
+          if (deleteDocTarget) await doDeleteDocument(deleteDocTarget)
+        }}
+        title="Eliminar archivo"
+        message={`¿Eliminar el archivo ${deleteDocTarget?.toUpperCase() ?? ''} de la factura? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+      />
     </div>
   )
 }
