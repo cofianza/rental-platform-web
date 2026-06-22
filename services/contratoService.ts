@@ -195,6 +195,15 @@ class ContratoService {
     return response.data
   }
 
+  /** Acción directa "Enviar a firma": lleva a pendiente_firma + dispara el envío. */
+  async enviarAFirma(id: string): Promise<{ ok: true; message: string }> {
+    const response = (await apiClient.post(
+      `/contratos/${id}/enviar-firma`,
+      {}
+    )) as unknown as { success: boolean; data: { ok: true; message: string } }
+    return response.data
+  }
+
   async getTransicionesDisponibles(id: string): Promise<IContratoTransicionesResponse['data']> {
     const response = (await apiClient.get(
       `/contratos/${id}/available-transitions`

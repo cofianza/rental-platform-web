@@ -50,6 +50,7 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
   const [firmaContratoId, setFirmaContratoId] = useState<string | null>(null)
+  const [enviandoFirmaId, setEnviandoFirmaId] = useState<string | null>(null)
 
   // Permissions
   // El contrato se genera automaticamente al aprobar el estudio (orchestrator).
@@ -119,6 +120,24 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
     setGenerarOpen(false)
     fetchContratos()
   }
+
+  // Acción directa "Enviar a firma": lleva el contrato a firma y dispara el
+  // envío (Auco) en un paso, sin pasar por "Cambiar estado".
+  async function handleEnviarAFirma(contrato: IContrato) {
+    setEnviandoFirmaId(contrato.id)
+    try {
+      const res = await contratoService.enviarAFirma(contrato.id)
+      toast.success(res.message || 'Contrato enviado a firma')
+      await fetchContratos()
+      setFirmaContratoId(contrato.id) // mostrar el progreso de firmas
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
+    } finally {
+      setEnviandoFirmaId(null)
+    }
+  }
+
+  const ESTADOS_PRE_FIRMA = ['borrador', 'en_revision', 'aprobado']
 
   async function handleOpenTransicion(contrato: IContrato) {
     try {
@@ -270,6 +289,21 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-2">
+                          {canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+                            <button
+                              onClick={() => handleEnviarAFirma(c)}
+                              disabled={enviandoFirmaId === c.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-coral-500 rounded-md hover:bg-coral-600 disabled:opacity-50"
+                              title="Llevar a firma y enviar al/los firmante(s)"
+                            >
+                              {enviandoFirmaId === c.id ? (
+                                <IconLoader size={14} className="animate-spin" />
+                              ) : (
+                                <IconMail size={14} />
+                              )}
+                              {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
+                            </button>
+                          )}
                           <button
                             onClick={() => router.push(`/contratos/${c.id}`)}
                             className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
