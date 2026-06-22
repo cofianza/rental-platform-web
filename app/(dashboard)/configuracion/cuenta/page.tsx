@@ -211,7 +211,7 @@ export default function MiCuentaPage() {
             label="Teléfono"
             value={form.telefono}
             onChange={(v) => onChange('telefono', v)}
-            placeholder="3001234567"
+            placeholder="300 123 4567"
             required
           />
           <p className="mt-1 text-xs text-gray-500">

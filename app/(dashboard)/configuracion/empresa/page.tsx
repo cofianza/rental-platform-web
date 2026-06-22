@@ -108,7 +108,7 @@ export default function EmpresaPage() {
                   required={c.required}
                   value={String(form[c.key] ?? '')}
                   onChange={(v) => setCampo(c.key, v)}
-                  placeholder="301 597 6919"
+                  placeholder="300 123 4567"
                 />
               ) : (
                 <>

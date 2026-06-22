@@ -338,7 +338,7 @@ export default function DatosContratoPage() {
               required
               value={form.whatsapp_recaudo ?? ''}
               onChange={(v) => onChange('whatsapp_recaudo', v)}
-              placeholder="301 597 6919"
+              placeholder="300 123 4567"
             />
             <p className="mt-1 text-xs text-gray-500">
               Obligatorio. Aquí recibes el enlace de firma del contrato. Debe ser un WhatsApp real.
