@@ -2,16 +2,11 @@
  * AprobarCondicionadoCard — visible para propietario/inmobiliaria/admin/operador
  * cuando el expediente está en 'condicionado'.
  *
- * Flujo: el buró devolvió el estudio como condicionado. El propietario decide
- * si quiere proceder de todos modos (caso típico: invitó co-arrendatario y
- * el ponderado sigue marginal pero quiere darle salida positiva). Captura
- * duración + fecha del contrato y aprueba — el backend transiciona el
- * expediente a 'aprobado' y genera el contrato.
- *
- * Mario (5-may-2026): este card YA NO muestra docs subidos por el solicitante
- * (codeudor/póliza). El nuevo paradigma es co-arrendatario: el solicitante
- * invita a un co-titular en lugar de subir papeles. El propietario aquí solo
- * decide aprobar manualmente o no.
+ * Flujo: el buró devolvió el estudio como condicionado. La inmobiliaria decide
+ * si proceder de todos modos. Al aprobar, el expediente pasa a 'aprobado'
+ * (SIN generar contrato aquí) y el contrato se genera luego desde la pestaña
+ * Contratos con el formulario completo (modalidad de fianza + servicios
+ * públicos / quién paga). La otra salida es invitar a un co-arrendatario.
  */
 
 'use client'
@@ -27,16 +22,6 @@ interface AprobarCondicionadoCardProps {
   onAprobado?: () => void
 }
 
-const DURACION_OPCIONES = [1, 2, 3, 6, 9, 12, 18, 24, 36, 48, 60] as const
-
-function todayISO(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 export function AprobarCondicionadoCard({
   expedienteId,
   expedienteEstado,
@@ -44,9 +29,6 @@ export function AprobarCondicionadoCard({
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [duracionMeses, setDuracionMeses] = useState<number>(12)
-  const [fechaInicio, setFechaInicio] = useState<string>(todayISO())
 
   const puedeAprobar =
     userRol === 'administrador' ||
@@ -57,32 +39,21 @@ export function AprobarCondicionadoCard({
   if (expedienteEstado !== 'condicionado' || !puedeAprobar) return null
 
   const handleAprobar = async () => {
-    if (!duracionMeses || duracionMeses < 1) {
-      toast.error('Selecciona la duración del contrato (al menos 1 mes)')
-      return
-    }
-    if (!fechaInicio || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
-      toast.error('Selecciona la fecha de inicio del contrato')
+    if (!window.confirm('¿Aprobar este expediente condicionado? Pasará a Aprobado y podrás generar el contrato.')) {
       return
     }
     setLoading(true)
     try {
-      const result = await expedienteService.aprobarCondicionado(expedienteId, {
-        duracion_contrato_meses: duracionMeses,
-        fecha_inicio_contrato: fechaInicio,
-      })
-      if (result.contrato_id) {
-        toast.success('Expediente aprobado. Contrato generado y listo para enviar a firma.')
-      } else {
-        toast.success('Expediente aprobado. Genera el contrato desde la pestaña Contratos.')
-      }
+      // Sin datos de contrato: solo aprueba. El contrato se genera después en
+      // la pestaña Contratos con el formulario completo.
+      await expedienteService.aprobarCondicionado(expedienteId)
+      toast.success('Expediente aprobado. Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).')
       onAprobado?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el expediente.'
       toast.error(msg)
     } finally {
       setLoading(false)
-      setShowForm(false)
     }
   }
 
@@ -103,76 +74,25 @@ export function AprobarCondicionadoCard({
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
           <p className="text-sm text-gray-700 mb-3">
             El buró marcó la solicitud como condicionada. El solicitante puede invitar a un co-arrendatario para
-            mejorar el perfil combinado. Si quieres aprobar manualmente sin esperar al co-arrendatario, captura los
-            datos del contrato y se generará automáticamente.
+            mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el expediente</strong>: pasará a
+            Aprobado y desde la pestaña <strong>Contratos</strong> generarás el contrato con el formulario completo
+            (modalidad de fianza y quién paga los servicios públicos).
           </p>
 
-          {!showForm ? (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setShowForm(true)}
-                disabled={loading}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
-              >
-                Aprobar y generar contrato
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleAprobar}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              {loading ? 'Aprobando…' : 'Aprobar expediente'}
+              {!loading && (
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-              </button>
-            </div>
-          ) : (
-            <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-4">
-              <p className="text-sm text-gray-700">
-                Datos del contrato — se usarán para generar el documento que firmará el solicitante.
-              </p>
-
-              <div>
-                <label htmlFor="aprobar-cond-duracion" className="block text-sm font-medium text-gray-700 mb-1">
-                  Duración del contrato (meses) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="aprobar-cond-duracion"
-                  value={duracionMeses}
-                  onChange={(e) => setDuracionMeses(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  {DURACION_OPCIONES.map((m) => (
-                    <option key={m} value={m}>{m === 1 ? '1 mes' : `${m} meses`}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="aprobar-cond-fecha" className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de inicio del contrato <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="aprobar-cond-fecha"
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button
-                  onClick={handleAprobar}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? 'Generando…' : 'Aprobar y generar contrato'}
-                </button>
-                <button
-                  onClick={() => setShowForm(false)}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
