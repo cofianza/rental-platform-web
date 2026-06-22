@@ -1,12 +1,15 @@
 /**
- * Gestión de equipo de la inmobiliaria (multi-tenant Fase 2).
- * El owner invita miembros por email, reenvía o revoca. Los miembros ven el
- * equipo en solo-lectura. Reutiliza los endpoints /inmobiliaria/miembros.
+ * Gestión de equipo de la inmobiliaria (multi-tenant).
+ * El owner invita miembros (como staff o sólo lectura), reenvía/cancela
+ * invitaciones, cambia roles (promover a co-titular, degradar, sólo lectura)
+ * y revoca. Cualquier miembro puede salir de la organización.
+ * Reutiliza los endpoints /inmobiliaria/miembros.
  */
 
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
 import {
@@ -17,26 +20,66 @@ import {
   IconTrash,
   IconLoader,
   IconShield,
+  IconUser,
+  IconEye,
   IconUserCheck,
   IconClock,
+  IconLogOut,
 } from '@/components/icons'
 import {
   listMiembros,
   invitarMiembro,
   reenviarMiembro,
   revocarMiembro,
+  cambiarRolMiembro,
+  salirDeMiInmobiliaria,
   setMiembrosVenTodo,
   type MiembrosResponse,
   type Miembro,
+  type RolMiembro,
 } from '@/services/miembrosService'
 
+const ROL_LABEL: Record<RolMiembro, string> = {
+  owner: 'Titular',
+  miembro: 'Miembro',
+  solo_lectura: 'Sólo lectura',
+}
+
+function RolBadge({ rol }: { rol: RolMiembro }) {
+  if (rol === 'owner') {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
+        <IconShield size={12} />
+        Titular
+      </span>
+    )
+  }
+  if (rol === 'solo_lectura') {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+        <IconEye size={12} />
+        Sólo lectura
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+      <IconUser size={12} />
+      Miembro
+    </span>
+  )
+}
+
 export default function EquipoPage() {
+  const router = useRouter()
   const [data, setData] = useState<MiembrosResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
+  const [rolInvitar, setRolInvitar] = useState<'miembro' | 'solo_lectura'>('miembro')
   const [inviting, setInviting] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [savingVenTodo, setSavingVenTodo] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -60,7 +103,7 @@ export default function EquipoPage() {
     if (!correo) return
     setInviting(true)
     try {
-      const res = await invitarMiembro(correo)
+      const res = await invitarMiembro(correo, rolInvitar)
       toast.success(res.reenviada ? 'Invitación reenviada' : 'Invitación enviada')
       setEmail('')
       await cargar()
@@ -77,9 +120,7 @@ export default function EquipoPage() {
     try {
       await setMiembrosVenTodo(value)
       toast.success(
-        value
-          ? 'Ahora los miembros ven toda la cartera'
-          : 'Ahora cada miembro ve solo lo suyo',
+        value ? 'Ahora los miembros ven toda la cartera' : 'Ahora cada miembro ve solo lo suyo',
       )
       await cargar()
     } catch (err: unknown) {
@@ -117,6 +158,47 @@ export default function EquipoPage() {
       toast.error(ex.message || 'No se pudo completar la acción')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  const handleCambiarRol = async (m: Miembro, nuevoRol: RolMiembro) => {
+    if (nuevoRol === m.rol_miembro) return
+    if (
+      nuevoRol === 'owner' &&
+      !window.confirm(`Promover a ${m.nombre || m.email} como titular (co-titular)?`)
+    ) {
+      return
+    }
+    setBusyId(m.id)
+    try {
+      await cambiarRolMiembro(m.id, nuevoRol)
+      toast.success(`Rol actualizado a ${ROL_LABEL[nuevoRol]}`)
+      await cargar()
+    } catch (err: unknown) {
+      const ex = err as { message?: string }
+      toast.error(ex.message || 'No se pudo cambiar el rol')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const handleSalir = async () => {
+    if (
+      !window.confirm(
+        '¿Salir de la inmobiliaria? Perderás el acceso a su cartera (inmuebles, expedientes, etc.).',
+      )
+    ) {
+      return
+    }
+    setLeaving(true)
+    try {
+      await salirDeMiInmobiliaria()
+      toast.success('Saliste de la inmobiliaria')
+      router.push('/dashboard')
+    } catch (err: unknown) {
+      const ex = err as { message?: string }
+      toast.error(ex.message || 'No se pudo procesar la salida')
+      setLeaving(false)
     }
   }
 
@@ -162,6 +244,15 @@ export default function EquipoPage() {
                     className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
+                <select
+                  value={rolInvitar}
+                  onChange={(e) => setRolInvitar(e.target.value as 'miembro' | 'solo_lectura')}
+                  className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  title="Rol del miembro"
+                >
+                  <option value="miembro">Miembro (gestiona datos)</option>
+                  <option value="solo_lectura">Sólo lectura</option>
+                </select>
                 <button
                   type="submit"
                   disabled={inviting}
@@ -172,8 +263,9 @@ export default function EquipoPage() {
                 </button>
               </form>
               <p className="text-xs text-gray-500 mt-3">
-                El miembro recibirá un enlace para unirse. Si no tiene cuenta, podrá crearla; si ya
-                la tiene, solo deberá aceptar. Tendrá acceso a la cartera de la inmobiliaria.
+                El miembro recibirá un enlace para unirse. Un <strong>miembro</strong> puede crear y
+                editar datos de la cartera; uno de <strong>sólo lectura</strong> solo puede
+                consultarlos. Podrás cambiar su rol o promoverlo a titular más adelante.
               </p>
             </div>
           )}
@@ -189,7 +281,7 @@ export default function EquipoPage() {
                   <p className="text-xs text-gray-500 mt-1 max-w-xl">
                     {data.miembros_ven_todo
                       ? 'Los miembros ven TODA la cartera de la inmobiliaria (inmuebles, expedientes, moras).'
-                      : 'Cada miembro ve solo lo que creó o lo que le asignes. El titular siempre ve todo.'}
+                      : 'Cada miembro ve solo lo que creó o lo que le asignes. Los titulares siempre ven todo.'}
                   </p>
                 </div>
                 <button
@@ -222,16 +314,11 @@ export default function EquipoPage() {
               {data.miembros.map((m) => (
                 <li key={m.id} className="px-5 py-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
                       </p>
-                      {m.rol_miembro === 'owner' && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
-                          <IconShield size={12} />
-                          Titular
-                        </span>
-                      )}
+                      <RolBadge rol={m.rol_miembro} />
                       {m.es_yo && <span className="text-xs text-gray-400">(tú)</span>}
                     </div>
                     {m.nombre && m.email && (
@@ -252,31 +339,70 @@ export default function EquipoPage() {
                       </span>
                     )}
 
-                    {data.soy_owner && m.rol_miembro !== 'owner' && (
+                    {/* Selector de rol (owner, miembros activos) */}
+                    {data.soy_owner && m.estado === 'activo' && (
+                      <select
+                        value={m.rol_miembro}
+                        disabled={busyId === m.id}
+                        onChange={(e) => handleCambiarRol(m, e.target.value as RolMiembro)}
+                        title="Cambiar rol"
+                        className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                      >
+                        <option value="owner">Titular</option>
+                        <option value="miembro">Miembro</option>
+                        <option value="solo_lectura">Sólo lectura</option>
+                      </select>
+                    )}
+
+                    {/* Reenviar / cancelar invitaciones pendientes (owner) */}
+                    {data.soy_owner && m.estado === 'invitado' && (
                       <div className="flex items-center gap-1">
-                        {m.estado === 'invitado' && (
-                          <button
-                            onClick={() => handleReenviar(m)}
-                            disabled={busyId === m.id}
-                            title="Reenviar invitación"
-                            className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
-                          >
-                            {busyId === m.id ? (
-                              <IconLoader size={16} className="animate-spin" />
-                            ) : (
-                              <IconRefresh size={16} />
-                            )}
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleReenviar(m)}
+                          disabled={busyId === m.id}
+                          title="Reenviar invitación"
+                          className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
+                        >
+                          {busyId === m.id ? (
+                            <IconLoader size={16} className="animate-spin" />
+                          ) : (
+                            <IconRefresh size={16} />
+                          )}
+                        </button>
                         <button
                           onClick={() => handleRevocar(m)}
                           disabled={busyId === m.id}
-                          title={m.estado === 'invitado' ? 'Cancelar invitación' : 'Quitar miembro'}
+                          title="Cancelar invitación"
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
                         >
                           <IconTrash size={16} />
                         </button>
                       </div>
+                    )}
+
+                    {/* Quitar a otro miembro activo (owner) */}
+                    {data.soy_owner && m.estado === 'activo' && !m.es_yo && (
+                      <button
+                        onClick={() => handleRevocar(m)}
+                        disabled={busyId === m.id}
+                        title="Quitar miembro"
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                      >
+                        <IconTrash size={16} />
+                      </button>
+                    )}
+
+                    {/* Salir (yo mismo, si estoy activo) */}
+                    {m.es_yo && m.estado === 'activo' && (
+                      <button
+                        onClick={handleSalir}
+                        disabled={leaving}
+                        title="Salir de la inmobiliaria"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg disabled:opacity-50"
+                      >
+                        {leaving ? <IconLoader size={14} className="animate-spin" /> : <IconLogOut size={14} />}
+                        Salir
+                      </button>
                     )}
                   </div>
                 </li>

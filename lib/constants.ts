@@ -186,6 +186,19 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Administración',
   },
   {
+    // Gestión de equipos de las inmobiliarias aliadas (miembros/titulares).
+    // Reusa el recurso 'usuarios' para el chequeo RBAC (el admin lo tiene);
+    // distinto de /inmobiliarias (perfiles aliados) — aquí se administran los
+    // miembros de cada organización multi-tenant.
+    label: 'Equipos inmobiliarias',
+    href: '/admin/inmobiliarias',
+    icon: 'Building2',
+    description: 'Miembros y titulares de cada inmobiliaria aliada',
+    resource: 'usuarios',
+    requiredRoles: ['administrador'],
+    group: 'Administración',
+  },
+  {
     label: 'Bitácora',
     href: '/bitacora',
     icon: 'ClipboardList',

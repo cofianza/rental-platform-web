@@ -4,12 +4,15 @@
 
 import { apiClient } from '@/lib/api'
 
+/** owner = titular (puede haber varios = co-titulares). miembro = staff. solo_lectura = viewer. */
+export type RolMiembro = 'owner' | 'miembro' | 'solo_lectura'
+
 export interface Miembro {
   id: string
   /** perfil_id (null si la invitación está pendiente). */
   perfil_id: string | null
   email: string | null
-  rol_miembro: 'owner' | 'miembro'
+  rol_miembro: RolMiembro
   estado: 'activo' | 'invitado' | 'revocado'
   nombre: string | null
   apellido: string | null
@@ -34,6 +37,24 @@ export interface InvitacionMiembroInfo {
   tiene_cuenta: boolean
 }
 
+export interface InmobiliariaAdmin {
+  id: string
+  nombre: string
+  estado: string
+  owner_perfil_id: string | null
+  owner_nombre: string | null
+  miembros_ven_todo: boolean
+  miembros_activos: number
+  invitaciones_pendientes: number
+  created_at: string
+}
+
+export interface AdminMiembrosResponse {
+  organizacion: { id: string; nombre: string }
+  miembros_ven_todo: boolean
+  miembros: Miembro[]
+}
+
 // ── Autenticado (owner / miembro) ──────────────────────────────
 
 export async function listMiembros(): Promise<MiembrosResponse> {
@@ -41,10 +62,13 @@ export async function listMiembros(): Promise<MiembrosResponse> {
   return res.data
 }
 
-export async function invitarMiembro(email: string): Promise<{ message: string; reenviada: boolean }> {
+export async function invitarMiembro(
+  email: string,
+  rol_miembro: 'miembro' | 'solo_lectura' = 'miembro',
+): Promise<{ message: string; reenviada: boolean }> {
   const res = await apiClient.post<{ message: string; reenviada: boolean }>(
     '/inmobiliaria/miembros/invitar',
-    { email },
+    { email, rol_miembro },
   )
   return res.data
 }
@@ -56,6 +80,49 @@ export async function reenviarMiembro(id: string): Promise<{ message: string }> 
 
 export async function revocarMiembro(id: string): Promise<{ message: string }> {
   const res = await apiClient.delete<{ message: string }>(`/inmobiliaria/miembros/${id}`)
+  return res.data
+}
+
+/** Cambia el rol de un miembro activo (owner-only): promover a co-titular, degradar o solo lectura. */
+export async function cambiarRolMiembro(id: string, rol_miembro: RolMiembro): Promise<{ message: string }> {
+  const res = await apiClient.patch<{ message: string }>(`/inmobiliaria/miembros/${id}/rol`, { rol_miembro })
+  return res.data
+}
+
+/** Salir de la organización (cualquier miembro activo, incl. solo lectura). */
+export async function salirDeMiInmobiliaria(): Promise<{ message: string }> {
+  const res = await apiClient.post<{ message: string }>('/inmobiliaria/miembros/salir', {})
+  return res.data
+}
+
+// ── Administración de plataforma (rol administrador) ──────────
+
+export async function adminListInmobiliarias(): Promise<InmobiliariaAdmin[]> {
+  const res = await apiClient.get<InmobiliariaAdmin[]>('/admin/inmobiliarias')
+  return res.data
+}
+
+export async function adminListMiembros(orgId: string): Promise<AdminMiembrosResponse> {
+  const res = await apiClient.get<AdminMiembrosResponse>(`/admin/inmobiliarias/${orgId}/miembros`)
+  return res.data
+}
+
+export async function adminCambiarRolMiembro(
+  orgId: string,
+  miembroId: string,
+  rol_miembro: RolMiembro,
+): Promise<{ message: string }> {
+  const res = await apiClient.patch<{ message: string }>(
+    `/admin/inmobiliarias/${orgId}/miembros/${miembroId}/rol`,
+    { rol_miembro },
+  )
+  return res.data
+}
+
+export async function adminRevocarMiembro(orgId: string, miembroId: string): Promise<{ message: string }> {
+  const res = await apiClient.delete<{ message: string }>(
+    `/admin/inmobiliarias/${orgId}/miembros/${miembroId}`,
+  )
   return res.data
 }
 
