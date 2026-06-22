@@ -504,6 +504,19 @@ class ExpedienteService {
   }
 
   /**
+   * Genera y envía al solicitante un enlace público para cargar su
+   * documentación adicional (estudio condicionado). No requiere que el
+   * solicitante tenga cuenta.
+   */
+  async enviarEnlaceDocumentos(expedienteId: string): Promise<{ ok: true; email_destino: string }> {
+    const response = await apiClient.post<{ ok: true; email_destino: string }>(
+      `/expedientes/${expedienteId}/soportes/enviar-enlace`,
+      {},
+    )
+    return response.data
+  }
+
+  /**
    * Genera el contrato para un expediente ya aprobado por el buró.
    * Recibe los datos del contrato (duración + fecha) — antes los pedía
    * el orchestrator con defaults; ahora los decide el propietario.

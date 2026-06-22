@@ -29,6 +29,7 @@ export function AprobarCondicionadoCard({
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
+  const [enviandoEnlace, setEnviandoEnlace] = useState(false)
 
   const puedeAprobar =
     userRol === 'administrador' ||
@@ -37,6 +38,18 @@ export function AprobarCondicionadoCard({
     userRol === 'inmobiliaria'
 
   if (expedienteEstado !== 'condicionado' || !puedeAprobar) return null
+
+  const handleEnviarEnlace = async () => {
+    setEnviandoEnlace(true)
+    try {
+      const res = await expedienteService.enviarEnlaceDocumentos(expedienteId)
+      toast.success(`Enlace de carga enviado al solicitante (${res.email_destino}).`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el enlace.')
+    } finally {
+      setEnviandoEnlace(false)
+    }
+  }
 
   const handleAprobar = async () => {
     if (!window.confirm('¿Aprobar este expediente condicionado? Pasará a Aprobado y podrás generar el contrato.')) {
@@ -82,7 +95,7 @@ export function AprobarCondicionadoCard({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleAprobar}
-              disabled={loading}
+              disabled={loading || enviandoEnlace}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
             >
               {loading ? 'Aprobando…' : 'Aprobar expediente'}
@@ -91,6 +104,13 @@ export function AprobarCondicionadoCard({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               )}
+            </button>
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={loading || enviandoEnlace}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante para cargar documentos'}
             </button>
           </div>
         </div>
