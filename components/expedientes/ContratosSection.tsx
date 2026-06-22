@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight, IconMail } from '@/components/icons'
@@ -84,6 +84,19 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
   useEffect(() => {
     fetchContratos()
   }, [fetchContratos])
+
+  // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
+  // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
+  // vez: si el usuario lo cierra, no lo reabrimos en cada refetch.
+  const autoOpenedFirmaRef = useRef(false)
+  useEffect(() => {
+    if (autoOpenedFirmaRef.current) return
+    const enFirma = contratos.find((c) => c.estado === 'pendiente_firma')
+    if (enFirma) {
+      setFirmaContratoId(enFirma.id)
+      autoOpenedFirmaRef.current = true
+    }
+  }, [contratos])
 
   async function handleDownload(contrato: IContrato) {
     setDownloadingId(contrato.id)
@@ -340,10 +353,11 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
                           {canRegenerate && c.estado === 'pendiente_firma' && (
                             <button
                               onClick={() => setFirmaContratoId(firmaContratoId === c.id ? null : c.id)}
-                              className={`p-1.5 rounded-md hover:bg-gray-100 ${firmaContratoId === c.id ? 'text-primary-600 bg-primary-50' : 'text-gray-400 hover:text-primary-600'}`}
-                              title="Solicitudes de firma"
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
+                              title="Ver y gestionar las firmas de este contrato (reenviar / cancelar)"
                             >
-                              <IconMail size={16} />
+                              <IconMail size={14} />
+                              {firmaContratoId === c.id ? 'Ocultar firmas' : 'Ver firmas'}
                             </button>
                           )}
                           {canRegenerate && !TERMINAL_STATES.includes(c.estado) && (
