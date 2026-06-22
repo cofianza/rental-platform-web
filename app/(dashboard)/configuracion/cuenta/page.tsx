@@ -96,7 +96,11 @@ export default function MiCuentaPage() {
 
     // PhoneInput emite "+57 3001234567"; el backend espera sin espacios.
     const telefonoLimpio = form.telefono.replace(/\s+/g, '').trim()
-    if (telefonoLimpio && !/^\+?\d{7,15}$/.test(telefonoLimpio)) {
+    if (!telefonoLimpio) {
+      toast.error('Ingresa tu teléfono de WhatsApp: ahí recibes los avisos y es el respaldo para firmar contratos.')
+      return
+    }
+    if (!/^\+?\d{7,15}$/.test(telefonoLimpio)) {
       toast.error('Teléfono inválido')
       return
     }
@@ -202,12 +206,18 @@ export default function MiCuentaPage() {
           </p>
         </div>
 
-        <PhoneInput
-          label="Teléfono"
-          value={form.telefono}
-          onChange={(v) => onChange('telefono', v)}
-          placeholder="3001234567"
-        />
+        <div>
+          <PhoneInput
+            label="Teléfono"
+            value={form.telefono}
+            onChange={(v) => onChange('telefono', v)}
+            placeholder="3001234567"
+            required
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Tu WhatsApp de contacto: aquí te llegan los avisos del sistema y es el respaldo para la firma de contratos. Con código de país (ej. +57…).
+          </p>
+        </div>
       </div>
 
       {/* Documento de identidad */}

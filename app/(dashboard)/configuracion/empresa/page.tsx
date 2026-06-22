@@ -12,12 +12,17 @@ import { PageHeader } from '@/components/ui'
 import { IconLoader, IconBuilding2 } from '@/components/icons'
 import { getEmpresa, updateEmpresa, type EmpresaInfo } from '@/services/empresaService'
 
-const CAMPOS: Array<{ key: keyof EmpresaInfo; label: string; type?: string; help?: string }> = [
-  { key: 'name', label: 'Razón social' },
+const CAMPOS: Array<{ key: keyof EmpresaInfo; label: string; type?: string; help?: string; required?: boolean }> = [
+  { key: 'name', label: 'Razón social', required: true, help: 'Nombre de Cofianza tal como firma en el contrato.' },
   { key: 'nit', label: 'NIT' },
   { key: 'address', label: 'Dirección' },
-  { key: 'phone', label: 'Teléfono', help: 'Formato internacional (ej. +57...). Se usa para la firma electrónica de Cofianza.' },
-  { key: 'email', label: 'Email', type: 'email' },
+  {
+    key: 'phone',
+    label: 'Teléfono (WhatsApp de Cofianza)',
+    required: true,
+    help: 'Obligatorio. A este WhatsApp le llega el enlace para que Cofianza firme el contrato. Debe ser un número real con código de país (ej. +57…) y distinto al del arrendatario y el arrendador.',
+  },
+  { key: 'email', label: 'Email', type: 'email', required: true, help: 'Correo de Cofianza para la firma y los certificados.' },
   { key: 'website', label: 'Sitio web' },
   { key: 'certificateValidityDays', label: 'Validez de certificados (días)', type: 'number' },
 ]
@@ -50,6 +55,14 @@ export default function EmpresaPage() {
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form) return
+    if (!form.name?.trim() || !form.email?.trim()) {
+      toast.error('La razón social y el email de Cofianza son obligatorios.')
+      return
+    }
+    if (!form.phone?.trim()) {
+      toast.error('Falta el WhatsApp de Cofianza: es donde recibe el enlace para firmar el contrato.')
+      return
+    }
     setSaving(true)
     try {
       const updated = await updateEmpresa(form)
@@ -86,7 +99,10 @@ export default function EmpresaPage() {
 
           {CAMPOS.map((c) => (
             <div key={c.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{c.label}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {c.label}
+                {c.required && <span className="text-coral-500"> *</span>}
+              </label>
               <input
                 type={c.type ?? 'text'}
                 value={String(form[c.key] ?? '')}

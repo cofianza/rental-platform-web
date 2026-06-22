@@ -74,6 +74,12 @@ export default function DatosContratoPage() {
   }
 
   const handleSave = async () => {
+    // El WhatsApp del arrendador es obligatorio: es a donde llega el enlace de
+    // firma del contrato. Sin él, no se puede firmar.
+    if (!form.whatsapp_recaudo?.trim()) {
+      toast.error('Falta el WhatsApp del arrendador: es donde recibes el enlace para firmar el contrato.')
+      return
+    }
     setSaving(true)
     try {
       const updated = await perfilArrendadorService.updateMe(form)
@@ -315,11 +321,12 @@ export default function DatosContratoPage() {
         </div>
       </div>
 
-      {/* Contacto para notificación de pagos */}
+      {/* WhatsApp del arrendador: firma + aviso de pagos */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">Notificación de pagos</h3>
+        <h3 className="text-base font-semibold text-gray-900">WhatsApp del arrendador (firma y pagos)</h3>
         <p className="text-sm text-gray-500 -mt-2">
-          El arrendatario te notificará cuando haga el pago. Estos canales aparecen en el contrato.
+          A este WhatsApp <strong>te llega el enlace para firmar el contrato</strong> como arrendador.
+          También es el canal donde el arrendatario te avisa de los pagos y que aparece impreso en el contrato.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -328,6 +335,8 @@ export default function DatosContratoPage() {
             value={form.whatsapp_recaudo}
             onChange={(v) => onChange('whatsapp_recaudo', v)}
             placeholder="+57 301 597 6919"
+            required
+            help="Obligatorio. Aquí recibes el enlace de firma del contrato. Debe ser un WhatsApp real, con código de país (ej. +57…)."
           />
           <Field
             label="Email"
@@ -335,6 +344,7 @@ export default function DatosContratoPage() {
             value={form.email_recaudo}
             onChange={(v) => onChange('email_recaudo', v)}
             placeholder="recaudo@empresa.com"
+            help="Para avisos de pago y respaldo de notificaciones."
           />
         </div>
       </div>
@@ -365,12 +375,16 @@ interface FieldProps {
   placeholder?: string
   help?: string
   type?: string
+  required?: boolean
 }
 
-function Field({ label, value, onChange, placeholder, help, type = 'text' }: FieldProps) {
+function Field({ label, value, onChange, placeholder, help, type = 'text', required = false }: FieldProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {required && <span className="text-coral-500"> *</span>}
+      </label>
       <input
         type={type}
         value={value ?? ''}
