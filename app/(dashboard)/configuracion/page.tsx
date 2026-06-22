@@ -74,6 +74,15 @@ const SECCIONES: Array<{
     soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
+    id: 'empresa',
+    href: '/configuracion/empresa',
+    titulo: 'Datos de la empresa',
+    descripcion: 'Razón social, NIT, dirección, teléfono, email y validez de certificados de Cofianza.',
+    icon: IconBuilding2,
+    color: 'bg-indigo-100 text-indigo-600',
+    soloRoles: ['administrador'],
+  },
+  {
     id: 'tesoreria',
     href: '/configuracion/tesoreria',
     titulo: 'Tesorería',
