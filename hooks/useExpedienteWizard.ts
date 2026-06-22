@@ -139,7 +139,9 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
     } else if (!EMAIL_REGEX.test(form.email)) {
       errors.email = 'Email invalido'
     }
-    if (form.telefono?.trim() && !isValidPhone(form.telefono)) {
+    if (!form.telefono?.trim()) {
+      errors.telefono = 'Teléfono requerido: a este WhatsApp le llega el enlace para firmar el contrato.'
+    } else if (!isValidPhone(form.telefono)) {
       errors.telefono = 'Celular colombiano (3XXXXXXXXX) o internacional con código de país (ej. +52 1234567890)'
     }
   }

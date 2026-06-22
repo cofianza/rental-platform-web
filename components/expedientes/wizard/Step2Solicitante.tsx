@@ -15,6 +15,7 @@ import {
   IconPlus,
   IconPencil,
 } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { solicitanteService } from '@/services/solicitanteService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
 import type { WizardStep2Data } from '@/hooks/useExpedienteWizard'
@@ -660,21 +661,19 @@ function SolicitanteForm({
             )}
           </div>
 
-          {/* Telefono */}
+          {/* Telefono (= WhatsApp del arrendatario para firmar) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_TELEFONO}
-            </label>
-            <input
-              type="tel"
+            <PhoneInput
+              label={WIZARD_MESSAGES.LABEL_TELEFONO}
+              required
               value={formData.telefono || ''}
-              onChange={(e) => onUpdateField('telefono', e.target.value)}
-              placeholder={WIZARD_MESSAGES.PLACEHOLDER_TELEFONO}
-              className={inputClasses(!!errors.telefono)}
+              onChange={(v) => onUpdateField('telefono', v)}
+              placeholder="300 123 4567"
+              error={errors.telefono}
             />
-            {errors.telefono && (
-              <p className="mt-1 text-xs text-red-600">{errors.telefono}</p>
-            )}
+            <p className="mt-1 text-xs text-gray-500">
+              A este WhatsApp le llega el enlace para firmar el contrato.
+            </p>
           </div>
         </div>
       </section>
