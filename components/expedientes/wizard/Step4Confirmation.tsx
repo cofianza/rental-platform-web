@@ -38,7 +38,7 @@ export function Step4Confirmation({
 }: Step4ConfirmationProps) {
   const { inmueble } = data.step1
   const { solicitante, isNewSolicitante, formData } = data.step2
-  const { notas, analista_id } = data.step3
+  const { notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
 
   // Obtener datos del solicitante (existente o nuevo)
   const solicitanteData = solicitante || formData
@@ -205,7 +205,14 @@ export function Step4Confirmation({
           {/* Responsable */}
           <div>
             <p className="text-xs font-medium text-gray-500 mb-1">Responsable asignado</p>
-            {analista_id ? (
+            {miembro_responsable_id ? (
+              <p className="text-sm text-gray-700">
+                <span className="inline-flex items-center gap-1">
+                  <IconUser size={14} className="text-gray-400" />
+                  {miembro_responsable_nombre || 'Responsable asignado'}
+                </span>
+              </p>
+            ) : analista_id ? (
               <p className="text-sm text-gray-700">
                 <span className="inline-flex items-center gap-1">
                   <IconUser size={14} className="text-gray-400" />

@@ -33,6 +33,8 @@ export interface WizardStep3Data {
   analista_id: string
   /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3.1). '' = sin asignar/auto. */
   miembro_responsable_id: string
+  /** Nombre legible del miembro responsable (solo para mostrarlo en Confirmación). */
+  miembro_responsable_nombre?: string
 }
 
 export interface WizardData {
@@ -66,6 +68,7 @@ const initialStep3: WizardStep3Data = {
   notas: '',
   analista_id: '',
   miembro_responsable_id: '',
+  miembro_responsable_nombre: '',
 }
 
 const initialData: WizardData = {

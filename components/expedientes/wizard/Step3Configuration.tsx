@@ -225,7 +225,14 @@ export function Step3Configuration({
           ) : (
             <select
               value={data.miembro_responsable_id}
-              onChange={(e) => onUpdate({ miembro_responsable_id: e.target.value })}
+              onChange={(e) => {
+                const id = e.target.value
+                const m = miembros.find((x) => (x.perfil_id ?? '') === id)
+                const nombre = m
+                  ? `${(m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email) ?? ''}${m.rol_miembro === 'owner' ? ' (titular)' : ''}`
+                  : ''
+                onUpdate({ miembro_responsable_id: id, miembro_responsable_nombre: nombre })
+              }}
               className={cn(
                 'block w-full px-4 py-3 border rounded-lg text-sm',
                 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
