@@ -57,7 +57,7 @@ export function Step4Confirmation({
 
       {/* Error de submit */}
       {submitError && (
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
           <IconAlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-red-800">
@@ -69,8 +69,8 @@ export function Step4Confirmation({
       )}
 
       {/* Resumen del Inmueble */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+      <div className="overflow-hidden rounded-xl border border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconHome size={16} className="text-gray-400" />
             Inmueble Seleccionado
@@ -123,8 +123,8 @@ export function Step4Confirmation({
       </div>
 
       {/* Resumen del Solicitante */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+      <div className="overflow-hidden rounded-xl border border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconUser size={16} className="text-gray-400" />
             Solicitante
@@ -182,8 +182,8 @@ export function Step4Confirmation({
       </div>
 
       {/* Resumen de Configuracion */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+      <div className="overflow-hidden rounded-xl border border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconFileText size={16} className="text-gray-400" />
             Configuracion
@@ -227,16 +227,16 @@ export function Step4Confirmation({
       </div>
 
       {/* Boton de crear */}
-      <div className="pt-4 border-t border-gray-200">
+      <div className="border-t border-gray-200 pt-5">
         <button
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting}
           className={cn(
-            'w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors',
+            'flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors',
             isSubmitting
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-primary-600 text-white hover:bg-primary-700'
+              ? 'cursor-not-allowed bg-gray-300 text-gray-500'
+              : 'bg-coral-500 text-white shadow-sm hover:bg-coral-600'
           )}
         >
           {isSubmitting ? (

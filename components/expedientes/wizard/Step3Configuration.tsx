@@ -256,7 +256,7 @@ export function Step3Configuration({
       )}
 
       {/* Informacion adicional */}
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
         <p className="text-sm text-blue-800">
           <span className="font-medium">Nota:</span> Estos campos son opcionales.
           Puede dejarlos vacios y actualizarlos posteriormente desde el detalle del expediente.

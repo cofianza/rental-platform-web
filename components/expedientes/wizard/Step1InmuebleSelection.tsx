@@ -267,7 +267,7 @@ export function Step1InmuebleSelection({
                         key={i.id}
                         type="button"
                         onClick={() => handleSelectInmueble(i)}
-                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/40 text-left transition-colors"
+                        className="flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-left transition-colors hover:border-primary-400 hover:bg-primary-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                       >
                         {card}
                       </button>
@@ -275,7 +275,7 @@ export function Step1InmuebleSelection({
                       <div
                         key={i.id}
                         title={motivoBloqueo}
-                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 opacity-70 cursor-not-allowed"
+                        className="flex cursor-not-allowed items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 opacity-70"
                       >
                         {card}
                       </div>
@@ -305,8 +305,8 @@ export function Step1InmuebleSelection({
               onChange={handleSearchChange}
               placeholder={WIZARD_MESSAGES.SEARCH_INMUEBLE_PLACEHOLDER}
               className={cn(
-                'block w-full pl-10 pr-4 py-3 border rounded-lg text-sm',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+                'block w-full rounded-lg border py-3 pl-10 pr-4 text-base sm:text-sm',
+                'focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500',
                 errors.inmueble ? 'border-red-300' : 'border-gray-300'
               )}
             />
@@ -321,7 +321,7 @@ export function Step1InmuebleSelection({
 
           {/* Dropdown de resultados */}
           {showDropdown && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+            <div className="absolute z-10 mt-1.5 max-h-80 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
               {searchResults.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
                   <IconHome size={32} className="mx-auto mb-2 text-gray-300" />
@@ -409,7 +409,7 @@ export function Step1InmuebleSelection({
 
           {/* Card del inmueble seleccionado */}
           <div className={cn(
-            'border rounded-lg overflow-hidden',
+            'overflow-hidden rounded-xl border',
             data.hasActiveExpediente ? 'border-blue-300' : 'border-gray-200'
           )}>
             {/* Imagen */}

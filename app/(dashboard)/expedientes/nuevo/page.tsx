@@ -139,10 +139,10 @@ function NuevoExpedienteContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-6 sm:py-8 sm:pb-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
             Nuevo Expediente
           </h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -151,17 +151,17 @@ function NuevoExpedienteContent() {
         </div>
 
         {/* Step Indicator */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <WizardStepIndicator
             currentStep={currentStep}
           />
         </div>
 
         {/* Contenido del paso */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           {prefillLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center gap-3 py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
               <p className="text-sm text-gray-500">Cargando inmueble seleccionado...</p>
             </div>
           ) : (
@@ -183,18 +183,18 @@ function NuevoExpedienteContent() {
 
         {/* Boton cancelar en paso 4 */}
         {currentStep === 4 && !isSubmitting && (
-          <div className="flex justify-between">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={prevStep}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
             >
               Anterior
             </button>
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+              className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
             >
               Cancelar
             </button>

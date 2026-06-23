@@ -39,54 +39,50 @@ export function WizardNavigation({
   }
 
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+    <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
       {/* Lado izquierdo: Cancelar o Anterior */}
-      <div>
-        {isFirstStep ? (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            {WIZARD_MESSAGES.CANCEL}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onPrevious}
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <IconArrowLeft size={16} />
-            {WIZARD_MESSAGES.PREVIOUS}
-          </button>
-        )}
-      </div>
-
-      {/* Lado derecho: Siguiente o Crear */}
-      <div>
+      {isFirstStep ? (
         <button
           type="button"
-          onClick={handleNextClick}
-          disabled={!canProceed || isSubmitting}
-          className="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
         >
-          {isSubmitting ? (
-            <>
-              <IconLoader size={16} className="animate-spin" />
-              {WIZARD_MESSAGES.CREATING}
-            </>
-          ) : isLastStep ? (
-            WIZARD_MESSAGES.CONFIRM_CREATE
-          ) : (
-            <>
-              {WIZARD_MESSAGES.NEXT}
-              <IconArrowRight size={16} />
-            </>
-          )}
+          {WIZARD_MESSAGES.CANCEL}
         </button>
-      </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={isSubmitting}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          <IconArrowLeft size={16} />
+          {WIZARD_MESSAGES.PREVIOUS}
+        </button>
+      )}
+
+      {/* Lado derecho: Siguiente o Crear */}
+      <button
+        type="button"
+        onClick={handleNextClick}
+        disabled={!canProceed || isSubmitting}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+      >
+        {isSubmitting ? (
+          <>
+            <IconLoader size={16} className="animate-spin" />
+            {WIZARD_MESSAGES.CREATING}
+          </>
+        ) : isLastStep ? (
+          WIZARD_MESSAGES.CONFIRM_CREATE
+        ) : (
+          <>
+            {WIZARD_MESSAGES.NEXT}
+            <IconArrowRight size={16} />
+          </>
+        )}
+      </button>
     </div>
   )
 }
