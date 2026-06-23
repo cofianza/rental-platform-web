@@ -512,9 +512,11 @@ function SolicitanteForm({
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
 }) {
-  // Solo lo esencial (básicos + contacto) visible; el resto es opcional y se
-  // despliega bajo demanda para no abrumar con un formulario gigante.
-  const [showMore, setShowMore] = useState(false)
+  // Solo lo esencial (básicos + contacto) visible; el resto es opcional.
+  // OCULTO temporalmente a pedido: los "datos adicionales" no se muestran por
+  // ahora. Para REACTIVAR: volver a `const [showMore, setShowMore] = useState(false)`
+  // y descomentar el botón de toggle más abajo.
+  const showMore = false
 
   const inputClasses = (hasError: boolean) =>
     cn(
@@ -678,8 +680,8 @@ function SolicitanteForm({
         </div>
       </section>
 
-      {/* Toggle: el resto (ubicación, laboral, adicional) es OPCIONAL — oculto
-          por defecto para que el formulario no abrume. */}
+      {/* Toggle "Agregar datos adicionales" OCULTO temporalmente a pedido.
+          Para reactivar: descomentar este botón y restaurar el useState arriba.
       <button
         type="button"
         onClick={() => setShowMore((v) => !v)}
@@ -687,6 +689,7 @@ function SolicitanteForm({
       >
         {showMore ? '− Ocultar datos adicionales' : '+ Agregar datos adicionales (opcional)'}
       </button>
+      */}
 
       {showMore && (
         <>
