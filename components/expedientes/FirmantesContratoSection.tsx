@@ -154,15 +154,20 @@ export function FirmantesContratoSection({
             </span>
           )}
           {canManage && !isLoading && pendientes && solicitud && (
-            <button
-              onClick={handleRecordatorio}
-              disabled={enviandoRecordatorio || recordatoriosAgotados}
-              className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:opacity-50"
-              title={recordatoriosAgotados ? 'Alcanzaste el máximo de recordatorios' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
-            >
-              {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
-              Recordatorio
-            </button>
+            <span className="inline-flex items-center gap-1.5">
+              <button
+                onClick={handleRecordatorio}
+                disabled={enviandoRecordatorio || recordatoriosAgotados}
+                className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:opacity-50"
+                title={recordatoriosAgotados ? 'Alcanzaste el máximo de recordatorios (5)' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
+              >
+                {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
+                Recordatorio
+              </button>
+              <span className="text-[11px] font-medium text-gray-400" title="Recordatorios/envíos realizados de los permitidos">
+                {solicitud.envios_realizados}/{solicitud.max_envios}
+              </span>
+            </span>
           )}
           <button
             onClick={() => cargar(true)}
