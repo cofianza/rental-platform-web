@@ -30,9 +30,13 @@ interface ContratosSectionProps {
   expedienteId: string
   /** Estado del expediente — el contrato solo se genera tras la aprobación. */
   expedienteEstado?: string
+  /** Se dispara cuando un contrato cambia de forma relevante (p. ej. al firmar
+   *  todas las partes), para que el padre re-consulte el EXPEDIENTE: su estado
+   *  puede pasar a 'cerrado' y el stepper avanzar a "Listo" sin refresco manual. */
+  onContratoActualizado?: () => void
 }
 
-export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSectionProps) {
+export function ContratosSection({ expedienteId, expedienteEstado, onContratoActualizado }: ContratosSectionProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -391,7 +395,7 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
           <FirmantesContratoSection
             contratoId={firmaContratoId}
             canManage={canCreate}
-            onAllSigned={fetchContratos}
+            onAllSigned={() => { fetchContratos(); onContratoActualizado?.() }}
             onFirmantesLoaded={(total) => setTieneMultiparte(total > 0)}
           />
           {/* "Solicitudes de Firma" = flujo de un solo firmante (legacy). Se

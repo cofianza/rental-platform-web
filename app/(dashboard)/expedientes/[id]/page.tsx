@@ -143,6 +143,16 @@ export default function ExpedienteDetallePage() {
     fetchExpediente()
   }, [fetchExpediente])
 
+  // Al firmar TODAS las partes, el expediente pasa a 'cerrado' en backend, pero
+  // ese cierre es DIFERIDO (auto-heal disparado al listar contratos, que
+  // onAllSigned ya hizo). Esperamos ~2.5s y re-consultamos el expediente UNA vez
+  // para que el stepper avance a "Listo" sin que el usuario refresque. Se dispara
+  // una sola vez (onAllSigned está guardado en FirmantesContratoSection), así que
+  // no hay loop de refetch.
+  const handleContratoActualizado = useCallback(() => {
+    setTimeout(() => { fetchExpediente() }, 2500)
+  }, [fetchExpediente])
+
   // Ejecutar transición
   const handleEjecutarTransicion = async (
     estadoDestino: EstadoExpediente,
@@ -690,7 +700,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Contratos */}
         {activeTab === 'contratos' && (
           <div className="p-6">
-            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} />
+            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} onContratoActualizado={handleContratoActualizado} />
           </div>
         )}
 
