@@ -18,7 +18,7 @@ import {
   EstudiosSkeleton,
   ESTUDIO_UI_MESSAGES,
 } from '@/components/estudios'
-import { EstudiosInmobiliariaView } from '@/components/estudios/EstudiosInmobiliariaView'
+import { EstudiosExpedientesTabs } from '@/components/estudios/EstudiosExpedientesTabs'
 import { EstudiosPropietarioView } from '@/components/estudios/EstudiosPropietarioView'
 
 function EstudiosContent() {
@@ -35,15 +35,11 @@ function EstudiosContent() {
     }
   }, [isInitialized, userRol, router])
 
-  // La inmobiliaria ve la vista con el diseño del mockup 13_v2; admin/operador
+  // La inmobiliaria ve la pestaña unificada "Estudios" con sub-pestañas internas
+  // Estudios | Expedientes (fusión de ambas pestañas en una sola). Admin/operador
   // conservan la bandeja/tabla operativa de siempre.
   if (userRol === 'inmobiliaria') {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Estudios" subtitle="Inicia y consulta tus estudios de crédito" />
-        <EstudiosInmobiliariaView />
-      </div>
-    )
+    return <EstudiosExpedientesTabs />
   }
 
   // Propietario: "Evaluar candidato" (mockup 14) — mismo historial re-skineado,

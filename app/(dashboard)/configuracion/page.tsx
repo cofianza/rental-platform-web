@@ -74,6 +74,17 @@ const SECCIONES: Array<{
     soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
   },
   {
+    // La pestaña "Visitas" se quitó del nav de la oficina virtual; queda
+    // accesible desde aquí (y desde cada expediente).
+    id: 'visitas',
+    href: '/citas',
+    titulo: 'Visitas',
+    descripcion: 'Agenda y tablero de las visitas a tus inmuebles.',
+    icon: IconCalendar,
+    color: 'bg-teal-100 text-teal-600',
+    soloRoles: ['inmobiliaria'],
+  },
+  {
     id: 'empresa',
     href: '/configuracion/empresa',
     titulo: 'Datos de la empresa',

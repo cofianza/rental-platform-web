@@ -6,6 +6,7 @@
 // HP-229: Listado + Bandejas
 export * from './constants'
 export * from './BandejaTabs'
+export * from './ExpedientesListado'
 export * from './ExpedienteBadges'
 export * from './ExpedientesFilters'
 export * from './ExpedientesSkeleton'

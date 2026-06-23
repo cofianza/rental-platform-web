@@ -18,9 +18,7 @@ import {
   IconAlertTriangle,
   IconReceipt,
   IconBarChart3,
-  IconClipboardList,
   IconSettings,
-  IconCalendar,
 } from '@/components/icons'
 
 interface TabDef {
@@ -41,27 +39,15 @@ const TABS: TabDef[] = [
     matchers: ['/inmuebles', '/vitrina'],
   },
   {
-    // Lista scopeada en el backend: la inmobiliaria/propietario solo ve
-    // expedientes de SUS inmuebles. Antes /expedientes no tenía link directo
-    // (solo se llegaba por enlaces indirectos) y el matcher vivía en Contratos.
-    label: 'Expedientes',
-    href: '/expedientes',
-    icon: IconClipboardList,
-    matchers: ['/expedientes'],
-  },
-  {
-    // Kanban de visitas (scopeado por rol en el backend). Antes solo se
-    // gestionaban las citas dentro de cada expediente; faltaba la agenda global.
-    label: 'Visitas',
-    href: '/citas',
-    icon: IconCalendar,
-    matchers: ['/citas'],
-  },
-  {
+    // Pestaña UNIFICADA: "Estudios" engloba Estudios + Expedientes (sub-pestañas
+    // internas en /estudios). Por eso "Expedientes" ya no es una pestaña aparte
+    // y "Visitas" se movió a Configuración. Los matchers incluyen /expedientes
+    // para que esta pestaña quede activa también en el listado/detalle de
+    // expedientes. Las rutas /expedientes y /citas siguen vivas.
     label: 'Estudios',
     href: '/estudios',
     icon: IconSearch,
-    matchers: ['/estudios'],
+    matchers: ['/estudios', '/expedientes'],
   },
   {
     label: 'Contratos',
