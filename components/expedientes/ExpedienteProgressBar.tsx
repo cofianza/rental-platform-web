@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react'
 import { IconCheck } from '@/components/icons'
 import { citaService } from '@/services/citaService'
+import { contratoService } from '@/services/contratoService'
 import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
@@ -34,6 +35,11 @@ export function ExpedienteProgressBar({
   className,
 }: ExpedienteProgressBarProps) {
   const [citaRealizada, setCitaRealizada] = useState(false)
+  // El paso "Firma"/"Listo" NO se refleja en expediente.estado: el expediente
+  // sigue en 'aprobado' mientras el contrato se firma, y solo pasa a 'cerrado'
+  // al final. Por eso, estando aprobado, miramos el estado del CONTRATO para
+  // avanzar el stepper. null = sin override (no aplica / aún sin cargar).
+  const [contratoStep, setContratoStep] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -47,14 +53,39 @@ export function ExpedienteProgressBar({
     return () => { cancelled = true }
   }, [expedienteId, estadoActual])
 
+  useEffect(() => {
+    // Solo importa en 'aprobado': antes el contrato no existe; en 'cerrado' ya
+    // está todo completo (paso 7). Evita fetches innecesarios en otros estados.
+    if (estadoActual !== 'aprobado') {
+      setContratoStep(null)
+      return
+    }
+    let cancelled = false
+    contratoService.getContratosForExpediente(expedienteId, { limit: 20 })
+      .then(({ data }) => {
+        if (cancelled) return
+        const firmado = data.some((c) => ['firmado', 'vigente', 'finalizado'].includes(c.estado))
+        const enFirma = data.some((c) => c.estado === 'pendiente_firma')
+        // 6 = Listo, 5 = Firma (índices de PROCESS_STEPS).
+        setContratoStep(firmado ? 6 : enFirma ? 5 : null)
+      })
+      .catch(() => { if (!cancelled) setContratoStep(null) })
+    return () => { cancelled = true }
+  }, [expedienteId, estadoActual])
+
   const isRejected = estadoActual === 'rechazado'
   const isConditioned = estadoActual === 'condicionado'
   const isCancelled = estadoActual === 'cerrado' && !!estadoPreCancelacion
   // Si fue cancelado, "currentStep" se calcula desde el estado pre-cancelacion
   // — los pasos completados son hasta ahi, no hasta el final.
-  const currentStep = isCancelled
+  const baseStep = isCancelled
     ? getProcessStep(estadoPreCancelacion!, citaRealizada)
     : getProcessStep(estadoActual, citaRealizada)
+  // El estado del contrato puede ADELANTAR el paso (Firma/Listo) cuando el
+  // expediente sigue en 'aprobado'. No aplica si el expediente fue cancelado.
+  const currentStep = !isCancelled && contratoStep !== null
+    ? Math.max(baseStep, contratoStep)
+    : baseStep
 
   if (isRejected) {
     return (
