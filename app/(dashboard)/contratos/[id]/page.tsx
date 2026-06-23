@@ -24,6 +24,7 @@ import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransi
 import { ContratoHistorialModal } from '@/components/expedientes/ContratoHistorialModal'
 import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSection'
 import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
+import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 
 const PdfViewer = dynamic(
@@ -402,6 +403,10 @@ export default function ContratoDetallePage() {
               </div>
             )}
           </div>
+
+          {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de
+              firma. Se auto-oculta si el contrato no usa firma multi-parte. */}
+          <FirmantesContratoSection contratoId={id} canManage={canManage} onAllSigned={fetchContrato} />
 
           {/* Expediente link */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
