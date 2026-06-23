@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import { API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
@@ -89,19 +90,23 @@ class ContratoService {
     if (query?.limit) params.append('limit', query.limit.toString())
     const qs = params.toString()
 
-    const response = (await apiClient.get(
-      `/expedientes/${expedienteId}/contratos${qs ? `?${qs}` : ''}`
-    )) as unknown as IContratosResponse
+    // Coalescing: en el detalle, varias cards piden los contratos del mismo
+    // expediente a la vez al montar → 1 sola petición en vez de N.
+    return coalesceRequest(`contratos-exp:${expedienteId}:${qs}`, async () => {
+      const response = (await apiClient.get(
+        `/expedientes/${expedienteId}/contratos${qs ? `?${qs}` : ''}`
+      )) as unknown as IContratosResponse
 
-    return {
-      data: response.data || [],
-      meta: {
-        total: response.pagination?.total || 0,
-        page: Number(response.pagination?.page) || 1,
-        limit: Number(response.pagination?.limit) || 10,
-        totalPages: response.pagination?.totalPages || 0,
-      },
-    }
+      return {
+        data: response.data || [],
+        meta: {
+          total: response.pagination?.total || 0,
+          page: Number(response.pagination?.page) || 1,
+          limit: Number(response.pagination?.limit) || 10,
+          totalPages: response.pagination?.totalPages || 0,
+        },
+      }
+    })
   }
 
   async getContratoById(id: string): Promise<IContrato> {

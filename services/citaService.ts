@@ -3,6 +3,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import type {
   ICita,
   ICrearCita,
@@ -21,8 +22,12 @@ class CitaService {
   }
 
   async getCitasByExpediente(expedienteId: string): Promise<ICita[]> {
-    const res = await apiClient.get<ICita[]>(`${this.basePath}?expediente_id=${expedienteId}`)
-    return res.data
+    // Coalescing: en el detalle, varias cards piden las citas del mismo
+    // expediente a la vez al montar → 1 sola petición en vez de N.
+    return coalesceRequest(`citas:${expedienteId}`, async () => {
+      const res = await apiClient.get<ICita[]>(`${this.basePath}?expediente_id=${expedienteId}`)
+      return res.data
+    })
   }
 
   /**
