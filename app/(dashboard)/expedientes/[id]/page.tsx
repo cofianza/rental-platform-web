@@ -505,6 +505,9 @@ export default function ExpedienteDetallePage() {
                 expedienteId={id}
                 expedienteEstado={expediente.estado}
                 inmuebleId={expediente.inmueble?.id}
+                solicitanteId={expediente.solicitante?.id}
+                solicitanteTelefono={expediente.solicitante?.telefono}
+                onSolicitanteUpdated={fetchExpediente}
                 onCitaRealizada={fetchExpediente}
               />
             </div>

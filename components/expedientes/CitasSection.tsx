@@ -9,7 +9,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconLoader, IconPlus, IconCheck, IconCalendar, IconClock, IconShieldCheck } from '@/components/icons'
 import { Modal } from '@/components/ui'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { citaService } from '@/services/citaService'
+import { solicitanteService } from '@/services/solicitanteService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatDateTime } from '@/lib/constants'
@@ -28,10 +30,16 @@ interface CitasSectionProps {
   /** Id del inmueble — habilita SlotSelector con disponibilidad real del
    *  propietario. Si falta, el modal cae a un input date+time crudo. */
   inmuebleId?: string
+  /** Solicitante del expediente — para capturar su teléfono (WhatsApp) al
+   *  agendar la visita si aún no lo tiene. */
+  solicitanteId?: string
+  solicitanteTelefono?: string | null
+  /** Refresca el expediente en el padre tras guardar el teléfono del solicitante. */
+  onSolicitanteUpdated?: () => void
   onCitaRealizada?: () => void
 }
 
-export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, onCitaRealizada }: CitasSectionProps) {
+export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, solicitanteId, solicitanteTelefono, onSolicitanteUpdated, onCitaRealizada }: CitasSectionProps) {
   // El estudio ya corrió (o el expediente cerró): el pago del estudio ya no es
   // accionable, así que no mostramos el pill "Aún sin pago"/"Pago pendiente".
   const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
@@ -229,7 +237,7 @@ export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, onCit
               </h4>
               <p className="text-sm text-gray-600">
                 {canManageCitas
-                  ? 'Programa una visita confirmada con el solicitante. Recibira una notificacion por correo.'
+                  ? 'Programa una visita confirmada con el solicitante. Recibira una notificacion por correo y WhatsApp.'
                   : 'Antes de continuar con el estudio crediticio, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmara.'}
               </p>
             </div>
@@ -292,6 +300,9 @@ export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, onCit
         expedienteId={expedienteId}
         inmuebleId={inmuebleId}
         isOwnerOrAgency={canManageCitas}
+        solicitanteId={solicitanteId}
+        solicitanteTelefono={solicitanteTelefono}
+        onSolicitanteUpdated={onSolicitanteUpdated}
         onCreated={() => { setShowCrearModal(false); fetchCitas() }}
       />
 
@@ -526,6 +537,9 @@ function CrearCitaModal({
   expedienteId,
   inmuebleId,
   isOwnerOrAgency,
+  solicitanteId,
+  solicitanteTelefono,
+  onSolicitanteUpdated,
   onCreated,
 }: {
   isOpen: boolean
@@ -533,17 +547,28 @@ function CrearCitaModal({
   expedienteId: string
   inmuebleId?: string
   isOwnerOrAgency: boolean
+  solicitanteId?: string
+  solicitanteTelefono?: string | null
+  onSolicitanteUpdated?: () => void
   onCreated: () => void
 }) {
   // SlotSelector emite ISO 8601 con offset (-05:00) ya alineado al horario
   // configurado por el propietario. No hay que componer fecha+hora a mano.
   const [slot, setSlot] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // El WhatsApp de confirmación de la cita (rama owner/inmobiliaria) solo sale al
+  // solicitante si tiene teléfono. Si no lo tiene, lo capturamos aquí y lo
+  // guardamos antes de agendar. (Para la rama solicitante no aplica.)
+  const faltaTelefono = isOwnerOrAgency && !(solicitanteTelefono ?? '').trim()
+  const telefonoValido = telefono.replace(/[^\d]/g, '').length >= 9
 
   const reset = () => {
     setSlot(null)
     setNotas('')
+    setTelefono('')
   }
 
   const handleClose = () => {
@@ -557,9 +582,27 @@ function CrearCitaModal({
       toast.error('Selecciona un horario disponible')
       return
     }
+    if (faltaTelefono && !telefonoValido) {
+      toast.error('Ingresa el teléfono (WhatsApp) del solicitante para enviarle la confirmación')
+      return
+    }
 
     setIsSubmitting(true)
     try {
+      // Si el solicitante no tenía teléfono y se capturó uno, guardarlo ANTES de
+      // agendar: el backend lee solicitantes.telefono al notificar por WhatsApp.
+      let telefonoGuardado = false
+      if (faltaTelefono && telefonoValido && solicitanteId) {
+        try {
+          await solicitanteService.updateSolicitante(solicitanteId, { telefono })
+          telefonoGuardado = true
+        } catch {
+          // Ej. 404 si el solicitante lo registró otro actor. No bloqueamos la
+          // visita; solo avisamos que el WhatsApp podría no salir.
+          toast.error('No pudimos guardar el teléfono; la visita se agenda igual, pero el WhatsApp podría no enviarse.')
+        }
+      }
+
       await citaService.crearCita({
         expediente_id: expedienteId,
         // El slot ya es ISO con offset; el backend lo guarda tal cual.
@@ -571,6 +614,7 @@ function CrearCitaModal({
       toast.success(isOwnerOrAgency ? 'Visita agendada y confirmada' : 'Cita solicitada exitosamente')
       reset()
       onCreated()
+      if (telefonoGuardado) onSolicitanteUpdated?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al agendar la cita'
       toast.error(msg)
@@ -589,9 +633,26 @@ function CrearCitaModal({
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
           {isOwnerOrAgency
-            ? 'Programa una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo.'
+            ? 'Programa una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo y WhatsApp.'
             : 'Elige un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
         </p>
+
+        {/* Captura del teléfono del solicitante si no lo tiene — necesario para
+            enviarle la confirmación de la visita por WhatsApp. */}
+        {faltaTelefono && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <PhoneInput
+              label="Teléfono del solicitante (WhatsApp)"
+              required
+              value={telefono}
+              onChange={setTelefono}
+              placeholder="300 123 4567"
+            />
+            <p className="mt-1.5 text-xs text-amber-700">
+              Este solicitante aún no tiene teléfono. Agrégalo para enviarle la confirmacion de la visita por WhatsApp.
+            </p>
+          </div>
+        )}
 
         {inmuebleId ? (
           <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
@@ -629,7 +690,7 @@ function CrearCitaModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || !slot}
+            disabled={isSubmitting || !slot || (faltaTelefono && !telefonoValido)}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
@@ -790,7 +851,7 @@ function ReprogramarCitaModal({
   // Texto y placeholders adaptados al actor.
   const descripcion = isSolicitante
     ? 'Elige un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmacion del propietario.'
-    : 'Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo y notificacion in-app.'
+    : 'Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo, WhatsApp y notificacion in-app.'
 
   const notasPlaceholder = isSolicitante
     ? 'Cuentale al propietario por que necesitas cambiar el horario.'
