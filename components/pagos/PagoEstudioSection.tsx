@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
@@ -571,19 +572,13 @@ function EnviarLinkModal({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Teléfono <span className="text-xs text-gray-400">(opcional)</span>
-          </label>
-          <input
-            type="tel"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            placeholder="+57 300 123 4567"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            disabled={isSubmitting}
-          />
-        </div>
+        <PhoneInput
+          label="Teléfono (opcional)"
+          value={telefono}
+          onChange={setTelefono}
+          placeholder="300 123 4567"
+          disabled={isSubmitting}
+        />
 
         <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
           <button
