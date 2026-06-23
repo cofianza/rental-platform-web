@@ -114,19 +114,17 @@ export default function ExpedienteDetallePage() {
     setNotFound(false)
 
     try {
-      // Primero cargar el expediente (crítico)
-      const expedienteData = await expedienteService.getExpedienteDetalle(id)
+      // Expediente (crítico) + transiciones (no crítico) EN PARALELO — antes
+      // iban en serie (2 round-trips encadenados, cada uno con su latencia).
+      const [expedienteData, transicionesData] = await Promise.all([
+        expedienteService.getExpedienteDetalle(id),
+        expedienteService.getTransicionesDisponibles(id).catch(() => {
+          console.warn('No se pudieron cargar las transiciones disponibles')
+          return []
+        }),
+      ])
       setExpediente(expedienteData)
-
-      // Luego intentar cargar transiciones (no crítico)
-      try {
-        const transicionesData = await expedienteService.getTransicionesDisponibles(id)
-        setTransiciones(transicionesData)
-      } catch {
-        // Si falla, simplemente no hay transiciones disponibles
-        console.warn('No se pudieron cargar las transiciones disponibles')
-        setTransiciones([])
-      }
+      setTransiciones(transicionesData)
     } catch (err) {
       if (err instanceof Error && err.message.includes('no encontrado')) {
         setNotFound(true)

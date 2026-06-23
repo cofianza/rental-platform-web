@@ -84,7 +84,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
   // Polling automático mientras esperamos pago. Cuando el solicitante paga
   // por Stripe, el webhook tarda 1-3 seg en marcar el pago como 'completado'
   // — sin esto el panel queda mostrando "pendiente" hasta que el usuario
-  // refresque a mano. Polling cada 4 seg, solo en estados donde tiene sentido.
+  // refresque a mano. Polling cada 12 seg, solo en estados donde tiene sentido.
   // Cuando detectamos que ya no está pendiente, llamamos onPagoCompletado
   // para que el expediente padre haga refetch (estudio + UI).
   useEffect(() => {
@@ -99,7 +99,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
       if (fresco.estado !== 'pendiente' && fresco.estado !== 'procesando') {
         onPagoCompletado?.()
       }
-    }, 4000)
+    }, 12000)
     return () => clearInterval(id)
   }, [estado, expedienteId, onPagoCompletado])
 
