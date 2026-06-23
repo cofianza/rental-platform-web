@@ -12,6 +12,8 @@ export interface IVisitaPublica {
   fecha: string | null // ISO con offset -05:00
   inmueble: { direccion: string; ciudad: string } | null
   nombre: string
+  /** Solo en citas 'confirmada': true si el solicitante ya confirmó que asistirá. */
+  confirmada_asistencia: boolean
 }
 
 export interface IVisitaSlot {
@@ -45,4 +47,9 @@ async function cancelar(token: string, motivo?: string): Promise<IVisitaPublica>
   return res.data
 }
 
-export const visitaService = { getVisita, getSlots, reprogramar, cancelar }
+async function confirmar(token: string): Promise<IVisitaPublica> {
+  const res = await apiClient.post<IVisitaPublica>(`/public/visita/${token}/confirmar`, {})
+  return res.data
+}
+
+export const visitaService = { getVisita, getSlots, reprogramar, cancelar, confirmar }

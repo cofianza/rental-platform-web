@@ -65,12 +65,14 @@ export default function GestionarVisitaPage() {
   // final): robusto tanto para la forma codificada como decodificada.
   const rawToken = String(params.token ?? '')
   const token = rawToken.replace(/[^a-f0-9]/gi, '').slice(-64) || rawToken
-  const accion = String(params.accion ?? '') === 'cancelar' ? 'cancelar' : 'reprogramar'
+  const accionRaw = String(params.accion ?? '')
+  const accion: 'cancelar' | 'confirmar' | 'reprogramar' =
+    accionRaw === 'cancelar' ? 'cancelar' : accionRaw === 'confirmar' ? 'confirmar' : 'reprogramar'
 
   const [visita, setVisita] = useState<IVisitaPublica | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<'reprogramada' | 'cancelada' | null>(null)
+  const [done, setDone] = useState<'reprogramada' | 'cancelada' | 'confirmada' | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   // Reprogramar
@@ -141,6 +143,19 @@ export default function GestionarVisitaPage() {
     }
   }
 
+  async function handleConfirmar() {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await visitaService.confirmar(token)
+      setDone('confirmada')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo confirmar')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   // ── Pantallas ──────────────────────────────────────────────
 
   if (loading) {
@@ -169,12 +184,18 @@ export default function GestionarVisitaPage() {
         <div className="text-center py-6">
           <IconCheckCircle size={48} className="mx-auto text-primary-600 mb-3" />
           <h1 className="text-xl font-bold text-gray-900">
-            {done === 'reprogramada' ? '¡Visita reprogramada!' : 'Visita cancelada'}
+            {done === 'reprogramada'
+              ? '¡Visita reprogramada!'
+              : done === 'cancelada'
+                ? 'Visita cancelada'
+                : '¡Asistencia confirmada!'}
           </h1>
           <p className="text-sm text-gray-600 mt-2">
             {done === 'reprogramada'
               ? 'Enviamos tu nueva fecha al propietario para que la confirme. Te avisaremos cuando quede lista.'
-              : 'Avisamos al propietario que no asistirás. Gracias por avisar a tiempo.'}
+              : done === 'cancelada'
+                ? 'Avisamos al propietario que no asistirás. Gracias por avisar a tiempo.'
+                : 'Le avisamos al propietario que asistirás. ¡Te esperamos puntual!'}
           </p>
         </div>
       </Card>
@@ -191,7 +212,11 @@ export default function GestionarVisitaPage() {
           {visita.nombre ? `Hola ${visita.nombre},` : 'Tu visita'}
         </h1>
         <p className="text-sm text-gray-600 mt-1">
-          {accion === 'cancelar' ? 'Vas a cancelar tu visita.' : 'Elige una nueva fecha para tu visita.'}
+          {accion === 'cancelar'
+            ? 'Vas a cancelar tu visita.'
+            : accion === 'confirmar'
+              ? 'Confirma que asistirás a tu visita.'
+              : 'Elige una nueva fecha para tu visita.'}
         </p>
 
         <div className="mt-4 space-y-2 text-sm">
@@ -226,6 +251,37 @@ export default function GestionarVisitaPage() {
               Si necesitas ayuda, responde por WhatsApp y te apoyamos.
             </p>
           </div>
+        </Card>
+      ) : accion === 'confirmar' ? (
+        <Card>
+          {visita.confirmada_asistencia ? (
+            <div className="text-center py-4">
+              <IconCheckCircle size={40} className="mx-auto text-primary-600 mb-2" />
+              <p className="text-sm text-gray-700">Ya confirmaste tu asistencia. ¡Te esperamos puntual!</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-700">
+                ¿Confirmas que asistirás a esta visita? Le avisaremos al propietario para que te espere.
+              </p>
+              {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+              <button
+                type="button"
+                onClick={handleConfirmar}
+                disabled={submitting}
+                className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submitting && <IconLoader size={16} className="animate-spin" />}
+                Sí, confirmo mi asistencia
+              </button>
+              <Link
+                href={`/visita/reprogramar/${token}`}
+                className="mt-3 block text-center text-sm text-gray-500 hover:underline"
+              >
+                Necesito cambiar la fecha
+              </Link>
+            </>
+          )}
         </Card>
       ) : accion === 'cancelar' ? (
         <Card>
