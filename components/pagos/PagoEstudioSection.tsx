@@ -22,9 +22,14 @@ interface PagoEstudioSectionProps {
    *  cancelado). Útil para incluir la sección en el tab Resumen sin dejar
    *  un bloque vacío cuando el pago aún no aplica. */
   hideIfNoAction?: boolean
+  /** Datos del solicitante del expediente — precargan el modal "Enviar link de
+   *  pago al arrendatario" (el usuario igual puede editarlos antes de enviar). */
+  solicitanteNombre?: string
+  solicitanteEmail?: string
+  solicitanteTelefono?: string | null
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoChange, userRole, hideIfNoAction }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoChange, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono }: PagoEstudioSectionProps) {
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -431,6 +436,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
         onClose={() => setShowLinkModal(false)}
         expedienteId={expedienteId}
         montoFormateado={estado.monto_formateado}
+        defaultNombre={solicitanteNombre}
+        defaultEmail={solicitanteEmail}
+        defaultTelefono={solicitanteTelefono}
         onSuccess={() => {
           setShowLinkModal(false)
           fetchEstado()
@@ -449,12 +457,18 @@ function EnviarLinkModal({
   onClose,
   expedienteId,
   montoFormateado,
+  defaultNombre,
+  defaultEmail,
+  defaultTelefono,
   onSuccess,
 }: {
   isOpen: boolean
   onClose: () => void
   expedienteId: string
   montoFormateado: string
+  defaultNombre?: string
+  defaultEmail?: string
+  defaultTelefono?: string | null
   onSuccess: () => void
 }) {
   const [email, setEmail] = useState('')
@@ -462,6 +476,17 @@ function EnviarLinkModal({
   const [telefono, setTelefono] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Precargar con los datos del solicitante del expediente cada vez que se abre
+  // el modal. Son editables antes de enviar.
+  useEffect(() => {
+    if (isOpen) {
+      setNombre(defaultNombre ?? '')
+      setEmail(defaultEmail ?? '')
+      setTelefono(defaultTelefono ?? '')
+      setError(null)
+    }
+  }, [isOpen, defaultNombre, defaultEmail, defaultTelefono])
 
   const resetForm = useCallback(() => {
     setEmail('')

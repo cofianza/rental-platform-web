@@ -462,6 +462,9 @@ export default function ExpedienteDetallePage() {
                     expedienteId={id}
                     userRole={user?.rol}
                     onPagoCompletado={fetchExpediente}
+                    solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
+                    solicitanteEmail={expediente.solicitante?.email}
+                    solicitanteTelefono={expediente.solicitante?.telefono}
                   />
                 )}
                 <EstudioEstadoCard
@@ -672,6 +675,9 @@ export default function ExpedienteDetallePage() {
                   userRole={user?.rol}
                   onPagoCompletado={fetchExpediente}
                   onPagadoChange={setEstudioPagado}
+                  solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
+                  solicitanteEmail={expediente.solicitante?.email}
+                  solicitanteTelefono={expediente.solicitante?.telefono}
                 />
               )
             )}
