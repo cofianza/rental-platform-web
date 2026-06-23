@@ -443,12 +443,15 @@ export default function ExpedienteDetallePage() {
               </div>
             )}
 
-            {/* Propietario/inmobiliaria/admin/operador: cards informativas
-                del estado del estudio y del contrato (cada una se auto-oculta
-                si no aplica). El orden refleja el flujo: cita realizada →
-                habilitar estudio → estudio en curso → contrato. */}
+            {/* Propietario/inmobiliaria/admin/operador. ORDEN: primero las
+                tarjetas de ACCIÓN REQUERIDA (lo que hay que hacer AHORA: habilitar
+                estudio / definir pago / aprobar condicionado / generar contrato),
+                y debajo las INFORMATIVAS (estado del estudio/contrato). Cada
+                tarjeta se auto-oculta si no aplica, así la acción vigente queda
+                siempre arriba del todo. */}
             {user?.rol !== 'solicitante' && (
               <>
+                {/* ── Acciones requeridas (arriba) ── */}
                 <AccionHabilitarEstudioCard
                   expedienteId={id}
                   estudioHabilitado={expediente.estudio_habilitado ?? false}
@@ -475,21 +478,11 @@ export default function ExpedienteDetallePage() {
                     solicitanteTelefono={expediente.solicitante?.telefono}
                   />
                 )}
-                <EstudioEstadoCard
-                  expedienteId={id}
-                  onVerEstudios={() => setActiveTab('estudios')}
-                  solicitante={expediente.solicitante}
-                />
                 <AprobarCondicionadoCard
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onAprobado={fetchExpediente}
-                />
-                <CoarrendatarioPropietarioCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
                 />
                 <AccionContratoPendienteCard
                   expedienteId={id}
@@ -497,9 +490,21 @@ export default function ExpedienteDetallePage() {
                   userRol={user?.rol}
                   onGenerated={fetchExpediente}
                 />
+
+                {/* ── Estado / informativo (debajo de las acciones) ── */}
+                <EstudioEstadoCard
+                  expedienteId={id}
+                  onVerEstudios={() => setActiveTab('estudios')}
+                  solicitante={expediente.solicitante}
+                />
                 <ContratoEstadoCard
                   expedienteId={id}
                   onVerContratos={() => setActiveTab('contratos')}
+                />
+                <CoarrendatarioPropietarioCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
                 />
               </>
             )}
