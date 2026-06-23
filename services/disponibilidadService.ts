@@ -24,6 +24,14 @@ export interface IDiaDisponibilidad {
   slots: ISlot[]
 }
 
+/** Respuesta de GET /disponibilidad/slots. */
+export interface ISlotsRespuesta {
+  dias: IDiaDisponibilidad[]
+  /** Antelación mínima del propietario (horas). El front decide con esto el
+   *  primer día navegable: 0=mismo día (hoy), 24=mañana, 48=pasado mañana. */
+  antelacion_minima_horas: number
+}
+
 /** Horario recurrente para un día de la semana (0=Domingo … 6=Sábado). */
 export interface IHorarioDia {
   dia_semana: number
@@ -60,11 +68,20 @@ async function getSlots(params: {
   inmuebleId: string
   desde: string // YYYY-MM-DD
   hasta: string // YYYY-MM-DD
-}): Promise<IDiaDisponibilidad[]> {
+}): Promise<ISlotsRespuesta> {
   const { inmuebleId, desde, hasta } = params
   const qs = new URLSearchParams({ inmueble_id: inmuebleId, desde, hasta }).toString()
-  const res = await apiClient.get<IDiaDisponibilidad[]>(`/disponibilidad/slots?${qs}`)
-  return res.data
+  const res = await apiClient.get<ISlotsRespuesta | IDiaDisponibilidad[]>(`/disponibilidad/slots?${qs}`)
+  const data = res.data
+  // Tolerante al orden de despliegue: el backend viejo devolvía solo el array
+  // de días (sin antelación). Normalizamos a la forma nueva (default 24h).
+  if (Array.isArray(data)) {
+    return { dias: data, antelacion_minima_horas: 24 }
+  }
+  return {
+    dias: data?.dias ?? [],
+    antelacion_minima_horas: data?.antelacion_minima_horas ?? 24,
+  }
 }
 
 async function getMiDisponibilidad(): Promise<IMiDisponibilidad> {

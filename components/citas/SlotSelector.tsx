@@ -39,7 +39,11 @@ export default function SlotSelector({
   onChange,
   className,
 }: SlotSelectorProps) {
-  const [offsetDias, setOffsetDias] = useState(1) // arranca mañana
+  // offsetDias = primer día visible de la ventana, contado desde HOY (Bogotá).
+  // Arranca en 0 (hoy); cuando llega la antelación del inmueble se sube al
+  // primer día permitido (offsetMinimo): 0=mismo día/2h, 1=24h, 2=48h.
+  const [offsetDias, setOffsetDias] = useState(0)
+  const [offsetMinimo, setOffsetMinimo] = useState(0)
   const [diasData, setDiasData] = useState<IDiaDisponibilidad[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,9 +63,15 @@ export default function SlotSelector({
 
     disponibilidadService
       .getSlots({ inmuebleId, desde, hasta })
-      .then((data) => {
+      .then((res) => {
         if (cancelled) return
-        setDiasData(data)
+        setDiasData(res.dias)
+        // Primer día permitido según la antelación del propietario: 0/0/1/2
+        // para mismo día / 2h / 24h / 48h. Si la ventana arrancó antes (p. ej.
+        // en 24h aún estábamos en hoy), saltamos al primer día útil.
+        const min = Math.max(0, Math.floor((res.antelacion_minima_horas ?? 24) / 24))
+        setOffsetMinimo(min)
+        setOffsetDias((cur) => (cur < min ? min : cur))
       })
       .catch(() => {
         if (cancelled) return
@@ -76,11 +86,11 @@ export default function SlotSelector({
     }
   }, [inmuebleId, desde, hasta, reloadTick])
 
-  const puedeRetroceder = offsetDias > 1
+  const puedeRetroceder = offsetDias > offsetMinimo
   const puedeAvanzar = offsetDias + DIAS_POR_VENTANA <= MAX_DIAS_ADELANTE
 
   const handleRetroceder = () => {
-    setOffsetDias(Math.max(1, offsetDias - DIAS_POR_VENTANA))
+    setOffsetDias(Math.max(offsetMinimo, offsetDias - DIAS_POR_VENTANA))
   }
 
   const handleAvanzar = () => {
