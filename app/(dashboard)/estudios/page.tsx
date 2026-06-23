@@ -18,7 +18,7 @@ import {
   EstudiosSkeleton,
   ESTUDIO_UI_MESSAGES,
 } from '@/components/estudios'
-import { EstudiosExpedientesTabs } from '@/components/estudios/EstudiosExpedientesTabs'
+import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedientesFusion'
 import { EstudiosPropietarioView } from '@/components/estudios/EstudiosPropietarioView'
 
 function EstudiosContent() {
@@ -35,11 +35,11 @@ function EstudiosContent() {
     }
   }, [isInitialized, userRol, router])
 
-  // La inmobiliaria ve la pestaña unificada "Estudios" con sub-pestañas internas
-  // Estudios | Expedientes (fusión de ambas pestañas en una sola). Admin/operador
-  // conservan la bandeja/tabla operativa de siempre.
+  // La inmobiliaria ve la vista UNIFICADA: una sola lista de expedientes con el
+  // estado del estudio embebido (badge) por fila. Admin/operador conservan su
+  // bandeja/tabla operativa de estudios.
   if (userRol === 'inmobiliaria') {
-    return <EstudiosExpedientesTabs />
+    return <EstudiosExpedientesFusion />
   }
 
   // Propietario: "Evaluar candidato" (mockup 14) — mismo historial re-skineado,

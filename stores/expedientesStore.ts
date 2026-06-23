@@ -23,6 +23,7 @@ export const DEFAULT_EXPEDIENTE_FILTERS: IExpedienteFilters = {
   inmueble_id: '',
   fecha_desde: '',
   fecha_hasta: '',
+  estudio_filtro: 'todos', // Vista fusionada: filtro por estado del estudio vigente
   page: 1,
   limit: 10,
   sortBy: 'created_at',

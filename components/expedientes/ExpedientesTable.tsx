@@ -8,6 +8,7 @@
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
 import { ExpedienteBadge, ProcessStepBadge } from './ExpedienteBadges'
+import { EstudioResultadoBadge } from '@/components/estudios/EstudioResultadoBadge'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import {
@@ -133,6 +134,9 @@ export function ExpedientesTable({
                 />
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Estudio
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Responsable
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -205,6 +209,13 @@ export function ExpedientesTable({
                   </div>
                 </td>
                 <td className="px-4 py-3">
+                  <EstudioResultadoBadge
+                    estado={expediente.estudio_vigente?.estado}
+                    resultado={expediente.estudio_vigente?.resultado}
+                    score={expediente.estudio_vigente?.score}
+                  />
+                </td>
+                <td className="px-4 py-3">
                   {expediente.analista ? (
                     <div className="flex items-center gap-2">
                       <Avatar name={expediente.analista.nombre} size="sm" />
@@ -263,6 +274,11 @@ export function ExpedientesTable({
                   estado={expediente.estado}
                   size="sm"
                   cancelado={!!expediente.cancelado_at}
+                />
+                <EstudioResultadoBadge
+                  estado={expediente.estudio_vigente?.estado}
+                  resultado={expediente.estudio_vigente?.resultado}
+                  score={expediente.estudio_vigente?.score}
                 />
               </div>
             </div>

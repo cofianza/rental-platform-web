@@ -5,7 +5,7 @@
  * "Estudios" (sub-pestaña Expedientes) sin duplicar la lógica.
  *
  * Usa useExpedientes (que escribe el querystring). NO montar simultáneamente
- * con otro listado que use el mismo querystring (ver EstudiosExpedientesTabs).
+ * con otro listado que use el mismo querystring.
  */
 
 'use client'

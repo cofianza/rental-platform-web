@@ -4,9 +4,27 @@
  */
 
 import type { EstadoExpediente } from '@/lib/constants'
+import type { EstadoEstudio, ResultadoEstudio } from './estudio'
 
 // Re-export del tipo de estado
 export type { EstadoExpediente }
+
+/** Estudio vigente (el más reciente) embebido en la fila del expediente. */
+export interface IEstudioVigente {
+  estado: EstadoEstudio
+  resultado: ResultadoEstudio
+  score?: number | null
+  created_at: string
+}
+
+/** Filtro de la vista fusionada por el estado del estudio vigente. */
+export type EstudioFiltro =
+  | 'todos'
+  | 'aprobado'
+  | 'rechazado'
+  | 'condicionado'
+  | 'en_proceso'
+  | 'sin_estudio'
 
 /**
  * Inmueble asociado al expediente
@@ -83,6 +101,9 @@ export interface IExpediente {
    *  escribe el orchestrator/coarrendatarios.service automáticamente. Lo lee
    *  el banner de cierre en el detalle del expediente. */
   motivo_rechazo?: string | null
+  /** Estudio vigente (el más reciente) del expediente, embebido por el RPC para
+   *  pintar su badge en la fila. null si el expediente aún no tiene estudios. */
+  estudio_vigente?: IEstudioVigente | null
   created_at: string
   updated_at: string
 }
@@ -97,6 +118,8 @@ export interface IExpedienteFilters {
   inmueble_id: string // Filtrar por inmueble asociado
   fecha_desde: string // ISO date string
   fecha_hasta: string // ISO date string
+  /** Filtra expedientes por el estado del estudio vigente (vista fusionada). */
+  estudio_filtro?: EstudioFiltro
   page: number
   limit: number
   sortBy: 'created_at' | 'numero' | 'estado'

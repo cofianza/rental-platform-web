@@ -44,6 +44,9 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   if (filters.inmueble_id) params.append('inmueble_id', filters.inmueble_id)
   if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
   if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)
+  if (filters.estudio_filtro && filters.estudio_filtro !== 'todos') {
+    params.append('estudio_filtro', filters.estudio_filtro)
+  }
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.limit) params.append('limit', filters.limit.toString())
   if (filters.sortBy) params.append('sortBy', filters.sortBy)

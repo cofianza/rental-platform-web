@@ -6,12 +6,22 @@
 'use client'
 
 import { Suspense } from 'react'
+import { useAuthStore } from '@/stores/auth.store'
 import { ExpedientesListado, ExpedientesSkeleton } from '@/components/expedientes'
+import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedientesFusion'
+
+function ExpedientesPageContent() {
+  const rol = useAuthStore((s) => s.user?.rol)
+  // La inmobiliaria ve la vista fusionada (expedientes + estudio embebido),
+  // igual que en /estudios. El resto de roles ve el listado estándar.
+  if (rol === 'inmobiliaria') return <EstudiosExpedientesFusion />
+  return <ExpedientesListado />
+}
 
 export default function ExpedientesPage() {
   return (
     <Suspense fallback={<ExpedientesPageSkeleton />}>
-      <ExpedientesListado />
+      <ExpedientesPageContent />
     </Suspense>
   )
 }
