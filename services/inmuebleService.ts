@@ -310,6 +310,17 @@ class InmuebleService {
   }
 
   /**
+   * Contrato vigente del inmueble (o null) — para "Ver contrato" / "Terminar
+   * contrato" desde el detalle del inmueble ocupado.
+   */
+  async getContratoVigente(inmuebleId: string): Promise<{ id: string; estado: string } | null> {
+    const res = await apiClient.get<{ id: string; estado: string } | null>(
+      `/inmuebles/${inmuebleId}/contrato-vigente`
+    )
+    return res.data ?? null
+  }
+
+  /**
    * Obtiene el historial de cambios de un inmueble (paginado)
    */
   async getCambios(

@@ -49,9 +49,12 @@ import {
   IconRefresh,
 } from '@/components/icons'
 import { inmuebleService } from '@/services/inmuebleService'
+import { contratoService } from '@/services/contratoService'
+import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants'
 import type { IInmueble, EstadoInmueble } from '@/types/inmueble'
+import type { EstadoContrato } from '@/types/contrato'
 import { cn } from '@/lib/utils'
 
 type TabId = 'info' | 'expedientes' | 'historial' | 'galeria' | 'contrato'
@@ -71,6 +74,12 @@ export default function InmuebleDetailPage() {
   const [isTogglingVitrina, setIsTogglingVitrina] = useState(false)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
+  // Contrato vigente del inmueble (cuando está 'ocupado') — para "Ver contrato"
+  // y la acción "Terminar contrato" (que libera el inmueble).
+  const [contratoVigente, setContratoVigente] = useState<{ id: string; estado: string } | null>(null)
+  const [showTerminarModal, setShowTerminarModal] = useState(false)
+  const [transicionesContrato, setTransicionesContrato] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [terminarLoading, setTerminarLoading] = useState(false)
 
   // Permisos por rol
   const isAdmin = user?.rol === 'administrador'
@@ -134,6 +143,18 @@ export default function InmuebleDetailPage() {
     }
   }, [inmueble])
 
+  // Contrato vigente: solo cuando el inmueble está 'ocupado' (tiene arriendo
+  // activo). Habilita "Ver contrato" y "Terminar contrato".
+  useEffect(() => {
+    if (inmueble?.estado === 'ocupado' && inmueble.id) {
+      inmuebleService.getContratoVigente(inmueble.id)
+        .then(setContratoVigente)
+        .catch(() => setContratoVigente(null))
+    } else {
+      setContratoVigente(null)
+    }
+  }, [inmueble?.estado, inmueble?.id])
+
   // Toggle visibilidad vitrina
   const handleToggleVitrina = async () => {
     if (!inmueble || isTogglingVitrina) return
@@ -152,7 +173,7 @@ export default function InmuebleDetailPage() {
       )
     } catch (err) {
       console.error('Error toggling vitrina:', err)
-      toast.error('Error al cambiar la visibilidad')
+      toast.error(err instanceof Error ? err.message : 'Error al cambiar la visibilidad')
     } finally {
       setIsTogglingVitrina(false)
     }
@@ -189,6 +210,42 @@ export default function InmuebleDetailPage() {
     } catch (err) {
       console.error('Error reactivating inmueble:', err)
       toast.error('Error al reactivar el inmueble')
+    }
+  }
+
+  // Terminar/cancelar el contrato vigente → libera el inmueble (vuelve a
+  // 'disponible', fuera de vitrina). Reusa el modal de transición de contratos.
+  const handleAbrirTerminar = async () => {
+    if (!contratoVigente) return
+    try {
+      const data = await contratoService.getTransicionesDisponibles(contratoVigente.id)
+      setTransicionesContrato(data.transiciones_disponibles)
+      setShowTerminarModal(true)
+    } catch {
+      toast.error('No se pudieron cargar las acciones del contrato')
+    }
+  }
+
+  const handleConfirmarTerminar = async (
+    estadoDestino: EstadoContrato,
+    comentario: string,
+    motivo?: string,
+  ) => {
+    if (!contratoVigente) return
+    setTerminarLoading(true)
+    try {
+      await contratoService.transicionar(contratoVigente.id, {
+        nuevo_estado: estadoDestino,
+        comentario,
+        motivo,
+      })
+      toast.success('Contrato actualizado. El inmueble quedó disponible para arrendar de nuevo.')
+      setShowTerminarModal(false)
+      await fetchInmueble()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el contrato')
+    } finally {
+      setTerminarLoading(false)
     }
   }
 
@@ -302,15 +359,38 @@ export default function InmuebleDetailPage() {
 
       case 'ocupado':
         if (canEdit) {
-          actions.push(
-            <button
-              key="ver-contrato"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <IconExternalLink size={16} />
-              Ver Contrato
-            </button>
-          )
+          if (contratoVigente) {
+            actions.push(
+              <Link
+                key="ver-contrato"
+                href={`/contratos/${contratoVigente.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <IconExternalLink size={16} />
+                Ver Contrato
+              </Link>
+            )
+            actions.push(
+              <button
+                key="terminar-contrato"
+                onClick={handleAbrirTerminar}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                <IconPower size={16} />
+                Terminar contrato
+              </button>
+            )
+          } else {
+            actions.push(
+              <span
+                key="ver-contrato-loading"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-400"
+              >
+                <IconLoader size={16} className="animate-spin" />
+                Cargando contrato…
+              </span>
+            )
+          }
         }
         break
 
@@ -574,7 +654,7 @@ export default function InmuebleDetailPage() {
                   expedientes={expedientes}
                   inmuebleId={inmueble.id}
                   isLoading={isLoadingExpedientes}
-                  canCreate={canCreate}
+                  canCreate={canCreate && inmueble.estado === 'disponible'}
                 />
               )}
 
@@ -674,11 +754,11 @@ export default function InmuebleDetailPage() {
                 </div>
                 <button
                   onClick={handleToggleVitrina}
-                  disabled={isTogglingVitrina}
+                  disabled={isTogglingVitrina || inmueble.estado !== 'disponible'}
                   className={cn(
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                     inmueble.visible_vitrina ? 'bg-primary-600' : 'bg-gray-200',
-                    isTogglingVitrina && 'opacity-50 cursor-not-allowed'
+                    (isTogglingVitrina || inmueble.estado !== 'disponible') && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   <span
@@ -697,9 +777,11 @@ export default function InmuebleDetailPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                {inmueble.visible_vitrina
-                  ? 'El inmueble es visible para el público en la vitrina.'
-                  : 'El inmueble está oculto de la vitrina pública.'}
+                {inmueble.estado !== 'disponible'
+                  ? 'Solo los inmuebles disponibles pueden publicarse en la vitrina. Se podrá cuando el inmueble esté libre.'
+                  : inmueble.visible_vitrina
+                    ? 'El inmueble es visible para el público en la vitrina.'
+                    : 'El inmueble está oculto de la vitrina pública.'}
               </p>
             </div>
           )}
@@ -732,6 +814,19 @@ export default function InmuebleDetailPage() {
         variant="danger"
         isLoading={isDeactivating}
       />
+
+      {/* Terminar contrato vigente → libera el inmueble (reusa el modal de
+          transición de contratos). */}
+      {contratoVigente && (
+        <ContratoTransicionModal
+          isOpen={showTerminarModal}
+          onClose={() => setShowTerminarModal(false)}
+          estadoActual={contratoVigente.estado as EstadoContrato}
+          transicionesDisponibles={transicionesContrato}
+          onConfirmar={handleConfirmarTerminar}
+          isLoading={terminarLoading}
+        />
+      )}
     </div>
   )
 }
