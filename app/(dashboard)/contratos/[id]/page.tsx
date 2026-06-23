@@ -41,6 +41,9 @@ export default function ContratoDetallePage() {
 
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  // true = el preview muestra el documento FIRMADO (con firmas + acuses); false
+  // = el PDF generado de la plantilla.
+  const [previewFirmado, setPreviewFirmado] = useState(false)
   const [transiciones, setTransiciones] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -65,16 +68,33 @@ export default function ContratoDetallePage() {
       const data = await contratoService.getContratoById(id)
       setContrato(data)
 
-      // Fetch preview URL (inline=true para que el viewer no intente
-      // descargar el PDF en vez de mostrarlo).
-      if (data.storage_key) {
+      // Preview del PDF. Si el contrato ya está FIRMADO, mostramos el DOCUMENTO
+      // FIRMADO (con las firmas + los acuses de Auco) — el mismo que se le envía
+      // al cliente. Si aún no está disponible o falla su generación, caemos al
+      // PDF generado (plantilla). Para contratos no firmados, el generado.
+      // inline=true para que el viewer lo muestre en vez de descargarlo.
+      let urlPreview: string | null = null
+      let esFirmado = false
+      if (FIRMADO_VISIBLE_STATES.includes(data.estado)) {
+        try {
+          const firmado = await contratoService.descargarContratoFirmado(id)
+          urlPreview = firmado.url
+          esFirmado = true
+        } catch {
+          // Documento firmado aún no disponible (p. ej. cancelado pre-firma o
+          // generación pendiente) — caemos al generado.
+        }
+      }
+      if (!urlPreview && data.storage_key) {
         try {
           const dl = await contratoService.descargarContrato(id, { inline: true })
-          setPreviewUrl(dl.url)
+          urlPreview = dl.url
         } catch {
           // Non-critical — PDF preview won't load
         }
       }
+      setPreviewUrl(urlPreview)
+      setPreviewFirmado(esFirmado)
 
       // Fetch available transitions (non-critical)
       if (data.estado && !TERMINAL_STATES.includes(data.estado)) {
@@ -286,19 +306,16 @@ export default function ContratoDetallePage() {
               Regenerar
             </button>
           )}
-          {canManage && transiciones.length > 0 && transiciones.map((t) => {
-            const tConfig = ESTADOS_CONTRATO[t.estado as EstadoContratoKey]
-            return (
-              <button
-                key={t.estado}
-                onClick={() => setTransicionOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-              >
-                <IconArrowRight size={16} />
-                {t.label}
-              </button>
-            )
-          })}
+          {canManage && transiciones.length > 0 && transiciones.map((t) => (
+            <button
+              key={t.estado}
+              onClick={() => setTransicionOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            >
+              <IconArrowRight size={16} />
+              {t.label}
+            </button>
+          ))}
           {canManage && contrato.estado === 'vigente' && (
             <button
               onClick={handleRenovar}
@@ -317,9 +334,16 @@ export default function ContratoDetallePage() {
         {/* PDF Preview */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
           {previewUrl ? (
-            <div className="h-[600px]">
-              <PdfViewer url={previewUrl} />
-            </div>
+            <>
+              {previewFirmado && (
+                <div className="px-3 py-2 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
+                  Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
+                </div>
+              )}
+              <div className="h-[600px]">
+                <PdfViewer url={previewUrl} />
+              </div>
+            </>
           ) : (
             <div className="flex items-center justify-center h-[400px] text-gray-400">
               <p className="text-sm">PDF no disponible</p>
