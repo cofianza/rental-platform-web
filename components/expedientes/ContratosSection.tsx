@@ -50,6 +50,9 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
   const [firmaContratoId, setFirmaContratoId] = useState<string | null>(null)
+  // null = aún sin saber; true/false lo reporta FirmantesContratoSection. Si hay
+  // firmantes multi-parte, ocultamos la sección legacy "Solicitudes de Firma".
+  const [tieneMultiparte, setTieneMultiparte] = useState<boolean | null>(null)
   const [enviandoFirmaId, setEnviandoFirmaId] = useState<string | null>(null)
 
   // Permissions
@@ -352,7 +355,7 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
                           )}
                           {canRegenerate && c.estado === 'pendiente_firma' && (
                             <button
-                              onClick={() => setFirmaContratoId(firmaContratoId === c.id ? null : c.id)}
+                              onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmaContratoId === c.id ? null : c.id) }}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
                               title="Ver y gestionar las firmas de este contrato (reenviar / cancelar)"
                             >
@@ -383,13 +386,24 @@ export function ContratosSection({ expedienteId, expedienteEstado }: ContratosSe
       {/* Firma Solicitudes */}
       {firmaContratoId && (
         <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-          {/* Progreso multi-parte (solo si el contrato tiene firmantes). */}
-          <FirmantesContratoSection contratoId={firmaContratoId} onAllSigned={fetchContratos} />
-          <FirmaSolicitudesSection
+          {/* Progreso multi-parte (solo si el contrato tiene firmantes). El
+              recordatorio a las partes pendientes vive aquí. */}
+          <FirmantesContratoSection
             contratoId={firmaContratoId}
-            estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
             canManage={canCreate}
+            onAllSigned={fetchContratos}
+            onFirmantesLoaded={(total) => setTieneMultiparte(total > 0)}
           />
+          {/* "Solicitudes de Firma" = flujo de un solo firmante (legacy). Se
+              oculta cuando el contrato ya usa firma multi-parte: el panel de
+              arriba es la fuente de verdad y el recordatorio ya está ahí. */}
+          {tieneMultiparte === false && (
+            <FirmaSolicitudesSection
+              contratoId={firmaContratoId}
+              estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
+              canManage={canCreate}
+            />
+          )}
         </div>
       )}
 

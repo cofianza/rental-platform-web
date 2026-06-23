@@ -10,10 +10,11 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp } from '@/components/icons'
+import { toast } from 'sonner'
+import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
-import type { IContratoFirmante, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
+import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
 
 const ROL_META: Record<RolFirmante, { label: string; icon: typeof IconUser }> = {
   arrendatario: { label: 'Arrendatario', icon: IconUser },
@@ -36,26 +37,53 @@ const POLL_MS = 15000
 
 export function FirmantesContratoSection({
   contratoId,
+  canManage = false,
   onAllSigned,
+  onFirmantesLoaded,
 }: {
   contratoId: string
+  /** Habilita el botón "Enviar recordatorio" (inmobiliaria/propietario/admin). */
+  canManage?: boolean
   /** Se dispara (una vez) cuando todas las partes quedan firmadas, para que el
    *  padre refresque el estado del contrato (badge "Enviado a Firma" → "Firmado"). */
   onAllSigned?: () => void
+  /** Reporta al padre cuántos firmantes multi-parte tiene el contrato (0 = flujo
+   *  de un solo firmante). El padre lo usa para ocultar la sección legacy
+   *  "Solicitudes de Firma" cuando hay multi-parte. */
+  onFirmantesLoaded?: (total: number) => void
 }) {
   const [firmantes, setFirmantes] = useState<IContratoFirmante[]>([])
+  // Solicitud-sobre activa del contrato: la usamos para mandar el recordatorio.
+  // Auco re-notifica a las partes pendientes (no crea documento → SIN costo).
+  const [solicitud, setSolicitud] = useState<ISolicitudFirma | null>(null)
+  const [enviandoRecordatorio, setEnviandoRecordatorio] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // El callback del padre puede cambiar de identidad en cada render; lo guardamos
+  // en ref para no meterlo en deps de `cargar` (evitaría loops de refetch).
+  const onFirmantesLoadedRef = useRef(onFirmantesLoaded)
+  onFirmantesLoadedRef.current = onFirmantesLoaded
 
   // `silencioso` = no mostramos el spinner grande (para el auto-poll y el botón).
   const cargar = useCallback(async (silencioso = false) => {
     if (silencioso) setRefreshing(true)
     else setIsLoading(true)
     try {
-      setFirmantes(await firmaService.listarFirmantes(contratoId))
+      const [fs, sols] = await Promise.all([
+        firmaService.listarFirmantes(contratoId),
+        firmaService.listarPorContrato(contratoId).catch(() => [] as ISolicitudFirma[]),
+      ])
+      setFirmantes(fs)
+      onFirmantesLoadedRef.current?.(fs.length)
+      // Sobre aún en proceso (no firmado/expirado/cancelado) → recordable.
+      setSolicitud(sols.find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado)) ?? null)
     } catch {
       // Silencioso: si el contrato no es multi-parte, no hay panel que mostrar.
-      if (!silencioso) setFirmantes([])
+      if (!silencioso) {
+        setFirmantes([])
+        onFirmantesLoadedRef.current?.(0)
+      }
     } finally {
       setIsLoading(false)
       setRefreshing(false)
@@ -93,6 +121,23 @@ export function FirmantesContratoSection({
     }
   }, [todasFirmaron, onAllSigned])
 
+  const handleRecordatorio = async () => {
+    if (!solicitud) return
+    setEnviandoRecordatorio(true)
+    try {
+      // reenviarSolicitud → Auco sendReminder sobre el sobre ya creado: recuerda
+      // a las partes pendientes. NO crea documento, así que NO gasta créditos.
+      await firmaService.reenviarSolicitud(solicitud.id)
+      toast.success('Recordatorio enviado a las partes pendientes')
+      cargar(true)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el recordatorio')
+    } finally {
+      setEnviandoRecordatorio(false)
+    }
+  }
+  const recordatoriosAgotados = !!solicitud && solicitud.envios_realizados >= solicitud.max_envios
+
   // Sin firmantes registrados → flujo de un solo firmante: no mostramos nada.
   if (!isLoading && total === 0) return null
 
@@ -107,6 +152,17 @@ export function FirmantesContratoSection({
             <span className={`text-xs font-medium ${todasFirmaron ? 'text-green-700' : 'text-gray-500'}`}>
               {firmados}/{total} firmaron
             </span>
+          )}
+          {canManage && !isLoading && pendientes && solicitud && (
+            <button
+              onClick={handleRecordatorio}
+              disabled={enviandoRecordatorio || recordatoriosAgotados}
+              className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:opacity-50"
+              title={recordatoriosAgotados ? 'Alcanzaste el máximo de recordatorios' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
+            >
+              {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
+              Recordatorio
+            </button>
           )}
           <button
             onClick={() => cargar(true)}
