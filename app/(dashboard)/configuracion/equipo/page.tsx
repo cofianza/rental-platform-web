@@ -415,8 +415,11 @@ export default function EquipoPage() {
                       </button>
                     )}
 
-                    {/* Salir (yo mismo, si estoy activo) */}
-                    {m.es_yo && m.estado === 'activo' && (
+                    {/* Salir (yo mismo, si estoy activo y NO soy titular). Un
+                        titular no puede renunciar a su propia inmobiliaria;
+                        primero debe dejar de ser titular / transferir la
+                        titularidad a otro miembro. */}
+                    {m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
                       <button
                         onClick={handleSalir}
                         disabled={leaving}
