@@ -13,7 +13,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconCheck, IconClock } from '@/components/icons'
+import { toast } from 'sonner'
+import { IconCheck, IconClock, IconRefresh, IconLoader } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { formatDate } from '@/lib/constants'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
@@ -22,6 +23,9 @@ interface EstudioEstadoCardProps {
   expedienteId: string
   /** Callback para llevar al usuario a la pestaña Estudios. */
   onVerEstudios?: () => void
+  /** Rol del usuario actual — para mostrar el botón "Reintentar consulta" a los
+   *  gestores (inmobiliaria / propietario / admin / operador) cuando falló. */
+  userRol?: string
   /** Datos del solicitante (persona evaluada) para mostrar nombre + cedula
    *  en la card. Viene del expediente padre — opcional para tolerar contextos
    *  donde aun no se cargo. */
@@ -70,7 +74,7 @@ function getSiguientePaso(estudio: IEstudio): string {
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
-    return 'La consulta a TransUnion falló. El solicitante puede reintentarla desde su panel.'
+    return 'La consulta a TransUnion falló por un problema técnico (no es un rechazo de crédito). Vuelve a intentarla.'
   }
   if (estudio.estado === 'cancelado') {
     return 'Estudio cancelado.'
@@ -147,7 +151,7 @@ const TONE_STYLES: Record<string, { card: string; icon: string; pill: string }> 
   },
 }
 
-export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: EstudioEstadoCardProps) {
+export function EstudioEstadoCard({ expedienteId, onVerEstudios, userRol, solicitante }: EstudioEstadoCardProps) {
   // Guardamos hasta 2 estudios: el del titular (tipo='individual') y el del
   // coarrendatario (tipo='con_coarrendatario'). Cuando existen los dos, los
   // mostramos en paneles separados para que cada uno muestre los datos y el
@@ -204,6 +208,8 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: 
           etiqueta="Titular"
           persona={titularSolicitante}
           onVerEstudios={onVerEstudios}
+          userRol={userRol}
+          onRetried={fetchEstudios}
         />
       )}
       {estudioCoa && (
@@ -212,6 +218,8 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, solicitante }: 
           etiqueta="Co-arrendatario"
           persona={coaSolicitante}
           onVerEstudios={onVerEstudios}
+          userRol={userRol}
+          onRetried={fetchEstudios}
         />
       )}
     </div>
@@ -230,9 +238,33 @@ interface EstudioPanelProps {
     numero_documento?: string | null
   } | null
   onVerEstudios?: () => void
+  userRol?: string
+  onRetried?: () => void
 }
 
-function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios }: EstudioPanelProps) {
+function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRetried }: EstudioPanelProps) {
+  const [reintentando, setReintentando] = useState(false)
+
+  const esGestor =
+    userRol === 'inmobiliaria' ||
+    userRol === 'propietario' ||
+    userRol === 'administrador' ||
+    userRol === 'operador_analista'
+  const puedeReintentar = esGestor && estudio.estado === 'fallido'
+
+  const handleReintentar = async () => {
+    setReintentando(true)
+    try {
+      await estudioService.ejecutarEstudio(estudio.id)
+      toast.success('Reintentando la consulta a TransUnion…')
+      onRetried?.()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo reintentar la consulta.')
+    } finally {
+      setReintentando(false)
+    }
+  }
+
   const tone = getTone(estudio)
   const styles = TONE_STYLES[tone]
   const estadoLabel = ESTADO_LABEL[estudio.estado] ?? estudio.estado
@@ -324,15 +356,28 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios }: EstudioPane
         </div>
       </div>
 
-      {onVerEstudios && (
-        <div className="mt-3 pt-3 border-t border-gray-200/60">
-          <button
-            type="button"
-            onClick={onVerEstudios}
-            className="text-xs font-medium text-primary-700 hover:text-primary-800"
-          >
-            Ver detalle del estudio →
-          </button>
+      {(puedeReintentar || onVerEstudios) && (
+        <div className="mt-3 pt-3 border-t border-gray-200/60 flex flex-wrap items-center gap-3">
+          {puedeReintentar && (
+            <button
+              type="button"
+              onClick={handleReintentar}
+              disabled={reintentando}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+            >
+              {reintentando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
+              {reintentando ? 'Reintentando…' : 'Reintentar consulta'}
+            </button>
+          )}
+          {onVerEstudios && (
+            <button
+              type="button"
+              onClick={onVerEstudios}
+              className="text-xs font-medium text-primary-700 hover:text-primary-800"
+            >
+              Ver detalle del estudio →
+            </button>
+          )}
         </div>
       )}
     </div>

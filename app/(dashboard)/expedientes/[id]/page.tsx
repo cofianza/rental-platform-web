@@ -464,6 +464,17 @@ export default function ExpedienteDetallePage() {
                 de arriba le explica por qué y cómo desbloquearse). */}
             {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
               <>
+                {/* Estado del estudio AL TOPE: es el centro del expediente.
+                    Se auto-oculta si aún no hay estudio (entonces manda la
+                    acción de habilitar). Si la consulta a TransUnion falló,
+                    aquí mismo está el botón para reintentarla. */}
+                <EstudioEstadoCard
+                  expedienteId={id}
+                  onVerEstudios={() => setActiveTab('estudios')}
+                  userRol={user?.rol}
+                  solicitante={expediente.solicitante}
+                />
+
                 {/* ── Acciones requeridas (arriba) ── */}
                 <AccionHabilitarEstudioCard
                   expedienteId={id}
@@ -505,11 +516,6 @@ export default function ExpedienteDetallePage() {
                 />
 
                 {/* ── Estado / informativo (debajo de las acciones) ── */}
-                <EstudioEstadoCard
-                  expedienteId={id}
-                  onVerEstudios={() => setActiveTab('estudios')}
-                  solicitante={expediente.solicitante}
-                />
                 <ContratoEstadoCard
                   expedienteId={id}
                   onVerContratos={() => setActiveTab('contratos')}
