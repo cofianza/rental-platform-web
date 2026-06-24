@@ -14,7 +14,7 @@ export const ESTADO_OPTIONS: { value: EstadoExpediente; label: string }[] = [
   { value: 'aprobado', label: 'Aprobado' },
   { value: 'rechazado', label: 'Rechazado' },
   { value: 'condicionado', label: 'Condicionado' },
-  { value: 'cerrado', label: 'Cerrado' },
+  { value: 'cerrado', label: 'Finalizado' },
 ]
 
 /**

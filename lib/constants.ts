@@ -295,7 +295,9 @@ export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
     borderColor: 'border-purple-300',
   },
   cerrado: {
-    label: 'Cerrado',
+    // "Finalizado" lee mejor que "Cerrado" para el cierre natural (éxito). Los
+    // expedientes cancelados muestran "Cancelado" aparte (ver ExpedienteBadge).
+    label: 'Finalizado',
     color: 'slate',
     bgColor: 'bg-slate-100',
     textColor: 'text-slate-700',

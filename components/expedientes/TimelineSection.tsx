@@ -62,7 +62,7 @@ const ESTADO_LABELS: Record<string, string> = {
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
   condicionado: 'Condicionado',
-  cerrado: 'Cerrado',
+  cerrado: 'Finalizado',
 }
 
 function estadoLabel(estado: string): string {

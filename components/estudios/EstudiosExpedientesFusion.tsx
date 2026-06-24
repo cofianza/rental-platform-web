@@ -21,6 +21,7 @@ import { IconSearch, IconPlus, IconRefresh, IconAlertTriangle } from '@/componen
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
+import { listMiembros } from '@/services/miembrosService'
 import type { IEstudiosStats } from '@/types/estudio'
 import type { EstudioFiltro } from '@/types/expediente'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
@@ -55,10 +56,23 @@ export function EstudiosExpedientesFusion() {
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
+  // Mapa perfil_id → nombre de los miembros del equipo, para mostrar en la
+  // columna "Responsable" el miembro al que se asignó cada expediente.
+  const [miembrosById, setMiembrosById] = useState<Record<string, string>>({})
 
   useEffect(() => {
     estudioService.getStats().then(setStats).catch(() => {})
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => {})
+    listMiembros()
+      .then((res) => {
+        const map: Record<string, string> = {}
+        for (const m of res.miembros) {
+          const nombre = `${m.nombre ?? ''} ${m.apellido ?? ''}`.trim()
+          if (m.perfil_id && nombre) map[m.perfil_id] = nombre
+        }
+        setMiembrosById(map)
+      })
+      .catch(() => {})
   }, [])
 
   // Tasa de aprobación honesta: aprobados / decididos.
@@ -177,6 +191,7 @@ export function EstudiosExpedientesFusion() {
             onSort={handleSort}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+            miembrosResponsablesById={miembrosById}
           />
         )}
       </div>

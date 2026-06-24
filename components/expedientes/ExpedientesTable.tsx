@@ -64,6 +64,11 @@ export interface ExpedientesTableProps {
   onSort: (column: IExpedienteFilters['sortBy']) => void
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
+  /** Mapa perfil_id → nombre de los miembros de la inmobiliaria. Cuando se
+   *  provee (vista inmobiliaria), la columna Responsable muestra el MIEMBRO
+   *  asignado al expediente (miembro_responsable_id); si no, cae al analista
+   *  interno (vista admin/operador). */
+  miembrosResponsablesById?: Record<string, string>
 }
 
 export function ExpedientesTable({
@@ -73,8 +78,19 @@ export function ExpedientesTable({
   onSort,
   onPageChange,
   onLimitChange,
+  miembrosResponsablesById,
 }: ExpedientesTableProps) {
   const router = useRouter()
+
+  // Nombre a mostrar en la columna Responsable: prioriza el miembro de la
+  // inmobiliaria asignado al expediente; si no hay (o no se proveyó el mapa),
+  // cae al analista interno.
+  const nombreResponsable = (e: IExpediente): string | null => {
+    if (e.miembro_responsable_id && miembrosResponsablesById?.[e.miembro_responsable_id]) {
+      return miembrosResponsablesById[e.miembro_responsable_id]
+    }
+    return e.analista?.nombre ?? null
+  }
 
   const handleRowClick = (id: string) => {
     router.push(`/expedientes/${id}`)
@@ -216,16 +232,17 @@ export function ExpedientesTable({
                   />
                 </td>
                 <td className="px-4 py-3">
-                  {expediente.analista ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar name={expediente.analista.nombre} size="sm" />
-                      <span className="text-sm text-gray-700">
-                        {expediente.analista.nombre}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">Sin asignar</span>
-                  )}
+                  {(() => {
+                    const nombre = nombreResponsable(expediente)
+                    return nombre ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar name={nombre} size="sm" />
+                        <span className="text-sm text-gray-700">{nombre}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Sin asignar</span>
+                    )
+                  })()}
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-sm text-gray-500">
@@ -303,14 +320,17 @@ export function ExpedientesTable({
 
             {/* Footer: responsable y fecha */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              {expediente.analista ? (
-                <div className="flex items-center gap-2">
-                  <Avatar name={expediente.analista.nombre} size="sm" />
-                  <span className="text-xs text-gray-600">{expediente.analista.nombre}</span>
-                </div>
-              ) : (
-                <span className="text-xs text-gray-400">Sin asignar</span>
-              )}
+              {(() => {
+                const nombre = nombreResponsable(expediente)
+                return nombre ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar name={nombre} size="sm" />
+                    <span className="text-xs text-gray-600">{nombre}</span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-400">Sin asignar</span>
+                )
+              })()}
               <span className="text-xs text-gray-500">
                 {formatDate(expediente.created_at)}
               </span>
