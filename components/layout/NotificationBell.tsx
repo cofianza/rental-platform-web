@@ -56,6 +56,7 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   'estudio.aprobado.propietario': { icon: IconShieldCheck, badge: 'bg-emerald-50 text-emerald-600' },
   'estudio.rechazado': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'estudio.rechazado.propietario': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
+  'estudio.condicionado': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'estudio.condicionado.propietario': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'pago.disponible': { icon: IconCreditCard, badge: 'bg-indigo-50 text-indigo-600' },
   'pago.confirmado': { icon: IconReceipt, badge: 'bg-indigo-50 text-indigo-600' },

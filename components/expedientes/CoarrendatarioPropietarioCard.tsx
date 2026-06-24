@@ -13,7 +13,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
@@ -44,12 +44,16 @@ export function CoarrendatarioPropietarioCard({
   const [showDetail, setShowDetail] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
+  const coaLoadedRef = useRef(false)
   const fetchCoa = useCallback(async () => {
     try {
       const data = await coarrendatarioService.getDelExpediente(expedienteId)
       setCoa(data)
+      coaLoadedRef.current = true
     } catch {
-      setCoa(null)
+      // No borrar la card por un error transitorio del polling (502 / red
+      // móvil): solo la dejamos en null si nunca llegó a cargar.
+      if (!coaLoadedRef.current) setCoa(null)
     } finally {
       setLoading(false)
     }
@@ -135,8 +139,10 @@ export function CoarrendatarioPropietarioCard({
         {/* Estado de la invitación + estudio */}
         <EstadoBlock coa={coa} />
 
-        {/* Resultado del estudio (cuando ya completó) */}
-        {coa.estado === 'estudio_completado' && coa.estudio && (
+        {/* Resultado del estudio: lo mostramos en cuanto el estudio embebido
+            terminó ('completado'), sin depender de que el campo coa.estado haya
+            ganado la carrera contra la transición del expediente. */}
+        {coa.estudio && coa.estudio.estado === 'completado' && (
           <ResultadoEstudioBlock
             estudio={coa.estudio}
             onVerDetalle={handleVerDetalle}

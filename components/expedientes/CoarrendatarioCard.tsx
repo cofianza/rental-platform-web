@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import {
@@ -57,12 +57,16 @@ export function CoarrendatarioCard({
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
 
+  const coaLoadedRef = useRef(false)
   const fetchCoa = useCallback(async () => {
     try {
       const data = await coarrendatarioService.getDelExpediente(expedienteId)
       setCoa(data)
+      coaLoadedRef.current = true
     } catch {
-      setCoa(null)
+      // No borrar la card por un error transitorio del polling: solo dejamos
+      // null si nunca llegó a cargar.
+      if (!coaLoadedRef.current) setCoa(null)
     } finally {
       setLoading(false)
     }
