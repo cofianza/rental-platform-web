@@ -11,6 +11,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -50,6 +51,12 @@ function profileToForm(p: IMyProfile): FormState {
 
 export default function MiCuentaPage() {
   const { user } = useAuth()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  // Si vinimos redirigidos (banner "completá tu perfil"), al guardar volvemos
+  // a donde estabamos. Solo aceptamos paths internos (evita open-redirect).
+  const returnToParam = searchParams?.get('returnTo')
+  const returnTo = returnToParam && returnToParam.startsWith('/') ? returnToParam : null
   const isInmobiliaria = user?.rol === 'inmobiliaria'
   const isSolicitante = user?.rol === 'solicitante'
 
@@ -105,6 +112,20 @@ export default function MiCuentaPage() {
       return
     }
 
+    // Para la inmobiliaria (titular y miembros del equipo) el documento es
+    // obligatorio: sin él, un miembro no puede administrar expedientes (queda
+    // bloqueado por perfil incompleto).
+    if (isInmobiliaria) {
+      if (!form.tipo_documento) {
+        toast.error('Selecciona tu tipo de documento')
+        return
+      }
+      if (form.numero_documento.trim().length < 3) {
+        toast.error('Ingresa tu número de documento')
+        return
+      }
+    }
+
     const payload: IUpdateMyProfilePayload = {
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
@@ -122,6 +143,13 @@ export default function MiCuentaPage() {
       setPerfil(updated)
       setForm(profileToForm(updated))
       toast.success('Datos actualizados')
+      // Refrescar la sesión para que `perfil_completo`/`rol_miembro` del store
+      // queden al día (así se levanta el bloqueo de "perfil incompleto" sin
+      // tener que recargar). Si vinimos de otro flujo, volvemos allí.
+      await authService.checkSession().catch(() => {})
+      if (returnTo) {
+        router.push(returnTo)
+      }
     } catch (err) {
       // Errores conocidos del backend con mensajes especificos.
       if (err instanceof ApiClientError) {
@@ -188,7 +216,7 @@ export default function MiCuentaPage() {
             label="Representante legal"
             value={form.nombre_representante}
             onChange={(v) => onChange('nombre_representante', v)}
-            placeholder="Carlos Mario Vélez Cifuentes"
+            placeholder="Ej. Juan Pérez Gómez"
             help="Quien firma en nombre de la inmobiliaria."
           />
         )}
@@ -226,7 +254,9 @@ export default function MiCuentaPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo{isInmobiliaria && <span className="text-coral-500"> *</span>}
+            </label>
             <select
               value={form.tipo_documento}
               onChange={(e) =>
@@ -247,7 +277,8 @@ export default function MiCuentaPage() {
               label="Número"
               value={form.numero_documento}
               onChange={(v) => onChange('numero_documento', v)}
-              placeholder="1026130143"
+              placeholder="Ej. 1234567890"
+              required={isInmobiliaria}
             />
           </div>
         </div>

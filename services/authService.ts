@@ -138,6 +138,8 @@ class AuthService {
         email: profile.email,
         nombre_completo: profile.nombre_completo,
         rol: profile.rol,
+        rol_miembro: profile.rol_miembro ?? null,
+        perfil_completo: profile.perfil_completo,
         activo: profile.activo,
       }
 

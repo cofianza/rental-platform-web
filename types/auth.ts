@@ -15,6 +15,15 @@
 export type UserRole = 'administrador' | 'operador_analista' | 'gerencia_consulta' | 'propietario' | 'inmobiliaria' | 'solicitante'
 
 /**
+ * Rol dentro de la organización (inmobiliaria). Es independiente del UserRole
+ * (todos los miembros son rol='inmobiliaria'). Solo viene de /auth/me.
+ * - owner: titular (puede haber varios co-titulares)
+ * - miembro: staff con permisos de escritura
+ * - solo_lectura: viewer
+ */
+export type RolMiembro = 'owner' | 'miembro' | 'solo_lectura'
+
+/**
  * Usuario básico retornado en login
  * (del auth.user de Supabase)
  */
@@ -36,6 +45,8 @@ export interface IUserProfile {
   nombre_completo?: string // Solo viene de /auth/me (construido en backend)
   telefono?: string | null
   rol: UserRole
+  rol_miembro?: RolMiembro | null // Solo /auth/me; null si no es miembro de una org
+  perfil_completo?: boolean // Solo /auth/me; datos personales mínimos completos
   activo?: boolean
   estado?: 'activo' | 'inactivo'
   created_at: string
@@ -50,6 +61,8 @@ export interface IUser {
   email: string
   nombre_completo?: string
   rol: UserRole
+  rol_miembro?: RolMiembro | null
+  perfil_completo?: boolean
   activo?: boolean
 }
 

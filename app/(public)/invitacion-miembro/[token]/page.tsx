@@ -13,6 +13,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconX, IconCheck, IconShield } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -42,6 +43,7 @@ export default function InvitacionMiembroPage() {
   // Form de registro
   const [nombre, setNombre] = useState('')
   const [apellido, setApellido] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -86,11 +88,20 @@ export default function InvitacionMiembroPage() {
 
   const handleRegistrar = async (e: React.FormEvent) => {
     e.preventDefault()
+    // El telefono es obligatorio: es el WhatsApp de contacto y el respaldo
+    // para la firma de contratos. PhoneInput emite "+57 301..."; validamos
+    // sin espacios.
+    const tel = telefono.replace(/\s+/g, '').trim()
+    if (!tel || !/^\+?\d{7,15}$/.test(tel)) {
+      toast.error('Ingresa un teléfono válido (con código de país, ej. +57…). Es tu WhatsApp de contacto.')
+      return
+    }
     setSubmitting(true)
     try {
       await registrarMiembro(token, {
         nombre: nombre.trim(),
         apellido: apellido.trim(),
+        telefono: tel,
         password,
       })
       setStatus('registrado')
@@ -228,6 +239,18 @@ export default function InvitacionMiembroPage() {
                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
+          </div>
+          <div>
+            <PhoneInput
+              label="Teléfono (WhatsApp)"
+              value={telefono}
+              onChange={setTelefono}
+              placeholder="300 123 4567"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Tu WhatsApp de contacto y respaldo para la firma de contratos. Con código de país (ej. +57…).
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Contraseña</label>

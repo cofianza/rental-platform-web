@@ -38,6 +38,8 @@ import {
   CoarrendatarioCard,
   CoarrendatarioPropietarioCard,
   ExpedienteRechazadoBanner,
+  PerfilPersonalIncompletoBanner,
+  miembroDebeCompletarPerfil,
   ContratoEstadoCard,
   EstudioEstadoCard,
   AuditoriaScoreCard,
@@ -58,6 +60,10 @@ export default function ExpedienteDetallePage() {
   const router = useRouter()
   const id = params.id as string
   const user = useAuthStore((s) => s.user)
+  // Miembro del equipo (no titular) con perfil personal incompleto: no puede
+  // administrar el expediente hasta completar sus datos (banner + acciones
+  // deshabilitadas; el backend además bloquea las mutaciones).
+  const bloqueadoPorPerfil = miembroDebeCompletarPerfil(user)
 
   // Pendientes count for badge
   const [pendientesCount, setPendientesCount] = useState(0)
@@ -322,8 +328,9 @@ export default function ExpedienteDetallePage() {
           </div>
         </div>
 
-        {/* Acciones — el solicitante no cambia estado manualmente. */}
-        {user?.rol !== 'solicitante' && (
+        {/* Acciones — el solicitante no cambia estado manualmente; un miembro
+            con perfil incompleto tampoco hasta completar sus datos. */}
+        {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
           <div className="flex gap-3 ml-12 lg:ml-0">
             {transiciones.length > 0 && (
               <button
@@ -368,6 +375,10 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
+            {/* Miembro del equipo con perfil personal incompleto: explica por
+                qué no puede administrar y enlaza a completar su perfil. */}
+            <PerfilPersonalIncompletoBanner user={user} />
+
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ? (
@@ -448,8 +459,10 @@ export default function ExpedienteDetallePage() {
                 estudio / definir pago / aprobar condicionado / generar contrato),
                 y debajo las INFORMATIVAS (estado del estudio/contrato). Cada
                 tarjeta se auto-oculta si no aplica, así la acción vigente queda
-                siempre arriba del todo. */}
-            {user?.rol !== 'solicitante' && (
+                siempre arriba del todo.
+                Un miembro con perfil incompleto no ve estas acciones (el banner
+                de arriba le explica por qué y cómo desbloquearse). */}
+            {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
               <>
                 {/* ── Acciones requeridas (arriba) ── */}
                 <AccionHabilitarEstudioCard

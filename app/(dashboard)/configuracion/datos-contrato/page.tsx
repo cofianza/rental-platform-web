@@ -82,6 +82,34 @@ export default function DatosContratoPage() {
       toast.error('Falta un WhatsApp válido del arrendador: es donde recibes el enlace para firmar el contrato.')
       return
     }
+    // Todos estos datos salen impresos en el contrato. Si falta cualquiera, el
+    // PDF queda con campos en blanco, asi que son obligatorios al guardar.
+    // (El mismo set se valida en el backend al generar el contrato.)
+    const requeridos: { valor: string | null | undefined; etiqueta: string }[] = [
+      { valor: form.domicilio_direccion, etiqueta: 'Domicilio (dirección)' },
+      { valor: form.domicilio_ciudad, etiqueta: 'Domicilio (ciudad)' },
+      { valor: form.cuenta_recaudo_banco, etiqueta: 'Banco de la cuenta de recaudo' },
+      { valor: form.cuenta_recaudo_tipo, etiqueta: 'Tipo de cuenta' },
+      { valor: form.cuenta_recaudo_numero, etiqueta: 'Número de cuenta' },
+      { valor: form.cuenta_recaudo_titular_nombre, etiqueta: 'Titular de la cuenta' },
+      { valor: form.cuenta_recaudo_titular_nit, etiqueta: 'NIT/CC del titular' },
+      { valor: form.email_recaudo, etiqueta: 'Email de recaudo' },
+    ]
+    if (isInmobiliaria) {
+      requeridos.push(
+        { valor: form.representante_legal, etiqueta: 'Representante legal' },
+        { valor: form.matricula_arrendador, etiqueta: 'Matrícula de arrendador' },
+      )
+    }
+    const faltantes = requeridos
+      .filter((r) => !r.valor || String(r.valor).trim().length === 0)
+      .map((r) => r.etiqueta)
+    if (faltantes.length > 0) {
+      toast.error(
+        `Faltan datos obligatorios para el contrato: ${faltantes.join(', ')}.`,
+      )
+      return
+    }
     setSaving(true)
     try {
       const updated = await perfilArrendadorService.updateMe({ ...form, whatsapp_recaudo: waRecaudo })
@@ -243,8 +271,9 @@ export default function DatosContratoPage() {
             label="Representante legal"
             value={form.representante_legal}
             onChange={(v) => onChange('representante_legal', v)}
-            placeholder="Carlos Mario Vélez Cifuentes"
+            placeholder="Ej. Juan Pérez Gómez"
             help="Quien firma el contrato a nombre de la inmobiliaria."
+            required
           />
         )}
 
@@ -253,13 +282,15 @@ export default function DatosContratoPage() {
             label="Domicilio (dirección)"
             value={form.domicilio_direccion}
             onChange={(v) => onChange('domicilio_direccion', v)}
-            placeholder="Calle 129 Sur 50 33 Oficina 301"
+            placeholder="Ej. Calle 10 # 20-30 Of. 301"
+            required
           />
           <Field
             label="Domicilio (ciudad)"
             value={form.domicilio_ciudad}
             onChange={(v) => onChange('domicilio_ciudad', v)}
-            placeholder="Caldas, Antioquia"
+            placeholder="Ej. Medellín, Antioquia"
+            required
           />
         </div>
 
@@ -268,8 +299,9 @@ export default function DatosContratoPage() {
             label="Matrícula de arrendador"
             value={form.matricula_arrendador}
             onChange={(v) => onChange('matricula_arrendador', v)}
-            placeholder="0732"
+            placeholder="Ej. 12345"
             help="Número de matrícula expedido por la alcaldía. Solo aplica a inmobiliarias."
+            required
           />
         )}
       </div>
@@ -286,10 +318,13 @@ export default function DatosContratoPage() {
             label="Banco"
             value={form.cuenta_recaudo_banco}
             onChange={(v) => onChange('cuenta_recaudo_banco', v)}
-            placeholder="Bancolombia"
+            placeholder="Ej. Bancolombia"
+            required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de cuenta</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo de cuenta<span className="text-coral-500"> *</span>
+            </label>
             <select
               value={form.cuenta_recaudo_tipo ?? ''}
               onChange={(e) =>
@@ -306,19 +341,22 @@ export default function DatosContratoPage() {
             label="Número de cuenta"
             value={form.cuenta_recaudo_numero}
             onChange={(v) => onChange('cuenta_recaudo_numero', v)}
-            placeholder="54102865025"
+            placeholder="Ej. 1234567890"
+            required
           />
           <Field
             label="Titular (nombre/razón social)"
             value={form.cuenta_recaudo_titular_nombre}
             onChange={(v) => onChange('cuenta_recaudo_titular_nombre', v)}
-            placeholder={perfil.razon_social ?? `${perfil.nombre} ${perfil.apellido}`.trim()}
+            placeholder="Ej. Inmobiliaria XYZ S.A.S."
+            required
           />
           <Field
             label="Titular (NIT/CC)"
             value={form.cuenta_recaudo_titular_nit}
             onChange={(v) => onChange('cuenta_recaudo_titular_nit', v)}
-            placeholder="901312029-0"
+            placeholder="Ej. 900123456-7"
+            required
           />
         </div>
       </div>
@@ -351,6 +389,7 @@ export default function DatosContratoPage() {
             onChange={(v) => onChange('email_recaudo', v)}
             placeholder="recaudo@empresa.com"
             help="Para avisos de pago y respaldo de notificaciones."
+            required
           />
         </div>
       </div>
