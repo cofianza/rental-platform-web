@@ -86,8 +86,8 @@ export function AprobarCondicionadoCard({
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
           <p className="text-sm text-gray-700 mb-3">
-            El buró marcó la solicitud como condicionada. El solicitante puede invitar a un co-arrendatario para
-            mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el expediente</strong>: pasará a
+            El buró marcó la solicitud como condicionada. Tú o el solicitante pueden invitar a un co-arrendatario
+            (abajo) para mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el expediente</strong>: pasará a
             Aprobado y desde la pestaña <strong>Contratos</strong> generarás el contrato con el formulario completo
             (modalidad de fianza y quién paga los servicios públicos).
           </p>

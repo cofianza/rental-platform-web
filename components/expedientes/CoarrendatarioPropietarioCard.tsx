@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
+import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import type { IEstudio } from '@/types/estudio'
 
 interface CoarrendatarioPropietarioCardProps {
@@ -81,7 +82,6 @@ export function CoarrendatarioPropietarioCard({
 
   if (loading) return null
   if (!esRolValido) return null
-  if (!coa) return null
   // Solo aparece de la fase 'condicionado' en adelante. Mientras el expediente
   // sigue en borrador / en_revision no tiene sentido mostrar al coarrendatario.
   if (
@@ -91,6 +91,20 @@ export function CoarrendatarioPropietarioCard({
     expedienteEstado !== 'cerrado'
   ) {
     return null
+  }
+  // Sin co-arrendatario aún: el gestor (inmobiliaria / propietario / admin /
+  // operador) puede invitarlo directamente — útil cuando es la inmobiliaria la
+  // que lleva el expediente. Solo mientras está condicionado; en estados
+  // posteriores sin co-arrendatario, no hay nada que mostrar.
+  if (!coa) {
+    if (expedienteEstado !== 'condicionado') return null
+    return (
+      <CoarrendatarioInviteForm
+        expedienteId={expedienteId}
+        audience="gestor"
+        onInvited={fetchCoa}
+      />
+    )
   }
 
   const handleVerDetalle = async () => {
