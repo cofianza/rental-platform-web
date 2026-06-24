@@ -81,8 +81,8 @@ export default function EmpresaPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title="Datos de la empresa"
-        subtitle="Información de Cofianza usada en certificados de estudio y en la firma electrónica."
+        title="Datos de la empresa (Cofianza)"
+        subtitle="Identidad institucional de COFIANZA, no tus datos personales. Cofianza firma como tercero en cada contrato: a este WhatsApp/email le llega su enlace de firma, y estos datos salen en los certificados de estudio."
       />
 
       {loading ? (

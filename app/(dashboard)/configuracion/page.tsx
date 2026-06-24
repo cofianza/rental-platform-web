@@ -35,7 +35,7 @@ const SECCIONES: Array<{
     descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
-    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
+    soloRoles: ['propietario', 'inmobiliaria'],
   },
   {
     id: 'mi-inmobiliaria',
@@ -44,7 +44,7 @@ const SECCIONES: Array<{
     descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL, Póliza y Contrato Marco.',
     icon: IconFileText,
     color: 'bg-amber-100 text-amber-700',
-    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
+    soloRoles: ['propietario', 'inmobiliaria'],
   },
   {
     id: 'equipo',
@@ -62,7 +62,7 @@ const SECCIONES: Array<{
     descripcion: 'Compre paquetes de estudios y libérelos manualmente para sus solicitantes.',
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
-    soloRoles: ['inmobiliaria', 'administrador'],
+    soloRoles: ['inmobiliaria'],
   },
   {
     id: 'disponibilidad',
@@ -71,7 +71,7 @@ const SECCIONES: Array<{
     descripcion: 'Define tus horarios para que los interesados agenden visitas solo en los espacios libres.',
     icon: IconCalendar,
     color: 'bg-cyan-100 text-cyan-600',
-    soloRoles: ['propietario', 'inmobiliaria', 'administrador'],
+    soloRoles: ['propietario', 'inmobiliaria'],
   },
   {
     // La pestaña "Visitas" se quitó del nav de la oficina virtual; queda
@@ -87,8 +87,8 @@ const SECCIONES: Array<{
   {
     id: 'empresa',
     href: '/configuracion/empresa',
-    titulo: 'Datos de la empresa',
-    descripcion: 'Razón social, NIT, dirección, teléfono, email y validez de certificados de Cofianza.',
+    titulo: 'Datos de la empresa (Cofianza)',
+    descripcion: 'Identidad de COFIANZA como firmante (no son tus datos personales): razón social, NIT y el WhatsApp/email donde le llega el enlace para firmar cada contrato y emitir certificados.',
     icon: IconBuilding2,
     color: 'bg-indigo-100 text-indigo-600',
     soloRoles: ['administrador'],
