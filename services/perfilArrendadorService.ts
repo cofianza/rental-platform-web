@@ -33,6 +33,7 @@ export interface IPerfilArrendador {
 }
 
 export interface IUpdatePerfilArrendadorInput {
+  razon_social?: string | null
   representante_legal?: string | null
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null

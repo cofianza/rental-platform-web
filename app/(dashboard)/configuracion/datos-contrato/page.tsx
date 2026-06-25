@@ -56,6 +56,7 @@ export default function DatosContratoPage() {
       .then((data) => {
         setPerfil(data)
         setForm({
+          razon_social: data.razon_social,
           representante_legal: data.representante_legal,
           domicilio_direccion: data.domicilio_direccion,
           domicilio_ciudad: data.domicilio_ciudad,
@@ -100,6 +101,7 @@ export default function DatosContratoPage() {
     ]
     if (isInmobiliaria) {
       requeridos.push(
+        { valor: form.razon_social, etiqueta: 'Nombre comercial / Razón social' },
         { valor: form.representante_legal, etiqueta: 'Representante legal' },
         { valor: form.matricula_arrendador, etiqueta: 'Matrícula de arrendador' },
       )
@@ -279,6 +281,17 @@ export default function DatosContratoPage() {
       {/* Datos generales del arrendador */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">Datos generales</h3>
+
+        {perfil.rol === 'inmobiliaria' && (
+          <Field
+            label="Nombre comercial / Razón social"
+            value={form.razon_social}
+            onChange={(v) => onChange('razon_social', v)}
+            placeholder="Ej. Inmobiliaria del Valle S.A.S"
+            help="El nombre de la inmobiliaria que aparece en el contrato y en la app."
+            required
+          />
+        )}
 
         {perfil.rol === 'inmobiliaria' && (
           <Field
