@@ -19,7 +19,7 @@ import {
   type IPerfilArrendador,
   type IUpdatePerfilArrendadorInput,
 } from '@/services/perfilArrendadorService'
-import { IconLoader, IconCheck, IconUpload, IconTrash } from '@/components/icons'
+import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 
 const ROL_LABELS: Record<string, string> = {
@@ -31,6 +31,9 @@ const ROL_LABELS: Record<string, string> = {
 export default function DatosContratoPage() {
   const { user } = useAuth()
   const isInmobiliaria = user?.rol === 'inmobiliaria'
+  // Los datos para contrato son de la ORGANIZACIÓN: solo el titular los edita.
+  // Un miembro no-titular los ve en modo lectura (el backend también lo bloquea).
+  const soloLectura = isInmobiliaria && user?.rol_miembro !== 'owner'
   const router = useRouter()
   const searchParams = useSearchParams()
   // Si vinimos redirigidos desde otra pantalla (banner perfil incompleto),
@@ -191,6 +194,17 @@ export default function DatosContratoPage() {
         subtitle={`Estos datos aparecen en los contratos de arrendamiento que se generan a tu nombre como ${rolLabel.toLowerCase()}.`}
       />
 
+      {soloLectura && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <p className="text-sm text-amber-800">
+            Estos datos los gestiona <strong>el titular</strong> de la inmobiliaria y son los mismos
+            para todo el equipo. Los ves en <strong>modo lectura</strong>.
+          </p>
+        </div>
+      )}
+
+      <fieldset disabled={soloLectura} className="space-y-6 border-0 p-0 m-0 disabled:opacity-70">
       {/* Logo (solo inmobiliaria) */}
       {isInmobiliaria && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -394,21 +408,24 @@ export default function DatosContratoPage() {
         </div>
       </div>
 
-      {/* Botón guardar */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? (
-            <IconLoader size={16} className="animate-spin" />
-          ) : (
-            <IconCheck size={16} />
-          )}
-          {saving ? 'Guardando…' : 'Guardar datos'}
-        </button>
-      </div>
+      {/* Botón guardar — solo el titular (los miembros ven en modo lectura) */}
+      {!soloLectura && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <IconLoader size={16} className="animate-spin" />
+            ) : (
+              <IconCheck size={16} />
+            )}
+            {saving ? 'Guardando…' : 'Guardar datos'}
+          </button>
+        </div>
+      )}
+      </fieldset>
     </div>
   )
 }

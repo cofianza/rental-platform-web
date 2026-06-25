@@ -106,6 +106,9 @@ export default function MiInmobiliariaPage() {
   const { user } = useAuth()
   const isInmobiliaria = user?.rol === 'inmobiliaria'
   const isPropietario = user?.rol === 'propietario'
+  // Documentos legales de la ORG: solo el titular los gestiona; los miembros los
+  // ven (y descargan) en modo lectura. El backend también lo bloquea.
+  const soloLectura = isInmobiliaria && user?.rol_miembro !== 'owner'
 
   const [docs, setDocs] = useState<IDocumentoLegalResumen[]>([])
   const [loading, setLoading] = useState(true)
@@ -174,6 +177,16 @@ export default function MiInmobiliariaPage() {
             : 'Documentos legales de tu perfil como propietario.'
         }
       />
+
+      {soloLectura && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <p className="text-sm text-amber-800">
+            Los documentos de la inmobiliaria los gestiona <strong>el titular</strong> y son los mismos
+            para todo el equipo. Puedes verlos y descargarlos, pero no editarlos.
+          </p>
+        </div>
+      )}
 
       {/* Contacto y notificaciones: a dónde llegan los mensajes de Cofianza
           (correo + WhatsApp). Editable desde Mi cuenta. */}
@@ -311,7 +324,7 @@ export default function MiInmobiliariaPage() {
             {tiposVisibles.map((cfg) => {
               const doc = docs.find((d) => d.tipo === cfg.tipo)
               return (
-                <DocumentoCard key={cfg.tipo} config={cfg} resumen={doc} onChange={fetchDocs} />
+                <DocumentoCard key={cfg.tipo} config={cfg} resumen={doc} onChange={fetchDocs} soloLectura={soloLectura} />
               )
             })}
           </div>
@@ -329,10 +342,12 @@ function DocumentoCard({
   config,
   resumen,
   onChange,
+  soloLectura = false,
 }: {
   config: TipoConfig
   resumen: IDocumentoLegalResumen | undefined
   onChange: () => void
+  soloLectura?: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -448,21 +463,23 @@ function DocumentoCard({
         </div>
       )}
 
-      {/* Acciones — botón de subida ancho (dashed → solid verde cuando cargado) */}
+      {/* Acciones — el titular sube/reemplaza/elimina; los miembros solo descargan. */}
       <div className="mt-auto space-y-2 pt-4">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading || removing}
-          className={`flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] px-3 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 ${
-            cargado
-              ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100'
-              : 'border-dashed border-gray-300 text-gray-600 hover:border-primary-500 hover:text-primary-700'
-          }`}
-        >
-          {uploading ? <IconLoader size={14} className="animate-spin" /> : <IconUpload size={14} />}
-          {cargado ? 'Reemplazar documento' : 'Subir documento'}
-        </button>
+        {!soloLectura && (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading || removing}
+            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border-[1.5px] px-3 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+              cargado
+                ? 'border-primary-300 bg-primary-50 text-primary-700 hover:bg-primary-100'
+                : 'border-dashed border-gray-300 text-gray-600 hover:border-primary-500 hover:text-primary-700'
+            }`}
+          >
+            {uploading ? <IconLoader size={14} className="animate-spin" /> : <IconUpload size={14} />}
+            {cargado ? 'Reemplazar documento' : 'Subir documento'}
+          </button>
+        )}
 
         {cargado && (
           <div className="flex gap-2">
@@ -474,16 +491,22 @@ function DocumentoCard({
             >
               <IconDownload size={14} /> Descargar
             </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={uploading || removing}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-            >
-              {removing ? <IconLoader size={14} className="animate-spin" /> : <IconTrash size={14} />}
-              Eliminar
-            </button>
+            {!soloLectura && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={uploading || removing}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {removing ? <IconLoader size={14} className="animate-spin" /> : <IconTrash size={14} />}
+                Eliminar
+              </button>
+            )}
           </div>
+        )}
+
+        {soloLectura && !cargado && (
+          <p className="text-center text-xs text-gray-400">Pendiente — lo carga el titular.</p>
         )}
 
         <input
