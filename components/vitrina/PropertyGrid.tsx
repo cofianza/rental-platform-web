@@ -369,25 +369,38 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
       {/* Content */}
       <div className="p-4">
-        {/* Price */}
-        <p className="text-lg font-bold text-primary-700 mb-0.5">
-          {formatCurrency(property.valor_arriendo)}
-          <span className="text-xs font-normal text-gray-500"> /mes</span>
-        </p>
-        {property.administracion > 0 && (
-          <p className="text-xs text-gray-500 mb-2">
-            Admin: {formatCurrency(property.administracion)}
-          </p>
-        )}
+        {/* Precio + ubicación a la izquierda; logo de la inmobiliaria a la
+            derecha (solo el logo, en su columna). */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {/* Price */}
+            <p className="text-lg font-bold text-primary-700 mb-0.5">
+              {formatCurrency(property.valor_arriendo)}
+              <span className="text-xs font-normal text-gray-500"> /mes</span>
+            </p>
+            {property.administracion > 0 && (
+              <p className="text-xs text-gray-500 mb-2">
+                Admin: {formatCurrency(property.administracion)}
+              </p>
+            )}
 
-        {/* Location */}
-        <p className="text-sm text-gray-700 font-medium truncate">
-          {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
-        </p>
-        <p className="text-xs text-gray-400 mb-3">Estrato {property.estrato}</p>
+            {/* Location */}
+            <p className="text-sm text-gray-700 font-medium truncate">
+              {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
+            </p>
+            <p className="text-xs text-gray-400">Estrato {property.estrato}</p>
+          </div>
+          {property.inmobiliaria?.logo_url && (
+            <img
+              src={property.inmobiliaria.logo_url}
+              alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
+              className="h-14 w-auto max-w-[40%] object-contain shrink-0"
+            />
+          )}
+        </div>
 
         {/* Features */}
-        <div className="flex items-center gap-3 text-xs text-gray-500">
+        <div className="flex items-center gap-3 text-xs text-gray-500 mt-3">
           {property.area_m2 && (
             <span className="flex items-center gap-1">
               <IconRuler size={14} />
@@ -409,17 +422,6 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             </span>
           )}
         </div>
-
-        {/* Logo de la inmobiliaria que publica — solo el logo, en grande */}
-        {property.inmobiliaria?.logo_url && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <img
-              src={property.inmobiliaria.logo_url}
-              alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
-              className="h-12 w-auto max-w-[60%] object-contain"
-            />
-          </div>
-        )}
       </div>
     </Link>
   )

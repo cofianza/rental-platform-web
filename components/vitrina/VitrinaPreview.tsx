@@ -148,22 +148,24 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
       {/* Contenido */}
       <div className="p-5">
-        <h3 className="font-bold text-ink-900 text-base leading-tight mb-1.5 truncate">{titulo}</h3>
-        <p className="flex items-center gap-1 text-xs text-gray-500 mb-3 truncate">
-          <span aria-hidden>📍</span> {ubicacion}
-        </p>
-
-        {/* Logo de la inmobiliaria que publica — solo el logo, en grande */}
-        {property.inmobiliaria?.logo_url && (
-          <div className="mb-3 -mt-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* Título + ubicación a la izquierda; logo de la inmobiliaria a la
+            derecha (solo el logo, en su columna). */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <h3 className="font-bold text-ink-900 text-base leading-tight mb-1.5 truncate">{titulo}</h3>
+            <p className="flex items-center gap-1 text-xs text-gray-500 truncate">
+              <span aria-hidden>📍</span> {ubicacion}
+            </p>
+          </div>
+          {property.inmobiliaria?.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={property.inmobiliaria.logo_url}
               alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
-              className="h-12 w-auto max-w-[60%] object-contain"
+              className="h-14 w-auto max-w-[40%] object-contain shrink-0"
             />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Specs */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-500 border-b border-gray-100 pb-3.5 mb-3.5">
