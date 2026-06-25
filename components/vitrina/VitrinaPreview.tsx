@@ -153,23 +153,15 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           <span aria-hidden>📍</span> {ubicacion}
         </p>
 
-        {/* Inmobiliaria que publica (logo si tiene + nombre) */}
-        {property.inmobiliaria && (
-          <div className="flex items-center gap-1.5 mb-3 -mt-1">
-            {property.inmobiliaria.logo_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={property.inmobiliaria.logo_url}
-                alt=""
-                aria-hidden
-                className="h-5 w-5 rounded object-contain border border-gray-200 bg-white shrink-0"
-              />
-            )}
-            {property.inmobiliaria.nombre && (
-              <span className="truncate text-[11px] font-medium text-gray-500">
-                {property.inmobiliaria.nombre}
-              </span>
-            )}
+        {/* Logo de la inmobiliaria que publica — solo el logo, en grande */}
+        {property.inmobiliaria?.logo_url && (
+          <div className="mb-3 -mt-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={property.inmobiliaria.logo_url}
+              alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
+              className="h-12 w-auto max-w-[60%] object-contain"
+            />
           </div>
         )}
 
