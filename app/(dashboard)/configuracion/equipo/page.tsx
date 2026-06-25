@@ -45,6 +45,10 @@ const ROL_LABEL: Record<RolMiembro, string> = {
   solo_lectura: 'Sólo lectura',
 }
 
+// Oculto por ahora: el titular no remueve a otros miembros desde la UI. Cada
+// miembro se va por su cuenta con "Salir". Poner en true para reactivarlo.
+const PERMITIR_QUITAR_MIEMBRO = false
+
 function RolBadge({ rol }: { rol: RolMiembro }) {
   if (rol === 'owner') {
     return (
@@ -403,8 +407,8 @@ export default function EquipoPage() {
                       </div>
                     )}
 
-                    {/* Quitar a otro miembro activo (owner) */}
-                    {data.soy_owner && m.estado === 'activo' && !m.es_yo && (
+                    {/* Quitar a otro miembro activo (owner) — oculto por ahora */}
+                    {PERMITIR_QUITAR_MIEMBRO && data.soy_owner && m.estado === 'activo' && !m.es_yo && (
                       <button
                         onClick={() => handleRevocar(m)}
                         disabled={busyId === m.id}
