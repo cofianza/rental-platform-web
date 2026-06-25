@@ -37,6 +37,12 @@ import {
   IconPencil,
   IconBuilding2,
   IconCheck,
+  IconImage,
+  IconMapPin,
+  IconBed,
+  IconBath,
+  IconRuler,
+  IconCar,
 } from '@/components/icons'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
@@ -157,15 +163,36 @@ export function PropiedadesInmobiliariaView() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total" value={meta?.total ?? inmuebles.length} sub="Propiedades registradas" />
+        <StatCard
+          label="Total"
+          value={meta?.total ?? inmuebles.length}
+          sub="Propiedades registradas"
+          icon={IconBuilding2}
+          iconClass="bg-slate-100 text-slate-500"
+        />
         <StatCard
           label="En vitrina"
           value={enVitrina}
           color="text-primary-600"
           sub="Publicadas en cofianza.co"
+          icon={IconGlobe}
+          iconClass="bg-primary-50 text-primary-600"
         />
-        <StatCard label="Disponibles" value={disponibles} color="text-blue-600" sub="Listas para arrendar" />
-        <StatCard label="Pausadas" value={pausadas} sub="Inactivas en este momento" />
+        <StatCard
+          label="Disponibles"
+          value={disponibles}
+          color="text-blue-600"
+          sub="Listas para arrendar"
+          icon={IconCheck}
+          iconClass="bg-blue-50 text-blue-600"
+        />
+        <StatCard
+          label="Pausadas"
+          value={pausadas}
+          sub="Inactivas en este momento"
+          icon={IconEyeOff}
+          iconClass="bg-gray-100 text-gray-500"
+        />
       </div>
 
       {/* Lista de propiedades */}
@@ -208,7 +235,7 @@ export function PropiedadesInmobiliariaView() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {inmuebles.map((i) => {
                 const vk = vitrinaKind(i)
                 const vs = VITRINA_STYLE[vk]
@@ -216,46 +243,99 @@ export function PropiedadesInmobiliariaView() {
                 return (
                   <div
                     key={i.id}
-                    className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors hover:border-coral-500 hover:bg-coral-50"
+                    className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center"
                   >
-                    {/* Chip de código (copiable) */}
-                    <button
-                      type="button"
-                      onClick={() => copiarCodigo(i.codigo)}
-                      title="Click para copiar el código"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3 py-1.5 font-mono text-sm font-extrabold text-primary-700 transition-colors hover:bg-primary-100"
+                    {/* Foto de la fachada */}
+                    <Link
+                      href={`/inmuebles/${i.id}`}
+                      className="relative h-40 w-full shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-24 sm:w-36"
                     >
-                      <IconCheck size={13} />
-                      {i.codigo}
-                    </button>
+                      {i.foto_fachada_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={i.foto_fachada_url}
+                          alt={i.direccion}
+                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-300">
+                          <IconImage size={30} />
+                        </div>
+                      )}
+                      {/* Badge de vitrina sobre la foto */}
+                      <span
+                        className={cn(
+                          'absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm backdrop-blur-sm',
+                          vs.wrap,
+                        )}
+                      >
+                        <span className={cn('h-1.5 w-1.5 rounded-full', vs.dot)} />
+                        {vs.label}
+                      </span>
+                    </Link>
 
                     {/* Info de la propiedad */}
-                    <div className="min-w-0">
-                      <h4 className="truncate text-[15px] font-bold text-gray-900">{i.direccion}</h4>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500">
-                        {i.ciudad && <span>{i.ciudad}</span>}
-                        {i.ciudad && <span className="text-gray-300">·</span>}
-                        <span className="font-bold text-gray-700">{money(i.valor_arriendo)}/mes</span>
-                        <span className="text-gray-300">·</span>
-                        <span>{TIPO_LABELS[i.tipo]}</span>
-                        <span className="text-gray-300">·</span>
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold',
-                            vs.wrap,
-                          )}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copiarCodigo(i.codigo)}
+                          title="Click para copiar el código"
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary-50 px-2 py-0.5 font-mono text-[11px] font-extrabold text-primary-700 transition-colors hover:bg-primary-100"
                         >
-                          <span className={cn('h-1.5 w-1.5 rounded-full', vs.dot)} />
-                          {vs.label}
-                        </span>
+                          {i.codigo}
+                        </button>
+                        <span className="truncate text-xs font-medium text-gray-400">{TIPO_LABELS[i.tipo]}</span>
+                      </div>
+
+                      <h4 className="truncate text-base font-bold text-gray-900">{i.direccion}</h4>
+                      {i.ciudad && (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                          <IconMapPin size={12} className="shrink-0 text-gray-400" />
+                          <span className="truncate">{i.ciudad}</span>
+                        </p>
+                      )}
+
+                      {/* Chips de amenidades */}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs font-medium text-gray-500">
+                        {i.habitaciones > 0 && (
+                          <span className="inline-flex items-center gap-1" title="Habitaciones">
+                            <IconBed size={14} className="text-gray-400" />
+                            {i.habitaciones}
+                          </span>
+                        )}
+                        {i.banos > 0 && (
+                          <span className="inline-flex items-center gap-1" title="Baños">
+                            <IconBath size={14} className="text-gray-400" />
+                            {i.banos}
+                          </span>
+                        )}
+                        {i.area_m2 ? (
+                          <span className="inline-flex items-center gap-1" title="Área">
+                            <IconRuler size={14} className="text-gray-400" />
+                            {i.area_m2} m²
+                          </span>
+                        ) : null}
+                        {i.parqueaderos > 0 && (
+                          <span className="inline-flex items-center gap-1" title="Parqueaderos">
+                            <IconCar size={14} className="text-gray-400" />
+                            {i.parqueaderos}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Precio */}
+                      <p className="mt-2">
+                        <span className="text-lg font-black tracking-tight text-gray-900">{money(i.valor_arriendo)}</span>
+                        <span className="ml-1 text-xs font-medium text-gray-400">/mes</span>
                       </p>
                     </div>
 
                     {/* Acciones */}
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
                       <Link
                         href={`/inmuebles/${i.id}`}
-                        className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
                       >
                         <IconGlobe size={13} />
                         Ver en web
@@ -263,7 +343,7 @@ export function PropiedadesInmobiliariaView() {
                       <button
                         type="button"
                         onClick={() => handleToggleVitrina(i, !publicada)}
-                        className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
                       >
                         {publicada ? <IconEyeOff size={13} /> : <IconEye size={13} />}
                         {publicada ? 'Pausar' : 'Publicar'}
@@ -271,7 +351,7 @@ export function PropiedadesInmobiliariaView() {
                       <button
                         type="button"
                         onClick={() => router.push(`/inmuebles/${i.id}/editar`)}
-                        className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
                       >
                         <IconPencil size={13} />
                         Editar
@@ -322,16 +402,27 @@ function StatCard({
   value,
   sub,
   color = 'text-gray-900',
+  icon: Icon,
+  iconClass = 'bg-gray-100 text-gray-500',
 }: {
   label: string
   value: number
   sub: string
   color?: string
+  icon?: typeof IconBuilding2
+  iconClass?: string
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-      <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
+    <div className="rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
+        {Icon && (
+          <span className={cn('flex h-7 w-7 items-center justify-center rounded-lg', iconClass)}>
+            <Icon size={15} />
+          </span>
+        )}
+      </div>
+      <div className={cn('mt-2 text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
       <div className="mt-1 text-xs text-gray-500">{sub}</div>
     </div>
   )
