@@ -62,7 +62,7 @@ export function PropertyGrid() {
   const [totalPages, setTotalPages] = useState(0)
   const [filterOptions, setFilterOptions] = useState<PublicPropertyFilters>({ ciudades: [], tipos: [], estratos: [] })
   const [loading, setLoading] = useState(true)
-  const [filtersLoaded, setFiltersLoaded] = useState(false)
+  const [, setFiltersLoaded] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -409,6 +409,25 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             </span>
           )}
         </div>
+
+        {/* Inmobiliaria que publica (logo si tiene + nombre) */}
+        {property.inmobiliaria && (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-1.5">
+            {property.inmobiliaria.logo_url && (
+              <img
+                src={property.inmobiliaria.logo_url}
+                alt=""
+                aria-hidden
+                className="h-5 w-5 rounded object-contain border border-gray-200 bg-white shrink-0"
+              />
+            )}
+            {property.inmobiliaria.nombre && (
+              <span className="truncate text-[11px] font-medium text-gray-500">
+                {property.inmobiliaria.nombre}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   )

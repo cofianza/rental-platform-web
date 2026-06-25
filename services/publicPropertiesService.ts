@@ -25,6 +25,9 @@ export interface PublicProperty {
   foto_fachada_url: string | null
   fotos?: { id: string; url: string; descripcion: string | null; orden: number }[]
   created_at: string
+  // Identidad pública de la inmobiliaria dueña (nombre comercial + logo). null
+  // para propietarios individuales o si no hay nada que mostrar.
+  inmobiliaria?: { nombre: string | null; logo_url: string | null } | null
 }
 
 export interface PublicPropertyFilters {
