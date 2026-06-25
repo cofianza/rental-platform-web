@@ -133,9 +133,8 @@ export default function MiCuentaPage() {
       tipo_documento: form.tipo_documento || null,
       numero_documento: form.numero_documento.trim() || null,
     }
-    if (isInmobiliaria) {
-      payload.nombre_representante = form.nombre_representante.trim() || null
-    }
+    // El "representante legal" ya no se edita aquí: vive en Datos para contrato
+    // (de la organización). No se envía desde Mi cuenta.
 
     setSaving(true)
     try {
@@ -211,15 +210,9 @@ export default function MiCuentaPage() {
           />
         </div>
 
-        {isInmobiliaria && (
-          <Field
-            label="Representante legal"
-            value={form.nombre_representante}
-            onChange={(v) => onChange('nombre_representante', v)}
-            placeholder="Ej. Juan Pérez Gómez"
-            help="Quien firma en nombre de la inmobiliaria."
-          />
-        )}
+        {/* "Representante legal" se gestiona en Configuración → Datos para
+            contrato (es de la organización y es el que sale en el contrato).
+            No se duplica aquí en los datos personales. */}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>

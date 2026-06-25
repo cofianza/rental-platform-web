@@ -45,9 +45,11 @@ const ROL_LABEL: Record<RolMiembro, string> = {
   solo_lectura: 'Sólo lectura',
 }
 
-// Oculto por ahora: el titular no remueve a otros miembros desde la UI. Cada
-// miembro se va por su cuenta con "Salir". Poner en true para reactivarlo.
+// Oculto por ahora: el titular no remueve a otros miembros desde la UI.
+// Poner en true para reactivarlo.
 const PERMITIR_QUITAR_MIEMBRO = false
+// Oculto por ahora: el "Salir" (auto-baja del miembro). Poner en true para reactivarlo.
+const PERMITIR_SALIR = false
 
 function RolBadge({ rol }: { rol: RolMiembro }) {
   if (rol === 'owner') {
@@ -423,7 +425,7 @@ export default function EquipoPage() {
                         titular no puede renunciar a su propia inmobiliaria;
                         primero debe dejar de ser titular / transferir la
                         titularidad a otro miembro. */}
-                    {m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
+                    {PERMITIR_SALIR && m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
                       <button
                         onClick={handleSalir}
                         disabled={leaving}
