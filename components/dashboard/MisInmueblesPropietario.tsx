@@ -86,21 +86,35 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-ink-200 bg-white transition hover:border-primary-400 hover:shadow-sm">
-      <div className="flex items-start justify-between gap-2 border-b border-ink-200 px-4 py-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-bold text-ink-900">
-            {p.codigo ? `${p.codigo} — ` : ''}
-            {cap(p.tipo)}
-          </h3>
-          <p className="truncate text-[11px] text-ink-500">
-            {p.direccion ?? 'Sin dirección'}
-            {p.ciudad ? `, ${p.ciudad}` : ''}
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
+      {/* Foto de la fachada con los estados superpuestos */}
+      <Link href={`/inmuebles/${p.id}`} className="relative block h-32 w-full overflow-hidden bg-ink-100">
+        {p.fotoFachadaUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={p.fotoFachadaUrl}
+            alt={p.direccion ?? 'Inmueble'}
+            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ink-300">
+            <IconHome size={32} />
+          </div>
+        )}
+        <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
           <Chip tone={arrendado ? 'green' : 'orange'}>{arrendado ? 'Arrendado' : 'Disponible'}</Chip>
           {p.visibleVitrina && <Chip tone="blue">En vitrina</Chip>}
         </div>
+      </Link>
+
+      <div className="border-b border-ink-200 px-4 py-3">
+        <h3 className="truncate text-sm font-bold text-ink-900">
+          {p.codigo ? `${p.codigo} — ` : ''}
+          {cap(p.tipo)}
+        </h3>
+        <p className="truncate text-[11px] text-ink-500">
+          {p.direccion ?? 'Sin dirección'}
+          {p.ciudad ? `, ${p.ciudad}` : ''}
+        </p>
       </div>
 
       <div className="px-4 py-3 text-[13px]">

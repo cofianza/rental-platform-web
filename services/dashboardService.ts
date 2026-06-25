@@ -306,6 +306,7 @@ export interface MiInmueble {
   area: number | null
   estado: string
   visibleVitrina: boolean
+  fotoFachadaUrl: string | null
   inquilino: string | null
   expedienteId: string | null
   contratoId: string | null
