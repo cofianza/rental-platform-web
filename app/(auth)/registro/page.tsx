@@ -9,23 +9,24 @@
 
 import Link from 'next/link'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { IconUser, IconHome, IconBuilding2, IconArrowRight } from '@/components/icons'
 
 const OPCIONES = [
   {
     href: AUTH_ROUTES.REGISTER_SOLICITANTE,
-    icono: '🏠',
+    Icon: IconUser,
     titulo: 'Soy Arrendatario',
     desc: 'Busco un inmueble para arrendar y necesito fianza.',
   },
   {
     href: AUTH_ROUTES.REGISTER_PROPIETARIO,
-    icono: '🔑',
+    Icon: IconHome,
     titulo: 'Soy Propietario',
     desc: 'Tengo inmuebles y quiero gestionar mis arriendos.',
   },
   {
     href: AUTH_ROUTES.REGISTER_INMOBILIARIA,
-    icono: '💼',
+    Icon: IconBuilding2,
     titulo: 'Soy Inmobiliaria',
     desc: 'Empresa o agencia que administra propiedades.',
   },
@@ -70,28 +71,22 @@ export default function RegisterTypeSelectorPage() {
             href={op.href}
             className="group flex items-center gap-4 p-4 border-[1.5px] border-slate-200 rounded-xl bg-white hover:border-primary-600 hover:bg-primary-50/40 transition-all"
           >
-            <div className="text-2xl shrink-0" aria-hidden>
-              {op.icono}
-            </div>
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition-colors group-hover:bg-primary-100"
+              aria-hidden
+            >
+              <op.Icon size={20} />
+            </span>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-semibold text-slate-900 group-hover:text-primary-700 transition-colors">
                 {op.titulo}
               </p>
               <p className="text-[13px] text-slate-500 mt-0.5 leading-[1.5]">{op.desc}</p>
             </div>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
+            <IconArrowRight
+              size={18}
               className="text-slate-400 group-hover:text-primary-600 transition-colors shrink-0"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            />
           </Link>
         ))}
       </div>
