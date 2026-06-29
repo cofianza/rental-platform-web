@@ -79,6 +79,29 @@ function NuevoExpedienteContent() {
           // Falla no bloqueante: el step 1 ya valida.
         }
         updateStep1({ inmueble, hasActiveExpediente })
+
+        // Si venimos de un INTERESADO de la vitrina, pre-llenar el solicitante
+        // (nuevo) con sus datos de contacto: /expedientes/nuevo?inmueble_id=..&
+        // nombre=..&apellido=..&telefono=..&email=.. — el dueño solo completa el
+        // documento. No pisa nada si no vienen esos params.
+        const preNombre = searchParams.get('nombre')
+        const preEmail = searchParams.get('email')
+        const preTelefono = searchParams.get('telefono')
+        if (preNombre || preEmail || preTelefono) {
+          updateStep2({
+            solicitante: null,
+            isNewSolicitante: true,
+            formData: {
+              tipo_persona: 'natural',
+              nombre: preNombre ?? '',
+              apellido: searchParams.get('apellido') ?? '',
+              tipo_documento: 'cc',
+              numero_documento: '',
+              email: preEmail ?? '',
+              telefono: preTelefono ?? '',
+            },
+          })
+        }
         goToStep(2)
       } catch (err) {
         toast.error(
@@ -88,7 +111,7 @@ function NuevoExpedienteContent() {
         setPrefillLoading(false)
       }
     })()
-  }, [inmueblePreseleccionId, updateStep1, goToStep])
+  }, [inmueblePreseleccionId, updateStep1, updateStep2, goToStep, searchParams])
 
   // Manejar cancelar
   const handleCancel = () => {

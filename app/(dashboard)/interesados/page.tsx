@@ -8,9 +8,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { IconLoader, IconCheck, IconHome, IconUser, IconX } from '@/components/icons'
+import { IconLoader, IconCheck, IconHome, IconUser, IconX, IconFileText } from '@/components/icons'
 import {
   interesadosService,
   type Interesado,
@@ -59,6 +60,23 @@ function formatFecha(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+// Link al wizard de nuevo expediente con el inmueble y los datos del interesado
+// pre-llenados (el dueño solo completa el documento). Divide el nombre completo
+// en nombre + apellido (best-effort: primera palabra = nombre, resto = apellido).
+function crearExpedienteHref(it: Interesado): string {
+  const partes = it.nombre.trim().split(/\s+/)
+  const nombre = partes[0] || it.nombre.trim()
+  const apellido = partes.slice(1).join(' ')
+  const params = new URLSearchParams({
+    inmueble_id: it.inmueble_id,
+    nombre,
+    apellido,
+    telefono: it.telefono,
+    email: it.email,
+  })
+  return `/expedientes/nuevo?${params.toString()}`
 }
 
 export default function InteresadosPage() {
@@ -189,8 +207,16 @@ export default function InteresadosPage() {
                 </div>
               </div>
 
-              {/* Acciones de estado */}
-              <div className="flex shrink-0 gap-2">
+              {/* Acciones */}
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                {/* Convertir el interesado en expediente (datos pre-llenados) */}
+                <Link
+                  href={crearExpedienteHref(it)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
+                >
+                  <IconFileText size={13} />
+                  Crear expediente
+                </Link>
                 {it.estado !== 'contactado' && (
                   <button
                     type="button"
