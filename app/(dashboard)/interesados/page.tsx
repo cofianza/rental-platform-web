@@ -143,6 +143,22 @@ export default function InteresadosPage() {
               key={it.id}
               className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4"
             >
+              {/* Miniatura del inmueble */}
+              <div className="shrink-0">
+                {it.inmuebles?.foto_fachada_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={it.inmuebles.foto_fachada_url}
+                    alt={inmuebleLabel(it)}
+                    className="h-16 w-24 rounded-lg object-cover border border-gray-200 bg-gray-50"
+                  />
+                ) : (
+                  <div className="flex h-16 w-24 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+                    <IconHome size={22} className="text-gray-300" />
+                  </div>
+                )}
+              </div>
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold text-gray-900 truncate">{it.nombre}</span>
