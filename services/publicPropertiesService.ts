@@ -100,6 +100,38 @@ export async function getPublicPropertyById(id: string): Promise<PublicProperty>
   return result.data
 }
 
+export interface RegistrarInteresPublicoInput {
+  nombre: string
+  telefono: string
+  email: string
+  acepta: boolean
+}
+
+/**
+ * Registra el interés de un visitante SIN cuenta (lead). No requiere auth.
+ * El backend guarda el contacto y avisa al dueño/inmobiliaria.
+ */
+export async function registrarInteresPublico(
+  propertyId: string,
+  input: RegistrarInteresPublicoInput,
+): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/public/properties/${propertyId}/interes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) {
+    let msg = 'No se pudo enviar tu interés. Intenta de nuevo.'
+    try {
+      const json = await res.json()
+      msg = json?.message || msg
+    } catch {
+      /* respuesta sin cuerpo JSON */
+    }
+    throw new Error(msg)
+  }
+}
+
 export async function getPublicPropertyFilters(): Promise<PublicPropertyFilters> {
   const result = await publicFetch<PublicPropertyFilters>('/public/properties/filters')
   return result.data ?? { ciudades: [], tipos: [], estratos: [] }

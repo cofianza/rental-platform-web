@@ -1,6 +1,8 @@
 /**
  * <MeInteresaCTA> — botón "Me interesa este inmueble" con 4 ramas de UX:
- *   1) No autenticado → redirige a /registro/solicitante con intent=interest.
+ *   1) No autenticado → abre un formulario corto (nombre, WhatsApp, correo +
+ *      autorización) que registra el interés como lead y avisa al anunciante.
+ *      NO se piden datos personales (cédula, etc.) en este paso.
  *   2) Autenticado pero NO solicitante → botón deshabilitado con título.
  *   3) Solicitante con expediente activo sobre este inmueble → link "Ver mi solicitud →".
  *   4) Solicitante sin expediente activo → abre modal con fecha + notas;
@@ -16,10 +18,11 @@ import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconLoader, IconCheck } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
-import { registrarInteres } from '@/services/publicPropertiesService'
+import { registrarInteres, registrarInteresPublico } from '@/services/publicPropertiesService'
 import { citaService } from '@/services/citaService'
 import SlotSelector, {
   formatSlotHora,
@@ -53,6 +56,15 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
   const [fechaPropuesta, setFechaPropuesta] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Formulario de interesado para visitantes SIN cuenta (lead).
+  const [showLeadModal, setShowLeadModal] = useState(false)
+  const [leadNombre, setLeadNombre] = useState('')
+  const [leadTelefono, setLeadTelefono] = useState('')
+  const [leadEmail, setLeadEmail] = useState('')
+  const [leadAcepta, setLeadAcepta] = useState(false)
+  const [leadSubmitting, setLeadSubmitting] = useState(false)
+  const [leadEnviado, setLeadEnviado] = useState(false)
 
   const isSolicitante = user?.rol === 'solicitante'
 
@@ -111,13 +123,53 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
   // ── Handlers ──────────────────────────────────────────
 
+  // Visitante sin cuenta → abre el formulario corto de interés (lead), en vez
+  // de mandarlo a registro. Los datos del estudio se piden después, si avanza.
   const handleVisitanteClick = useCallback(() => {
-    // Mantiene el flujo legacy de visitante → registro con intent.
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cofianza_interested_property', inmuebleId)
+    setShowLeadModal(true)
+  }, [])
+
+  const closeLeadModal = () => {
+    if (leadSubmitting) return
+    setShowLeadModal(false)
+    setLeadEnviado(false)
+  }
+
+  const handleLeadSubmit = async () => {
+    if (leadNombre.trim().length < 2) {
+      toast.error('Ingresa tu nombre')
+      return
     }
-    router.push(`/registro/solicitante?property_id=${inmuebleId}&intent=interest`)
-  }, [inmuebleId, router])
+    const tel = leadTelefono.replace(/\s+/g, '').trim()
+    if (!/^\+?\d{7,15}$/.test(tel)) {
+      toast.error('Ingresa un WhatsApp válido, con código de país (ej. +57…).')
+      return
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(leadEmail.trim())) {
+      toast.error('Ingresa un correo válido')
+      return
+    }
+    if (!leadAcepta) {
+      toast.error('Debes autorizar el tratamiento de tus datos para continuar')
+      return
+    }
+
+    setLeadSubmitting(true)
+    try {
+      await registrarInteresPublico(inmuebleId, {
+        nombre: leadNombre.trim(),
+        telefono: tel,
+        email: leadEmail.trim(),
+        acepta: true,
+      })
+      setLeadEnviado(true)
+      toast.success('¡Listo! Le avisamos al anunciante; te contactará pronto.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar tu interés. Intenta de nuevo.')
+    } finally {
+      setLeadSubmitting(false)
+    }
+  }
 
   const closeModal = () => {
     if (submitting) return
@@ -153,7 +205,6 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
       } catch (citaError) {
         // Expediente creado pero cita falló: no rollback. Auditoría en console
         // para detectar si el caso ocurre seguido en pruebas/producción.
-        // eslint-disable-next-line no-console
         console.error('[MeInteresaCTA] Expediente creado pero cita falló. Requiere intervención:', {
           expediente_id: expedienteId,
           error: citaError,
@@ -231,7 +282,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
   }
 
   // RAMA 1 (no auth) o RAMA 4 sin expediente: botón activo.
-  // Si no hay sesión → redirige a registro. Si es solicitante → abre modal.
+  // Si no hay sesión → abre el formulario de interés. Si es solicitante → abre el modal de cita.
   return (
     <>
       <button
@@ -316,6 +367,111 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             )}
           </div>
         </div>
+      </Modal>
+
+      {/* Modal del visitante SIN cuenta: formulario corto de interés (lead) */}
+      <Modal
+        isOpen={showLeadModal}
+        onClose={closeLeadModal}
+        title="Me interesa este inmueble"
+        size="md"
+      >
+        {leadEnviado ? (
+          <div className="space-y-4 text-center py-2">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <IconCheck size={24} />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">¡Gracias por tu interés!</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Le avisamos al anunciante con tus datos. Te contactará por WhatsApp o correo para
+                coordinar la visita.
+              </p>
+            </div>
+            <button
+              onClick={closeLeadModal}
+              className="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            >
+              Entendido
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Déjanos tus datos y el anunciante te contactará para coordinar una visita. Por ahora
+              no pedimos datos personales (cédula, ingresos) — eso solo se pide si decides avanzar.
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nombre <span className="text-coral-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={leadNombre}
+                onChange={(e) => setLeadNombre(e.target.value)}
+                placeholder="Tu nombre"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <PhoneInput
+              label="WhatsApp"
+              value={leadTelefono}
+              onChange={setLeadTelefono}
+              placeholder="300 123 4567"
+              required
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Correo <span className="text-coral-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={leadEmail}
+                onChange={(e) => setLeadEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <label className="flex items-start gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={leadAcepta}
+                onChange={(e) => setLeadAcepta(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>
+                Autorizo que Cofianza comparta mis datos de contacto con el anunciante de este
+                inmueble y acepto la{' '}
+                <a href="/privacidad" target="_blank" className="text-primary-600 underline">
+                  Política de Tratamiento de Datos
+                </a>
+                .
+              </span>
+            </label>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={closeLeadModal}
+                disabled={leadSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLeadSubmit}
+                disabled={leadSubmitting || !leadAcepta}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {leadSubmitting && <IconLoader size={14} className="animate-spin" />}
+                Enviar
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   )

@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation'
 import type { IconProps } from '@/components/icons'
 import {
   IconHome,
+  IconUsers,
   IconSearch,
   IconFileText,
   IconAlertTriangle,
@@ -45,6 +46,8 @@ const NAV: NavGroup[] = [
     group: 'Gestión',
     items: [
       { label: 'Mis inmuebles', href: '/dashboard', Icon: IconHome, exact: true },
+      // Interesados de la vitrina (leads sin cuenta) sobre sus inmuebles.
+      { label: 'Interesados', href: '/interesados', Icon: IconUsers },
       // Lista scopeada en el backend: el propietario solo ve expedientes de
       // SUS inmuebles. Orden del flujo: inmueble → expediente → estudio → contrato.
       { label: 'Expedientes', href: '/expedientes', Icon: IconClipboardList },

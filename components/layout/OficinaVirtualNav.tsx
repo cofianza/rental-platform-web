@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   IconBuilding2,
+  IconUsers,
   IconSearch,
   IconFileText,
   IconAlertTriangle,
@@ -37,6 +38,12 @@ const TABS: TabDef[] = [
     href: '/inmuebles',
     icon: IconBuilding2,
     matchers: ['/inmuebles', '/vitrina'],
+  },
+  {
+    label: 'Interesados',
+    href: '/interesados',
+    icon: IconUsers,
+    matchers: ['/interesados'],
   },
   {
     // Pestaña UNIFICADA: "Estudios" engloba Estudios + Expedientes (sub-pestañas
