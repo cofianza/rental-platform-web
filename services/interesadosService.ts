@@ -16,6 +16,7 @@ export interface Interesado {
     ciudad: string
     barrio: string | null
     direccion: string | null
+    codigo: string | null
     foto_fachada_url: string | null
   } | null
 }

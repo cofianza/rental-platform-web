@@ -48,8 +48,12 @@ function inmuebleLabel(it: Interesado): string {
   const inm = it.inmuebles
   if (!inm) return 'Inmueble'
   const tipo = TIPO_LABEL[inm.tipo] || inm.tipo
-  const lugar = inm.barrio ? `${inm.barrio}, ${inm.ciudad}` : inm.ciudad
-  return `${tipo} en ${lugar}`
+  // Dirección (lo más específico) o barrio, + ciudad, + código entre paréntesis
+  // para distinguir inmuebles del mismo dueño en la misma ciudad.
+  const detalle = inm.direccion?.trim() || inm.barrio?.trim()
+  const lugar = detalle ? `${detalle}, ${inm.ciudad}` : inm.ciudad
+  const codigo = inm.codigo?.trim()
+  return `${tipo} en ${lugar}${codigo ? ` (cód. ${codigo})` : ''}`
 }
 
 function waLink(telefono: string): string {
