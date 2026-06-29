@@ -62,6 +62,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
   const [leadNombre, setLeadNombre] = useState('')
   const [leadTelefono, setLeadTelefono] = useState('')
   const [leadEmail, setLeadEmail] = useState('')
+  const [leadMensaje, setLeadMensaje] = useState('')
   const [leadAcepta, setLeadAcepta] = useState(false)
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadEnviado, setLeadEnviado] = useState(false)
@@ -160,6 +161,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         nombre: leadNombre.trim(),
         telefono: tel,
         email: leadEmail.trim(),
+        mensaje: leadMensaje.trim() || undefined,
         acepta: true,
       })
       setLeadEnviado(true)
@@ -432,6 +434,20 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
                 placeholder="tu@correo.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mensaje <span className="font-normal text-gray-400">(opcional)</span>
+              </label>
+              <textarea
+                value={leadMensaje}
+                onChange={(e) => setLeadMensaje(e.target.value)}
+                rows={2}
+                maxLength={500}
+                placeholder="Ej. ¿Sigue disponible? Me gustaría verlo el sábado."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

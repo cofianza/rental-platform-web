@@ -205,6 +205,11 @@ export default function InteresadosPage() {
                     {it.email}
                   </a>
                 </div>
+                {it.mensaje && (
+                  <p className="mt-2 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-sm italic text-gray-700">
+                    “{it.mensaje}”
+                  </p>
+                )}
               </div>
 
               {/* Acciones */}

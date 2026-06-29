@@ -8,6 +8,7 @@ export interface Interesado {
   nombre: string
   telefono: string
   email: string
+  mensaje: string | null
   estado: InteresadoEstado
   created_at: string
   inmuebles: {

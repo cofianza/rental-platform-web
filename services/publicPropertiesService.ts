@@ -104,6 +104,7 @@ export interface RegistrarInteresPublicoInput {
   nombre: string
   telefono: string
   email: string
+  mensaje?: string
   acepta: boolean
 }
 
