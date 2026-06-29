@@ -25,6 +25,7 @@ import {
 } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
+import { useInteresadosNuevos } from '@/hooks/useInteresadosNuevos'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { NotificationBell } from './NotificationBell'
 
@@ -82,6 +83,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user)
   const { logout } = useAuth()
   const pathname = usePathname()
+  const interesadosNuevos = useInteresadosNuevos(true)
 
   const nombre = user?.nombre_completo || user?.email || 'Usuario'
   const iniciales = nombre
@@ -142,6 +144,9 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
               }`}
             >
               <Icon size={14} /> {it.label}
+              {it.href === '/interesados' && interesadosNuevos > 0 && (
+                <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">{interesadosNuevos}</span>
+              )}
             </Link>
           )
         })}
@@ -169,6 +174,9 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
                     }`}
                   >
                     <Icon size={17} /> {it.label}
+                    {it.href === '/interesados' && interesadosNuevos > 0 && (
+                      <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">{interesadosNuevos}</span>
+                    )}
                   </Link>
                 )
               })}

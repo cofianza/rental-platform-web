@@ -21,6 +21,7 @@ import {
   IconBarChart3,
   IconSettings,
 } from '@/components/icons'
+import { useInteresadosNuevos } from '@/hooks/useInteresadosNuevos'
 
 interface TabDef {
   label: string
@@ -100,6 +101,7 @@ interface Props {
 export function OficinaVirtualNav({ rol }: Props) {
   const pathname = usePathname()
   const isInmobiliaria = rol === 'inmobiliaria'
+  const interesadosNuevos = useInteresadosNuevos(true)
 
   const visibleTabs = TABS.filter((t) => !t.onlyInmobiliaria || isInmobiliaria)
 
@@ -125,6 +127,11 @@ export function OficinaVirtualNav({ rol }: Props) {
               >
                 <Icon size={18} />
                 {tab.label}
+                {tab.href === '/interesados' && interesadosNuevos > 0 && (
+                  <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">
+                    {interesadosNuevos}
+                  </span>
+                )}
               </Link>
             )
           })}

@@ -42,4 +42,10 @@ export const interesadosService = {
   async updateEstado(id: string, estado: InteresadoEstado): Promise<void> {
     await apiClient.patch(`/interesados/${id}`, { estado })
   },
+
+  /** Conteo de interesados 'nuevo' (sin atender) — para el badge de la pestaña. */
+  async contarNuevos(): Promise<number> {
+    const res = await apiClient.get<{ nuevos: number }>('/interesados/count')
+    return res.data?.nuevos ?? 0
+  },
 }
