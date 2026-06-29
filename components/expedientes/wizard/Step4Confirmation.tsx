@@ -17,6 +17,7 @@ import {
   IconCheck,
   IconLoader,
   IconAlertTriangle,
+  IconPencil,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
@@ -28,6 +29,8 @@ interface Step4ConfirmationProps {
   isSubmitting: boolean
   submitError: string | null
   onSubmit: () => void
+  /** Volver a un paso del wizard para corregir datos (1=inmueble, 2=solicitante, 3=config). */
+  onEditStep: (step: number) => void
 }
 
 export function Step4Confirmation({
@@ -35,6 +38,7 @@ export function Step4Confirmation({
   isSubmitting,
   submitError,
   onSubmit,
+  onEditStep,
 }: Step4ConfirmationProps) {
   const { inmueble } = data.step1
   const { solicitante, isNewSolicitante, formData } = data.step2
@@ -70,11 +74,19 @@ export function Step4Confirmation({
 
       {/* Resumen del Inmueble */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
-        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconHome size={16} className="text-gray-400" />
             Inmueble Seleccionado
           </h3>
+          <button
+            type="button"
+            onClick={() => onEditStep(1)}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 disabled:opacity-50"
+          >
+            <IconPencil size={13} /> Editar
+          </button>
         </div>
         <div className="p-4">
           {inmueble && (
@@ -124,7 +136,7 @@ export function Step4Confirmation({
 
       {/* Resumen del Solicitante */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
-        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconUser size={16} className="text-gray-400" />
             Solicitante
@@ -134,6 +146,14 @@ export function Step4Confirmation({
               </span>
             )}
           </h3>
+          <button
+            type="button"
+            onClick={() => onEditStep(2)}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 disabled:opacity-50"
+          >
+            <IconPencil size={13} /> Editar
+          </button>
         </div>
         <div className="p-4">
           {solicitanteData && (
@@ -183,11 +203,19 @@ export function Step4Confirmation({
 
       {/* Resumen de Configuracion */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
-        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+        <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <IconFileText size={16} className="text-gray-400" />
             Configuracion
           </h3>
+          <button
+            type="button"
+            onClick={() => onEditStep(3)}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 disabled:opacity-50"
+          >
+            <IconPencil size={13} /> Editar
+          </button>
         </div>
         <div className="p-4 space-y-3">
           {/* Notas */}

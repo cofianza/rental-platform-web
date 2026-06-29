@@ -130,6 +130,7 @@ function NuevoExpedienteContent() {
             isSubmitting={isSubmitting}
             submitError={submitError}
             onSubmit={submitExpediente}
+            onEditStep={goToStep}
           />
         )
       default:
