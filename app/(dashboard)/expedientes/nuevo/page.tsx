@@ -64,6 +64,9 @@ function NuevoExpedienteContent() {
   // volver a buscar lo que ya eligio.
   const prefillRanRef = useRef(false)
   const [prefillLoading, setPrefillLoading] = useState(false)
+  // El paso 2 avisa cuando el form de edición de solicitante tiene cambios sin
+  // guardar — bloqueamos "Siguiente" hasta que el usuario guarde o cancele.
+  const [step2EditDirty, setStep2EditDirty] = useState(false)
   useEffect(() => {
     if (!inmueblePreseleccionId || prefillRanRef.current) return
     prefillRanRef.current = true
@@ -136,6 +139,7 @@ function NuevoExpedienteContent() {
             errors={errors.step2}
             onUpdate={updateStep2}
             onUpdateField={updateStep2Field}
+            onEditingDirtyChange={setStep2EditDirty}
           />
         )
       case 3:
@@ -197,7 +201,7 @@ function NuevoExpedienteContent() {
         {currentStep < 4 && (
           <WizardNavigation
             currentStep={currentStep}
-            canProceed={canProceed()}
+            canProceed={canProceed() && !step2EditDirty}
             isSubmitting={isSubmitting}
             onPrevious={prevStep}
             onNext={nextStep}

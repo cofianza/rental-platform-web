@@ -14,6 +14,7 @@ import {
   IconX,
   IconPlus,
   IconPencil,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { solicitanteService } from '@/services/solicitanteService'
@@ -33,6 +34,12 @@ interface Step2SolicitanteProps {
   errors: Record<string, string>
   onUpdate: (data: Partial<WizardStep2Data>) => void
   onUpdateField: (field: string, value: unknown) => void
+  /**
+   * Avisa al wizard padre cuando el formulario de edición de solicitante tiene
+   * cambios SIN guardar. El padre lo usa para bloquear "Siguiente" y forzar
+   * que el usuario guarde (o cancele) antes de avanzar.
+   */
+  onEditingDirtyChange?: (dirty: boolean) => void
 }
 
 export function Step2Solicitante({
@@ -40,6 +47,7 @@ export function Step2Solicitante({
   errors,
   onUpdate,
   onUpdateField,
+  onEditingDirtyChange,
 }: Step2SolicitanteProps) {
   // Estado local para busqueda. Default 'cc' (cédula): el caso 90% en Colombia,
   // así el usuario solo escribe el número y busca — un clic menos.
@@ -68,13 +76,27 @@ export function Step2Solicitante({
   // el wizard hasta guardar; al guardar, reemplaza el solicitante seleccionado.
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<ISolicitanteCreateData | null>(null)
+  // Snapshot de los datos al abrir la edición — para saber si hay cambios sin
+  // guardar (comparando contra el form actual) y mostrar el aviso.
+  const [editBaseline, setEditBaseline] = useState<ISolicitanteCreateData | null>(null)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
+
+  // ¿El form de edición difiere del original? (false si volvió a su valor inicial)
+  const isEditDirty =
+    !!editForm && !!editBaseline && JSON.stringify(editForm) !== JSON.stringify(editBaseline)
+
+  // Avisar al wizard padre del estado "cambios sin guardar" para que bloquee
+  // "Siguiente". Al desmontar (o salir de la edición) se limpia.
+  useEffect(() => {
+    onEditingDirtyChange?.(isEditDirty)
+    return () => onEditingDirtyChange?.(false)
+  }, [isEditDirty, onEditingDirtyChange])
 
   const handleEditExisting = (s: ISolicitante) => {
     setEditError(null)
     setEditingId(s.id)
-    setEditForm({
+    const initial: ISolicitanteCreateData = {
       tipo_persona: s.tipo_persona,
       nombre: s.nombre,
       apellido: s.apellido,
@@ -92,12 +114,15 @@ export function Step2Solicitante({
       nivel_educativo: s.nivel_educativo ?? undefined,
       parentesco: s.parentesco ?? undefined,
       habitara_inmueble: s.habitara_inmueble,
-    })
+    }
+    setEditForm(initial)
+    setEditBaseline(initial)
   }
 
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditForm(null)
+    setEditBaseline(null)
     setEditError(null)
   }
 
@@ -110,6 +135,7 @@ export function Step2Solicitante({
       onUpdate({ solicitante: updated, isNewSolicitante: false, formData: null })
       setEditingId(null)
       setEditForm(null)
+      setEditBaseline(null)
       toast.success('Solicitante actualizado')
       // Refrescar el quick-pick para que muestre los datos actualizados.
       solicitanteService.list({ limit: 6 }).then(setRecientes).catch(() => {})
@@ -222,6 +248,38 @@ export function Step2Solicitante({
           </button>
         </div>
 
+        {/* Aviso prominente: hay cambios sin guardar. Mientras esté visible, el
+            wizard bloquea "Siguiente" (vía onEditingDirtyChange) — el usuario
+            DEBE guardar o cancelar antes de avanzar. */}
+        {isEditDirty && (
+          <div className="flex flex-col gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <IconAlertTriangle size={22} className="text-amber-600" />
+              </span>
+              <div>
+                <p className="text-base font-bold text-amber-900 sm:text-lg">
+                  Hiciste cambios sin guardar
+                </p>
+                <p className="mt-0.5 text-sm text-amber-800">
+                  Para que se apliquen debes hacer clic en{' '}
+                  <span className="font-semibold">«Guardar cambios»</span>. Si avanzas sin guardar,
+                  se perderán.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              disabled={isSavingEdit}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+            >
+              {isSavingEdit && <IconLoader size={16} className="animate-spin" />}
+              Guardar cambios
+            </button>
+          </div>
+        )}
+
         {editError && <p className="text-sm text-red-600">{editError}</p>}
 
         <SolicitanteForm
@@ -235,7 +293,10 @@ export function Step2Solicitante({
             type="button"
             onClick={handleSaveEdit}
             disabled={isSavingEdit}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+            className={cn(
+              'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50',
+              isEditDirty && 'ring-2 ring-amber-400 ring-offset-2',
+            )}
           >
             {isSavingEdit && <IconLoader size={16} className="animate-spin" />}
             Guardar cambios
