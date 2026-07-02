@@ -19,10 +19,27 @@ import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/c
 
 type TipoGeneracion = 'cofianza' | 'otrosi'
 
-const MODALIDADES: { value: ModalidadFianza; label: string }[] = [
-  { value: 'plena', label: 'Cofianza Plena' },
-  { value: 'compartida', label: 'Cofianza Compartida' },
-  { value: 'plus', label: 'Cofianza Plus' },
+// Descripciones espejo de la tabla `modalidades_fianza` del backend (fuente de
+// verdad para el contrato: comision_texto/prima_texto/cubre_danos). Si esos
+// valores cambian en BD, actualizarlos también aquí.
+const MODALIDADES: {
+  value: ModalidadFianza
+  label: string
+  comision: string
+  prima: string
+  cubreDanos: boolean
+  nota?: string
+}[] = [
+  { value: 'plena', label: 'Cofianza Plena', comision: '5%', prima: '50%', cubreDanos: false },
+  {
+    value: 'compartida',
+    label: 'Cofianza Compartida',
+    comision: '4%',
+    prima: '60%',
+    cubreDanos: false,
+    nota: 'Requiere registrar un co-titular de la fianza.',
+  },
+  { value: 'plus', label: 'Cofianza Plus', comision: '6%', prima: '50%', cubreDanos: true },
 ]
 
 const SERVICIOS: { key: string; label: string }[] = [
@@ -236,6 +253,24 @@ export function GenerarContratoModal({
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
+                {/* Descripción de la modalidad seleccionada. */}
+                {(() => {
+                  const m = MODALIDADES.find((x) => x.value === modalidad)
+                  if (!m) return null
+                  return (
+                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
+                      <p>
+                        <span className="font-medium text-gray-800">Comisión {m.comision}</span> ·{' '}
+                        <span className="font-medium text-gray-800">Prima {m.prima}</span>
+                      </p>
+                      <p className="mt-0.5">
+                        Cubre cánones, servicios públicos, administración PH y cláusula penal
+                        {m.cubreDanos ? ', más daños al inmueble.' : '. No cubre daños al inmueble.'}
+                      </p>
+                      {m.nota && <p className="mt-0.5 text-primary-700">{m.nota}</p>}
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Co-titular — solo en Cofianza Compartida */}
