@@ -18,6 +18,7 @@ import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
 import SlotSelector, {
+  EditarHorariosHint,
   formatSlotHora,
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
@@ -558,6 +559,8 @@ function CrearCitaModal({
   const [notas, setNotas] = useState('')
   const [telefono, setTelefono] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Incrementa al volver de editar horarios en otra pestaña → recarga slots.
+  const [slotRefresh, setSlotRefresh] = useState(0)
 
   // El WhatsApp de confirmación de la cita (rama owner/inmobiliaria) solo sale al
   // solicitante si tiene teléfono. Si no lo tiene, lo capturamos aquí y lo
@@ -655,7 +658,18 @@ function CrearCitaModal({
         )}
 
         {inmuebleId ? (
-          <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
+          <>
+            <SlotSelector
+              inmuebleId={inmuebleId}
+              value={slot}
+              onChange={setSlot}
+              refreshSignal={slotRefresh}
+            />
+            {/* Solo el gestor puede editar su propia disponibilidad. */}
+            {isOwnerOrAgency && (
+              <EditarHorariosHint onRefresh={() => setSlotRefresh((n) => n + 1)} />
+            )}
+          </>
         ) : (
           <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
             No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.
@@ -673,15 +687,26 @@ function CrearCitaModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {isOwnerOrAgency ? 'Nota para el solicitante (opcional)' : 'Notas (opcional)'}
+          </label>
           <textarea
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={500}
-            placeholder="Indicaciones de acceso, preguntas para el propietario, etc."
+            placeholder={
+              isOwnerOrAgency
+                ? 'Indicaciones de acceso, qué traer, punto de encuentro…'
+                : 'Indicaciones de acceso, preguntas para el propietario, etc.'
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
+          {isOwnerOrAgency && (
+            <p className="mt-1 text-xs text-gray-500">
+              Se la enviaremos al solicitante por WhatsApp y correo junto con la confirmación.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
@@ -805,6 +830,8 @@ function ReprogramarCitaModal({
   const [slot, setSlot] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Incrementa al volver de editar horarios en otra pestaña → recarga slots.
+  const [slotRefresh, setSlotRefresh] = useState(0)
 
   const reset = () => {
     setSlot(null)
@@ -874,7 +901,18 @@ function ReprogramarCitaModal({
         <p className="text-sm text-gray-600">{descripcion}</p>
 
         {inmuebleId ? (
-          <SlotSelector inmuebleId={inmuebleId} value={slot} onChange={setSlot} />
+          <>
+            <SlotSelector
+              inmuebleId={inmuebleId}
+              value={slot}
+              onChange={setSlot}
+              refreshSignal={slotRefresh}
+            />
+            {/* El gestor (no solicitante) puede ajustar su disponibilidad. */}
+            {!isSolicitante && (
+              <EditarHorariosHint onRefresh={() => setSlotRefresh((n) => n + 1)} />
+            )}
+          </>
         ) : (
           <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
             No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.

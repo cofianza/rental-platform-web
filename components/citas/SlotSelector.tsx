@@ -16,7 +16,11 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconAlertTriangle,
+  IconSettings,
+  IconExternalLink,
+  IconRefresh,
 } from '@/components/icons'
+import Link from 'next/link'
 import {
   disponibilidadService,
   type IDiaDisponibilidad,
@@ -28,6 +32,9 @@ interface SlotSelectorProps {
   value: string | null
   onChange: (slotIso: string | null) => void
   className?: string
+  /** Cambiar este número fuerza un re-fetch de los slots (p. ej. tras editar
+   *  los horarios en otra pestaña). */
+  refreshSignal?: number
 }
 
 const DIAS_POR_VENTANA = 7
@@ -38,6 +45,7 @@ export default function SlotSelector({
   value,
   onChange,
   className,
+  refreshSignal = 0,
 }: SlotSelectorProps) {
   // offsetDias = primer día visible de la ventana, contado desde HOY (Bogotá).
   // Arranca en 0 (hoy); cuando llega la antelación del inmueble se sube al
@@ -84,7 +92,7 @@ export default function SlotSelector({
     return () => {
       cancelled = true
     }
-  }, [inmuebleId, desde, hasta, reloadTick])
+  }, [inmuebleId, desde, hasta, reloadTick, refreshSignal])
 
   const puedeRetroceder = offsetDias > offsetMinimo
   const puedeAvanzar = offsetDias + DIAS_POR_VENTANA <= MAX_DIAS_ADELANTE
@@ -207,6 +215,40 @@ export default function SlotSelector({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Acceso contextual para el gestor (propietario/inmobiliaria/admin): si no ve
+ * el horario que necesita, edita su configuración de disponibilidad en
+ * /disponibilidad (nueva pestaña) y vuelve a "Actualizar" para recargar los
+ * slots sin cerrar el modal. Renderizar SOLO para gestores.
+ */
+export function EditarHorariosHint({ onRefresh }: { onRefresh: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50/70 px-3 py-2">
+      <span className="text-xs text-gray-500">
+        ¿No ves el horario que necesitas? Ajusta tu disponibilidad de visitas.
+      </span>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700"
+        >
+          <IconRefresh size={13} /> Actualizar
+        </button>
+        <Link
+          href="/disponibilidad"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800"
+        >
+          <IconSettings size={13} /> Configurar horarios
+          <IconExternalLink size={12} />
+        </Link>
+      </div>
     </div>
   )
 }
