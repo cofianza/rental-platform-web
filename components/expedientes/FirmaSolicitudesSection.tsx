@@ -42,6 +42,9 @@ export function FirmaSolicitudesSection({
   const [reenviandoId, setReenviandoId] = useState<string | null>(null)
   const [cancelandoId, setCancelandoId] = useState<string | null>(null)
   const [reenviarTarget, setReenviarTarget] = useState<ISolicitudFirma | null>(null)
+  // Email destino del reenvío — prellenado con el del firmante y corregible
+  // en el modal (antes era solo lectura y un email mal escrito no tenía arreglo).
+  const [reenviarEmail, setReenviarEmail] = useState('')
   const [evidenciaTarget, setEvidenciaTarget] = useState<ISolicitudFirma | null>(null)
 
   const fetchSolicitudes = useCallback(async () => {
@@ -62,12 +65,22 @@ export function FirmaSolicitudesSection({
 
   async function handleReenviarConfirmed() {
     if (!reenviarTarget) return
+    const emailNuevo = reenviarEmail.trim().toLowerCase()
+    if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
+      toast.error('Ingresa un correo válido para reenviar')
+      return
+    }
     const id = reenviarTarget.id
+    // Solo mandamos email_alternativo si difiere del registrado — así el
+    // backend hace un reenvío simple cuando no cambió, y re-emite la
+    // solicitud al nuevo firmante cuando sí.
+    const original = (reenviarTarget.email_firmante ?? '').toLowerCase()
+    const options = emailNuevo !== original ? { email_alternativo: emailNuevo } : undefined
     setReenviarTarget(null)
     setReenviandoId(id)
     try {
-      await firmaService.reenviarSolicitud(id)
-      toast.success('Solicitud reenviada correctamente')
+      await firmaService.reenviarSolicitud(id, options)
+      toast.success(`Solicitud reenviada a ${emailNuevo}`)
       fetchSolicitudes()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al reenviar'
@@ -182,7 +195,10 @@ export function FirmaSolicitudesSection({
                   {isActive && canManage && (
                     <>
                       <button
-                        onClick={() => setReenviarTarget(s)}
+                        onClick={() => {
+                          setReenviarEmail(s.email_firmante ?? '')
+                          setReenviarTarget(s)
+                        }}
                         disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
                         className="px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 disabled:opacity-50"
                         title="Reenviar enlace"
@@ -250,10 +266,21 @@ export function FirmaSolicitudesSection({
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
               <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
-              <p className="text-sm text-gray-600">{reenviarTarget.email_firmante}</p>
-              <p className="text-xs text-gray-500 mt-2">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                  Correo destino (corrígelo si estaba mal escrito)
+                </label>
+                <input
+                  type="email"
+                  value={reenviarEmail}
+                  onChange={(e) => setReenviarEmail(e.target.value)}
+                  placeholder="correo@ejemplo.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
                 Envíos: {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
               </p>
             </div>

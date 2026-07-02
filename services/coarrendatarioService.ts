@@ -72,6 +72,21 @@ export const coarrendatarioService = {
     return res.data
   },
 
+  /**
+   * Reenvía la invitación pendiente, corrigiendo email/teléfono si venían mal.
+   * El backend regenera el token (invalida el enlace anterior) y reenvía el correo.
+   */
+  async reenviar(
+    expedienteId: string,
+    input: { email?: string; telefono?: string } = {},
+  ): Promise<ICoarrendatario> {
+    const res = (await apiClient.post(
+      `/expedientes/${expedienteId}/coarrendatario/reenviar`,
+      input,
+    )) as unknown as { data: ICoarrendatario }
+    return res.data
+  },
+
   /** Estado del coarrendatario actual del expediente (o null si no hay). */
   async getDelExpediente(expedienteId: string): Promise<ICoarrendatario | null> {
     const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario`)) as unknown as {

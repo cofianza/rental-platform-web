@@ -9,11 +9,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
 import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle } from '@/components/icons'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { IAutorizacion } from '@/types/autorizacion'
 
 interface AutorizacionSectionProps {
   expedienteId: string
+  /** Contacto registrado del solicitante — se muestra como destino del enlace
+   *  y es corregible antes de (re)enviar. Opcionales para tolerar contextos
+   *  donde el padre aún no los tiene. */
+  solicitanteEmail?: string | null
+  solicitanteTelefono?: string | null
+  /** Refresca el expediente padre cuando el contacto del solicitante cambió. */
+  onContactoActualizado?: () => void
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -32,7 +40,12 @@ const METODO_LABELS: Record<string, string> = {
   otp: 'Verificación por código OTP',
 }
 
-export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) {
+export function AutorizacionSection({
+  expedienteId,
+  solicitanteEmail,
+  solicitanteTelefono,
+  onContactoActualizado,
+}: AutorizacionSectionProps) {
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -42,6 +55,12 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
   // Detalle de la firma: evidencia legal y texto literal firmado (colapsables).
   const [showEvidencia, setShowEvidencia] = useState(false)
   const [showTexto, setShowTexto] = useState(false)
+  // Corrección del contacto destino antes de (re)enviar el enlace. Antes la
+  // card ni mostraba a dónde se enviaba — con el dato mal escrito, reenviar
+  // era inútil y no había forma de arreglarlo.
+  const [editContacto, setEditContacto] = useState(false)
+  const [emailEdit, setEmailEdit] = useState('')
+  const [telEdit, setTelEdit] = useState('')
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -59,9 +78,26 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
   }, [fetchStatus])
 
   const handleEnviarEnlace = async () => {
+    // Overrides de contacto (solo si el gestor está corrigiendo y difieren).
+    let contacto: { email?: string; telefono?: string } | undefined
+    if (editContacto) {
+      const emailNuevo = emailEdit.trim().toLowerCase()
+      if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
+        toast.error('Ingresa un correo válido para enviar el enlace')
+        return
+      }
+      const telDigits = telEdit.replace(/\D/g, '').replace(/^57/, '')
+      contacto = {
+        ...(emailNuevo !== (solicitanteEmail ?? '').toLowerCase() ? { email: emailNuevo } : {}),
+        ...(telDigits.length >= 7 && telEdit !== (solicitanteTelefono ?? '')
+          ? { telefono: telEdit }
+          : {}),
+      }
+      if (!contacto.email && !contacto.telefono) contacto = undefined
+    }
     setSending(true)
     try {
-      const result = await autorizacionService.enviarEnlace(expedienteId)
+      const result = await autorizacionService.enviarEnlace(expedienteId, contacto)
       toast.success('Enlace de autorizacion enviado al arrendatario')
       setAutorizacion({
         id: result.id,
@@ -75,6 +111,10 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
         token_expiracion: result.token_expiracion,
         created_at: new Date().toISOString(),
       })
+      if (contacto) {
+        setEditContacto(false)
+        onContactoActualizado?.()
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar enlace'
       toast.error(msg)
@@ -82,6 +122,71 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
       setSending(false)
     }
   }
+
+  // Bloque compartido "a dónde se envía" + corrección — visible en todos los
+  // estados que ofrecen (re)enviar el enlace.
+  const contactoDestino = (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+      {!editContacto ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-gray-600">
+            Se enviará a{' '}
+            <span className="font-medium text-gray-800">{solicitanteEmail || 'correo no registrado'}</span>
+            {solicitanteTelefono && (
+              <>
+                {' '}y WhatsApp <span className="font-medium text-gray-800">{solicitanteTelefono}</span>
+              </>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setEmailEdit(solicitanteEmail ?? '')
+              setTelEdit(solicitanteTelefono ?? '')
+              setEditContacto(true)
+            }}
+            className="text-xs font-semibold text-primary-700 hover:text-primary-800"
+          >
+            Corregir contacto
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
+              <input
+                type="email"
+                value={emailEdit}
+                onChange={(e) => setEmailEdit(e.target.value)}
+                disabled={sending}
+                placeholder="correo@ejemplo.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              />
+            </div>
+            <PhoneInput
+              label="WhatsApp (opcional)"
+              value={telEdit}
+              onChange={setTelEdit}
+              placeholder="300 123 4567"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] text-gray-500">
+              Al enviar, el contacto corregido se guarda también en los datos del solicitante.
+            </p>
+            <button
+              type="button"
+              onClick={() => setEditContacto(false)}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700"
+            >
+              Cancelar corrección
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   const handleRevocar = async () => {
     if (revocarMotivo.length < 10) {
@@ -132,6 +237,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
           <p className="text-sm text-gray-500">
             El arrendatario debe autorizar la consulta en centrales de riesgo antes de crear un estudio.
           </p>
+          {contactoDestino}
           <button
             onClick={handleEnviarEnlace}
             disabled={sending}
@@ -162,6 +268,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
               </p>
             </div>
           </div>
+          {contactoDestino}
           <button
             onClick={handleEnviarEnlace}
             disabled={sending}
@@ -335,6 +442,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
               </p>
             </div>
           </div>
+          {contactoDestino}
           <button
             onClick={handleEnviarEnlace}
             disabled={sending}
@@ -362,6 +470,7 @@ export function AutorizacionSection({ expedienteId }: AutorizacionSectionProps) 
               </p>
             </div>
           </div>
+          {contactoDestino}
           <button
             onClick={handleEnviarEnlace}
             disabled={sending}

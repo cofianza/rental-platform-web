@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
+import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 
 interface CoarrendatarioCardProps {
   expedienteId: string
@@ -94,6 +95,18 @@ export function CoarrendatarioCard({
       </div>
 
       <EstadoBadge estado={coa.estado} />
+
+      {/* Invitación pendiente: el solicitante puede corregir el contacto y
+          reenviar — un email mal escrito no debe dejarlo esperando para
+          siempre. El key remonta el form cuando el contacto guardado cambia. */}
+      {coa.estado === 'pendiente_aceptacion' && (
+        <CoarrendatarioReenviarInvitacion
+          key={`${coa.email}|${coa.telefono ?? ''}`}
+          expedienteId={expedienteId}
+          coa={coa}
+          onReenviado={fetchCoa}
+        />
+      )}
     </div>
   )
 }

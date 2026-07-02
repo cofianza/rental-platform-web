@@ -13,7 +13,9 @@ import type { ICreateEstudioInput, TipoEstudio, ProveedorEstudio, PagoPor } from
 interface SolicitarEstudioModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirmar: (data: ICreateEstudioInput) => Promise<void>
+  /** Devuelve true si el estudio se creó — solo entonces el modal se cierra
+   *  y resetea. En fallo permanece abierto con lo escrito para corregir. */
+  onConfirmar: (data: ICreateEstudioInput) => Promise<boolean>
   isLoading?: boolean
 }
 
@@ -50,7 +52,9 @@ export function SolicitarEstudioModal({
   const handleClose = () => {
     if (isLoading) return
     setTipo('individual')
-    setProveedor('transunion')
+    // Mismo default que el estado inicial ('manual') — antes reseteaba a
+    // 'transunion' y la 2ª apertura arrancaba distinta a la 1ª.
+    setProveedor('manual')
     setDuracion(12)
     setPagoPor('inmobiliaria')
     setObservaciones('')
@@ -64,14 +68,16 @@ export function SolicitarEstudioModal({
       return
     }
     setError(null)
-    await onConfirmar({
+    const ok = await onConfirmar({
       tipo,
       proveedor,
       duracion_contrato_meses: duracion,
       pago_por: pagoPor,
       observaciones: observaciones.trim() || undefined,
     })
-    handleClose()
+    // Solo cerrar (y resetear los campos) si el POST fue exitoso — antes un
+    // fallo cerraba el modal igual y se perdía todo lo escrito.
+    if (ok) handleClose()
   }
 
   return (

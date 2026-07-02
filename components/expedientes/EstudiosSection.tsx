@@ -9,12 +9,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { RegistrarResultadoModal } from './RegistrarResultadoModal'
+import { ReintentarEstudioForm } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 
 // ============================================
@@ -104,16 +106,21 @@ interface EstudiosSectionProps {
   expedienteId: string
   /** Solicitante (persona evaluada) — viene del expediente padre y se muestra
    *  en cada card del listado y en el modal de detalle. Opcional para tolerar
-   *  contextos donde aun no se cargo. */
+   *  contextos donde aun no se cargo. El email prellena el modal de "enviar
+   *  enlace" (corregible ahí mismo si estaba mal escrito). */
   solicitante?: {
     nombre: string
     apellido: string
     tipo_documento?: string | null
     numero_documento?: string | null
+    email?: string | null
   } | null
+  /** Refresca el expediente padre cuando el email del solicitante se corrigió
+   *  desde el modal de enviar enlace (evita que el prop quede desactualizado). */
+  onContactoActualizado?: () => void
 }
 
-export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionProps) {
+export function EstudiosSection({ expedienteId, solicitante, onContactoActualizado }: EstudiosSectionProps) {
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Propietario/inmobiliaria pueden ver el detalle completo del estudio
@@ -132,6 +139,10 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
   const [showDetail, setShowDetail] = useState<IEstudio | null>(null)
   const [cancelTarget, setCancelTarget] = useState<IEstudio | null>(null)
   const [resultadoTarget, setResultadoTarget] = useState<IEstudio | null>(null)
+  // Enviar enlace: modal con el email visible y corregible ANTES de enviar
+  // (antes se enviaba a ciegas y el destino solo se descubría en el toast).
+  const [sendLinkTarget, setSendLinkTarget] = useState<IEstudio | null>(null)
+  const [sendLinkEmail, setSendLinkEmail] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
   // ============================================
@@ -160,15 +171,20 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
   // Actions
   // ============================================
 
-  const handleCreate = async (data: ICreateEstudioInput) => {
+  // Devuelve true/false para que el modal solo se cierre (y resetee sus
+  // campos) cuando el POST fue exitoso — si falla, el usuario conserva lo
+  // que escribió y puede corregir y reintentar.
+  const handleCreate = async (data: ICreateEstudioInput): Promise<boolean> => {
     setActionLoading(true)
     try {
       await estudioService.createEstudio(expedienteId, data)
       toast.success('Estudio solicitado exitosamente')
       await fetchEstudios()
+      return true
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al solicitar estudio'
       toast.error(msg)
+      return false
     } finally {
       setActionLoading(false)
     }
@@ -190,12 +206,29 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
     }
   }
 
-  const handleSendLink = async (estudio: IEstudio) => {
+  const handleSendLink = async () => {
+    if (!sendLinkTarget) return
+    const email = sendLinkEmail.trim().toLowerCase()
+    if (!email || !/.+@.+\..+/.test(email)) {
+      toast.error('Ingresa un correo válido para enviar el enlace')
+      return
+    }
     setActionLoading(true)
     try {
-      const res = await estudioService.enviarEnlace(estudio.id)
+      // Solo mandamos el override si difiere del registrado (si cambió, el
+      // backend también actualiza el email del solicitante titular).
+      const registrado = (solicitante?.email ?? '').toLowerCase()
+      const conOverride = email !== registrado
+      const res = await estudioService.enviarEnlace(
+        sendLinkTarget.id,
+        conOverride ? { email } : undefined,
+      )
       toast.success(`Enlace enviado a ${res.email_destino}`)
+      setSendLinkTarget(null)
       await fetchEstudios()
+      // Si se corrigió el email, refrescar el expediente padre para que el
+      // prop `solicitante.email` no quede desactualizado.
+      if (conOverride) onContactoActualizado?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar enlace'
       toast.error(msg)
@@ -390,7 +423,10 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
                         </button>
                       )}
                       <button
-                        onClick={() => handleSendLink(estudio)}
+                        onClick={() => {
+                          setSendLinkEmail(solicitante?.email ?? '')
+                          setSendLinkTarget(estudio)
+                        }}
                         disabled={actionLoading}
                         title="Enviar enlace al solicitante"
                         className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
@@ -408,6 +444,28 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
                     </div>
                   )}
                 </div>
+
+                {/* Estudio fallido: reintento con el documento corregible aquí
+                    mismo (antes este tab no ofrecía NINGUNA salida — el form
+                    solo existía en la card del resumen). Gestores + dueños:
+                    el backend autoriza a ambos en /ejecutar. stopPropagation
+                    para no abrir el modal de detalle al interactuar. */}
+                {(canManage || isStakeholder) && estudio.estado === 'fallido' && (
+                  <div
+                    className="mt-3"
+                    onClick={(e) => e.stopPropagation()}
+                    // Sin esto, Enter/Espacio dentro de los inputs burbujea al
+                    // onKeyDown de la card y abre el modal de detalle.
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <ReintentarEstudioForm
+                      estudioId={estudio.id}
+                      persona={persona}
+                      esTitular={persona?.etiqueta !== 'Co-arrendatario'}
+                      onRetried={fetchEstudios}
+                    />
+                  </div>
+                )}
               </div>
             )
           })}
@@ -451,6 +509,57 @@ export function EstudiosSection({ expedienteId, solicitante }: EstudiosSectionPr
         variant="danger"
         isLoading={actionLoading}
       />
+
+      {/* Enviar enlace self-service: el email se ve y se corrige aquí antes
+          de enviar (si cambia, el backend actualiza también el solicitante). */}
+      <Modal
+        isOpen={!!sendLinkTarget}
+        onClose={() => setSendLinkTarget(null)}
+        title="Enviar enlace al solicitante"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            El solicitante recibirá un enlace para completar su formulario del estudio. Verifica o
+            corrige el correo antes de enviar.
+          </p>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Correo destino</label>
+            <input
+              type="email"
+              value={sendLinkEmail}
+              onChange={(e) => setSendLinkEmail(e.target.value)}
+              disabled={actionLoading}
+              placeholder="correo@ejemplo.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {sendLinkTarget?.tipo === 'con_coarrendatario'
+                ? 'El enlace lo recibe el titular del expediente. Una corrección aquí solo cambia el destino de este envío.'
+                : 'Si lo corriges, también se actualiza en los datos del solicitante.'}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setSendLinkTarget(null)}
+              disabled={actionLoading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSendLink}
+              disabled={actionLoading || !sendLinkEmail.trim()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              {actionLoading && <IconLoader size={14} className="animate-spin" />}
+              Enviar enlace
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

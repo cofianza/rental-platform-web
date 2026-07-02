@@ -131,12 +131,27 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
     }
   }
 
+  // Email corregido para el reenvío del link. null = no está editando (el
+  // reenvío va al email guardado). Un email mal escrito no debe ser callejón
+  // sin salida: /enviar-link responde 409 mientras haya un pago pendiente.
+  const [reenviarEmail, setReenviarEmail] = useState<string | null>(null)
+
   const handleReenviar = async () => {
+    const emailNuevo = reenviarEmail?.trim().toLowerCase()
+    if (reenviarEmail !== null && (!emailNuevo || !/.+@.+\..+/.test(emailNuevo))) {
+      setError('Ingresa un correo válido para reenviar el link')
+      return
+    }
     setIsSubmitting(true)
     setError(null)
     try {
-      await pagoEstudioService.reenviar(expedienteId)
+      const registrado = (estado?.pago?.email_pagador ?? '').toLowerCase()
+      await pagoEstudioService.reenviar(
+        expedienteId,
+        emailNuevo && emailNuevo !== registrado ? { email_pagador: emailNuevo } : undefined,
+      )
       setError(null)
+      setReenviarEmail(null)
       await fetchEstado()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al reenviar link')
@@ -356,14 +371,50 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
               <p className="text-xs text-amber-600">{estado.monto_formateado} COP — Link enviado a {estado.pago?.email_pagador}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+
+          {/* Corregir el email destino: el mismo link se reenvía al corregido
+              (no se puede re-crear el link mientras el pago siga pendiente). */}
+          {reenviarEmail !== null && (
+            <div className="mb-3">
+              <label className="block text-[11px] font-medium text-amber-800 mb-1">
+                Correo destino corregido
+              </label>
+              <input
+                type="email"
+                value={reenviarEmail}
+                onChange={(e) => setReenviarEmail(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="correo@ejemplo.com"
+                className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
+              />
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleReenviar}
               disabled={isSubmitting}
               className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
             >
-              Reenviar correo
+              {reenviarEmail !== null ? 'Reenviar al correo corregido' : 'Reenviar correo'}
             </button>
+            {reenviarEmail === null ? (
+              <button
+                onClick={() => setReenviarEmail(estado.pago?.email_pagador ?? '')}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
+              >
+                Corregir correo
+              </button>
+            ) : (
+              <button
+                onClick={() => setReenviarEmail(null)}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                Cancelar corrección
+              </button>
+            )}
             <button
               onClick={onCancelar}
               disabled={isSubmitting}

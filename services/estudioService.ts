@@ -117,11 +117,14 @@ export const estudioService = {
   },
 
   /**
-   * Envia enlace self-service al solicitante
+   * Envia enlace self-service al solicitante. Acepta un email de corrección:
+   * si difiere del registrado, el backend lo persiste en el solicitante y
+   * envía el enlace al corregido.
    */
-  async enviarEnlace(estudioId: string): Promise<ISendLinkResponse> {
+  async enviarEnlace(estudioId: string, body?: { email?: string }): Promise<ISendLinkResponse> {
     const res = await apiClient.post<ISendLinkResponse>(
       `/estudios/${estudioId}/enviar-enlace`,
+      body || {},
     )
     return res.data
   },

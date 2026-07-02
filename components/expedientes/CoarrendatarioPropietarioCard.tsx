@@ -18,6 +18,7 @@ import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrend
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
+import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import type { IEstudio } from '@/types/estudio'
 
 interface CoarrendatarioPropietarioCardProps {
@@ -152,6 +153,18 @@ export function CoarrendatarioPropietarioCard({
 
         {/* Estado de la invitación + estudio */}
         <EstadoBlock coa={coa} />
+
+        {/* Invitación pendiente: permitir corregir el contacto y reenviar —
+            un email mal escrito no debe dejar el expediente sin salida. El key
+            remonta el form cuando el contacto guardado cambia tras reenviar. */}
+        {coa.estado === 'pendiente_aceptacion' && (
+          <CoarrendatarioReenviarInvitacion
+            key={`${coa.email}|${coa.telefono ?? ''}`}
+            expedienteId={expedienteId}
+            coa={coa}
+            onReenviado={fetchCoa}
+          />
+        )}
 
         {/* Resultado del estudio: lo mostramos en cuanto el estudio embebido
             terminó ('completado'), sin depender de que el campo coa.estado haya

@@ -714,8 +714,19 @@ export default function ExpedienteDetallePage() {
               )
             )}
             {/* La autorización Habeas Data solo aparece una vez pagado/resuelto el estudio. */}
-            {estudioPagado && <AutorizacionSection expedienteId={id} />}
-            <EstudiosSection expedienteId={id} solicitante={expediente.solicitante} />
+            {estudioPagado && (
+              <AutorizacionSection
+                expedienteId={id}
+                solicitanteEmail={expediente.solicitante?.email}
+                solicitanteTelefono={expediente.solicitante?.telefono}
+                onContactoActualizado={fetchExpediente}
+              />
+            )}
+            <EstudiosSection
+              expedienteId={id}
+              solicitante={expediente.solicitante}
+              onContactoActualizado={fetchExpediente}
+            />
           </div>
         )}
 

@@ -13,10 +13,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import { IconCheck, IconClock, IconRefresh, IconLoader } from '@/components/icons'
+import { IconCheck, IconClock } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { formatDate } from '@/lib/constants'
+import { ReintentarEstudioForm } from './ReintentarEstudioForm'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 
 interface EstudioEstadoCardProps {
@@ -226,14 +226,6 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, userRol, solici
   )
 }
 
-// TransUnion Colombia solo consulta documentos colombianos. Restringimos el
-// dropdown del reintento a los soportados (igual que EstudioSolicitanteCard).
-type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
-function normalizeTipoDoc(t?: string | null): TipoDoc {
-  const v = (t || '').toLowerCase()
-  return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ti' ? v : 'cc'
-}
-
 // ── Panel individual (titular o coarrendatario) ────────────────────
 
 interface EstudioPanelProps {
@@ -251,43 +243,12 @@ interface EstudioPanelProps {
 }
 
 function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRetried }: EstudioPanelProps) {
-  const [reintentando, setReintentando] = useState(false)
-
   const esGestor =
     userRol === 'inmobiliaria' ||
     userRol === 'propietario' ||
     userRol === 'administrador' ||
     userRol === 'operador_analista'
   const puedeReintentar = esGestor && estudio.estado === 'fallido'
-
-  // Documento a consultar en el reintento. Se prefilla con el del solicitante
-  // (o coarrendatario) y el gestor puede corregirlo aquí mismo — la causa más
-  // común del 'fallido' es una cédula mal escrita o un tipo no soportado. El
-  // backend persiste el cambio y sincroniza `solicitantes` (salvo coarrendatario).
-  // Init lazy: no se pisa con los re-render del polling del padre.
-  const [tipoDoc, setTipoDoc] = useState<TipoDoc>(() => normalizeTipoDoc(persona?.tipo_documento))
-  const [numeroDoc, setNumeroDoc] = useState(() => persona?.numero_documento?.trim() ?? '')
-
-  const handleReintentar = async () => {
-    const numero = numeroDoc.trim()
-    if (!numero) {
-      toast.error('Ingresa el número de documento para reintentar')
-      return
-    }
-    setReintentando(true)
-    try {
-      await estudioService.ejecutarEstudio(estudio.id, {
-        tipo_documento: tipoDoc,
-        numero_documento: numero,
-      })
-      toast.success('Reintentando la consulta a TransUnion…')
-      onRetried?.()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo reintentar la consulta.')
-    } finally {
-      setReintentando(false)
-    }
-  }
 
   const tone = getTone(estudio)
   const styles = TONE_STYLES[tone]
@@ -383,59 +344,12 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
       {(puedeReintentar || onVerEstudios) && (
         <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-3">
           {puedeReintentar && (
-            <div className="rounded-lg border border-gray-200 bg-white p-3">
-              <p className="text-xs font-semibold text-gray-700 mb-2">
-                Verifica o corrige el documento antes de reintentar
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="sm:w-44">
-                  <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                    Tipo de documento
-                  </label>
-                  <select
-                    value={tipoDoc}
-                    onChange={(e) => setTipoDoc(e.target.value as TipoDoc)}
-                    disabled={reintentando}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-                  >
-                    <option value="cc">Cédula de ciudadanía (CC)</option>
-                    <option value="ce">Cédula de extranjería (CE)</option>
-                    <option value="ti">Tarjeta de identidad (TI)</option>
-                    <option value="nit">NIT</option>
-                  </select>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                    Número de documento
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={numeroDoc}
-                    onChange={(e) => setNumeroDoc(e.target.value.replace(/[^\w]/g, ''))}
-                    placeholder="Número de cédula"
-                    disabled={reintentando}
-                    maxLength={20}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleReintentar}
-                  disabled={reintentando || numeroDoc.trim().length < 5}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {reintentando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
-                  {reintentando ? 'Reintentando…' : 'Reintentar consulta'}
-                </button>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-2">
-                Solo se consultan documentos colombianos (CC, CE, TI, NIT).
-                {etiqueta === 'Titular'
-                  ? ' Al reintentar, el documento se actualiza también en los datos del solicitante.'
-                  : ''}
-              </p>
-            </div>
+            <ReintentarEstudioForm
+              estudioId={estudio.id}
+              persona={persona}
+              esTitular={etiqueta === 'Titular'}
+              onRetried={onRetried}
+            />
           )}
           {onVerEstudios && (
             <button

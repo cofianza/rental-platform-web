@@ -47,8 +47,16 @@ class PagoEstudioService {
     return response.data
   }
 
-  async reenviar(expedienteId: string): Promise<{ message: string }> {
-    const response = await apiClient.post<{ message: string }>(`/expedientes/${expedienteId}/pago-estudio/reenviar`)
+  /** Reenvía el link pendiente; acepta corrección del email/nombre del pagador
+   *  (se persiste en el pago y el mismo link se reenvía al corregido). */
+  async reenviar(
+    expedienteId: string,
+    body?: { email_pagador?: string; nombre_pagador?: string },
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      `/expedientes/${expedienteId}/pago-estudio/reenviar`,
+      body || {},
+    )
     return response.data
   }
 
