@@ -464,7 +464,18 @@ export default function ExpedienteDetallePage() {
                 de arriba le explica por qué y cómo desbloquearse). */}
             {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
               <>
-                {/* Estado del estudio AL TOPE: es el centro del expediente.
+                {/* Acción requerida: generar contrato — AL TOPE cuando aplica
+                    (expediente aprobado sin contrato). Se auto-oculta en el
+                    resto de estados, así que solo aparece encima del estudio
+                    justo cuando es el siguiente paso. */}
+                <AccionContratoPendienteCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
+                  onGenerated={fetchExpediente}
+                />
+
+                {/* Estado del estudio: es el centro del expediente.
                     Se auto-oculta si aún no hay estudio (entonces manda la
                     acción de habilitar). Si la consulta a TransUnion falló,
                     aquí mismo está el botón para reintentarla. */}
@@ -507,12 +518,6 @@ export default function ExpedienteDetallePage() {
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onAprobado={fetchExpediente}
-                />
-                <AccionContratoPendienteCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  onGenerated={fetchExpediente}
                 />
 
                 {/* ── Estado / informativo (debajo de las acciones) ── */}
