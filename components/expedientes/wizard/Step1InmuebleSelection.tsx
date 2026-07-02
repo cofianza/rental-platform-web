@@ -197,7 +197,8 @@ export function Step1InmuebleSelection({
     <div className="space-y-6">
       {/* Header del paso */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+          <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP1_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -213,7 +214,7 @@ export function Step1InmuebleSelection({
               comun (pocos inmuebles propios) elijan en un solo click. */}
           {usaDropdownPropios && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
                 Mis inmuebles
               </label>
               {isLoadingMios ? (
@@ -255,7 +256,7 @@ export function Step1InmuebleSelection({
                           </div>
                           <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
                           {seleccionable ? (
-                            <p className="text-sm font-semibold text-primary-600">{formatCurrency(i.valor_arriendo)}/mes</p>
+                            <p className="text-sm font-bold text-primary-600">{formatCurrency(i.valor_arriendo)}/mes</p>
                           ) : (
                             <p className="text-xs text-gray-500">{motivoBloqueo}</p>
                           )}
@@ -469,28 +470,28 @@ export function Step1InmuebleSelection({
               {/* Detalles */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
                     {data.inmueble.habitaciones}
                   </p>
-                  <p className="text-xs text-gray-500">Habitaciones</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Habitaciones</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
                     {data.inmueble.banos}
                   </p>
-                  <p className="text-xs text-gray-500">Banos</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Baños</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
                     {data.inmueble.estrato}
                   </p>
-                  <p className="text-xs text-gray-500">Estrato</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Estrato</p>
                 </div>
               </div>
 
               {/* Precio */}
               <div className="pt-3 border-t border-gray-100">
-                <p className="text-2xl font-bold text-primary-600">
+                <p className="text-2xl font-black tracking-tight text-primary-600">
                   {formatCurrency(data.inmueble.valor_arriendo)}
                   <span className="text-sm font-normal text-gray-500">/mes</span>
                 </p>

@@ -112,7 +112,8 @@ export function Step3Configuration({
     <div className="space-y-6">
       {/* Header del paso */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+          <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP3_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">

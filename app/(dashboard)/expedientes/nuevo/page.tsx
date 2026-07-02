@@ -182,6 +182,7 @@ function NuevoExpedienteContent() {
         <div className="mb-6 sm:mb-8">
           <WizardStepIndicator
             currentStep={currentStep}
+            onStepClick={goToStep}
           />
         </div>
 

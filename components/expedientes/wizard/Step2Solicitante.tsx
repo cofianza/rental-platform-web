@@ -240,7 +240,10 @@ export function Step2Solicitante({
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Editar solicitante</h2>
+            <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+              <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
+              Editar solicitante
+            </h2>
             <p className="mt-1 text-sm text-gray-500">Actualiza los datos y guarda los cambios.</p>
           </div>
           <button type="button" onClick={handleCancelEdit} className="text-sm text-gray-500 hover:text-gray-700">
@@ -319,7 +322,8 @@ export function Step2Solicitante({
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
             {WIZARD_MESSAGES.STEP2_TITLE}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
@@ -342,7 +346,8 @@ export function Step2Solicitante({
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+              <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
               {WIZARD_MESSAGES.CREATE_NEW_SOLICITANTE}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -371,7 +376,8 @@ export function Step2Solicitante({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+          <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP2_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -457,7 +463,7 @@ export function Step2Solicitante({
       {/* Quick-pick: solicitantes ya registrados por este usuario */}
       {recientes.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-500">
             O elige uno que ya registraste
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -597,7 +603,7 @@ function SolicitanteForm({
     <div className="space-y-8">
       {/* Seccion: Datos Basicos */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wide text-gray-500">
           {WIZARD_MESSAGES.SECTION_DATOS_BASICOS}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -703,7 +709,7 @@ function SolicitanteForm({
 
       {/* Seccion: Contacto */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wide text-gray-500">
           {WIZARD_MESSAGES.SECTION_CONTACTO}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -756,7 +762,7 @@ function SolicitanteForm({
         <>
       {/* Seccion: Ubicacion */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wide text-gray-500">
           {WIZARD_MESSAGES.SECTION_UBICACION}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -811,7 +817,7 @@ function SolicitanteForm({
 
       {/* Seccion: Informacion Laboral */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wide text-gray-500">
           {WIZARD_MESSAGES.SECTION_LABORAL}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -881,7 +887,7 @@ function SolicitanteForm({
 
       {/* Seccion: Informacion Adicional */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+        <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wide text-gray-500">
           {WIZARD_MESSAGES.SECTION_ADICIONAL}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

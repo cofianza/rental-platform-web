@@ -51,7 +51,8 @@ export function Step4Confirmation({
     <div className="space-y-6">
       {/* Header del paso */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
+          <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP4_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -75,7 +76,7 @@ export function Step4Confirmation({
       {/* Resumen del Inmueble */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconHome size={16} className="text-gray-400" />
             Inmueble Seleccionado
           </h3>
@@ -124,7 +125,7 @@ export function Step4Confirmation({
                   <IconMapPin size={12} />
                   {inmueble.ciudad}, {inmueble.departamento}
                 </p>
-                <p className="text-lg font-bold text-primary-600 mt-2">
+                <p className="mt-2 text-lg font-black tracking-tight text-primary-600">
                   {formatCurrency(inmueble.valor_arriendo)}
                   <span className="text-xs font-normal text-gray-500">/mes</span>
                 </p>
@@ -137,7 +138,7 @@ export function Step4Confirmation({
       {/* Resumen del Solicitante */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconUser size={16} className="text-gray-400" />
             Solicitante
             {isNewSolicitante && (
@@ -204,7 +205,7 @@ export function Step4Confirmation({
       {/* Resumen de Configuracion */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconFileText size={16} className="text-gray-400" />
             Configuracion
           </h3>
@@ -220,7 +221,7 @@ export function Step4Confirmation({
         <div className="p-4 space-y-3">
           {/* Notas */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1">Notas internas</p>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Notas internas</p>
             {notas ? (
               <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
                 {notas}
@@ -232,7 +233,7 @@ export function Step4Confirmation({
 
           {/* Responsable */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1">Responsable asignado</p>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Responsable asignado</p>
             {miembro_responsable_id ? (
               <p className="text-sm text-gray-700">
                 <span className="inline-flex items-center gap-1">
