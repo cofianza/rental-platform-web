@@ -47,6 +47,8 @@ import {
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
+import { solicitanteService } from '@/services/solicitanteService'
+import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type {
@@ -106,6 +108,29 @@ export default function ExpedienteDetallePage() {
   const [activeTab, setActiveTab] = useState('resumen')
   // El estudio quedó pagado/resuelto → recién ahí se muestra la autorización Habeas Data.
   const [estudioPagado, setEstudioPagado] = useState(false)
+
+  // 3.1: nº total de expedientes de esta persona — permite al gestor "evaluar
+  // cada caso" cuando la ficha se reutilizó (el toast del wizard es efímero).
+  // Solo roles con solicitantes:read en el RBAC de la API (propietario NO lo
+  // tiene — incluirlo generaría un 403 en cada carga del detalle).
+  const [solicitanteExpCount, setSolicitanteExpCount] = useState<number | null>(null)
+  const solicitanteId = expediente?.solicitante?.id
+  const esRolGestor =
+    user?.rol === 'administrador' ||
+    user?.rol === 'operador_analista' ||
+    user?.rol === 'inmobiliaria'
+  useEffect(() => {
+    if (!solicitanteId || !esRolGestor) {
+      setSolicitanteExpCount(null)
+      return
+    }
+    let cancel = false
+    solicitanteService
+      .getSolicitanteById(solicitanteId)
+      .then((s) => { if (!cancel) setSolicitanteExpCount(s.expedientes_count ?? null) })
+      .catch(() => { if (!cancel) setSolicitanteExpCount(null) })
+    return () => { cancel = true }
+  }, [solicitanteId, esRolGestor])
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -350,6 +375,7 @@ export default function ExpedienteDetallePage() {
           expedienteId={id}
           estadoActual={expediente.estado}
           estadoPreCancelacion={expediente.estado_pre_cancelacion}
+          citaOmitida={expediente.cita_omitida}
         />
       </div>
 
@@ -567,9 +593,15 @@ export default function ExpedienteDetallePage() {
                       label="Ciudad"
                       value={`${expediente.inmueble.ciudad}, ${expediente.inmueble.departamento}`}
                     />
-                    <InfoRow label="Tipo" value={expediente.inmueble.tipo} />
+                    <InfoRow
+                      label="Tipo"
+                      value={TIPO_LABELS[expediente.inmueble.tipo as keyof typeof TIPO_LABELS] || expediente.inmueble.tipo}
+                    />
                     {expediente.inmueble.uso && (
-                      <InfoRow label="Uso" value={expediente.inmueble.uso} />
+                      <InfoRow
+                        label="Uso"
+                        value={{ vivienda: 'Vivienda', mixto: 'Mixto', comercial: 'Comercio', local_comercial: 'Comercio' }[expediente.inmueble.uso] || expediente.inmueble.uso}
+                      />
                     )}
                     {expediente.inmueble.estrato && (
                       <InfoRow label="Estrato" value={expediente.inmueble.estrato} />
@@ -618,6 +650,16 @@ export default function ExpedienteDetallePage() {
                       label="Documento"
                       value={`${expediente.solicitante.tipo_documento} ${expediente.solicitante.numero_documento}`}
                     />
+                    {/* 3.1: si la persona tiene más de un expediente, avisarlo
+                        de forma persistente (el toast de reutilización es
+                        efímero). Busca por su documento en la lista. */}
+                    {solicitanteExpCount !== null && solicitanteExpCount > 1 && (
+                      <InfoRow
+                        label="Expedientes"
+                        value={`${solicitanteExpCount} de esta persona`}
+                        highlight
+                      />
+                    )}
                     <InfoRow label="Email" value={expediente.solicitante.email} />
                     {expediente.solicitante.telefono && (
                       <InfoRow label="Teléfono" value={expediente.solicitante.telefono} />

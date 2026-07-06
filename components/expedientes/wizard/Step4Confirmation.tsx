@@ -23,6 +23,7 @@ import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
+import { TIPO_LABELS } from '@/components/inmuebles/constants'
 
 interface Step4ConfirmationProps {
   data: WizardData
@@ -114,8 +115,8 @@ export function Step4Confirmation({
                   <span className="text-sm font-medium text-gray-500">
                     {inmueble.codigo}
                   </span>
-                  <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full capitalize">
-                    {inmueble.tipo}
+                  <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                    {TIPO_LABELS[inmueble.tipo as keyof typeof TIPO_LABELS] || inmueble.tipo}
                   </span>
                 </div>
                 <p className="text-sm font-medium text-gray-900 mt-1">

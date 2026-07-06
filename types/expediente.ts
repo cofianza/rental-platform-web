@@ -327,7 +327,7 @@ export interface ICrearComentario {
 export interface ITimelineEvento {
   id: string
   expediente_id: string
-  tipo: 'creacion' | 'transicion' | 'documento' | 'comentario' | 'asignacion' | 'estudio' | 'contrato' | 'firma' | 'pago'
+  tipo: 'creacion' | 'transicion' | 'documento' | 'comentario' | 'asignacion' | 'estudio' | 'contrato' | 'firma' | 'pago' | 'cita'
   descripcion: string
   detalle: Record<string, unknown> | null
   usuario_id: string

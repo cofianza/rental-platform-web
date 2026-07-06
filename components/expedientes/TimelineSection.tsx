@@ -88,6 +88,8 @@ const EVENTO_CONFIG: Record<
   contrato: { icon: IconFileText, color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
   firma: { icon: IconPencil, color: 'text-green-600', bgColor: 'bg-green-100' },
   pago: { icon: IconDollarSign, color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
+  // Eventos de cita (agendada/realizada/omitida — 3.2).
+  cita: { icon: IconClock, color: 'text-cyan-600', bgColor: 'bg-cyan-100' },
 }
 
 const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
@@ -95,6 +97,7 @@ const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
   { value: 'transicion', label: 'Transiciones' },
   { value: 'comentario', label: 'Comentarios' },
   { value: 'asignacion', label: 'Asignaciones' },
+  { value: 'cita', label: 'Citas' },
   { value: 'creacion', label: 'Creación' },
 ]
 

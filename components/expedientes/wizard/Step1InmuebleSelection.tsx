@@ -20,6 +20,7 @@ import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
+import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
@@ -449,8 +450,8 @@ export function Step1InmuebleSelection({
                     {estadoBadge(data.inmueble.estado).label}
                   </span>
                 </span>
-                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full capitalize shrink-0">
-                  {data.inmueble.tipo}
+                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full shrink-0">
+                  {TIPO_LABELS[data.inmueble.tipo as keyof typeof TIPO_LABELS] || data.inmueble.tipo}
                 </span>
               </div>
 

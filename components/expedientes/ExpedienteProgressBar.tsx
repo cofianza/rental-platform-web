@@ -25,6 +25,9 @@ export interface ExpedienteProgressBarProps {
    *  (no completados). Sin esto, un expediente cancelado se ve identico a uno
    *  cerrado naturalmente — todos los pasos en verde. */
   estadoPreCancelacion?: EstadoExpediente | null
+  /** 3.2: la cita se omitió (visita coordinada por fuera) — el paso "Cita
+   *  previa" cuenta como resuelto aunque no exista una cita 'realizada'. */
+  citaOmitida?: boolean
   className?: string
 }
 
@@ -32,6 +35,7 @@ export function ExpedienteProgressBar({
   expedienteId,
   estadoActual,
   estadoPreCancelacion,
+  citaOmitida,
   className,
 }: ExpedienteProgressBarProps) {
   const [citaRealizada, setCitaRealizada] = useState(false)
@@ -76,11 +80,15 @@ export function ExpedienteProgressBar({
   const isRejected = estadoActual === 'rechazado'
   const isConditioned = estadoActual === 'condicionado'
   const isCancelled = estadoActual === 'cerrado' && !!estadoPreCancelacion
+  // "Cita previa" resuelta: cita realizada O cita omitida (3.2, visita
+  // coordinada por fuera). Sin el OR, el stepper quedaba atascado en "Cita
+  // previa" en la misma pantalla donde el gestor acababa de omitirla.
+  const citaResuelta = citaRealizada || !!citaOmitida
   // Si fue cancelado, "currentStep" se calcula desde el estado pre-cancelacion
   // — los pasos completados son hasta ahi, no hasta el final.
   const baseStep = isCancelled
-    ? getProcessStep(estadoPreCancelacion!, citaRealizada)
-    : getProcessStep(estadoActual, citaRealizada)
+    ? getProcessStep(estadoPreCancelacion!, citaResuelta)
+    : getProcessStep(estadoActual, citaResuelta)
   // El estado del contrato puede ADELANTAR el paso (Firma/Listo) cuando el
   // expediente sigue en 'aprobado'. No aplica si el expediente fue cancelado.
   const currentStep = !isCancelled && contratoStep !== null

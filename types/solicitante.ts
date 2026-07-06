@@ -53,6 +53,9 @@ export interface ISolicitante {
   updated_at: string
   /** true si al "crear" se reutilizó una ficha ya existente por documento (3.1). */
   reutilizado?: boolean
+  /** Conteo de expedientes de esta persona (solo en GET /solicitantes/:id).
+   *  3.1: permite al gestor "evaluar cada caso" cuando la ficha se reutiliza. */
+  expedientes_count?: number
 }
 
 /**

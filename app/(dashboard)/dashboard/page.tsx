@@ -517,7 +517,14 @@ function SolicitanteDashboard() {
         await Promise.all(
           res.data.map(async (exp) => {
             const cita = citasMap[exp.id]
-            if (!cita || cita.estado !== 'realizada' || !cita.estudioHabilitado) {
+            // La cita puede estar OMITIDA (3.2) o no requerirse (invitación):
+            // no hay fila de cita, pero exp.cita_realizada (RPC) ya viene
+            // resuelto — intentamos igual cargar el estado del pago.
+            // OR (no ternario): si la cita quedo OMITIDA (3.2) con una fila
+            // de cita 'solicitada' aun viva, exp.cita_realizada manda igual.
+            const citaOk =
+              (cita?.estado === 'realizada' && !!cita.estudioHabilitado) || !!exp.cita_realizada
+            if (!citaOk) {
               pagoMap[exp.id] = null
               return
             }
@@ -542,12 +549,19 @@ function SolicitanteDashboard() {
   const estadoActivo = (exp: IExpediente) =>
     exp.estado === 'borrador' || exp.estado === 'en_revision' || exp.estado === 'informacion_incompleta'
 
-  const expedientesSinCita = expedientes.filter((exp) => estadoActivo(exp) && !citasByExpediente[exp.id])
+  // Excluir los expedientes con la cita OMITIDA (3.2) o creados por invitación:
+  // exp.cita_realizada (RPC) ya considera esos casos — sin esto, el banner le
+  // pediría al solicitante agendar una visita que se decidió omitir.
+  const expedientesSinCita = expedientes.filter(
+    (exp) => estadoActivo(exp) && !citasByExpediente[exp.id] && !exp.cita_realizada,
+  )
+  // Los banners de cita pendiente se omiten si la cita ya quedo resuelta por
+  // otra via (omitida 3.2 / invitacion): exp.cita_realizada del RPC.
   const expedientesCitaSolicitada = expedientes.filter(
-    (exp) => estadoActivo(exp) && citasByExpediente[exp.id]?.estado === 'solicitada',
+    (exp) => estadoActivo(exp) && !exp.cita_realizada && citasByExpediente[exp.id]?.estado === 'solicitada',
   )
   const expedientesCitaConfirmada = expedientes.filter(
-    (exp) => estadoActivo(exp) && citasByExpediente[exp.id]?.estado === 'confirmada',
+    (exp) => estadoActivo(exp) && !exp.cita_realizada && citasByExpediente[exp.id]?.estado === 'confirmada',
   )
   // Cita realizada pero el propietario aún no habilita el estudio: el solicitante
   // depende de una acción externa — mostramos banner ámbar sutil.
@@ -558,11 +572,12 @@ function SolicitanteDashboard() {
       citasByExpediente[exp.id]?.estudioHabilitado === false,
   )
   // Estudio habilitado + pago pendiente: acción activa del solicitante.
+  // pagoByExpediente solo se llena cuando la cita quedo resuelta (realizada u
+  // omitida/invitacion) y el estado del pago se pudo consultar — basta con el
+  // estado del pago, sin re-exigir la fila de cita (que no existe al omitir).
   const expedientesPagoPendiente = expedientes.filter(
     (exp) =>
       estadoActivo(exp) &&
-      citasByExpediente[exp.id]?.estado === 'realizada' &&
-      citasByExpediente[exp.id]?.estudioHabilitado === true &&
       (pagoByExpediente[exp.id]?.estado === 'pendiente' ||
         pagoByExpediente[exp.id]?.estado === 'fallido'),
   )
@@ -763,7 +778,9 @@ function SolicitanteDashboard() {
       ) : (
         <div className="space-y-4">
           {expedientes.map((exp) => {
-            const citaRealizada = citasByExpediente[exp.id]?.estado === 'realizada'
+            // exp.cita_realizada (RPC) incluye la cita omitida (3.2) y los
+            // expedientes por invitación; el map local cubre el refresco fino.
+            const citaRealizada = !!exp.cita_realizada || citasByExpediente[exp.id]?.estado === 'realizada'
             const isCancelled = exp.estado === 'cerrado' && !!exp.cancelado_at
             // Si fue cancelado, calculamos los pasos completados desde el
             // estado pre-cancelacion. Asi el solicitante ve hasta donde
