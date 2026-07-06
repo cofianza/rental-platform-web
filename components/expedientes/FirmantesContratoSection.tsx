@@ -11,7 +11,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail } from '@/components/icons'
+import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail, IconAlertTriangle } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
@@ -143,6 +143,19 @@ export function FirmantesContratoSection({
 
   const pct = total > 0 ? Math.round((firmados / total) * 100) : 0
 
+  // 4.3 — Cada firmante recibe SU propio código (OTP) por WhatsApp en su número.
+  // Detectamos números repetidos entre firmantes: si dos comparten número, no
+  // queda claro a quién llegó cada código (fue la confusión del reporte 4.3).
+  const normTel = (t?: string | null) => (t ? t.replace(/\D/g, '') : '')
+  const telFreq = firmantes.reduce<Record<string, number>>((acc, f) => {
+    const k = normTel(f.telefono)
+    if (k) acc[k] = (acc[k] ?? 0) + 1
+    return acc
+  }, {})
+  const telsDuplicados = new Set(
+    Object.entries(telFreq).filter(([, n]) => n > 1).map(([k]) => k),
+  )
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
       <div className="flex items-center justify-between mb-2">
@@ -196,6 +209,17 @@ export function FirmantesContratoSection({
         </div>
       )}
 
+      {!isLoading && telsDuplicados.size > 0 && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>
+            Dos firmantes tienen el <strong>mismo número de WhatsApp</strong>. Cada parte necesita un
+            número distinto para recibir <strong>su propio</strong> código de firma; con el mismo número
+            no queda claro a quién llegó cada uno.
+          </span>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
           <IconLoader size={20} className="animate-spin text-primary-600" />
@@ -225,9 +249,13 @@ export function FirmantesContratoSection({
                       <span className="font-normal text-gray-500"> · {f.nombre}</span>
                     </p>
                     {f.telefono && (
-                      <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                      <p className={`text-xs flex items-center gap-1 truncate ${telsDuplicados.has(normTel(f.telefono)) ? 'text-amber-700' : 'text-gray-500'}`}>
                         <IconWhatsapp size={11} className="text-green-600 shrink-0" />
-                        <span className="truncate">{firmado ? 'Firmó vía' : 'Le llega a'} {f.telefono}</span>
+                        <span className="truncate">
+                          {firmado ? 'Firmó vía WhatsApp a ' : 'Su código de firma llega por WhatsApp a '}
+                          <span className="font-medium">{f.telefono}</span>
+                          {telsDuplicados.has(normTel(f.telefono)) && ' · repetido'}
+                        </span>
                       </p>
                     )}
                     {f.firmado_en ? (
