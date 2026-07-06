@@ -19,8 +19,12 @@ const protectedRoutes = [
   '/bitacora',
 ]
 
-// Rutas de auth que deben redirigir a dashboard si ya está autenticado
-const authRoutes = ['/login', '/registro', '/recuperar-contrasena', '/restablecer-contrasena', '/verificar-email']
+// Rutas de auth que deben redirigir a dashboard si ya está autenticado.
+// OJO: /verificar-email NO va aquí — el enlace del correo debe ejecutar la
+// verificación SIEMPRE, incluso si el navegador ya tiene una sesión activa
+// (otra pestaña, sesión previa, o registrar una 2ª cuenta). Si estuviera en
+// esta lista, el proxy lo mandaría a /dashboard y el token se perdería.
+const authRoutes = ['/login', '/registro', '/recuperar-contrasena', '/restablecer-contrasena']
 
 // Cookie de sesión establecida por authService después del login
 const SESSION_COOKIE_NAME = 'hp-session'
