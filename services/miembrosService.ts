@@ -47,6 +47,10 @@ export interface InmobiliariaAdmin {
   miembros_activos: number
   invitaciones_pendientes: number
   created_at: string
+  /** 1.6: afianzadora/aseguradora que usaba la inmobiliaria al registrarse
+   *  (dato de conversión). null si no lo reportó. */
+  afianzadora_actual?: string | null
+  afianzadora_tipo?: 'afianzadora' | 'aseguradora' | 'ninguna' | null
 }
 
 export interface AdminMiembrosResponse {

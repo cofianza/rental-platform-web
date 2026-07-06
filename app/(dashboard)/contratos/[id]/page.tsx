@@ -25,6 +25,7 @@ import { ContratoHistorialModal } from '@/components/expedientes/ContratoHistori
 import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSection'
 import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
 import { ContratoVerificacionView } from '@/components/contratos/ContratoVerificacionView'
+import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 
@@ -56,7 +57,9 @@ export default function ContratoDetallePage() {
 
   // Action states
   const [downloadLoading, setDownloadLoading] = useState(false)
-  const [regenerateLoading, setRegenerateLoading] = useState(false)
+  // 4.1e: el editor controlado (fecha/plazo/canon con tope/servicios)
+  // reemplaza la regeneracion "ciega" de un click.
+  const [regenerarOpen, setRegenerarOpen] = useState(false)
   const [transicionOpen, setTransicionOpen] = useState(false)
   const [transicionLoading, setTransicionLoading] = useState(false)
   const [historialOpen, setHistorialOpen] = useState(false)
@@ -64,6 +67,10 @@ export default function ContratoDetallePage() {
   const [renewLoading, setRenewLoading] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Regenerar/editar (4.1e) tambien lo permite la API a inmobiliaria y
+  // propietario (contratos:update) — no solo a los roles internos.
+  const canRegenerate =
+    canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
 
   const fetchContrato = useCallback(async () => {
     setIsLoading(true)
@@ -143,19 +150,6 @@ export default function ContratoDetallePage() {
     }
   }
 
-  async function handleRegenerar() {
-    setRegenerateLoading(true)
-    try {
-      await contratoService.regenerarContrato(id)
-      toast.success('Contrato regenerado correctamente')
-      fetchContrato()
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al regenerar'
-      toast.error(message)
-    } finally {
-      setRegenerateLoading(false)
-    }
-  }
 
   async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string) {
     setTransicionLoading(true)
@@ -301,14 +295,13 @@ export default function ContratoDetallePage() {
             {downloadLoading ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
             Descargar PDF
           </button>
-          {canManage && contrato.estado === 'borrador' && (
+          {canRegenerate && contrato.estado === 'borrador' && (
             <button
-              onClick={handleRegenerar}
-              disabled={regenerateLoading}
+              onClick={() => setRegenerarOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50"
             >
-              {regenerateLoading ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
-              Regenerar
+              <IconRefresh size={16} />
+              Editar y regenerar
             </button>
           )}
           {canManage && transiciones.length > 0 && transiciones.map((t) => (
@@ -491,6 +484,19 @@ export default function ContratoDetallePage() {
       </div>
 
       {/* Modals */}
+      {/* Editor controlado + regeneracion (4.1e) */}
+      <RegenerarContratoModal
+        isOpen={regenerarOpen}
+        onClose={() => setRegenerarOpen(false)}
+        contrato={{
+          id: contrato.id,
+          fecha_inicio: contrato.fecha_inicio,
+          duracion_meses: contrato.duracion_meses,
+          valor_arriendo: contrato.valor_arriendo,
+        }}
+        onRegenerated={() => { setRegenerarOpen(false); fetchContrato() }}
+      />
+
       {transicionOpen && (
         <ContratoTransicionModal
           isOpen={true}

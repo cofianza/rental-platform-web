@@ -9,6 +9,7 @@ import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
+import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
@@ -54,7 +55,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
 
   // Action loading
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
+  // 4.1e: contrato abierto en el editor controlado (fecha/plazo/canon/servicios).
+  const [regenerarTarget, setRegenerarTarget] = useState<IContrato | null>(null)
   const [firmaContratoId, setFirmaContratoId] = useState<string | null>(null)
   // null = aún sin saber; true/false lo reporta FirmantesContratoSection. Si hay
   // firmantes multi-parte, ocultamos la sección legacy "Solicitudes de Firma".
@@ -127,19 +129,6 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     }
   }
 
-  async function handleRegenerar(contrato: IContrato) {
-    setRegeneratingId(contrato.id)
-    try {
-      await contratoService.regenerarContrato(contrato.id)
-      toast.success('Contrato regenerado correctamente')
-      fetchContratos()
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al regenerar'
-      toast.error(message)
-    } finally {
-      setRegeneratingId(null)
-    }
-  }
 
   function handleGenerated() {
     setGenerarOpen(false)
@@ -375,16 +364,11 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                           </button>
                           {canRegenerate && c.estado === 'borrador' && (
                             <button
-                              onClick={() => handleRegenerar(c)}
-                              disabled={regeneratingId === c.id}
+                              onClick={() => setRegenerarTarget(c)}
                               className="p-1.5 text-gray-400 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                              title="Regenerar PDF"
+                              title="Editar y regenerar (fecha, plazo, canon, servicios)"
                             >
-                              {regeneratingId === c.id ? (
-                                <IconLoader size={16} className="animate-spin" />
-                              ) : (
-                                <IconRefresh size={16} />
-                              )}
+                              <IconRefresh size={16} />
                             </button>
                           )}
                           {canRegenerate && c.estado === 'pendiente_firma' && (
@@ -460,6 +444,19 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
           isLoading={transicionLoading}
         />
       )}
+
+      {/* Editor controlado + regeneracion (4.1e) */}
+      <RegenerarContratoModal
+        isOpen={!!regenerarTarget}
+        onClose={() => setRegenerarTarget(null)}
+        contrato={regenerarTarget ? {
+          id: regenerarTarget.id,
+          fecha_inicio: regenerarTarget.fecha_inicio,
+          duracion_meses: regenerarTarget.duracion_meses,
+          valor_arriendo: regenerarTarget.valor_arriendo,
+        } : null}
+        onRegenerated={() => { setRegenerarTarget(null); fetchContratos() }}
+      />
 
       {/* Pre-chequeo de firmantes antes de enviar a firma (4.3) */}
       <EnviarFirmaPreviewModal

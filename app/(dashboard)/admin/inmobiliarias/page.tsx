@@ -231,6 +231,14 @@ export default function AdminInmobiliariasPage() {
                       {o.invitaciones_pendientes > 0 && ` · ${o.invitaciones_pendientes} pendientes`}
                       {o.estado !== 'activa' && ` · ${o.estado}`}
                     </p>
+                    {/* 1.6: dato de conversión — de qué afianzadora/aseguradora vienen. */}
+                    {o.afianzadora_tipo && o.afianzadora_tipo !== 'ninguna' ? (
+                      <p className="text-xs text-gray-400 truncate">
+                        Venía de: {o.afianzadora_actual || 'sin nombre'} ({o.afianzadora_tipo})
+                      </p>
+                    ) : o.afianzadora_tipo === 'ninguna' ? (
+                      <p className="text-xs text-gray-400 truncate">Sin afianzadora previa</p>
+                    ) : null}
                   </div>
                   {open ? (
                     <IconChevronDown size={18} className="text-gray-400 flex-shrink-0" />
