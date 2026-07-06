@@ -24,6 +24,9 @@ interface FormData {
   nombre_representante_nombre: string
   nombre_representante_apellido: string
   cargo_representante: string
+  // ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6)
+  afianzadora_tipo: '' | 'afianzadora' | 'aseguradora' | 'ninguna'
+  afianzadora_actual: string
   telefono: string
   email: string
   password: string
@@ -41,6 +44,8 @@ const initialFormData: FormData = {
   nombre_representante_nombre: '',
   nombre_representante_apellido: '',
   cargo_representante: '',
+  afianzadora_tipo: '',
+  afianzadora_actual: '',
   telefono: '',
   email: '',
   password: '',
@@ -201,6 +206,16 @@ export default function RegisterInmobiliariaPage() {
         nombre_representante_apellido: formData.nombre_representante_apellido,
         ...(formData.cargo_representante.trim()
           ? { cargo_representante: formData.cargo_representante.trim() }
+          : {}),
+        ...(formData.afianzadora_tipo ? { afianzadora_tipo: formData.afianzadora_tipo } : {}),
+        // Solo enviamos el nombre cuando el tipo es afianzadora/aseguradora. Si
+        // el usuario eligio 'ninguna' (o vacio) NO mandamos un nombre que quedo
+        // escrito antes de cambiar el select — evita el dato contradictorio
+        // tipo='ninguna' + afianzadora_actual='<nombre>'.
+        ...(formData.afianzadora_tipo === 'afianzadora' || formData.afianzadora_tipo === 'aseguradora'
+          ? formData.afianzadora_actual.trim()
+            ? { afianzadora_actual: formData.afianzadora_actual.trim() }
+            : {}
           : {}),
         email: formData.email,
         telefono: formData.telefono,
@@ -401,6 +416,41 @@ export default function RegisterInmobiliariaPage() {
                 maxLength={100}
               />
             </div>
+          </div>
+
+          {/* ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ¿Qué usan hoy para respaldar sus arriendos?{' '}
+                <span className="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <select
+                value={formData.afianzadora_tipo}
+                onChange={(e) => updateField('afianzadora_tipo', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Seleccionar…</option>
+                <option value="afianzadora">Afianzadora</option>
+                <option value="aseguradora">Aseguradora</option>
+                <option value="ninguna">Ninguna</option>
+              </select>
+            </div>
+            {formData.afianzadora_tipo !== '' && formData.afianzadora_tipo !== 'ninguna' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ¿Cuál? <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.afianzadora_actual}
+                  onChange={(e) => updateField('afianzadora_actual', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                  placeholder="Nombre de la afianzadora / aseguradora"
+                  maxLength={200}
+                />
+              </div>
+            )}
           </div>
 
           <PhoneInput
