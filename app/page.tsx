@@ -62,7 +62,7 @@ export default function HomePage() {
                   href="#vitrina"
                   className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
-                  Ver inmuebles disponibles →
+                  Encuentra tu inmueble →
                 </a>
                 <Link
                   href="/registro"
@@ -396,7 +396,7 @@ export default function HomePage() {
                   'Cashback del 30% si cumples',
                   'Reporte positivo a centrales de riesgo',
                 ],
-                cta: 'Ver inmuebles disponibles →',
+                cta: 'Encuentra tu inmueble →',
                 href: '/vitrina',
                 featured: true,
               },
@@ -617,7 +617,7 @@ export default function HomePage() {
               href="/vitrina"
               className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
-              Ver inmuebles disponibles →
+              Encuentra tu inmueble →
             </Link>
             <Link
               href="/registro"
