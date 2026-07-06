@@ -95,7 +95,10 @@ export function FirmaStep1Summary({ data, token, onContinue }: FirmaStep1Summary
           <iframe
             src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
             className="w-full"
-            style={{ height: '400px' }}
+            /* 4.1c: el contrato es largo (11+ páginas); antes 400px mostraba
+               apenas un tercio de una página. Damos casi toda la altura de la
+               ventana para leerlo con comodidad (el iframe scrollea). */
+            style={{ height: '78vh', minHeight: '560px' }}
             title="Contrato de arrendamiento"
           />
         )}

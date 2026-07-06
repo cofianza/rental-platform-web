@@ -341,7 +341,9 @@ export default function ContratoDetallePage() {
                   Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
                 </div>
               )}
-              <div className="h-[600px]">
+              {/* 4.1c: el contrato supera las 11 páginas; damos casi toda la
+                  altura de la ventana para leerlo cómodo (el visor scrollea). */}
+              <div className="h-[85vh] min-h-150">
                 <PdfViewer url={previewUrl} />
               </div>
             </>

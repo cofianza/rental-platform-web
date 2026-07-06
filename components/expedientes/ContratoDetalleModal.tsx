@@ -62,7 +62,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-y-auto mx-4">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
@@ -105,7 +105,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                 src={pdfUrl}
                 title="Vista previa del contrato"
                 className="w-full border border-gray-200 rounded-lg bg-white"
-                style={{ height: '70vh' }}
+                style={{ height: '80vh' }}
               />
             ) : null}
           </div>
