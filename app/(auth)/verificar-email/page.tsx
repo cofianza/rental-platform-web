@@ -68,25 +68,49 @@ function VerifyEmailContent() {
       )}
 
       {state === 'success' && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
               <IconCheck size={32} className="text-green-600" />
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Cuenta activada</h1>
-          <p className="text-sm text-gray-600">
-            Tu correo fue verificado y tu cuenta quedó activa.
-          </p>
-          <div className="bg-green-50 rounded-lg p-4 text-sm text-gray-700">
-            <p>Ya puedes iniciar sesión para continuar.</p>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900">
+              ¡Bienvenido a Cofianza!
+            </h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Verificamos tu correo y tu cuenta ya está activa.
+            </p>
           </div>
-          <div className="pt-4">
+
+          {/* Explicación breve de cómo funciona (onboarding inmobiliaria/propietario) */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+              Cómo funciona tu Oficina Virtual
+            </p>
+            <ul className="space-y-2.5">
+              {[
+                'Publica tus inmuebles en la vitrina y recibe interesados sin costo.',
+                'El candidato paga su estudio de crédito y lo evaluamos en segundos.',
+                'Generas el contrato con Cofianza como fiador y se firma digital.',
+                'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
+              ].map((paso, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-bold text-primary-700">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-gray-700">{paso}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
             <Link
               href={AUTH_ROUTES.LOGIN}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-bold rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Ir a inicio de sesión
+              Iniciar sesión y empezar
             </Link>
           </div>
         </div>
