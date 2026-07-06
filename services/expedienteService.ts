@@ -467,6 +467,20 @@ class ExpedienteService {
   }
 
   /**
+   * Tarea 3.2: marca la cita como omitida (visita ya coordinada por fuera),
+   * lo que permite habilitar el estudio sin exigir una cita 'realizada'.
+   */
+  async omitirCita(
+    expedienteId: string,
+    motivo?: string,
+  ): Promise<{ expediente: { id: string; numero: string; cita_omitida: true } }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string; cita_omitida: true }
+    }>(`/expedientes/${expedienteId}/omitir-cita`, { motivo })
+    return response.data
+  }
+
+  /**
    * Caso opuesto: el propietario decide tras la visita no proceder con el
    * candidato. Marca el expediente como rechazado para estudio y notifica al
    * solicitante por email + in-app.

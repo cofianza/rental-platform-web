@@ -87,6 +87,9 @@ export interface IExpediente {
    *  excluyente con estudio_habilitado=true. */
   estudio_rechazado?: boolean | null
   motivo_estudio_rechazado?: string | null
+  /** Flag 3.2: la cita se omitió porque ya hubo contacto/visita por fuera;
+   *  permite habilitar el estudio sin exigir una cita 'realizada'. */
+  cita_omitida?: boolean
   /** Datos del contrato capturados al habilitar el estudio. Editables hasta
    *  esa habilitacion; despues quedan congelados y alimentan el contrato. */
   duracion_contrato_meses?: number | null

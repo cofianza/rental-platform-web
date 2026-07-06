@@ -491,6 +491,7 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   estudioHabilitado={expediente.estudio_habilitado ?? false}
                   estudioRechazado={expediente.estudio_rechazado}
+                  citaOmitida={expediente.cita_omitida}
                   userRol={user?.rol}
                   onAction={fetchExpediente}
                 />

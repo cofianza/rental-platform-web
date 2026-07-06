@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { IconShieldCheck, IconLoader, IconAlertTriangle } from '@/components/icons'
+import { IconShieldCheck, IconLoader, IconAlertTriangle, IconCalendar } from '@/components/icons'
 import { Modal } from '@/components/ui'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
@@ -29,6 +29,8 @@ interface AccionHabilitarEstudioCardProps {
   expedienteId: string
   estudioHabilitado: boolean
   estudioRechazado: boolean | null | undefined
+  /** 3.2: la cita se omitió (visita coordinada por fuera) → habilita sin cita. */
+  citaOmitida?: boolean
   userRol?: string
   onAction: () => void | Promise<void>
 }
@@ -37,6 +39,7 @@ export function AccionHabilitarEstudioCard({
   expedienteId,
   estudioHabilitado,
   estudioRechazado,
+  citaOmitida,
   userRol,
   onAction,
 }: AccionHabilitarEstudioCardProps) {
@@ -50,6 +53,8 @@ export function AccionHabilitarEstudioCard({
   const [loading, setLoading] = useState(true)
   const [showRechazar, setShowRechazar] = useState(false)
   const [motivoRechazo, setMotivoRechazo] = useState('')
+  const [showOmitir, setShowOmitir] = useState(false)
+  const [motivoOmitir, setMotivoOmitir] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
@@ -91,6 +96,22 @@ export function AccionHabilitarEstudioCard({
     }
   }
 
+  const handleOmitirCita = async () => {
+    setSubmitting(true)
+    try {
+      await expedienteService.omitirCita(expedienteId, motivoOmitir.trim() || undefined)
+      toast.success('Cita omitida. Ya puedes habilitar el estudio.')
+      setShowOmitir(false)
+      setMotivoOmitir('')
+      await onAction()
+    } catch (err: unknown) {
+      const errObj = err as { message?: string }
+      toast.error(errObj.message || 'No se pudo omitir la cita')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleRechazar = async () => {
     setSubmitting(true)
     try {
@@ -112,7 +133,89 @@ export function AccionHabilitarEstudioCard({
   if (loading) return null
   if (estudioHabilitado || estudioRechazado) return null
   if (!puedeDecidir) return null
-  if (!tieneCitaRealizada) return null
+
+  // Se puede habilitar el estudio si hubo cita realizada O si el gestor omitió
+  // la cita (visita coordinada por fuera, 3.2).
+  const puedeContinuar = tieneCitaRealizada || !!citaOmitida
+
+  // Sin cita realizada y sin omitir: ofrecemos omitir la cita (3.2) en vez de
+  // dejar el flujo atascado en "Agenda una visita".
+  if (!puedeContinuar) {
+    return (
+      <>
+        <div className="border border-gray-200 bg-white rounded-lg p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+              <IconCalendar size={20} className="text-gray-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-gray-900 mb-0.5">
+                ¿Ya coordinaron la visita por fuera?
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Para habilitar el estudio normalmente se agenda una visita. Si ya la
+                coordinaron por WhatsApp (u otro medio) y decidieron continuar, puedes
+                omitir la cita y seguir directo con el estudio crediticio.
+              </p>
+              <button
+                onClick={() => setShowOmitir(true)}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50 transition-colors"
+              >
+                <IconCalendar size={14} />
+                La visita ya se hizo — omitir cita
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <Modal
+          isOpen={showOmitir}
+          onClose={() => !submitting && setShowOmitir(false)}
+          title="Omitir la cita de visita"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Confirmas que la visita ya se coordinó por fuera y quieres continuar sin
+              agendar una cita en el sistema. Podrás habilitar el estudio enseguida.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Motivo / nota (opcional)
+              </label>
+              <textarea
+                value={motivoOmitir}
+                onChange={(e) => setMotivoOmitir(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                placeholder="Ej: visita coordinada y realizada por WhatsApp el 2 de julio."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Queda registrado en la bitácora del expediente.</p>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowOmitir(false)}
+                disabled={submitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleOmitirCita}
+                disabled={submitting}
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {submitting && <IconLoader size={14} className="animate-spin" />}
+                Omitir cita y continuar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </>
+    )
+  }
 
   return (
     <>
@@ -126,7 +229,9 @@ export function AccionHabilitarEstudioCard({
               Acción requerida: ¿habilitamos el estudio crediticio?
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.
+              {citaOmitida
+                ? 'Marcaste la visita como ya realizada. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'
+                : 'La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
