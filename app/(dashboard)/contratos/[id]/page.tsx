@@ -24,6 +24,7 @@ import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransi
 import { ContratoHistorialModal } from '@/components/expedientes/ContratoHistorialModal'
 import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSection'
 import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
+import { ContratoVerificacionView } from '@/components/contratos/ContratoVerificacionView'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 
@@ -45,6 +46,9 @@ export default function ContratoDetallePage() {
   // true = el preview muestra el documento FIRMADO (con firmas + acuses); false
   // = el PDF generado de la plantilla.
   const [previewFirmado, setPreviewFirmado] = useState(false)
+  // 4.1d: alterna entre el PDF y la "vista de verificación" (contrato con los
+  // datos insertados resaltados) para confirmar que se generó bien.
+  const [vista, setVista] = useState<'pdf' | 'verificacion'>('pdf')
   const [transiciones, setTransiciones] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -334,24 +338,50 @@ export default function ContratoDetallePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* PDF Preview */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {previewUrl ? (
-            <>
-              {previewFirmado && (
-                <div className="px-3 py-2 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
-                  Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
-                </div>
-              )}
-              {/* 4.1c: el contrato supera las 11 páginas; damos casi toda la
-                  altura de la ventana para leerlo cómodo (el visor scrollea). */}
-              <div className="h-[85vh] min-h-150">
-                <PdfViewer url={previewUrl} />
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[400px] text-gray-400">
-              <p className="text-sm">PDF no disponible</p>
+          {previewFirmado && vista === 'pdf' && previewUrl && (
+            <div className="px-3 py-2 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
+              Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
             </div>
           )}
+          {/* 4.1d: alternar entre el PDF y la vista de verificación (datos
+              resaltados) para confirmar que el contrato se generó bien. La vista
+              de verificación es independiente del PDF (usa su propio endpoint),
+              así que el toggle se muestra aunque el PDF no esté disponible. */}
+          <div className="flex items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50">
+            <button
+              onClick={() => setVista('pdf')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                vista === 'pdf'
+                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              PDF
+            </button>
+            <button
+              onClick={() => setVista('verificacion')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                vista === 'verificacion'
+                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Vista de verificación
+            </button>
+          </div>
+          {/* 4.1c: el contrato supera las 11 páginas; damos casi toda la
+              altura de la ventana para leerlo cómodo (el visor scrollea). */}
+          <div className="h-[85vh] min-h-150">
+            {vista === 'verificacion' ? (
+              <ContratoVerificacionView contratoId={id} />
+            ) : previewUrl ? (
+              <PdfViewer url={previewUrl} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <p className="text-sm">PDF no disponible</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info panel */}
