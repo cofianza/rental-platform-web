@@ -1,5 +1,5 @@
 /**
- * Mi Inmobiliaria — gestión de los 7 documentos legales que la
+ * Mi Inmobiliaria — gestión de los documentos legales que la
  * inmobiliaria/propietario tiene que cargar para operar con Cofianza
  * (Mario 12-may-2026). Cada doc se sube/reemplaza/descarga/elimina via
  * /api/v1/documentos-legales/:tipo.
@@ -25,7 +25,6 @@ import {
   IconFileCheck,
   IconId,
   IconScrollText,
-  IconShieldCheck,
 } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -84,13 +83,6 @@ const TIPOS: TipoConfig[] = [
     descripcion: 'Solo si actúa con poder otorgado por el propietario.',
     obligatorio: false,
     icon: IconScrollText,
-  },
-  {
-    tipo: 'poliza',
-    titulo: 'Póliza de Seguros',
-    descripcion: 'Póliza de responsabilidad civil o cumplimiento, según aplique.',
-    obligatorio: false,
-    icon: IconShieldCheck,
   },
   {
     tipo: 'contrato_marco',

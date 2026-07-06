@@ -41,7 +41,7 @@ const SECCIONES: Array<{
     id: 'mi-inmobiliaria',
     href: '/configuracion/mi-inmobiliaria',
     titulo: 'Mi Inmobiliaria',
-    descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL, Póliza y Contrato Marco.',
+    descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL y Contrato Marco.',
     icon: IconFileText,
     color: 'bg-amber-100 text-amber-700',
     soloRoles: ['propietario', 'inmobiliaria'],

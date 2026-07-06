@@ -9,15 +9,12 @@
 
 import Link from 'next/link'
 import { AUTH_ROUTES } from '@/lib/constants'
-import { IconUser, IconHome, IconBuilding2, IconArrowRight } from '@/components/icons'
+import { IconHome, IconBuilding2, IconArrowRight } from '@/components/icons'
 
+// Solo inmobiliarias y propietarios se registran en la Oficina Virtual. El
+// arrendatario NO se auto-registra desde aquí (la cuenta de solicitante se crea
+// por el flujo de la vitrina "Me interesa"/agendar o por invitación).
 const OPCIONES = [
-  {
-    href: AUTH_ROUTES.REGISTER_SOLICITANTE,
-    Icon: IconUser,
-    titulo: 'Soy Arrendatario',
-    desc: 'Busco un inmueble para arrendar y necesito fianza.',
-  },
   {
     href: AUTH_ROUTES.REGISTER_PROPIETARIO,
     Icon: IconHome,
