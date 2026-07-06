@@ -1,6 +1,6 @@
 /**
  * Indicador de Estrato - HP-180
- * Visualiza el estrato socioeconómico (1-6) con barra de segmentos
+ * Visualiza el estrato socioeconómico (1-7) con barra de segmentos
  */
 
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ const ESTRATO_COLORS: Record<number, string> = {
   4: 'bg-lime-500',
   5: 'bg-green-500',
   6: 'bg-emerald-500',
+  7: 'bg-teal-500',
 }
 
 const ESTRATO_LABELS: Record<number, string> = {
@@ -27,7 +28,12 @@ const ESTRATO_LABELS: Record<number, string> = {
   4: 'Medio',
   5: 'Medio-alto',
   6: 'Alto',
+  7: 'Alto-alto',
 }
+
+// Mantener en sync con ESTRATO_OPTIONS (constants.ts), inmuebles.schema.ts
+// (max 7) y el CHECK de la migración 20260706000001.
+const ESTRATO_MAX = 7
 
 const SIZE_CONFIG = {
   sm: { height: 'h-1.5', gap: 'gap-0.5', text: 'text-xs' },
@@ -40,7 +46,7 @@ export function EstratoIndicator({
   size = 'md',
   showLabel = true
 }: EstratoIndicatorProps) {
-  const validEstrato = Math.min(Math.max(estrato, 1), 6)
+  const validEstrato = Math.min(Math.max(estrato, 1), ESTRATO_MAX)
   const config = SIZE_CONFIG[size]
 
   return (
@@ -56,7 +62,7 @@ export function EstratoIndicator({
         </div>
       )}
       <div className={cn('flex w-full', config.gap)}>
-        {[1, 2, 3, 4, 5, 6].map((level) => (
+        {Array.from({ length: ESTRATO_MAX }, (_, i) => i + 1).map((level) => (
           <div
             key={level}
             className={cn(

@@ -47,7 +47,7 @@ import {
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
 
-type VitrinaKind = 'vitrina' | 'pausada' | 'sin_publicar'
+type VitrinaKind = 'vitrina' | 'pausada' | 'inactiva'
 
 const VITRINA_STYLE: Record<VitrinaKind, { wrap: string; dot: string; label: string }> = {
   vitrina: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600', label: 'En vitrina' },
@@ -56,21 +56,24 @@ const VITRINA_STYLE: Record<VitrinaKind, { wrap: string; dot: string; label: str
     dot: 'bg-gray-400',
     label: 'Pausada',
   },
-  sin_publicar: {
+  inactiva: {
     wrap: 'bg-gray-50 text-gray-600 border border-gray-200',
     dot: 'bg-gray-400',
-    label: 'Sin publicar',
+    label: 'Inactiva',
   },
 }
 
+// 2.5: "Pausar" = visible_vitrina=false conservando estado 'disponible'. Por
+// eso "Pausada" es NO estar en vitrina (sin estar inactiva); 'inactivo' es el
+// soft-delete y se etiqueta aparte como "Inactiva".
 function vitrinaKind(i: IInmueble): VitrinaKind {
+  if (i.estado === 'inactivo') return 'inactiva'
   if (i.visible_vitrina) return 'vitrina'
-  if (i.estado === 'inactivo') return 'pausada'
-  return 'sin_publicar'
+  return 'pausada'
 }
 
 // Chips de filtro: reutilizan el mapeo de patch de VitrinaFilterChips (page).
-type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'sin_publicar'
+type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'inactivas'
 
 const CHIPS: Array<{
   key: ChipKey
@@ -79,8 +82,9 @@ const CHIPS: Array<{
 }> = [
   { key: 'todas', label: 'Todas', patch: { visible_vitrina: '', estado: '' } },
   { key: 'vitrina', label: 'En vitrina', patch: { visible_vitrina: true, estado: '' } },
-  { key: 'pausadas', label: 'Pausadas', patch: { visible_vitrina: '', estado: 'inactivo' } },
-  { key: 'sin_publicar', label: 'Sin publicar', patch: { visible_vitrina: false, estado: '' } },
+  // 2.5: "Pausadas" = fuera de vitrina (lo que produce el boton Pausar).
+  { key: 'pausadas', label: 'Pausadas', patch: { visible_vitrina: false, estado: '' } },
+  { key: 'inactivas', label: 'Inactivas', patch: { visible_vitrina: '', estado: 'inactivo' } },
 ]
 
 // ── Componente ───────────────────────────────────────────────
@@ -97,15 +101,16 @@ export function PropiedadesInmobiliariaView() {
   // Stat-cards reales derivados del listado en pantalla + meta.
   const enVitrina = inmuebles.filter((i) => i.visible_vitrina).length
   const disponibles = inmuebles.filter((i) => i.estado === 'disponible').length
-  const pausadas = inmuebles.filter((i) => i.estado === 'inactivo').length
+  // 2.5: pausada = fuera de vitrina sin estar inactiva (lo que hace "Pausar").
+  const pausadas = inmuebles.filter((i) => !i.visible_vitrina && i.estado !== 'inactivo').length
 
   const activeChip: ChipKey =
     filters.visible_vitrina === true
       ? 'vitrina'
       : filters.visible_vitrina === false
-        ? 'sin_publicar'
+        ? 'pausadas'
         : filters.estado === 'inactivo'
-          ? 'pausadas'
+          ? 'inactivas'
           : 'todas'
 
   // "Agregar propiedad": gate por perfil incompleto → datos-contrato con returnTo.

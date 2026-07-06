@@ -26,6 +26,7 @@ const TIPO_DOC_OPTIONS = [
 
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', casa: 'Casa', oficina: 'Oficina', local: 'Local', bodega: 'Bodega',
+  apartaestudio: 'Apartaestudio', casa_finca: 'Casa Finca', finca: 'Finca', lote: 'Lote', parqueadero: 'Parqueadero',
 }
 
 interface FormErrors {

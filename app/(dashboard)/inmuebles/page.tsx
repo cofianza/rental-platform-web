@@ -268,7 +268,7 @@ function InmueblesContent() {
           canDelete={canDelete}
           canCreate={canCreate}
           isAdmin={isAdmin}
-          onToggleVitrina={isAdmin ? handleToggleVitrina : undefined}
+          onToggleVitrina={isAdmin || isOperador ? handleToggleVitrina : undefined}
           error={error}
           onRetry={fetchInmuebles}
           onCreateNew={handleCreateClick}
@@ -294,7 +294,7 @@ function InmueblesContent() {
 // Filter-chips: Todas / En vitrina / Pausadas / Sin publicar
 // ============================================================
 
-type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'sin_publicar'
+type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'inactivas'
 
 interface VitrinaFilterChipsProps {
   filters: { visible_vitrina: boolean | ''; estado: '' | 'disponible' | 'en_estudio' | 'ocupado' | 'inactivo' }
@@ -307,16 +307,18 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
   // el chip principal — los chips son solo de "modo de vista".
   const active: ChipKey = (() => {
     if (filters.visible_vitrina === true) return 'vitrina'
-    if (filters.visible_vitrina === false) return 'sin_publicar'
-    if (filters.estado === 'inactivo') return 'pausadas'
+    if (filters.visible_vitrina === false) return 'pausadas'
+    if (filters.estado === 'inactivo') return 'inactivas'
     return 'todas'
   })()
 
   const chips: Array<{ key: ChipKey; label: string; patch: VitrinaFilterChipsProps['filters'] }> = [
-    { key: 'todas',        label: 'Todas',        patch: { visible_vitrina: '', estado: '' } },
-    { key: 'vitrina',      label: 'En vitrina',   patch: { visible_vitrina: true, estado: '' } },
-    { key: 'pausadas',     label: 'Pausadas',     patch: { visible_vitrina: '', estado: 'inactivo' } },
-    { key: 'sin_publicar', label: 'Sin publicar', patch: { visible_vitrina: false, estado: '' } },
+    { key: 'todas',     label: 'Todas',      patch: { visible_vitrina: '', estado: '' } },
+    { key: 'vitrina',   label: 'En vitrina', patch: { visible_vitrina: true, estado: '' } },
+    // 2.5: "Pausadas" = fuera de vitrina (lo que produce el boton Pausar);
+    // 'inactivo' es el soft-delete y va aparte como "Inactivas".
+    { key: 'pausadas',  label: 'Pausadas',   patch: { visible_vitrina: false, estado: '' } },
+    { key: 'inactivas', label: 'Inactivas',  patch: { visible_vitrina: '', estado: 'inactivo' } },
   ]
 
   return (

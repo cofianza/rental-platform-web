@@ -13,6 +13,7 @@ import { dashboardService, type MiInmueble, type HistorialInquilino } from '@/se
 import { citaService } from '@/services/citaService'
 import { inmuebleService } from '@/services/inmuebleService'
 import type { ICita } from '@/types/cita'
+import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import {
   IconHome,
   IconCheckCircle,
@@ -38,6 +39,9 @@ import {
 } from '@/components/dashboard/secciones/_shared'
 
 const cap = (s: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—')
+// Label legible del tipo de inmueble (los tipos nuevos llevan guion bajo:
+// 'casa_finca' -> 'Casa finca'). Cae a cap() si el tipo no esta en el map.
+const tipoLabel = (t: string | null) => (t && TIPO_LABELS[t as keyof typeof TIPO_LABELS]) || cap(t)
 
 const btnS =
   'inline-flex items-center gap-1 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition-colors hover:bg-ink-50'
@@ -109,7 +113,7 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
       <div className="border-b border-ink-200 px-4 py-3">
         <h3 className="truncate text-sm font-bold text-ink-900">
           {p.codigo ? `${p.codigo} — ` : ''}
-          {cap(p.tipo)}
+          {tipoLabel(p.tipo)}
         </h3>
         <p className="truncate text-[11px] text-ink-500">
           {p.direccion ?? 'Sin dirección'}
@@ -118,7 +122,7 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
       </div>
 
       <div className="px-4 py-3 text-[13px]">
-        <Row label="Tipo">{cap(p.tipo)}</Row>
+        <Row label="Tipo">{tipoLabel(p.tipo)}</Row>
         <Row label="Canon">{money(p.canon)}</Row>
         <Row label="Detalles">{detalles}</Row>
         {arrendado ? (
@@ -311,7 +315,7 @@ function HistorialInquilinos({ inmuebles }: { inmuebles: MiInmueble[] }) {
         <div key={i.id}>
           <div className="mb-1.5 text-xs font-bold text-ink-700">
             {i.codigo ? `${i.codigo} — ` : ''}
-            {cap(i.tipo)}
+            {tipoLabel(i.tipo)}
           </div>
           <Tabla head={['Inquilino', 'Período', 'Estado']} density="compact">
             {i.historial.map((h, idx) => {

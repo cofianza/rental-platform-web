@@ -168,7 +168,6 @@ export function InmueblesTable({
   canEdit = true,
   canDelete = false,
   canCreate = true,
-  isAdmin = false,
   onToggleVitrina,
   error = null,
   onRetry,
@@ -289,7 +288,7 @@ export function InmueblesTable({
                   onSort={onSort}
                 />
               </th>
-              {isAdmin && onToggleVitrina && (
+              {onToggleVitrina && (
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vitrina
                 </th>
@@ -335,7 +334,7 @@ export function InmueblesTable({
                 <td className="px-4 py-3 whitespace-nowrap text-center">
                   <EstadoBadge estado={inmueble.estado} />
                 </td>
-                {isAdmin && onToggleVitrina && (
+                {onToggleVitrina && (
                   <td
                     className="px-4 py-3 whitespace-nowrap text-center"
                     onClick={(e) => e.stopPropagation()}
@@ -436,7 +435,7 @@ export function InmueblesTable({
               <span className="text-sm font-medium text-gray-900">
                 {formatCOP(inmueble.valor_arriendo)}
               </span>
-              {isAdmin && onToggleVitrina && (
+              {onToggleVitrina && (
                 <VitrinaToggle inmueble={inmueble} onToggle={onToggleVitrina} />
               )}
             </div>

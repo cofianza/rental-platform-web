@@ -13,8 +13,11 @@ import { PropertyDetailClient } from './PropertyDetailClient'
 import { getPublicPropertyById, getPublicProperties } from '@/services/publicPropertiesService'
 import type { PublicProperty } from '@/services/publicPropertiesService'
 
+// Mantener en sync con TIPO_LABELS de components/inmuebles/constants.ts (este
+// es un server component; el map canónico vive en un módulo de cliente).
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', casa: 'Casa', oficina: 'Oficina', local: 'Local', bodega: 'Bodega',
+  apartaestudio: 'Apartaestudio', casa_finca: 'Casa Finca', finca: 'Finca', lote: 'Lote', parqueadero: 'Parqueadero',
 }
 
 // ── Dynamic metadata for SEO ────────────────

@@ -17,6 +17,11 @@ const TIPO_LABEL: Record<string, string> = {
   oficina: 'Oficina',
   local: 'Local',
   bodega: 'Bodega',
+  apartaestudio: 'Apartaestudio',
+  casa_finca: 'Casa Finca',
+  finca: 'Finca',
+  lote: 'Lote',
+  parqueadero: 'Parqueadero',
 }
 
 const TIPO_EMOJI: Record<string, string> = {
