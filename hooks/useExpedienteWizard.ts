@@ -329,10 +329,18 @@ export function useExpedienteWizard() {
     try {
       let solicitanteId = data.step2.solicitante?.id
 
-      // Si es nuevo solicitante, crearlo primero
+      // Si es nuevo solicitante, crearlo primero. Si el documento ya existía,
+      // el backend reutiliza la ficha (3.1) y avisamos al gestor para que
+      // verifique los datos y las solicitudes previas de esa persona.
       if (data.step2.isNewSolicitante && data.step2.formData) {
         const newSolicitante = await solicitanteService.createSolicitante(data.step2.formData)
         solicitanteId = newSolicitante.id
+        if (newSolicitante.reutilizado) {
+          toast.warning(
+            'Esta persona ya estaba registrada; reutilizamos su ficha. Revisa sus datos y sus solicitudes previas por si esta es una nueva.',
+            { duration: 8000 },
+          )
+        }
       }
 
       if (!solicitanteId) {

@@ -51,6 +51,8 @@ export interface ISolicitante {
   estado: 'activo' | 'inactivo'
   created_at: string
   updated_at: string
+  /** true si al "crear" se reutilizó una ficha ya existente por documento (3.1). */
+  reutilizado?: boolean
 }
 
 /**
