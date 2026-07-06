@@ -133,7 +133,8 @@ class ContratoService {
       fecha_inicio?: string
       duracion_meses?: number
       valor_arriendo?: number
-      variables?: Record<string, string>
+      // 4.1e: reasignación de quién paga cada servicio (obligaciones).
+      servicios_reparto?: Record<string, 'arrendatario' | 'arrendador'>
     }
   ): Promise<IContrato> {
     const response = (await apiClient.post(
