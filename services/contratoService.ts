@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api'
 import { coalesceRequest } from '@/lib/requestCoalesce'
 import { API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
+import type { IFirmantesPreview } from '@/types/firma'
 import type {
   IContrato,
   IContratoMeta,
@@ -207,6 +208,17 @@ class ContratoService {
       `/contratos/${id}/enviar-firma`,
       {}
     )) as unknown as { success: boolean; data: { ok: true; message: string } }
+    return response.data
+  }
+
+  /**
+   * Pre-chequeo de firmantes antes de enviar a firma (4.3): a qué número va el
+   * OTP de cada firmante, marcando repetidos/faltantes. No crea el sobre.
+   */
+  async previewFirmantes(id: string): Promise<IFirmantesPreview> {
+    const response = (await apiClient.get(
+      `/contratos/${id}/firmantes-preview`
+    )) as unknown as { success: boolean; data: IFirmantesPreview }
     return response.data
   }
 

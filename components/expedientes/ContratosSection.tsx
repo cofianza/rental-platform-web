@@ -8,10 +8,12 @@ import { GenerarContratoModal } from './GenerarContratoModal'
 import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
+import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
+import type { IFirmantesPreview } from '@/types/firma'
 
 const ESTADO_STYLES: Record<string, { label: string; bg: string; text: string }> = {
   borrador: { label: 'Borrador', bg: 'bg-gray-100', text: 'text-gray-700' },
@@ -58,6 +60,9 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // firmantes multi-parte, ocultamos la sección legacy "Solicitudes de Firma".
   const [tieneMultiparte, setTieneMultiparte] = useState<boolean | null>(null)
   const [enviandoFirmaId, setEnviandoFirmaId] = useState<string | null>(null)
+  // 4.3: pre-chequeo de firmantes antes de enviar (modal con los números + bloqueo si hay repetido).
+  const [firmaPreview, setFirmaPreview] = useState<{ contrato: IContrato; data: IFirmantesPreview } | null>(null)
+  const [confirmandoFirma, setConfirmandoFirma] = useState(false)
 
   // Permissions
   // El contrato se genera automaticamente al aprobar el estudio (orchestrator).
@@ -141,19 +146,44 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     fetchContratos()
   }
 
-  // Acción directa "Enviar a firma": lleva el contrato a firma y dispara el
-  // envío (Auco) en un paso, sin pasar por "Cambiar estado".
+  // Envío efectivo a firma (Auco). Propaga errores; los callers muestran el toast.
+  async function doEnviarAFirma(contrato: IContrato) {
+    const res = await contratoService.enviarAFirma(contrato.id)
+    toast.success(res.message || 'Contrato enviado a firma')
+    await fetchContratos()
+    setFirmaContratoId(contrato.id) // mostrar el progreso de firmas
+  }
+
+  // "Enviar a firma": ANTES de enviar, pre-chequeo de firmantes (4.3). Si es
+  // multi-parte, mostramos un modal con a qué número va el OTP de cada firmante
+  // y bloqueamos si hay número repetido/faltante. Si no aplica (flujo de un
+  // firmante), enviamos directo.
   async function handleEnviarAFirma(contrato: IContrato) {
     setEnviandoFirmaId(contrato.id)
     try {
-      const res = await contratoService.enviarAFirma(contrato.id)
-      toast.success(res.message || 'Contrato enviado a firma')
-      await fetchContratos()
-      setFirmaContratoId(contrato.id) // mostrar el progreso de firmas
+      const preview = await contratoService.previewFirmantes(contrato.id)
+      if (!preview.aplica || preview.firmantes.length === 0) {
+        await doEnviarAFirma(contrato)
+      } else {
+        setFirmaPreview({ contrato, data: preview })
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
     } finally {
       setEnviandoFirmaId(null)
+    }
+  }
+
+  async function handleConfirmarFirma() {
+    if (!firmaPreview) return
+    setConfirmandoFirma(true)
+    try {
+      await doEnviarAFirma(firmaPreview.contrato)
+      setFirmaPreview(null)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
+    } finally {
+      setConfirmandoFirma(false)
     }
   }
 
@@ -430,6 +460,16 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
           isLoading={transicionLoading}
         />
       )}
+
+      {/* Pre-chequeo de firmantes antes de enviar a firma (4.3) */}
+      <EnviarFirmaPreviewModal
+        isOpen={!!firmaPreview}
+        firmantes={firmaPreview?.data.firmantes ?? []}
+        puedeEnviar={firmaPreview?.data.puede_enviar ?? false}
+        submitting={confirmandoFirma}
+        onConfirm={handleConfirmarFirma}
+        onClose={() => !confirmandoFirma && setFirmaPreview(null)}
+      />
     </div>
   )
 }

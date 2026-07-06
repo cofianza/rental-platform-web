@@ -13,6 +13,24 @@ export type EstadoSolicitudFirma =
 
 export type RolFirmante = 'arrendatario' | 'arrendador' | 'cofianza'
 
+// Pre-chequeo de firmantes antes de enviar a firma (4.3): a qué número va el
+// OTP de cada firmante, con banderas de repetido/faltante.
+export interface IFirmantePreview {
+  rol_firmante: RolFirmante
+  nombre: string
+  email: string
+  telefono: string | null
+  auto: boolean
+  falta_datos: boolean
+  duplicado: boolean
+}
+
+export interface IFirmantesPreview {
+  aplica: boolean
+  firmantes: IFirmantePreview[]
+  puede_enviar: boolean
+}
+
 // Firmante multi-parte de un contrato (arrendatario/arrendador/cofianza).
 export interface IContratoFirmante {
   id: string
