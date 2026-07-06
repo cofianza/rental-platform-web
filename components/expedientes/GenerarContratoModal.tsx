@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconFileText, IconUpload } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/contrato'
 
 type TipoGeneracion = 'cofianza' | 'otrosi'
@@ -42,18 +43,8 @@ const MODALIDADES: {
   { value: 'plus', label: 'Cofianza Plus', comision: '6%', prima: '50%', cubreDanos: true },
 ]
 
-const SERVICIOS: { key: string; label: string }[] = [
-  { key: 'agua', label: 'Agua y alcantarillado' },
-  { key: 'energia', label: 'Energía eléctrica' },
-  { key: 'gas', label: 'Gas natural' },
-  { key: 'basuras', label: 'Recolección de basuras' },
-  { key: 'alumbrado', label: 'Alumbrado público' },
-  { key: 'internet', label: 'Internet / TV / Telefonía' },
-  { key: 'admin_ph', label: 'Administración PH' },
-]
-
 const SERVICIOS_DEFAULT: Record<string, CargoServicio> = Object.fromEntries(
-  SERVICIOS.map((s) => [s.key, 'arrendatario' as CargoServicio]),
+  SERVICIOS_CONTRATO.map((s) => [s.key, 'arrendatario' as CargoServicio]),
 )
 
 interface GenerarContratoModalProps {
@@ -314,7 +305,7 @@ export function GenerarContratoModal({
                   Servicios públicos — ¿quién paga?
                 </label>
                 <div className="space-y-1.5">
-                  {SERVICIOS.map((s) => (
+                  {SERVICIOS_CONTRATO.map((s) => (
                     <div key={s.key} className="flex items-center justify-between gap-2">
                       <span className="text-xs text-gray-600">{s.label}</span>
                       <select

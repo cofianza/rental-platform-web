@@ -2,13 +2,16 @@
  * AccionHabilitarEstudioCard — Resumen del expediente.
  *
  * Aparece cuando:
- *   - hay cita realizada
+ *   - el expediente esta en un estado pre-estudio (borrador / en_revision /
+ *     informacion_incompleta — mismo gate que la RPC de habilitacion)
  *   - el estudio aun NO se habilito ni se rechazo
  *   - el usuario tiene permiso para decidir (propietario/inmobiliaria/admin/operador)
  *
- * Da al propietario el control de "Habilitar estudio" o "No habilitar"
- * sin tener que ir al kanban /citas — mantiene el flujo dentro del
- * expediente. Tras la accion, el padre refresca via onAction.
+ * Con cita realizada (o cita omitida, 3.2) muestra la decision de habilitar /
+ * no habilitar; sin ninguna de las dos, ofrece "omitir la cita" (visita
+ * coordinada por fuera). Da al propietario el control sin tener que ir al
+ * kanban /citas — mantiene el flujo dentro del expediente. Tras la accion,
+ * el padre refresca via onAction.
  *
  * Nota (Mario, 5-may-2026): este card YA NO pide duracion + fecha del
  * contrato. Esos datos se piden cuando se va a generar el contrato
@@ -25,12 +28,20 @@ import { Modal } from '@/components/ui'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
 
+// Estados del expediente donde la RPC fn_habilitar_estudio_expediente permite
+// habilitar. Fuera de ellos (aprobado, cerrado, cancelado…) la card sería un
+// callejón sin salida: dejaría omitir la cita y luego la RPC rechazaría.
+const ESTADOS_HABILITABLES = ['borrador', 'en_revision', 'informacion_incompleta']
+
 interface AccionHabilitarEstudioCardProps {
   expedienteId: string
   estudioHabilitado: boolean
   estudioRechazado: boolean | null | undefined
   /** 3.2: la cita se omitió (visita coordinada por fuera) → habilita sin cita. */
   citaOmitida?: boolean
+  /** Estado del expediente — la card solo aplica en estados pre-estudio
+   *  (mismo gate que la RPC). Si no se pasa, no se filtra por estado. */
+  expedienteEstado?: string
   userRol?: string
   onAction: () => void | Promise<void>
 }
@@ -40,6 +51,7 @@ export function AccionHabilitarEstudioCard({
   estudioHabilitado,
   estudioRechazado,
   citaOmitida,
+  expedienteEstado,
   userRol,
   onAction,
 }: AccionHabilitarEstudioCardProps) {
@@ -48,6 +60,11 @@ export function AccionHabilitarEstudioCard({
     userRol === 'inmobiliaria' ||
     userRol === 'administrador' ||
     userRol === 'operador_analista'
+
+  // Fuera de los estados habilitables (expediente cancelado/cerrado/avanzado)
+  // la card no aplica — sin esto ofrecería "omitir cita" en un expediente
+  // donde la habilitación luego sería rechazada por la RPC.
+  const estadoPermitido = !expedienteEstado || ESTADOS_HABILITABLES.includes(expedienteEstado)
 
   const [tieneCitaRealizada, setTieneCitaRealizada] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -60,7 +77,7 @@ export function AccionHabilitarEstudioCard({
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
   // casos (estudio ya decidido o usuario sin permiso) salimos sin gasto.
   const fetchCitas = useCallback(async () => {
-    if (!puedeDecidir || estudioHabilitado || estudioRechazado) {
+    if (!puedeDecidir || !estadoPermitido || estudioHabilitado || estudioRechazado) {
       setLoading(false)
       return
     }
@@ -73,7 +90,7 @@ export function AccionHabilitarEstudioCard({
     } finally {
       setLoading(false)
     }
-  }, [expedienteId, puedeDecidir, estudioHabilitado, estudioRechazado])
+  }, [expedienteId, puedeDecidir, estadoPermitido, estudioHabilitado, estudioRechazado])
 
   useEffect(() => { fetchCitas() }, [fetchCitas])
 
@@ -131,6 +148,7 @@ export function AccionHabilitarEstudioCard({
   // Reglas de visibilidad combinadas — early-return para no renderizar nada
   // cuando no aplica.
   if (loading) return null
+  if (!estadoPermitido) return null
   if (estudioHabilitado || estudioRechazado) return null
   if (!puedeDecidir) return null
 

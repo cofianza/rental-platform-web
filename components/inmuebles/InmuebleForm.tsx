@@ -722,7 +722,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             <div>
               <label htmlFor="estrato" className="block text-sm font-medium text-gray-700 mb-1">
                 Estrato *
-                <FieldTooltip text="Clasificacion socioeconomica de 1 a 6 usada en Colombia. Determina el costo de servicios publicos. 1 es el mas bajo, 6 el mas alto." />
+                <FieldTooltip text="Clasificacion socioeconomica de 1 a 7 usada en Colombia. Determina el costo de servicios publicos. 1 es el mas bajo, 7 el mas alto." />
               </label>
               <select
                 id="estrato"

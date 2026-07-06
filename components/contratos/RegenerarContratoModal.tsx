@@ -19,24 +19,14 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconRefresh } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import { SERVICIOS_CONTRATO } from '@/components/expedientes/serviciosContrato'
 import type { CargoServicio } from '@/types/contrato'
-
-// Espejo de la lista del backend / GenerarContratoModal.
-const SERVICIOS: { key: string; label: string }[] = [
-  { key: 'agua', label: 'Agua y alcantarillado' },
-  { key: 'energia', label: 'Energía eléctrica' },
-  { key: 'gas', label: 'Gas natural' },
-  { key: 'basuras', label: 'Recolección de basuras' },
-  { key: 'alumbrado', label: 'Alumbrado público' },
-  { key: 'internet', label: 'Internet / TV / Telefonía' },
-  { key: 'admin_ph', label: 'Administración PH' },
-]
 
 // '' = "sin cambio": no tocamos ese servicio. Así una edición parcial no
 // resetea el resto de la distribución vigente (el backend hace merge).
 type CargoOpt = CargoServicio | ''
 const SERVICIOS_DEFAULT: Record<string, CargoOpt> = Object.fromEntries(
-  SERVICIOS.map((s) => [s.key, '' as CargoOpt]),
+  SERVICIOS_CONTRATO.map((s) => [s.key, '' as CargoOpt]),
 )
 
 interface Props {
@@ -82,6 +72,12 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         setSubmitting(false)
         return
       }
+      // Solo enviamos el canon si el usuario LO CAMBIÓ. El campo viene
+      // pre-cargado con el canon vigente; reenviarlo tal cual haría que la API
+      // re-valide el tope del 10% sobre un valor que el usuario no tocó (y
+      // bloquearía la regeneración si el valor publicado del inmueble bajó).
+      // Si va undefined, la API conserva el canon actual del contrato.
+      const valorCambiado = valor !== undefined && valor !== (contrato.valor_arriendo ?? undefined)
       // Solo mandamos los servicios que el usuario cambió (distintos de "sin
       // cambio"); el backend hace merge sobre la distribución vigente.
       const serviciosCambiados = Object.fromEntries(
@@ -90,7 +86,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
       await contratoService.regenerarContrato(contrato.id, {
         fecha_inicio: fechaInicio,
         duracion_meses: Number(duracionMeses),
-        valor_arriendo: valor,
+        valor_arriendo: valorCambiado ? valor : undefined,
         servicios_reparto:
           reasignarServicios && Object.keys(serviciosCambiados).length > 0
             ? serviciosCambiados
@@ -161,14 +157,14 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
               type="number"
               value={valorArriendo}
               onChange={(e) => setValorArriendo(e.target.value)}
-              placeholder="Si lo dejas vacío se usa el del inmueble"
+              placeholder="Sin cambios se conserva el canon actual"
               min={0}
               disabled={submitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Solo completá si el canon negociado difiere del valor publicado. No puede superar el
-              <strong> 10%</strong> sobre el valor del inmueble.
+              Si no lo cambias, se conserva el canon actual del contrato. Un canon nuevo no puede
+              superar el <strong>10%</strong> sobre el valor del inmueble.
             </p>
           </div>
 
@@ -189,7 +185,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                   Solo se actualizan los servicios que cambies; el resto conserva su asignación actual.
                 </p>
-                {SERVICIOS.map((s) => (
+                {SERVICIOS_CONTRATO.map((s) => (
                   <div key={s.key} className="flex items-center justify-between gap-3">
                     <span className="text-sm text-gray-700">{s.label}</span>
                     <select
