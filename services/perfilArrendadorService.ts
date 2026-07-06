@@ -15,6 +15,7 @@ export interface IPerfilArrendador {
   rol: string
   tipo_documento: string | null
   numero_documento: string | null
+  nit: string | null
   razon_social: string | null
   representante_legal: string | null
   domicilio_direccion: string | null
@@ -34,6 +35,7 @@ export interface IPerfilArrendador {
 
 export interface IUpdatePerfilArrendadorInput {
   razon_social?: string | null
+  nit?: string | null
   representante_legal?: string | null
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null

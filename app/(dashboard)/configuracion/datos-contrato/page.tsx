@@ -57,6 +57,7 @@ export default function DatosContratoPage() {
         setPerfil(data)
         setForm({
           razon_social: data.razon_social,
+          nit: data.nit,
           representante_legal: data.representante_legal,
           domicilio_direccion: data.domicilio_direccion,
           domicilio_ciudad: data.domicilio_ciudad,
@@ -102,6 +103,7 @@ export default function DatosContratoPage() {
     if (isInmobiliaria) {
       requeridos.push(
         { valor: form.razon_social, etiqueta: 'Nombre comercial / Razón social' },
+        { valor: form.nit, etiqueta: 'NIT' },
         { valor: form.representante_legal, etiqueta: 'Representante legal' },
         { valor: form.matricula_arrendador, etiqueta: 'Matrícula de arrendador' },
       )
@@ -289,6 +291,17 @@ export default function DatosContratoPage() {
             onChange={(v) => onChange('razon_social', v)}
             placeholder="Ej. Inmobiliaria del Valle S.A.S"
             help="El nombre de la inmobiliaria que aparece en el contrato y en la app."
+            required
+          />
+        )}
+
+        {perfil.rol === 'inmobiliaria' && (
+          <Field
+            label="NIT"
+            value={form.nit}
+            onChange={(v) => onChange('nit', v)}
+            placeholder="Ej. 901234567-8"
+            help="NIT de la inmobiliaria (con dígito de verificación). Aparece en el contrato."
             required
           />
         )}
