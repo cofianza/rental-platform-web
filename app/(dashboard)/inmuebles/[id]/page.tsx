@@ -531,8 +531,12 @@ export default function InmuebleDetailPage() {
                       </div>
                       <div>
                         <dt className="text-gray-500">Uso</dt>
-                        <dd className="text-gray-900 font-medium capitalize">
-                          {inmueble.uso === 'vivienda' ? 'Vivienda' : 'Comercial'}
+                        <dd className="text-gray-900 font-medium">
+                          {inmueble.uso === 'vivienda'
+                            ? 'Vivienda'
+                            : inmueble.uso === 'mixto'
+                              ? 'Mixto'
+                              : 'Comercio'}
                         </dd>
                       </div>
                       {inmueble.destinacion && (

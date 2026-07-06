@@ -18,7 +18,8 @@ import { registrarVisitaInmueble } from '@/services/publicPropertiesService'
 import type { PublicProperty } from '@/services/publicPropertiesService'
 
 const TIPO_LABELS: Record<string, string> = {
-  apartamento: 'Apartamento', casa: 'Casa', oficina: 'Oficina', local: 'Local', bodega: 'Bodega',
+  apartamento: 'Apartamento', apartaestudio: 'Apartaestudio', casa: 'Casa', casa_finca: 'Casa Finca',
+  finca: 'Finca', oficina: 'Oficina', local: 'Local', bodega: 'Bodega', lote: 'Lote', parqueadero: 'Parqueadero',
 }
 
 interface Props {

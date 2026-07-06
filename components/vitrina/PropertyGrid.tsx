@@ -26,10 +26,15 @@ const LIMIT = 12
 
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento',
+  apartaestudio: 'Apartaestudio',
   casa: 'Casa',
+  casa_finca: 'Casa Finca',
+  finca: 'Finca',
   oficina: 'Oficina',
   local: 'Local',
   bodega: 'Bodega',
+  lote: 'Lote',
+  parqueadero: 'Parqueadero',
 }
 
 const HAB_OPTIONS = [

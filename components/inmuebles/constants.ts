@@ -8,16 +8,22 @@ import type { TipoInmueble, UsoInmueble, EstadoInmueble } from '@/types/inmueble
 export const TIPO_OPTIONS: { value: TipoInmueble | ''; label: string }[] = [
   { value: '', label: 'Todos los tipos' },
   { value: 'apartamento', label: 'Apartamento' },
+  { value: 'apartaestudio', label: 'Apartaestudio' },
   { value: 'casa', label: 'Casa' },
+  { value: 'casa_finca', label: 'Casa Finca' },
+  { value: 'finca', label: 'Finca' },
   { value: 'oficina', label: 'Oficina' },
   { value: 'local', label: 'Local' },
   { value: 'bodega', label: 'Bodega' },
+  { value: 'lote', label: 'Lote' },
+  { value: 'parqueadero', label: 'Parqueadero' },
 ]
 
 // Opciones de uso
 export const USO_OPTIONS: { value: UsoInmueble; label: string }[] = [
   { value: 'vivienda', label: 'Vivienda' },
-  { value: 'local_comercial', label: 'Local comercial' },
+  { value: 'comercial', label: 'Comercio' },
+  { value: 'mixto', label: 'Mixto' },
 ]
 
 // Opciones de estado
@@ -32,21 +38,27 @@ export const ESTADO_OPTIONS: { value: EstadoInmueble | ''; label: string }[] = [
 // Opciones de estrato (Colombia)
 export const ESTRATO_OPTIONS: { value: number | ''; label: string }[] = [
   { value: '', label: 'Todos los estratos' },
-  { value: 1, label: 'Estrato 1 - Bajo-bajo' },
-  { value: 2, label: 'Estrato 2 - Bajo' },
-  { value: 3, label: 'Estrato 3 - Medio-bajo' },
-  { value: 4, label: 'Estrato 4 - Medio' },
-  { value: 5, label: 'Estrato 5 - Medio-alto' },
-  { value: 6, label: 'Estrato 6 - Alto' },
+  { value: 1, label: 'Estrato 1' },
+  { value: 2, label: 'Estrato 2' },
+  { value: 3, label: 'Estrato 3' },
+  { value: 4, label: 'Estrato 4' },
+  { value: 5, label: 'Estrato 5' },
+  { value: 6, label: 'Estrato 6' },
+  { value: 7, label: 'Estrato 7' },
 ]
 
 // Labels de tipo
 export const TIPO_LABELS: Record<TipoInmueble, string> = {
   apartamento: 'Apartamento',
+  apartaestudio: 'Apartaestudio',
   casa: 'Casa',
+  casa_finca: 'Casa Finca',
+  finca: 'Finca',
   oficina: 'Oficina',
   local: 'Local',
   bodega: 'Bodega',
+  lote: 'Lote',
+  parqueadero: 'Parqueadero',
 }
 
 // Labels de estado
@@ -68,10 +80,15 @@ export const ESTADO_BADGE_CLASSES: Record<EstadoInmueble, string> = {
 // Colores de badge de tipo
 export const TIPO_BADGE_CLASSES: Record<TipoInmueble, string> = {
   apartamento: 'bg-purple-100 text-purple-800',
+  apartaestudio: 'bg-purple-100 text-purple-800',
   casa: 'bg-indigo-100 text-indigo-800',
+  casa_finca: 'bg-indigo-100 text-indigo-800',
+  finca: 'bg-emerald-100 text-emerald-800',
   oficina: 'bg-cyan-100 text-cyan-800',
   local: 'bg-orange-100 text-orange-800',
   bodega: 'bg-stone-100 text-stone-800',
+  lote: 'bg-lime-100 text-lime-800',
+  parqueadero: 'bg-slate-100 text-slate-800',
 }
 
 // Opciones de items por página

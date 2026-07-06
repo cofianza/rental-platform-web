@@ -277,7 +277,9 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         propietario_id: inmueble.propietario_id,
         foto_fachada_url: inmueble.foto_fachada_url || '',
         barrio: inmueble.barrio || '',
-        uso: inmueble.uso,
+        // 'local_comercial' (legacy) se consolida en 'comercial' (Comercio) para
+        // que el select lo muestre correctamente con las nuevas opciones.
+        uso: inmueble.uso === 'local_comercial' ? 'comercial' : inmueble.uso,
         destinacion: inmueble.destinacion || '',
         valor_comercial: inmueble.valor_comercial || '',
         administracion: inmueble.administracion || '',

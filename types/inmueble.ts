@@ -3,8 +3,19 @@
  */
 
 // Enums
-export type TipoInmueble = 'apartamento' | 'casa' | 'oficina' | 'local' | 'bodega'
-export type UsoInmueble = 'vivienda' | 'local_comercial'
+export type TipoInmueble =
+  | 'apartamento'
+  | 'apartaestudio'
+  | 'casa'
+  | 'casa_finca'
+  | 'finca'
+  | 'oficina'
+  | 'local'
+  | 'bodega'
+  | 'lote'
+  | 'parqueadero'
+// 'comercial' y 'mixto' nuevos; 'local_comercial' se conserva por filas existentes.
+export type UsoInmueble = 'vivienda' | 'comercial' | 'local_comercial' | 'mixto'
 export type EstadoInmueble = 'disponible' | 'en_estudio' | 'ocupado' | 'inactivo'
 
 // Propietario (datos embebidos en inmueble)
