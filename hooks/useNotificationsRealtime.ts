@@ -52,6 +52,14 @@ export function useNotificationsRealtime() {
     }
 
     let cancelled = false
+    // Realtime es un lujo, no la vía crítica (el Effect 4 poll de 60s cubre
+    // la funcionalidad). Si el join del canal falla repetidamente —RLS, WS
+    // bloqueado por red/proxy, o churn de StrictMode/Fast Refresh en dev—
+    // supabase-js reintenta en bucle y ensucia la consola con
+    // "WebSocket failed" + CHANNEL_ERROR. Tras unos intentos nos rendimos y
+    // cerramos el canal; el polling mantiene las notificaciones al día.
+    let errorCount = 0
+    let gaveUp = false
 
     setLoading(true)
     notificacionService
@@ -67,6 +75,13 @@ export function useNotificationsRealtime() {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+
+    // setAuth ANTES de subscribe: el join de postgres_changes necesita el JWT
+    // del usuario para que RLS (auth.uid()) autorice el filtro user_id=eq.…
+    // Effect 2 lo mantiene fresco en refrescos posteriores; esto asegura que
+    // el PRIMER join lleve el token sin depender del orden de los efectos.
+    const currentToken = useAuthStore.getState().accessToken
+    if (currentToken) supabase.realtime.setAuth(currentToken)
 
     const channel = supabase
       .channel(`notif:${userId}`)
@@ -97,12 +112,28 @@ export function useNotificationsRealtime() {
         },
       )
       .subscribe((status, err) => {
-        // Log explícito del estado del canal para debug. Si dice
-        // 'CHANNEL_ERROR' sabemos que el join falló (típicamente RLS o
-        // token vencido). Antes esto era silencioso.
-        if (status !== 'SUBSCRIBED' && status !== 'CLOSED') {
-          // eslint-disable-next-line no-console
-          console.warn('[notif realtime] channel status:', status, err)
+        if (status === 'SUBSCRIBED') {
+          errorCount = 0
+          return
+        }
+        // Solo CHANNEL_ERROR / TIMED_OUT cuentan como fallo real. Tras 3
+        // intentos cerramos el canal para cortar el bucle de reconexión
+        // (y el ruido en consola) — el polling de 60s toma el relevo.
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          errorCount += 1
+          if (errorCount >= 3 && !gaveUp) {
+            gaveUp = true
+            // eslint-disable-next-line no-console
+            console.warn(
+              '[notif realtime] canal deshabilitado tras varios fallos; ' +
+                'las notificaciones seguirán vía polling (60s).',
+              err,
+            )
+            if (channelRef.current) {
+              supabase.removeChannel(channelRef.current)
+              channelRef.current = null
+            }
+          }
         }
       })
 

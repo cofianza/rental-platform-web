@@ -111,10 +111,12 @@ class ContratoService {
   }
 
   async getContratoById(id: string): Promise<IContrato> {
-    const response = (await apiClient.get(
-      `/contratos/${id}`
-    )) as unknown as IContratoResponse
-    return response.data
+    return coalesceRequest(`contrato:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}`
+      )) as unknown as IContratoResponse
+      return response.data
+    })
   }
 
   async generarContrato(
@@ -163,17 +165,21 @@ class ContratoService {
     // inline=true para preview en iframe (sin Content-Disposition: attachment).
     // Sin parametro, fuerza descarga (uso del boton "Descargar").
     const qs = options?.inline ? '?inline=true' : ''
-    const response = (await apiClient.get(
-      `/contratos/${id}/descargar${qs}`
-    )) as unknown as IContratoDownloadApiResponse
-    return response.data
+    return coalesceRequest(`contrato-dl:${id}:${qs}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/descargar${qs}`
+      )) as unknown as IContratoDownloadApiResponse
+      return response.data
+    })
   }
 
   async getVersiones(contratoId: string): Promise<IContratoVersion[]> {
-    const response = (await apiClient.get(
-      `/contratos/${contratoId}/versiones`
-    )) as unknown as IVersionesResponse
-    return response.data || []
+    return coalesceRequest(`contrato-versiones:${contratoId}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${contratoId}/versiones`
+      )) as unknown as IVersionesResponse
+      return response.data || []
+    })
   }
 
   async descargarVersion(contratoId: string, versionNum: number): Promise<IContratoDownloadResponse> {
@@ -223,10 +229,12 @@ class ContratoService {
   }
 
   async getTransicionesDisponibles(id: string): Promise<IContratoTransicionesResponse['data']> {
-    const response = (await apiClient.get(
-      `/contratos/${id}/available-transitions`
-    )) as unknown as IContratoTransicionesResponse
-    return response.data
+    return coalesceRequest(`contrato-transiciones:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/available-transitions`
+      )) as unknown as IContratoTransicionesResponse
+      return response.data
+    })
   }
 
   async getHistorialTransiciones(id: string): Promise<{ estado_actual: string; historial: IContratoHistorialEntry[] }> {
@@ -265,24 +273,32 @@ class ContratoService {
   }
 
   async descargarContratoFirmado(id: string): Promise<IContratoDownloadResponse> {
-    const response = (await apiClient.get(
-      `/contratos/${id}/descargar-firmado`
-    )) as unknown as IContratoDownloadApiResponse
-    return response.data
+    // GET idempotente que piden a la vez la página (preview) y
+    // ContratoFirmadoSection al montar → coalesce lo colapsa en 1 request.
+    return coalesceRequest(`contrato-firmado-dl:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/descargar-firmado`
+      )) as unknown as IContratoDownloadApiResponse
+      return response.data
+    })
   }
 
   async getInfoFirma(id: string): Promise<IContratoInfoFirma> {
-    const response = (await apiClient.get(
-      `/contratos/${id}/info-firma`
-    )) as unknown as { success: boolean; data: IContratoInfoFirma }
-    return response.data
+    return coalesceRequest(`contrato-info-firma:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/info-firma`
+      )) as unknown as { success: boolean; data: IContratoInfoFirma }
+      return response.data
+    })
   }
 
   async verificarIntegridad(id: string): Promise<IContratoVerificacionIntegridad> {
-    const response = (await apiClient.get(
-      `/contratos/${id}/verificar-integridad`
-    )) as unknown as { success: boolean; data: IContratoVerificacionIntegridad }
-    return response.data
+    return coalesceRequest(`contrato-integridad:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/verificar-integridad`
+      )) as unknown as { success: boolean; data: IContratoVerificacionIntegridad }
+      return response.data
+    })
   }
 
   async getLogAccesos(id: string): Promise<IContratoAccesoFirmado[]> {
@@ -320,10 +336,12 @@ class ContratoService {
   }
 
   async listarArchivos(id: string): Promise<IContratoArchivo[]> {
-    const response = (await apiClient.get(
-      `/contratos/${id}/archivos`
-    )) as unknown as { success: boolean; data: { archivos: IContratoArchivo[] } }
-    return response.data.archivos
+    return coalesceRequest(`contrato-archivos:${id}`, async () => {
+      const response = (await apiClient.get(
+        `/contratos/${id}/archivos`
+      )) as unknown as { success: boolean; data: { archivos: IContratoArchivo[] } }
+      return response.data.archivos
+    })
   }
 
   async descargarArchivo(contratoId: string, archivoId: string): Promise<IContratoDownloadResponse> {
