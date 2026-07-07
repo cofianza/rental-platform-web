@@ -7,9 +7,14 @@
  * a la vez las citas/contratos del mismo expediente → antes eran N peticiones
  * idénticas, ahora es 1.
  *
- * NO es una caché: no hay TTL. Una vez que la promesa se resuelve, la clave se
- * libera, así que la siguiente llamada (p. ej. el refetch tras una mutación) va
- * fresca a la red. Por eso es seguro: cero riesgo de datos stale.
+ * NO es una caché: no hay TTL. Solo comparte promesas EN VUELO. Una vez que la
+ * promesa se resuelve, la clave se libera, así que la siguiente llamada (p. ej.
+ * el refetch SECUENCIAL tras una mutación —await de la mutación y luego el
+ * refetch) va fresca a la red. Salvedad: si un refetch se SOLAPA con un GET del
+ * mismo key aún en vuelo, recibirá el resultado de ESE GET (posible dato previo
+ * a la mutación). Con el uso actual (refetch secuencial) no ocurre; tenlo en
+ * cuenta si introduces refetches concurrentes. El valor resuelto se comparte
+ * por REFERENCIA entre callers concurrentes: trátalo como inmutable.
  */
 const inflight = new Map<string, Promise<unknown>>()
 

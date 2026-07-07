@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
@@ -22,6 +22,37 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString()
 
+// react-pdf/pdfjs: cuando un <Document> se desmonta con una carga en vuelo
+// —típico del doble-montaje de StrictMode en dev, o al navegar mientras el PDF
+// aún carga— pdfjs aborta el loading/rendering task y su promesa se rechaza con
+// "Worker was terminated" / "Transport destroyed" / "sendWithPromise ...
+// destroyed" / AbortException / RenderingCancelledException. Es benigno (tarea
+// cancelada) pero sale como "Uncaught (in promise)" ensuciando la consola.
+// Silenciamos SOLO esos rechazos, y SOLO mientras haya al menos un PdfViewer
+// montado (contador pdfViewersActive) — así jamás ocultamos un "Worker was
+// terminated" de OTRO web worker ajeno a pdfjs. Los errores reales de carga
+// (red, PDF corrupto, 403) van por onLoadError → "Error al cargar el PDF".
+let pdfViewersActive = 0
+
+const BENIGN_PDFJS_REJECTION =
+  /worker was terminated|transport destroyed|sendWithPromise.*destroyed|loading task (was )?(destroyed|cancelled)|rendering cancelled|(Abort|RenderingCancelled)Exception/i
+
+if (typeof window !== 'undefined') {
+  const w = window as Window & { __pdfjsRejectionGuard?: boolean }
+  if (!w.__pdfjsRejectionGuard) {
+    w.__pdfjsRejectionGuard = true
+    window.addEventListener('unhandledrejection', (event) => {
+      if (pdfViewersActive === 0) return
+      const reason = event.reason as { message?: string; name?: string } | string | undefined
+      const msg =
+        typeof reason === 'string' ? reason : `${reason?.name ?? ''} ${reason?.message ?? ''}`
+      if (BENIGN_PDFJS_REJECTION.test(msg)) {
+        event.preventDefault()
+      }
+    })
+  }
+}
+
 interface PdfViewerProps {
   url: string
 }
@@ -37,6 +68,15 @@ export function PdfViewer({ url }: PdfViewerProps) {
   const [hasError, setHasError] = useState(false)
 
   const scale = SCALE_LEVELS[scaleIndex]
+
+  // Marca que hay un visor de PDF vivo: acota el guard de rechazos benignos de
+  // pdfjs para que solo actúe mientras se está usando react-pdf.
+  useEffect(() => {
+    pdfViewersActive += 1
+    return () => {
+      pdfViewersActive -= 1
+    }
+  }, [])
 
   const onDocumentLoadSuccess = useCallback(({ numPages: total }: { numPages: number }) => {
     setNumPages(total)

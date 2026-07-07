@@ -112,6 +112,9 @@ export function useNotificationsRealtime() {
         },
       )
       .subscribe((status, err) => {
+        // Si este effect ya se limpió (re-montaje, cambio de usuario), este
+        // callback pertenece a un canal viejo: no toques el estado nuevo.
+        if (cancelled) return
         if (status === 'SUBSCRIBED') {
           errorCount = 0
           return
@@ -129,10 +132,10 @@ export function useNotificationsRealtime() {
                 'las notificaciones seguirán vía polling (60s).',
               err,
             )
-            if (channelRef.current) {
-              supabase.removeChannel(channelRef.current)
-              channelRef.current = null
-            }
+            // Cerramos SIEMPRE el canal local de este effect, nunca el que
+            // haya en el ref (podría ser uno nuevo de un re-montaje posterior).
+            supabase.removeChannel(channel)
+            if (channelRef.current === channel) channelRef.current = null
           }
         }
       })
