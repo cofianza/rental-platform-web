@@ -52,6 +52,7 @@ export default function ContratoDetallePage() {
   // datos insertados resaltados) para confirmar que se generó bien.
   const [vista, setVista] = useState<'pdf' | 'verificacion'>('pdf')
   const [transiciones, setTransiciones] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [morasActivas, setMorasActivas] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -134,6 +135,7 @@ export default function ContratoDetallePage() {
         try {
           const t = await contratoService.getTransicionesDisponibles(id)
           setTransiciones(t.transiciones_disponibles ?? [])
+          setMorasActivas(t.moras_activas ?? 0)
         } catch {
           // Silent
         }
@@ -142,6 +144,7 @@ export default function ContratoDetallePage() {
         // viejas — sin esto, los botones de transición seguían pintados tras
         // finalizar y un click daba error.
         setTransiciones([])
+        setMorasActivas(0)
       }
     } catch (err: unknown) {
       // Un refresco silencioso que falla NO debe tumbar la página ya cargada.
@@ -185,6 +188,20 @@ export default function ContratoDetallePage() {
     }
   }
 
+
+  // Abrir el modal de transición: refetch de transiciones + moras activas para
+  // que la advertencia de moras del modal no muestre un conteo desactualizado
+  // (p. ej. si se saldó/reportó una mora tras cargar la página).
+  async function handleAbrirTransicion() {
+    try {
+      const t = await contratoService.getTransicionesDisponibles(id)
+      setTransiciones(t.transiciones_disponibles ?? [])
+      setMorasActivas(t.moras_activas ?? 0)
+    } catch {
+      // Si falla el refetch, abrimos igual con lo que ya teníamos.
+    }
+    setTransicionOpen(true)
+  }
 
   async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string): Promise<boolean> {
     setTransicionLoading(true)
@@ -344,7 +361,7 @@ export default function ContratoDetallePage() {
           {canManage && transiciones.length > 0 && transiciones.map((t) => (
             <button
               key={t.estado}
-              onClick={() => setTransicionOpen(true)}
+              onClick={handleAbrirTransicion}
               className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
             >
               <IconArrowRight size={16} />
@@ -549,6 +566,7 @@ export default function ContratoDetallePage() {
           transicionesDisponibles={transiciones}
           onConfirmar={handleConfirmarTransicion}
           isLoading={transicionLoading}
+          morasActivas={morasActivas}
         />
       )}
 

@@ -172,6 +172,9 @@ export interface IContratoTransicionesResponse {
     contrato_id: string
     estado_actual: EstadoContrato
     transiciones_disponibles: Array<{ estado: EstadoContrato; label: string }>
+    /** Moras activas del contrato — la UI advierte antes de terminar/cancelar
+     *  (la mora sobrevive a la terminación; el cobro de la fianza continúa). */
+    moras_activas?: number
   }
 }
 

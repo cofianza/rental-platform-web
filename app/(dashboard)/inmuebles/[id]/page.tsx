@@ -94,6 +94,7 @@ export default function InmuebleDetailPage() {
   const [contratoVigenteResuelto, setContratoVigenteResuelto] = useState(false)
   const [showTerminarModal, setShowTerminarModal] = useState(false)
   const [transicionesContrato, setTransicionesContrato] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [morasActivasContrato, setMorasActivasContrato] = useState(0)
   const [terminarLoading, setTerminarLoading] = useState(false)
 
   // Permisos por rol
@@ -266,6 +267,7 @@ export default function InmuebleDetailPage() {
     try {
       const data = await contratoService.getTransicionesDisponibles(contratoVigente.id)
       setTransicionesContrato(data.transiciones_disponibles)
+      setMorasActivasContrato(data.moras_activas ?? 0)
       setShowTerminarModal(true)
     } catch {
       toast.error('No se pudieron cargar las acciones del contrato')
@@ -921,6 +923,7 @@ export default function InmuebleDetailPage() {
           transicionesDisponibles={transicionesContrato}
           onConfirmar={handleConfirmarTerminar}
           isLoading={terminarLoading}
+          morasActivas={morasActivasContrato}
         />
       )}
     </div>

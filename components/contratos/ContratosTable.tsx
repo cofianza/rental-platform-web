@@ -27,6 +27,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [transicionContrato, setTransicionContrato] = useState<IContratoListItem | null>(null)
   const [transicionesDisponibles, setTransicionesDisponibles] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [morasActivasTransicion, setMorasActivasTransicion] = useState(0)
   const [transicionLoading, setTransicionLoading] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
@@ -61,6 +62,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
     try {
       const data = await contratoService.getTransicionesDisponibles(contrato.id)
       setTransicionesDisponibles(data.transiciones_disponibles)
+      setMorasActivasTransicion(data.moras_activas ?? 0)
       setTransicionContrato(contrato)
     } catch {
       toast.error('Error al obtener transiciones disponibles')
@@ -305,6 +307,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
           transicionesDisponibles={transicionesDisponibles}
           onConfirmar={handleConfirmarTransicion}
           isLoading={transicionLoading}
+          morasActivas={morasActivasTransicion}
         />
       )}
 

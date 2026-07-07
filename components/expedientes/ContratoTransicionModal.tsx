@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
-import { IconLoader, IconArrowRight } from '@/components/icons'
+import { IconLoader, IconArrowRight, IconAlertTriangle } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey } from '@/lib/constants'
 import type { EstadoContrato } from '@/types/contrato'
 
@@ -20,6 +20,9 @@ export interface ContratoTransicionModalProps {
    *  conserva comentario/motivo para reintentar. void/true = éxito → cierra. */
   onConfirmar: (estadoDestino: EstadoContrato, comentario: string, motivo?: string) => Promise<boolean | void>
   isLoading?: boolean
+  /** Moras activas del contrato: si >0 se advierte al terminar/cancelar (la
+   *  mora NO se cancela al terminar — el cobro sigue). */
+  morasActivas?: number
 }
 
 const ESTADOS_CON_MOTIVO: EstadoContrato[] = ['cancelado', 'finalizado']
@@ -31,6 +34,7 @@ export function ContratoTransicionModal({
   transicionesDisponibles,
   onConfirmar,
   isLoading = false,
+  morasActivas = 0,
 }: ContratoTransicionModalProps) {
   const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoContrato | null>(null)
   const [comentario, setComentario] = useState('')
@@ -86,6 +90,21 @@ export function ContratoTransicionModal({
       size="md"
     >
       <div className="space-y-6">
+        {/* Advertencia de moras activas: la mora NO se cancela al terminar el
+            contrato (el cobro de la fianza continúa), así que el operador debe
+            decidir explícitamente si marcarla pagada o cancelarla. Solo aplica a
+            transiciones de terminación (finalizado/cancelado). */}
+        {morasActivas > 0 && (!estadoSeleccionado || ESTADOS_CON_MOTIVO.includes(estadoSeleccionado)) && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>
+              Este contrato tiene <strong>{morasActivas} mora{morasActivas > 1 ? 's' : ''} activa{morasActivas > 1 ? 's' : ''}</strong>.
+              Terminar o cancelar el contrato <strong>no cierra</strong> la mora: el cobro sigue su curso.
+              Si ya se saldó o quieres detenerla, márcala como pagada o cancélala en <em>Reportar Mora</em>.
+            </span>
+          </div>
+        )}
+
         {/* Estado actual */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

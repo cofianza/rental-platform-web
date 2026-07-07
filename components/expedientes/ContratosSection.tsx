@@ -51,6 +51,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   const [generarOpen, setGenerarOpen] = useState(false)
   const [transicionContrato, setTransicionContrato] = useState<IContrato | null>(null)
   const [transicionesDisponibles, setTransicionesDisponibles] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
+  const [morasActivasTransicion, setMorasActivasTransicion] = useState(0)
   const [transicionLoading, setTransicionLoading] = useState(false)
 
   // Action loading
@@ -182,6 +183,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     try {
       const data = await contratoService.getTransicionesDisponibles(contrato.id)
       setTransicionesDisponibles(data.transiciones_disponibles)
+      setMorasActivasTransicion(data.moras_activas ?? 0)
       setTransicionContrato(contrato)
     } catch {
       toast.error('Error al obtener las transiciones disponibles')
@@ -449,6 +451,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
           transicionesDisponibles={transicionesDisponibles}
           onConfirmar={handleConfirmarTransicion}
           isLoading={transicionLoading}
+          morasActivas={morasActivasTransicion}
         />
       )}
 
