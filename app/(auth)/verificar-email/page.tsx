@@ -91,18 +91,33 @@ function VerifyEmailContent() {
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">
               Cómo funciona tu Oficina Virtual
             </p>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {[
-                'Publica tus inmuebles en la vitrina y recibe interesados sin costo.',
-                'El candidato paga su estudio de crédito y lo evaluamos en segundos.',
-                'Generas el contrato con Cofianza como fiador y se firma digital.',
-                'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
+                {
+                  titulo: 'Publicas tus inmuebles',
+                  detalle: 'Los subes a la vitrina de Cofianza sin costo y recibes interesados por la web y por WhatsApp.',
+                },
+                {
+                  titulo: 'Estudias al candidato',
+                  detalle: 'El candidato paga su estudio de crédito y recibes el resultado (aprobado, condicionado o rechazado) casi al instante.',
+                },
+                {
+                  titulo: 'Generas y firman el contrato',
+                  detalle: 'Se genera automático con tus datos y Cofianza como fiador; la firma es 100% digital con validez legal (Ley 527 de 1999).',
+                },
+                {
+                  titulo: 'Quedas respaldado ante la mora',
+                  detalle: 'Si el inquilino se atrasa, reportas la mora y Cofianza cubre el canon y gestiona el cobro por ti.',
+                },
               ].map((paso, i) => (
                 <li key={i} className="flex items-start gap-2.5">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[11px] font-bold text-primary-700">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-gray-700">{paso}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-gray-800">{paso.titulo}</span>
+                    <span className="block text-xs leading-relaxed text-gray-500">{paso.detalle}</span>
+                  </span>
                 </li>
               ))}
             </ul>
