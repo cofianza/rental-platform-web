@@ -106,7 +106,12 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
         )}
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
           <Chip tone={arrendado ? 'green' : 'orange'}>{arrendado ? 'Arrendado' : 'Disponible'}</Chip>
-          {p.visibleVitrina && <Chip tone="blue">En vitrina</Chip>}
+          {/* Publicado real = flag + disponible + sin arriendo (mismo guard que
+              el toggle de abajo): un arrendado con flag residual NO está en la
+              vitrina pública — no mostrar "En vitrina" encima de "Arrendado". */}
+          {!arrendado && p.estado === 'disponible' && p.visibleVitrina && (
+            <Chip tone="blue">En vitrina</Chip>
+          )}
         </div>
       </Link>
 

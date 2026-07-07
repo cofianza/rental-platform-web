@@ -47,10 +47,12 @@ import {
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
 
-type VitrinaKind = 'vitrina' | 'pausada' | 'inactiva'
+type VitrinaKind = 'vitrina' | 'pausada' | 'inactiva' | 'arrendada' | 'estudio'
 
 const VITRINA_STYLE: Record<VitrinaKind, { wrap: string; dot: string; label: string }> = {
   vitrina: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600', label: 'En vitrina' },
+  arrendada: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500', label: 'Arrendada' },
+  estudio: { wrap: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500', label: 'En estudio' },
   pausada: {
     wrap: 'bg-gray-50 text-gray-600 border border-gray-200',
     dot: 'bg-gray-400',
@@ -63,12 +65,22 @@ const VITRINA_STYLE: Record<VitrinaKind, { wrap: string; dot: string; label: str
   },
 }
 
+// Publicado DE VERDAD = flag + estado 'disponible' (la vitrina pública exige
+// ambos; el flag solo no basta — un ocupado con flag residual NO se publica).
+function estaPublicado(i: IInmueble): boolean {
+  return i.visible_vitrina && i.estado === 'disponible'
+}
+
 // 2.5: "Pausar" = visible_vitrina=false conservando estado 'disponible'. Por
-// eso "Pausada" es NO estar en vitrina (sin estar inactiva); 'inactivo' es el
-// soft-delete y se etiqueta aparte como "Inactiva".
+// eso "Pausada" es NO estar en vitrina estando disponible; 'inactivo' es el
+// soft-delete ("Inactiva"), 'ocupado' es un arriendo en curso ("Arrendada") y
+// 'en_estudio' un candidato en proceso ("En estudio") — ninguno de esos dos
+// está publicado aunque conserve un flag residual.
 function vitrinaKind(i: IInmueble): VitrinaKind {
   if (i.estado === 'inactivo') return 'inactiva'
-  if (i.visible_vitrina) return 'vitrina'
+  if (i.estado === 'ocupado') return 'arrendada'
+  if (i.estado === 'en_estudio') return 'estudio'
+  if (estaPublicado(i)) return 'vitrina'
   return 'pausada'
 }
 
@@ -81,9 +93,10 @@ const CHIPS: Array<{
   patch: { visible_vitrina: boolean | ''; estado: IInmueble['estado'] | '' }
 }> = [
   { key: 'todas', label: 'Todas', patch: { visible_vitrina: '', estado: '' } },
-  { key: 'vitrina', label: 'En vitrina', patch: { visible_vitrina: true, estado: '' } },
-  // 2.5: "Pausadas" = fuera de vitrina (lo que produce el boton Pausar).
-  { key: 'pausadas', label: 'Pausadas', patch: { visible_vitrina: false, estado: '' } },
+  // Publicado real = flag + disponible (un ocupado con flag residual no está en la vitrina).
+  { key: 'vitrina', label: 'En vitrina', patch: { visible_vitrina: true, estado: 'disponible' } },
+  // 2.5: "Pausadas" = fuera de vitrina estando disponible (lo que produce Pausar).
+  { key: 'pausadas', label: 'Pausadas', patch: { visible_vitrina: false, estado: 'disponible' } },
   { key: 'inactivas', label: 'Inactivas', patch: { visible_vitrina: '', estado: 'inactivo' } },
 ]
 
@@ -99,10 +112,11 @@ export function PropiedadesInmobiliariaView() {
     user?.rol === 'inmobiliaria' && completitud !== null && !completitud.completo
 
   // Stat-cards reales derivados del listado en pantalla + meta.
-  const enVitrina = inmuebles.filter((i) => i.visible_vitrina).length
+  // Publicado real = flag + disponible (un ocupado con flag residual no cuenta).
+  const enVitrina = inmuebles.filter(estaPublicado).length
   const disponibles = inmuebles.filter((i) => i.estado === 'disponible').length
-  // 2.5: pausada = fuera de vitrina sin estar inactiva (lo que hace "Pausar").
-  const pausadas = inmuebles.filter((i) => !i.visible_vitrina && i.estado !== 'inactivo').length
+  // 2.5: pausada = disponible pero fuera de vitrina (lo que hace "Pausar").
+  const pausadas = inmuebles.filter((i) => !i.visible_vitrina && i.estado === 'disponible').length
 
   const activeChip: ChipKey =
     filters.visible_vitrina === true
@@ -244,7 +258,11 @@ export function PropiedadesInmobiliariaView() {
               {inmuebles.map((i) => {
                 const vk = vitrinaKind(i)
                 const vs = VITRINA_STYLE[vk]
-                const publicada = i.visible_vitrina
+                // "Pausar" se ofrece siempre que el flag esté encendido (limpia
+                // también un flag residual en no-disponibles); "Publicar" solo
+                // en 'disponible' (el API rechaza publicar en otros estados).
+                const flagVitrina = i.visible_vitrina
+                const puedeTogglear = i.estado !== 'inactivo' && (flagVitrina || i.estado === 'disponible')
                 return (
                   <div
                     key={i.id}
@@ -345,14 +363,16 @@ export function PropiedadesInmobiliariaView() {
                         <IconGlobe size={13} />
                         Ver en web
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleVitrina(i, !publicada)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
-                      >
-                        {publicada ? <IconEyeOff size={13} /> : <IconEye size={13} />}
-                        {publicada ? 'Pausar' : 'Publicar'}
-                      </button>
+                      {puedeTogglear && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVitrina(i, !flagVitrina)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        >
+                          {flagVitrina ? <IconEyeOff size={13} /> : <IconEye size={13} />}
+                          {flagVitrina ? 'Pausar' : 'Publicar'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => router.push(`/inmuebles/${i.id}/editar`)}

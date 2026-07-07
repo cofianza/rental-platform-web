@@ -314,10 +314,11 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
 
   const chips: Array<{ key: ChipKey; label: string; patch: VitrinaFilterChipsProps['filters'] }> = [
     { key: 'todas',     label: 'Todas',      patch: { visible_vitrina: '', estado: '' } },
-    { key: 'vitrina',   label: 'En vitrina', patch: { visible_vitrina: true, estado: '' } },
-    // 2.5: "Pausadas" = fuera de vitrina (lo que produce el boton Pausar);
+    // Publicado real = flag + disponible (un ocupado con flag residual no está en la vitrina pública).
+    { key: 'vitrina',   label: 'En vitrina', patch: { visible_vitrina: true, estado: 'disponible' } },
+    // 2.5: "Pausadas" = disponible fuera de vitrina (lo que produce el boton Pausar);
     // 'inactivo' es el soft-delete y va aparte como "Inactivas".
-    { key: 'pausadas',  label: 'Pausadas',   patch: { visible_vitrina: false, estado: '' } },
+    { key: 'pausadas',  label: 'Pausadas',   patch: { visible_vitrina: false, estado: 'disponible' } },
     { key: 'inactivas', label: 'Inactivas',  patch: { visible_vitrina: '', estado: 'inactivo' } },
   ]
 

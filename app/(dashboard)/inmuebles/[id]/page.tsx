@@ -52,6 +52,7 @@ import { inmuebleService } from '@/services/inmuebleService'
 import { contratoService } from '@/services/contratoService'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { useAuthStore } from '@/stores/auth.store'
+import { useInmueblesStore } from '@/stores/inmuebles.store'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants'
 import type { IInmueble, EstadoInmueble } from '@/types/inmueble'
 import type { EstadoContrato } from '@/types/contrato'
@@ -71,6 +72,12 @@ export default function InmuebleDetailPage() {
   const [isLoadingExpedientes, setIsLoadingExpedientes] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('info')
+  // Keep-alive del tab Contrato: se monta en la primera visita y luego solo se
+  // oculta con CSS — evita re-pedir el preview compilado en cada entrada al tab.
+  const [contratoTabVisitado, setContratoTabVisitado] = useState(false)
+  useEffect(() => {
+    if (activeTab === 'contrato') setContratoTabVisitado(true)
+  }, [activeTab])
   const [isTogglingVitrina, setIsTogglingVitrina] = useState(false)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
@@ -90,21 +97,33 @@ export default function InmuebleDetailPage() {
   const canDeactivate = isAdmin
   const canCreate = isAdmin || isOperador || isPropietario || isInmobiliaria
 
-  // Cargar inmueble
-  const fetchInmueble = useCallback(async () => {
+  // Cargar inmueble.
+  // opts.silent = refresco EN SITIO (p. ej. tras terminar el contrato): NO toca
+  // isLoading — el skeleton de página completa desmontaría todas las secciones
+  // y sus efectos de montaje re-dispararían sus fetches (mismo anti-patrón de
+  // bucle corregido en contratos/[id]). Un refresco silencioso que falla
+  // tampoco tumba la página ya renderizada: avisa por toast.
+  const fetchInmueble = useCallback(async (opts?: { silent?: boolean }) => {
     if (!id) return
+    const silent = opts?.silent ?? false
 
-    setIsLoading(true)
-    setError(null)
+    if (!silent) {
+      setIsLoading(true)
+      setError(null)
+    }
 
     try {
       const data = await inmuebleService.getInmuebleById(id)
       setInmueble(data)
+      // Mantener la lista (store zustand) en sincronía para que al volver a
+      // /inmuebles no se vean badges/valores viejos.
+      useInmueblesStore.getState().updateInmuebleInList(data)
     } catch (err) {
       console.error('Error fetching inmueble:', err)
-      setError('No se pudo cargar el inmueble')
+      if (!silent) setError('No se pudo cargar el inmueble')
+      else toast.error('No se pudo refrescar el inmueble')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }, [id])
 
@@ -166,6 +185,7 @@ export default function InmuebleDetailPage() {
         !inmueble.visible_vitrina
       )
       setInmueble(updated)
+      useInmueblesStore.getState().updateInmuebleInList(updated)
       toast.success(
         updated.visible_vitrina
           ? 'Inmueble visible en la vitrina'
@@ -186,6 +206,9 @@ export default function InmuebleDetailPage() {
     setIsDeactivating(true)
     try {
       await inmuebleService.deleteInmueble(inmueble.id)
+      // Quitar de la lista cacheada antes de navegar: si no, el inmueble
+      // desactivado "parpadea" en /inmuebles hasta el siguiente fetch.
+      useInmueblesStore.getState().removeInmuebleFromList(inmueble.id)
       toast.success('Inmueble desactivado exitosamente')
       router.push('/inmuebles')
     } catch (err) {
@@ -206,6 +229,7 @@ export default function InmuebleDetailPage() {
         estado: 'disponible' as EstadoInmueble,
       })
       setInmueble(updated)
+      useInmueblesStore.getState().updateInmuebleInList(updated)
       toast.success('Inmueble reactivado exitosamente')
     } catch (err) {
       console.error('Error reactivating inmueble:', err)
@@ -241,7 +265,8 @@ export default function InmuebleDetailPage() {
       })
       toast.success('Contrato actualizado. El inmueble quedó disponible para arrendar de nuevo.')
       setShowTerminarModal(false)
-      await fetchInmueble()
+      // Refresco EN SITIO: sin skeleton de página completa (no desmonta tabs).
+      await fetchInmueble({ silent: true })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el contrato')
     } finally {
@@ -276,7 +301,7 @@ export default function InmuebleDetailPage() {
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
-              onClick={fetchInmueble}
+              onClick={() => fetchInmueble()}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
             >
               <IconRefresh size={16} />
@@ -649,8 +674,15 @@ export default function InmuebleDetailPage() {
                 </div>
               )}
 
-              {activeTab === 'contrato' && (
-                <PlantillaContratoPreview inmuebleId={inmueble.id} />
+              {/* Tab Contrato: lazy en la primera visita y luego KEEP-ALIVE
+                  (oculto con CSS, no desmontado) — el preview compilado del
+                  contrato es una petición cara al backend y se re-pedía en
+                  CADA entrada al tab. El botón "Recargar" del componente
+                  sigue siendo la vía para refrescarlo. */}
+              {contratoTabVisitado && (
+                <div className={activeTab === 'contrato' ? '' : 'hidden'}>
+                  <PlantillaContratoPreview inmuebleId={inmueble.id} />
+                </div>
               )}
 
               {activeTab === 'expedientes' && (
@@ -746,8 +778,17 @@ export default function InmuebleDetailPage() {
             </div>
           )}
 
-          {/* Visibility toggle */}
-          {canEdit && (
+          {/* Visibility toggle. Publicado DE VERDAD = flag + estado disponible
+              (la vitrina pública exige ambos): el toggle se pinta con ese
+              derivado — antes se pintaba VERDE con el flag crudo en un
+              inmueble ocupado, contradiciendo el copy de abajo. Se permite
+              APAGAR un flag residual en no-disponibles (el API solo bloquea
+              encender); encender solo en 'disponible'. */}
+          {canEdit && (() => {
+            const publicado = inmueble.visible_vitrina && inmueble.estado === 'disponible'
+            const toggleBloqueado =
+              isTogglingVitrina || (inmueble.estado !== 'disponible' && !inmueble.visible_vitrina)
+            return (
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -758,17 +799,17 @@ export default function InmuebleDetailPage() {
                 </div>
                 <button
                   onClick={handleToggleVitrina}
-                  disabled={isTogglingVitrina || inmueble.estado !== 'disponible'}
+                  disabled={toggleBloqueado}
                   className={cn(
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                    inmueble.visible_vitrina ? 'bg-primary-600' : 'bg-gray-200',
-                    (isTogglingVitrina || inmueble.estado !== 'disponible') && 'opacity-50 cursor-not-allowed'
+                    publicado ? 'bg-primary-600' : 'bg-gray-200',
+                    toggleBloqueado && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   <span
                     className={cn(
                       'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                      inmueble.visible_vitrina ? 'translate-x-5' : 'translate-x-0'
+                      publicado ? 'translate-x-5' : 'translate-x-0'
                     )}
                   >
                     {isTogglingVitrina && (
@@ -788,7 +829,8 @@ export default function InmuebleDetailPage() {
                     : 'El inmueble está oculto de la vitrina pública.'}
               </p>
             </div>
-          )}
+            )
+          })()}
 
           {/* Metadata */}
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
