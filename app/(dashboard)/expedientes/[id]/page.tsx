@@ -572,6 +572,7 @@ export default function ExpedienteDetallePage() {
               <CitasSection
                 expedienteId={id}
                 expedienteEstado={expediente.estado}
+                citaOmitida={expediente.cita_omitida}
                 inmuebleId={expediente.inmueble?.id}
                 solicitanteId={expediente.solicitante?.id}
                 solicitanteTelefono={expediente.solicitante?.telefono}

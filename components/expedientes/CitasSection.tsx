@@ -28,6 +28,10 @@ interface CitasSectionProps {
   /** Estado del expediente — para ocultar el pill de pago cuando el estudio ya
    *  corrió (en expedientes finalizados no tiene sentido "Aún sin pago"). */
   expedienteEstado?: string
+  /** 3.2: la visita se marcó como ya realizada por fuera (cita_omitida). Cuando
+   *  es true NO ofrecemos "Agendar visita" — se muestra el estado de visita
+   *  omitida en su lugar. */
+  citaOmitida?: boolean
   /** Id del inmueble — habilita SlotSelector con disponibilidad real del
    *  propietario. Si falta, el modal cae a un input date+time crudo. */
   inmuebleId?: string
@@ -40,7 +44,7 @@ interface CitasSectionProps {
   onCitaRealizada?: () => void
 }
 
-export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, solicitanteId, solicitanteTelefono, onSolicitanteUpdated, onCitaRealizada }: CitasSectionProps) {
+export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmuebleId, solicitanteId, solicitanteTelefono, onSolicitanteUpdated, onCitaRealizada }: CitasSectionProps) {
   // El estudio ya corrió (o el expediente cerró): el pago del estudio ya no es
   // accionable, así que no mostramos el pill "Aún sin pago"/"Pago pendiente".
   const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
@@ -170,7 +174,7 @@ export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, solic
         </h3>
         {/* Mostrar boton compacto solo cuando hay historial (canceladas/no_asistio)
             pero NO hay cita activa ni realizada — caso "rebote" tras cancelacion. */}
-        {!hasNoActiveCita && !completedCita && !activeCita && (
+        {!hasNoActiveCita && !completedCita && !activeCita && !citaOmitida && (
           <button
             onClick={() => setShowCrearModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
@@ -221,7 +225,25 @@ export function CitasSection({ expedienteId, expedienteEstado, inmuebleId, solic
         </div>
       )}
 
-      {hasNoActiveCita && (
+      {/* 3.2: la visita se marcó como ya realizada por fuera (cita_omitida) — no
+          ofrecemos agendar; mostramos el estado en su lugar. */}
+      {citaOmitida && !completedCita && !activeCita && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+              <IconCheck size={16} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-green-800">Visita ya realizada</p>
+              <p className="text-xs text-green-600">
+                Marcada como realizada por fuera (visita coordinada directamente). No hace falta agendar.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasNoActiveCita && !citaOmitida && (
         <div className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-primary-100/50 to-cyan-50 border-2 border-primary-200 rounded-xl p-6">
           {/* Decoración de fondo */}
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary-200/40 rounded-full blur-2xl pointer-events-none" />
