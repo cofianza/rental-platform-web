@@ -476,6 +476,17 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
         submitting={confirmandoFirma}
         onConfirm={handleConfirmarFirma}
         onClose={() => !confirmandoFirma && setFirmaPreview(null)}
+        onFirmanteUpdated={async () => {
+          // Tras corregir un teléfono en línea, re-pedimos el preview para
+          // re-validar repetidos/faltantes sin cerrar el modal.
+          if (!firmaPreview) return
+          try {
+            const p = await contratoService.previewFirmantes(firmaPreview.contrato.id)
+            setFirmaPreview({ contrato: firmaPreview.contrato, data: p })
+          } catch {
+            /* si falla, el usuario puede reintentar */
+          }
+        }}
       />
     </div>
   )

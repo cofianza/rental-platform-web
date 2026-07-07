@@ -714,6 +714,16 @@ export default function ContratoDetallePage() {
         onClose={() => {
           if (!confirmandoFirma) setFirmaPreview(null)
         }}
+        onFirmanteUpdated={async () => {
+          // Tras corregir un teléfono en línea, re-pedimos el preview para
+          // re-validar repetidos/faltantes sin cerrar el modal.
+          try {
+            const p = await contratoService.previewFirmantes(id)
+            setFirmaPreview(p)
+          } catch {
+            /* si falla, el usuario puede reintentar */
+          }
+        }}
       />
 
       <ConfirmDialog
