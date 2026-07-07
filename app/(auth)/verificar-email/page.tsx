@@ -79,7 +79,10 @@ function VerifyEmailContent() {
               ¡Bienvenido a Cofianza!
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Verificamos tu correo y tu cuenta ya está activa.
+              Verificamos tu correo y tu cuenta ya está activa. Cofianza reemplaza la
+              fianza tradicional: <span className="font-semibold text-gray-800">nosotros
+              respaldamos el contrato como fiador</span> y, si hay mora, pagamos y
+              gestionamos el cobro — tú te enfocas en arrendar.
             </p>
           </div>
 
@@ -105,13 +108,38 @@ function VerifyEmailContent() {
             </ul>
           </div>
 
-          <div>
+          {/* Primeros pasos concretos al entrar por primera vez */}
+          <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-4 text-left">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-primary-700">
+              Tus primeros pasos
+            </p>
+            <ul className="space-y-2.5">
+              {[
+                'Completa los datos para el contrato en Configuración (NIT, representante y cuenta de pago).',
+                'Publica tu primer inmueble en la vitrina.',
+                'Cuando tengas un interesado, crea su expediente y solicita el estudio.',
+              ].map((paso, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-600" />
+                  <span className="text-sm text-gray-700">{paso}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="space-y-2">
             <Link
               href={AUTH_ROUTES.LOGIN}
               className="inline-flex w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-bold rounded-lg hover:bg-primary-700 transition-colors"
             >
               Iniciar sesión y empezar
             </Link>
+            <p className="text-xs text-gray-500">
+              ¿Dudas? Escríbenos a{' '}
+              <a href="mailto:hola@cofianza.co" className="font-medium text-primary-600 hover:text-primary-700">
+                hola@cofianza.co
+              </a>
+            </p>
           </div>
         </div>
       )}
