@@ -175,6 +175,9 @@ export function useExpedienteWizard() {
   const [errors, setErrors] = useState<WizardErrors>(initialErrors)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // 3.1: si el solicitante ya tiene un expediente activo para este inmueble, el
+  // backend devuelve el expediente existente para que ofrezcamos "Ver expediente".
+  const [existingExpediente, setExistingExpediente] = useState<{ id: string; numero: string | null } | null>(null)
 
   // ============================================
   // Navegacion
@@ -325,6 +328,7 @@ export function useExpedienteWizard() {
   const submitExpediente = useCallback(async (): Promise<string | null> => {
     setIsSubmitting(true)
     setSubmitError(null)
+    setExistingExpediente(null)
 
     try {
       let solicitanteId = data.step2.solicitante?.id
@@ -370,6 +374,14 @@ export function useExpedienteWizard() {
         } else {
           message = err.message
         }
+        // 3.1: el backend adjunta el expediente activo existente → guardamos su
+        // id/numero para ofrecer "Ver expediente" en la confirmación.
+        if (err.code === 'EXPEDIENTE_ACTIVO_DUPLICADO') {
+          const det = err.details as unknown as { expediente_id?: string; expediente_numero?: string | null } | undefined
+          if (det?.expediente_id) {
+            setExistingExpediente({ id: det.expediente_id, numero: det.expediente_numero ?? null })
+          }
+        }
       } else if (err instanceof Error) {
         message = err.message
       }
@@ -392,6 +404,7 @@ export function useExpedienteWizard() {
     setErrors(initialErrors)
     setIsSubmitting(false)
     setSubmitError(null)
+    setExistingExpediente(null)
   }, [])
 
   // ============================================
@@ -405,6 +418,7 @@ export function useExpedienteWizard() {
     errors,
     isSubmitting,
     submitError,
+    existingExpediente,
 
     // Navegacion
     goToStep,

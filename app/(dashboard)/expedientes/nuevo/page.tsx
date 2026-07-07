@@ -47,6 +47,7 @@ function NuevoExpedienteContent() {
     errors,
     isSubmitting,
     submitError,
+    existingExpediente,
     nextStep,
     prevStep,
     goToStep,
@@ -156,6 +157,7 @@ function NuevoExpedienteContent() {
             data={data}
             isSubmitting={isSubmitting}
             submitError={submitError}
+            existingExpediente={existingExpediente}
             onSubmit={submitExpediente}
             onEditStep={goToStep}
           />

@@ -6,6 +6,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   IconHome,
   IconMapPin,
@@ -18,6 +19,7 @@ import {
   IconLoader,
   IconAlertTriangle,
   IconPencil,
+  IconArrowRight,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
@@ -29,6 +31,9 @@ interface Step4ConfirmationProps {
   data: WizardData
   isSubmitting: boolean
   submitError: string | null
+  /** 3.1: si el solicitante ya tiene un expediente activo para este inmueble,
+   *  el backend lo devuelve para ofrecer "Ver expediente" en vez de un callejón. */
+  existingExpediente?: { id: string; numero: string | null } | null
   onSubmit: () => void
   /** Volver a un paso del wizard para corregir datos (1=inmueble, 2=solicitante, 3=config). */
   onEditStep: (step: number) => void
@@ -38,6 +43,7 @@ export function Step4Confirmation({
   data,
   isSubmitting,
   submitError,
+  existingExpediente,
   onSubmit,
   onEditStep,
 }: Step4ConfirmationProps) {
@@ -65,11 +71,22 @@ export function Step4Confirmation({
       {submitError && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
           <IconAlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium text-red-800">
               {WIZARD_MESSAGES.ERROR}
             </p>
             <p className="text-xs text-red-600 mt-1">{submitError}</p>
+            {/* 3.1: si ya hay un expediente activo para este inmueble, ofrecer
+                ir directo a él en vez de dejar al usuario atascado. */}
+            {existingExpediente && (
+              <Link
+                href={`/expedientes/${existingExpediente.id}`}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+              >
+                Ver expediente{existingExpediente.numero ? ` ${existingExpediente.numero}` : ' existente'}
+                <IconArrowRight size={14} />
+              </Link>
+            )}
           </div>
         </div>
       )}
