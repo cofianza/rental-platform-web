@@ -98,6 +98,8 @@ const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
   { value: 'comentario', label: 'Comentarios' },
   { value: 'asignacion', label: 'Asignaciones' },
   { value: 'cita', label: 'Citas' },
+  // Eventos del contrato (activado / finalizado / cancelado).
+  { value: 'contrato', label: 'Contrato' },
   { value: 'creacion', label: 'Creación' },
 ]
 

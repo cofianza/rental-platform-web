@@ -91,6 +91,7 @@ export default function InmuebleDetailPage() {
   // Contrato vigente del inmueble (cuando está 'ocupado') — para "Ver contrato"
   // y la acción "Terminar contrato" (que libera el inmueble).
   const [contratoVigente, setContratoVigente] = useState<{ id: string; estado: string } | null>(null)
+  const [contratoVigenteResuelto, setContratoVigenteResuelto] = useState(false)
   const [showTerminarModal, setShowTerminarModal] = useState(false)
   const [transicionesContrato, setTransicionesContrato] = useState<Array<{ estado: EstadoContrato; label: string }>>([])
   const [terminarLoading, setTerminarLoading] = useState(false)
@@ -100,9 +101,14 @@ export default function InmuebleDetailPage() {
   const isOperador = user?.rol === 'operador_analista'
   const isPropietario = user?.rol === 'propietario'
   const isInmobiliaria = user?.rol === 'inmobiliaria'
-  const canEdit = isAdmin || isOperador || isPropietario || isInmobiliaria
+  // Miembro solo_lectura de la org: el API le niega TODA mutación (deny por
+  // defecto del middleware); no pintarle Editar/Terminar/toggle para que no
+  // descubra el bloqueo con un 403. (rol_miembro llega vía /auth/me; si aún no
+  // está cargado se comporta como antes.)
+  const isViewer = isInmobiliaria && user?.rol_miembro === 'solo_lectura'
+  const canEdit = (isAdmin || isOperador || isPropietario || isInmobiliaria) && !isViewer
   const canDeactivate = isAdmin
-  const canCreate = isAdmin || isOperador || isPropietario || isInmobiliaria
+  const canCreate = (isAdmin || isOperador || isPropietario || isInmobiliaria) && !isViewer
 
   // Cargar inmueble.
   // opts.silent = refresco EN SITIO (p. ej. tras terminar el contrato): NO toca
@@ -111,7 +117,7 @@ export default function InmuebleDetailPage() {
   // bucle corregido en contratos/[id]). Un refresco silencioso que falla
   // tampoco tumba la página ya renderizada: avisa por toast.
   const fetchInmueble = useCallback(async (opts?: { silent?: boolean }) => {
-    if (!id) return
+    if (!id) return null
     const silent = opts?.silent ?? false
 
     if (!silent) {
@@ -125,10 +131,14 @@ export default function InmuebleDetailPage() {
       // Mantener la lista (store zustand) en sincronía para que al volver a
       // /inmuebles no se vean badges/valores viejos.
       useInmueblesStore.getState().updateInmuebleInList(data)
+      // Devolvemos el inmueble fresco para que el caller pueda decidir sobre
+      // él sin esperar el re-render (p. ej. el toast tras terminar contrato).
+      return data
     } catch (err) {
       console.error('Error fetching inmueble:', err)
       if (!silent) setError('No se pudo cargar el inmueble')
       else toast.error('No se pudo refrescar el inmueble')
+      return null
     } finally {
       if (!silent) setIsLoading(false)
     }
@@ -170,14 +180,19 @@ export default function InmuebleDetailPage() {
   }, [inmueble])
 
   // Contrato vigente: solo cuando el inmueble está 'ocupado' (tiene arriendo
-  // activo). Habilita "Ver contrato" y "Terminar contrato".
+  // activo). Habilita "Ver contrato" y "Terminar contrato". `resuelto`
+  // distingue "cargando" de "no hay contrato vigente" (p. ej. ocupado por una
+  // renovación aún en firma) — antes ese caso mostraba un spinner perpetuo.
   useEffect(() => {
     if (inmueble?.estado === 'ocupado' && inmueble.id) {
+      setContratoVigenteResuelto(false)
       inmuebleService.getContratoVigente(inmueble.id)
         .then(setContratoVigente)
         .catch(() => setContratoVigente(null))
+        .finally(() => setContratoVigenteResuelto(true))
     } else {
       setContratoVigente(null)
+      setContratoVigenteResuelto(true)
     }
   }, [inmueble?.estado, inmueble?.id])
 
@@ -261,8 +276,8 @@ export default function InmuebleDetailPage() {
     estadoDestino: EstadoContrato,
     comentario: string,
     motivo?: string,
-  ) => {
-    if (!contratoVigente) return
+  ): Promise<boolean> => {
+    if (!contratoVigente) return false
     setTerminarLoading(true)
     try {
       await contratoService.transicionar(contratoVigente.id, {
@@ -270,12 +285,25 @@ export default function InmuebleDetailPage() {
         comentario,
         motivo,
       })
-      toast.success('Contrato actualizado. El inmueble quedó disponible para arrendar de nuevo.')
       setShowTerminarModal(false)
       // Refresco EN SITIO: sin skeleton de página completa (no desmonta tabs).
-      await fetchInmueble({ silent: true })
+      const updated = await fetchInmueble({ silent: true })
+      // El API puede haber saltado la liberación (guard de renovación: otro
+      // contrato del expediente sigue vigente/en firma) → el inmueble sigue
+      // ocupado. Re-resolver el contrato vigente explícitamente (el efecto por
+      // [estado] no re-corre si el estado no cambió) y no mentir en el toast.
+      if (updated?.estado === 'ocupado') {
+        const cv = await inmuebleService.getContratoVigente(id).catch(() => null)
+        setContratoVigente(cv)
+        toast.success('Contrato actualizado. El inmueble sigue ocupado por otro contrato en curso.')
+      } else {
+        setContratoVigente(null)
+        toast.success('Contrato actualizado. El inmueble quedó disponible para arrendar de nuevo.')
+      }
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el contrato')
+      return false
     } finally {
       setTerminarLoading(false)
     }
@@ -412,7 +440,7 @@ export default function InmuebleDetailPage() {
                 Terminar contrato
               </button>
             )
-          } else {
+          } else if (!contratoVigenteResuelto) {
             actions.push(
               <span
                 key="ver-contrato-loading"
@@ -420,6 +448,19 @@ export default function InmuebleDetailPage() {
               >
                 <IconLoader size={16} className="animate-spin" />
                 Cargando contrato…
+              </span>
+            )
+          } else {
+            // Ocupado sin contrato VIGENTE: típico de una renovación aún en
+            // firma con el contrato padre ya finalizado. Antes esto era un
+            // spinner perpetuo; el contrato en curso se gestiona desde el
+            // expediente/detalle de contratos.
+            actions.push(
+              <span
+                key="ver-contrato-en-proceso"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-500"
+              >
+                Ocupado por un contrato en proceso (p. ej. renovación en firma)
               </span>
             )
           }

@@ -16,7 +16,9 @@ export interface ContratoTransicionModalProps {
   onClose: () => void
   estadoActual: EstadoContrato
   transicionesDisponibles: TransicionDisponible[]
-  onConfirmar: (estadoDestino: EstadoContrato, comentario: string, motivo?: string) => Promise<void>
+  /** Devuelve false si la transición falló: el modal permanece abierto y
+   *  conserva comentario/motivo para reintentar. void/true = éxito → cierra. */
+  onConfirmar: (estadoDestino: EstadoContrato, comentario: string, motivo?: string) => Promise<boolean | void>
   isLoading?: boolean
 }
 
@@ -63,12 +65,14 @@ export function ContratoTransicionModal({
     }
 
     setError(null)
-    await onConfirmar(
+    const ok = await onConfirmar(
       estadoSeleccionado,
       comentario.trim(),
       requiresMotivo ? motivo.trim() : undefined,
     )
-    handleClose()
+    // Si la transición falló (false), NO cerrar: el usuario conserva su
+    // comentario/motivo y puede reintentar (antes se descartaban en silencio).
+    if (ok !== false) handleClose()
   }
 
   const configActual = ESTADOS_CONTRATO[estadoActual as EstadoContratoKey]

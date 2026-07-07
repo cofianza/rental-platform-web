@@ -67,8 +67,8 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
     }
   }
 
-  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string) {
-    if (!transicionContrato) return
+  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string): Promise<boolean> {
+    if (!transicionContrato) return false
     setTransicionLoading(true)
     try {
       await contratoService.transicionar(transicionContrato.id, {
@@ -79,9 +79,11 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
       toast.success('Estado del contrato actualizado')
       setTransicionContrato(null)
       onRefetch()
+      return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
       toast.error(message)
+      return false
     } finally {
       setTransicionLoading(false)
     }

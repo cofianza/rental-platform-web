@@ -129,6 +129,11 @@ export default function ContratoDetallePage() {
         } catch {
           // Silent
         }
+      } else {
+        // Estado terminal (finalizado/cancelado): limpiar las transiciones
+        // viejas — sin esto, los botones de transición seguían pintados tras
+        // finalizar y un click daba error.
+        setTransiciones([])
       }
     } catch (err: unknown) {
       // Un refresco silencioso que falla NO debe tumbar la página ya cargada.
@@ -173,7 +178,7 @@ export default function ContratoDetallePage() {
   }
 
 
-  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string) {
+  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string): Promise<boolean> {
     setTransicionLoading(true)
     try {
       await contratoService.transicionar(id, {
@@ -184,9 +189,11 @@ export default function ContratoDetallePage() {
       toast.success('Estado del contrato actualizado')
       setTransicionOpen(false)
       fetchContrato()
+      return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
       toast.error(message)
+      return false
     } finally {
       setTransicionLoading(false)
     }

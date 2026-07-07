@@ -188,8 +188,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     }
   }
 
-  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string) {
-    if (!transicionContrato) return
+  async function handleConfirmarTransicion(estadoDestino: EstadoContrato, comentario: string, motivo?: string): Promise<boolean> {
+    if (!transicionContrato) return false
     setTransicionLoading(true)
     try {
       await contratoService.transicionar(transicionContrato.id, {
@@ -200,9 +200,16 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
       toast.success('Estado del contrato actualizado')
       setTransicionContrato(null)
       fetchContratos()
+      // Avisar al padre en TODA transición exitosa (no solo al completarse la
+      // firma): una transición cambia el expediente/inmueble en el server
+      // (p. ej. 'vigente' cierra el expediente; finalizar/cancelar libera el
+      // inmueble) y sin esto el resto de la página quedaba stale.
+      onContratoActualizado?.()
+      return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
       toast.error(message)
+      return false
     } finally {
       setTransicionLoading(false)
     }
