@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   IconUser, IconMail, IconLock, IconMapPin, IconId,
   IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { RegistroStepper, regInputCls, ValidCheck, scrollToFirstError } from '@/components/auth/registro-ui'
 
 interface FormData {
   nombre: string
@@ -86,6 +88,7 @@ export default function RegisterPropietarioPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -137,7 +140,10 @@ export default function RegisterPropietarioPage() {
   }
 
   const handleSubmit = async () => {
-    if (!validateAll()) return
+    if (!validateAll()) {
+      scrollToFirstError(formRef.current)
+      return
+    }
 
     setIsLoading(true)
     setServerError(null)
@@ -172,11 +178,35 @@ export default function RegisterPropietarioPage() {
     }
   }
 
-  const inputCls = (hasError?: boolean) =>
-    cn(
-      'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-      hasError ? 'border-red-500' : 'border-gray-300',
-    )
+  const inputCls = (hasError?: boolean, valid?: boolean, rightIcon?: boolean) =>
+    regInputCls({ error: hasError, valid, rightIcon })
+
+  // Validez en vivo (check verde + stepper de progreso).
+  const emailValido = !!formData.email.trim() && isValidEmail(formData.email)
+  const telValido = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '').length === 10
+  const passwordValida =
+    formData.password.length >= 8 &&
+    /[A-Z]/.test(formData.password) &&
+    /[a-z]/.test(formData.password) &&
+    /\d/.test(formData.password)
+
+  const pasos = [
+    {
+      label: 'Datos personales',
+      done:
+        !!formData.nombre.trim() && !!formData.apellido.trim() && !!formData.tipo_documento &&
+        !!formData.numero_documento.trim() && telValido && !!formData.direccion.trim(),
+    },
+    {
+      label: 'Acceso',
+      done: emailValido && passwordValida && formData.password === formData.confirm_password && !!formData.confirm_password,
+    },
+    {
+      label: 'Términos',
+      done: formData.accept_terms && formData.accept_data_treatment,
+    },
+  ]
+  const hayErrores = Object.keys(errors).length > 0
 
   return (
     <div className="w-full">
@@ -193,13 +223,26 @@ export default function RegisterPropietarioPage() {
         </a>
       </p>
 
+      <RegistroStepper steps={pasos} />
+
       {serverError && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
 
+      {hayErrores && !serverError && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <p className="text-sm text-red-700">
+            Faltan datos o hay campos con error. Revisa los marcados en rojo abajo.
+          </p>
+        </div>
+      )}
+
       <form
+        ref={formRef}
+        noValidate
         onSubmit={(e) => {
           e.preventDefault()
           handleSubmit()
@@ -218,6 +261,8 @@ export default function RegisterPropietarioPage() {
                   onChange={(e) => updateField('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
                   placeholder="Tu nombre"
+                  autoComplete="given-name"
+                  aria-invalid={!!errors.nombre}
                 />
               </div>
               {errors.nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre}</p>}
@@ -231,6 +276,8 @@ export default function RegisterPropietarioPage() {
                   onChange={(e) => updateField('apellido', e.target.value)}
                   className={inputCls(!!errors.apellido)}
                   placeholder="Tu apellido"
+                  autoComplete="family-name"
+                  aria-invalid={!!errors.apellido}
                 />
               </div>
               {errors.apellido && <p className="mt-1.5 text-sm text-red-600">{errors.apellido}</p>}
@@ -246,6 +293,7 @@ export default function RegisterPropietarioPage() {
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
                   className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
+                  aria-invalid={!!errors.tipo_documento}
                 >
                   <option value="">Seleccionar...</option>
                   <option value="cc">Cédula de Ciudadanía</option>
@@ -264,6 +312,8 @@ export default function RegisterPropietarioPage() {
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={inputCls(!!errors.numero_documento)}
                   placeholder="Número de documento"
+                  inputMode="numeric"
+                  aria-invalid={!!errors.numero_documento}
                 />
               </div>
               {errors.numero_documento && <p className="mt-1.5 text-sm text-red-600">{errors.numero_documento}</p>}
@@ -286,6 +336,8 @@ export default function RegisterPropietarioPage() {
                 onChange={(e) => updateField('direccion', e.target.value)}
                 className={inputCls(!!errors.direccion)}
                 placeholder="Tu dirección"
+                autoComplete="street-address"
+                aria-invalid={!!errors.direccion}
               />
             </div>
             {errors.direccion && <p className="mt-1.5 text-sm text-red-600">{errors.direccion}</p>}
@@ -301,9 +353,13 @@ export default function RegisterPropietarioPage() {
               <input
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className={inputCls(!!errors.email)}
+                className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
                 placeholder="tu@email.com"
+                autoComplete="email"
+                inputMode="email"
+                aria-invalid={!!errors.email}
               />
+              <ValidCheck show={emailValido && !errors.email} />
             </div>
             {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
@@ -316,8 +372,10 @@ export default function RegisterPropietarioPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
                 placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+                aria-invalid={!!errors.password}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -335,8 +393,10 @@ export default function RegisterPropietarioPage() {
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
                 placeholder="Repite tu contraseña"
+                autoComplete="new-password"
+                aria-invalid={!!errors.confirm_password}
               />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}

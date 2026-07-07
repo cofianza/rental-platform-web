@@ -66,7 +66,7 @@ export default function RegisterTypeSelectorPage() {
           <Link
             key={op.href}
             href={op.href}
-            className="group flex items-center gap-4 p-4 border-[1.5px] border-slate-200 rounded-xl bg-white hover:border-primary-600 hover:bg-primary-50/40 transition-all"
+            className="group flex items-center gap-4 p-4 border-[1.5px] border-slate-200 rounded-xl bg-white hover:border-primary-600 hover:bg-primary-50/40 transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
           >
             <span
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition-colors group-hover:bg-primary-100"

@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   IconUser, IconMail, IconLock, IconMapPin, IconId,
   IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { RegistroStepper, regInputCls, ValidCheck, scrollToFirstError } from '@/components/auth/registro-ui'
 
 interface FormData {
   razon_social: string
@@ -123,6 +125,7 @@ export default function RegisterInmobiliariaPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -191,7 +194,11 @@ export default function RegisterInmobiliariaPage() {
   }
 
   const handleSubmit = async () => {
-    if (!validateAll()) return
+    if (!validateAll()) {
+      // Lleva al usuario al primer campo con error (puede estar bajo el fold).
+      scrollToFirstError(formRef.current)
+      return
+    }
 
     setIsLoading(true)
     setServerError(null)
@@ -242,11 +249,43 @@ export default function RegisterInmobiliariaPage() {
     }
   }
 
-  const inputCls = (hasError?: boolean) =>
-    cn(
-      'w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-      hasError ? 'border-red-500' : 'border-gray-300',
-    )
+  const inputCls = (hasError?: boolean, valid?: boolean, rightIcon?: boolean) =>
+    regInputCls({ error: hasError, valid, rightIcon })
+
+  // Validez en vivo para feedback (check verde) y para el stepper de progreso.
+  const nitValido =
+    /^\d{1,15}$/.test(formData.nit_numero) &&
+    /^\d$/.test(formData.nit_dv) &&
+    validateNitModulo11(`${formData.nit_numero}-${formData.nit_dv}`)
+  const emailValido = !!formData.email.trim() && isValidEmail(formData.email)
+  const telValido = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '').length === 10
+  const passwordValida =
+    formData.password.length >= 8 &&
+    /[A-Z]/.test(formData.password) &&
+    /[a-z]/.test(formData.password) &&
+    /\d/.test(formData.password)
+
+  const pasos = [
+    {
+      label: 'Inmobiliaria',
+      done:
+        !!formData.razon_social.trim() && nitValido &&
+        !!formData.direccion_comercial.trim() && !!formData.ciudad.trim(),
+    },
+    {
+      label: 'Representante',
+      done:
+        !!formData.nombre_representante_nombre.trim() &&
+        !!formData.nombre_representante_apellido.trim() && telValido && emailValido,
+    },
+    {
+      label: 'Acceso',
+      done:
+        passwordValida && formData.password === formData.confirm_password &&
+        !!formData.confirm_password && formData.accept_terms && formData.accept_data_treatment,
+    },
+  ]
+  const hayErrores = Object.keys(errors).length > 0
 
   return (
     <div className="w-full">
@@ -273,13 +312,26 @@ export default function RegisterInmobiliariaPage() {
         </span>
       </div>
 
+      <RegistroStepper steps={pasos} />
+
       {serverError && (
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
 
+      {hayErrores && !serverError && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <p className="text-sm text-red-700">
+            Faltan datos o hay campos con error. Revisa los marcados en rojo abajo.
+          </p>
+        </div>
+      )}
+
       <form
+        ref={formRef}
+        noValidate
         onSubmit={(e) => {
           e.preventDefault()
           handleSubmit()
@@ -297,6 +349,8 @@ export default function RegisterInmobiliariaPage() {
                 onChange={(e) => updateField('razon_social', e.target.value)}
                 className={inputCls(!!errors.razon_social)}
                 placeholder="Nombre de la empresa"
+                autoComplete="organization"
+                aria-invalid={!!errors.razon_social}
               />
             </div>
             {errors.razon_social && <p className="mt-1.5 text-sm text-red-600">{errors.razon_social}</p>}
@@ -312,8 +366,9 @@ export default function RegisterInmobiliariaPage() {
                   inputMode="numeric"
                   value={formData.nit_numero}
                   onChange={(e) => updateField('nit_numero', e.target.value.replace(/\D/g, '').slice(0, 15))}
-                  className={inputCls(!!errors.nit_numero)}
+                  className={inputCls(!!errors.nit_numero, nitValido)}
                   placeholder="900123456"
+                  aria-invalid={!!errors.nit_numero}
                 />
               </div>
               <span className="self-center text-gray-400 font-bold">−</span>
@@ -325,20 +380,27 @@ export default function RegisterInmobiliariaPage() {
                   onChange={(e) => updateField('nit_dv', e.target.value.replace(/\D/g, '').slice(0, 1))}
                   className={cn(
                     'w-full px-3 py-2.5 border rounded-lg text-sm font-bold text-center focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-                    errors.nit_dv ? 'border-red-500' : 'border-gray-300',
+                    errors.nit_dv ? 'border-red-500' : nitValido ? 'border-green-400' : 'border-gray-300',
                   )}
                   placeholder="DV"
                   maxLength={1}
                   aria-label="Dígito de verificación"
+                  aria-invalid={!!errors.nit_dv}
                 />
               </div>
             </div>
             {(errors.nit_numero || errors.nit_dv) && (
               <p className="mt-1.5 text-sm text-red-600">{errors.nit_numero || errors.nit_dv}</p>
             )}
-            <p className="mt-1 text-xs text-gray-400">
-              Número (sin puntos) y dígito de verificación. Ejemplo: 900123456 - 9
-            </p>
+            {nitValido ? (
+              <p className="mt-1 flex items-center gap-1 text-xs font-medium text-green-600">
+                <IconCheck size={13} /> NIT válido
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-400">
+                Número (sin puntos) y dígito de verificación. Ejemplo: 900123456 - 8
+              </p>
+            )}
           </div>
 
           <div>
@@ -350,6 +412,8 @@ export default function RegisterInmobiliariaPage() {
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
                 className={inputCls(!!errors.direccion_comercial)}
                 placeholder="Dirección de la sede principal"
+                autoComplete="street-address"
+                aria-invalid={!!errors.direccion_comercial}
               />
             </div>
             {errors.direccion_comercial && <p className="mt-1.5 text-sm text-red-600">{errors.direccion_comercial}</p>}
@@ -364,6 +428,8 @@ export default function RegisterInmobiliariaPage() {
                 onChange={(e) => updateField('ciudad', e.target.value)}
                 className={inputCls(!!errors.ciudad)}
                 placeholder="Ciudad"
+                autoComplete="address-level2"
+                aria-invalid={!!errors.ciudad}
               />
             </div>
             {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
@@ -382,6 +448,8 @@ export default function RegisterInmobiliariaPage() {
                   onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_nombre)}
                   placeholder="Nombre"
+                  autoComplete="given-name"
+                  aria-invalid={!!errors.nombre_representante_nombre}
                 />
               </div>
               {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
@@ -395,6 +463,8 @@ export default function RegisterInmobiliariaPage() {
                   onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_apellido)}
                   placeholder="Apellido"
+                  autoComplete="family-name"
+                  aria-invalid={!!errors.nombre_representante_apellido}
                 />
               </div>
               {errors.nombre_representante_apellido && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
@@ -411,9 +481,10 @@ export default function RegisterInmobiliariaPage() {
                 type="text"
                 value={formData.cargo_representante}
                 onChange={(e) => updateField('cargo_representante', e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                className={inputCls(false)}
                 placeholder="Ej: Representante Legal, Gerente, Director Comercial"
                 maxLength={100}
+                autoComplete="organization-title"
               />
             </div>
           </div>
@@ -467,9 +538,13 @@ export default function RegisterInmobiliariaPage() {
               <input
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className={inputCls(!!errors.email)}
+                className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
                 placeholder="contacto@empresa.com"
+                autoComplete="email"
+                inputMode="email"
+                aria-invalid={!!errors.email}
               />
+              <ValidCheck show={emailValido && !errors.email} />
             </div>
             {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
@@ -485,8 +560,10 @@ export default function RegisterInmobiliariaPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
                 placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+                aria-invalid={!!errors.password}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -504,8 +581,10 @@ export default function RegisterInmobiliariaPage() {
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : 'border-gray-300')}
+                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
                 placeholder="Repite tu contraseña"
+                autoComplete="new-password"
+                aria-invalid={!!errors.confirm_password}
               />
               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
