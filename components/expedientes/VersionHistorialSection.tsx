@@ -13,6 +13,14 @@ interface VersionHistorialSectionProps {
   onCompare?: (v1: number, v2: number) => void
 }
 
+// Versiones generadas antes del fix del resumen guardaban objetos como
+// "[object Object]". Si detectamos ese resumen corrupto mostramos un texto
+// neutro en vez de la basura (las versiones nuevas ya llegan legibles).
+function formatResumenCambios(resumen: string): string {
+  if (resumen.includes('[object Object]')) return 'Contrato regenerado'
+  return resumen
+}
+
 export function VersionHistorialSection({
   contratoId,
   currentVersion,
@@ -83,12 +91,27 @@ export function VersionHistorialSection({
       </h3>
 
       <div className="space-y-2">
-        {/* Current version indicator */}
-        <div className="flex items-center gap-3 p-2.5 bg-primary-50 border border-primary-200 rounded-lg text-sm">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-            v{currentVersion}
-          </span>
-          <span className="text-primary-700 font-medium">Version actual</span>
+        {/* Current version indicator. El diff que describe QUÉ cambió en la
+            versión actual es el guardado en la fila archivada más reciente
+            (versiones[0], ordenadas desc) — su resumen es la transición
+            v(actual-1) → v(actual). */}
+        <div className="flex items-start justify-between gap-3 p-2.5 bg-primary-50 border border-primary-200 rounded-lg text-sm">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                v{currentVersion}
+              </span>
+              <span className="text-primary-700 font-medium">Versión actual</span>
+            </div>
+            {versiones[0]?.resumen_cambios && (
+              <p
+                className="text-xs text-primary-600 mt-1 truncate"
+                title={`Cambios en esta versión: ${formatResumenCambios(versiones[0].resumen_cambios)}`}
+              >
+                Cambios en esta versión: {formatResumenCambios(versiones[0].resumen_cambios)}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Archived versions */}
@@ -112,8 +135,11 @@ export function VersionHistorialSection({
                 )}
               </div>
               {v.resumen_cambios && (
-                <p className="text-xs text-gray-500 mt-1 truncate" title={v.resumen_cambios}>
-                  {v.resumen_cambios}
+                <p
+                  className="text-xs text-gray-500 mt-1 truncate"
+                  title={`Reemplazada por v${v.version + 1}: ${formatResumenCambios(v.resumen_cambios)}`}
+                >
+                  Reemplazada por v{v.version + 1}: {formatResumenCambios(v.resumen_cambios)}
                 </p>
               )}
             </div>
