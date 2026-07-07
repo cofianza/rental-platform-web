@@ -17,6 +17,8 @@ export interface IPerfilArrendador {
   numero_documento: string | null
   nit: string | null
   razon_social: string | null
+  afianzadora_tipo: 'afianzadora' | 'aseguradora' | 'ninguna' | null
+  afianzadora_actual: string | null
   representante_legal: string | null
   domicilio_direccion: string | null
   domicilio_ciudad: string | null
@@ -36,6 +38,8 @@ export interface IPerfilArrendador {
 export interface IUpdatePerfilArrendadorInput {
   razon_social?: string | null
   nit?: string | null
+  afianzadora_tipo?: 'afianzadora' | 'aseguradora' | 'ninguna' | null
+  afianzadora_actual?: string | null
   representante_legal?: string | null
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null

@@ -108,6 +108,10 @@ export default function MiInmobiliariaPage() {
   // Teléfono de contacto (a dónde llegan los WhatsApp) — viene del perfil
   // completo (/auth/me), no del user del store que solo trae lo básico.
   const [telefonoContacto, setTelefonoContacto] = useState<string | null>(null)
+  // Afianzadora/aseguradora actual (dato de conversión, tarea 1.6) — editable.
+  const [afTipo, setAfTipo] = useState<'' | 'afianzadora' | 'aseguradora' | 'ninguna'>('')
+  const [afActual, setAfActual] = useState('')
+  const [savingAf, setSavingAf] = useState(false)
 
   useEffect(() => {
     authService
@@ -135,8 +139,37 @@ export default function MiInmobiliariaPage() {
   // Identidad (logo / nombre / NIT / dirección) — se edita en datos-contrato;
   // aquí solo la mostramos para que esta pantalla refleje el mockup.
   useEffect(() => {
-    perfilArrendadorService.getMe().then(setPerfil).catch(() => {})
+    perfilArrendadorService
+      .getMe()
+      .then((p) => {
+        setPerfil(p)
+        setAfTipo(p.afianzadora_tipo ?? '')
+        setAfActual(p.afianzadora_actual ?? '')
+      })
+      .catch(() => {})
   }, [])
+
+  const afDirty =
+    afTipo !== (perfil?.afianzadora_tipo ?? '') || afActual !== (perfil?.afianzadora_actual ?? '')
+
+  const guardarAfianzadora = async () => {
+    if (savingAf || soloLectura) return
+    setSavingAf(true)
+    try {
+      const updated = await perfilArrendadorService.updateMe({
+        afianzadora_tipo: afTipo === '' ? null : afTipo,
+        afianzadora_actual: afActual,
+      })
+      setPerfil(updated)
+      setAfTipo(updated.afianzadora_tipo ?? '')
+      setAfActual(updated.afianzadora_actual ?? '')
+      toast.success('Afianzadora actualizada')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo guardar')
+    } finally {
+      setSavingAf(false)
+    }
+  }
 
   // Filtrar tipos según rol: el propietario no necesita Cámara de Comercio,
   // Matrícula ni Contrato Marco (ese ultimo igual aplica si es inmobiliaria).
@@ -293,6 +326,56 @@ export default function MiInmobiliariaPage() {
               Editar datos →
             </Link>
           </div>
+        </div>
+      )}
+
+      {/* Afianzadora/aseguradora actual — editable (tarea 1.6). Dato de
+          conversión: con qué respaldan hoy sus arriendos. Solo inmobiliaria. */}
+      {perfil && isInmobiliaria && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-gray-900">¿Qué usan hoy para respaldar sus arriendos?</h3>
+          <p className="mt-0.5 mb-4 text-sm text-gray-500">
+            Afianzadora o aseguradora con la que trabajan actualmente (opcional).
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <select
+              value={afTipo}
+              onChange={(e) => setAfTipo(e.target.value as typeof afTipo)}
+              disabled={soloLectura}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+            >
+              <option value="">Seleccionar…</option>
+              <option value="afianzadora">Afianzadora</option>
+              <option value="aseguradora">Aseguradora</option>
+              <option value="ninguna">Ninguna</option>
+            </select>
+            {(afTipo === 'afianzadora' || afTipo === 'aseguradora') && (
+              <input
+                type="text"
+                value={afActual}
+                onChange={(e) => setAfActual(e.target.value)}
+                disabled={soloLectura}
+                maxLength={200}
+                placeholder="Nombre de la afianzadora / aseguradora"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+              />
+            )}
+          </div>
+          {soloLectura ? (
+            <p className="mt-3 text-xs text-gray-400">Solo el titular de la inmobiliaria puede editar este dato.</p>
+          ) : (
+            <div className="mt-4 text-right">
+              <button
+                type="button"
+                onClick={guardarAfianzadora}
+                disabled={savingAf || !afDirty}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingAf ? <IconLoader size={15} className="animate-spin" /> : null}
+                {savingAf ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
