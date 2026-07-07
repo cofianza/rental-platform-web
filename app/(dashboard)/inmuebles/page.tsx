@@ -306,9 +306,12 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
   // otros filtros aplicados encima (search, tipo, ciudad), igual marcamos
   // el chip principal — los chips son solo de "modo de vista".
   const active: ChipKey = (() => {
-    if (filters.visible_vitrina === true) return 'vitrina'
-    if (filters.visible_vitrina === false) return 'pausadas'
-    if (filters.estado === 'inactivo') return 'inactivas'
+    // Detección endurecida: los chips vitrina/pausadas setean flag + estado
+    // 'disponible'. Si el usuario cambia el select de estado con el chip
+    // activo (combinación mixta), no resaltamos un chip que ya no aplica.
+    if (filters.visible_vitrina === true && filters.estado === 'disponible') return 'vitrina'
+    if (filters.visible_vitrina === false && filters.estado === 'disponible') return 'pausadas'
+    if (filters.visible_vitrina === '' && filters.estado === 'inactivo') return 'inactivas'
     return 'todas'
   })()
 

@@ -118,10 +118,13 @@ export function PropiedadesInmobiliariaView() {
   // 2.5: pausada = disponible pero fuera de vitrina (lo que hace "Pausar").
   const pausadas = inmuebles.filter((i) => !i.visible_vitrina && i.estado === 'disponible').length
 
+  // Detección endurecida: los chips vitrina/pausadas setean flag + estado
+  // 'disponible'; una combinación mixta (p. ej. flag=true con otro estado,
+  // metida por URL o filtros externos) no resalta ningún chip específico.
   const activeChip: ChipKey =
-    filters.visible_vitrina === true
+    filters.visible_vitrina === true && filters.estado === 'disponible'
       ? 'vitrina'
-      : filters.visible_vitrina === false
+      : filters.visible_vitrina === false && filters.estado === 'disponible'
         ? 'pausadas'
         : filters.estado === 'inactivo'
           ? 'inactivas'

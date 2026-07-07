@@ -72,6 +72,10 @@ export function useInmuebles() {
     const tipo = searchParams.get('tipo') as TipoInmueble | null
     const ciudad = searchParams.get('ciudad')
     const estado = searchParams.get('estado') as EstadoInmueble | null
+    // visible_vitrina viaja en la URL junto con estado: los chips "En vitrina"/
+    // "Pausadas" setean ambos; si solo persistiéramos estado, una recarga
+    // dejaría la lista filtrada a disponibles sin ningún chip que lo delate.
+    const visibleVitrina = searchParams.get('visible_vitrina')
     const estrato = searchParams.get('estrato')
     const rent_min = searchParams.get('rent_min')
     const rent_max = searchParams.get('rent_max')
@@ -84,6 +88,9 @@ export function useInmuebles() {
     if (tipo) urlFilters.tipo = tipo
     if (ciudad) urlFilters.ciudad = ciudad
     if (estado) urlFilters.estado = estado
+    if (visibleVitrina === 'true' || visibleVitrina === 'false') {
+      urlFilters.visible_vitrina = visibleVitrina === 'true'
+    }
     if (estrato) urlFilters.estrato = parseInt(estrato, 10)
     if (rent_min) urlFilters.rent_min = parseInt(rent_min, 10)
     if (rent_max) urlFilters.rent_max = parseInt(rent_max, 10)
@@ -108,6 +115,9 @@ export function useInmuebles() {
       if (newFilters.tipo) params.set('tipo', newFilters.tipo)
       if (newFilters.ciudad) params.set('ciudad', newFilters.ciudad)
       if (newFilters.estado) params.set('estado', newFilters.estado)
+      if (newFilters.visible_vitrina !== '' && newFilters.visible_vitrina !== undefined) {
+        params.set('visible_vitrina', String(newFilters.visible_vitrina))
+      }
       if (newFilters.estrato !== '' && newFilters.estrato !== undefined) {
         params.set('estrato', newFilters.estrato.toString())
       }

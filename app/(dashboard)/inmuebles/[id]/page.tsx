@@ -78,6 +78,13 @@ export default function InmuebleDetailPage() {
   useEffect(() => {
     if (activeTab === 'contrato') setContratoTabVisitado(true)
   }, [activeTab])
+  // Al navegar detalle→detalle (mismo componente, id distinto) resetear el
+  // keep-alive y el tab: si no, el preview del contrato se montaría (oculto)
+  // para el inmueble nuevo aunque nunca se abra el tab.
+  useEffect(() => {
+    setContratoTabVisitado(false)
+    setActiveTab('info')
+  }, [id])
   const [isTogglingVitrina, setIsTogglingVitrina] = useState(false)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
@@ -823,7 +830,9 @@ export default function InmuebleDetailPage() {
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 {inmueble.estado !== 'disponible'
-                  ? 'Solo los inmuebles disponibles pueden publicarse en la vitrina. Se podrá cuando el inmueble esté libre.'
+                  ? inmueble.visible_vitrina
+                    ? 'Este inmueble conserva una marca de vitrina antigua; usa el interruptor para retirarla. Podrá publicarse de nuevo cuando esté libre.'
+                    : 'Solo los inmuebles disponibles pueden publicarse en la vitrina. Se podrá cuando el inmueble esté libre.'
                   : inmueble.visible_vitrina
                     ? 'El inmueble es visible para el público en la vitrina.'
                     : 'El inmueble está oculto de la vitrina pública.'}
