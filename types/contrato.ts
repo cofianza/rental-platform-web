@@ -92,6 +92,10 @@ export interface IContratoDownloadResponse {
   nombre_archivo: string
   tipo_mime: string
   expires_in: number
+  /** Solo en descargar-firmado: de dónde salió el PDF.
+   *  'manual' = subido a mano · 'auco' = archivado de Auco (firmas estampadas)
+   *  'combinado' = original + acuses generados · 'original' = sin firmas. */
+  fuente?: 'manual' | 'auco' | 'combinado' | 'original'
 }
 
 export interface IContratosResponse {

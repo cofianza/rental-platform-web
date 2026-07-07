@@ -47,6 +47,7 @@ export default function ContratoDetallePage() {
   // true = el preview muestra el documento FIRMADO (con firmas + acuses); false
   // = el PDF generado de la plantilla.
   const [previewFirmado, setPreviewFirmado] = useState(false)
+  const [previewFuente, setPreviewFuente] = useState<'manual' | 'auco' | 'combinado' | 'original' | null>(null)
   // 4.1d: alterna entre el PDF y la "vista de verificación" (contrato con los
   // datos insertados resaltados) para confirmar que se generó bien.
   const [vista, setVista] = useState<'pdf' | 'verificacion'>('pdf')
@@ -102,10 +103,17 @@ export default function ContratoDetallePage() {
           try {
             const firmado = await contratoService.descargarContratoFirmado(id)
             urlPreview = firmado.url
-            esFirmado = true
+            // fuente: 'auco'/'manual' = PDF con firmas reales; 'combinado' =
+            // original + acuses; 'original' = SIN firmas (no pintar el banner
+            // "documento firmado" sobre un PDF que no las tiene). Backends
+            // viejos no mandan fuente → asumimos firmado (comportamiento previo).
+            const fuente = firmado.fuente ?? 'manual'
+            esFirmado = fuente !== 'original'
+            setPreviewFuente(fuente)
           } catch {
             // Documento firmado aún no disponible (p. ej. cancelado pre-firma o
             // generación pendiente) — caemos al generado.
+            setPreviewFuente(null)
           }
         }
         if (!urlPreview && data.storage_key) {
@@ -361,9 +369,16 @@ export default function ContratoDetallePage() {
         {/* PDF Preview */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
           {previewFirmado && vista === 'pdf' && previewUrl && (
-            <div className="px-3 py-2 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
-              Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
-            </div>
+            previewFuente === 'combinado' ? (
+              <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 text-xs font-medium text-amber-700">
+                Contrato con acuses de firma electrónica adjuntos. El documento con las firmas
+                estampadas de Auco aún no está disponible — se intentará traer de nuevo al recargar.
+              </div>
+            ) : (
+              <div className="px-3 py-2 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
+                Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.
+              </div>
+            )
           )}
           {/* 4.1d: alternar entre el PDF y la vista de verificación (datos
               resaltados) para confirmar que el contrato se generó bien. La vista
