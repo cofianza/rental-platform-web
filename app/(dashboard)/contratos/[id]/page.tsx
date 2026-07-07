@@ -72,43 +72,56 @@ export default function ContratoDetallePage() {
   const canRegenerate =
     canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
 
-  const fetchContrato = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    setNotFound(false)
+  // opts.silent = refresco EN SITIO (p. ej. cuando FirmantesContratoSection
+  // avisa vía onAllSigned que ya firmaron todos). En modo silencioso NO tocamos
+  // isLoading: si mostráramos el skeleton de página completa desmontaríamos los
+  // hijos, y al re-montarse FirmantesContratoSection su guard allSignedFiredRef
+  // se resetea y vuelve a llamar onAllSigned → bucle infinito de recargas.
+  // Tampoco re-pedimos el PDF: su contenido no cambió y descargarContratoFirmado
+  // devuelve una URL firmada NUEVA cada vez, lo que recargaría el visor en vano.
+  const fetchContrato = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false
+    if (!silent) {
+      setIsLoading(true)
+      setError(null)
+      setNotFound(false)
+    }
     try {
       const data = await contratoService.getContratoById(id)
       setContrato(data)
 
-      // Preview del PDF. Si el contrato ya está FIRMADO, mostramos el DOCUMENTO
-      // FIRMADO (con las firmas + los acuses de Auco) — el mismo que se le envía
-      // al cliente. Si aún no está disponible o falla su generación, caemos al
-      // PDF generado (plantilla). Para contratos no firmados, el generado.
-      // inline=true para que el viewer lo muestre en vez de descargarlo.
-      let urlPreview: string | null = null
-      let esFirmado = false
-      if (FIRMADO_VISIBLE_STATES.includes(data.estado)) {
-        try {
-          const firmado = await contratoService.descargarContratoFirmado(id)
-          urlPreview = firmado.url
-          esFirmado = true
-        } catch {
-          // Documento firmado aún no disponible (p. ej. cancelado pre-firma o
-          // generación pendiente) — caemos al generado.
+      if (!silent) {
+        // Preview del PDF. Si el contrato ya está FIRMADO, mostramos el DOCUMENTO
+        // FIRMADO (con las firmas + los acuses de Auco) — el mismo que se le envía
+        // al cliente. Si aún no está disponible o falla su generación, caemos al
+        // PDF generado (plantilla). Para contratos no firmados, el generado.
+        // inline=true para que el viewer lo muestre en vez de descargarlo.
+        let urlPreview: string | null = null
+        let esFirmado = false
+        if (FIRMADO_VISIBLE_STATES.includes(data.estado)) {
+          try {
+            const firmado = await contratoService.descargarContratoFirmado(id)
+            urlPreview = firmado.url
+            esFirmado = true
+          } catch {
+            // Documento firmado aún no disponible (p. ej. cancelado pre-firma o
+            // generación pendiente) — caemos al generado.
+          }
         }
-      }
-      if (!urlPreview && data.storage_key) {
-        try {
-          const dl = await contratoService.descargarContrato(id, { inline: true })
-          urlPreview = dl.url
-        } catch {
-          // Non-critical — PDF preview won't load
+        if (!urlPreview && data.storage_key) {
+          try {
+            const dl = await contratoService.descargarContrato(id, { inline: true })
+            urlPreview = dl.url
+          } catch {
+            // Non-critical — PDF preview won't load
+          }
         }
+        setPreviewUrl(urlPreview)
+        setPreviewFirmado(esFirmado)
       }
-      setPreviewUrl(urlPreview)
-      setPreviewFirmado(esFirmado)
 
-      // Fetch available transitions (non-critical)
+      // Fetch available transitions (non-critical) — también en silent: es
+      // barato y es justo lo que cambia cuando el contrato avanza de estado.
       if (data.estado && !TERMINAL_STATES.includes(data.estado)) {
         try {
           const t = await contratoService.getTransicionesDisponibles(id)
@@ -118,16 +131,25 @@ export default function ContratoDetallePage() {
         }
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al cargar el contrato'
-      if (message.includes('no encontrado') || message.includes('404')) {
-        setNotFound(true)
-      } else {
-        setError(message)
+      // Un refresco silencioso que falla NO debe tumbar la página ya cargada.
+      if (!silent) {
+        const message = err instanceof Error ? err.message : 'Error al cargar el contrato'
+        if (message.includes('no encontrado') || message.includes('404')) {
+          setNotFound(true)
+        } else {
+          setError(message)
+        }
       }
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }, [id])
+
+  // Refresco tras completar todas las firmas: EN SITIO (no full-page skeleton),
+  // para no desmontar/re-montar FirmantesContratoSection y evitar el bucle.
+  const handleAllSigned = useCallback(() => {
+    fetchContrato({ silent: true })
+  }, [fetchContrato])
 
   useEffect(() => {
     fetchContrato()
@@ -238,7 +260,7 @@ export default function ContratoDetallePage() {
         <p className="text-lg font-medium text-gray-900 mb-2">Error al cargar el contrato</p>
         <p className="text-sm text-gray-500 mb-4">{error}</p>
         <button
-          onClick={fetchContrato}
+          onClick={() => fetchContrato()}
           className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
         >
           Reintentar
@@ -431,7 +453,7 @@ export default function ContratoDetallePage() {
 
           {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de
               firma. Se auto-oculta si el contrato no usa firma multi-parte. */}
-          <FirmantesContratoSection contratoId={id} canManage={canManage} onAllSigned={fetchContrato} />
+          <FirmantesContratoSection contratoId={id} canManage={canManage} onAllSigned={handleAllSigned} />
 
           {/* Expediente link */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
