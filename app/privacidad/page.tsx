@@ -5,8 +5,8 @@
  * en el form de registro del solicitante. Conforme a Ley 1581/2012 y
  * Decreto 1377/2013 (Colombia).
  *
- * Los placeholders [NIT_PENDIENTE] y [DIRECCION_PENDIENTE] se reemplazarán
- * cuando salgan los datos definitivos de Cámara de Comercio.
+ * Datos de identificación (NIT y dirección) confirmados por el cliente el
+ * 09-jul-2026 con la versión oficial v1.0 del documento legal.
  */
 
 import type { Metadata } from 'next'
@@ -37,9 +37,9 @@ export default function PrivacidadPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Responsable del tratamiento</h2>
             <ul className="list-none pl-0 space-y-1">
               <li><strong>COFIANZA S.A.S.</strong></li>
-              <li>NIT: [pendiente de inscripción en Cámara de Comercio]</li>
+              <li>NIT: 902.038.122-7</li>
               <li>Correo: <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a></li>
-              <li>Dirección: [pendiente de definición de domicilio principal]</li>
+              <li>Dirección: Calle 75ab sur 52d 336</li>
             </ul>
             <p className="mt-3">
               COFIANZA S.A.S. actúa como responsable del tratamiento de datos personales en el desarrollo de sus actividades de evaluación de riesgo, estructuración y gestión de soluciones financieras, tecnológicas y servicios asociados.

@@ -3,8 +3,8 @@
  * por el equipo legal de COFIANZA S.A.S. Página pública linkada desde el
  * checkbox de registro. Mantener la URL /terminos para no romper el link.
  *
- * El placeholder [NIT_PENDIENTE] se reemplazará cuando salga el certificado
- * de Cámara de Comercio.
+ * NIT confirmado por el cliente el 09-jul-2026 (mismo dato que la Política de
+ * Tratamiento de Datos v1.0 y que la plantilla del contrato V4).
  */
 
 import type { Metadata } from 'next'
@@ -50,7 +50,7 @@ export default function TerminosPage() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">2. Quién es Cofianza y quiénes usan la plataforma</h2>
             <p>
-              COFIANZA S.A.S. es una sociedad comercial domiciliada en Colombia, identificada con NIT [pendiente de inscripción en Cámara de Comercio], propietaria y operadora de LA PLATAFORMA. Es independiente de las inmobiliarias, propietarios y arrendatarios que la utilizan y no actúa como parte en los contratos de arrendamiento que se suscriben entre ellos, salvo cuando se pacten fianzas u otros servicios propios de Cofianza.
+              COFIANZA S.A.S. es una sociedad comercial domiciliada en Colombia, identificada con NIT 902.038.122-7, propietaria y operadora de LA PLATAFORMA. Es independiente de las inmobiliarias, propietarios y arrendatarios que la utilizan y no actúa como parte en los contratos de arrendamiento que se suscriben entre ellos, salvo cuando se pacten fianzas u otros servicios propios de Cofianza.
             </p>
             <p>En estos Términos usamos:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
