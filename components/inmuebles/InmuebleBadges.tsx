@@ -59,6 +59,7 @@ export function EstratoBadge({ estrato }: EstratoBadgeProps) {
     4: 'bg-lime-100 text-lime-800',
     5: 'bg-emerald-100 text-emerald-800',
     6: 'bg-teal-100 text-teal-800',
+    7: 'bg-cyan-100 text-cyan-800',
   }
 
   return (

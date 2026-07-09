@@ -21,16 +21,6 @@ const ESTRATO_COLORS: Record<number, string> = {
   7: 'bg-teal-500',
 }
 
-const ESTRATO_LABELS: Record<number, string> = {
-  1: 'Bajo-bajo',
-  2: 'Bajo',
-  3: 'Medio-bajo',
-  4: 'Medio',
-  5: 'Medio-alto',
-  6: 'Alto',
-  7: 'Alto-alto',
-}
-
 // Mantener en sync con ESTRATO_OPTIONS (constants.ts), inmuebles.schema.ts
 // (max 7) y el CHECK de la migración 20260706000001.
 const ESTRATO_MAX = 7
@@ -52,14 +42,9 @@ export function EstratoIndicator({
   return (
     <div className="flex flex-col gap-1">
       {showLabel && (
-        <div className="flex items-center justify-between">
-          <span className={cn('text-gray-600', config.text)}>
-            Estrato {validEstrato}
-          </span>
-          <span className={cn('text-gray-500', config.text)}>
-            {ESTRATO_LABELS[validEstrato]}
-          </span>
-        </div>
+        <span className={cn('text-gray-600', config.text)}>
+          Estrato {validEstrato}
+        </span>
       )}
       <div className={cn('flex w-full', config.gap)}>
         {Array.from({ length: ESTRATO_MAX }, (_, i) => i + 1).map((level) => (

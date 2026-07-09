@@ -24,6 +24,8 @@ export interface IPerfilArrendador {
   domicilio_ciudad: string | null
   ciudad: string | null
   matricula_arrendador: string | null
+  matricula_expedida_por: string | null
+  matricula_fecha: string | null
   logo_storage_key: string | null
   logo_url: string | null
   whatsapp_recaudo: string | null
@@ -44,6 +46,8 @@ export interface IUpdatePerfilArrendadorInput {
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null
   matricula_arrendador?: string | null
+  matricula_expedida_por?: string | null
+  matricula_fecha?: string | null
   whatsapp_recaudo?: string | null
   email_recaudo?: string | null
   cuenta_recaudo_banco?: string | null

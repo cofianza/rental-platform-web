@@ -165,31 +165,42 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, submit
                   </div>
 
                   {editable && editando && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        type="tel"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        placeholder="+57 300 000 0000"
-                        autoFocus
-                        disabled={guardando}
-                        className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:opacity-50"
-                      />
-                      <button
-                        onClick={() => guardarTelefono(f)}
-                        disabled={guardando}
-                        className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
-                      >
-                        {guardando ? <IconLoader size={13} className="animate-spin" /> : <IconCheck size={13} />}
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => setEditingRol(null)}
-                        disabled={guardando}
-                        className="rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-                      >
-                        Cancelar
-                      </button>
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="tel"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          placeholder="+57 300 000 0000"
+                          autoFocus
+                          disabled={guardando}
+                          className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:opacity-50"
+                        />
+                        <button
+                          onClick={() => guardarTelefono(f)}
+                          disabled={guardando}
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {guardando ? <IconLoader size={13} className="animate-spin" /> : <IconCheck size={13} />}
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => setEditingRol(null)}
+                          disabled={guardando}
+                          className="rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                      {f.origen === 'arrendador' && (
+                        <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-600">
+                          <IconAlertTriangle size={12} className="mt-0.5 shrink-0" />
+                          <span>
+                            Este es el WhatsApp de recaudo de la inmobiliaria: se usa en todos tus
+                            contratos y avisos, no solo en esta firma.
+                          </span>
+                        </p>
+                      )}
                     </div>
                   )}
                 </li>

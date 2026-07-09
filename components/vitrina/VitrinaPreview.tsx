@@ -30,6 +30,11 @@ const TIPO_EMOJI: Record<string, string> = {
   oficina: '🏢',
   local: '🏬',
   bodega: '🏭',
+  apartaestudio: '🏢',
+  casa_finca: '🏡',
+  finca: '🌾',
+  lote: '🏞️',
+  parqueadero: '🅿️',
 }
 
 // "Nuevo" = publicado en los últimos 21 días.

@@ -62,6 +62,8 @@ export default function DatosContratoPage() {
           domicilio_direccion: data.domicilio_direccion,
           domicilio_ciudad: data.domicilio_ciudad,
           matricula_arrendador: data.matricula_arrendador,
+          matricula_expedida_por: data.matricula_expedida_por,
+          matricula_fecha: data.matricula_fecha,
           whatsapp_recaudo: data.whatsapp_recaudo,
           email_recaudo: data.email_recaudo,
           cuenta_recaudo_banco: data.cuenta_recaudo_banco,
@@ -343,6 +345,25 @@ export default function DatosContratoPage() {
             help="Número de matrícula expedido por la alcaldía. Solo aplica a inmobiliarias."
             required
           />
+        )}
+
+        {isInmobiliaria && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Matrícula expedida por"
+              value={form.matricula_expedida_por}
+              onChange={(v) => onChange('matricula_expedida_por', v)}
+              placeholder="Ej. Cámara de Comercio de Medellín"
+              help="Entidad que expidió la matrícula. Se imprime en el contrato."
+            />
+            <Field
+              label="Fecha de expedición de la matrícula"
+              type="date"
+              value={form.matricula_fecha}
+              onChange={(v) => onChange('matricula_fecha', v)}
+              help="Fecha en que se expidió la matrícula. Se imprime en el contrato."
+            />
+          </div>
         )}
       </div>
 
