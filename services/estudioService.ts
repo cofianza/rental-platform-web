@@ -115,6 +115,8 @@ export const estudioService = {
       numero_documento?: string
       /** Cambio manual de buró en el reintento (transunion | datacredito). */
       proveedor?: 'transunion' | 'datacredito'
+      /** Primer apellido — solo DataCrédito lo valida (contra Registraduría). */
+      primer_apellido?: string
     },
   ): Promise<IEstudio> {
     const res = await apiClient.post<IEstudio>(`/estudios/${estudioId}/ejecutar`, body || {})

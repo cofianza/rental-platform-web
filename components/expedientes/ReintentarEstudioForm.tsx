@@ -41,6 +41,21 @@ function normalizeProveedorReintento(p?: string | null): ProveedorReintento {
   return p === 'datacredito' ? 'datacredito' : 'transunion'
 }
 
+/**
+ * Propone el primer apellido a partir del nombre completo. En Colombia el
+ * orden habitual es `Nombre1 [Nombre2] Apellido1 [Apellido2]`, así que con 4+
+ * palabras el primer apellido es la antepenúltima y con 3 la penúltima.
+ * Es solo una propuesta editable: DataCrédito lo contrasta contra la
+ * Registraduría y basta un error para que la consulta falle con código 10.
+ */
+function proponerPrimerApellido(nombreCompleto?: string | null): string {
+  const partes = (nombreCompleto || '').trim().split(/\s+/).filter(Boolean)
+  if (partes.length === 0) return ''
+  if (partes.length <= 2) return partes[partes.length - 1]
+  if (partes.length === 3) return partes[1]
+  return partes[partes.length - 2]
+}
+
 interface ReintentarEstudioFormProps {
   estudioId: string
   /** Buró con el que falló — preseleccionado; el gestor puede cambiarlo. */
@@ -49,6 +64,10 @@ interface ReintentarEstudioFormProps {
   persona?: {
     tipo_documento?: string | null
     numero_documento?: string | null
+    /** Nombre completo — solo se usa para PROPONER el apellido si no viene. */
+    nombre?: string | null
+    /** Apellido ya separado. Si existe se usa tal cual (más fiable que derivarlo). */
+    apellido?: string | null
   } | null
   /** true = titular (el documento corregido se sincroniza en el solicitante). */
   esTitular?: boolean
@@ -71,12 +90,29 @@ export function ReintentarEstudioForm({
   const [proveedor, setProveedor] = useState<ProveedorReintento>(() =>
     normalizeProveedorReintento(proveedorActual),
   )
+  // Si el apellido viene separado se usa tal cual; solo si no, se propone a
+  // partir del nombre completo. En ambos casos queda editable: es lo que el
+  // buró contrasta contra la Registraduría.
+  const [primerApellido, setPrimerApellido] = useState(() => {
+    const separado = persona?.apellido?.trim()
+    if (separado) return separado.split(/\s+/)[0]
+    return proponerPrimerApellido(persona?.nombre)
+  })
   const [reintentando, setReintentando] = useState(false)
+
+  // Solo DataCrédito valida el apellido (contra Registraduría, y únicamente
+  // cuando el documento es CC). Con TransUnion el campo sobra y solo distrae.
+  const requiereApellido = proveedor === 'datacredito' && tipoDoc === 'cc'
 
   const handleReintentar = async () => {
     const numero = numeroDoc.trim()
     if (!numero) {
       toast.error('Ingresa el número de documento para reintentar')
+      return
+    }
+    const apellido = primerApellido.trim()
+    if (requiereApellido && apellido.length < 2) {
+      toast.error('DataCrédito requiere el primer apellido para validar la identidad')
       return
     }
     setReintentando(true)
@@ -85,6 +121,7 @@ export function ReintentarEstudioForm({
         tipo_documento: tipoDoc,
         numero_documento: numero,
         proveedor,
+        ...(apellido ? { primer_apellido: apellido } : {}),
       })
       toast.success(`Reintentando la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`)
       onRetried?.()
@@ -150,6 +187,24 @@ export function ReintentarEstudioForm({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           />
         </div>
+        {/* Solo DataCrédito + CC: es el único caso en que el buró contrasta el
+            apellido contra Registraduría (código 10 si no coincide). */}
+        {requiereApellido && (
+          <div className="sm:w-52">
+            <label className="block text-[11px] font-medium text-gray-500 mb-1">
+              Primer apellido
+            </label>
+            <input
+              type="text"
+              value={primerApellido}
+              onChange={(e) => setPrimerApellido(e.target.value)}
+              placeholder="Como en la Registraduría"
+              disabled={reintentando}
+              maxLength={80}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            />
+          </div>
+        )}
         <button
           type="button"
           onClick={handleReintentar}
@@ -162,6 +217,9 @@ export function ReintentarEstudioForm({
       </div>
       <p className="text-[11px] text-gray-500 mt-2">
         Solo se consultan documentos colombianos (CC, CE, TI, NIT).
+        {requiereApellido
+          ? ' DataCrédito valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
+          : ''}
         {/* Comparación contra el valor CRUDO, no el normalizado: un estudio
             legacy con proveedor 'sifin'/'manual' se normaliza a 'transunion'
             en el select, y comparar contra el normalizado ocultaría el aviso
