@@ -26,7 +26,7 @@ import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 const PROVEEDOR_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
   sifin: 'SIFIN',
-  datacredito: 'DataCredito',
+  datacredito: 'DataCrédito',
 }
 
 const ESTADOS_FINALIZADOS = ['completado', 'fallido', 'cancelado']
@@ -459,7 +459,9 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                     onKeyDown={(e) => e.stopPropagation()}
                   >
                     <ReintentarEstudioForm
+                      key={`${estudio.id}:${estudio.proveedor}`}
                       estudioId={estudio.id}
+                      proveedorActual={estudio.proveedor}
                       persona={persona}
                       esTitular={persona?.etiqueta !== 'Co-arrendatario'}
                       onRetried={fetchEstudios}

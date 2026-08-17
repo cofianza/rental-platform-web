@@ -33,6 +33,16 @@ import { expedienteService } from '@/services/expedienteService'
 // callejón sin salida: dejaría omitir la cita y luego la RPC rechazaría.
 const ESTADOS_HABILITABLES = ['borrador', 'en_revision', 'informacion_incompleta']
 
+// Burós ejecutables. 'manual' y 'sifin' quedan fuera: el primero no se
+// consulta automáticamente y el segundo es un stub sin implementar, así que
+// ofrecerlos aquí dejaría al solicitante pagando por un estudio que no corre.
+type BuroEjecutable = 'transunion' | 'datacredito'
+
+const BUROS: { value: BuroEjecutable; label: string }[] = [
+  { value: 'transunion', label: 'TransUnion' },
+  { value: 'datacredito', label: 'DataCrédito' },
+]
+
 interface AccionHabilitarEstudioCardProps {
   expedienteId: string
   estudioHabilitado: boolean
@@ -73,6 +83,7 @@ export function AccionHabilitarEstudioCard({
   const [showOmitir, setShowOmitir] = useState(false)
   const [motivoOmitir, setMotivoOmitir] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [proveedor, setProveedor] = useState<BuroEjecutable>('transunion')
 
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
   // casos (estudio ya decidido o usuario sin permiso) salimos sin gasto.
@@ -97,8 +108,9 @@ export function AccionHabilitarEstudioCard({
   const handleHabilitar = async () => {
     setSubmitting(true)
     try {
-      await expedienteService.habilitarEstudio(expedienteId)
-      toast.success('Estudio habilitado, se notifico al solicitante')
+      await expedienteService.habilitarEstudio(expedienteId, proveedor)
+      const buroLabel = BUROS.find((b) => b.value === proveedor)?.label ?? proveedor
+      toast.success(`Estudio habilitado con ${buroLabel}, se notificó al solicitante`)
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -251,6 +263,33 @@ export function AccionHabilitarEstudioCard({
                 ? 'Marcaste la visita como ya realizada. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'
                 : 'La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'}
             </p>
+            {/* Selección de buró. Va ANTES del botón porque la decisión se
+                toma al habilitar: el estudio se crea con ese proveedor y
+                cambiarlo después obliga a reintentar (y a pagar otra consulta). */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                Buró de crédito a consultar
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {BUROS.map((b) => (
+                  <button
+                    key={b.value}
+                    type="button"
+                    onClick={() => setProveedor(b.value)}
+                    disabled={submitting}
+                    aria-pressed={proveedor === b.value}
+                    className={[
+                      'px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50',
+                      proveedor === b.value
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+                    ].join(' ')}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleHabilitar}

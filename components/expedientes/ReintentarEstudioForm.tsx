@@ -1,12 +1,15 @@
 /**
  * ReintentarEstudioForm — reintento de un estudio 'fallido' con el documento
  * verificable/corregible en el lugar (la causa típica del fallo es una cédula
- * mal escrita o un tipo de documento no soportado).
+ * mal escrita o un tipo de documento no soportado) y con el BURÓ elegible:
+ * si TransUnion falla, el gestor puede relanzar por DataCrédito o viceversa.
+ * El cambio es manual a propósito — cada consulta se factura, así que la
+ * decisión de gastar en el otro buró es del gestor, no automática.
  *
  * Compartido por EstudioEstadoCard (resumen) y EstudiosSection (tab Estudios).
- * El documento va como override a POST /estudios/:id/ejecutar: se consulta ese,
- * se persiste en datos_formulario y (solo titular) se sincroniza en el
- * solicitante.
+ * Documento y proveedor van como override a POST /estudios/:id/ejecutar: se
+ * consulta eso, se persiste en el estudio y (solo titular) el documento se
+ * sincroniza en el solicitante.
  */
 
 'use client'
@@ -26,8 +29,22 @@ export function normalizeTipoDocEstudio(t?: string | null): TipoDocEstudio {
   return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ti' ? v : 'cc'
 }
 
+// Burós ejecutables por reintento (mismo enum que ejecutarEstudioBodySchema).
+type ProveedorReintento = 'transunion' | 'datacredito'
+
+const PROVEEDOR_REINTENTO_LABELS: Record<ProveedorReintento, string> = {
+  transunion: 'TransUnion',
+  datacredito: 'DataCrédito',
+}
+
+function normalizeProveedorReintento(p?: string | null): ProveedorReintento {
+  return p === 'datacredito' ? 'datacredito' : 'transunion'
+}
+
 interface ReintentarEstudioFormProps {
   estudioId: string
+  /** Buró con el que falló — preseleccionado; el gestor puede cambiarlo. */
+  proveedorActual?: string | null
   /** Documento actual del evaluado — prellenado para verificar/corregir. */
   persona?: {
     tipo_documento?: string | null
@@ -41,6 +58,7 @@ interface ReintentarEstudioFormProps {
 
 export function ReintentarEstudioForm({
   estudioId,
+  proveedorActual,
   persona,
   esTitular = true,
   onRetried,
@@ -50,6 +68,9 @@ export function ReintentarEstudioForm({
     normalizeTipoDocEstudio(persona?.tipo_documento),
   )
   const [numeroDoc, setNumeroDoc] = useState(() => persona?.numero_documento?.trim() ?? '')
+  const [proveedor, setProveedor] = useState<ProveedorReintento>(() =>
+    normalizeProveedorReintento(proveedorActual),
+  )
   const [reintentando, setReintentando] = useState(false)
 
   const handleReintentar = async () => {
@@ -63,11 +84,16 @@ export function ReintentarEstudioForm({
       await estudioService.ejecutarEstudio(estudioId, {
         tipo_documento: tipoDoc,
         numero_documento: numero,
+        proveedor,
       })
-      toast.success('Reintentando la consulta a TransUnion…')
+      toast.success(`Reintentando la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`)
       onRetried?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo reintentar la consulta.')
+      // Refrescar también al fallar: el backend pudo haber tomado el lock y
+      // persistido el cambio de buró antes de romperse, así que sin esto la
+      // card seguiría mostrando el proveedor viejo y el estado anterior.
+      onRetried?.()
     } finally {
       setReintentando(false)
     }
@@ -76,9 +102,23 @@ export function ReintentarEstudioForm({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
-        Verifica o corrige el documento antes de reintentar
+        Verifica el documento y el buró antes de reintentar
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="sm:w-40">
+          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+            Buró de crédito
+          </label>
+          <select
+            value={proveedor}
+            onChange={(e) => setProveedor(e.target.value as ProveedorReintento)}
+            disabled={reintentando}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          >
+            <option value="transunion">TransUnion</option>
+            <option value="datacredito">DataCrédito</option>
+          </select>
+        </div>
         <div className="sm:w-44">
           <label className="block text-[11px] font-medium text-gray-500 mb-1">
             Tipo de documento
@@ -122,6 +162,13 @@ export function ReintentarEstudioForm({
       </div>
       <p className="text-[11px] text-gray-500 mt-2">
         Solo se consultan documentos colombianos (CC, CE, TI, NIT).
+        {/* Comparación contra el valor CRUDO, no el normalizado: un estudio
+            legacy con proveedor 'sifin'/'manual' se normaliza a 'transunion'
+            en el select, y comparar contra el normalizado ocultaría el aviso
+            justo cuando el buró sí está cambiando. */}
+        {proveedor !== proveedorActual
+          ? ' El estudio quedará registrado con el buró seleccionado.'
+          : ''}
         {esTitular
           ? ' Al reintentar, el documento se actualiza también en los datos del solicitante.'
           : ''}

@@ -41,7 +41,7 @@ interface EstudioDetailModalProps {
 const PROVEEDOR_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
   sifin: 'SIFIN',
-  datacredito: 'DataCredito',
+  datacredito: 'DataCrédito',
 }
 
 const TIPO_LABELS: Record<string, string> = {
@@ -122,6 +122,10 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
   const isTransUnion = estudio.proveedor === 'transunion'
   const isTransUnionCompleted = isTransUnion && estudio.estado === 'completado'
+  // DataCrédito comparte el resumen (gauge + observaciones) pero no tiene
+  // vista de reporte detallado propia — su respuesta cruda tiene otra forma.
+  const isBuroCompleted =
+    (isTransUnion || estudio.proveedor === 'datacredito') && estudio.estado === 'completado'
   // El detalle del buró se persiste en `respuesta_proveedor` (JSON crudo del
   // proveedor). Antes leíamos de `datos_formulario`, que en realidad solo
   // contiene los inputs del form — por eso el modal aparecía vacío para los
@@ -178,7 +182,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle del Estudio" size="lg">
       <div className="space-y-4">
         {/* Estado y resultado */}
-        {isTransUnionCompleted ? (
+        {isBuroCompleted ? (
           <div className="flex flex-col items-center py-2">
             <ScoreGauge score={estudio.score} resultado={estudio.resultado} size="md" />
             <div className="flex items-center gap-2 mt-3">

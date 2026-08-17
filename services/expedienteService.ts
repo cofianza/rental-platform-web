@@ -455,6 +455,8 @@ class ExpedienteService {
    */
   async habilitarEstudio(
     expedienteId: string,
+    /** Buró con el que se consultará. Si se omite, el backend usa TransUnion. */
+    proveedor?: 'transunion' | 'datacredito',
   ): Promise<{
     expediente: { id: string; numero: string; estudio_habilitado: true }
     estudio: { id: string; estado: string; resultado: string }
@@ -462,7 +464,7 @@ class ExpedienteService {
     const response = await apiClient.patch<{
       expediente: { id: string; numero: string; estudio_habilitado: true }
       estudio: { id: string; estado: string; resultado: string }
-    }>(`/expedientes/${expedienteId}/habilitar-estudio`, {})
+    }>(`/expedientes/${expedienteId}/habilitar-estudio`, proveedor ? { proveedor } : {})
     return response.data
   }
 

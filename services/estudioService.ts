@@ -110,7 +110,12 @@ export const estudioService = {
    */
   async ejecutarEstudio(
     estudioId: string,
-    body?: { tipo_documento?: string; numero_documento?: string },
+    body?: {
+      tipo_documento?: string
+      numero_documento?: string
+      /** Cambio manual de buró en el reintento (transunion | datacredito). */
+      proveedor?: 'transunion' | 'datacredito'
+    },
   ): Promise<IEstudio> {
     const res = await apiClient.post<IEstudio>(`/estudios/${estudioId}/ejecutar`, body || {})
     return res.data

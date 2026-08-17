@@ -24,11 +24,12 @@ const TIPOS_ESTUDIO: { value: TipoEstudio; label: string }[] = [
   { value: 'con_coarrendatario', label: 'Con coarrendatario' },
 ]
 
+// SIFIN se excluye a propósito: su provider en la API es un stub que lanza
+// PROVIDER_NOT_IMPLEMENTED — ofrecerlo sería un callejón sin salida.
 const PROVEEDORES: { value: ProveedorEstudio; label: string }[] = [
   { value: 'manual', label: 'Manual (sin proveedor)' },
   { value: 'transunion', label: 'TransUnion' },
-  { value: 'sifin', label: 'SIFIN' },
-  { value: 'datacredito', label: 'DataCredito' },
+  { value: 'datacredito', label: 'DataCrédito' },
 ]
 
 const PAGO_OPTIONS: { value: PagoPor; label: string }[] = [

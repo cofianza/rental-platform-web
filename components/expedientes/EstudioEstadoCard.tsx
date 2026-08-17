@@ -66,15 +66,22 @@ const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
  * para que el estudio avance. Cambia segun estado + resultado, y siempre va
  * por encima de los detalles tecnicos en la card.
  */
+const BURO_LABELS: Record<string, string> = {
+  transunion: 'TransUnion',
+  datacredito: 'DataCrédito',
+  sifin: 'SIFIN',
+}
+
 function getSiguientePaso(estudio: IEstudio): string {
+  const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
   if (estudio.estado === 'completado') {
-    if (estudio.resultado === 'aprobado') return 'Estudio aprobado por TransUnion. Siguiente paso: generar contrato.'
+    if (estudio.resultado === 'aprobado') return `Estudio aprobado por ${buro}. Siguiente paso: generar contrato.`
     if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
     if (estudio.resultado === 'rechazado') return 'Estudio rechazado. El expediente no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
-    return 'La consulta a TransUnion falló por un problema técnico (no es un rechazo de crédito). Vuelve a intentarla.'
+    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelve a intentarla — puedes cambiar de buró en el reintento.`
   }
   if (estudio.estado === 'cancelado') {
     return 'Estudio cancelado.'
@@ -95,7 +102,7 @@ function getSiguientePaso(estudio: IEstudio): string {
     return 'Esperando que el solicitante termine de llenar el formulario.'
   }
   if (estudio.estado === 'formulario_completado') {
-    return 'Formulario listo. El solicitante puede ejecutar la consulta a TransUnion desde su panel.'
+    return `Formulario listo. El solicitante puede ejecutar la consulta a ${buro} desde su panel.`
   }
   if (estudio.estado === 'documentos_cargados') {
     return 'Documentos cargados. Listo para ejecutar la consulta.'
@@ -314,7 +321,7 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
               </p>
             )}
             <p className="text-xs text-gray-600">
-              Proveedor: <span className="font-medium text-gray-800">{estudio.proveedor}</span>
+              Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
               {' · '}
               Tipo: <span className="font-medium text-gray-800">{estudio.tipo === 'con_coarrendatario' ? 'con coarrendatario' : 'individual'}</span>
             </p>
@@ -345,7 +352,12 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
         <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-3">
           {puedeReintentar && (
             <ReintentarEstudioForm
+              // key: el form inicializa su estado de forma lazy, así que sin
+              // esto la preselección de buró/documento quedaría del estudio
+              // anterior al cambiar de estudio o de buró.
+              key={`${estudio.id}:${estudio.proveedor}`}
               estudioId={estudio.id}
+              proveedorActual={estudio.proveedor}
               persona={persona}
               esTitular={etiqueta === 'Titular'}
               onRetried={onRetried}

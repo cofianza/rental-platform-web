@@ -14,7 +14,7 @@ export const SORTABLE_COLUMNS = {
 export const PROVEEDOR_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
   sifin: 'SIFIN',
-  datacredito: 'DataCredito',
+  datacredito: 'DataCrédito',
 }
 
 export const ESTUDIO_UI_MESSAGES = {
