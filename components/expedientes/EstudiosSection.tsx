@@ -48,16 +48,22 @@ function formatDate(dateStr: string): string {
 function getPersonaEvaluada(
   estudio: IEstudio,
   titular: { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined,
-): { nombre: string; tipo_documento?: string | null; numero_documento?: string | null; etiqueta: 'Titular' | 'Co-arrendatario' } | null {
+): { nombre: string; apellido?: string | null; tipo_documento?: string | null; numero_documento?: string | null; etiqueta: 'Titular' | 'Co-arrendatario' } | null {
   if (estudio.tipo === 'con_coarrendatario') {
     const datos = (estudio.datos_formulario || {}) as {
       nombre_completo?: string
+      apellido?: string
       tipo_documento?: string
       numero_documento?: string
     }
     if (!datos.nombre_completo && !datos.numero_documento) return null
     return {
       nombre: (datos.nombre_completo || '').trim(),
+      // El apellido capturado en su propio campo al invitar — lo usa el form
+      // de reintento para proponer el primer apellido que DataCrédito
+      // contrasta contra Registraduría (derivarlo del nombre completo falla
+      // con dos nombres o apellidos compuestos).
+      apellido: datos.apellido ?? null,
       tipo_documento: datos.tipo_documento ?? null,
       numero_documento: datos.numero_documento ?? null,
       etiqueta: 'Co-arrendatario',
@@ -66,6 +72,7 @@ function getPersonaEvaluada(
   if (!titular) return null
   return {
     nombre: `${titular.nombre} ${titular.apellido}`.trim(),
+    apellido: titular.apellido ?? null,
     tipo_documento: titular.tipo_documento ?? null,
     numero_documento: titular.numero_documento ?? null,
     etiqueta: 'Titular',

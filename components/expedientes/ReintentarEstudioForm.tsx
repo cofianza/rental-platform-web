@@ -121,7 +121,12 @@ export function ReintentarEstudioForm({
         tipo_documento: tipoDoc,
         numero_documento: numero,
         proveedor,
-        ...(apellido ? { primer_apellido: apellido } : {}),
+        // SOLO cuando el campo está visible: el backend trata cualquier
+        // primer_apellido como corrección explícita y lo sincroniza en
+        // solicitantes.apellido. Mandarlo con el campo oculto (TransUnion, o
+        // DataCrédito con CE/TI) pisaba en silencio un apellido compuesto
+        // ('Pérez García' → 'Pérez') que el gestor nunca vio ni tocó.
+        ...(requiereApellido && apellido ? { primer_apellido: apellido } : {}),
       })
       toast.success(`Reintentando la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`)
       onRetried?.()

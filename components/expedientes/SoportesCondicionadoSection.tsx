@@ -57,6 +57,7 @@ export function SoportesCondicionadoSection({
 }: SoportesCondicionadoSectionProps) {
   const [soportes, setSoportes] = useState<SoporteListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [proposito, setProposito] = useState<PropositoSoporte>('codeudor')
@@ -66,8 +67,13 @@ export function SoportesCondicionadoSection({
     try {
       const data = await expedienteSoportesService.listar(expedienteId)
       setSoportes(data)
+      setFetchError(false)
     } catch {
+      // Distinguir "no hay documentos" de "no se pudo consultar": un 429/red
+      // aquí mostraba 'el solicitante aún no ha subido documentos' con
+      // documentos ya subidos — y el gestor decide con ese dato.
       setSoportes([])
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -138,7 +144,14 @@ export function SoportesCondicionadoSection({
 
   return (
     <div className="space-y-3">
-      {soportes.length === 0 ? (
+      {fetchError ? (
+        <p className="text-sm text-red-700">
+          No se pudieron cargar los documentos.{' '}
+          <button type="button" onClick={fetchSoportes} className="underline font-medium">
+            Reintentar
+          </button>
+        </p>
+      ) : soportes.length === 0 ? (
         <p className="text-sm text-gray-600 italic">
           {permitirSubir
             ? 'Aún no has subido documentos adicionales.'

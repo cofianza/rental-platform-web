@@ -557,6 +557,11 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
+                  // La ponderación del backend puede mover el expediente a
+                  // aprobado/rechazado sola cuando completa el estudio del
+                  // coarrendatario — sin esto, la página quedaba ofreciendo
+                  // "Aprobar expediente" sobre un estado que ya no existe.
+                  onEstudioCompletado={fetchExpediente}
                 />
               </>
             )}
@@ -782,18 +787,26 @@ export default function ExpedienteDetallePage() {
                 el Resumen: cuando el gestor entra a esta pestaña ya está viendo
                 el resultado y su motivo, y tener que volver al Resumen para
                 actuar rompe el hilo. Ambas cards se auto-ocultan si el
-                expediente no está condicionado o el rol no puede decidir. */}
-            <AprobarCondicionadoCard
-              expedienteId={id}
-              expedienteEstado={expediente.estado}
-              userRol={user?.rol}
-              onAprobado={fetchExpediente}
-            />
-            <CoarrendatarioPropietarioCard
-              expedienteId={id}
-              expedienteEstado={expediente.estado}
-              userRol={user?.rol}
-            />
+                expediente no está condicionado o el rol no puede decidir.
+                Mismo guard de perfil que el Resumen: un miembro con el perfil
+                incompleto no debe poder aprobar desde esta pestaña lo que el
+                Resumen le bloquea con banner explicativo. */}
+            {!bloqueadoPorPerfil && (
+              <>
+                <AprobarCondicionadoCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
+                  onAprobado={fetchExpediente}
+                />
+                <CoarrendatarioPropietarioCard
+                  expedienteId={id}
+                  expedienteEstado={expediente.estado}
+                  userRol={user?.rol}
+                  onEstudioCompletado={fetchExpediente}
+                />
+              </>
+            )}
           </div>
         )}
 

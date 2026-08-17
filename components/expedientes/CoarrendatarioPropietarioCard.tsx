@@ -25,6 +25,13 @@ interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
   expedienteEstado: string
   userRol?: string
+  /**
+   * Se dispara cuando el estudio del coarrendatario COMPLETA: la ponderación
+   * del backend puede haber movido el expediente a aprobado/rechazado solo,
+   * y sin refrescar al padre la página seguiría ofreciendo "Aprobar
+   * expediente" sobre un estado que ya no existe (400 al pulsarlo).
+   */
+  onEstudioCompletado?: () => void
 }
 
 const TIPO_DOC_LABEL: Record<string, string> = {
@@ -39,6 +46,7 @@ export function CoarrendatarioPropietarioCard({
   expedienteId,
   expedienteEstado,
   userRol,
+  onEstudioCompletado,
 }: CoarrendatarioPropietarioCardProps) {
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,11 +55,20 @@ export function CoarrendatarioPropietarioCard({
   const [loadingDetail, setLoadingDetail] = useState(false)
 
   const coaLoadedRef = useRef(false)
+  // Detecta la transición a estudio completado UNA vez, para avisar al padre.
+  const estudioCompletadoNotificadoRef = useRef(false)
   const fetchCoa = useCallback(async () => {
     try {
       const data = await coarrendatarioService.getDelExpediente(expedienteId)
       setCoa(data)
       coaLoadedRef.current = true
+      if (
+        data?.estudio?.estado === 'completado' &&
+        !estudioCompletadoNotificadoRef.current
+      ) {
+        estudioCompletadoNotificadoRef.current = true
+        onEstudioCompletado?.()
+      }
     } catch {
       // No borrar la card por un error transitorio del polling (502 / red
       // móvil): solo la dejamos en null si nunca llegó a cargar.
@@ -59,7 +76,7 @@ export function CoarrendatarioPropietarioCard({
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, onEstudioCompletado])
 
   useEffect(() => { fetchCoa() }, [fetchCoa])
 

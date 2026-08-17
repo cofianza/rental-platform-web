@@ -399,6 +399,7 @@ function getCoarrendatarioFromEstudio(
 ): { nombre: string; apellido?: string; tipo_documento?: string | null; numero_documento?: string | null } | null {
   const datos = (estudio.datos_formulario || {}) as {
     nombre_completo?: string
+    apellido?: string
     tipo_documento?: string
     numero_documento?: string
   }
@@ -407,7 +408,12 @@ function getCoarrendatarioFromEstudio(
   const idx = completo.indexOf(' ')
   return {
     nombre: idx === -1 ? completo : completo.slice(0, idx),
-    apellido: idx === -1 ? '' : completo.slice(idx + 1),
+    // Preferir el apellido capturado en su propio campo al invitar: partir
+    // nombre_completo por el primer espacio convierte el segundo NOMBRE en
+    // apellido ('Juan Carlos Pérez' → apellido 'Carlos Pérez'), y el form de
+    // reintento propondría 'Carlos' como primer apellido → código 10 de
+    // DataCrédito con consulta facturada perdida.
+    apellido: datos.apellido || (idx === -1 ? '' : completo.slice(idx + 1)),
     tipo_documento: datos.tipo_documento ?? null,
     numero_documento: datos.numero_documento ?? null,
   }
