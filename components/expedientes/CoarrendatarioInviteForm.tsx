@@ -154,7 +154,7 @@ export function CoarrendatarioInviteForm({
           <FormField label="Email" type="email" value={email} onChange={setEmail} />
 
           <PhoneInput
-            label="Teléfono (opcional, para notificaciones futuras)"
+            label="WhatsApp (opcional — le llega la invitación también por ahí)"
             value={telefono}
             onChange={setTelefono}
           />
