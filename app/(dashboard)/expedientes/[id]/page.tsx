@@ -777,6 +777,23 @@ export default function ExpedienteDetallePage() {
               solicitante={expediente.solicitante}
               onContactoActualizado={fetchExpediente}
             />
+
+            {/* Decisión sobre un estudio condicionado, también aquí y no solo en
+                el Resumen: cuando el gestor entra a esta pestaña ya está viendo
+                el resultado y su motivo, y tener que volver al Resumen para
+                actuar rompe el hilo. Ambas cards se auto-ocultan si el
+                expediente no está condicionado o el rol no puede decidir. */}
+            <AprobarCondicionadoCard
+              expedienteId={id}
+              expedienteEstado={expediente.estado}
+              userRol={user?.rol}
+              onAprobado={fetchExpediente}
+            />
+            <CoarrendatarioPropietarioCard
+              expedienteId={id}
+              expedienteEstado={expediente.estado}
+              userRol={user?.rol}
+            />
           </div>
         )}
 
