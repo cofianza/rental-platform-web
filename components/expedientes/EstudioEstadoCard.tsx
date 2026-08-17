@@ -307,6 +307,17 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
             <p className="text-sm text-gray-800 font-medium mb-2">{siguientePaso}</p>
           )}
 
+          {/* Motivo real del fallo. El texto de arriba es genérico para
+              cualquier error; el backend guarda en `observaciones` la causa
+              concreta (documento no encontrado, apellido que no coincide con
+              Registraduría, buró caído…). Sin esto había que ir a la base de
+              datos para saber qué corregir. */}
+          {estudio.estado === 'fallido' && estudio.observaciones && (
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2">
+              {estudio.observaciones}
+            </p>
+          )}
+
           <div className="space-y-0.5 text-sm">
             {persona && (
               <p className="text-xs text-gray-600">
