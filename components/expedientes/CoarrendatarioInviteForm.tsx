@@ -130,7 +130,11 @@ export function CoarrendatarioInviteForm({
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Nombre" value={nombre} onChange={setNombre} />
-            <FormField label="Apellido" value={apellido} onChange={setApellido} />
+            {/* Solo el primero: DataCrédito lo contrasta contra la
+                Registraduría tal cual — con los dos apellidos la consulta
+                falla (código 10) y se factura igual. No se auto-recorta en
+                código porque hay primeros apellidos compuestos ('De La Hoz'). */}
+            <FormField label="Primer apellido (como en la cédula)" value={apellido} onChange={setApellido} />
           </div>
 
           <div className="grid grid-cols-5 gap-3">
