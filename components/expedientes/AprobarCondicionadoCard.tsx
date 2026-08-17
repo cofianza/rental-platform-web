@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui'
 import { expedienteService } from '@/services/expedienteService'
+import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -112,6 +113,19 @@ export function AprobarCondicionadoCard({
             >
               {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante para cargar documentos'}
             </button>
+          </div>
+
+          {/* Documentos que el solicitante subió por el enlace. Sin esto, el
+              gestor podía enviar el enlace pero no ver el resultado: los
+              soportes solo se listaban dentro de la sección de re-evaluación
+              del modal de detalle, que está gateada a admin/operador.
+              `permitirSubir=false`: aquí el gestor revisa y descarga, quien
+              carga es el solicitante desde su enlace público. */}
+          <div className="mt-4 border-t border-amber-200 pt-3">
+            <p className="text-xs font-semibold text-gray-700 mb-2">
+              Documentos de soporte del solicitante
+            </p>
+            <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
           </div>
         </div>
       </div>
