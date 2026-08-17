@@ -402,6 +402,25 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                         </span>
                       </div>
                     )}
+                    {/* Motivo del desenlace. Solo se muestra donde el "por qué"
+                        cambia lo que el gestor debe hacer: sin score (buró sin
+                        información), rechazo, o fallo técnico. En un aprobado
+                        las observaciones son solo el detalle del reporte, y el
+                        badge + el score ya lo dicen todo. */}
+                    {estudio.observaciones &&
+                      (estudio.estado === 'fallido' ||
+                        estudio.resultado === 'condicionado' ||
+                        estudio.resultado === 'rechazado') && (
+                        <p
+                          className={`mt-2 text-xs rounded-lg border px-2.5 py-1.5 ${
+                            estudio.estado === 'fallido' || estudio.resultado === 'rechazado'
+                              ? 'bg-red-50 border-red-200 text-red-800'
+                              : 'bg-amber-50 border-amber-200 text-amber-800'
+                          }`}
+                        >
+                          {estudio.observaciones}
+                        </p>
+                      )}
                   </div>
 
                   {/* Actions — solo gestion (admin/operador). El click "ver detalle"
