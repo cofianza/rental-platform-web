@@ -16,7 +16,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { IconCheck, IconClock } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { formatDate } from '@/lib/constants'
-import { ReintentarEstudioForm } from './ReintentarEstudioForm'
+import {
+  ReintentarEstudioForm,
+  puedeRelanzarEstudio,
+  esCondicionadoSinInfo,
+} from './ReintentarEstudioForm'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 
 interface EstudioEstadoCardProps {
@@ -255,7 +259,10 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
     userRol === 'propietario' ||
     userRol === 'administrador' ||
     userRol === 'operador_analista'
-  const puedeReintentar = esGestor && estudio.estado === 'fallido'
+  // Incluye el condicionado-sin-información: ahí el form no reintenta sino que
+  // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
+  const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio)
+  const esReconsulta = esCondicionadoSinInfo(estudio)
 
   const tone = getTone(estudio)
   const styles = TONE_STYLES[tone]
@@ -371,6 +378,7 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
               proveedorActual={estudio.proveedor}
               persona={persona}
               esTitular={etiqueta === 'Titular'}
+              esReconsulta={esReconsulta}
               onRetried={onRetried}
             />
           )}

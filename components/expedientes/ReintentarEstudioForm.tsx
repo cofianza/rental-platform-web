@@ -41,6 +41,36 @@ function normalizeProveedorReintento(p?: string | null): ProveedorReintento {
   return p === 'datacredito' ? 'datacredito' : 'transunion'
 }
 
+function otroBuro(p: ProveedorReintento): ProveedorReintento {
+  return p === 'datacredito' ? 'transunion' : 'datacredito'
+}
+
+/**
+ * Un estudio completado, condicionado y SIN score significa que el buró no
+ * pudo evaluar a la persona (código 14 de DataCrédito, exclusiones de
+ * CreditVision). No es un perfil marginal: es falta de información, y la
+ * salida natural es preguntarle al OTRO buró.
+ */
+export function esCondicionadoSinInfo(estudio: {
+  estado: string
+  resultado?: string | null
+  score?: number | null
+}): boolean {
+  return estudio.estado === 'completado' && estudio.resultado === 'condicionado' && estudio.score == null
+}
+
+/**
+ * ¿Se puede relanzar este estudio contra un buró? Compartido por la card del
+ * resumen y el tab Estudios para que no se desincronicen.
+ */
+export function puedeRelanzarEstudio(estudio: {
+  estado: string
+  resultado?: string | null
+  score?: number | null
+}): boolean {
+  return estudio.estado === 'fallido' || esCondicionadoSinInfo(estudio)
+}
+
 /**
  * Propone el primer apellido a partir del nombre completo. En Colombia el
  * orden habitual es `Nombre1 [Nombre2] Apellido1 [Apellido2]`, así que con 4+
@@ -71,6 +101,12 @@ interface ReintentarEstudioFormProps {
   } | null
   /** true = titular (el documento corregido se sincroniza en el solicitante). */
   esTitular?: boolean
+  /**
+   * true cuando el estudio no falló sino que quedó condicionado sin
+   * información del buró. El backend solo deja re-ejecutarlo si se CAMBIA de
+   * proveedor, así que el form arranca con el otro buró y lo exige.
+   */
+  esReconsulta?: boolean
   /** Refresca la lista/card padre tras disparar el reintento. */
   onRetried?: () => void
 }
@@ -80,6 +116,7 @@ export function ReintentarEstudioForm({
   proveedorActual,
   persona,
   esTitular = true,
+  esReconsulta = false,
   onRetried,
 }: ReintentarEstudioFormProps) {
   // Init lazy: no se pisa con los re-render del polling del padre.
@@ -87,9 +124,12 @@ export function ReintentarEstudioForm({
     normalizeTipoDocEstudio(persona?.tipo_documento),
   )
   const [numeroDoc, setNumeroDoc] = useState(() => persona?.numero_documento?.trim() ?? '')
-  const [proveedor, setProveedor] = useState<ProveedorReintento>(() =>
-    normalizeProveedorReintento(proveedorActual),
-  )
+  // En una re-consulta arranca con el OTRO buró: repetir el que ya dijo "no
+  // tengo información" no aporta nada, y además el backend lo rechaza.
+  const [proveedor, setProveedor] = useState<ProveedorReintento>(() => {
+    const actual = normalizeProveedorReintento(proveedorActual)
+    return esReconsulta ? otroBuro(actual) : actual
+  })
   // Si el apellido viene separado se usa tal cual; solo si no, se propone a
   // partir del nombre completo. En ambos casos queda editable: es lo que el
   // buró contrasta contra la Registraduría.
@@ -113,6 +153,12 @@ export function ReintentarEstudioForm({
     const apellido = primerApellido.trim()
     if (requiereApellido && apellido.length < 2) {
       toast.error('DataCrédito requiere el primer apellido para validar la identidad')
+      return
+    }
+    if (esReconsulta && proveedor === normalizeProveedorReintento(proveedorActual)) {
+      toast.error(
+        `${PROVEEDOR_REINTENTO_LABELS[proveedor]} ya respondió que no tiene información de esta persona. Elige el otro buró.`,
+      )
       return
     }
     setReintentando(true)
@@ -144,7 +190,9 @@ export function ReintentarEstudioForm({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
-        Verifica el documento y el buró antes de reintentar
+        {esReconsulta
+          ? `${PROVEEDOR_REINTENTO_LABELS[normalizeProveedorReintento(proveedorActual)]} no tiene información de esta persona. Puedes consultar el otro buró.`
+          : 'Verifica el documento y el buró antes de reintentar'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-40">
@@ -217,10 +265,19 @@ export function ReintentarEstudioForm({
           className="inline-flex shrink-0 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {reintentando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
-          {reintentando ? 'Reintentando…' : 'Reintentar consulta'}
+          {reintentando
+            ? esReconsulta
+              ? 'Consultando…'
+              : 'Reintentando…'
+            : esReconsulta
+              ? 'Consultar este buró'
+              : 'Reintentar consulta'}
         </button>
       </div>
       <p className="text-[11px] text-gray-500 mt-2">
+        {esReconsulta
+          ? 'Que un buró no tenga datos no garantiza que el otro sí. Esta consulta se factura igual. '
+          : ''}
         Solo se consultan documentos colombianos (CC, CE, TI, NIT).
         {requiereApellido
           ? ' DataCrédito valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'

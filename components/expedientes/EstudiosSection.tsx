@@ -16,7 +16,11 @@ import { useAuthStore } from '@/stores/auth.store'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { RegistrarResultadoModal } from './RegistrarResultadoModal'
-import { ReintentarEstudioForm } from './ReintentarEstudioForm'
+import {
+  ReintentarEstudioForm,
+  puedeRelanzarEstudio,
+  esCondicionadoSinInfo,
+} from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 
 // ============================================
@@ -476,7 +480,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                     solo existía en la card del resumen). Gestores + dueños:
                     el backend autoriza a ambos en /ejecutar. stopPropagation
                     para no abrir el modal de detalle al interactuar. */}
-                {(canManage || isStakeholder) && estudio.estado === 'fallido' && (
+                {(canManage || isStakeholder) && puedeRelanzarEstudio(estudio) && (
                   <div
                     className="mt-3"
                     onClick={(e) => e.stopPropagation()}
@@ -490,6 +494,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                       proveedorActual={estudio.proveedor}
                       persona={persona}
                       esTitular={persona?.etiqueta !== 'Co-arrendatario'}
+                      esReconsulta={esCondicionadoSinInfo(estudio)}
                       onRetried={fetchEstudios}
                     />
                   </div>
