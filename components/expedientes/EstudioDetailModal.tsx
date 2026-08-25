@@ -14,9 +14,12 @@ import { IconFileText, IconLoader, IconCheck } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { ScoreGauge } from '@/components/estudios/ScoreGauge'
 import { TransUnionReportDetail } from '@/components/estudios/TransUnionReportDetail'
+import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReportDetail'
+import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 import type { TransUnionResponse } from '@/types/transunion'
+import type { DataCreditoResponse } from '@/types/datacredito'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -122,10 +125,11 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
   const isTransUnion = estudio.proveedor === 'transunion'
   const isTransUnionCompleted = isTransUnion && estudio.estado === 'completado'
-  // DataCrédito comparte el resumen (gauge + observaciones) pero no tiene
-  // vista de reporte detallado propia — su respuesta cruda tiene otra forma.
-  const isBuroCompleted =
-    (isTransUnion || estudio.proveedor === 'datacredito') && estudio.estado === 'completado'
+  const isDataCredito = estudio.proveedor === 'datacredito'
+  const isDataCreditoCompleted = isDataCredito && estudio.estado === 'completado'
+  // Ambos burós comparten el resumen (gauge + observaciones) y ahora ambos
+  // tienen vista de reporte detallado propia.
+  const isBuroCompleted = isTransUnionCompleted || isDataCreditoCompleted
   // El detalle del buró se persiste en `respuesta_proveedor` (JSON crudo del
   // proveedor). Antes leíamos de `datos_formulario`, que en realidad solo
   // contiene los inputs del form — por eso el modal aparecía vacío para los
@@ -133,6 +137,28 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const transunionData = isTransUnionCompleted
     ? (estudio.respuesta_proveedor as TransUnionResponse | null)
     : null
+  // DataCrédito sí envuelve su reporte: la raíz persistida es
+  // { ReportHDCplus: {...} }, porque el provider guarda la respuesta completa
+  // y no `response.ReportHDCplus`. TransUnion no tiene esa envoltura.
+  const datacreditoData = isDataCreditoCompleted
+    ? (estudio.respuesta_proveedor as DataCreditoResponse | null)
+    : null
+
+  // Un estudio "completado" no garantiza que haya reporte con contenido
+  // financiero: DataCrédito responde código 14 (consulta efectiva SIN historia
+  // crediticia) y además la persistencia de `respuesta_proveedor` es
+  // best-effort en la API. En esos casos los datos del formulario (ingresos
+  // declarados, ocupación, empresa) son lo único que le queda al gestor, así
+  // que la sección no debe suprimirse por el simple hecho de que el buró
+  // respondió.
+  const dcReport = datacreditoData?.ReportHDCplus
+  const dcConHistoria = Boolean(
+    dcReport?.liabilities?.length ||
+      dcReport?.creditCard?.length ||
+      dcReport?.agregatedInfo?.overview ||
+      dcReport?.AgregatedInfo?.overview
+  )
+  const hayReporteFinanciero = Boolean(transunionData) || dcConHistoria
 
   const isReevaluable =
     estudio.estado === 'completado' &&
@@ -344,7 +370,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte TransUnion</h4>
                 {transunionData ? (
-                  <TransUnionReportDetail data={transunionData} />
+                  <ReporteBuroErrorBoundary>
+                    <TransUnionReportDetail data={transunionData} />
+                  </ReporteBuroErrorBoundary>
                 ) : (
                   <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
                     El reporte detallado del buró no se persistió para este estudio.
@@ -355,8 +383,30 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               </div>
             )}
 
-            {/* Datos formulario (non-TransUnion providers) */}
-            {estudio.datos_formulario && !isTransUnionCompleted && (
+            {/* DataCredito Report Detail */}
+            {isDataCreditoCompleted && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte DataCrédito</h4>
+                {datacreditoData?.ReportHDCplus ? (
+                  <ReporteBuroErrorBoundary>
+                    <DataCreditoReportDetail data={datacreditoData} />
+                  </ReporteBuroErrorBoundary>
+                ) : (
+                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    El reporte detallado del buró no se persistió para este estudio.
+                    Las consultas más recientes incluyen el detalle completo;
+                    para este caso, las observaciones del estudio resumen el resultado.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Datos formulario — fallback cuando no hay reporte de buró con
+                contenido financiero (manual, SIFIN, no completados, código 14
+                de DataCrédito o `respuesta_proveedor` no persistida). No debe
+                suplantar al reporte, pero tampoco desaparecer cuando el reporte
+                no trae historia crediticia: es el único insumo que queda. */}
+            {estudio.datos_formulario && !hayReporteFinanciero && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
                 <div className="bg-gray-50 rounded-lg p-4">

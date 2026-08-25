@@ -44,8 +44,10 @@ export interface IEstudio {
   condiciones?: string | null
   datos_formulario?: Record<string, unknown> | null
   // Respuesta cruda del buró (JSON). Para TransUnion: Combo 1901 con
-  // Tercero, Consolidado, HuellaConsulta. Es lo que renderiza el
-  // TransUnionReportDetail en el modal de detalle del estudio.
+  // Tercero, Consolidado, HuellaConsulta (sin envoltura). Para DataCrédito:
+  // el envelope HDC Plus completo, { ReportHDCplus: {...} }. Es lo que
+  // renderizan TransUnionReportDetail y DataCreditoReportDetail en el modal
+  // de detalle del estudio.
   respuesta_proveedor?: Record<string, unknown> | null
   token_self_service?: string | null
   expiracion_token?: string | null

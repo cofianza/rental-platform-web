@@ -7,7 +7,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Badge } from '@/components/ui/Badge'
 import { IconChevronDown, IconChevronUp } from '@/components/icons'
 import type {
   TransUnionResponse,
@@ -36,7 +35,15 @@ function formatCOP(value: string | number | undefined): string {
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '—'
   try {
-    return new Date(dateStr).toLocaleDateString('es-CO', {
+    // El buro envia fechas 'AAAA-MM-DD' sin zona horaria. `new Date` las
+    // interpreta como UTC y en Colombia (UTC-5) se mostrarian un dia antes, lo
+    // que rompe el cruce de la fecha de expedicion contra la cedula escaneada.
+    const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim())
+    const fecha = soloFecha
+      ? new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]))
+      : new Date(dateStr)
+    if (Number.isNaN(fecha.getTime())) return dateStr
+    return fecha.toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

@@ -4,9 +4,11 @@
  */
 
 export * from './constants'
+export * from './DataCreditoReportDetail'
 export * from './EstudiosBandejaTabs'
 export * from './EstudiosFilters'
 export * from './EstudiosSkeleton'
 export * from './EstudiosTable'
+export * from './ReporteBuroErrorBoundary'
 export * from './ScoreGauge'
 export * from './TransUnionReportDetail'
