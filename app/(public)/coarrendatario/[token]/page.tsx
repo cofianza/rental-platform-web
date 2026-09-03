@@ -27,6 +27,8 @@ export default function CoarrendatarioPublicPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Checkboxes T&C
+  // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
+  // Estos `false` son normativos — no los cambies ni los derives de nada.
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptData, setAcceptData] = useState(false)
   const [resultMsg, setResultMsg] = useState<string | null>(null)
@@ -80,7 +82,7 @@ export default function CoarrendatarioPublicPage() {
       await coarrendatarioService.rechazar(token)
       setPhase('rechazado')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo registrar el rechazo.'
+      const msg = err instanceof Error ? err.message : 'No pudimos registrar tu respuesta. Intenta de nuevo.'
       setErrorMsg(msg)
       setPhase('lista')
     }
@@ -178,6 +180,29 @@ export default function CoarrendatarioPublicPage() {
             </div>
           )}
 
+          {/*
+            Autorizacion de tratamiento de datos, INTEGRA y visible.
+            Flujo del modulo de estudios §8.4: el texto debe estar visible en
+            la pantalla, no oculto tras un enlace, y la casilla no puede venir
+            marcada por defecto. El invitado es otro titular de datos: su
+            consulta al buro exige SU propia autorizacion, y esta pantalla es
+            donde se presenta. El backend congela este mismo texto y su version
+            en autorizaciones_habeas_data al aceptar.
+          */}
+          {view?.texto_legal && (
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <div className="border-b border-gray-100 px-4 py-3">
+                <h3 className="text-sm font-semibold text-gray-900">Autorización de tratamiento de datos</h3>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  Este es el texto íntegro que estás aceptando. Versión {view.version_terminos}.
+                </p>
+              </div>
+              <div className="whitespace-pre-wrap bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+                {view.texto_legal}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
               <input
@@ -201,7 +226,7 @@ export default function CoarrendatarioPublicPage() {
                 className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span>
-                Autorizo el tratamiento de mis datos personales conforme a la <Link href="/privacidad" target="_blank" className="text-primary-600 underline">política de privacidad</Link> (Ley 1581/2012) y autorizo la consulta a centrales de riesgo.
+                <strong>He leído, comprendido y acepto</strong> la autorización de tratamiento de datos que aparece arriba, y autorizo la consulta y el reporte en centrales de información (Ley 1266/2008 y Ley 1581/2012).
               </span>
             </label>
           </div>

@@ -411,7 +411,17 @@ export default function EstudioFormularioPage() {
           />
         </div>
 
-        {/* Terminos */}
+        {/* Terminos del servicio.
+            OJO: esta casilla NO es la autorizacion de habeas data. Antes decia
+            "Autorizo el tratamiento de mis datos personales para la realizacion
+            del estudio de riesgo crediticio", pero esta pantalla no presenta el
+            texto de esa autorizacion (ni completo ni tras un enlace), no guarda
+            su version, ni deja evidencia en autorizaciones_habeas_data: solo
+            escribe acepta_terminos en datos_formulario. El §8.4 exige el texto
+            integro VISIBLE y evidencia demostrable, y eso solo ocurre en el
+            enlace de autorizacion (/autorizar/:token), que es ademas lo unico
+            que el gate acepta para consultar centrales de riesgo. Por eso aqui
+            la casilla se limita a lo que de verdad recoge. */}
         <div className="flex items-start gap-3 pt-2">
           <input
             id="acepta_terminos"
@@ -421,10 +431,14 @@ export default function EstudioFormularioPage() {
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label htmlFor="acepta_terminos" className="text-sm text-gray-600">
-            Autorizo el tratamiento de mis datos personales para la realizacion del estudio
-            de riesgo crediticio y acepto los terminos y condiciones del servicio.
+            Acepto los términos y condiciones del servicio.
           </label>
         </div>
+        <p className="text-xs text-gray-500 -mt-1">
+          Enviar este formulario no autoriza la consulta en centrales de riesgo. Esa autorización se
+          firma aparte, en el enlace de autorización que te enviamos: allí verás el texto completo
+          antes de aceptarlo.
+        </p>
 
         {/* Submit */}
         <div className="pt-2">

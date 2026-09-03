@@ -13,11 +13,31 @@ interface PageProps {
   params: Promise<{ codigo: string }>
 }
 
+// Pagina publica: la ve el prospecto (QR / URL del certificado).
+// Flujo del modulo de estudios §13: "Nunca usar la palabra 'rechazado' en
+// ninguna pantalla dirigida al prospecto", y §10 fija el lexico de la cuarta
+// ruta: "No aprobable por ahora. [...] Nunca es un portazo".
+// El valor de la clave es el enum de la base (`rechazado`) y NO se toca; lo
+// que cambia es lo que lee la persona. El rojo tambien se va: un pill rojo
+// comunica portazo aunque la palabra cambie.
+//
+// 'condicionado' se deja como esta: el §13 solo prohibe la palabra 'rechazado'.
+// Ademas el PDF del certificado imprime "CONDICIONADO" (certificado.service.ts)
+// y esta pagina es justamente la que prueba que el papel no fue alterado, asi
+// que las dos etiquetas tienen que decir lo mismo. Y "con co-arrendatario"
+// seria falso cuando el condicionado viene de que el buro no pudo evaluar.
 const RESULTADO_BADGES: Record<string, { bg: string; text: string; label: string }> = {
   aprobado: { bg: 'bg-green-100', text: 'text-green-800', label: 'Aprobado' },
   condicionado: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Condicionado' },
-  rechazado: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rechazado' },
+  rechazado: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'No aprobable por ahora' },
 }
+
+// Fallback NEUTRO, nunca 'aprobado'. `verificarCertificado` devuelve
+// `resultado: estudio?.resultado || ''`, asi que si la relacion con `estudios`
+// viene vacia o trae un estado que no es uno de los tres, el mapa no acierta.
+// Caer en 'aprobado' hacia que la pagina que existe para probar autenticidad
+// afirmara en verde "Aprobado" sobre un certificado sin estudio que lo respalde.
+const BADGE_DESCONOCIDO = { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Resultado no disponible' }
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '—'
@@ -101,7 +121,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
   }
 
   const isVigente = data.status === 'valido_vigente'
-  const badge = RESULTADO_BADGES[data.resultado] || RESULTADO_BADGES.aprobado
+  const badge = RESULTADO_BADGES[data.resultado] || BADGE_DESCONOCIDO
 
   return (
     <div className="max-w-md mx-auto py-8">

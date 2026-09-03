@@ -42,7 +42,7 @@ const FINALIDADES = [
     titulo: 'Evaluamos tu solicitud en segundos',
     sub: 'Riesgo, capacidad de pago y aprobación',
     detalle: [
-      'Analizamos tu perfil de riesgo y comportamiento de pago para aprobar o rechazar tu fianza.',
+      'Analizamos tu perfil de riesgo y tu comportamiento de pago para definir si podemos respaldarte y en qué condiciones.',
       'Usamos scoring automatizado; tienes derecho a pedir revisión humana de cualquier decisión que te afecte.',
     ],
   },
@@ -117,8 +117,9 @@ export default function AutorizarPage() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1)
+  // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
+  // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
-  const [legalAbierto, setLegalAbierto] = useState(false)
   const [openFin, setOpenFin] = useState<number | null>(null)
   const [consents, setConsents] = useState<Record<ConsentKey, boolean>>({
     analitica: false,
@@ -408,25 +409,23 @@ export default function AutorizarPage() {
               })}
             </div>
 
-            {/* Autorización legal completa */}
+            {/*
+              Autorización legal completa, SIEMPRE visible.
+              Flujo del módulo de estudios §8.4: "El texto de la autorización
+              debe estar visible en la pantalla, no oculto tras un enlace".
+              Antes vivía tras un desplegable "Ver autorización legal completa".
+              No volver a esconderlo tras un botón, un modal ni un enlace.
+            */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-              <button
-                type="button"
-                onClick={() => setLegalAbierto((v) => !v)}
-                className="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-semibold text-gray-700"
-              >
-                Ver autorización legal completa
-                <IconChevronDown
-                  size={16}
-                  className={cn('text-gray-400 transition-transform', legalAbierto && 'rotate-180')}
-                />
-              </button>
-              {legalAbierto && (
-                <div className="max-h-64 overflow-y-auto whitespace-pre-wrap border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
-                  {data.texto_legal}
-                  <p className="mt-2 text-[11px] text-gray-400">Versión: {data.version_terminos}</p>
-                </div>
-              )}
+              <div className="border-b border-gray-100 px-4 py-3">
+                <h2 className="text-sm font-semibold text-gray-900">Autorización legal completa</h2>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  Este es el texto íntegro que estás aceptando. Versión {data.version_terminos}.
+                </p>
+              </div>
+              <div className="whitespace-pre-wrap bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+                {data.texto_legal}
+              </div>
             </div>
 
             {/* Aceptación */}

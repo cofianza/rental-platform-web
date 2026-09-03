@@ -408,7 +408,10 @@ export default function ExpedienteDetallePage() {
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ? (
-              <ExpedienteRechazadoBanner motivo={expediente.motivo_rechazo} />
+              <ExpedienteRechazadoBanner
+                motivo={expediente.motivo_rechazo}
+                esProspecto={user?.rol === 'solicitante'}
+              />
             ) : expediente.estado === 'cerrado' && expediente.cancelado_at ? (
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">

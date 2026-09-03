@@ -61,6 +61,14 @@ export interface ICoarrendatarioPublicView {
     titular_nombre: string
   }
   expira_en: string
+  /**
+   * Texto integro de la autorizacion de tratamiento de datos que el invitado
+   * acepta, con su version. Flujo del modulo de estudios §8.4: debe estar
+   * visible en la pantalla, no oculto tras un enlace. Es exactamente el texto
+   * que el backend congela en autorizaciones_habeas_data.texto_autorizado.
+   */
+  texto_legal: string
+  version_terminos: string
 }
 
 export const coarrendatarioService = {
