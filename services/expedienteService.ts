@@ -469,6 +469,35 @@ class ExpedienteService {
   }
 
   /**
+   * Paso 4 del asistente (Flujo de Gerencia, módulo de estudios, §7): una sola
+   * llamada que habilita el estudio, omite la cita si el backend la exige (el
+   * flujo del §3 no contempla visita) y aplica la forma de pago elegida en el
+   * paso 3. El enlace de autorización lo dispara la forma de pago: la opción C
+   * lo manda antes de cobrar (§6.3) y las A y B al confirmarse el pago.
+   */
+  async iniciarEstudio(
+    expedienteId: string,
+    input: {
+      forma_pago: 'credito' | 'inmobiliaria' | 'prospecto'
+      proveedor?: 'transunion' | 'datacredito'
+      notas?: string
+    },
+  ): Promise<{
+    expediente: { id: string; numero: string }
+    estudio: { id: string }
+    forma_pago: 'credito' | 'inmobiliaria' | 'prospecto'
+    cita_omitida: boolean
+  }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string }
+      estudio: { id: string }
+      forma_pago: 'credito' | 'inmobiliaria' | 'prospecto'
+      cita_omitida: boolean
+    }>(`/expedientes/${expedienteId}/iniciar-estudio`, input)
+    return response.data
+  }
+
+  /**
    * Tarea 3.2: marca la cita como omitida (visita ya coordinada por fuera),
    * lo que permite habilitar el estudio sin exigir una cita 'realizada'.
    */

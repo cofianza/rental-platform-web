@@ -28,7 +28,16 @@ export interface WizardStep2Data {
   formData: ISolicitanteCreateData | null
 }
 
+/** Flujo de Gerencia, modulo de estudios, §6: las tres formas de pago del estudio. */
+export type FormaPagoEstudio = 'credito' | 'inmobiliaria' | 'prospecto'
+
 export interface WizardStep3Data {
+  /**
+   * §6 "PASO 3 — CONFIGURACIÓN": "En este paso se define cómo se paga el
+   * estudio. Existen tres opciones y el solicitante elige una." '' = sin
+   * elegir todavía, que es lo único que impide avanzar al paso 4.
+   */
+  forma_pago: FormaPagoEstudio | ''
   notas: string
   analista_id: string
   /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3.1). '' = sin asignar/auto. */
@@ -65,6 +74,7 @@ const initialStep2: WizardStep2Data = {
 }
 
 const initialStep3: WizardStep3Data = {
+  forma_pago: '',
   notas: '',
   analista_id: '',
   miembro_responsable_id: '',
@@ -154,6 +164,10 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
 
 function validateStep3(data: WizardStep3Data): Record<string, string> {
   const errors: Record<string, string> = {}
+
+  if (!data.forma_pago) {
+    errors.forma_pago = 'Elige cómo se paga el estudio'
+  }
 
   if (data.notas && data.notas.length > 5000) {
     errors.notas = 'Las notas no deben exceder 5000 caracteres'
@@ -316,7 +330,9 @@ export function useExpedienteWizard() {
       return false
     }
     if (currentStep === 3) {
-      return true // Paso 3 es opcional
+      // §6: elegir la forma de pago es obligatorio — es lo que decide qué se
+      // dispara al confirmar. Las notas y el responsable siguen siendo opcionales.
+      return !!data.step3.forma_pago
     }
     return true
   }, [currentStep, data])
@@ -360,7 +376,28 @@ export function useExpedienteWizard() {
         notas: data.step3.notas || undefined,
       })
 
-      toast.success('Expediente creado exitosamente')
+      // §7 "PASO 4 — CONFIRMACIÓN": "Al enviar, el sistema genera un enlace
+      // único e irrepetible y lo remite por WhatsApp al celular registrado,
+      // con copia al correo electrónico. El estudio queda en estado ESPERANDO
+      // AUTORIZACIÓN." Eso lo hace iniciarEstudio en UNA llamada.
+      //
+      // Si esta segunda llamada falla, el expediente YA existe: perderlo sería
+      // peor que entrar sin estudio, así que navegamos igual y le decimos al
+      // gestor qué le quedó pendiente (puede elegir el pago desde el panel).
+      try {
+        await expedienteService.iniciarEstudio(expediente.id, {
+          forma_pago: data.step3.forma_pago as FormaPagoEstudio,
+          notas: data.step3.notas || undefined,
+        })
+        toast.success('Solicitud enviada: el prospecto recibirá el enlace de autorización.')
+      } catch (inicioErr) {
+        const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
+        toast.warning(
+          `Creamos el expediente, pero no se pudo iniciar el estudio: ${detalle}. Elige la forma de pago desde el expediente.`,
+          { duration: 10000 },
+        )
+      }
+
       router.push(`/expedientes/${expediente.id}`)
 
       return expediente.id

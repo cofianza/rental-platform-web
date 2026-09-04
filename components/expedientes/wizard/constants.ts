@@ -101,7 +101,7 @@ export const WIZARD_MESSAGES = {
 
   // Paso 3
   STEP3_TITLE: 'Configuración',
-  STEP3_SUBTITLE: 'Configura opciones adicionales del expediente',
+  STEP3_SUBTITLE: 'Define cómo se paga el estudio de este prospecto',
   NOTAS_LABEL: 'Notas internas',
   NOTAS_PLACEHOLDER: 'Notas internas sobre el expediente (opcional)...',
   NOTAS_MAX_LENGTH: 'Las notas no deben exceder 5000 caracteres',
@@ -111,11 +111,11 @@ export const WIZARD_MESSAGES = {
 
   // Paso 4
   STEP4_TITLE: 'Confirmación',
-  STEP4_SUBTITLE: 'Revisa los datos antes de crear el expediente',
-  CONFIRM_CREATE: 'Crear Expediente',
-  CREATING: 'Creando expediente...',
-  SUCCESS: 'Expediente creado exitosamente',
-  ERROR: 'Error al crear el expediente',
+  STEP4_SUBTITLE: 'Revisa los datos antes de enviarle la solicitud de autorización al prospecto',
+  CONFIRM_CREATE: 'Enviar solicitud de autorización',
+  CREATING: 'Enviando solicitud...',
+  SUCCESS: 'Solicitud enviada al prospecto',
+  ERROR: 'Error al enviar la solicitud',
 
   // Navegacion
   PREVIOUS: 'Anterior',

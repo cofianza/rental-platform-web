@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   IconSearch,
@@ -15,9 +16,12 @@ import {
   IconPlus,
   IconPencil,
   IconAlertTriangle,
+  IconFileCheck,
+  IconArrowRight,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { solicitanteService } from '@/services/solicitanteService'
+import { estudioService, type IEstudioVigente } from '@/services/estudioService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
 import type { WizardStep2Data } from '@/hooks/useExpedienteWizard'
 import {
@@ -55,6 +59,10 @@ export function Step2Solicitante({
   const [searchNumDoc, setSearchNumDoc] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  // §5.2: "Si ya existe un estudio vigente para ese mismo número de documento,
+  // el sistema lo informa y ofrece consultarlo o reutilizarlo, en lugar de
+  // crear uno nuevo y cobrarlo."
+  const [estudioVigente, setEstudioVigente] = useState<IEstudioVigente | null>(null)
   // Solicitantes que esta inmobiliaria/propietario ya registró — para elegir
   // rápido sin escribir el documento. El backend los scopea por creado_por.
   const [recientes, setRecientes] = useState<ISolicitante[]>([])
@@ -175,12 +183,20 @@ export function Step2Solicitante({
 
     setIsSearching(true)
     setSearchError(null)
+    // Limpiar el aviso anterior: si no, el estudio vigente de la persona
+    // buscada antes seguiría en pantalla junto a los datos de otra.
+    setEstudioVigente(null)
 
     try {
-      const solicitante = await solicitanteService.searchByDocument(
-        searchTipoDoc,
-        searchNumDoc.trim()
-      )
+      // El aviso del §5.2 es informativo: si la consulta falla, la búsqueda
+      // del solicitante sigue su curso. Por eso va en paralelo y con catch.
+      const [solicitante, vigente] = await Promise.all([
+        solicitanteService.searchByDocument(searchTipoDoc, searchNumDoc.trim()),
+        estudioService
+          .buscarVigentePorDocumento(searchTipoDoc, searchNumDoc.trim())
+          .catch(() => null),
+      ])
+      setEstudioVigente(vigente)
 
       if (solicitante) {
         onUpdate({
@@ -441,6 +457,35 @@ export function Step2Solicitante({
           </button>
         </div>
 
+        {/* §5.2 — ya hay un estudio vigente para este documento */}
+        {estudioVigente && (
+          <div className="mt-3 rounded-xl border border-primary-200 bg-primary-50/70 p-4">
+            <div className="flex items-start gap-3">
+              <IconFileCheck size={18} className="mt-0.5 shrink-0 text-primary-600" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-primary-900">
+                  Esta persona ya tiene un estudio vigente
+                </p>
+                <p className="mt-1 text-sm text-primary-800">
+                  {estudioVigente.expediente_numero
+                    ? `Expediente ${estudioVigente.expediente_numero}. `
+                    : ''}
+                  Le quedan {estudioVigente.dias_restantes}{' '}
+                  {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia. Puedes
+                  reutilizarlo para esta propiedad sin volver a cobrarlo.
+                </p>
+                <Link
+                  href={`/expedientes/${estudioVigente.expediente_id}`}
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800"
+                >
+                  Ver el estudio existente
+                  <IconArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error de busqueda */}
         {searchError && (
           <p className="text-sm text-red-600 mt-3">{searchError}</p>
@@ -579,11 +624,13 @@ function SolicitanteForm({
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
 }) {
-  // Solo lo esencial (básicos + contacto) visible; el resto es opcional.
-  // OCULTO temporalmente a pedido: los "datos adicionales" no se muestran por
-  // ahora. Para REACTIVAR: volver a `const [showMore, setShowMore] = useState(false)`
-  // y descomentar el botón de toggle más abajo.
-  const showMore = false
+  // Flujo de Gerencia, modulo de estudios, §5.1: los campos de este paso son
+  // los MÍNIMOS para identificar y contactar al prospecto. Lo laboral y los
+  // ingresos se los pregunta el §8.2 al propio prospecto en su pantalla, que
+  // es donde el dato es fiable y donde el documento pide que se explique para
+  // qué se usa. Aquí quedan detrás de un toggle: quien ya los tiene a mano
+  // puede capturarlos, pero el camino rápido es el del documento.
+  const [showMore, setShowMore] = useState(false)
 
   const inputClasses = (hasError: boolean) =>
     cn(
@@ -747,8 +794,7 @@ function SolicitanteForm({
         </div>
       </section>
 
-      {/* Toggle "Agregar datos adicionales" OCULTO temporalmente a pedido.
-          Para reactivar: descomentar este botón y restaurar el useState arriba.
+      {/* §5.1: todo lo que no es mínimo vive aquí detrás. */}
       <button
         type="button"
         onClick={() => setShowMore((v) => !v)}
@@ -756,7 +802,6 @@ function SolicitanteForm({
       >
         {showMore ? '− Ocultar datos adicionales' : '+ Agregar datos adicionales (opcional)'}
       </button>
-      */}
 
       {showMore && (
         <>

@@ -20,6 +20,7 @@ import {
   IconAlertTriangle,
   IconPencil,
   IconArrowRight,
+  IconCreditCard,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
@@ -49,7 +50,15 @@ export function Step4Confirmation({
 }: Step4ConfirmationProps) {
   const { inmueble } = data.step1
   const { solicitante, isNewSolicitante, formData } = data.step2
-  const { notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
+  const { forma_pago, notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
+
+  // §7: el resumen debe mostrar "propiedad, canon, datos del prospecto y forma
+  // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
+  const FORMA_PAGO_LABEL: Record<string, string> = {
+    credito: 'Descontado del paquete de estudios (opción A)',
+    inmobiliaria: 'Lo paga la inmobiliaria ahora (opción B)',
+    prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
+  }
 
   // Obtener datos del solicitante (existente o nuevo)
   const solicitanteData = solicitante || formData
@@ -237,6 +246,19 @@ export function Step4Confirmation({
           </button>
         </div>
         <div className="p-4 space-y-3">
+          {/* Forma de pago — §7 la exige en el resumen */}
+          <div>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Forma de pago del estudio</p>
+            {forma_pago ? (
+              <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
+                <IconCreditCard size={14} className="text-gray-400" />
+                {FORMA_PAGO_LABEL[forma_pago]}
+              </p>
+            ) : (
+              <p className="text-sm text-red-600">Sin elegir — vuelve al paso 3</p>
+            )}
+          </div>
+
           {/* Notas */}
           <div>
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Notas internas</p>

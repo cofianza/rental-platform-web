@@ -288,6 +288,36 @@ export const estudioService = {
     )
     return res.data
   },
+
+  /**
+   * §5.2 del flujo: ¿esta persona ya tiene un estudio vigente? Se consulta en
+   * el paso 2 del asistente para ofrecer reutilizarlo en vez de cobrar otro.
+   * Devuelve null cuando no hay nada — que es el caso normal.
+   */
+  async buscarVigentePorDocumento(
+    tipoDocumento: string,
+    numeroDocumento: string,
+  ): Promise<IEstudioVigente | null> {
+    const params = new URLSearchParams({
+      tipo_documento: tipoDocumento,
+      numero_documento: numeroDocumento,
+    })
+    const res = await apiClient.get<{ estudio: IEstudioVigente | null }>(
+      `/estudios/vigente?${params.toString()}`,
+    )
+    return res.data.estudio
+  },
+}
+
+/** §5.2 — estudio ya pagado y todavía dentro de su vigencia. */
+export interface IEstudioVigente {
+  id: string
+  expediente_id: string
+  expediente_numero: string | null
+  resultado: string | null
+  fecha_completado: string | null
+  vigente_hasta: string
+  dias_restantes: number
 }
 
 // ============================================
