@@ -6,7 +6,8 @@
  *   - en_proceso             → "Consultando tu historial...".
  *   - completado + aprobado  → banner verde.
  *   - completado + condicionado → banner ámbar.
- *   - completado + rechazado → banner rojo.
+ *   - completado + rechazado → banner "No aprobable por ahora" (§10: nunca
+ *     la palabra "rechazado" en pantallas del prospecto, §13).
  *   - fallido                → reintentar.
  *
  * Se auto-oculta si todavía no existe un estudio en un estado relevante
@@ -521,16 +522,34 @@ export function EstudioSolicitanteCard({
       )
     }
     if (estudio.resultado === 'rechazado') {
+      // NO se afirma la causa. Este card convive en la misma pantalla con
+      // ExpedienteRechazadoBanner y con el correo del orquestador, y el texto
+      // fijo de antes ("tu historial crediticio actual no cumple los
+      // requisitos, mejora tu perfil") los contradice cuando el rechazo fue por
+      // una regla dura V4.1: ahi el historial puede estar impecable (el caso de
+      // produccion tenia score 773) y lo que no da es la carga mensual frente
+      // al canon. Mandarlo a "mejorar su perfil" es mandarlo a arreglar algo
+      // que no esta roto.
+      //
+      // `motivo_rechazo` que llega en esta respuesta NO es el del gestor: la
+      // API lo sustituye por el motivo general del flujo §10 para el rol
+      // 'solicitante' (redactarEstudioParaProspecto en estudios.service.ts), y
+      // lo deja null cuando no hay un motivo apto para el prospecto — por eso
+      // el fallback no nombra ninguna causa.
+      // Paleta slate, la misma de ExpedienteRechazadoBanner en su variante de
+      // prospecto: los dos bloques hablan del mismo hecho en la misma pantalla.
+      // El ambar queda reservado para 'condicionado', que si tiene salida.
       return (
-        <div className="border border-red-200 bg-red-50 rounded-lg p-5">
+        <div className="border border-slate-200 bg-slate-50 rounded-lg p-5">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 text-slate-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-sm font-semibold text-red-900 mb-0.5">Estudio no aprobado</p>
-              <p className="text-sm text-red-800">
-                Tu historial crediticio actual no cumple los requisitos. Puedes mejorar tu perfil y volver a intentarlo más adelante.
+              <p className="text-sm font-semibold text-slate-900 mb-0.5">No aprobable por ahora</p>
+              <p className="text-sm text-slate-700">
+                {estudio.motivo_rechazo ||
+                  'Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti: puedes intentarlo con un inmueble de canon menor, presentar un co-arrendatario o volver a solicitarlo más adelante.'}
               </p>
             </div>
           </div>
