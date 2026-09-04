@@ -128,6 +128,8 @@ export default function AutorizarPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [hashDocumento, setHashDocumento] = useState<string | null>(null)
+  // §6.3: tras firmar, en la opción C todavía falta el pago. Lo dice el backend.
+  const [pagoRequerido, setPagoRequerido] = useState(false)
 
   const [otpState, setOtpState] = useState<OtpState>('idle')
   // Una casilla por posición (array de 6). Evita el desalineado del modelo string
@@ -225,6 +227,7 @@ export default function AutorizarPage() {
         consentimientos_opcionales: consents,
       })
       setHashDocumento(result.hash_documento)
+      setPagoRequerido(!!result.pago_requerido)
       setPageState('signed')
     } catch (err) {
       const code = (err as { code?: string })?.code
@@ -284,15 +287,19 @@ export default function AutorizarPage() {
           </div>
           <h2 className="text-xl font-extrabold text-gray-900">¡Autorización firmada!</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Tu autorización quedó registrada con firma electrónica (Ley 527/1999). Ya puedes continuar con tu
-            solicitud de fianza.
+            Tu autorización quedó registrada con firma electrónica (Ley 527/1999).
+            {pagoRequerido
+              ? ' Te acabamos de enviar por correo y WhatsApp el enlace para pagar el estudio: tu evaluación se ejecuta apenas se confirme el pago.'
+              : ' Ya puedes continuar con tu solicitud de fianza.'}
           </p>
           {hashDocumento && (
             <p className="mx-auto mt-4 max-w-md break-all rounded-lg bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400">
               Verificación: {hashDocumento}
             </p>
           )}
-          <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
+          <p className="mt-4 text-sm text-gray-500">
+            {pagoRequerido ? 'Revisa tu correo y tu WhatsApp para completar el pago.' : 'Puedes cerrar esta página.'}
+          </p>
         </div>
       </Card>
     )

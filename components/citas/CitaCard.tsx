@@ -17,6 +17,7 @@ import { Modal, ConfirmDialog } from '@/components/ui'
 import { IconLoader, IconCalendar, IconPhone, IconShieldCheck, IconMail, IconId, IconUser } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
+import { useAuthStore } from '@/stores/auth.store'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
@@ -37,6 +38,7 @@ interface CitaCardProps {
 type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar_estudio'
 
 export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
+  const userRol = useAuthStore((s) => s.user?.rol)
   const [action, setAction] = useState<ActionState>('idle')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -112,11 +114,18 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const estadoConfig = ESTADO_CITA_CONFIG[cita.estado]
   const fechaRelevante = cita.fecha_confirmada || cita.fecha_propuesta
 
+  // §6.3: habilitar ya no cobra. Al propietario individual se le manda al
+  // solicitante el enlace de AUTORIZACION (el cobro se genera cuando firme);
+  // a inmobiliaria/admin/operador no se le manda NADA hasta que elija el pago
+  // desde el expediente. El texto viejo ("se le enviara el link de pago")
+  // describia el orden anterior y dejaba al gestor esperando un cobro.
   const handleHabilitarEstudio = () => {
     if (!expediente) return
     return runAction(
       () => expedienteService.habilitarEstudio(expediente.id),
-      'Estudio habilitado, se notifico al solicitante',
+      userRol === 'propietario'
+        ? 'Estudio habilitado. Al solicitante le llega el enlace para autorizar la consulta'
+        : 'Estudio habilitado. Define el pago desde el expediente',
     )
   }
 
@@ -473,7 +482,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleHabilitarEstudio}
         title="Habilitar estudio crediticio"
-        message="Se habilitara el estudio para este solicitante y se le enviara el link de pago. ¿Continuar?"
+        message="Se habilitara el estudio y al solicitante le llegara el enlace para autorizar la consulta en centrales; el cobro va despues. ¿Continuar?"
         confirmLabel="Habilitar estudio"
         isLoading={isLoading}
       />
@@ -520,6 +529,13 @@ function PagoEstudioPill({ estado }: { estado?: string | null }) {
     cancelado: {
       label: 'Pago cancelado',
       className: 'text-gray-600 bg-gray-50 border-gray-200',
+    },
+    // §6.3: el gestor ya eligió "enviar link al arrendatario", pero el cobro
+    // se crea recién cuando el prospecto firma. Sin esta entrada caía en
+    // 'Aún sin pago' — idéntico a "nadie ha decidido nada".
+    esperando_autorizacion: {
+      label: 'Esperando autorización',
+      className: 'text-blue-700 bg-blue-50 border-blue-200',
     },
     sin_definir: {
       label: 'Aún sin pago',

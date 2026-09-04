@@ -70,7 +70,7 @@ export default function InvitacionPage() {
     try {
       const result = await canjearInvitacion(token)
       sessionStorage.removeItem('invitacion_token')
-      toast.success('Tu expediente está listo para pagar el estudio')
+      toast.success('Tu expediente está listo. El siguiente paso es autorizar la consulta en centrales')
       router.push(result.redirect)
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -224,7 +224,8 @@ export default function InvitacionPage() {
               <IconCheck size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-green-900">
                 Tu cuenta coincide con la invitación. Al canjear, se vinculará este expediente
-                a tu perfil y se habilitará el pago del estudio crediticio.
+                a tu perfil y podrás autorizar la consulta en centrales de riesgo (el cobro del
+                estudio llega después de que autorices).
               </p>
             </div>
           </div>

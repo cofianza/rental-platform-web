@@ -110,7 +110,7 @@ export function AccionHabilitarEstudioCard({
     try {
       await expedienteService.habilitarEstudio(expedienteId, proveedor)
       const buroLabel = BUROS.find((b) => b.value === proveedor)?.label ?? proveedor
-      toast.success(`Estudio habilitado con ${buroLabel}, se notificó al solicitante`)
+      toast.success(`Estudio habilitado con ${buroLabel}. Define el pago desde el expediente; al solicitante le llega primero la autorización`)
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -260,8 +260,8 @@ export function AccionHabilitarEstudioCard({
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {citaOmitida
-                ? 'Marcaste la visita como ya realizada. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'
-                : 'La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el link para pagar y completar) o cerrar el proceso aquí.'}
+                ? 'Marcaste la visita como ya realizada. Decide si proceder con el estudio crediticio del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
+                : 'La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
             </p>
             {/* Selección de buró. Va ANTES del botón porque la decisión se
                 toma al habilitar: el estudio se crea con ese proveedor y

@@ -265,7 +265,9 @@ export function EstudioSolicitanteCard({
   if (loading || authLoading) return null
 
   // Antes del pago (solicitado / pago_pendiente) NO mostramos nada — el
-  // PagoEstudioSection se encarga de ese paso.
+  // PagoEstudioSection se encarga de ese paso. Con el §6.3 'pago_pendiente' es
+  // justo la espera nueva: el prospecto YA autorizó y lo que falta es su pago,
+  // así que la card que corresponde ahí es la del cobro, no ésta.
   if (!estudio) return null
 
   // Card "Firma tu autorización": el camino correcto cuando hay un enlace de
@@ -286,8 +288,8 @@ export function EstudioSolicitanteCard({
             Te enviamos un enlace a tu {solicitanteTelefono
               ? <strong>WhatsApp y correo</strong>
               : <strong>correo</strong>} para autorizar el tratamiento
-            de tus datos y la consulta a las centrales de riesgo. Ábrelo y fírmalo — apenas autorices,
-            tu estudio crediticio se ejecuta automáticamente.
+            de tus datos y la consulta a las centrales de riesgo. Ábrelo y fírmalo: es el primer paso,
+            y apenas autorices te llega el enlace para pagar el estudio.
           </p>
           <p className="text-xs text-gray-500">
             El enlace es personal y {venceTexto}. ¿No te llegó? Revisa tu correo (incluido spam)
@@ -319,8 +321,9 @@ export function EstudioSolicitanteCard({
   )
 
   // Estados tempranos (antes del formulario): si ya hay un enlace de autorización
-  // pendiente (flujo manual: el link se envía tras el pago aunque el estudio siga
-  // en 'solicitado'/'pagado'), guiamos a firmarlo en lugar de no mostrar nada.
+  // pendiente, guiamos a firmarlo en lugar de no mostrar nada. Desde el §6.3 el
+  // enlace de autorización es lo PRIMERO que recibe (antes iba después del
+  // pago), así que este es el camino normal y no el excepcional.
   if (estudio.estado === 'solicitado' || estudio.estado === 'pago_pendiente' || estudio.estado === 'pagado' || estudio.estado === 'autorizado') {
     if (estudio.estado !== 'pago_pendiente') {
       if (esperandoInicio) return cardIniciandoEstudio

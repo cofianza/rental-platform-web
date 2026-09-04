@@ -6,8 +6,16 @@ import { apiClient } from '@/lib/api'
 import type { IPago } from './pagoService'
 
 export interface IPagoEstudioEstado {
-  estado: 'sin_definir' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
+  /** `esperando_autorizacion` (§6.3): el gestor ya eligió "enviar link al
+   *  arrendatario", pero el cobro todavía no existe — primero tiene que firmar
+   *  el habeas data. Es el estado nuevo del orden invertido. */
+  estado: 'sin_definir' | 'esperando_autorizacion' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
+  /** El estudio ya se puede ejecutar (= hay pago confirmado). */
   puede_avanzar: boolean
+  /** El TITULAR ya firmó el habeas data y sigue vigente. Distingue "esperando
+   *  que autorice" de "autorizado, falta cobrar" — sin esto no se puede
+   *  decidir si mostrarle al prospecto el CTA de pago. */
+  autorizado: boolean
   monto: number
   moneda: string
   monto_formateado: string
@@ -42,8 +50,12 @@ class PagoEstudioService {
     return response.data
   }
 
-  async enviarLink(expedienteId: string, input: IEnviarLinkInput): Promise<IPago> {
-    const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pago-estudio/enviar-link`, input)
+  /** §6.3: en la PRIMERA llamada no se cobra — el backend le manda la
+   *  autorización al arrendatario y responde `{ estado: 'esperando_autorizacion' }`
+   *  sin crear el pago. El cobro nace cuando el arrendatario firma. Nadie
+   *  consume la respuesta (se refresca el estado), de ahí la unión laxa. */
+  async enviarLink(expedienteId: string, input: IEnviarLinkInput): Promise<IPago | { estado: 'esperando_autorizacion' }> {
+    const response = await apiClient.post<IPago | { estado: 'esperando_autorizacion' }>(`/expedientes/${expedienteId}/pago-estudio/enviar-link`, input)
     return response.data
   }
 

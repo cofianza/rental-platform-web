@@ -106,8 +106,6 @@ export default function ExpedienteDetallePage() {
 
   // Estado de tabs
   const [activeTab, setActiveTab] = useState('resumen')
-  // El estudio quedó pagado/resuelto → recién ahí se muestra la autorización Habeas Data.
-  const [estudioPagado, setEstudioPagado] = useState(false)
 
   // 3.1: nº total de expedientes de esta persona — permite al gestor "evaluar
   // cada caso" cuando la ficha se reutilizó (el toast del wizard es efímero).
@@ -532,6 +530,19 @@ export default function ExpedienteDetallePage() {
                   userRol={user?.rol}
                   onAction={fetchExpediente}
                 />
+                {/* §6.3 — INVERSIÓN DEL ORDEN: primero la autorización, después
+                    el cobro. Hasta 2026-09-04 esta card vivía escondida en el
+                    tab Estudios y detrás de un gate `estudioPagado`; con el
+                    orden nuevo la firma es la PRIMERA acción requerida (y la
+                    que dispara el cobro), así que va donde el gestor mira. */}
+                {(expediente.estudio_habilitado ?? false) && (
+                  <AutorizacionSection
+                    expedienteId={id}
+                    solicitanteEmail={expediente.solicitante?.email}
+                    solicitanteTelefono={expediente.solicitante?.telefono}
+                    onContactoActualizado={fetchExpediente}
+                  />
+                )}
                 {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
                     estudio, la inmobiliaria/propietario decide aquí quién
                     asume el costo (crédito / asumir / link al arrendatario)
@@ -771,15 +782,22 @@ export default function ExpedienteDetallePage() {
                   expedienteId={id}
                   userRole={user?.rol}
                   onPagoCompletado={fetchExpediente}
-                  onPagadoChange={setEstudioPagado}
                   solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
                   solicitanteEmail={expediente.solicitante?.email}
                   solicitanteTelefono={expediente.solicitante?.telefono}
                 />
               )
             )}
-            {/* La autorización Habeas Data solo aparece una vez pagado/resuelto el estudio. */}
-            {estudioPagado && (
+            {/* §6.3: la autorización ya NO se gatea por el pago — es al revés,
+                la firma es lo que dispara el cobro. Gatearla dejaba la opción C
+                muerta en la UI (nunca hay pago confirmado antes de firmar).
+                Pero SÍ se gatea por `estudio_habilitado`, igual que el Resumen:
+                sin estudio habilitado el aviso de arriba dice "el pago estará
+                disponible cuando… el estudio esté habilitado" mientras esta
+                card ofrecía mandar el habeas data — dos textos contradictorios
+                en la misma pantalla, y una firma que al llegar no encuentra
+                estudio y quema su vigencia. */}
+            {(expediente.estudio_habilitado ?? false) && (
               <AutorizacionSection
                 expedienteId={id}
                 solicitanteEmail={expediente.solicitante?.email}

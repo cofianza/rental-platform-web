@@ -1091,6 +1091,13 @@ function PagoEstudioPill({ estado }: { estado?: string | null }) {
       label: 'Pago cancelado',
       className: 'text-gray-600 bg-gray-50 border-gray-200',
     },
+    // §6.3: el gestor ya eligió "enviar link al arrendatario", pero el cobro
+    // se crea recién cuando el prospecto firma. Sin esta entrada caía en
+    // 'Aún sin pago' — idéntico a "nadie ha decidido nada".
+    esperando_autorizacion: {
+      label: 'Esperando autorización',
+      className: 'text-blue-700 bg-blue-50 border-blue-200',
+    },
     sin_definir: {
       label: 'Aún sin pago',
       className: 'text-gray-600 bg-gray-50 border-gray-200',

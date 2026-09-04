@@ -12,10 +12,6 @@ import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/f
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
-  /** Reporta al padre si el estudio ya está pagado/resuelto (completado o
-   *  asumido por la inmobiliaria), para gatear pasos posteriores como la
-   *  autorización Habeas Data. Debe ser una función estable (p.ej. un setState). */
-  onPagadoChange?: (pagado: boolean) => void
   /** Rol del usuario actual — el solicitante ve un CTA "Pagar ahora" en lugar
    *  de los controles admin (enviar link / asumir costo). */
   userRole?: string
@@ -30,7 +26,7 @@ interface PagoEstudioSectionProps {
   solicitanteTelefono?: string | null
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoChange, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono }: PagoEstudioSectionProps) {
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -75,12 +71,6 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
   useEffect(() => { fetchEstado() }, [fetchEstado])
   useEffect(() => { fetchSaldo() }, [fetchSaldo])
 
-  // Reportar al padre si el estudio quedó pagado/resuelto (para gatear la
-  // autorización Habeas Data, que solo debe aparecer tras el pago).
-  useEffect(() => {
-    onPagadoChange?.(estado?.estado === 'completado' || estado?.estado === 'asumido_inmobiliaria')
-  }, [estado, onPagadoChange])
-
   // Polling automático mientras esperamos pago. Cuando el solicitante paga
   // por Stripe, el webhook tarda 1-3 seg en marcar el pago como 'completado'
   // — sin esto el panel queda mostrando "pendiente" hasta que el usuario
@@ -89,14 +79,17 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
   // para que el expediente padre haga refetch (estudio + UI).
   useEffect(() => {
     if (!estado) return
-    const enEspera = estado.estado === 'pendiente' || estado.estado === 'procesando'
+    // 'esperando_autorizacion' también es espera: cuando el arrendatario firme,
+    // el backend le genera el cobro solo y este panel tiene que enterarse.
+    const enEspera =
+      estado.estado === 'pendiente' || estado.estado === 'procesando' || estado.estado === 'esperando_autorizacion'
     if (!enEspera) return
 
     const id = setInterval(async () => {
       const fresco = await pagoEstudioService.getEstado(expedienteId).catch(() => null)
       if (!fresco) return
       setEstado(fresco)
-      if (fresco.estado !== 'pendiente' && fresco.estado !== 'procesando') {
+      if (fresco.estado !== 'pendiente' && fresco.estado !== 'procesando' && fresco.estado !== 'esperando_autorizacion') {
         onPagoCompletado?.()
       }
     }, 12000)
@@ -206,7 +199,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
   // El solicitante no puede "asumir" ni "enviar link". Solo paga si hay
   // link de Stripe generado, o espera a que definan la forma de pago.
   if (userRole === 'solicitante') {
-    if (hideIfNoAction && (estado.estado === 'sin_definir' || estado.estado === 'cancelado')) {
+    if (hideIfNoAction && (estado.estado === 'sin_definir' || estado.estado === 'cancelado' || estado.estado === 'esperando_autorizacion')) {
       return null
     }
     return <PagoEstudioSolicitanteView estado={estado} />
@@ -294,7 +287,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
                 </svg>
                 <span className="text-sm font-semibold text-gray-900">Enviar link al arrendatario</span>
                 <span className="text-xs text-gray-500">Él paga con tarjeta o PSE</span>
-                <span className="text-[11px] text-gray-500 leading-snug">Le llega por correo y WhatsApp; al pagar, el proceso sigue solo.</span>
+                <span className="text-[11px] text-gray-500 leading-snug">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
               </button>
             </div>
           ) : (
@@ -331,6 +324,46 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
         </div>
       )}
 
+      {/* Esperando que el arrendatario autorice (§6.3, opción C).
+          Todavía no hay fila de pago: el cobro se le genera al firmar. Los
+          escapes siguen disponibles porque no hay link vivo que cancelar. */}
+      {estado.estado === 'esperando_autorizacion' && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-amber-800">Esperando que el arrendatario autorice</p>
+              <p className="text-xs text-amber-600">
+                Le enviamos el enlace de autorización por correo y WhatsApp. Apenas lo firme le llega el cobro de {estado.monto_formateado} COP,
+                y el estudio corre cuando el pago se confirme.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {puedeUsarCreditos && (saldoCreditos?.saldo_total ?? 0) > 0 && (
+              <button
+                onClick={handleLiberarCredito}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
+              >
+                Liberar con crédito
+              </button>
+            )}
+            {mostrarAsumir && (
+              <button
+                onClick={() => { void handleAsumir() }}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
+              >
+                Yo asumo el costo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Asumido por inmobiliaria */}
       {estado.estado === 'asumido_inmobiliaria' && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -354,7 +387,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
           </svg>
           <div>
             <p className="text-sm font-medium text-green-800">Pago confirmado</p>
-            <p className="text-xs text-green-600">{estado.monto_formateado} COP — Siguiente paso desbloqueado</p>
+            <p className="text-xs text-green-600">{estado.monto_formateado} COP — el estudio crediticio ya puede ejecutarse</p>
           </div>
         </div>
       )}
@@ -367,7 +400,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, onPagadoCha
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-amber-800">Esperando pago del arrendatario</p>
+              <p className="text-sm font-medium text-amber-800">
+                {estado.autorizado ? 'Ya autorizó — esperando su pago' : 'Esperando pago del arrendatario'}
+              </p>
               <p className="text-xs text-amber-600">{estado.monto_formateado} COP — Link enviado a {estado.pago?.email_pagador}</p>
             </div>
           </div>
@@ -580,13 +615,19 @@ function EnviarLinkModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Enviar link de pago al arrendatario" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Enviar al arrendatario (autorización y luego el cobro)" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
         )}
 
         <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg">
+          {/* §6.3: lo primero que recibe el arrendatario es la AUTORIZACIÓN.
+              El cobro se le genera y se le envía cuando la firme. */}
+          <p className="text-sm text-primary-800 mb-2">
+            Le enviaremos primero el enlace para <span className="font-medium">autorizar la consulta en centrales</span>.
+            Apenas lo firme le llega automáticamente el cobro a este mismo correo y WhatsApp.
+          </p>
           <p className="text-sm text-primary-800">
             <span className="font-medium">Concepto:</span> Estudio de arrendamiento
           </p>
@@ -651,7 +692,7 @@ function EnviarLinkModal({
                 <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
               </svg>
             )}
-            {isSubmitting ? 'Enviando...' : 'Enviar link de pago'}
+            {isSubmitting ? 'Enviando...' : 'Enviar al arrendatario'}
           </button>
         </div>
       </form>
@@ -932,7 +973,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
               Monto a pagar: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
             </p>
             <p className="text-xs text-gray-500 mb-4">
-              Serás redirigido a la pasarela de pago segura. Al completar el pago, tu estudio se ejecuta automáticamente.
+              Ya firmaste tu autorización. Serás redirigido a la pasarela de pago segura y, al confirmarse el pago,
+              ejecutamos la consulta en centrales de riesgo.
             </p>
             <a
               href={linkPago}
@@ -992,6 +1034,21 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         <p className="text-sm font-medium text-gray-800">El pago fue cancelado</p>
         <p className="text-xs text-gray-500 mt-1">
           Contacta al propietario o a la inmobiliaria para retomar el proceso.
+        </p>
+      </div>
+    )
+  }
+
+  // §6.3: ya se definió que paga él, pero primero tiene que autorizar. NO se le
+  // muestra ningún CTA de pago: cobrar antes de autorizar es justo lo que el
+  // requisito prohíbe (y todavía no existe fila de pago que cobrar).
+  if (estado.estado === 'esperando_autorizacion') {
+    return (
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm font-medium text-blue-800">Firma primero tu autorización</p>
+        <p className="text-xs text-blue-600 mt-1">
+          Te enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
+          Apenas lo firmes te llega el enlace de pago ({estado.monto_formateado} COP).
         </p>
       </div>
     )

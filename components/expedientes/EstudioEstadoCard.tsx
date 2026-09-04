@@ -56,8 +56,8 @@ interface EstudioEstadoCardProps {
 // la card; el tab Estudios tiene el detalle fino.
 const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   solicitado: 'Solicitado',
-  pago_pendiente: 'Pago pendiente',
-  pagado: 'Pagado, pendiente autorizacion',
+  pago_pendiente: 'Autorizado, esperando pago',
+  pagado: 'Pagado',
   autorizado: 'Autorizado, pendiente formulario',
   formulario_enviado: 'Esperando datos del solicitante',
   formulario_completado: 'Formulario completado',
@@ -103,11 +103,16 @@ function getSiguientePaso(estudio: IEstudio): string {
   if (estudio.estado === 'en_proceso') {
     return 'Consultando con el buró de crédito. El resultado llega en minutos.'
   }
-  if (estudio.estado === 'pago_pendiente' || estudio.estado === 'solicitado') {
-    return 'Esperando que el solicitante realice el pago del estudio.'
+  // §6.3: el orden es AUTORIZACION -> PAGO -> EJECUCION. 'solicitado' es la
+  // espera de la firma; 'pago_pendiente' es la espera del cobro, ya autorizado.
+  if (estudio.estado === 'solicitado') {
+    return 'Esperando que el solicitante autorice la consulta en centrales de riesgo.'
+  }
+  if (estudio.estado === 'pago_pendiente') {
+    return 'Ya autorizó. Esperando el pago del estudio: no se consulta a centrales hasta confirmarlo.'
   }
   if (estudio.estado === 'pagado') {
-    return 'Pago recibido. Esperando que el solicitante autorice el tratamiento de datos.'
+    return 'Pago recibido. El estudio se ejecuta en seguida.'
   }
   if (estudio.estado === 'autorizado') {
     return 'Autorizado. Esperando que el solicitante complete el formulario con sus datos.'

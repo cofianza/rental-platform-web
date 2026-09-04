@@ -30,7 +30,7 @@ export interface CanjearResult {
     estudio_habilitado: boolean
     source: 'invitacion'
   }
-  siguiente_paso: 'pagar_estudio'
+  siguiente_paso: 'autorizar_estudio'
   redirect: string
 }
 

@@ -77,6 +77,15 @@ export function AutorizacionSection({
     fetchStatus()
   }, [fetchStatus])
 
+  // §6.3: con el orden invertido, la firma del arrendatario es lo que dispara
+  // el cobro y la ejecución del estudio. Sin polling el gestor no se enteraba
+  // de la firma hasta refrescar a mano. Mismo intervalo que PagoEstudioSection.
+  useEffect(() => {
+    if (autorizacion?.estado !== 'pendiente') return
+    const id = setInterval(() => { void fetchStatus() }, 12000)
+    return () => clearInterval(id)
+  }, [autorizacion?.estado, fetchStatus])
+
   const handleEnviarEnlace = async () => {
     // Overrides de contacto (solo si el gestor está corrigiendo y difieren).
     let contacto: { email?: string; telefono?: string } | undefined
@@ -235,7 +244,8 @@ export function AutorizacionSection({
       {!autorizacion && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
-            El arrendatario debe autorizar la consulta en centrales de riesgo antes de crear un estudio.
+            El arrendatario debe autorizar la consulta en centrales de riesgo antes de que corra el estudio.
+            Es el primer paso: el cobro del estudio se le pide después de que firme.
           </p>
           {contactoDestino}
           <button

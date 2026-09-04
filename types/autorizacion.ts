@@ -71,6 +71,11 @@ export interface IFirmarResponse {
   estado: string
   hash_documento: string
   autorizado_en: string
+  /** §6.3: en la opción C el cobro va DESPUÉS de la firma. Viene del backend
+   *  (derivado del pago del expediente) porque el prospecto no tiene sesión y
+   *  el mismo endpoint sirve a A y B, donde ya está pagado y ofrecerle un
+   *  cobro sería cobrarle dos veces. */
+  pago_requerido?: boolean
 }
 
 export interface IRevocarInput {

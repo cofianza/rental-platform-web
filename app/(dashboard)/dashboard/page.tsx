@@ -581,6 +581,13 @@ function SolicitanteDashboard() {
       (pagoByExpediente[exp.id]?.estado === 'pendiente' ||
         pagoByExpediente[exp.id]?.estado === 'fallido'),
   )
+  // §6.3: eslabón nuevo, ANTES del pago. El gestor ya decidió que el pago lo
+  // hace el arrendatario, pero primero tiene que firmar el habeas data — el
+  // enlace de pago ni siquiera existe todavía. Sin este banner el prospecto
+  // pasaba de "esperando habilitación" a "paga", que es el orden viejo.
+  const expedientesEsperandoAutorizacion = expedientes.filter(
+    (exp) => estadoActivo(exp) && pagoByExpediente[exp.id]?.estado === 'esperando_autorizacion',
+  )
 
   return (
     <div className="space-y-6">
@@ -594,9 +601,10 @@ function SolicitanteDashboard() {
           Azul: cita solicitada → esperando confirmación del propietario.
           Verde: cita confirmada → fecha lista para la visita.
           Ámbar: cita realizada pero el propietario aún no habilita el estudio.
-          Primario/gradient: estudio habilitado + pago pendiente → CTA "Pagar estudio".
+          Ámbar: ya se definió el pago pero el arrendatario aún no autoriza (§6.3).
+          Primario/gradient: ya autorizó y el pago está pendiente → CTA "Pagar estudio".
           Si el pago está completado o asumido, no mostramos banner; el stepper de la card toma el relevo. */}
-      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length + expedientesPagoPendiente.length) > 0 && (
+      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length + expedientesEsperandoAutorizacion.length + expedientesPagoPendiente.length) > 0 && (
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
@@ -655,6 +663,34 @@ function SolicitanteDashboard() {
             )
           })}
 
+          {/* §6.3: primero autorizar, después pagar — ámbar, sin CTA de pago
+              (todavía no hay nada que pagar y ofrecerlo sería cobrar antes de
+              autorizar, justo lo que el requisito prohíbe). */}
+          {expedientesEsperandoAutorizacion.map((exp) => (
+            <div key={`aut-${exp.id}`} className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+                  <IconClock size={22} className="text-amber-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-amber-900 mb-0.5">
+                    Firma tu autorización para continuar
+                  </h3>
+                  <p className="text-sm text-amber-800">
+                    Te enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
+                    Apenas lo firmes te llega el enlace de pago del estudio.
+                  </p>
+                </div>
+                <Link
+                  href={`/expedientes/${exp.id}`}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 shadow-sm transition-colors shrink-0"
+                >
+                  Ver mi expediente
+                </Link>
+              </div>
+            </div>
+          ))}
+
           {/* Estudio habilitado, pago pendiente → CTA "Pagar ahora" (gradient primario) */}
           {expedientesPagoPendiente.map((exp) => {
             const pago = pagoByExpediente[exp.id]
@@ -676,7 +712,7 @@ function SolicitanteDashboard() {
                     <p className="text-sm text-white/90">
                       {esFallido
                         ? 'Hubo un problema con el pago anterior. Intenta de nuevo para continuar con tu estudio.'
-                        : 'Tu estudio ya está habilitado. Realiza el pago para que podamos ejecutarlo y avancemos a la aprobación.'}
+                        : 'Ya autorizaste la consulta. Realiza el pago para que ejecutemos tu estudio y avancemos a la aprobación.'}
                     </p>
                   </div>
                   {pago?.linkPago ? (
@@ -716,7 +752,7 @@ function SolicitanteDashboard() {
                     Esperando que el propietario habilite tu estudio
                   </h3>
                   <p className="text-sm text-amber-800">
-                    Tu visita ya se realizó. En cuanto el propietario autorice el siguiente paso, podrás pagar el estudio crediticio y continuar con tu solicitud.
+                    Tu visita ya se realizó. En cuanto el propietario habilite el siguiente paso, te llegará el enlace para autorizar la consulta y continuar con tu solicitud.
                   </p>
                 </div>
                 <Link

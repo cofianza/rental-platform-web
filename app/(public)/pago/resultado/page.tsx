@@ -129,7 +129,7 @@ function PagoResultadoContent() {
 
         <p className="text-sm text-gray-600 max-w-sm mx-auto">
           {isSuccess
-            ? 'Tu pago del estudio de arrendamiento ha sido procesado correctamente. El equipo de la inmobiliaria continuara con el proceso.'
+            ? 'Tu pago del estudio de arrendamiento ha sido procesado correctamente. Con tu autorizacion ya firmada, estamos ejecutando la consulta: te avisaremos el resultado.'
             : isPending
               ? 'Tu pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Te avisaremos cuando se confirme — no necesitas volver a pagar.'
               : isCancelled
@@ -181,7 +181,7 @@ function PagoResultadoContent() {
           <p className="text-sm text-green-800">
             {isAuthenticated
               ? 'Ya puedes regresar a tu panel para ver el avance del estudio crediticio.'
-              : 'No necesitas hacer nada mas. La inmobiliaria te contactara para los siguientes pasos del proceso de arrendamiento.'}
+              : 'No necesitas hacer nada mas: tu estudio ya esta corriendo. La inmobiliaria te contactara con el resultado.'}
           </p>
         </div>
       ) : (
