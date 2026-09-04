@@ -35,6 +35,8 @@ export * from './SolicitarEstudioModal'
 export * from './EstudioDetailModal'
 export * from './RegistrarResultadoModal'
 export * from './ReEvaluacionSection'
+// Portabilidad del estudio a otra propiedad (Flujo §4.3)
+export * from './ReasignarEstudioModal'
 export * from './EstudioHistorialSection'
 
 // HP-334: Autorizacion habeas data

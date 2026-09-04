@@ -13,7 +13,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconCheck, IconClock } from '@/components/icons'
+import { IconBuilding2, IconCheck, IconClock } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { formatDate } from '@/lib/constants'
 import {
@@ -21,6 +21,7 @@ import {
   puedeRelanzarEstudio,
   esCondicionadoSinInfo,
 } from './ReintentarEstudioForm'
+import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 
 interface EstudioEstadoCardProps {
@@ -39,6 +40,15 @@ interface EstudioEstadoCardProps {
     tipo_documento?: string | null
     numero_documento?: string | null
   } | null
+  /**
+   * Inmueble actual del expediente. Solo lo necesita la reasignacion del §4.3,
+   * para excluirlo de la lista de destinos. Opcional: sin el, la card se
+   * comporta exactamente igual salvo que la lista incluye el actual (y la API
+   * lo rechaza con "el expediente ya esta sobre esa propiedad").
+   */
+  inmuebleActualId?: string | null
+  /** Se llama tras reasignar, para que el expediente se recargue. */
+  onReasignado?: () => void
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -162,7 +172,14 @@ const TONE_STYLES: Record<string, { card: string; icon: string; pill: string }> 
   },
 }
 
-export function EstudioEstadoCard({ expedienteId, onVerEstudios, userRol, solicitante }: EstudioEstadoCardProps) {
+export function EstudioEstadoCard({
+  expedienteId,
+  onVerEstudios,
+  userRol,
+  solicitante,
+  inmuebleActualId,
+  onReasignado,
+}: EstudioEstadoCardProps) {
   // Guardamos hasta 2 estudios: el del titular (tipo='individual') y el del
   // coarrendatario (tipo='con_coarrendatario'). Cuando existen los dos, los
   // mostramos en paneles separados para que cada uno muestre los datos y el
@@ -221,6 +238,11 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, userRol, solici
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
+          inmuebleActualId={inmuebleActualId}
+          onReasignado={() => {
+            fetchEstudios()
+            onReasignado?.()
+          }}
         />
       )}
       {estudioCoa && (
@@ -231,6 +253,10 @@ export function EstudioEstadoCard({ expedienteId, onVerEstudios, userRol, solici
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
+          // La reasignacion NO se ofrece desde el panel del co-arrendatario: lo
+          // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
+          // arrastra los dos estudios. Dos botones para el mismo traslado solo
+          // servirian para que el gestor crea que son dos cosas distintas.
         />
       )}
     </div>
@@ -251,9 +277,22 @@ interface EstudioPanelProps {
   onVerEstudios?: () => void
   userRol?: string
   onRetried?: () => void
+  /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
+  inmuebleActualId?: string | null
+  onReasignado?: () => void
 }
 
-function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRetried }: EstudioPanelProps) {
+function EstudioPanel({
+  estudio,
+  etiqueta,
+  persona,
+  onVerEstudios,
+  userRol,
+  onRetried,
+  inmuebleActualId,
+  onReasignado,
+}: EstudioPanelProps) {
+  const [reasignarAbierto, setReasignarAbierto] = useState(false)
   const esGestor =
     userRol === 'inmobiliaria' ||
     userRol === 'propietario' ||
@@ -263,6 +302,23 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
   // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
   const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio)
   const esReconsulta = esCondicionadoSinInfo(estudio)
+  // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
+  // otra propiedad sin volver a cobrar. El caso natural es el candidato que
+  // perdio el inmueble porque otro fue aprobado primero (§4.2 ya se lo avisa
+  // en el timeline). Se ofrece solo al gestor y solo desde el panel del
+  // titular.
+  //
+  // Los cuatro roles de `esGestor` entran, PROPIETARIO INCLUIDO: la ruta
+  // /reasignar usa roleGuard con esa misma lista (antes pedia
+  // expedientes:update, que el propietario no tiene, y el boton lo llevaba a un
+  // 403 seco despues de elegir la propiedad — un callejon sin salida dentro de
+  // una promesa comercial). Si esa lista cambia, esta condicion cambia con ella.
+  //
+  // No se filtra ademas por resultado ni por pago: el §4.3 solo pide "pagado y
+  // ejecutado", y el pago lo verifica la API contra `pagos` (fallando cerrado).
+  // Esconder el boton por una condicion que aqui no se puede comprobar dejaria
+  // al gestor sin saber por que no aparece.
+  const puedeReasignar = esGestor && onReasignado != null && estudio.estado === 'completado'
 
   const tone = getTone(estudio)
   const styles = TONE_STYLES[tone]
@@ -366,7 +422,7 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
         </div>
       </div>
 
-      {(puedeReintentar || onVerEstudios) && (
+      {(puedeReintentar || puedeReasignar || onVerEstudios) && (
         <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-3">
           {puedeReintentar && (
             <ReintentarEstudioForm
@@ -382,6 +438,16 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
               onRetried={onRetried}
             />
           )}
+          {puedeReasignar && (
+            <button
+              type="button"
+              onClick={() => setReasignarAbierto(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <IconBuilding2 size={14} />
+              Reasignar a otra propiedad
+            </button>
+          )}
           {onVerEstudios && (
             <button
               type="button"
@@ -392,6 +458,17 @@ function EstudioPanel({ estudio, etiqueta, persona, onVerEstudios, userRol, onRe
             </button>
           )}
         </div>
+      )}
+
+      {puedeReasignar && (
+        <ReasignarEstudioModal
+          isOpen={reasignarAbierto}
+          onClose={() => setReasignarAbierto(false)}
+          estudioId={estudio.id}
+          inmuebleActualId={inmuebleActualId}
+          canonEvaluado={estudio.canon_evaluado}
+          onReasignado={onReasignado}
+        />
       )}
     </div>
   )

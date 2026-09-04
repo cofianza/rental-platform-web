@@ -52,6 +52,19 @@ export interface IEstudio {
   token_self_service?: string | null
   expiracion_token?: string | null
   estudio_padre_id?: string | null
+  /**
+   * Canon CONGELADO con el que se ejecuto el estudio (COP). Lo escribe la API
+   * al tomar el lock de ejecucion, porque `inmuebles.valor_arriendo` es
+   * editable: sin este snapshot la tolerancia del §4.3 compararia contra un
+   * valor que pudo cambiar despues.
+   *
+   * null en los estudios anteriores al cambio — y eso es justamente lo que los
+   * vuelve NO portables (la API lo dice con su propio mensaje). Llega como
+   * string porque es un NUMERIC de PostgREST.
+   */
+  canon_evaluado?: number | string | null
+  /** De donde salio ese canon: 'inmueble' | 'contrato' | 'expediente' | 'manual'. */
+  canon_evaluado_origen?: string | null
   created_at: string
   updated_at: string
   solicitado_por?: {
@@ -266,4 +279,38 @@ export interface IVerificacionCertificado {
   fecha_vencimiento: string
   empresa: string
   numero_documento_masked: string
+}
+
+// ============================================================
+// Portabilidad del estudio a otra propiedad (Flujo §4.3)
+// ============================================================
+
+/**
+ * Lo que devuelve POST /estudios/:id/reasignar. Los numeros no son decorado:
+ * son la explicacion auditable de por que se permitio reutilizar un estudio
+ * pagado sin volver a cobrar.
+ */
+export interface IReasignacionEstudio {
+  expediente_id: string
+  expediente_numero: string | null
+  estudio_id: string
+  inmueble_origen_id: string
+  inmueble_destino_id: string
+  canon_origen_cop: number
+  canon_destino_cop: number
+  canon_maximo_tolerado_cop: number
+  tolerancia_pct: number
+  canon_ingreso_destino_pct: number | null
+  /** 'no_evaluable' cuando el buro no entrego ingreso inferido (TransUnion). */
+  veredicto_canon_ingreso: 'cumple' | 'no_cumple' | 'no_evaluable'
+  /** Vigencia ORIGINAL: la reasignacion no la extiende (§4.3). */
+  vigencia_hasta: string | null
+  /** Siempre false: "sin costo adicional". */
+  se_cobro: boolean
+  /**
+   * Que paso con el certificado ya emitido. 'desactualizado' significa que el
+   * PDF sigue nombrando la propiedad anterior y hay que regenerarlo antes de
+   * entregarlo — el gestor tiene que enterarse.
+   */
+  certificado: 'sin_certificado' | 'regenerado' | 'desactualizado'
 }

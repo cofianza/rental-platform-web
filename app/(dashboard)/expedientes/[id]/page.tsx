@@ -513,6 +513,13 @@ export default function ExpedienteDetallePage() {
                   onVerEstudios={() => setActiveTab('estudios')}
                   userRol={user?.rol}
                   solicitante={expediente.solicitante}
+                  // Portabilidad §4.3: el gestor puede llevar un estudio ya
+                  // ejecutado a otra propiedad sin volver a cobrar. Al hacerlo
+                  // cambia el inmueble del expediente, asi que hay que recargar
+                  // la pagina entera (la seccion Inmueble de aqui abajo es lo
+                  // primero que queda desactualizado).
+                  inmuebleActualId={expediente.inmueble?.id}
+                  onReasignado={fetchExpediente}
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}

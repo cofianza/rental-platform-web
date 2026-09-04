@@ -54,6 +54,13 @@ export interface IInmueble {
   notas_internas?: string | null
   estado: EstadoInmueble
   propietario_id: string
+  /**
+   * Organizacion dueña de la propiedad. null cuando la cartera es de un
+   * propietario individual. El backend lo sirve en INMUEBLE_FIELDS; aqui hace
+   * falta para la reasignacion del §4.3, que solo traslada dentro de la misma
+   * cartera.
+   */
+  inmobiliaria_id?: string | null
   /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3). */
   miembro_responsable_id?: string | null
   visible_vitrina: boolean

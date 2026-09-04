@@ -20,7 +20,7 @@ import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
-import { TIPO_LABELS } from '@/components/inmuebles/constants'
+import { TIPO_LABELS, esSeleccionable, motivoNoSeleccionable } from '@/components/inmuebles/constants'
 import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
@@ -59,18 +59,10 @@ function estadoBadge(i: IInmueble) {
   return ESTADO_BADGE[i.estado] ?? { label: i.estado, cls: 'bg-gray-100 text-gray-600' }
 }
 
-/** §4.2: solo una propiedad comprometida deja de admitir candidatos. */
-function esSeleccionable(i: IInmueble): boolean {
-  return i.estado !== 'ocupado' && i.estado !== 'inactivo'
-}
-
-function motivoNoSeleccionable(i: IInmueble): string {
-  if (i.estado === 'inactivo') return 'Inactivo: reactívalo desde el detalle del inmueble'
-  if (i.reservado && !i.arrendado) {
-    return 'Reservado: hay un candidato aprobado y el contrato está en proceso.'
-  }
-  return 'Ya está arrendado (contrato firmado)'
-}
+// §4.2: solo una propiedad comprometida deja de admitir candidatos.
+// esSeleccionable / motivoNoSeleccionable viven en
+// components/inmuebles/constants porque la reasignacion del estudio (§4.3) usa
+// exactamente la misma regla — ver la nota alli.
 // Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
 // mas, los excedentes se encuentran via el buscador como antes.
 const MIS_INMUEBLES_LIMIT = 50

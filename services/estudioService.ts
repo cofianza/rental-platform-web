@@ -24,6 +24,7 @@ import type {
   ICertificadoDownloadResponse,
   IVerificacionCertificado,
   IEstudiosStats,
+  IReasignacionEstudio,
 } from '@/types/estudio'
 
 // ============================================
@@ -133,6 +134,23 @@ export const estudioService = {
       `/estudios/${estudioId}/enviar-enlace`,
       body || {},
     )
+    return res.data
+  },
+
+  /**
+   * Portabilidad §4.3: reutiliza un estudio ya pagado y ejecutado en OTRA
+   * propiedad, sin costo adicional. Mueve el inmueble del expediente.
+   *
+   * La API decide (tolerancia +15% sobre el canon con el que se evaluo, y
+   * recalculo de la relacion canon/ingreso <= 40%, mas el tope de canon y la
+   * reserva del destino). Cuando no aplica, el error trae el mensaje que hay
+   * que mostrarle al gestor tal cual: dice el numero concreto y ofrece la
+   * salida.
+   */
+  async reasignar(estudioId: string, inmuebleIdDestino: string): Promise<IReasignacionEstudio> {
+    const res = await apiClient.post<IReasignacionEstudio>(`/estudios/${estudioId}/reasignar`, {
+      inmueble_id_destino: inmuebleIdDestino,
+    })
     return res.data
   },
 

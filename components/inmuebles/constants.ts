@@ -2,7 +2,7 @@
  * Constantes de Inmuebles - HP-174
  */
 
-import type { TipoInmueble, UsoInmueble, EstadoInmueble } from '@/types/inmueble'
+import type { TipoInmueble, UsoInmueble, EstadoInmueble, IInmueble } from '@/types/inmueble'
 
 // Opciones de tipo de inmueble
 export const TIPO_OPTIONS: { value: TipoInmueble | ''; label: string }[] = [
@@ -135,3 +135,36 @@ export const INMUEBLE_MESSAGES = {
 
 // Columnas ordenables
 export const SORTABLE_COLUMNS = ['codigo', 'ciudad', 'valor_arriendo', 'area_m2', 'created_at', 'tipo', 'estrato', 'estado'] as const
+
+// ============================================================
+// §4.2 — ¿esta propiedad admite un candidato nuevo?
+// ============================================================
+//
+// Flujo de Gerencia §4.2 (CAMBIO APROBADO): tener estudios en curso YA NO
+// bloquea la propiedad. Una inmobiliaria muestra el mismo inmueble a varios
+// interesados y necesita evaluarlos en paralelo. Lo unico que impide
+// seleccionarla es que ya este comprometida:
+//   - 'ocupado' + reservado → un candidato aprobado tiene el contrato en curso
+//   - 'ocupado' + arrendado → contrato vigente
+//   - 'inactivo'            → el dueño la dio de baja
+// 'en_estudio' quedo como legado (ya no se escribe) y por eso SI es
+// seleccionable: una fila historica no puede seguir bloqueando.
+//
+// Viven aqui, y no dentro del wizard, porque hay dos pantallas que eligen
+// propiedad con esta misma regla: el paso 1 de creacion del expediente y la
+// reasignacion del estudio (§4.3). Duplicarla era volver a abrir la puerta a
+// que una de las dos se quedara con la version vieja. El backend las aplica
+// igual en estudios-simultaneos.guard.ts — esto es solo la cortesia de no
+// ofrecer lo que se va a rechazar.
+
+export function esSeleccionable(i: IInmueble): boolean {
+  return i.estado !== 'ocupado' && i.estado !== 'inactivo'
+}
+
+export function motivoNoSeleccionable(i: IInmueble): string {
+  if (i.estado === 'inactivo') return 'Inactivo: reactívalo desde el detalle del inmueble'
+  if (i.reservado && !i.arrendado) {
+    return 'Reservado: hay un candidato aprobado y el contrato está en proceso.'
+  }
+  return 'Ya está arrendado (contrato firmado)'
+}
