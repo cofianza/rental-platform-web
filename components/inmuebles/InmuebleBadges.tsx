@@ -4,6 +4,7 @@
  */
 
 import type { EstadoInmueble, TipoInmueble } from '@/types/inmueble'
+import { IconClipboardList } from '@/components/icons'
 import { ESTADO_LABELS, ESTADO_BADGE_CLASSES, TIPO_LABELS, TIPO_BADGE_CLASSES } from './constants'
 
 interface EstadoBadgeProps {
@@ -23,6 +24,60 @@ export function EstadoBadge({ estado }: EstadoBadgeProps) {
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ESTADO_BADGE_CLASSES[estado]}`}
     >
       {ESTADO_LABELS[estado]}
+    </span>
+  )
+}
+
+interface EstudiosActivosBadgeProps {
+  /** Estudios en curso sobre el inmueble (IInmueble.estudios_activos). */
+  count?: number | null
+  /** Reservado: un candidato aprobado ya tiene el contrato en proceso. */
+  reservado?: boolean | null
+  /** Arrendado: hay un contrato vigente. */
+  arrendado?: boolean | null
+}
+
+/**
+ * Indicador de estudios en curso — Flujo de Gerencia §4.2: "Si la propiedad ya
+ * tiene estudios en curso, se muestra un indicador con el número de estudios
+ * activos, SIN impedir la selección."
+ *
+ * Es informativo y nada más: no deshabilita, no bloquea, no cambia el estado.
+ * Una inmobiliaria muestra el mismo inmueble a varios interesados a la vez y
+ * los evalúa en paralelo; este badge le dice cuántos van, que es justo el dato
+ * que el viejo estado 'en_estudio' escondía detrás de un booleano.
+ *
+ * Con 0 estudios NO se pinta nada (un "0 estudios" es ruido).
+ *
+ * OJO con el copy: los estudios perdedores NO se cancelan al reservarse la
+ * propiedad (la reasignación es §4.3, otra fase), así que toda propiedad
+ * reservada o arrendada sigue arrastrando estudios en curso y por tanto este
+ * badge. Si en ese estado dijera "puedes iniciar otro estudio" estaría
+ * mintiendo: el backend responde 409 INMUEBLE_RESERVADO. Por eso el tooltip
+ * depende del contexto, y por eso llega en props en vez de dejar que cada
+ * pantalla lo adivine — el gate ad-hoc solo estaba en una de las cinco.
+ *
+ * Único componente del badge: se escribe aquí una vez y lo consumen la tabla de
+ * admin, la vista de inmobiliaria, el detalle y las listas del asistente, para
+ * que el copy no se bifurque en cinco sitios.
+ */
+export function EstudiosActivosBadge({ count, reservado, arrendado }: EstudiosActivosBadgeProps) {
+  if (!count || count < 1) return null
+  const comprometido = !!reservado || !!arrendado
+  const title = arrendado
+    ? 'La propiedad ya está arrendada: no admite estudios nuevos.'
+    : reservado
+      ? 'Reservada para un candidato aprobado con contrato en proceso: no admite estudios nuevos.'
+      : 'Puedes iniciar otro estudio. La propiedad solo se reserva cuando uno queda aprobado.'
+  return (
+    <span
+      title={title}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+        comprometido ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
+      }`}
+    >
+      <IconClipboardList size={12} />
+      {count === 1 ? '1 estudio en curso' : `${count} estudios en curso`}
     </span>
   )
 }

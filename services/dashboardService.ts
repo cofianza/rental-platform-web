@@ -314,6 +314,10 @@ export interface MiInmueble {
   garantiaActiva: boolean
   pago: 'al_dia' | 'mora' | null
   historial: HistorialInquilino[]
+  /** Estudios en curso (Flujo §4.2). Informativo: no bloquea nada. */
+  estudiosActivos?: number
+  /** Reservado: candidato aprobado con el contrato en proceso, aún sin firmar. */
+  reservado?: boolean
 }
 
 export interface MisInmueblesData {

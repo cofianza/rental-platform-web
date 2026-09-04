@@ -21,6 +21,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
+import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
@@ -34,16 +35,41 @@ interface Step1InmuebleSelectionProps {
 const DEBOUNCE_MS = 300
 const MIN_SEARCH_CHARS = 2
 
-// Estado del inmueble → badge visual. Solo 'disponible' es seleccionable para
-// un nuevo expediente; los demás muestran por qué está bloqueado.
+// Estado del inmueble → badge visual.
+//
+// Flujo de Gerencia §4.2 (CAMBIO APROBADO): tener estudios en curso YA NO
+// bloquea la propiedad. Una inmobiliaria muestra el mismo inmueble a varios
+// interesados y necesita evaluarlos en paralelo. Lo único que impide
+// seleccionar es que la propiedad ya esté comprometida:
+//   - 'ocupado' + reservado → un candidato aprobado tiene el contrato en curso
+//   - 'ocupado' + arrendado → contrato vigente
+//   - 'inactivo'            → el dueño la dio de baja
+// 'en_estudio' quedó como legado (ya no se escribe) y por eso ahora SÍ es
+// seleccionable: una fila histórica no puede seguir bloqueando.
 const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
   disponible: { label: 'Disponible', cls: 'bg-green-100 text-green-700' },
-  en_estudio: { label: 'En estudio', cls: 'bg-amber-100 text-amber-700' },
+  en_estudio: { label: 'Disponible', cls: 'bg-green-100 text-green-700' },
   ocupado: { label: 'Arrendado', cls: 'bg-gray-200 text-gray-700' },
   inactivo: { label: 'Inactivo', cls: 'bg-gray-100 text-gray-500' },
 }
-function estadoBadge(estado: string) {
-  return ESTADO_BADGE[estado] ?? { label: estado, cls: 'bg-gray-100 text-gray-600' }
+function estadoBadge(i: IInmueble) {
+  if (i.estado === 'ocupado' && i.reservado && !i.arrendado) {
+    return { label: 'Reservado', cls: 'bg-amber-100 text-amber-700' }
+  }
+  return ESTADO_BADGE[i.estado] ?? { label: i.estado, cls: 'bg-gray-100 text-gray-600' }
+}
+
+/** §4.2: solo una propiedad comprometida deja de admitir candidatos. */
+function esSeleccionable(i: IInmueble): boolean {
+  return i.estado !== 'ocupado' && i.estado !== 'inactivo'
+}
+
+function motivoNoSeleccionable(i: IInmueble): string {
+  if (i.estado === 'inactivo') return 'Inactivo: reactívalo desde el detalle del inmueble'
+  if (i.reservado && !i.arrendado) {
+    return 'Reservado: hay un candidato aprobado y el contrato está en proceso.'
+  }
+  return 'Ya está arrendado (contrato firmado)'
 }
 // Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
 // mas, los excedentes se encuentran via el buscador como antes.
@@ -122,9 +148,13 @@ export function Step1InmuebleSelection({
 
     setIsSearching(true)
     try {
+      // Sin filtro de estado (§4.2): una propiedad con estudios en curso sigue
+      // siendo 'disponible' y debe encontrarse; las comprometidas también se
+      // listan, con su badge, y son las únicas no seleccionables. §4.1 pide
+      // buscar por código, dirección o ciudad — de eso ya se encarga
+      // search_inmueble_ids con unaccent() en el backend.
       const response = await inmuebleService.getInmuebles({
         search: term,
-        estado: 'disponible',
         limit: 10,
       })
       setSearchResults(response.data)
@@ -229,14 +259,9 @@ export function Step1InmuebleSelection({
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {misInmuebles.map((i) => {
-                    const seleccionable = i.estado === 'disponible'
-                    const badge = estadoBadge(i.estado)
-                    const motivoBloqueo =
-                      i.estado === 'ocupado'
-                        ? 'Ya está arrendado (contrato firmado)'
-                        : i.estado === 'en_estudio'
-                          ? 'Reservado: otro candidato está en estudio'
-                          : 'No disponible'
+                    const seleccionable = esSeleccionable(i)
+                    const badge = estadoBadge(i)
+                    const motivoBloqueo = motivoNoSeleccionable(i)
                     const card = (
                       <>
                         <div className="shrink-0 w-14 h-14 bg-gray-100 rounded-lg overflow-hidden">
@@ -254,6 +279,8 @@ export function Step1InmuebleSelection({
                             <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', badge.cls)}>
                               {badge.label}
                             </span>
+                            {/* §4.2: el indicador informa, no impide seleccionar. */}
+                            <EstudiosActivosBadge count={i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
                           </div>
                           <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
                           {seleccionable ? (
@@ -286,7 +313,7 @@ export function Step1InmuebleSelection({
                 </div>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                Solo los inmuebles <span className="font-medium">disponibles</span> se pueden seleccionar. ¿No lo encuentras? Usa el buscador.
+                Puedes evaluar varios candidatos para la misma propiedad al tiempo. Solo se reserva cuando uno queda aprobado. ¿No la encuentras? Usa el buscador.
               </p>
             </div>
           )}
@@ -331,12 +358,22 @@ export function Step1InmuebleSelection({
                 </div>
               ) : (
                 <ul>
-                  {searchResults.map((inmueble) => (
+                  {searchResults.map((inmueble) => {
+                    // El buscador ya no filtra por estado (§4.2): lista todo lo
+                    // que coincida y marca lo comprometido, en vez de esconderlo.
+                    const seleccionable = esSeleccionable(inmueble)
+                    const badge = estadoBadge(inmueble)
+                    return (
                     <li key={inmueble.id}>
                       <button
                         type="button"
+                        disabled={!seleccionable}
+                        title={seleccionable ? undefined : motivoNoSeleccionable(inmueble)}
                         onClick={() => handleSelectInmueble(inmueble)}
-                        className="w-full px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left"
+                        className={cn(
+                          'w-full px-4 py-3 flex items-start gap-3 transition-colors text-left',
+                          seleccionable ? 'hover:bg-gray-50' : 'cursor-not-allowed bg-gray-50 opacity-70',
+                        )}
                       >
                         {/* Foto miniatura */}
                         <div className="shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
@@ -356,19 +393,31 @@ export function Step1InmuebleSelection({
                         </div>
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {inmueble.codigo} - {inmueble.direccion}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {inmueble.codigo} - {inmueble.direccion}
+                            </p>
+                            <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', badge.cls)}>
+                              {badge.label}
+                            </span>
+                          </div>
                           <p className="text-xs text-gray-500">
                             {inmueble.ciudad}, {inmueble.departamento}
                           </p>
-                          <p className="text-sm font-semibold text-primary-600 mt-1">
-                            {formatCurrency(inmueble.valor_arriendo)}/mes
-                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <p className="text-sm font-semibold text-primary-600">
+                              {formatCurrency(inmueble.valor_arriendo)}/mes
+                            </p>
+                            <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+                          </div>
+                          {!seleccionable && (
+                            <p className="mt-1 text-xs text-gray-500">{motivoNoSeleccionable(inmueble)}</p>
+                          )}
                         </div>
                       </button>
                     </li>
-                  ))}
+                    )
+                  })}
                 </ul>
               )}
             </div>
@@ -397,13 +446,15 @@ export function Step1InmuebleSelection({
               <IconAlertTriangle size={20} className="text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-blue-800">
-                  Este inmueble ya tiene un expediente activo
+                  {(data.inmueble?.estudios_activos ?? 0) > 0
+                    ? `Este inmueble ya tiene ${data.inmueble?.estudios_activos} ${(data.inmueble?.estudios_activos ?? 0) === 1 ? 'estudio' : 'estudios'} en curso.`
+                    : 'Este inmueble ya tiene un expediente activo'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Expediente: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Puede continuar y crear otro expediente para este inmueble.
+                  Puedes iniciar otro; la propiedad se reserva únicamente cuando uno quede aprobado.
                 </p>
               </div>
             </div>
@@ -446,9 +497,10 @@ export function Step1InmuebleSelection({
                   <span className="text-sm font-medium text-gray-500 truncate">
                     {data.inmueble.codigo}
                   </span>
-                  <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', estadoBadge(data.inmueble.estado).cls)}>
-                    {estadoBadge(data.inmueble.estado).label}
+                  <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', estadoBadge(data.inmueble).cls)}>
+                    {estadoBadge(data.inmueble).label}
                   </span>
+                  <EstudiosActivosBadge count={data.inmueble.estudios_activos} reservado={data.inmueble.reservado} arrendado={data.inmueble.arrendado} />
                 </span>
                 <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full shrink-0">
                   {TIPO_LABELS[data.inmueble.tipo as keyof typeof TIPO_LABELS] || data.inmueble.tipo}

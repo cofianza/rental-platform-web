@@ -25,6 +25,7 @@ import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 import { TIPO_LABELS } from './constants'
+import { EstudiosActivosBadge } from './InmuebleBadges'
 import { money } from '@/components/dashboard/secciones/_shared'
 import { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
 import { cn } from '@/lib/utils'
@@ -47,11 +48,15 @@ import {
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
 
-type VitrinaKind = 'vitrina' | 'pausada' | 'inactiva' | 'arrendada' | 'estudio'
+type VitrinaKind = 'vitrina' | 'pausada' | 'inactiva' | 'arrendada' | 'reservada' | 'estudio'
 
 const VITRINA_STYLE: Record<VitrinaKind, { wrap: string; dot: string; label: string }> = {
   vitrina: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600', label: 'En vitrina' },
   arrendada: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500', label: 'Arrendada' },
+  // Reservada: hay un candidato aprobado con el contrato en proceso, todavía
+  // sin firmar. En la base es 'ocupado' igual que "Arrendada" — el matiz lo da
+  // `reservado`, que el backend calcula junto al indicador de estudios.
+  reservada: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500', label: 'Reservada' },
   estudio: { wrap: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500', label: 'En estudio' },
   pausada: {
     wrap: 'bg-gray-50 text-gray-600 border border-gray-200',
@@ -73,12 +78,17 @@ function estaPublicado(i: IInmueble): boolean {
 
 // 2.5: "Pausar" = visible_vitrina=false conservando estado 'disponible'. Por
 // eso "Pausada" es NO estar en vitrina estando disponible; 'inactivo' es el
-// soft-delete ("Inactiva"), 'ocupado' es un arriendo en curso ("Arrendada") y
-// 'en_estudio' un candidato en proceso ("En estudio") — ninguno de esos dos
-// está publicado aunque conserve un flag residual.
+// soft-delete ("Inactiva") y 'ocupado' es una propiedad comprometida.
+//
+// Flujo §4.2: 'ocupado' ya no significa solo "arrendada". Se reparte en dos:
+//   - Reservada: contrato en proceso, aún sin firmar (`reservado`).
+//   - Arrendada: contrato vigente.
+// Y 'en_estudio' quedó como legado — ya no se escribe (una propiedad con
+// estudios en curso se queda 'disponible' y los muestra con el contador), pero
+// se sigue pintando por si queda alguna fila histórica.
 function vitrinaKind(i: IInmueble): VitrinaKind {
   if (i.estado === 'inactivo') return 'inactiva'
-  if (i.estado === 'ocupado') return 'arrendada'
+  if (i.estado === 'ocupado') return i.reservado && !i.arrendado ? 'reservada' : 'arrendada'
   if (i.estado === 'en_estudio') return 'estudio'
   if (estaPublicado(i)) return 'vitrina'
   return 'pausada'
@@ -312,6 +322,8 @@ export function PropiedadesInmobiliariaView() {
                           {i.codigo}
                         </button>
                         <span className="truncate text-xs font-medium text-gray-400">{TIPO_LABELS[i.tipo]}</span>
+                        {/* Indicador §4.2: varios candidatos en paralelo sobre la misma propiedad. */}
+                        <EstudiosActivosBadge count={i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
                       </div>
 
                       <h4 className="truncate text-base font-bold text-gray-900">{i.direccion}</h4>

@@ -23,6 +23,7 @@ import {
 } from '@/components/inmuebles'
 import type { IExpediente } from '@/types/expediente'
 import { TIPO_LABELS, ESTADO_LABELS, ESTADO_BADGE_CLASSES } from '@/components/inmuebles/constants'
+import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
 import {
   IconArrowLeft,
@@ -379,6 +380,12 @@ export default function InmuebleDetailPage() {
     }
 
     switch (inmueble.estado) {
+      // Flujo de Gerencia §4.2: tener estudios en curso NO bloquea la
+      // propiedad — se pueden evaluar varios candidatos en paralelo. Por eso
+      // 'disponible' y el legado 'en_estudio' comparten acciones: en ambos se
+      // puede iniciar otro estudio. 'en_estudio' ya no se escribe; el case
+      // sobrevive solo por las filas históricas.
+      case 'en_estudio':
       case 'disponible':
         if (canEdit) {
           actions.push(
@@ -404,19 +411,6 @@ export default function InmuebleDetailPage() {
             </button>
           )
         }
-        break
-
-      case 'en_estudio':
-        // No se pueden iniciar nuevos estudios
-        actions.push(
-          <div
-            key="blocked"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg cursor-not-allowed"
-          >
-            <IconPlay size={16} />
-            <span>En estudio activo</span>
-          </div>
-        )
         break
 
       case 'ocupado':
@@ -453,16 +447,19 @@ export default function InmuebleDetailPage() {
               </span>
             )
           } else {
-            // Ocupado sin contrato VIGENTE: típico de una renovación aún en
-            // firma con el contrato padre ya finalizado. Antes esto era un
-            // spinner perpetuo; el contrato en curso se gestiona desde el
-            // expediente/detalle de contratos.
+            // Ocupado sin contrato VIGENTE. Dos casos, ambos "comprometido
+            // pero sin firmar": la RESERVA del §4.2 (un candidato aprobado
+            // avanzó a la generación del contrato) o una renovación aún en
+            // firma con el contrato padre ya finalizado. El contrato en curso
+            // se gestiona desde el expediente / detalle de contratos.
             actions.push(
               <span
                 key="ver-contrato-en-proceso"
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-500"
               >
-                Ocupado por un contrato en proceso (p. ej. renovación en firma)
+                {inmueble.reservado
+                  ? 'Reservado para un candidato aprobado (contrato en proceso)'
+                  : 'Ocupado por un contrato en proceso (p. ej. renovación en firma)'}
               </span>
             )
           }
@@ -517,8 +514,13 @@ export default function InmuebleDetailPage() {
                 ESTADO_BADGE_CLASSES[inmueble.estado]
               )}
             >
-              {ESTADO_LABELS[inmueble.estado]}
+              {/* 'ocupado' cubre dos situaciones desde §4.2: reservado
+                  (contrato en proceso) y arrendado (contrato vigente). */}
+              {inmueble.estado === 'ocupado' && inmueble.reservado && !inmueble.arrendado
+                ? 'Reservado'
+                : ESTADO_LABELS[inmueble.estado]}
             </span>
+            <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
           </div>
           <p className="text-gray-500 flex items-center gap-1">
             <IconMapPin size={14} />
@@ -740,7 +742,11 @@ export default function InmuebleDetailPage() {
                   expedientes={expedientes}
                   inmuebleId={inmueble.id}
                   isLoading={isLoadingExpedientes}
-                  canCreate={canCreate && inmueble.estado === 'disponible'}
+                  // §4.2: se puede abrir otro expediente mientras haya
+                  // estudios en curso; solo lo impide una propiedad
+                  // comprometida ('ocupado' = reservada o arrendada) o dada de
+                  // baja. 'en_estudio' es legado y ya no bloquea.
+                  canCreate={canCreate && inmueble.estado !== 'ocupado' && inmueble.estado !== 'inactivo'}
                 />
               )}
 

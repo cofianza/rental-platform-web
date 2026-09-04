@@ -19,7 +19,7 @@ import {
   IconPlus,
   IconRefresh,
 } from '@/components/icons'
-import { EstadoBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
+import { EstadoBadge, EstudiosActivosBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
 import { ITEMS_PER_PAGE_OPTIONS, INMUEBLE_MESSAGES } from './constants'
 import type { IInmueble, IInmuebleFilters, IInmueblesMeta } from '@/types/inmueble'
 
@@ -332,7 +332,11 @@ export function InmueblesTable({
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-center">
-                  <EstadoBadge estado={inmueble.estado} />
+                  {/* Indicador §4.2: cuantos candidatos se evaluan en paralelo. */}
+                  <div className="flex flex-col items-center gap-1">
+                    <EstadoBadge estado={inmueble.estado} />
+                    <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+                  </div>
                 </td>
                 {onToggleVitrina && (
                   <td
@@ -395,6 +399,7 @@ export function InmueblesTable({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-primary-600">{inmueble.codigo}</span>
                   <EstadoBadge estado={inmueble.estado} />
+                  <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
                 </div>
                 <div className="text-sm text-gray-900 truncate">{inmueble.direccion}</div>
                 <div className="text-xs text-gray-500">

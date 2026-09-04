@@ -9,7 +9,7 @@ export { InmueblesTable } from './InmueblesTable'
 export { InmueblesSkeleton } from './InmueblesSkeleton'
 
 // Badges
-export { EstadoBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
+export { EstadoBadge, EstudiosActivosBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
 
 // Formulario
 export { InmuebleForm } from './InmuebleForm'

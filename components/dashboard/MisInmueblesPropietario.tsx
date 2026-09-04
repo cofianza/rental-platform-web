@@ -105,7 +105,18 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
           </div>
         )}
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
-          <Chip tone={arrendado ? 'green' : 'orange'}>{arrendado ? 'Arrendado' : 'Disponible'}</Chip>
+          {/* §4.2: 'ocupado' sin contrato vigente = Reservada (candidato
+              aprobado con el contrato en proceso). Antes ambas cosas se
+              pintaban igual, y una propiedad con estudios en curso salía
+              "Disponible" sin decir cuántos candidatos había. */}
+          <Chip tone={arrendado ? 'green' : 'orange'}>
+            {arrendado ? 'Arrendado' : p.reservado ? 'Reservado' : 'Disponible'}
+          </Chip>
+          {!arrendado && !p.reservado && (p.estudiosActivos ?? 0) > 0 && (
+            <Chip tone="blue">
+              {p.estudiosActivos === 1 ? '1 estudio en curso' : `${p.estudiosActivos} estudios en curso`}
+            </Chip>
+          )}
           {/* Publicado real = flag + disponible + sin arriendo (mismo guard que
               el toggle de abajo): un arrendado con flag residual NO está en la
               vitrina pública — no mostrar "En vitrina" encima de "Arrendado". */}
@@ -143,7 +154,11 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
           </>
         ) : (
           <Row label="Estado">
-            <Chip tone="orange">Disponible ahora</Chip>
+            {p.reservado ? (
+              <Chip tone="orange">Reservado para un candidato aprobado</Chip>
+            ) : (
+              <Chip tone="orange">Disponible ahora</Chip>
+            )}
           </Row>
         )}
 

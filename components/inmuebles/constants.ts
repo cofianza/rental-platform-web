@@ -26,11 +26,15 @@ export const USO_OPTIONS: { value: UsoInmueble; label: string }[] = [
   { value: 'mixto', label: 'Mixto' },
 ]
 
-// Opciones de estado
+// Opciones de estado.
+// 'en_estudio' se retiró del filtro: desde el Flujo de Gerencia §4.2 ese estado
+// ya no se escribe (una propiedad con estudios en curso se queda 'disponible'),
+// así que filtrar por él devolvería siempre cero. El valor SIGUE en
+// ESTADO_LABELS / ESTADO_BADGE_CLASSES para pintar las filas históricas que
+// todavía lo tengan.
 export const ESTADO_OPTIONS: { value: EstadoInmueble | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
   { value: 'disponible', label: 'Disponible' },
-  { value: 'en_estudio', label: 'En Estudio' },
   { value: 'ocupado', label: 'Ocupado' },
   { value: 'inactivo', label: 'Inactivo' },
 ]

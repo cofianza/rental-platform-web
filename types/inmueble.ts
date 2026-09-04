@@ -60,6 +60,18 @@ export interface IInmueble {
   foto_fachada_url: string
   created_at: string
   updated_at: string
+  // ── Indicador de estudios simultáneos (Flujo de Gerencia §4.2) ──
+  // Los sirve el backend en listado, buscador y detalle con UNA consulta
+  // agregada por página (fn_inmuebles_estado_estudios), nunca N+1. Opcionales
+  // porque no todos los DTO del backend los traen todavía.
+  /** Estudios en curso sobre el inmueble. Se muestra, NO bloquea la selección. */
+  estudios_activos?: number
+  /** Expedientes distintos con estudio en curso. */
+  expedientes_activos?: number
+  /** Reservado: un candidato aprobado tiene el contrato en proceso (aún sin firmar). */
+  reservado?: boolean
+  /** Arrendado: hay un contrato vigente. */
+  arrendado?: boolean
   // Relación con propietario (solo en detalle)
   propietario?: IPropietario
   // Contrato tipo subido por el propietario (alternativa a plantilla con variables)
