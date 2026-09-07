@@ -203,7 +203,7 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
           Editar
         </Link>
         {!arrendado && (
-          <Link href="/estudios" className={btnP}>
+          <Link href={`/expedientes/nuevo?inmueble_id=${p.id}`} className={btnP}>
             Evaluar candidato
           </Link>
         )}

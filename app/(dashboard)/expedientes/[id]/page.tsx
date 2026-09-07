@@ -88,7 +88,7 @@ export default function ExpedienteDetallePage() {
     : [
         { id: 'resumen', label: 'Resumen' },
         { id: 'documentos', label: 'Documentos', count: pendientesCount > 0 ? pendientesCount : undefined },
-        { id: 'estudios', label: 'Estudios' },
+        { id: 'estudios', label: 'Evaluación' },
         { id: 'contratos', label: 'Contratos' },
         { id: 'pagos', label: 'Pagos' },
         ...(isInternalRole

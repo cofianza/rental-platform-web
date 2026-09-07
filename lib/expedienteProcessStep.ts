@@ -10,10 +10,10 @@
 import type { EstadoExpediente } from '@/lib/constants'
 
 export const PROCESS_STEPS = [
-  { id: 'solicitud', label: 'Solicitud' },
-  { id: 'cita', label: 'Cita previa' },
-  { id: 'estudio', label: 'Estudio' },
-  { id: 'aprobacion', label: 'Aprobacion' },
+  { id: 'solicitud', label: 'Estudio' },
+  { id: 'cita', label: 'Visita' },
+  { id: 'estudio', label: 'Evaluación' },
+  { id: 'aprobacion', label: 'Resultado' },
   { id: 'contrato', label: 'Contrato' },
   { id: 'firma', label: 'Firma' },
   { id: 'listo', label: 'Listo' },

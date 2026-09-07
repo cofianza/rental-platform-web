@@ -189,7 +189,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
     setActionLoading(true)
     try {
       await estudioService.createEstudio(expedienteId, data)
-      toast.success('Estudio solicitado exitosamente')
+      toast.success('Evaluación solicitada exitosamente')
       await fetchEstudios()
       return true
     } catch (err) {
@@ -206,7 +206,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
     setActionLoading(true)
     try {
       await estudioService.cancelEstudio(cancelTarget.id)
-      toast.success('Estudio cancelado')
+      toast.success('Evaluación cancelada')
       setCancelTarget(null)
       await fetchEstudios()
     } catch (err) {
@@ -298,7 +298,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IconPlus size={16} />
-            Solicitar estudio
+            Solicitar evaluación
           </button>
         )}
       </div>
@@ -320,7 +320,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconPlus size={16} />
-              Solicitar estudio
+              Solicitar evaluación
             </button>
           )}
         </div>

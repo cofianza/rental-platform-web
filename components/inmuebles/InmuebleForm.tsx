@@ -5,7 +5,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { scrollToFirstError } from '@/components/auth/registro-ui'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -239,6 +240,13 @@ const initialFormData: FormData = {
   ubicacion_detallada: '',
 }
 
+// Etiquetas para el aviso de 'falta X' (antes: 'completa todos los campos requeridos' sin decir cual).
+const FIELD_LABELS: Record<string, string> = {
+  codigo: 'código', direccion: 'dirección', ciudad: 'ciudad', departamento: 'departamento', tipo: 'tipo de inmueble',
+  estrato: 'estrato', valor_arriendo: 'valor del arriendo', propietario_id: 'propietario', foto_fachada_url: 'foto de fachada',
+  area_m2: 'área', habitaciones: 'habitaciones', banos: 'baños', parqueaderos: 'parqueaderos', administracion: 'administración',
+}
+
 export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
@@ -246,6 +254,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   const isInmobiliariaUser = authUser?.rol === 'inmobiliaria'
   const isAutoAssignOwner = isPropietarioUser || isInmobiliariaUser
   const [formData, setFormData] = useState<FormData>(initialFormData)
+  const formRef = useRef<HTMLFormElement>(null)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [initialPropietario, setInitialPropietario] = useState<{
@@ -311,7 +320,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     }
   }, [mode, inmueble])
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: FormErrors = {}
 
     const codigoTrim = formData.codigo.trim()
@@ -372,14 +381,17 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return Object.keys(newErrors)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) {
-      toast.error('Por favor, completa todos los campos requeridos')
+    const faltan = validateForm()
+    if (faltan.length > 0) {
+      const etiquetas = faltan.map((k) => FIELD_LABELS[k] ?? k)
+      toast.error(`Revisa: ${etiquetas.slice(0, 4).join(', ')}${etiquetas.length > 4 ? ` y ${etiquetas.length - 4} más` : ''}`)
+      scrollToFirstError(formRef.current)
       return
     }
 
@@ -586,7 +598,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
       <PageHeader title={title} subtitle={subtitle} />
 
       {/* Formulario */}
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
         {/* Fotos — Galeria completa en edicion, uploader simple en creacion */}
         {mode === 'edit' && inmueble?.id ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

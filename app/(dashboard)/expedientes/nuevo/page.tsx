@@ -176,7 +176,7 @@ function NuevoExpedienteContent() {
             Nuevo Estudio
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Complete los pasos para crear un nuevo estudio de arrendamiento
+            Completa los pasos para crear un nuevo estudio de arrendamiento
           </p>
         </div>
 

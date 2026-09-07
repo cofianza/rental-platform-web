@@ -49,7 +49,7 @@ export function UserForm({
     nombre: '',
     apellido: '',
     telefono: '',
-    rol: lockedRol ?? 'operador_analista',
+    rol: lockedRol ?? ('' as IUserFormData['rol']),
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
@@ -69,7 +69,7 @@ export function UserForm({
         nombre: '',
         apellido: '',
         telefono: '',
-        rol: lockedRol ?? 'operador_analista',
+        rol: lockedRol ?? ('' as IUserFormData['rol']),
       })
     }
     setErrors({})
@@ -229,6 +229,7 @@ export function UserForm({
                 errors.rol ? 'border-red-300' : 'border-gray-300'
               }`}
             >
+              <option value="">Selecciona un rol…</option>
               {roleOptionsFiltered.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}

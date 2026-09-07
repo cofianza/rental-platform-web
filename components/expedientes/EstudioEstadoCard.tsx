@@ -510,7 +510,7 @@ function EstudioPanel({
               onClick={onVerEstudios}
               className="text-xs font-medium text-primary-700 hover:text-primary-800"
             >
-              Ver detalle del estudio →
+              Ver detalle de la evaluación →
             </button>
           )}
         </div>

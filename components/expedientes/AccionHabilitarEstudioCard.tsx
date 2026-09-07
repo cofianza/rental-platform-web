@@ -180,13 +180,13 @@ export function AccionHabilitarEstudioCard({
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-                ¿Ya coordinaron la visita por fuera?
+                Primero, la visita al inmueble
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Para habilitar la evaluación normalmente se agenda una visita. Si ya la
-                coordinaron por WhatsApp (u otro medio) y decidieron continuar, puedes
-                omitir la cita y seguir directo con la evaluación crediticia.
+              <p className="text-sm text-gray-600 mb-3">
+                Agenda la visita desde la sección de citas de este estudio. Cuando se realice,
+                aquí podrás habilitar la evaluación crediticia.
               </p>
+              <p className="text-sm text-gray-500 mb-2">¿La visita ya se hizo por fuera (WhatsApp u otro medio)?</p>
               <button
                 onClick={() => setShowOmitir(true)}
                 disabled={submitting}

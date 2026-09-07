@@ -90,6 +90,21 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'FolderOpen',
     description: 'Casos de arrendamiento',
     resource: 'expedientes',
+    // solicitante: ve sus estudios en /dashboard; el listado operativo
+    // (bandejas, analista, exportar) no es para él.
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'propietario', 'inmobiliaria'],
+    group: 'Operación',
+  },
+  {
+    // Bandeja de evaluaciones crediticias solo para roles internos: /expedientes
+    // no filtra por proveedor/resultado. Inmobiliaria y propietario ya tienen su
+    // propio enlace (OficinaVirtualNav / PropietarioShell).
+    label: 'Evaluaciones',
+    href: '/estudios',
+    icon: 'FolderOpen',
+    description: 'Bandeja de evaluaciones crediticias (buró, resultado, score)',
+    resource: 'estudios',
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta'],
     group: 'Operación',
   },
   {

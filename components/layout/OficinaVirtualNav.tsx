@@ -12,6 +12,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
+  IconHome,
   IconBuilding2,
   IconUsers,
   IconSearch,
@@ -34,6 +35,12 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
+  {
+    label: 'Inicio',
+    href: '/dashboard',
+    icon: IconHome,
+    matchers: ['/dashboard'],
+  },
   {
     label: 'Propiedades y Vitrina',
     href: '/inmuebles',

@@ -410,11 +410,11 @@ export default function DashboardPage() {
 // ── Solicitante Dashboard ────────────────────────────────────
 
 const PROCESS_STEPS = [
-  { id: 'expediente', label: 'Solicitud', description: 'Tu estudio esta registrado' },
-  { id: 'cita', label: 'Cita previa', description: 'Agenda una visita al inmueble' },
-  { id: 'estudio', label: 'Estudio', description: 'Evaluacion de riesgo en proceso' },
-  { id: 'aprobado', label: 'Aprobación', description: 'Resultado del estudio' },
-  { id: 'contrato', label: 'Contrato', description: 'Generacion y revision del contrato' },
+  { id: 'expediente', label: 'Estudio', description: 'Tu estudio está registrado' },
+  { id: 'cita', label: 'Visita', description: 'Agenda una visita al inmueble' },
+  { id: 'estudio', label: 'Evaluación', description: 'Evaluación crediticia en proceso' },
+  { id: 'aprobado', label: 'Resultado', description: 'Resultado de la evaluación' },
+  { id: 'contrato', label: 'Contrato', description: 'Generación y revisión del contrato' },
   { id: 'firma', label: 'Firma', description: 'Firma electrónica del contrato' },
   { id: 'vigente', label: 'Listo', description: 'Contrato vigente' },
 ]
@@ -873,9 +873,9 @@ function SolicitanteDashboard() {
 
                 {/* Stepper */}
                 {isRejected ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-700 font-medium">Estudio no aprobado</p>
-                    <p className="text-xs text-red-600 mt-0.5">El estudio fue rechazado tras la evaluación crediticia.</p>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <p className="text-sm text-slate-900 font-medium">No aprobable por ahora</p>
+                    <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre ti: puedes intentarlo con un inmueble de canon menor, presentar un co-arrendatario o volver a solicitarlo más adelante.</p>
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -883,7 +883,16 @@ function SolicitanteDashboard() {
                     <p className="text-xs text-amber-600 mt-0.5">Invita a un co-arrendatario para que los respaldemos juntos.</p>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1">
+                  <>
+                  {/* Movil: barra + 'Paso X de N'; los 7 circulos con etiquetas de 9px no se leen en 360px */}
+                  <div className="sm:hidden">
+                    <div className="h-1.5 rounded-full bg-gray-200" role="progressbar" aria-valuemin={0} aria-valuemax={PROCESS_STEPS.length} aria-valuenow={currentStep + 1}>
+                      <div className="h-1.5 rounded-full bg-primary-600" style={{ width: `${Math.round(((currentStep + 1) / PROCESS_STEPS.length) * 100)}%` }} />
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-gray-900">Paso {currentStep + 1} de {PROCESS_STEPS.length} · {PROCESS_STEPS[currentStep]?.label}</p>
+                    <p className="text-xs text-gray-500">{PROCESS_STEPS[currentStep]?.description}</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-1">
                     {PROCESS_STEPS.map((step, idx) => {
                       const isComplete = idx < currentStep
                       const isCurrent = idx === currentStep
@@ -931,6 +940,7 @@ function SolicitanteDashboard() {
                       )
                     })}
                   </div>
+                  </>
                 )}
               </Link>
             )

@@ -157,7 +157,7 @@ export function EstudiosInmobiliariaView({
             </span>
           )}
           <Link
-            href="/expedientes"
+            href="/expedientes/nuevo"
             className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
           >
             <IconPlus size={16} />

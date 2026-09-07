@@ -324,7 +324,8 @@ export function useExpedienteWizard() {
           form.apellido?.trim() &&
           form.tipo_documento &&
           form.numero_documento?.trim() &&
-          form.email?.trim()
+          form.telefono?.trim() &&
+          EMAIL_REGEX.test(form.email ?? '')
         )
       }
       return false

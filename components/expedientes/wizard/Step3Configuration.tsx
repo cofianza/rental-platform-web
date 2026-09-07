@@ -321,7 +321,7 @@ export function Step3Configuration({
             <div>
               <p className="text-sm text-amber-800">{analistasError}</p>
               <p className="text-xs text-amber-600 mt-1">
-                Puede continuar sin asignar responsable
+                Puedes continuar sin asignar responsable
               </p>
             </div>
           </div>
@@ -400,13 +400,6 @@ export function Step3Configuration({
         </div>
       )}
 
-      {/* Informacion adicional */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-800">
-          <span className="font-medium">Nota:</span> Estos campos son opcionales.
-          Puede dejarlos vacios y actualizarlos posteriormente desde el detalle del estudio.
-        </p>
-      </div>
     </div>
   )
 }
