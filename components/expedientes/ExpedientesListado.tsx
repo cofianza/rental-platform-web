@@ -69,7 +69,7 @@ export function ExpedientesListado() {
       {/* Header */}
       <PageHeader
         title="Estudios"
-        subtitle={meta ? `${meta.total} expedientes` : 'Cargando...'}
+        subtitle={meta ? `${meta.total} estudios` : 'Cargando...'}
         actions={
           <div className="flex items-center gap-2">
             <ExportButton

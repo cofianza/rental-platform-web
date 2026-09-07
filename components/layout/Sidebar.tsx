@@ -126,7 +126,9 @@ export function Sidebar() {
 
           {/* Botón cerrar (solo mobile) */}
           <button
+            type="button"
             onClick={closeSidebar}
+            aria-label="Cerrar menú"
             className="md:hidden p-1 hover:bg-gray-100 rounded shrink-0"
           >
             <IconX size={20} className="text-gray-600" />

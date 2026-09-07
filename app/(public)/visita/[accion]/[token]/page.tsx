@@ -294,7 +294,7 @@ export default function GestionarVisitaPage() {
             rows={3}
             maxLength={500}
             placeholder="Cuéntale al propietario por qué cancelas (opcional)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
           <button

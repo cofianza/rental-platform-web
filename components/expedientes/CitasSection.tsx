@@ -5,6 +5,7 @@
 
 'use client'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconLoader, IconPlus, IconCheck, IconCalendar, IconClock, IconShieldCheck } from '@/components/icons'
@@ -50,6 +51,8 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
   const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
   const user = useAuthStore((s) => s.user)
   const [citas, setCitas] = useState<ICita[]>([])
+  const [confirmRealizar, setConfirmRealizar] = useState<ICita | null>(null)
+  const [confirmNoAsistio, setConfirmNoAsistio] = useState<ICita | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showCrearModal, setShowCrearModal] = useState(false)
   const [showConfirmarModal, setShowConfirmarModal] = useState<ICita | null>(null)
@@ -278,6 +281,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
 
       {/* Citas activas */}
       {!completedCita && citas.filter((c) => c.estado !== 'cancelada' && c.estado !== 'no_asistio').length > 0 && (
+        <>
         <div className="space-y-3">
           {citas
             .filter((c) => c.estado !== 'cancelada' && c.estado !== 'no_asistio')
@@ -290,14 +294,40 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
                 isLoading={actionLoading === cita.id}
                 onConfirmar={() => setShowConfirmarModal(cita)}
                 onReprogramar={() => setShowReprogramarModal(cita)}
-                onRealizar={() => handleRealizar(cita)}
+                onRealizar={() => setConfirmRealizar(cita)}
                 onCancelar={() => setShowCancelarModal(cita)}
-                onNoAsistio={() => handleNoAsistio(cita)}
+                onNoAsistio={() => setConfirmNoAsistio(cita)}
                 onAcusarReprogramacion={() => handleAcusarReprogramacion(cita)}
                 onRechazarReprogramacion={() => handleRechazarReprogramacion(cita)}
               />
             ))}
         </div>
+        <ConfirmDialog
+          isOpen={confirmRealizar !== null}
+          onClose={() => setConfirmRealizar(null)}
+          onConfirm={async () => {
+            const c = confirmRealizar
+            setConfirmRealizar(null)
+            if (c) await handleRealizar(c)
+          }}
+          title="Marcar la visita como realizada"
+          message="Confirma que la visita al inmueble se realizó. Con esto se habilita la evaluación crediticia del solicitante."
+          confirmLabel="Sí, se realizó"
+        />
+        <ConfirmDialog
+          isOpen={confirmNoAsistio !== null}
+          onClose={() => setConfirmNoAsistio(null)}
+          onConfirm={async () => {
+            const c = confirmNoAsistio
+            setConfirmNoAsistio(null)
+            if (c) await handleNoAsistio(c)
+          }}
+          variant="danger"
+          title="Registrar que no asistió"
+          message="La visita queda como no realizada y el solicitante deberá agendar otra."
+          confirmLabel="No asistió"
+        />
+        </>
       )}
 
       {/* Historial de citas canceladas/no asistio */}

@@ -1,5 +1,6 @@
 'use client'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -63,6 +64,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // firmantes multi-parte, ocultamos la sección legacy "Solicitudes de Firma".
   const [tieneMultiparte, setTieneMultiparte] = useState<boolean | null>(null)
   const [enviandoFirmaId, setEnviandoFirmaId] = useState<string | null>(null)
+  const [confirmFirma, setConfirmFirma] = useState<IContrato | null>(null)
   // 4.3: pre-chequeo de firmantes antes de enviar (modal con los números + bloqueo si hay repetido).
   const [firmaPreview, setFirmaPreview] = useState<{ contrato: IContrato; data: IFirmantesPreview } | null>(null)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
@@ -153,7 +155,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     try {
       const preview = await contratoService.previewFirmantes(contrato.id)
       if (!preview.aplica || preview.firmantes.length === 0) {
-        await doEnviarAFirma(contrato)
+        setConfirmFirma(contrato)
       } else {
         setFirmaPreview({ contrato, data: preview })
       }
@@ -469,6 +471,18 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
       />
 
       {/* Pre-chequeo de firmantes antes de enviar a firma (4.3) */}
+      <ConfirmDialog
+        isOpen={confirmFirma !== null}
+        onClose={() => setConfirmFirma(null)}
+        onConfirm={async () => {
+          const c = confirmFirma
+          setConfirmFirma(null)
+          if (c) await doEnviarAFirma(c)
+        }}
+        title="Enviar el contrato a firma"
+        message="Se crea el sobre en Auco y al arrendatario le llega el enlace de firma por WhatsApp. Cada envío consume créditos de firma."
+        confirmLabel="Enviar a firma"
+      />
       <EnviarFirmaPreviewModal
         isOpen={!!firmaPreview}
         firmantes={firmaPreview?.data.firmantes ?? []}

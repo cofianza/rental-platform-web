@@ -303,6 +303,14 @@ export function InmueblesTable({
               <tr
                 key={inmueble.id}
                 onClick={() => onView(inmueble)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.currentTarget.click()
+                  }
+                }}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -479,6 +487,8 @@ export function InmueblesTable({
               {/* Navegación de páginas */}
               <div className="flex items-center gap-1">
                 <button
+                  type="button"
+                  aria-label="Página anterior"
                   onClick={() => handlePageChange(meta.page - 1)}
                   disabled={meta.page <= 1}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -489,6 +499,8 @@ export function InmueblesTable({
                   {meta.page} / {meta.totalPages}
                 </span>
                 <button
+                  type="button"
+                  aria-label="Página siguiente"
                   onClick={() => handlePageChange(meta.page + 1)}
                   disabled={meta.page >= meta.totalPages}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

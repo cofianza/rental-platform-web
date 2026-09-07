@@ -99,7 +99,7 @@ function VerifyEmailContent() {
                 },
                 {
                   titulo: 'Estudias al candidato',
-                  detalle: 'El candidato paga su estudio de crédito y recibes el resultado (aprobado, condicionado o rechazado) casi al instante.',
+                  detalle: 'El candidato paga su estudio de crédito y recibes el resultado (aprobado, condicionado o no aprobable por ahora) casi al instante.',
                 },
                 {
                   titulo: 'Generas y firman el contrato',

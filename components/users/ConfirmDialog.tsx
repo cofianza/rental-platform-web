@@ -49,7 +49,7 @@ export function ConfirmDialog({
   const styles = variantStyles[variant]
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" ariaLabel={title}>
       <div className="flex flex-col items-center text-center">
         {/* Icono */}
         <div className={`p-3 rounded-full ${styles.icon} mb-4`}>

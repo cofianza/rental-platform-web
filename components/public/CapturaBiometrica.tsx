@@ -43,8 +43,7 @@ import {
   IconRefresh,
   IconShieldCheck,
   IconUser,
-  IconAlertTriangle,
-} from '@/components/icons'
+  IconAlertTriangle, IconArrowLeft, IconArrowRight } from '@/components/icons'
 
 /**
  * Lado más largo tras reescalar, y calidad JPEG.
@@ -303,7 +302,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
             : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
         )}
       >
-        Continuar →
+        <span className="inline-flex items-center gap-1.5">Continuar <IconArrowRight size={16} /></span>
       </button>
 
       {!verificada && (
@@ -326,9 +325,9 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
         type="button"
         onClick={onVolver}
         disabled={enviando}
-        className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
+        className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
       >
-        ← Volver
+        <IconArrowLeft size={14} /> Volver
       </button>
     </div>
   )

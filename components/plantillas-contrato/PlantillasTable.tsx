@@ -171,6 +171,8 @@ export function PlantillasTable({
           </p>
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              aria-label="Página anterior"
               onClick={() => onPageChange(meta.page - 1)}
               disabled={meta.page <= 1}
               className="p-1.5 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
@@ -181,6 +183,8 @@ export function PlantillasTable({
               {meta.page} / {meta.totalPages}
             </span>
             <button
+              type="button"
+              aria-label="Página siguiente"
               onClick={() => onPageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages}
               className="p-1.5 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"

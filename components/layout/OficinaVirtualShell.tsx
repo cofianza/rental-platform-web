@@ -14,6 +14,8 @@
 
 'use client'
 
+import { esStorageSupabase } from '@/lib/imagenes'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth.store'
@@ -126,10 +128,12 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                   <span className="text-[11px] text-gray-500">{subtitulo}</span>
                 </span>
                 {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={logoUrl}
                     alt={displayName}
+                    width={36}
+                    height={36}
+                    unoptimized={!esStorageSupabase(logoUrl)}
                     className="w-9 h-9 rounded-full object-cover border border-gray-200 bg-white"
                   />
                 ) : (

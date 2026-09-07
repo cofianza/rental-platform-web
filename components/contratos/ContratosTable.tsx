@@ -127,6 +127,14 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                   <tr
                     key={c.id}
                     onClick={() => router.push(`/contratos/${c.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        e.currentTarget.click()
+                      }
+                    }}
                     className="hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-6 py-4">

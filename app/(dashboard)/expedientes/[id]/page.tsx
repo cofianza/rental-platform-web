@@ -18,6 +18,8 @@ import {
   IconUser,
   IconFolderOpen,
   IconAlertTriangle,
+  IconX,
+  IconCheck,
 } from '@/components/icons'
 import {
   ExpedienteProgressBar,
@@ -414,9 +416,7 @@ export default function ExpedienteDetallePage() {
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
-                    <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <IconX size={28} className="text-red-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio cancelado</h3>
@@ -437,9 +437,7 @@ export default function ExpedienteDetallePage() {
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none" />
                 <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-white shadow-md border border-green-200 flex items-center justify-center shrink-0">
-                    <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <IconCheck size={28} className="text-green-600" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-gray-900 mb-0.5">¡Estudio finalizado!</h3>

@@ -220,6 +220,14 @@ export function EstudiosTable({
               <tr
                 key={estudio.id}
                 onClick={() => handleRowClick(estudio.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.currentTarget.click()
+                  }
+                }}
                 className={cn(
                   'hover:bg-gray-50 cursor-pointer transition-colors',
                   loadingDetail && 'pointer-events-none opacity-60'
@@ -343,6 +351,8 @@ export function EstudiosTable({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              aria-label="Página anterior"
               onClick={() => onPageChange(meta.page - 1)}
               disabled={meta.page <= 1}
               className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -381,6 +391,8 @@ export function EstudiosTable({
             </div>
 
             <button
+              type="button"
+              aria-label="Página siguiente"
               onClick={() => onPageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages}
               className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

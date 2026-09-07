@@ -173,9 +173,9 @@ export function ContratosInmobiliariaView() {
         {pendientes.length === 0 ? (
           <EmptyRow texto="No hay contratos en borrador." />
         ) : (
-          <table className="w-full min-w-max text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
+              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
                 <th className="px-6 py-3 font-bold">Arrendatario</th>
                 <th className="px-6 py-3 font-bold">Propiedad</th>
                 <th className="px-6 py-3 font-bold">Canon</th>
@@ -206,7 +206,7 @@ export function ContratosInmobiliariaView() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </Panel>
 
@@ -215,9 +215,9 @@ export function ContratosInmobiliariaView() {
         {enFirma.length === 0 ? (
           <EmptyRow texto="Ningún contrato en proceso de firma." />
         ) : (
-          <table className="w-full min-w-max text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
+              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
                 <th className="px-6 py-3 font-bold">Arrendatario</th>
                 <th className="px-6 py-3 font-bold">Propiedad</th>
                 <th className="px-6 py-3 font-bold">Estado</th>
@@ -238,7 +238,7 @@ export function ContratosInmobiliariaView() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </Panel>
 
@@ -247,9 +247,9 @@ export function ContratosInmobiliariaView() {
         {activos.length === 0 ? (
           <EmptyRow texto="Sin contratos activos." />
         ) : (
-          <table className="w-full min-w-max text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
+              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
                 <th className="px-6 py-3 font-bold">Arrendatario</th>
                 <th className="px-6 py-3 font-bold">Propiedad</th>
                 <th className="px-6 py-3 font-bold">Canon</th>
@@ -274,7 +274,7 @@ export function ContratosInmobiliariaView() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </Panel>
     </div>

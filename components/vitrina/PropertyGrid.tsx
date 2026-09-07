@@ -19,6 +19,7 @@ import {
   type PublicPropertiesQuery,
 } from '@/services/publicPropertiesService'
 import { formatCurrency } from '@/lib/constants'
+import { esStorageSupabase } from '@/lib/imagenes'
 
 const DEBOUNCE_MS = 300
 const LIMIT = 12
@@ -348,9 +349,6 @@ export function PropertyGrid() {
 
 // ── Property Card ───────────────────────────
 
-// Solo el storage de Supabase esta en images.remotePatterns; cualquier otra
-// URL se pinta tal cual (unoptimized) en vez de tumbar la vitrina.
-const esStorageSupabase = (url: string) => /\.supabase\.co\/storage\/v1\/object\/public\//.test(url)
 
 function PropertyCard({ property }: { property: PublicProperty }) {
   return (

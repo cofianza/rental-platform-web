@@ -21,12 +21,15 @@ interface FirmaStep3SignatureProps {
   onRequestGeo?: () => void
 }
 
+const TRAZO_MINIMO_PX = 60
+
 export function FirmaStep3Signature({
   nombreFirmante,
   onComplete,
   onBack,
   onRequestGeo,
 }: FirmaStep3SignatureProps) {
+  const trazoRef = useRef(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
@@ -37,29 +40,40 @@ export function FirmaStep3Signature({
     onRequestGeo?.()
   }, [onRequestGeo])
 
-  // Canvas setup
+  // Canvas setup. Se re-mide al girar el telefono: si no, el backing store
+  // queda con el tamano viejo y el trazo cae lejos del dedo.
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const setup = () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
-    // Set canvas size to match display size
-    const rect = canvas.getBoundingClientRect()
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
+      // Set canvas size to match display size
+      const rect = canvas.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      ctx.scale(dpr, dpr)
 
-    // Configure drawing style
-    ctx.strokeStyle = '#1a1a2e'
-    ctx.lineWidth = 2.5
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
+      // Configure drawing style
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 2.5
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
 
-    // Draw signature line
-    drawSignatureLine(ctx, rect.width)
+      // Draw signature line
+      drawSignatureLine(ctx, rect.width)
+    }
+    setup()
+    const onResize = () => {
+      setup()
+      trazoRef.current = 0
+      setHasSignature(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   // Draw the baseline for signature
@@ -116,7 +130,6 @@ export function FirmaStep3Signature({
 
     setIsDrawing(true)
     setLastPos(pos)
-    setHasSignature(true)
   }, [getPosition])
 
   // Draw
@@ -138,6 +151,10 @@ export function FirmaStep3Signature({
     ctx.lineTo(pos.x, pos.y)
     ctx.stroke()
 
+    // Un toque suelto no es una firma: se exige un trazo minimo.
+    trazoRef.current += Math.hypot(pos.x - lastPos.x, pos.y - lastPos.y)
+    if (trazoRef.current >= TRAZO_MINIMO_PX) setHasSignature(true)
+
     setLastPos(pos)
   }, [isDrawing, lastPos, getPosition])
 
@@ -149,6 +166,7 @@ export function FirmaStep3Signature({
 
   // Clear signature
   const clearSignature = useCallback(() => {
+    trazoRef.current = 0
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return

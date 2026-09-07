@@ -493,6 +493,8 @@ function SolicitanteDashboard() {
   const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
   const [pagoByExpediente, setPagoByExpediente] = useState<Record<string, PagoEstudioInfo | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
+  const [expError, setExpError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     expedienteService.getExpedientes({ page: 1, limit: 5, sortBy: 'created_at', sortOrder: 'desc' })
@@ -541,9 +543,9 @@ function SolicitanteDashboard() {
         )
         setPagoByExpediente(pagoMap)
       })
-      .catch(() => {})
+      .catch(() => setExpError(true))
       .finally(() => setLoadingExp(false))
-  }, [])
+  }, [reloadKey])
 
   // Clasificar expedientes según el estado de su cita activa, para apilar banners.
   const estadoActivo = (exp: IExpediente) =>
@@ -802,10 +804,25 @@ function SolicitanteDashboard() {
           <div className="h-4 w-full bg-gray-200 rounded mb-2" />
           <div className="h-4 w-3/4 bg-gray-200 rounded" />
         </div>
+      ) : expError ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-sm text-red-800 mb-3">No pudimos cargar tus estudios. Puede ser un problema de conexión.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadingExp(true)
+              setExpError(false)
+              setReloadKey((k) => k + 1)
+            }}
+            className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            Reintentar
+          </button>
+        </div>
       ) : expedientes.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin solicitudes activas</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin estudios activos</h3>
           <p className="text-sm text-gray-500 mb-4">Aún no tienes solicitudes de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
             Explorar inmuebles

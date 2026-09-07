@@ -50,7 +50,15 @@ export default function EstudioFormularioPage() {
         setFormInfo(data)
         setPageState(data.ya_completado ? 'completed' : 'form')
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Enlace invalido o expirado'
+        const e = err as { statusCode?: number; code?: string; message?: string }
+        const msg =
+          e.statusCode === 404 || e.code === 'NOT_FOUND'
+            ? 'Este enlace no existe o ya fue usado. Pide que te lo reenvíen.'
+            : e.statusCode === 410 || /expir|vencid/i.test(e.code ?? '') || /expir|vencid/i.test(e.message ?? '')
+              ? 'Este enlace venció. Pide que te envíen uno nuevo.'
+              : e.statusCode === 0
+                ? 'Sin conexión. Revisa tu internet y vuelve a intentar.'
+                : 'No pudimos abrir tu estudio en este momento. Vuelve a intentarlo en un rato.'
         setErrorMessage(msg)
         setPageState('error')
       }
@@ -236,7 +244,7 @@ export default function EstudioFormularioPage() {
           </div>
 
           <p className="text-xs text-gray-400 pt-2">
-            Tu estudio de riesgo crediticio está siendo procesado. Puedes cerrar esta ventana.
+            Tu evaluación crediticia está en proceso. Te avisaremos por WhatsApp y correo con el resultado; puedes cerrar esta ventana.
           </p>
         </div>
       </div>
@@ -284,7 +292,7 @@ export default function EstudioFormularioPage() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Ingrese su nombre completo"
           />
         </div>
@@ -298,7 +306,7 @@ export default function EstudioFormularioPage() {
             <select
               value={tipoDoc}
               onChange={(e) => setTipoDoc(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="CC">Cédula de Ciudadanía</option>
               <option value="CE">Cédula de Extranjería</option>
@@ -318,8 +326,9 @@ export default function EstudioFormularioPage() {
               value={numDoc}
               onChange={(e) => setNumDoc(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Ingresa tu número de documento"
+              inputMode="numeric"
             />
           </div>
         </div>
@@ -335,7 +344,7 @@ export default function EstudioFormularioPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="correo@ejemplo.com"
             />
           </div>
@@ -348,8 +357,10 @@ export default function EstudioFormularioPage() {
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="3001234567"
+              inputMode="tel"
+              autoComplete="tel"
             />
           </div>
         </div>
@@ -365,8 +376,9 @@ export default function EstudioFormularioPage() {
               value={ingresos}
               onChange={(e) => setIngresos(e.target.value)}
               min={0}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="$ 0"
+              inputMode="numeric"
             />
           </div>
           <div>
@@ -377,7 +389,7 @@ export default function EstudioFormularioPage() {
               type="text"
               value={ocupacion}
               onChange={(e) => setOcupacion(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Empleado, independiente, etc."
             />
           </div>
@@ -392,7 +404,7 @@ export default function EstudioFormularioPage() {
             type="text"
             value={empresa}
             onChange={(e) => setEmpresa(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Nombre de la empresa"
           />
         </div>
@@ -406,7 +418,7 @@ export default function EstudioFormularioPage() {
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Calle, número, barrio, ciudad"
           />
         </div>

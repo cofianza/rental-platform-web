@@ -232,11 +232,11 @@ function RegistroSolicitanteContent() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Nombre" value={nombre} onChange={setNombre} error={errors.nombre} />
-            <FormField label="Apellido" value={apellido} onChange={setApellido} error={errors.apellido} />
+            <FormField label="Nombre" autoComplete="given-name" value={nombre} onChange={setNombre} error={errors.nombre} />
+            <FormField label="Apellido" autoComplete="family-name" value={apellido} onChange={setApellido} error={errors.apellido} />
           </div>
 
-          <FormField label="Email" type="email" value={email} onChange={setEmail} error={errors.email} />
+          <FormField label="Email" type="email" autoComplete="email" inputMode="email" value={email} onChange={setEmail} error={errors.email} />
           <PhoneInput
             label="Teléfono"
             value={telefono}
@@ -250,7 +250,7 @@ function RegistroSolicitanteContent() {
               <select
                 value={tipoDocumento}
                 onChange={(e) => setTipoDocumento(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {TIPO_DOC_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -258,12 +258,12 @@ function RegistroSolicitanteContent() {
               </select>
             </div>
             <div className="col-span-3">
-              <FormField label="Número de documento" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
+              <FormField label="Número de documento" inputMode="numeric" autoComplete="off" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
             </div>
           </div>
 
-          <FormField label="Contraseña" type="password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres" />
-          <FormField label="Confirmar contraseña" type="password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
+          <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres" />
+          <FormField label="Confirmar contraseña" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
 
           {/* Checkboxes */}
           <div className="space-y-3">
@@ -335,10 +335,12 @@ function RegistroSolicitanteContent() {
 // ── Form Field ──────────────────────────────
 
 function FormField({
+  autoComplete,
+  inputMode,
   label, value, onChange, error, type = 'text', placeholder,
 }: {
   label: string; value: string; onChange: (v: string) => void; error?: string
-  type?: string; placeholder?: string
+  type?: string; placeholder?: string; autoComplete?: string; inputMode?: 'numeric' | 'tel' | 'email' | 'text'
 }) {
   // Toggle local solo cuando es type="password" — no afecta al resto.
   const [showPassword, setShowPassword] = useState(false)
@@ -354,7 +356,10 @@ function FormField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full px-3 py-2.5 ${isPassword ? 'pr-11' : ''} border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          aria-invalid={!!error}
+          className={`w-full px-3 py-2.5 ${isPassword ? 'pr-11' : ''} border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           }`}
         />

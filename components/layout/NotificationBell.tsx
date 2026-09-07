@@ -158,9 +158,22 @@ export function NotificationBell() {
     }
   }
 
+  // Escape cierra el panel (el clic fuera ya lo cerraba).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
   return (
     <div ref={containerRef} className="relative">
       <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
         onClick={() => setOpen((v) => !v)}
         className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label={`Notificaciones${unreadCount > 0 ? ` (${unreadCount} sin leer)` : ''}`}
@@ -226,7 +239,9 @@ export function NotificationBell() {
                               {n.titulo}
                             </p>
                             {unread && (
-                              <span className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-1.5" />
+                              <span className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-1.5">
+                                <span className="sr-only">Sin leer</span>
+                              </span>
                             )}
                           </div>
                           <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.mensaje}</p>

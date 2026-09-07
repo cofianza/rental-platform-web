@@ -19,11 +19,15 @@ function ContratosContent() {
 
   // KPI cards (Pendientes de generar / En proceso de firma / Activos).
   const [stats, setStats] = useState<IContratosStats | null>(null)
+  const [statsError, setStatsError] = useState(false)
   useEffect(() => {
     contratoService
       .getStats()
       .then(setStats)
-      .catch(() => setStats(null))
+      .catch(() => {
+        setStats(null)
+        setStatsError(true)
+      })
   }, [])
 
   const datosContratoAction = canEditDatosContrato ? (
@@ -44,7 +48,7 @@ function ContratosContent() {
       <div className="space-y-6">
         <PageHeader
           title="Contratos"
-          subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : 'Cargando…'}
+          subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : statsError ? 'No se pudieron cargar los indicadores' : 'Cargando…'}
           actions={datosContratoAction}
         />
         <ContratosInmobiliariaView />
@@ -56,7 +60,7 @@ function ContratosContent() {
     <div className="space-y-6">
       <PageHeader
         title="Contratos"
-        subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : 'Cargando…'}
+        subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : statsError ? 'No se pudieron cargar los indicadores' : 'Cargando…'}
         actions={datosContratoAction}
       />
 

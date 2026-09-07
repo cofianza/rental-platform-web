@@ -7,6 +7,7 @@
 
 'use client'
 
+import { IconX } from '@/components/icons'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/lib/constants'
 
@@ -123,7 +124,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
             aria-label="Limpiar"
           >
-            ✕
+            <IconX size={14} aria-hidden />
           </button>
         )}
       </div>

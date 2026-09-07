@@ -361,7 +361,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-green-900 mb-1">¡Contrato activo!</h3>
             <p className="text-sm text-green-800 mb-3">
-              Tu arrendamiento está vigente. Ya puedes disfrutar de tu nuevo hogar. 🏠
+              Tu arrendamiento está vigente. Ya puedes disfrutar de tu nuevo hogar.
             </p>
             <button
               onClick={() => handleDescargar(true)}

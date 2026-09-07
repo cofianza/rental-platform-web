@@ -174,6 +174,14 @@ export function ExpedientesTable({
               <tr
                 key={expediente.id}
                 onClick={() => handleRowClick(expediente.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.currentTarget.click()
+                  }
+                }}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <td className="px-4 py-3">
@@ -192,7 +200,7 @@ export function ExpedientesTable({
                       </p>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Sin inmueble</span>
+                    <span className="text-sm text-gray-500">Sin inmueble</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -206,7 +214,7 @@ export function ExpedientesTable({
                       </p>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Sin solicitante</span>
+                    <span className="text-sm text-gray-500">Sin solicitante</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -240,7 +248,7 @@ export function ExpedientesTable({
                         <span className="text-sm text-gray-700">{nombre}</span>
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400">Sin asignar</span>
+                      <span className="text-sm text-gray-500">Sin asignar</span>
                     )
                   })()}
                 </td>
@@ -328,7 +336,7 @@ export function ExpedientesTable({
                     <span className="text-xs text-gray-600">{nombre}</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-400">Sin asignar</span>
+                  <span className="text-xs text-gray-500">Sin asignar</span>
                 )
               })()}
               <span className="text-xs text-gray-500">
@@ -364,6 +372,8 @@ export function ExpedientesTable({
           {/* Botones de paginación */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              aria-label="Página anterior"
               onClick={() => onPageChange(meta.page - 1)}
               disabled={meta.page <= 1}
               className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -404,6 +414,8 @@ export function ExpedientesTable({
             </div>
 
             <button
+              type="button"
+              aria-label="Página siguiente"
               onClick={() => onPageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages}
               className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

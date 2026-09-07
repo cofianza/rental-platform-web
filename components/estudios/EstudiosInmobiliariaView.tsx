@@ -233,9 +233,9 @@ export function EstudiosInmobiliariaView({
               </p>
             </div>
           ) : (
-            <table className="w-full min-w-max text-sm">
+            <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
+                <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
                   <th className="px-6 py-3 font-bold">Prospecto</th>
                   <th className="px-6 py-3 font-bold">Tipo</th>
                   <th className="px-6 py-3 font-bold">Estudio</th>
@@ -293,7 +293,7 @@ export function EstudiosInmobiliariaView({
                   )
                 })}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 

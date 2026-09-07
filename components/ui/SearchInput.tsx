@@ -50,6 +50,7 @@ export function SearchInput({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder}
         className={cn(
           'block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg',
           'text-sm placeholder-gray-400',
@@ -61,6 +62,7 @@ export function SearchInput({
       {/* Botón X para limpiar */}
       {value && (
         <button
+          type="button"
           onClick={handleClear}
           className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-700 transition-colors"
           aria-label="Limpiar búsqueda"

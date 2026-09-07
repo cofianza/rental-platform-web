@@ -16,6 +16,8 @@ import { formatCurrency, formatDate } from '@/lib/constants'
 import { MeInteresaCTA } from '@/components/vitrina/MeInteresaCTA'
 import { registrarVisitaInmueble } from '@/services/publicPropertiesService'
 import type { PublicProperty } from '@/services/publicPropertiesService'
+import Image from 'next/image'
+import { esStorageSupabase } from '@/lib/imagenes'
 
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', apartaestudio: 'Apartaestudio', casa: 'Casa', casa_finca: 'Casa Finca',
@@ -74,10 +76,14 @@ export function PropertyDetailClient({ property, similares }: Props) {
               onClick={() => lightboxImages.length > 0 && handleImageClick(selectedPhoto)}
             >
               {mainImage ? (
-                <img
+                <Image
                   src={mainImage}
                   alt={`${tipoLabel} en ${property.ciudad}`}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  unoptimized={!esStorageSupabase(mainImage)}
+                  className="object-cover hover:scale-105 transition-transform duration-300"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center">
@@ -99,14 +105,17 @@ export function PropertyDetailClient({ property, similares }: Props) {
                   <button
                     key={foto.id}
                     onClick={() => setSelectedPhoto(idx)}
-                    className={`shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                    className={`relative shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
                       idx === selectedPhoto ? 'border-primary-600' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
-                    <img
+                    <Image
                       src={foto.url}
                       alt={foto.descripcion || `Foto ${idx + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="80px"
+                      unoptimized={!esStorageSupabase(foto.url)}
+                      className="object-cover"
                     />
                   </button>
                 ))}
@@ -264,9 +273,9 @@ function SimilarCard({ property }: { property: PublicProperty }) {
       href={`/inmueble/${property.id}`}
       className="flex gap-3 bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md hover:border-gray-300 transition-all"
     >
-      <div className="w-24 h-20 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+      <div className="relative w-24 h-20 rounded-lg bg-gray-100 overflow-hidden shrink-0">
         {property.foto_fachada_url ? (
-          <img src={property.foto_fachada_url} alt={tipoLabel} className="w-full h-full object-cover" />
+          <Image src={property.foto_fachada_url} alt={tipoLabel} fill sizes="96px" unoptimized={!esStorageSupabase(property.foto_fachada_url)} className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <IconHome size={24} className="text-gray-300" />

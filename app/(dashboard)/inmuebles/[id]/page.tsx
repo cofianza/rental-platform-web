@@ -89,6 +89,7 @@ export default function InmuebleDetailPage() {
   const [isTogglingVitrina, setIsTogglingVitrina] = useState(false)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
+  const [isReactivating, setIsReactivating] = useState(false)
   // Contrato vigente del inmueble (cuando está 'ocupado') — para "Ver contrato"
   // y la acción "Terminar contrato" (que libera el inmueble).
   const [contratoVigente, setContratoVigente] = useState<{ id: string; estado: string } | null>(null)
@@ -246,8 +247,8 @@ export default function InmuebleDetailPage() {
 
   // Reactivar inmueble
   const handleReactivate = async () => {
-    if (!inmueble) return
-
+    if (!inmueble || isReactivating) return
+    setIsReactivating(true)
     try {
       const updated = await inmuebleService.updateInmueble(inmueble.id, {
         estado: 'disponible' as EstadoInmueble,
@@ -258,6 +259,8 @@ export default function InmuebleDetailPage() {
     } catch (err) {
       console.error('Error reactivating inmueble:', err)
       toast.error('Error al reactivar el inmueble')
+    } finally {
+      setIsReactivating(false)
     }
   }
 
@@ -472,6 +475,7 @@ export default function InmuebleDetailPage() {
             <button
               key="reactivate"
               onClick={handleReactivate}
+              disabled={isReactivating}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
             >
               <IconPower size={16} />

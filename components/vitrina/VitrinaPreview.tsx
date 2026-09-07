@@ -6,10 +6,13 @@
 
 'use client'
 
+import { IconBuilding2, IconHome, IconMapPin, IconCar } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getPublicProperties, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency } from '@/lib/constants'
+import Image from 'next/image'
+import { esStorageSupabase } from '@/lib/imagenes'
 
 const TIPO_LABEL: Record<string, string> = {
   apartamento: 'Apartamento',
@@ -24,17 +27,19 @@ const TIPO_LABEL: Record<string, string> = {
   parqueadero: 'Parqueadero',
 }
 
-const TIPO_EMOJI: Record<string, string> = {
-  apartamento: '🏢',
-  casa: '🏠',
-  oficina: '🏢',
-  local: '🏬',
-  bodega: '🏭',
-  apartaestudio: '🏢',
-  casa_finca: '🏡',
-  finca: '🌾',
-  lote: '🏞️',
-  parqueadero: '🅿️',
+// Iconos de la libreria (regla de la casa: nada de emojis, que cada telefono
+// pinta distinto y el lector de pantalla lee como "edificio de oficinas").
+const TIPO_ICONO: Record<string, typeof IconHome> = {
+  apartamento: IconBuilding2,
+  casa: IconHome,
+  oficina: IconBuilding2,
+  local: IconBuilding2,
+  bodega: IconBuilding2,
+  apartaestudio: IconBuilding2,
+  casa_finca: IconHome,
+  finca: IconMapPin,
+  lote: IconMapPin,
+  parqueadero: IconCar,
 }
 
 // "Nuevo" = publicado en los últimos 21 días.
@@ -120,7 +125,7 @@ export function VitrinaPreview() {
 function PropertyCard({ property }: { property: PublicProperty }) {
   const foto = property.fotos?.[0]?.url || property.foto_fachada_url
   const tipoLabel = TIPO_LABEL[property.tipo] || property.tipo
-  const emoji = TIPO_EMOJI[property.tipo] || '🏠'
+  const Icono = TIPO_ICONO[property.tipo] || IconHome
   const titulo = `${tipoLabel} ${property.barrio || property.ciudad}`
   const ubicacion = property.barrio ? `${property.ciudad}, ${property.barrio}` : property.ciudad
   const nuevo = esNuevo(property.created_at)
@@ -133,14 +138,18 @@ function PropertyCard({ property }: { property: PublicProperty }) {
       {/* Imagen / placeholder con badges sobrepuestos */}
       <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-primary-50 to-coral-50">
         {foto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={foto}
             alt={titulo}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized={!esStorageSupabase(foto)}
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl">{emoji}</div>
+          <div className="w-full h-full flex items-center justify-center">
+            <Icono size={48} className="text-primary-300" />
+          </div>
         )}
 
         {/* Badge tipo (arriba-izquierda) */}
@@ -164,14 +173,17 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           <div className="min-w-0">
             <h3 className="font-bold text-ink-900 text-base leading-tight mb-1.5 truncate">{titulo}</h3>
             <p className="flex items-center gap-1 text-xs text-gray-500 truncate">
-              <span aria-hidden>📍</span> {ubicacion}
+              <IconMapPin size={12} aria-hidden className="shrink-0" /> {ubicacion}
             </p>
           </div>
           {property.inmobiliaria?.logo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={property.inmobiliaria.logo_url}
               alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
+              width={0}
+              height={0}
+              sizes="160px"
+              unoptimized={!esStorageSupabase(property.inmobiliaria.logo_url)}
               className="h-14 w-auto max-w-[40%] object-contain shrink-0"
             />
           )}

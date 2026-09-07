@@ -249,7 +249,7 @@ export function FirmaStep2Otp({
       </div>
 
       {/* OTP Input */}
-      <div className="flex justify-center gap-2 sm:gap-3">
+      <div className="flex justify-center gap-1.5 sm:gap-3">
         {Array.from({ length: OTP_LENGTH }).map((_, index) => (
           <input
             key={index}
@@ -258,6 +258,8 @@ export function FirmaStep2Otp({
             }}
             type="text"
             inputMode="numeric"
+            autoComplete={index === 0 ? 'one-time-code' : 'off'}
+            name={index === 0 ? 'otp' : undefined}
             maxLength={1}
             value={value[index] || ''}
             onChange={(e) => handleChange(index, e.target.value)}
@@ -265,7 +267,7 @@ export function FirmaStep2Otp({
             onPaste={handlePaste}
             disabled={isSubmitting}
             className={`
-              w-12 h-14 sm:w-14 sm:h-16
+              w-10 h-12 sm:w-14 sm:h-16
               text-center text-2xl font-bold
               border-2 rounded-lg
               focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500

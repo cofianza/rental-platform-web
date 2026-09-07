@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { cn } from '@/lib/utils'
 
 interface CountryCode {
@@ -139,10 +139,11 @@ export function PhoneInput({
     emitChange(selectedDial, raw)
   }
 
+  const inputId = useId()
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
           {label}{required && ' *'}
         </label>
       )}
@@ -211,8 +212,12 @@ export function PhoneInput({
             </div>
           )}
           <input
+            id={inputId}
             type="tel"
             inputMode="numeric"
+            autoComplete="tel-national"
+            required={required}
+            aria-invalid={!!error}
             value={localNumber}
             onChange={handleLocalChange}
             disabled={disabled}

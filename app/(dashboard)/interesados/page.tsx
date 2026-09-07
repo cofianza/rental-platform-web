@@ -7,6 +7,8 @@
 
 'use client'
 
+import Image from 'next/image'
+import { esStorageSupabase } from '@/lib/imagenes'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -173,10 +175,12 @@ export default function InteresadosPage() {
               {/* Miniatura del inmueble */}
               <div className="shrink-0">
                 {it.inmuebles?.foto_fachada_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={it.inmuebles.foto_fachada_url}
                     alt={inmuebleLabel(it)}
+                    width={96}
+                    height={64}
+                    unoptimized={!esStorageSupabase(it.inmuebles.foto_fachada_url)}
                     className="h-16 w-24 rounded-lg object-cover border border-gray-200 bg-gray-50"
                   />
                 ) : (

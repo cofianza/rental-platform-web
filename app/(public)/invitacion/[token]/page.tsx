@@ -223,7 +223,7 @@ export default function InvitacionPage() {
             <div className="flex items-start gap-3">
               <IconCheck size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-green-900">
-                Tu cuenta coincide con la invitación. Al canjear, se vinculará este expediente
+                Tu cuenta coincide con la invitación. Al canjear, se vinculará este estudio
                 a tu perfil y podrás autorizar la consulta en centrales de riesgo (el cobro del
                 estudio llega después de que autorices).
               </p>

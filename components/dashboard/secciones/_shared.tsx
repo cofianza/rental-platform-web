@@ -8,13 +8,14 @@
 
 'use client'
 
+import { formatCurrency } from '@/lib/constants'
 import { useCallback, useEffect, useState } from 'react'
 import type { IconProps } from '@/components/icons'
 import { IconRefresh, IconX, IconTrendingUp, IconTrendingDown } from '@/components/icons'
 
 // ── Formatters ───────────────────────────────────────────────
 
-export const money = (n: number | null | undefined) => `$${Number(n ?? 0).toLocaleString('es-CO')}`
+export const money = (n: number | null | undefined) => formatCurrency(Number(n ?? 0))
 
 /** Moneda compacta para valores grandes en cards estrechas: $2,1 M / $850 k. */
 export const moneyCompact = (n: number | null | undefined) => {
@@ -27,10 +28,12 @@ export const moneyCompact = (n: number | null | undefined) => {
 
 export const fechaCorta = (iso: string | null | undefined) => {
   if (!iso) return '—'
-  const d = new Date(iso)
+  // Una fecha sin hora (YYYY-MM-DD) se lee como dia calendario de Bogota;
+  // `new Date('2026-09-07')` es medianoche UTC y en America sale un dia antes.
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00-05:00` : iso)
   return Number.isNaN(d.getTime())
     ? '—'
-    : d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+    : d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
 }
 
 /** Tiempo relativo en español ("hace 3 h", "hace 2 d"). Cae a fechaCorta si es viejo. */

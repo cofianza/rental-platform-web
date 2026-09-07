@@ -148,7 +148,6 @@ export default function FacturaDetallePage() {
       const presigned = await facturacionService.getUploadPresignedUrl(id, tipo)
 
       // 2. Upload file (mock - in real implementation would upload to presigned URL)
-      console.log('[MOCK] Uploading file to:', presigned.signedUrl)
 
       // 3. Confirm upload
       const updated = await facturacionService.confirmarUploadDocumento(id, tipo, presigned.storage_key)

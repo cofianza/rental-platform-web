@@ -8,7 +8,7 @@
  * su evaluación crediticia. NO necesita crear cuenta.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -25,6 +25,10 @@ export default function CoarrendatarioPublicPage() {
   const [view, setView] = useState<ICoarrendatarioPublicView | null>(null)
   const [phase, setPhase] = useState<Phase>('cargando')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (errorMsg) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [errorMsg])
 
   // Checkboxes T&C
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
@@ -168,17 +172,11 @@ export default function CoarrendatarioPublicPage() {
             <p className="font-semibold mb-1">¿Qué pasa si aceptas?</p>
             <ul className="list-disc pl-5 space-y-1 text-amber-800">
               <li>Realizaremos una evaluación crediticia rápida a tu nombre.</li>
-              <li>Tu información se trata conforme a la <Link href="/privacidad" target="_blank" className="underline">política de tratamiento de datos</Link>.</li>
+              <li>Tu información se trata conforme a la <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">política de tratamiento de datos</Link>.</li>
               <li>Si juntos cumplen el perfil, los respaldamos como arrendatarios.</li>
               <li>No tienes que crear cuenta ni firmar nada extra ahora — solo aceptar.</li>
             </ul>
           </div>
-
-          {errorMsg && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3">
-              {errorMsg}
-            </div>
-          )}
 
           {/*
             Autorizacion de tratamiento de datos, INTEGRA y visible.
@@ -213,7 +211,7 @@ export default function CoarrendatarioPublicPage() {
                 className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span>
-                Acepto los <Link href="/terminos" target="_blank" className="text-primary-600 underline">términos y condiciones</Link> de Cofianza.
+                Acepto los <Link href="/terminos" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">términos y condiciones</Link> de Cofianza.
               </span>
             </label>
 
@@ -231,8 +229,17 @@ export default function CoarrendatarioPublicPage() {
             </label>
           </div>
 
+          {/* El error va pegado al boton: antes quedaba varias pantallas arriba,
+              detras del texto legal, y el usuario volvia a tocar sin verlo. */}
+          {errorMsg && (
+            <div ref={errorRef} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3" role="alert">
+              {errorMsg}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
+              type="button"
               onClick={handleAceptar}
               disabled={procesando || !acceptTerms || !acceptData}
               className="flex-1 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"

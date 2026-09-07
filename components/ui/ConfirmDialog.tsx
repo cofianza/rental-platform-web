@@ -54,6 +54,8 @@ export function ConfirmDialog({
 
         <div className="flex justify-end gap-3 pt-2">
           <button
+            type="button"
+            autoFocus={variant === 'danger'}
             onClick={onClose}
             disabled={isLoading}
             className={cn(
@@ -67,6 +69,8 @@ export function ConfirmDialog({
           </button>
 
           <button
+            type="button"
+            autoFocus={variant !== 'danger'}
             onClick={handleConfirm}
             disabled={isLoading}
             className={cn(

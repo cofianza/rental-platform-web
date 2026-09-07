@@ -116,12 +116,12 @@ export default function CargarDocumentosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div>
+      <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Carga de documentos</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Hola {ctx.solicitante}, sube los documentos para tu solicitud de arriendo
+            Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
             {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
           </p>
         </div>

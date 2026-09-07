@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
 import type { ISolicitudFirmaPublic } from '@/types/firma'
 import {
   IconCheck,
@@ -41,11 +41,13 @@ export function FirmaStep4Confirmation({
   error,
   firmadoEn,
 }: FirmaStep4ConfirmationProps) {
-  const [isSuccess, setIsSuccess] = useState(false)
+  // El exito lo dicta el padre (firmadoEn llega solo cuando el API confirmo
+  // la firma): antes se marcaba exito localmente tras `await onSubmit()`,
+  // aunque el padre hubiera capturado el error y el reintento siguiera en vuelo.
+  const isSuccess = !!firmadoEn
 
   const handleSubmit = async () => {
     await onSubmit()
-    setIsSuccess(true)
   }
 
   // Success state
@@ -88,12 +90,12 @@ export function FirmaStep4Confirmation({
           Recibirás una copia del contrato firmado en tu correo electrónico.
         </p>
         <div className="pt-4">
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
             Volver al inicio
-          </a>
+          </Link>
         </div>
       </div>
     )

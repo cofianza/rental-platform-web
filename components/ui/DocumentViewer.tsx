@@ -176,6 +176,9 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={documento.nombre_original ?? 'Visor de documento'}
       className="fixed inset-0 z-50 bg-black/90 flex flex-col"
       onClick={handleBackdropClick}
     >

@@ -18,7 +18,7 @@ import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
 
 export function AccionesPendientesWidget() {
-  const { data, isLoading, error } = useAccionesPendientes()
+  const { data, isLoading, error, refetch } = useAccionesPendientes()
 
   if (isLoading) {
     return (
@@ -32,8 +32,15 @@ export function AccionesPendientesWidget() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-        {error}
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 flex flex-wrap items-center justify-between gap-3">
+        <span>{error}</span>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+        >
+          Reintentar
+        </button>
       </div>
     )
   }

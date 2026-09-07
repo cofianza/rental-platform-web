@@ -3,6 +3,7 @@
  * Server Component - no requiere interactividad
  */
 
+import { IconTrendingUp, IconTrendingDown, IconArrowRight } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import type { IconProps } from '@/components/icons'
 
@@ -50,10 +51,11 @@ export function KPICard({
   }
 
   const trendIcons = {
-    up: '↑',
-    down: '↓',
-    neutral: '→',
+    up: <IconTrendingUp size={14} aria-hidden />,
+    down: <IconTrendingDown size={14} aria-hidden />,
+    neutral: <IconArrowRight size={14} aria-hidden />,
   }
+  const trendLabels = { up: 'Aumento', down: 'Disminución', neutral: 'Sin cambio' }
 
   const variant = ACCENT_VARIANTS[accentColor] ?? DEFAULT_VARIANT
 
@@ -79,8 +81,10 @@ export function KPICard({
           {/* Cambio porcentual */}
           {change !== undefined && (
             <div className="flex items-center gap-1">
-              <span className={cn('text-sm font-medium', trendColors[trend])}>
-                {trendIcons[trend]} {Math.abs(change)}%
+              <span className={cn('inline-flex items-center gap-1 text-sm font-medium', trendColors[trend])}>
+                {trendIcons[trend]}
+                <span className="sr-only">{trendLabels[trend]} respecto al período anterior:</span>
+                {Math.abs(change)}%
               </span>
               <span className="text-xs text-gray-500">vs. período anterior</span>
             </div>

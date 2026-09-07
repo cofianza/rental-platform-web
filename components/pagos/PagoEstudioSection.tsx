@@ -1,5 +1,6 @@
 'use client'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -30,6 +31,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmLiberar, setConfirmLiberar] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
@@ -102,6 +104,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     try {
       await creditosEstudiosService.liberarEstudio(expedienteId)
       await Promise.all([fetchEstado(), fetchSaldo()])
+      toast.success('Crédito descontado. La evaluación arranca de inmediato.')
       onPagoCompletado?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al liberar el estudio con credito')
@@ -237,8 +240,21 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               {/* Liberar con credito (inmobiliaria) */}
               {puedeUsarCreditos && (
                 (saldoCreditos?.saldo_total ?? 0) > 0 ? (
+                  <>
+              <ConfirmDialog
+                    isOpen={confirmLiberar}
+                    onClose={() => setConfirmLiberar(false)}
+                    onConfirm={() => {
+                      setConfirmLiberar(false)
+                      return handleLiberarCredito()
+                    }}
+                    isLoading={isSubmitting}
+                    title="Liberar con crédito"
+                    message={`Se descuenta 1 crédito de tu saldo (${saldoCreditos?.saldo_total ?? 0} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    confirmLabel="Descontar 1 crédito"
+                  />
                   <button
-                    onClick={handleLiberarCredito}
+                    onClick={() => setConfirmLiberar(true)}
                     disabled={isSubmitting}
                     className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-emerald-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50 text-center"
                   >
@@ -249,6 +265,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoCreditos?.saldo_total} estudios</span>
                     <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
                   </button>
+                  </>
                 ) : (
                   <Link
                     href="/configuracion/creditos-estudios"
@@ -343,13 +360,27 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           </div>
           <div className="flex flex-wrap gap-2">
             {puedeUsarCreditos && (saldoCreditos?.saldo_total ?? 0) > 0 && (
-              <button
-                onClick={handleLiberarCredito}
+              <>
+              <ConfirmDialog
+                    isOpen={confirmLiberar}
+                    onClose={() => setConfirmLiberar(false)}
+                    onConfirm={() => {
+                      setConfirmLiberar(false)
+                      return handleLiberarCredito()
+                    }}
+                    isLoading={isSubmitting}
+                    title="Liberar con crédito"
+                    message={`Se descuenta 1 crédito de tu saldo (${saldoCreditos?.saldo_total ?? 0} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    confirmLabel="Descontar 1 crédito"
+                  />
+                  <button
+                onClick={() => setConfirmLiberar(true)}
                 disabled={isSubmitting}
                 className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
               >
                 Liberar con crédito
               </button>
+              </>
             )}
             {mostrarAsumir && (
               <button

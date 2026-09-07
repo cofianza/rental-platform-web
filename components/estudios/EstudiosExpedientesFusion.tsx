@@ -56,13 +56,14 @@ export function EstudiosExpedientesFusion() {
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
+  const [saldoError, setSaldoError] = useState(false)
   // Mapa perfil_id → nombre de los miembros del equipo, para mostrar en la
   // columna "Responsable" el miembro al que se asignó cada expediente.
   const [miembrosById, setMiembrosById] = useState<Record<string, string>>({})
 
   useEffect(() => {
     estudioService.getStats().then(setStats).catch(() => {})
-    creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => {})
+    creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
       .then((res) => {
         const map: Record<string, string> = {}
@@ -104,13 +105,13 @@ export function EstudiosExpedientesFusion() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-gray-900">Estudios</h1>
           <p className="text-sm font-medium text-gray-500">
-            Tus estudios y el estado de su estudio de crédito, en un solo lugar.
+            Tus estudios y el estado de su evaluación crediticia, en un solo lugar.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
             <IconSearch size={14} />
-            {saldo ? saldo.saldo_total : '…'} estudios disponibles
+            {saldo ? saldo.saldo_total : saldoError ? '—' : '…'} estudios disponibles
           </span>
           <button
             onClick={() => router.push('/expedientes/nuevo')}

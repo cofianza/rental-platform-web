@@ -22,7 +22,7 @@ import {
   IconFolderOpen,
   IconMail,
 } from '@/components/icons'
-import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime } from '@/lib/constants'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, formatCurrency } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { VersionHistorialSection } from '@/components/expedientes/VersionHistorialSection'
@@ -102,6 +102,7 @@ export default function ContratoDetallePage() {
   const [enviandoFirma, setEnviandoFirma] = useState(false)
   const [firmaPreview, setFirmaPreview] = useState<IFirmantesPreview | null>(null)
   const [confirmFirmaOpen, setConfirmFirmaOpen] = useState(false)
+  const [confirmRenovar, setConfirmRenovar] = useState(false)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
 
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
@@ -385,13 +386,7 @@ export default function ContratoDetallePage() {
 
   const estadoConfig = ESTADOS_CONTRATO[contrato.estado as EstadoContratoKey]
   const dotClass = ESTADO_DOT[estadoConfig?.color ?? 'gray'] || 'bg-gray-400'
-  const valorArriendoFmt = contrato.valor_arriendo
-    ? new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-      }).format(Number(contrato.valor_arriendo))
-    : '—'
+  const valorArriendoFmt = contrato.valor_arriendo ? formatCurrency(Number(contrato.valor_arriendo)) : '—'
 
   return (
     <div className="space-y-6">
@@ -478,7 +473,7 @@ export default function ContratoDetallePage() {
           ))}
           {canManage && contrato.estado === 'vigente' && (
             <button
-              onClick={handleRenovar}
+              onClick={() => setConfirmRenovar(true)}
               disabled={renewLoading}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
@@ -726,6 +721,18 @@ export default function ContratoDetallePage() {
         }}
       />
 
+      <ConfirmDialog
+        isOpen={confirmRenovar}
+        onClose={() => setConfirmRenovar(false)}
+        onConfirm={async () => {
+          setConfirmRenovar(false)
+          await handleRenovar()
+        }}
+        isLoading={renewLoading}
+        title="Renovar el contrato"
+        message="Se genera un contrato nuevo en borrador a partir de este y te llevamos a él. El actual sigue vigente hasta que el nuevo se firme."
+        confirmLabel="Generar renovación"
+      />
       <ConfirmDialog
         isOpen={confirmFirmaOpen}
         onClose={() => setConfirmFirmaOpen(false)}

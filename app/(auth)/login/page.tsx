@@ -268,11 +268,9 @@ function LoginForm() {
         </div>
 
         {/* Recuérdame + olvidé contraseña */}
-        <div className="flex justify-between items-center text-[13px] mb-5">
-          <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 accent-primary-600" />
-            Recordarme
-          </label>
+        {/* La sesion la mantiene el servidor (cookie hp-session); la casilla
+            "Recordarme" no estaba conectada a nada y prometia lo que no hacia. */}
+        <div className="flex justify-end items-center text-[13px] mb-5">
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
             className="text-primary-600 font-semibold hover:underline"

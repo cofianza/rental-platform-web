@@ -9,6 +9,7 @@
 
 'use client'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -30,6 +31,7 @@ import {
   type MoraEstado,
 } from '@/services/morasService'
 import { formatCurrency } from '@/lib/constants'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
 
 interface ContratoSelectItem {
   id: string
@@ -590,13 +592,15 @@ function MoraDetalleModal({
     }
   }
 
-  async function handleCancelar() {
-    const motivo = window.prompt('Motivo de la cancelación:')
-    if (!motivo) return
+  const [cancelarAbierto, setCancelarAbierto] = useState(false)
+  const [pagarAbierto, setPagarAbierto] = useState(false)
+  const [escalarAbierto, setEscalarAbierto] = useState(false)
+  async function handleCancelar(motivo: string) {
     setActing(true)
     try {
       await morasService.cancelar(moraId, motivo)
       toast.success('Mora cancelada')
+      setCancelarAbierto(false)
       await recargar()
       onChange()
     } catch (err) {
@@ -760,7 +764,7 @@ function MoraDetalleModal({
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center gap-2 justify-end">
             <button
               type="button"
-              onClick={handleCancelar}
+              onClick={() => setCancelarAbierto(true)}
               disabled={acting}
               className="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             >
@@ -768,7 +772,7 @@ function MoraDetalleModal({
             </button>
             <button
               type="button"
-              onClick={handlePagar}
+              onClick={() => setPagarAbierto(true)}
               disabled={acting}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-300 rounded-lg hover:bg-primary-100 disabled:opacity-50"
             >
@@ -777,7 +781,7 @@ function MoraDetalleModal({
             {mora.estado !== 'fase_3' && (
               <button
                 type="button"
-                onClick={handleEscalar}
+                onClick={() => setEscalarAbierto(true)}
                 disabled={acting}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-coral-500 hover:bg-coral-600 rounded-lg disabled:opacity-50"
               >
@@ -788,6 +792,42 @@ function MoraDetalleModal({
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={pagarAbierto}
+        onClose={() => setPagarAbierto(false)}
+        onConfirm={async () => {
+          setPagarAbierto(false)
+          await handlePagar()
+        }}
+        isLoading={acting}
+        title="Marcar la mora como pagada"
+        message="El caso se cierra y se detienen las escalaciones al inquilino. Esta acción no se puede deshacer."
+        confirmLabel="Marcar pagada"
+      />
+      <ConfirmDialog
+        isOpen={escalarAbierto}
+        onClose={() => setEscalarAbierto(false)}
+        onConfirm={async () => {
+          setEscalarAbierto(false)
+          await handleEscalar()
+        }}
+        isLoading={acting}
+        variant="danger"
+        title={`Escalar a ${mora?.estado === 'fase_1' ? 'Fase 2 (Urgencia)' : 'Fase 3 (Legal)'}`}
+        message="Al inquilino le llega de inmediato el WhatsApp de escalación. No se puede deshacer."
+        confirmLabel="Escalar"
+      />
+      <MotivoDialog
+        isOpen={cancelarAbierto}
+        onClose={() => setCancelarAbierto(false)}
+        onConfirm={handleCancelar}
+        isLoading={acting}
+        title="Cancelar caso de mora"
+        label="Motivo de la cancelación"
+        placeholder="Ej.: el inquilino pagó por fuera de la plataforma, error de registro…"
+        confirmLabel="Cancelar caso"
+        variant="danger"
+      />
     </div>
   )
 }

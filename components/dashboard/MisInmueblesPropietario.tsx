@@ -6,6 +6,9 @@
 
 'use client'
 
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
+import Image from 'next/image'
+import { esStorageSupabase } from '@/lib/imagenes'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -93,11 +96,13 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
       {/* Foto de la fachada con los estados superpuestos */}
       <Link href={`/inmuebles/${p.id}`} className="relative block h-32 w-full overflow-hidden bg-ink-100">
         {p.fotoFachadaUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={p.fotoFachadaUrl}
             alt={p.direccion ?? 'Inmueble'}
-            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 100vw, 33vw"
+            unoptimized={!esStorageSupabase(p.fotoFachadaUrl)}
+            className="object-cover transition-transform duration-300 hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-ink-300">
@@ -214,6 +219,8 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
 
 function SolicitudesVisita() {
   const [citas, setCitas] = useState<ICita[]>([])
+  const [citasError, setCitasError] = useState(false)
+  const [rechazando, setRechazando] = useState<ICita | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
@@ -221,13 +228,17 @@ function SolicitudesVisita() {
   useEffect(() => {
     let cancel = false
     setLoading(true)
+    setCitasError(false)
     citaService
       .listMisCitas({ estado: 'solicitada', limit: 20, page: 1 })
       .then((r) => {
         if (!cancel) setCitas(r.data)
       })
       .catch(() => {
-        if (!cancel) setCitas([])
+        if (!cancel) {
+          setCitas([])
+          setCitasError(true)
+        }
       })
       .finally(() => {
         if (!cancel) setLoading(false)
@@ -250,10 +261,11 @@ function SolicitudesVisita() {
     }
   }
 
-  const rechazar = async (c: ICita) => {
+  const rechazar = async (c: ICita, motivo: string) => {
     setBusy(c.id)
     try {
-      await citaService.cancelarCita(c.id, { motivo_cancelacion: 'Rechazada por el propietario' })
+      await citaService.cancelarCita(c.id, { motivo_cancelacion: motivo })
+      setRechazando(null)
       toast.success('Visita rechazada.')
       setVersion((v) => v + 1)
     } catch (e) {
@@ -275,7 +287,16 @@ function SolicitudesVisita() {
   if (citas.length === 0) {
     return (
       <div className="rounded-xl border border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
-        No hay solicitudes de visita pendientes.
+        {citasError ? (
+          <>
+            No se pudieron cargar las solicitudes de visita.{' '}
+            <button type="button" onClick={() => setVersion((v) => v + 1)} className="font-medium underline">
+              Reintentar
+            </button>
+          </>
+        ) : (
+          'No hay solicitudes de visita pendientes.'
+        )}
       </div>
     )
   }
@@ -303,7 +324,18 @@ function SolicitudesVisita() {
               <button type="button" disabled={busy === c.id} onClick={() => aprobar(c)} className={`${btnP} disabled:opacity-50`}>
                 Aprobar
               </button>
-              <button type="button" disabled={busy === c.id} onClick={() => rechazar(c)} className={`${btnS} disabled:opacity-50`}>
+              <MotivoDialog
+                isOpen={rechazando?.id === c.id}
+                onClose={() => setRechazando(null)}
+                onConfirm={(motivo) => rechazar(c, motivo)}
+                isLoading={busy === c.id}
+                title="Rechazar la visita"
+                label="Motivo (el solicitante lo verá)"
+                placeholder="Ej.: el inmueble ya se está negociando con otra persona…"
+                confirmLabel="Rechazar visita"
+                variant="danger"
+              />
+              <button type="button" disabled={busy === c.id} onClick={() => setRechazando(c)} className={`${btnS} disabled:opacity-50`}>
                 Rechazar
               </button>
             </div>

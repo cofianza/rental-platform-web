@@ -96,13 +96,27 @@ export function DataTable<T extends Record<string, unknown>>({
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
+                  scope="col"
+                  aria-sort={
+                    column.sortable
+                      ? sortKey === column.key
+                        ? sortDirection === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                      : undefined
+                  }
                   className={cn(
                     'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
-                    column.sortable && 'cursor-pointer hover:bg-gray-100 select-none'
+                    column.sortable && 'hover:bg-gray-100 select-none'
                   )}
-                  onClick={() => column.sortable && handleSort(column.key)}
                 >
-                  <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!column.sortable}
+                    onClick={() => column.sortable && handleSort(column.key)}
+                    className={cn('flex items-center gap-2 uppercase', column.sortable ? 'cursor-pointer' : 'cursor-default')}
+                  >
                     {column.label}
                     {column.sortable && sortKey === column.key && (
                       <span className="text-primary-600">
@@ -113,7 +127,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         )}
                       </span>
                     )}
-                  </div>
+                  </button>
                 </th>
               ))}
             </tr>

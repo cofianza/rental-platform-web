@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useId, useRef } from 'react'
 import { IconX } from '@/components/icons'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +16,27 @@ export interface ModalProps {
   size?: 'sm' | 'md' | 'lg'
   children: React.ReactNode
   className?: string
+  /** Nombre accesible cuando no hay `title` (p. ej. dialogos con titulo propio). */
+  ariaLabel?: string
 }
+
+// Bloqueo de scroll con contador: un ConfirmDialog abierto sobre otro Modal
+// no destraba la pagina al cerrarse, y se restaura el overflow que hubiera.
+let bloqueos = 0
+let overflowPrevio = ''
+function bloquearScroll() {
+  if (bloqueos++ === 0) {
+    overflowPrevio = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  }
+}
+function liberarScroll() {
+  bloqueos = Math.max(0, bloqueos - 1)
+  if (bloqueos === 0) document.body.style.overflow = overflowPrevio
+}
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 const SIZES = {
   sm: 'max-w-md',
@@ -31,29 +51,65 @@ export function Modal({
   size = 'md',
   children,
   className,
+  ariaLabel,
 }: ModalProps) {
-  // Cerrar con tecla Escape
-  const handleEscape = useCallback(
+  const titleId = useId()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const restaurarFocoRef = useRef<HTMLElement | null>(null)
+
+  // Escape cierra; Tab/Shift+Tab se quedan dentro del dialogo (trampa de foco).
+  const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose()
+        return
+      }
+      if (event.key !== 'Tab' || !contentRef.current) return
+      const nodos = Array.from(contentRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null
+      )
+      if (nodos.length === 0) {
+        event.preventDefault()
+        return
+      }
+      const primero = nodos[0]
+      const ultimo = nodos[nodos.length - 1]
+      const activo = document.activeElement as HTMLElement | null
+      if (event.shiftKey && (activo === primero || !contentRef.current.contains(activo))) {
+        event.preventDefault()
+        ultimo.focus()
+      } else if (!event.shiftKey && activo === ultimo) {
+        event.preventDefault()
+        primero.focus()
       }
     },
     [onClose]
   )
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      // Prevenir scroll del body
-      document.body.style.overflow = 'hidden'
-    }
+    if (!isOpen) return
+    restaurarFocoRef.current = document.activeElement as HTMLElement | null
+    document.addEventListener('keydown', handleKeyDown)
+    bloquearScroll()
+    // Foco inicial: el primer control del cuerpo (un `autoFocus` hijo gana);
+    // se salta el boton de cerrar para no invitar a cerrar por accidente.
+    const t = setTimeout(() => {
+      const root = contentRef.current
+      if (!root) return
+      if (root.contains(document.activeElement) && document.activeElement !== document.body) return
+      const primero = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).find(
+        (el) => el.offsetParent !== null && !el.hasAttribute('data-modal-close')
+      )
+      ;(primero ?? root).focus()
+    }, 0)
 
     return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
+      clearTimeout(t)
+      document.removeEventListener('keydown', handleKeyDown)
+      liberarScroll()
+      restaurarFocoRef.current?.focus?.()
     }
-  }, [isOpen, handleEscape])
+  }, [isOpen, handleKeyDown])
 
   if (!isOpen) return null
 
@@ -62,7 +118,8 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      aria-label={title ? undefined : ariaLabel}
     >
       {/* Overlay */}
       <div
@@ -75,8 +132,10 @@ export function Modal({
           para que cuando el contenido sea largo, el body haga scroll
           interno y el header (titulo + boton cerrar) quede sticky. */}
       <div
+        ref={contentRef}
+        tabIndex={-1}
         className={cn(
-          'relative bg-white rounded-lg shadow-xl w-full flex flex-col',
+          'relative bg-white rounded-lg shadow-xl w-full flex flex-col outline-none',
           'max-h-[calc(100vh-2rem)]',
           'animate-in fade-in zoom-in-95 duration-200',
           SIZES[size],
@@ -87,13 +146,15 @@ export function Modal({
         {/* Header (no se encoge) */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-            <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900">
               {title}
             </h2>
             <button
+              type="button"
+              data-modal-close
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
-              aria-label="Cerrar modal"
+              aria-label="Cerrar"
             >
               <IconX size={20} className="text-gray-500" />
             </button>

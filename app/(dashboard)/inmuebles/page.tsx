@@ -18,7 +18,7 @@ import {
   SolicitudesVisitaWidget,
   PropiedadesInmobiliariaView,
 } from '@/components/inmuebles'
-import { ConfirmDialog } from '@/components/users'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
@@ -280,9 +280,9 @@ function InmueblesContent() {
         isOpen={deleteDialog.isOpen}
         onClose={closeDeleteDialog}
         onConfirm={handleConfirmDelete}
-        title="Eliminar Inmueble"
+        title="Desactivar inmueble"
         message={`¿Estás seguro de que deseas eliminar el inmueble ${deleteDialog.inmueble?.codigo}? Esta acción marcará el inmueble como inactivo.`}
-        confirmText="Eliminar"
+        confirmLabel="Desactivar"
         variant="danger"
         isLoading={isDeleteLoading}
       />

@@ -102,6 +102,17 @@ export function FirmaStep1Summary({ data, token, onContinue }: FirmaStep1Summary
             title="Contrato de arrendamiento"
           />
         )}
+        {/* iOS Safari pinta el iframe como una caja sin scroll: siempre hay salida. */}
+        {pdfState === 'ready' && pdfUrl && (
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline"
+          >
+            Abrir el contrato en una pestaña nueva
+          </a>
+        )}
       </div>
 
       {/* Contract info summary */}

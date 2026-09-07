@@ -156,6 +156,8 @@ export function BitacoraTable({
 
               <div className="flex items-center gap-1">
                 <button
+                  type="button"
+                  aria-label="Página anterior"
                   onClick={() => handlePageChange(meta.page - 1)}
                   disabled={meta.page <= 1}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -166,6 +168,8 @@ export function BitacoraTable({
                   {meta.page} / {meta.totalPages}
                 </span>
                 <button
+                  type="button"
+                  aria-label="Página siguiente"
                   onClick={() => handlePageChange(meta.page + 1)}
                   disabled={meta.page >= meta.totalPages}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

@@ -54,8 +54,7 @@ import {
   IconUserCheck,
   IconUserX,
   IconBuilding2,
-  IconUser,
-} from '@/components/icons'
+  IconUser, IconArrowLeft } from '@/components/icons'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
@@ -383,6 +382,7 @@ export default function AutorizarPage() {
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
         setErrorMessage('Este enlace ya no está vigente. Pide que te reenvíen uno nuevo desde el estudio.')
+        setData(null) // pantalla terminal: sin datos no se vuelve a pintar el paso 4 con su boton
         setPageState('error')
         return
       }
@@ -870,9 +870,9 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => setPaso(1)}
-              className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
-              ← Volver
+              <IconArrowLeft size={14} /> Volver
             </button>
           </div>
         )}
@@ -933,9 +933,9 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => setPaso(2)}
-              className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
-              ← Volver
+              <IconArrowLeft size={14} /> Volver
             </button>
           </div>
         )}
@@ -1011,9 +1011,9 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => setPaso(data?.biometria?.requerida ? 'bio' : 3)}
-              className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
-              ← Volver
+              <IconArrowLeft size={14} /> Volver
             </button>
           </div>
         )}

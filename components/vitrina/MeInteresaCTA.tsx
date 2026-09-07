@@ -4,7 +4,7 @@
  *      autorización) que registra el interés como lead y avisa al anunciante.
  *      NO se piden datos personales (cédula, etc.) en este paso.
  *   2) Autenticado pero NO solicitante → botón deshabilitado con título.
- *   3) Solicitante con expediente activo sobre este inmueble → link "Ver mi solicitud →".
+ *   3) Solicitante con expediente activo sobre este inmueble → link "Ver mi estudio →".
  *   4) Solicitante sin expediente activo → abre modal con fecha + notas;
  *      al enviar crea expediente + cita en cadena.
  *
@@ -100,7 +100,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
   // Auto-apertura del modal cuando venimos de /registro/solicitante con ?agendar=1.
   // Espera a que el check de expediente termine para decidir bien. Si ya hay
-  // expediente activo, no abre modal (la rama "Ver mi solicitud" toma control).
+  // expediente activo, no abre modal (la rama "Ver mi estudio" toma control).
   // Limpia el query param con router.replace para que cerrar el modal no lo
   // re-abra en loops de re-render.
   useEffect(() => {
@@ -219,8 +219,8 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
     } catch (interesError: unknown) {
       const errObj = interesError as { code?: string; statusCode?: number; message?: string }
       if (errObj.code === 'EXPEDIENTE_ALREADY_EXISTS' || errObj.statusCode === 409) {
-        toast.error('Ya tienes una solicitud activa sobre este inmueble.')
-        // Refrescar el check para que la card se re-renderize en modo "Ver mi solicitud".
+        toast.error('Ya tienes un estudio activo sobre este inmueble.')
+        // Refrescar el check para que la card se re-renderize en modo "Ver mi estudio".
         const refreshed = await expedienteService
           .miExpedientePorInmueble(inmuebleId)
           .catch(() => ({ expediente: null }))
@@ -251,7 +251,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
     )
   }
 
-  // RAMA 3: solicitante con expediente activo → link a "Ver mi solicitud".
+  // RAMA 3: solicitante con expediente activo → link a "Ver mi estudio".
   if (isAuthenticated && isSolicitante && expedienteActivo) {
     return (
       <div className="space-y-2">
@@ -259,7 +259,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
           href={`/expedientes/${expedienteActivo.id}`}
           className={`${buttonClasses(variant, 'primary')} block text-center`}
         >
-          Ver mi solicitud →
+          Ver mi estudio →
         </Link>
         {variant === 'primary' && (
           <p className="text-xs text-gray-600">
@@ -273,13 +273,10 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
   // RAMA 2: autenticado pero rol distinto de solicitante.
   if (isInitialized && isAuthenticated && !isSolicitante) {
     return (
-      <button
-        disabled
-        title="Solo los solicitantes pueden registrar interés en inmuebles"
-        className={`${buttonClasses(variant, 'disabled')} cursor-not-allowed`}
-      >
-        Me interesa este inmueble
-      </button>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Esta cuenta es de {user?.rol === 'inmobiliaria' ? 'inmobiliaria' : user?.rol === 'propietario' ? 'propietario' : 'gestión'}.
+        Para postularte a este inmueble entra con una cuenta de arrendatario.
+      </div>
     )
   }
 
@@ -341,7 +338,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               rows={3}
               maxLength={500}
               placeholder="Cuéntale por qué te interesa, o deja alguna observación para la visita."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <p className="text-xs text-gray-400 mt-1 text-right">{notas.length}/500</p>
           </div>
@@ -413,7 +410,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 value={leadNombre}
                 onChange={(e) => setLeadNombre(e.target.value)}
                 placeholder="Tu nombre"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
@@ -434,7 +431,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
                 placeholder="tu@correo.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
@@ -448,7 +445,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 rows={2}
                 maxLength={500}
                 placeholder="Ej. ¿Sigue disponible? Me gustaría verlo el sábado."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
@@ -462,7 +459,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               <span>
                 Autorizo que Cofianza comparta mis datos de contacto con el anunciante de este
                 inmueble y acepto la{' '}
-                <a href="/privacidad" target="_blank" className="text-primary-600 underline">
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
                   Política de Tratamiento de Datos
                 </a>
                 .

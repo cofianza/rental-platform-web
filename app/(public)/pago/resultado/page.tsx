@@ -55,13 +55,16 @@ function PagoResultadoContent() {
   }, [status, paymentId])
 
   // Auto-cierre tras pago exitoso. Stripe se abrio en una pestaña nueva
-  // (target="_blank" desde el CTA "Pagar ahora"), asi que `window.close()`
+  // (target="_blank" rel="noopener noreferrer" desde el CTA "Pagar ahora"), asi que `window.close()`
   // nos devuelve a la pestaña original donde el usuario tenia su expediente.
   // Si el browser bloquea el close (politica de seguridad cuando no podemos
   // probar window.opener) y hay sesion activa, hacemos fallback a redirect.
   useEffect(() => {
     if (loading || !reconcileDone) return
-    if (status !== 'success') return
+    // Solo con sesion: un invitado abrio esto desde WhatsApp/correo y el
+    // browser movil no deja cerrar esa pestaña por script (se quedaba en
+    // "Cerrando..." para siempre).
+    if (status !== 'success' || !isAuthenticated) return
 
     setSecondsLeft(AUTO_CLOSE_SECONDS)
     const tick = setInterval(() => {
@@ -211,11 +214,25 @@ function PagoResultadoContent() {
           >
             {isAuthenticated ? 'Cerrar y volver al estudio' : 'Cerrar ventana'}
           </button>
-          <p className="text-xs text-gray-500">
-            {secondsLeft > 0
-              ? `Esta ventana se cerrará automáticamente en ${secondsLeft} ${secondsLeft === 1 ? 'segundo' : 'segundos'}.`
-              : 'Cerrando...'}
-          </p>
+          {isAuthenticated ? (
+            <p className="text-xs text-gray-500">
+              {secondsLeft > 0
+                ? `Esta ventana se cerrará automáticamente en ${secondsLeft} ${secondsLeft === 1 ? 'segundo' : 'segundos'}.`
+                : 'Cerrando...'}
+            </p>
+          ) : (
+            <div className="w-full rounded-lg border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
+              <p className="mb-1 font-semibold text-gray-900">¿Qué sigue?</p>
+              <ol className="list-decimal space-y-1 pl-4">
+                <li>Cofianza consulta las centrales de riesgo (tarda menos de un minuto).</li>
+                <li>Te avisamos por WhatsApp y correo con el resultado.</li>
+                <li>Si tienes dudas, escríbele a la inmobiliaria que te envió el enlace.</li>
+              </ol>
+              <Link href="/" className="mt-3 inline-block font-medium text-primary-700 hover:underline">
+                Ir a cofianza.co
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

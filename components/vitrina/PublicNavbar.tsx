@@ -87,7 +87,7 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/vitrina"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 pathname === '/vitrina'
                   ? 'text-primary-700 bg-primary-50'
                   : 'text-primary-600 hover:bg-primary-50'

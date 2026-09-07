@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
 import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
+import { IconCheck, IconX, IconArrowRight } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Te pidieron fiador? Soy yo. Llámanos.',
@@ -34,7 +35,7 @@ export default function HomePage() {
         <div className="absolute -top-1/4 -right-1/12 w-[700px] h-[700px] bg-primary-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 md:py-28 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 md:py-28 lg:py-16 md:py-32">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
             {/* Copy izquierdo */}
             <div className="flex-1 max-w-2xl">
@@ -58,12 +59,12 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-3 mb-12">
-                <a
-                  href="#vitrina"
+                <Link
+                  href="/vitrina"
                   className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
-                  Encuentra tu inmueble →
-                </a>
+                  Encuentra tu inmueble <IconArrowRight size={18} />
+                </Link>
                 <Link
                   href="/registro"
                   className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
@@ -74,13 +75,13 @@ export default function HomePage() {
 
               <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-primary-400 font-bold">✓</span> Respuesta en segundos
+                  <IconCheck size={14} className="text-primary-400 shrink-0" /> Respuesta en segundos
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-primary-400 font-bold">✓</span> Cashback del 30%
+                  <IconCheck size={14} className="text-primary-400 shrink-0" /> Cashback del 30%
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-primary-400 font-bold">✓</span> Reporte positivo a centrales
+                  <IconCheck size={14} className="text-primary-400 shrink-0" /> Reporte positivo a centrales
                 </span>
               </div>
             </div>
@@ -99,10 +100,10 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { name: 'Pago del estudio', status: '✓', state: 'done' },
-                    { name: 'Evaluación crediticia', status: '✓ Aprobado', state: 'done' },
-                    { name: 'Contrato generado', status: '✓ Listo', state: 'done' },
-                    { name: 'Firma electrónica', status: '→ WhatsApp', state: 'active' },
+                    { name: 'Pago del estudio', status: 'Pagado', state: 'done' },
+                    { name: 'Evaluación crediticia', status: 'Aprobado', state: 'done' },
+                    { name: 'Contrato generado', status: 'Listo', state: 'done' },
+                    { name: 'Firma electrónica', status: 'WhatsApp', state: 'active' },
                   ].map((step) => (
                     <div
                       key={step.name}
@@ -131,6 +132,7 @@ export default function HomePage() {
                           step.state === 'active' ? 'text-coral-500' : 'text-primary-400'
                         }`}
                       >
+                        {step.state === 'done' ? <IconCheck size={12} className="inline -mt-0.5 mr-1" /> : <IconArrowRight size={12} className="inline -mt-0.5 mr-1" />}
                         {step.status}
                       </span>
                     </div>
@@ -159,7 +161,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 grid grid-cols-2 md:grid-cols-4">
           {[
             { val: ['100', '%'], lbl: 'Digital' },
-            { val: '⚡', lbl: 'Respuesta en segundos' },
+            { val: '< 1 min', lbl: 'Respuesta' },
             { val: '0', lbl: 'Codeudores' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir', accent: 'orange' as const },
           ].map((s, i) => (
@@ -194,7 +196,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           PROBLEMA
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-gray-50 py-32 px-5 sm:px-8">
+      <section className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             El problema
@@ -275,7 +277,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CÓMO FUNCIONA
           ════════════════════════════════════════════════════════════ */}
-      <section id="como-funciona" className="bg-white py-32 px-5 sm:px-8">
+      <section id="como-funciona" className="bg-white py-16 md:py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Así funciona
@@ -348,7 +350,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
-            { val: '⚡', lbl: 'De solicitud a respuesta en segundos' },
+            { val: '< 1 min', lbl: 'De solicitud a respuesta' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
@@ -372,7 +374,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           AUDIENCIAS
           ════════════════════════════════════════════════════════════ */}
-      <section id="para-quien" className="bg-gray-50 py-32 px-5 sm:px-8">
+      <section id="para-quien" className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Para quién es Cofianza
@@ -396,7 +398,7 @@ export default function HomePage() {
                   'Cashback del 30% si cumples',
                   'Reporte positivo a centrales de riesgo',
                 ],
-                cta: 'Encuentra tu inmueble →',
+                cta: 'Encuentra tu inmueble',
                 href: '/vitrina',
                 featured: true,
               },
@@ -410,7 +412,7 @@ export default function HomePage() {
                   'Proceso de restitución coordinado',
                   'Sin tramitar cobros directamente',
                 ],
-                cta: 'Registra tu inmueble →',
+                cta: 'Registra tu inmueble',
                 href: '/registro',
               },
               {
@@ -423,7 +425,7 @@ export default function HomePage() {
                   'Cofianza firma en tus contratos',
                   'Protocolo de cobro profesional incluido',
                 ],
-                cta: 'Aliarme con Cofianza →',
+                cta: 'Aliarme con Cofianza',
                 href: '/registro',
               },
             ].map((a) => (
@@ -458,7 +460,7 @@ export default function HomePage() {
                           : 'text-gray-700 border-gray-100'
                       }`}
                     >
-                      <span className="text-primary-400 font-bold shrink-0">→</span>
+                      <IconArrowRight size={14} className="text-primary-400 shrink-0 mt-0.5" />
                       {item}
                     </li>
                   ))}
@@ -469,7 +471,7 @@ export default function HomePage() {
                     a.featured ? 'text-coral-400' : 'text-primary-600'
                   }`}
                 >
-                  {a.cta}
+                  <span className="inline-flex items-center gap-1.5">{a.cta} <IconArrowRight size={16} /></span>
                 </Link>
               </div>
             ))}
@@ -486,7 +488,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           COMPARACIÓN
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-ink-900 text-white py-32 px-5 sm:px-8">
+      <section className="bg-ink-900 text-white py-16 md:py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
@@ -514,7 +516,7 @@ export default function HomePage() {
                     key={item}
                     className="flex items-start gap-2.5 text-sm text-white/30 py-2 border-b border-white/[0.05]"
                   >
-                    <span className="text-red-400 shrink-0">✗</span>
+                    <IconX size={14} className="text-red-400 shrink-0 mt-0.5" />
                     {item}
                   </li>
                 ))}
@@ -536,7 +538,7 @@ export default function HomePage() {
                     key={item}
                     className="flex items-start gap-2.5 text-sm text-white/90 py-2 border-b border-white/15"
                   >
-                    <span className="text-primary-300 shrink-0">✓</span>
+                    <IconCheck size={14} className="text-primary-300 shrink-0 mt-0.5" />
                     {item}
                   </li>
                 ))}
@@ -549,7 +551,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           FAQ
           ════════════════════════════════════════════════════════════ */}
-      <section id="preguntas" className="bg-gray-50 py-32 px-5 sm:px-8">
+      <section id="preguntas" className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Preguntas frecuentes
@@ -600,7 +602,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CTA FINAL
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink-900 text-white py-32 px-5 sm:px-8 text-center">
+      <section className="relative overflow-hidden bg-ink-900 text-white py-16 md:py-32 px-5 sm:px-8 text-center">
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white">
@@ -617,13 +619,13 @@ export default function HomePage() {
               href="/vitrina"
               className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
-              Encuentra tu inmueble →
+              Encuentra tu inmueble <IconArrowRight size={18} />
             </Link>
             <Link
               href="/registro"
               className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
             >
-              Soy propietario / inmobiliaria →
+              Soy propietario / inmobiliaria <IconArrowRight size={18} />
             </Link>
           </div>
         </div>
