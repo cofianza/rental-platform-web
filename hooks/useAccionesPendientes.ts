@@ -13,6 +13,9 @@
  * duración + fecha desde AccionContratoPendienteCard. Antes de este hook,
  * ese paso no se exponía en el dashboard y el propietario quedaba "ciego".
  *
+ * Categoría 4 se resuelve en UNA consulta (GET /contratos?expediente_ids=…)
+ * en vez de 1 por expediente candidato.
+ *
  * TODO: si el dataset supera 50 en producción, paginar por categoría.
  */
 
@@ -88,29 +91,24 @@ export function useAccionesPendientes() {
       }
 
       // ── Categoria contratos por generar ──────────────────
-      // Para cada expediente aprobado/condicionado, verificar si ya existe un
-      // contrato activo. Solo entran a la lista los que NO tienen contrato.
-      // Limitamos a 5 visibles (igual que las otras categorias).
+      // Una sola consulta con los ids candidatos; entran los que NO tienen
+      // contrato activo. Limitamos a 5 visibles (igual que las otras).
       let porGenerarContrato: IExpediente[] = []
-      if (expedientesRes.status === 'fulfilled') {
+      if (expedientesRes.status === 'fulfilled' && expedientesRes.value.data.length > 0) {
         const candidatos = expedientesRes.value.data
-        const checks = await Promise.all(
-          candidatos.map(async (exp) => {
-            try {
-              const contratos = await contratoService.getContratosForExpediente(exp.id, {
-                page: 1,
-                limit: 5,
-              })
-              const activos = (contratos.data || []).filter((c) => c.estado !== 'cancelado')
-              return activos.length === 0 ? exp : null
-            } catch {
-              // Si falla la consulta de contratos para un expediente puntual,
-              // lo omitimos del listado (mejor que romper toda la categoria).
-              return null
-            }
-          }),
-        )
-        porGenerarContrato = checks.filter((e): e is IExpediente => e !== null).slice(0, 5)
+        try {
+          const { data: contratos } = await contratoService.getAllContratos({
+            expediente_ids: candidatos.map((e) => e.id).join(','),
+            limit: 100,
+          })
+          const conContrato = new Set(
+            contratos.filter((c) => c.estado !== 'cancelado').map((c) => c.expediente_id),
+          )
+          porGenerarContrato = candidatos.filter((e) => !conContrato.has(e.id)).slice(0, 5)
+        } catch {
+          // Si falla la consulta de contratos, omitimos la categoria (mejor
+          // que romper todo el widget).
+        }
       }
 
       setData({

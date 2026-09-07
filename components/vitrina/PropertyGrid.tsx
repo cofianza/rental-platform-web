@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { IconSearch, IconHome, IconBed, IconBath, IconCar, IconRuler, IconChevronLeft, IconChevronRight, IconX } from '@/components/icons'
 import {
   getPublicProperties,
@@ -347,6 +348,10 @@ export function PropertyGrid() {
 
 // ── Property Card ───────────────────────────
 
+// Solo el storage de Supabase esta en images.remotePatterns; cualquier otra
+// URL se pinta tal cual (unoptimized) en vez de tumbar la vitrina.
+const esStorageSupabase = (url: string) => /\.supabase\.co\/storage\/v1\/object\/public\//.test(url)
+
 function PropertyCard({ property }: { property: PublicProperty }) {
   return (
     <Link
@@ -356,10 +361,13 @@ function PropertyCard({ property }: { property: PublicProperty }) {
       {/* Image */}
       <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
         {property.foto_fachada_url ? (
-          <img
+          <Image
             src={property.foto_fachada_url}
             alt={`${TIPO_LABELS[property.tipo] || property.tipo} en ${property.ciudad}`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized={!esStorageSupabase(property.foto_fachada_url)}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -396,9 +404,13 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             <p className="text-xs text-gray-400">Estrato {property.estrato}</p>
           </div>
           {property.inmobiliaria?.logo_url && (
-            <img
+            <Image
               src={property.inmobiliaria.logo_url}
               alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
+              width={0}
+              height={0}
+              sizes="160px"
+              unoptimized={!esStorageSupabase(property.inmobiliaria.logo_url)}
               className="h-14 w-auto max-w-[40%] object-contain shrink-0"
             />
           )}

@@ -65,6 +65,7 @@ class ContratoService {
     if (filters.search) params.append('search', filters.search)
     if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
     if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)
+    if (filters.expediente_ids) params.append('expediente_ids', filters.expediente_ids)
     const qs = params.toString()
 
     const response = (await apiClient.get(

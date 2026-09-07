@@ -281,4 +281,6 @@ export interface IContratoListFilters {
   search?: string
   fecha_desde?: string
   fecha_hasta?: string
+  /** uuids separados por coma (max 50) — dashboard: contratos de N expedientes en 1 consulta */
+  expediente_ids?: string
 }
