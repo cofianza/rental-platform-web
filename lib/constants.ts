@@ -215,6 +215,16 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Administración',
   },
   {
+    // Adenda 1 §11: parámetros del modelo editables por Gerencia sin desarrollo.
+    label: 'Calibración del modelo',
+    href: '/admin/calibracion',
+    icon: 'Settings',
+    description: 'Parámetros del scorecard V4.1 y su historial',
+    resource: 'configuracion',
+    requiredRoles: ['administrador'],
+    group: 'Administración',
+  },
+  {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',

@@ -10,7 +10,9 @@
  *   Paso 3: beneficios (3 consentimientos OPCIONALES con toggle).
  *   Paso 'bio': cotejo biométrico AucoFace — SOLO si el backend lo pide
  *           (AUCO_BIOMETRIA_ENABLED). Política Anexo A + §14.
- *   Paso 4: firma con OTP de 6 casillas + resumen.
+ *   Paso 4: confirmación + resumen. SIN OTP (Adenda 1 §7, Gerencia 07/09/2026:
+ *           "No se implementa OTP en el flujo de autorización del estudio").
+ *           La aceptación por casilla es la firma (Decreto 1377/2013, art. 7).
  *
  * EL PASO 'bio' VA ANTES DE LA FIRMA Y DESPUÉS DE LA ACEPTACIÓN, y ese orden
  * es legal, no estético: la foto del rostro es dato sensible (Ley 1581 art. 5)
@@ -18,9 +20,8 @@
  * declara — el texto que se le presenta en el paso 1 ya es la versión
  * 3.0-biometria cuando el interruptor está encendido.
  *
- * POR QUÉ §8.2/§8.3 VAN ANTES DE LA FIRMA Y NO DESPUÉS: el OTP se dispara al
- * ENTRAR al paso de firma (irAFirma) y caduca a los 5 minutos. Un formulario
- * después de ese disparo llevaría al prospecto a firmar con OTP_EXPIRADO.
+ * Sin OTP el orden de los pasos ya no lo dicta un reloj; se conserva porque
+ * §8.2/§8.3 son opcionales y la confirmación final debe ser lo último.
  *
  * Todo lo de "Sobre ti" es OPCIONAL y el botón Continuar nunca se deshabilita:
  * el propio documento señala §8.2 como el punto de mayor abandono, y lo único
@@ -29,7 +30,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { IAutorizacionPublicData } from '@/types/autorizacion'
@@ -59,7 +60,6 @@ import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
 type PageState = 'loading' | 'form' | 'signed' | 'error' | 'reportado'
-type OtpState = 'idle' | 'sending' | 'sent'
 type ConsentKey = 'analitica' | 'comercial' | 'historial_referencia'
 type SituacionLaboral = 'empleado' | 'independiente' | 'pensionado' | 'otro'
 
@@ -207,19 +207,6 @@ export default function AutorizarPage() {
   // §6.3: tras firmar, en la opción C todavía falta el pago. Lo dice el backend.
   const [pagoRequerido, setPagoRequerido] = useState(false)
 
-  const [otpState, setOtpState] = useState<OtpState>('idle')
-  // Una casilla por posición (array de 6). Evita el desalineado del modelo string
-  // compactado: cada índice de casilla corresponde 1:1 con su dígito.
-  const [otpDigits, setOtpDigits] = useState<string[]>(() => ['', '', '', '', '', ''])
-  const [otpCooldown, setOtpCooldown] = useState(0)
-  // Marca si el código actual YA fue verificado en el backend. Evita re-verificar
-  // en un reintento de firma (re-verificar un OTP ya consumido falla y atasca).
-  const [otpVerified, setOtpVerified] = useState(false)
-  const otpRefs = useRef<Array<HTMLInputElement | null>>([])
-
-  const otpCodigo = otpDigits.join('')
-  const otpCompleto = otpDigits.every((d) => d !== '')
-
   useEffect(() => {
     autorizacionPublicService
       .getData(token)
@@ -256,39 +243,15 @@ export default function AutorizarPage() {
     window.scrollTo(0, 0)
   }, [paso])
 
-  useEffect(() => {
-    if (otpCooldown <= 0) return
-    const timer = setTimeout(() => setOtpCooldown((c) => c - 1), 1000)
-    return () => clearTimeout(timer)
-  }, [otpCooldown])
-
-  const handleEnviarOtp = useCallback(async () => {
-    setOtpState('sending')
-    setErrorMessage('')
-    // Un código nuevo invalida el anterior: limpiamos input y estado de verificación.
-    setOtpDigits(['', '', '', '', '', ''])
-    setOtpVerified(false)
-    try {
-      await autorizacionPublicService.enviarOtp(token)
-      setOtpState('sent')
-      setOtpCooldown(60)
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Error al enviar el código')
-      setOtpState('idle')
-    }
-  }, [token])
-
-  // De Beneficios (paso 3) a Firma (paso 4): enviamos el OTP al entrar. Es el
-  // ÚNICO disparador del OTP y por eso nada que pida escribir va después.
+  // De Beneficios (o de Identidad) a Confirmar (paso 4). Adenda 1 §7: ya no
+  // hay OTP en esta etapa; el paso 4 solo confirma lo aceptado en el paso 1.
   const irAFirma = useCallback(() => {
     setPaso(4)
-    if (otpState === 'idle') void handleEnviarOtp()
-  }, [otpState, handleEnviarOtp])
+    setErrorMessage('')
+  }, [])
 
   // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
-  // ANTES de disparar el OTP: el OTP caduca a los 5 minutos y sacar fotos con
-  // el reloj corriendo llevaría a firmar con OTP_EXPIRADO — el mismo motivo
-  // por el que §8.2/§8.3 tampoco van después.
+  // antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     if (data?.biometria?.requerida && data.biometria.estado !== 'verificada') {
       setPaso('bio')
@@ -301,33 +264,9 @@ export default function AutorizarPage() {
   // índice traduce el paso 'bio' a su posición para poder compararlo.
   const conBiometria = !!data?.biometria?.requerida
   const pasosBarra = conBiometria
-    ? ['Autorización', 'Sobre ti', 'Beneficios', 'Identidad', 'Firma']
-    : ['Autorización', 'Sobre ti', 'Beneficios', 'Firma']
+    ? ['Autorización', 'Sobre ti', 'Beneficios', 'Identidad', 'Confirmar']
+    : ['Autorización', 'Sobre ti', 'Beneficios', 'Confirmar']
   const pasoIndice = paso === 'bio' ? 4 : paso === 4 && conBiometria ? 5 : paso
-
-  function setOtpDigit(i: number, val: string) {
-    const d = val.replace(/\D/g, '').slice(-1)
-    setOtpDigits((prev) => {
-      const next = [...prev]
-      next[i] = d
-      return next
-    })
-    if (d && i < 5) otpRefs.current[i + 1]?.focus()
-  }
-  function onOtpKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    // Backspace en casilla vacía: retrocede a la anterior (que sí tiene dígito).
-    if (e.key === 'Backspace' && !otpDigits[i] && i > 0) otpRefs.current[i - 1]?.focus()
-  }
-  function onOtpPaste(e: React.ClipboardEvent<HTMLInputElement>) {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (pasted) {
-      e.preventDefault()
-      const next = ['', '', '', '', '', '']
-      for (let k = 0; k < pasted.length; k++) next[k] = pasted[k]
-      setOtpDigits(next)
-      otpRefs.current[Math.min(pasted.length, 5)]?.focus()
-    }
-  }
 
   // PASO 5 → backend. Una sola llamada al salir de "Sobre ti", con la
   // confirmación de identidad incluida. Best-effort a propósito: lo que el
@@ -416,21 +355,15 @@ export default function AutorizarPage() {
     }
   }
 
+  // Adenda 1 §7: la aceptación por casilla ES la autorización. El backend
+  // congela texto, versión, documento, IP, fecha y dispositivo (§8.4).
   async function handleConfirmarYFirmar() {
-    if (!otpCompleto || submitting) return
+    if (submitting) return
     setSubmitting(true)
     setErrorMessage('')
     try {
-      // Verificar solo si este código aún no se verificó. Si una firma previa
-      // falló por algo transitorio, el OTP ya quedó verificado en el backend;
-      // re-verificarlo daría "no hay código pendiente" y dejaría al usuario atascado.
-      if (!otpVerified) {
-        await autorizacionPublicService.verificarOtp(token, otpCodigo)
-        setOtpVerified(true)
-      }
       const result = await autorizacionPublicService.firmar(token, {
-        metodo_firma: 'otp',
-        codigo_otp: otpCodigo,
+        metodo_firma: 'casilla',
         consentimientos_opcionales: consents,
       })
       setHashDocumento(result.hash_documento)
@@ -453,12 +386,7 @@ export default function AutorizarPage() {
         setPageState('error')
         return
       }
-      // El OTP ya no sirve (expiró / no hay pendiente): forzamos re-verificación
-      // y sugerimos reenviar.
-      if (code === 'OTP_EXPIRADO' || code === 'OTP_NOT_FOUND' || code === 'OTP_NO_VERIFICADO') {
-        setOtpVerified(false)
-      }
-      setErrorMessage(err instanceof Error ? err.message : 'Código incorrecto o error al firmar')
+      setErrorMessage(err instanceof Error ? err.message : 'No pudimos registrar tu autorización. Inténtalo de nuevo.')
     } finally {
       setSubmitting(false)
     }
@@ -1024,72 +952,23 @@ export default function AutorizarPage() {
           />
         )}
 
-        {/* ── Paso 4: Firma ── */}
+        {/* ── Paso 4: Confirmar (Adenda 1 §7: sin OTP) ── */}
         {paso === 4 && (
           <div className="space-y-5">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                 <IconShieldCheck size={28} />
               </div>
-              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Firma con tu código</h2>
+              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirma tu autorización</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {data?.solicitante.telefono_masked ? (
-                  <>
-                    Te enviamos un código de 6 dígitos a tu{' '}
-                    <strong className="text-gray-700">WhatsApp {data.solicitante.telefono_masked}</strong>{' '}
-                    y a tu correo. Ingrésalo para firmar.
-                  </>
-                ) : (
-                  <>
-                    Te enviamos un código de 6 dígitos a tu{' '}
-                    <strong className="text-gray-700">correo</strong>. Ingrésalo para firmar.
-                  </>
-                )}
+                Revisa el resumen y confirma. Con eso queda autorizada la consulta y arranca tu estudio.
               </p>
             </div>
 
-            {otpState === 'sending' ? (
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <IconLoader size={16} className="animate-spin text-primary-600" /> Enviando código…
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-center gap-2">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <input
-                      key={i}
-                      ref={(el) => {
-                        otpRefs.current[i] = el
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={otpDigits[i] ?? ''}
-                      onChange={(e) => setOtpDigit(i, e.target.value)}
-                      onKeyDown={(e) => onOtpKeyDown(i, e)}
-                      onPaste={i === 0 ? onOtpPaste : undefined}
-                      className="h-12 w-11 rounded-xl border border-gray-300 text-center text-2xl font-bold text-gray-900 focus:border-primary-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
-                    />
-                  ))}
-                </div>
-                <p className="text-center text-xs text-gray-400">
-                  ¿No recibiste el código?{' '}
-                  <button
-                    type="button"
-                    onClick={handleEnviarOtp}
-                    disabled={otpCooldown > 0}
-                    className="font-semibold text-primary-700 hover:underline disabled:text-gray-400 disabled:no-underline"
-                  >
-                    {otpCooldown > 0 ? `Reenviar en ${otpCooldown}s` : 'Reenviar'}
-                  </button>
-                </p>
-              </>
-            )}
-
             <div className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs text-primary-800">
               <IconShieldCheck size={14} className="mt-0.5 shrink-0 text-primary-600" />
-              Al confirmar, este código actúa como tu firma electrónica con plena validez legal (Ley 527/1999 y
-              Decreto 2364/2012).
+              Al confirmar aceptas el texto que leíste en el paso 1. Tu aceptación queda registrada con fecha, hora,
+              dispositivo y documento (Decreto 1377 de 2013, art. 7).
             </div>
 
             {/* Resumen */}
@@ -1122,11 +1001,11 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={handleConfirmarYFirmar}
-              disabled={!otpCompleto || submitting}
+              disabled={submitting}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting && <IconLoader size={20} className="animate-spin" />}
-              {submitting ? 'Firmando…' : 'Confirmar y firmar'}
+              {submitting ? 'Registrando…' : 'Confirmar y autorizar'}
             </button>
 
             <button

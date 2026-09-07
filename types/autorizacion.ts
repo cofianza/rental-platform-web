@@ -3,7 +3,7 @@
  */
 
 export type EstadoAutorizacion = 'pendiente' | 'autorizado' | 'expirado' | 'revocado'
-export type MetodoFirma = 'canvas' | 'otp'
+export type MetodoFirma = 'canvas' | 'otp' | 'casilla'
 export type CanalAutorizacion = 'web' | 'enlace'
 
 export interface IAutorizacion {

@@ -38,6 +38,8 @@ function formatDate(dateStr: string | null | undefined): string {
 const METODO_LABELS: Record<string, string> = {
   canvas: 'Firma manuscrita digital',
   otp: 'Verificación por código OTP',
+  // Adenda 1 §7: aceptación por casilla, sin OTP (Decreto 1377/2013 art. 7).
+  casilla: 'Aceptación por casilla',
 }
 
 export function AutorizacionSection({
