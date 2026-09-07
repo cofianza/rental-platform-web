@@ -26,6 +26,33 @@ export interface IAutorizacion {
   user_agent?: string | null
   version_terminos?: string | null
   texto_autorizado?: string | null
+  /** PASO 5 (Flujo §8): lo que el prospecto declaró en su celular. El bloque
+   *  §8.2 (situación laboral, dónde labora, ingreso declarado) y el texto libre
+   *  del reporte SOLO llegan a los roles internos de Cofianza — el backend los
+   *  omite del JSON por allowlist, no los esconde el render. */
+  perfil_prospecto?: IPerfilProspecto | null
+}
+
+export interface IPerfilProspecto {
+  identidad_confirmada: boolean
+  identidad_confirmada_en: string | null
+  identidad_reporte: 'no_soy_yo' | 'datos_incorrectos' | null
+  identidad_reporte_en: string | null
+  presentacion: 'solo' | 'acompanado' | null
+  coarrendatario_intencion: {
+    nombre: string
+    apellido: string
+    email?: string
+    telefono?: string
+  } | null
+  // Solo roles internos de Cofianza (administrador / operador_analista /
+  // gerencia_consulta). Para inmobiliaria y propietario estas claves NO vienen.
+  identidad_reporte_detalle?: string | null
+  situacion_laboral?: 'empleado' | 'independiente' | 'pensionado' | 'otro' | null
+  donde_labora?: string | null
+  /** AUTORREPORTADO. Nunca es el ingreso del scorecard (Política V4.1 §4.2). */
+  ingreso_declarado_cop?: number | null
+  discrepancia_ingreso?: { hay: boolean; desviacion_pct: number } | null
 }
 
 export interface IAutorizacionPublicData {
@@ -36,9 +63,13 @@ export interface IAutorizacionPublicData {
   solicitante: {
     nombre: string
     apellido: string
-    // El backend ya NO expone el email al portador del token (PII minimizada).
-    email?: string
     telefono_masked?: string | null
+    /** §8.1: el documento va ENMASCARADO (últimos 4). Enseñarlo completo al
+     *  portador del enlace le regalaría la respuesta a un impostor — §12
+     *  dice que la confirmación de identidad ES la defensa contra el enlace
+     *  reenviado a un tercero. */
+    tipo_documento?: string | null
+    numero_documento_masked?: string | null
   }
   expediente: {
     numero_expediente: string
@@ -95,4 +126,26 @@ export interface IOtpResponse {
 export interface IVerificarOtpResponse {
   verificado: boolean
   mensaje: string
+}
+
+// ── PASO 5 (Flujo §8) — pantalla pública del prospecto ──────────────
+
+export interface IPerfilProspectoInput {
+  /** §8.1 — sólo `true`: el backend rechaza cualquier otra cosa. */
+  identidad_confirmada?: true
+  situacion_laboral?: 'empleado' | 'independiente' | 'pensionado' | 'otro'
+  donde_labora?: string
+  ingreso_declarado_cop?: number
+  presentacion?: 'solo' | 'acompanado'
+  coarrendatario?: {
+    nombre: string
+    apellido: string
+    email?: string
+    telefono?: string
+  }
+}
+
+export interface IReportarIdentidadInput {
+  motivo: 'no_soy_yo' | 'datos_incorrectos'
+  detalle?: string
 }

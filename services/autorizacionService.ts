@@ -13,6 +13,8 @@ import type {
   IRevocarResponse,
   IOtpResponse,
   IVerificarOtpResponse,
+  IPerfilProspectoInput,
+  IReportarIdentidadInput,
 } from '@/types/autorizacion'
 
 // ============================================
@@ -74,6 +76,25 @@ export const autorizacionPublicService = {
   async enviarOtp(token: string): Promise<IOtpResponse> {
     const res = await publicClient.post<IOtpResponse>(
       `/public/autorizar/${token}/enviar-otp`
+    )
+    return res.data
+  },
+
+  /** PASO 5 (§8.1 + §8.2 + §8.3). Una sola llamada, ANTES del paso de firma:
+   *  el OTP se dispara al entrar a firma y caduca a los 5 minutos. */
+  async guardarPerfil(token: string, input: IPerfilProspectoInput): Promise<{ guardado: boolean }> {
+    const res = await publicClient.post<{ guardado: boolean }>(
+      `/public/autorizar/${token}/perfil`,
+      input
+    )
+    return res.data
+  },
+
+  /** §12: "el prospecto reporta que no es él" → detiene el enlace. */
+  async reportarIdentidad(token: string, input: IReportarIdentidadInput): Promise<{ reportado: boolean }> {
+    const res = await publicClient.post<{ reportado: boolean }>(
+      `/public/autorizar/${token}/reportar-identidad`,
+      input
     )
     return res.data
   },

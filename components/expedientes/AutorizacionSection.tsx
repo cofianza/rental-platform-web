@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
-import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle } from '@/components/icons'
+import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { IAutorizacion } from '@/types/autorizacion'
@@ -229,6 +229,31 @@ export function AutorizacionSection({
   }
 
   const estado = autorizacion?.estado
+  // PASO 5 (Flujo §8). El bloque §8.2 (situación laboral, dónde labora,
+  // ingreso declarado) SOLO viene si el backend decidió que este rol es interno
+  // de Cofianza: para inmobiliaria y propietario esas claves ni siquiera están
+  // en el JSON. La promesa del §8.2 se sostiene ahí, no en este render.
+  const perfil = autorizacion?.perfil_prospecto ?? null
+  // El banner del §12 sólo mientras el reporte sea la ÚLTIMA palabra. Si
+  // después hubo una firma, el gestor ya corrigió y reenvió: seguir gritando
+  // "el enlace se detuvo y no se consultó ninguna central de riesgo" encima de
+  // un expediente ya autorizado, cobrado y ejecutado es información falsa y
+  // permanente. (El backend además limpia el reporte cuando el prospecto
+  // vuelve a confirmar identidad; esto cubre que esa escritura best-effort
+  // fallara.)
+  const reporteVigente =
+    !!perfil?.identidad_reporte &&
+    !(
+      autorizacion?.autorizado_en &&
+      perfil.identidad_reporte_en &&
+      new Date(autorizacion.autorizado_en) > new Date(perfil.identidad_reporte_en)
+    )
+  const hayPerfil8 =
+    !!perfil &&
+    (perfil.situacion_laboral != null ||
+      perfil.donde_labora != null ||
+      perfil.ingreso_declarado_cop != null ||
+      perfil.presentacion != null)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -239,6 +264,36 @@ export function AutorizacionSection({
         </div>
         {estado && <Badge estado={estado} />}
       </div>
+
+      {/*
+        §12: "El prospecto reporta que no es el. El estudio se detiene, se marca
+        para revision y se notifica al solicitante y a Cofianza."
+
+        Va ARRIBA de todo y fuera de cualquier rama de estado, porque en los
+        datos la autorizacion queda como 'expirado' — indistinguible de un
+        enlace caducado si no fuera por este banner. La correccion la hace el
+        gestor aqui (donde esta auditada y scopeada) y reenvia el enlace: la
+        pantalla publica NUNCA reescribe el documento del solicitante.
+      */}
+      {reporteVigente && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <IconUserX size={18} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-amber-800">
+              {perfil.identidad_reporte === 'no_soy_yo'
+                ? 'Quien abrió el enlace dice que NO es el titular de estos datos'
+                : 'Quien abrió el enlace dice que los datos registrados están mal'}
+            </p>
+            <p className="text-xs text-amber-700">
+              Reportado el {formatDate(perfil.identidad_reporte_en)}. El enlace se detuvo y no se consultó
+              ninguna central de riesgo. Corrige los datos del solicitante y envía un enlace nuevo.
+            </p>
+            {perfil.identidad_reporte_detalle && (
+              <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sin autorizacion */}
       {!autorizacion && (
@@ -493,6 +548,93 @@ export function AutorizacionSection({
             )}
             Enviar nueva autorizacion
           </button>
+        </div>
+      )}
+
+      {/*
+        PASO 5 (Flujo §8.2 y §8.3): lo que el prospecto declaró en su celular.
+        Solo llega a los roles internos de Cofianza — el backend omite estas
+        claves del JSON para inmobiliaria y propietario, así que este bloque no
+        renderiza para ellos sin ningún condicional de rol aquí.
+
+        La etiqueta "declarado por el prospecto" NO es decorativa: es lo que
+        impide que dentro de seis meses alguien lo confunda con el ingreso que
+        infiere el buró. La Política V4.1 §4.2 excluye explícitamente el
+        autorreportado del scorecard, y este número no entra al DTI ni a la
+        relación canon/ingreso por ningún camino.
+
+        ponytail: el §8.3 se queda en mostrar la intención. Prellenar
+        CoarrendatarioInviteForm exigiría bajar el dato por dos cards más, y la
+        cédula del co-arrendatario (obligatoria al invitar) no se le pide al
+        prospecto de todos modos: el gestor va a teclear ese campo igual.
+      */}
+      {hayPerfil8 && perfil && (
+        <div className="mt-4 border border-gray-200 rounded-lg p-4 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Lo que nos contó el prospecto
+          </p>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            {perfil.situacion_laboral && (
+              <div>
+                <dt className="text-xs text-gray-500">Situación laboral</dt>
+                <dd className="text-gray-900 font-medium capitalize">{perfil.situacion_laboral}</dd>
+              </div>
+            )}
+            {perfil.donde_labora && (
+              <div>
+                <dt className="text-xs text-gray-500">Dónde labora</dt>
+                <dd className="text-gray-900 font-medium flex items-center gap-1.5">
+                  <IconBuilding2 size={13} className="text-gray-400" />
+                  {perfil.donde_labora}
+                </dd>
+              </div>
+            )}
+            {perfil.ingreso_declarado_cop != null && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs text-gray-500">Ingreso mensual</dt>
+                <dd className="text-gray-900 font-medium">
+                  ${perfil.ingreso_declarado_cop.toLocaleString('es-CO')}
+                  <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                    declarado por el prospecto · no entra al puntaje
+                  </span>
+                  {perfil.discrepancia_ingreso?.hay && (
+                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">
+                      revisar discrepancia ({perfil.discrepancia_ingreso.desviacion_pct}% vs. lo inferido)
+                    </span>
+                  )}
+                </dd>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  No se le muestra a la inmobiliaria ni al propietario (§8.2).
+                </p>
+              </div>
+            )}
+            {perfil.presentacion && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs text-gray-500">Se presenta</dt>
+                {/* flex-wrap + min-w-0 + break-all: el correo es una palabra
+                    indivisible y la celda del grid es minmax(0,1fr) — sin esto
+                    un correo largo desborda la tarjeta y mete scroll horizontal
+                    en toda la página del expediente vista en un móvil. */}
+                <dd className="text-gray-900 font-medium flex flex-wrap items-center gap-1.5">
+                  <IconUsers size={13} className="text-gray-400 shrink-0" />
+                  {perfil.presentacion === 'acompanado' ? 'Con un co-arrendatario' : 'Solo'}
+                  {perfil.coarrendatario_intencion && (
+                    <span className="text-gray-600 font-normal min-w-0 break-all">
+                      — {perfil.coarrendatario_intencion.nombre} {perfil.coarrendatario_intencion.apellido}
+                      {perfil.coarrendatario_intencion.email && ` · ${perfil.coarrendatario_intencion.email}`}
+                      {perfil.coarrendatario_intencion.telefono && ` · ${perfil.coarrendatario_intencion.telefono}`}
+                    </span>
+                  )}
+                </dd>
+                {perfil.presentacion === 'acompanado' && (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Es una intención, no una invitación: la invitación real se emite desde la sección de
+                    co-arrendatario cuando el expediente quede condicionado.
+                  </p>
+                )}
+              </div>
+            )}
+          </dl>
         </div>
       )}
     </div>
