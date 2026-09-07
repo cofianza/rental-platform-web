@@ -5,6 +5,8 @@
 
 import { apiClient, ApiClient } from '@/lib/api'
 import type {
+  ITarifaEstudio,
+  ITarifaOverrideInput,
   IEstudio,
   IEstudioListItem,
   IEstudioFilters,
@@ -262,6 +264,22 @@ export const estudioService = {
   /**
    * Obtiene historial de re-evaluaciones
    */
+  // ── Adenda §5: tarifa del estudio ──
+  async getTarifa(estudioId: string): Promise<ITarifaEstudio> {
+    const res = await apiClient.get<ITarifaEstudio>(`/estudios/${estudioId}/tarifa`)
+    return res.data
+  },
+
+  async setTarifaOverride(estudioId: string, input: ITarifaOverrideInput): Promise<ITarifaEstudio> {
+    const res = await apiClient.patch<ITarifaEstudio>(`/estudios/${estudioId}/tarifa`, input)
+    return res.data
+  },
+
+  async quitarTarifaOverride(estudioId: string): Promise<ITarifaEstudio> {
+    const res = await apiClient.delete<ITarifaEstudio>(`/estudios/${estudioId}/tarifa`)
+    return res.data
+  },
+
   async getHistorial(estudioId: string): Promise<IEstudioHistorial> {
     const res = await apiClient.get<IEstudioHistorial>(
       `/estudios/${estudioId}/historial`,

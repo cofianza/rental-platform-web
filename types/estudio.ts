@@ -380,3 +380,49 @@ export interface IAntecedentesEstudio {
   seguridad_social: { estado: string | null; regimen: string | null; tipo_afiliado: string | null; entidad: string | null } | null
   registraduria_estado: string | null
 }
+
+// ── Adenda §5: tarifa del estudio (tabla estandar + condiciones especiales) ──
+export type ViaAprobacion = 'automatica' | 'condicionada_coarrendatario' | 'revision_manual'
+
+export interface ITarifaOverride {
+  tarifa_mensual_pct?: number
+  prima_vinculacion_pct?: number
+  cashback_pct?: number
+  autorizado_por: string
+  autorizado_por_nombre?: string | null
+  autorizado_en: string
+  motivo?: string | null
+}
+
+export interface ITarifasCalculadas {
+  via: ViaAprobacion
+  con_coarrendatario: boolean
+  tarifa_mensual_pct: number
+  tarifa_mensual_cop: number | null
+  iva_pct: number
+  tarifa_mensual_con_iva_cop: number | null
+  prima_vinculacion_pct: number
+  prima_vinculacion_cop: number | null
+  cashback_pct: number
+  /** true cuando alguna cifra viene de condiciones especiales autorizadas. */
+  negociada: boolean
+}
+
+export interface ITarifaEstudio {
+  estudio_id: string
+  estado: string
+  resultado: string | null
+  tarifas: ITarifasCalculadas
+  override: ITarifaOverride | null
+  certificado_emitido: boolean
+  /** Solo tras PATCH/DELETE: si el CRC ya emitido se regenero con las cifras nuevas. */
+  crc_regenerado?: boolean
+  crc_error?: string | null
+}
+
+export interface ITarifaOverrideInput {
+  tarifa_mensual_pct?: number
+  prima_vinculacion_pct?: number
+  cashback_pct?: number
+  motivo: string
+}

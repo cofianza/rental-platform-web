@@ -22,6 +22,7 @@ import {
   esCondicionadoSinInfo,
 } from './ReintentarEstudioForm'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
+import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 
 interface EstudioEstadoCardProps {
@@ -473,6 +474,7 @@ function EstudioPanel({
               </p>
             )}
           </div>
+          <TarifaEstudioBlock estudio={estudio} userRol={userRol} />
         </div>
       </div>
 
