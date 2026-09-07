@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
+import { IconInfo, IconClock, IconUsers, IconCheckCircle } from '@/components/icons'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 
@@ -43,6 +44,17 @@ interface EstudioSolicitanteCardProps {
 // estudio falla con 'tercero no existe'. Restringimos las opciones desde
 // el dropdown para evitar el error.
 type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
+
+/**
+ * §10: "se indica que puede mejorar. Nunca es un portazo." Mismo texto que
+ * MEJORAS_SUGERIDAS de la API. Se duplica a proposito: es copy, no logica, y
+ * bajarlo por la respuesta no aportaria nada — no depende del caso.
+ */
+const MEJORAS_SUGERIDAS = [
+  'Sumar un coarrendatario con ingresos propios: no necesita finca raíz.',
+  'Ponerte al día en las obligaciones que tengas en mora.',
+  'Buscar un inmueble con un canon más bajo frente a tus ingresos.',
+]
 
 export function EstudioSolicitanteCard({
   expedienteId,
@@ -489,6 +501,69 @@ export function EstudioSolicitanteCard({
 
   // Resultado completado.
   if (estudio.estado === 'completado') {
+    // Flujo §10: cuando la API manda la ruta, ELLA manda. El titulo y el
+    // mensaje vienen calculados en modules/estudios/rutas-resultado.ts para
+    // que el lenguaje del §10/§13 viva en un solo sitio y no se desincronice
+    // entre esta card, los correos y el WhatsApp.
+    //
+    // Los bloques por `resultado` de mas abajo se conservan como fallback: la
+    // web y la API se despliegan por separado, y sin esto una web nueva contra
+    // una API vieja dejaria al prospecto sin ningun mensaje.
+    if (estudio.ruta) {
+      const r = estudio.ruta
+      const tono =
+        r.ruta === 'perfil_fuerte' || r.ruta === 'perfil_medio'
+          ? { borde: 'border-green-200', fondo: 'bg-green-50', titulo: 'text-green-900', texto: 'text-green-800', icono: 'text-green-600' }
+          : r.ruta === 'coarrendatario_requerido'
+            ? { borde: 'border-amber-200', fondo: 'bg-amber-50', titulo: 'text-amber-900', texto: 'text-amber-800', icono: 'text-amber-600' }
+            : r.ruta === 'en_revision'
+              ? { borde: 'border-blue-200', fondo: 'bg-blue-50', titulo: 'text-blue-900', texto: 'text-blue-800', icono: 'text-blue-600' }
+              // 'no_aprobable' va en slate, no en rojo: el §10 pide que nunca sea
+              // un portazo. El ambar queda para lo que si tiene salida.
+              : { borde: 'border-slate-200', fondo: 'bg-slate-50', titulo: 'text-slate-900', texto: 'text-slate-700', icono: 'text-slate-500' }
+
+      return (
+        <div className={`border ${tono.borde} ${tono.fondo} rounded-lg p-5`}>
+          <div className="flex items-start gap-3">
+            <span className={`shrink-0 mt-0.5 ${tono.icono}`}>
+              {r.ruta === 'no_aprobable' ? (
+                <IconInfo size={20} />
+              ) : r.ruta === 'en_revision' ? (
+                <IconClock size={20} />
+              ) : r.ruta === 'coarrendatario_requerido' ? (
+                <IconUsers size={20} />
+              ) : (
+                <IconCheckCircle size={20} />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold ${tono.titulo} mb-0.5`}>{r.titulo}</p>
+              <p className={`text-sm ${tono.texto}`}>{r.mensaje}</p>
+
+              {/* §10: "se indica que puede mejorar. Nunca es un portazo." */}
+              {r.ruta === 'no_aprobable' && (
+                <ul className={`mt-3 space-y-1.5 text-sm ${tono.texto}`}>
+                  {MEJORAS_SUGERIDAS.map((m) => (
+                    <li key={m} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+                      <span>{m}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* §10: el incentivo comercial del perfil medio. */}
+              {r.coarrendatarioAbarataPrima && (
+                <p className={`mt-2 text-xs ${tono.texto} opacity-80`}>
+                  Sumar un coarrendatario baja el valor de la prima.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     if (estudio.resultado === 'aprobado') {
       return (
         <div className="border border-green-200 bg-green-50 rounded-lg p-5">

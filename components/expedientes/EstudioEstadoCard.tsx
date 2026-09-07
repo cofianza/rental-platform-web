@@ -89,7 +89,15 @@ const BURO_LABELS: Record<string, string> = {
 function getSiguientePaso(estudio: IEstudio): string {
   const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
   if (estudio.estado === 'completado') {
-    if (estudio.resultado === 'aprobado') return `Estudio aprobado por ${buro}. Siguiente paso: generar contrato.`
+    // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta interna
+    // ("Perfil medio (82 pts) — coarrendatario opcional"). El gestor SI puede ver
+    // el dato crudo; lo que no viaja es al prospecto, que recibe la ruta sin
+    // etiqueta (redactarEstudioParaProspecto en la API).
+    const etiqueta = estudio.ruta?.etiquetaGestor
+    if (estudio.resultado === 'aprobado') {
+      const base = `Estudio aprobado por ${buro}. Siguiente paso: generar contrato.`
+      return etiqueta ? `${etiqueta}. ${base}` : base
+    }
     if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
     if (estudio.resultado === 'rechazado') return 'Estudio rechazado. El expediente no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'

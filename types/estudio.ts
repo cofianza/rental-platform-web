@@ -32,6 +32,8 @@ export interface IEstudio {
   proveedor: ProveedorEstudio
   estado: EstadoEstudio
   resultado: ResultadoEstudio
+  /** Ruta del §10. Opcional: no viaja en los listados, solo en el detalle. */
+  ruta?: IRutaResultado
   score?: number | null
   observaciones?: string | null
   duracion_contrato_meses: number
@@ -313,4 +315,32 @@ export interface IReasignacionEstudio {
    * entregarlo — el gestor tiene que enterarse.
    */
   certificado: 'sin_certificado' | 'regenerado' | 'desactualizado'
+}
+
+/**
+ * Las cuatro rutas del resultado — Flujo §10. La API las calcula en
+ * modules/estudios/rutas-resultado.ts y las adjunta al detalle del estudio;
+ * la web solo las pinta. Asi el lenguaje que lee el prospecto vive en UN sitio
+ * y no se desincroniza entre pantallas, correos y WhatsApp.
+ *
+ * 'en_revision' no es una de las cuatro: es el estado mientras un analista
+ * decide, y existe para no adelantarle un veredicto al prospecto.
+ */
+export type RutaResultado =
+  | 'perfil_fuerte'
+  | 'perfil_medio'
+  | 'coarrendatario_requerido'
+  | 'no_aprobable'
+  | 'en_revision'
+
+export interface IRutaResultado {
+  ruta: RutaResultado
+  titulo: string
+  mensaje: string
+  puedeContinuarSolo: boolean
+  coarrendatarioObligatorio: boolean
+  /** Solo en perfil_medio: el incentivo comercial que el §10 pide mostrar. */
+  coarrendatarioAbarataPrima: boolean
+  /** Interna. La API la borra para el rol 'solicitante' (lleva el puntaje). */
+  etiquetaGestor?: string
 }
