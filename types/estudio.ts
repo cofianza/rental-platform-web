@@ -34,6 +34,8 @@ export interface IEstudio {
   resultado: ResultadoEstudio
   /** Ruta del §10. Opcional: no viaja en los listados, solo en el detalle. */
   ruta?: IRutaResultado
+  /** Expiracion del §12. Opcional: igual que `ruta`, solo en el detalle. */
+  expiracion?: IExpiracionEstudio
   score?: number | null
   observaciones?: string | null
   duracion_contrato_meses: number
@@ -343,4 +345,17 @@ export interface IRutaResultado {
   coarrendatarioAbarataPrima: boolean
   /** Interna. La API la borra para el rol 'solicitante' (lleva el puntaje). */
   etiquetaGestor?: string
+}
+
+/**
+ * Veredicto de expiracion del §12 ("El prospecto no autoriza. El estudio expira
+ * transcurrido el plazo definido"). La API lo DERIVA del reloj en cada lectura
+ * — no hay estado 'expirado' en la base — asi que no hay nada que refrescar.
+ */
+export interface IExpiracionEstudio {
+  expirado: boolean
+  /** Negativo cuando ya expiro. null cuando el reloj no corre. */
+  diasRestantes: number | null
+  expiraEn: string | null
+  motivo: string
 }

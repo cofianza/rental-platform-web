@@ -88,6 +88,16 @@ const BURO_LABELS: Record<string, string> = {
 
 function getSiguientePaso(estudio: IEstudio): string {
   const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
+
+  // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
+  // definido. El solicitante puede reenviar la solicitud sin costo adicional
+  // mientras no se haya ejecutado el motor." Va ANTES que todo lo demás: si el
+  // plazo se venció, lo único accionable es reenviar, y decirle al gestor
+  // "esperando al prospecto" cuando ya no va a responder lo deja esperando a él.
+  if (estudio.expiracion?.expirado) {
+    return estudio.expiracion.motivo
+  }
+
   if (estudio.estado === 'completado') {
     // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta interna
     // ("Perfil medio (82 pts) — coarrendatario opcional"). El gestor SI puede ver
