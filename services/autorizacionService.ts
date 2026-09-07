@@ -15,6 +15,7 @@ import type {
   IVerificarOtpResponse,
   IPerfilProspectoInput,
   IReportarIdentidadInput,
+  IBiometriaResponse,
 } from '@/types/autorizacion'
 
 // ============================================
@@ -86,6 +87,30 @@ export const autorizacionPublicService = {
     const res = await publicClient.post<{ guardado: boolean }>(
       `/public/autorizar/${token}/perfil`,
       input
+    )
+    return res.data
+  },
+
+  /** Política Anexo A + §14: cotejo cara-vs-documento vía AucoFace.
+   *  NUNCA bloquea — un cotejo fallido responde 200 con el veredicto y el
+   *  prospecto puede seguir; el estudio pasa a revisión manual. */
+  async verificarBiometria(
+    token: string,
+    input: { documentImage: string; photo: string },
+  ): Promise<IBiometriaResponse> {
+    const res = await publicClient.post<IBiometriaResponse>(
+      `/public/autorizar/${token}/biometria`,
+      input
+    )
+    return res.data
+  },
+
+  /** Ley 1581 art. 6-a: el titular NO está obligado a autorizar un dato
+   *  sensible. Se registra el ejercicio del derecho y el flujo continúa. */
+  async omitirBiometria(token: string): Promise<IBiometriaResponse> {
+    const res = await publicClient.post<IBiometriaResponse>(
+      `/public/autorizar/${token}/biometria/omitir`,
+      {}
     )
     return res.data
   },

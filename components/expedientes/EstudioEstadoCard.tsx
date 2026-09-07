@@ -80,6 +80,22 @@ const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
  * para que el estudio avance. Cambia segun estado + resultado, y siempre va
  * por encima de los detalles tecnicos en la card.
  */
+/**
+ * Linea del background check de Auco para el gestor. El prospecto nunca la ve
+ * (la API le manda `antecedentes: null`). Politica §6 (OFAC/ONU = regla dura),
+ * §14 (sin verificar = revision manual) y §16.5 (antecedentes = flag).
+ */
+function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>): string {
+  if (a.estado === 'desactivado') return 'no consultadas (verificacion apagada)'
+  if (a.estado === 'no_verificado') return `sin verificar — revision manual (${a.motivo ?? 'Auco no respondio'})`
+  if (a.reportado_en_listas) {
+    const listas = [a.listas_vinculantes.ofac ? 'OFAC' : null, a.listas_vinculantes.onu ? 'ONU' : null].filter(Boolean).join(' y ')
+    return `REPORTADO en ${listas} — regla dura`
+  }
+  if (a.flags_revision.length > 0) return `sin reporte en OFAC/ONU, pero con flags de revision: ${a.flags_revision.join(', ')}`
+  return 'sin reporte'
+}
+
 const BURO_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
   datacredito: 'DataCrédito',
@@ -429,6 +445,21 @@ function EstudioPanel({
             {typeof estudio.score === 'number' && estudio.score > 0 && (
               <p className="text-xs text-gray-700">
                 Score: <span className="font-semibold">{estudio.score}</span>
+              </p>
+            )}
+            {estudio.antecedentes && (
+              <p
+                className={`text-xs mt-1 ${
+                  estudio.antecedentes.reportado_en_listas
+                    ? 'text-red-700'
+                    : estudio.antecedentes.estado !== 'verificado' || estudio.antecedentes.flags_revision.length > 0
+                      ? 'text-amber-700'
+                      : 'text-gray-700'
+                }`}
+                title={estudio.antecedentes.motivo ?? undefined}
+              >
+                Listas restrictivas (Auco):{' '}
+                <span className="font-medium">{describirAntecedentes(estudio.antecedentes)}</span>
               </p>
             )}
             {estudio.motivo_rechazo && (

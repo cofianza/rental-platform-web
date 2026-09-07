@@ -79,6 +79,33 @@ export interface IAutorizacionPublicData {
       barrio: string | null
     }
   }
+  /**
+   * Política V4.1, Anexo A ("cédula validada vía biometría AUCO") + §14.
+   * `requerida` = el interruptor del backend; `estado` = lo ya verificado en
+   * este expediente (reabrir el enlace no obliga a repetir el cotejo).
+   * Ausente en respuestas anteriores al despliegue.
+   */
+  biometria?: {
+    requerida: boolean
+    estado: EstadoBiometria | null
+  }
+}
+
+/** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
+export type EstadoBiometria =
+  | 'verificada'
+  | 'no_coincide'
+  | 'no_verificada'
+  | 'omitida'
+  | 'desactivada'
+
+export interface IBiometriaResponse {
+  estado: EstadoBiometria
+  /** Solo viene cuando `verificada`: es un parámetro del control antifraude. */
+  similitud?: number | null
+  umbral?: number
+  motivo?: string | null
+  guardado?: boolean
 }
 
 export interface IEnviarEnlaceResponse {

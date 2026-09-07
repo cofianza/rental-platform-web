@@ -8,7 +8,15 @@
  *           en un muro legal.
  *   Paso 2: §8.2 laboral + ingreso y §8.3 solo/acompañado ("Sobre ti").
  *   Paso 3: beneficios (3 consentimientos OPCIONALES con toggle).
+ *   Paso 'bio': cotejo biométrico AucoFace — SOLO si el backend lo pide
+ *           (AUCO_BIOMETRIA_ENABLED). Política Anexo A + §14.
  *   Paso 4: firma con OTP de 6 casillas + resumen.
+ *
+ * EL PASO 'bio' VA ANTES DE LA FIRMA Y DESPUÉS DE LA ACEPTACIÓN, y ese orden
+ * es legal, no estético: la foto del rostro es dato sensible (Ley 1581 art. 5)
+ * y no se puede capturar antes de que el prospecto acepte el texto que la
+ * declara — el texto que se le presenta en el paso 1 ya es la versión
+ * 3.0-biometria cuando el interruptor está encendido.
  *
  * POR QUÉ §8.2/§8.3 VAN ANTES DE LA FIRMA Y NO DESPUÉS: el OTP se dispara al
  * ENTRAR al paso de firma (irAFirma) y caduca a los 5 minutos. Un formulario
@@ -47,6 +55,7 @@ import {
   IconBuilding2,
   IconUser,
 } from '@/components/icons'
+import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
 type PageState = 'loading' | 'form' | 'signed' | 'error' | 'reportado'
@@ -158,7 +167,10 @@ export default function AutorizarPage() {
   const [data, setData] = useState<IAutorizacionPublicData | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
-  const [paso, setPaso] = useState<1 | 2 | 3 | 4>(1)
+  // 'bio' no es un número para no renumerar los cuatro pasos existentes: el
+  // cotejo es condicional y, apagado el interruptor, el flujo es idéntico al
+  // de siempre.
+  const [paso, setPaso] = useState<1 | 2 | 3 | 'bio' | 4>(1)
   // §8.1: gatea el resto del paso 1. Es un acto de UI (no premarcado) y viaja
   // al backend como `identidad_confirmada: true`.
   const [identidadOk, setIdentidadOk] = useState(false)
@@ -272,6 +284,26 @@ export default function AutorizarPage() {
     setPaso(4)
     if (otpState === 'idle') void handleEnviarOtp()
   }, [otpState, handleEnviarOtp])
+
+  // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
+  // ANTES de disparar el OTP: el OTP caduca a los 5 minutos y sacar fotos con
+  // el reloj corriendo llevaría a firmar con OTP_EXPIRADO — el mismo motivo
+  // por el que §8.2/§8.3 tampoco van después.
+  const salirDeBeneficios = useCallback(() => {
+    if (data?.biometria?.requerida && data.biometria.estado !== 'verificada') {
+      setPaso('bio')
+      return
+    }
+    irAFirma()
+  }, [data?.biometria?.requerida, data?.biometria?.estado, irAFirma])
+
+  // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
+  // índice traduce el paso 'bio' a su posición para poder compararlo.
+  const conBiometria = !!data?.biometria?.requerida
+  const pasosBarra = conBiometria
+    ? ['Autorización', 'Sobre ti', 'Beneficios', 'Identidad', 'Firma']
+    : ['Autorización', 'Sobre ti', 'Beneficios', 'Firma']
+  const pasoIndice = paso === 'bio' ? 4 : paso === 4 && conBiometria ? 5 : paso
 
   function setOtpDigit(i: number, val: string) {
     const d = val.replace(/\D/g, '').slice(-1)
@@ -529,10 +561,12 @@ export default function AutorizarPage() {
         </span>
       </div>
 
-      {/* Progreso */}
-      <div className="grid grid-cols-4 gap-1.5 px-5 pt-4">
-        {['Autorización', 'Sobre ti', 'Beneficios', 'Firma'].map((label, i) => {
-          const on = paso >= i + 1
+      {/* Progreso. El paso de identidad solo existe si el backend lo pide, así
+          que la barra tiene 4 o 5 tramos según el interruptor — pintar cinco
+          siempre le prometería al prospecto un paso que no va a ver. */}
+      <div className={cn('grid gap-1.5 px-5 pt-4', pasosBarra.length === 5 ? 'grid-cols-5' : 'grid-cols-4')}>
+        {pasosBarra.map((label, i) => {
+          const on = pasoIndice >= i + 1
           return (
             <div key={label}>
               <div className={cn('h-1.5 rounded-full', on ? 'bg-primary-600' : 'bg-gray-200')} />
@@ -963,7 +997,7 @@ export default function AutorizarPage() {
 
             <button
               type="button"
-              onClick={irAFirma}
+              onClick={salirDeBeneficios}
               className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
             >
               Continuar →
@@ -976,6 +1010,18 @@ export default function AutorizarPage() {
               ← Volver
             </button>
           </div>
+        )}
+
+        {/* ── Paso 'bio': verificación de identidad (Política Anexo A + §14).
+            El componente NUNCA bloquea: `onContinuar` se dispara igual si el
+            cotejo falla o si el prospecto ejerce su derecho a negarse. ── */}
+        {paso === 'bio' && (
+          <CapturaBiometrica
+            token={token}
+            estadoPrevio={data?.biometria?.estado ?? null}
+            onContinuar={irAFirma}
+            onVolver={() => setPaso(3)}
+          />
         )}
 
         {/* ── Paso 4: Firma ── */}
@@ -1085,7 +1131,7 @@ export default function AutorizarPage() {
 
             <button
               type="button"
-              onClick={() => setPaso(3)}
+              onClick={() => setPaso(data?.biometria?.requerida ? 'bio' : 3)}
               className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
               ← Volver

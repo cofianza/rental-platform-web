@@ -36,6 +36,11 @@ export interface IEstudio {
   ruta?: IRutaResultado
   /** Expiracion del §12. Opcional: igual que `ruta`, solo en el detalle. */
   expiracion?: IExpiracionEstudio
+  /**
+   * Background check de Auco (listas restrictivas, antecedentes, afiliacion).
+   * Solo gestores: la API lo manda null al prospecto. null = no se consulto.
+   */
+  antecedentes?: IAntecedentesEstudio | null
   score?: number | null
   observaciones?: string | null
   duracion_contrato_meses: number
@@ -358,4 +363,20 @@ export interface IExpiracionEstudio {
   diasRestantes: number | null
   expiraEn: string | null
   motivo: string
+}
+
+/** Resumen del background check de Auco, tal como lo guarda la API (sin `raw`). */
+export interface IAntecedentesEstudio {
+  fuente: 'auco'
+  estado: 'verificado' | 'no_verificado' | 'desactivado'
+  code: string | null
+  consultado_en: string
+  motivo: string | null
+  listas_vinculantes: { ofac: boolean; onu: boolean }
+  reportado_en_listas: boolean
+  /** Flags de revision manual (§16.5): policia, procuraduria, interpol, peps... */
+  flags_revision: string[]
+  nivel: string | null
+  seguridad_social: { estado: string | null; regimen: string | null; tipo_afiliado: string | null; entidad: string | null } | null
+  registraduria_estado: string | null
 }
