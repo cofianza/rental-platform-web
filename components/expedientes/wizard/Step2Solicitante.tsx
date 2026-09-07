@@ -468,7 +468,7 @@ export function Step2Solicitante({
                 </p>
                 <p className="mt-1 text-sm text-primary-800">
                   {estudioVigente.expediente_numero
-                    ? `Expediente ${estudioVigente.expediente_numero}. `
+                    ? `Estudio ${estudioVigente.expediente_numero}. `
                     : ''}
                   Le quedan {estudioVigente.dias_restantes}{' '}
                   {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia. Puedes

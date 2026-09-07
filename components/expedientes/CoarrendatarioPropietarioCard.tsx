@@ -227,14 +227,14 @@ function EstadoBlock({ coa }: { coa: ICoarrendatario }) {
     pendiente_aceptacion: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Esperando respuesta',
-      mensaje: 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su estudio crediticio.',
+      mensaje: 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
     },
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
       mensaje: coa.estudio?.estado === 'en_proceso'
         ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
-        : 'Procesando su estudio crediticio.',
+        : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {
       color: 'bg-red-50 border-red-200 text-red-900',

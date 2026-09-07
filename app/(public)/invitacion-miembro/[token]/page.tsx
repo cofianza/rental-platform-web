@@ -191,7 +191,7 @@ export default function InvitacionMiembroPage() {
       </div>
       <p className="text-sm text-gray-600 mb-6">
         {info.invitador ? <strong>{info.invitador}</strong> : 'Una inmobiliaria'} te invitó a unirte a{' '}
-        <strong>{info.organizacion}</strong> en Cofianza para gestionar inmuebles y expedientes en
+        <strong>{info.organizacion}</strong> en Cofianza para gestionar inmuebles y estudios en
         equipo.
       </p>
 

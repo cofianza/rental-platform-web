@@ -84,7 +84,7 @@ export function EstudiosExpedientesFusion() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar expedientes</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar estudios</h3>
         <p className="text-sm text-gray-500 mb-4">{error}</p>
         <button
           onClick={() => fetchExpedientes()}
@@ -104,7 +104,7 @@ export function EstudiosExpedientesFusion() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-gray-900">Estudios</h1>
           <p className="text-sm font-medium text-gray-500">
-            Tus expedientes y el estado de su estudio de crédito, en un solo lugar.
+            Tus estudios y el estado de su estudio de crédito, en un solo lugar.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -117,7 +117,7 @@ export function EstudiosExpedientesFusion() {
             className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
           >
             <IconPlus size={16} />
-            Nuevo expediente
+            Nuevo estudio
           </button>
         </div>
       </div>

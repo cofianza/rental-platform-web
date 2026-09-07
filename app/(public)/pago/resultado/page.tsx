@@ -180,7 +180,7 @@ function PagoResultadoContent() {
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-sm text-green-800">
             {isAuthenticated
-              ? 'Ya puedes regresar a tu panel para ver el avance del estudio crediticio.'
+              ? 'Ya puedes regresar a tu panel para ver el avance de la evaluación crediticia.'
               : 'No necesitas hacer nada mas: tu estudio ya esta corriendo. La inmobiliaria te contactara con el resultado.'}
           </p>
         </div>
@@ -209,7 +209,7 @@ function PagoResultadoContent() {
             }}
             className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
           >
-            {isAuthenticated ? 'Cerrar y volver al expediente' : 'Cerrar ventana'}
+            {isAuthenticated ? 'Cerrar y volver al estudio' : 'Cerrar ventana'}
           </button>
           <p className="text-xs text-gray-500">
             {secondsLeft > 0
@@ -227,7 +227,7 @@ function PagoResultadoContent() {
             href={expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'}
             className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
           >
-            {expedienteId ? 'Ver mi expediente' : 'Ir a mi panel'}
+            {expedienteId ? 'Ver mi estudio' : 'Ir a mi panel'}
           </Link>
         </div>
       )}

@@ -311,7 +311,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
             No hay estudios de riesgo
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            No hay estudios de riesgo crediticio para este expediente.
+            No hay estudios de riesgo crediticio para este estudio.
           </p>
           {canManage && (
             <button
@@ -568,7 +568,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
             />
             <p className="mt-1 text-xs text-gray-500">
               {sendLinkTarget?.tipo === 'con_coarrendatario'
-                ? 'El enlace lo recibe el titular del expediente. Una corrección aquí solo cambia el destino de este envío.'
+                ? 'El enlace lo recibe el titular del estudio. Una corrección aquí solo cambia el destino de este envío.'
                 : 'Si lo corriges, también se actualiza en los datos del solicitante.'}
             </p>
           </div>

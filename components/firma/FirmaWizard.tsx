@@ -220,7 +220,7 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
             ¿Qué puedes hacer?
           </p>
           <p className="text-sm text-amber-700">
-            Contacta al administrador de tu expediente para que te envíe un nuevo enlace de firma.
+            Contacta al administrador de tu estudio para que te envíe un nuevo enlace de firma.
           </p>
         </div>
       </div>

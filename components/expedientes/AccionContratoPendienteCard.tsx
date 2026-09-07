@@ -73,7 +73,7 @@ export function AccionContratoPendienteCard({
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold text-gray-900 mb-0.5">Acción requerida: generar contrato</h3>
               <p className="text-sm text-gray-600 mb-3">
-                El expediente está aprobado. Genera el contrato definiendo la fecha de inicio, la duración, la
+                El estudio está aprobado. Genera el contrato definiendo la fecha de inicio, la duración, la
                 modalidad de fianza y quién paga los servicios públicos.
               </p>
               <button

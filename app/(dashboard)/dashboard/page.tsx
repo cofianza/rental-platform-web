@@ -209,7 +209,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Solicitudes</h3>
-                <p className="text-sm text-gray-500">Expedientes de arrendamiento</p>
+                <p className="text-sm text-gray-500">Estudios de arrendamiento</p>
               </div>
             </div>
           </Link>
@@ -298,7 +298,7 @@ export default function DashboardPage() {
       ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
-            title="Expedientes activos"
+            title="Estudios activos"
             value={summary.totalExpedientesActivos}
             icon={IconFolderOpen}
             accentColor="bg-primary-600"
@@ -328,7 +328,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Donut Chart — 1 col */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expedientes por estado</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudios por estado</h2>
           {loading ? (
             <div className="flex items-center justify-center h-64 animate-pulse">
               <div className="w-48 h-48 bg-gray-200 rounded-full" />
@@ -367,7 +367,7 @@ export default function DashboardPage() {
           ) : pendientes.length === 0 ? (
             <div className="text-center py-12">
               <IconCheck size={40} className="mx-auto text-green-300 mb-3" />
-              <p className="text-sm text-gray-500">No hay expedientes pendientes</p>
+              <p className="text-sm text-gray-500">No hay estudios pendientes</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
@@ -410,7 +410,7 @@ export default function DashboardPage() {
 // ── Solicitante Dashboard ────────────────────────────────────
 
 const PROCESS_STEPS = [
-  { id: 'expediente', label: 'Solicitud', description: 'Tu expediente esta registrado' },
+  { id: 'expediente', label: 'Solicitud', description: 'Tu estudio esta registrado' },
   { id: 'cita', label: 'Cita previa', description: 'Agenda una visita al inmueble' },
   { id: 'estudio', label: 'Estudio', description: 'Evaluacion de riesgo en proceso' },
   { id: 'aprobado', label: 'Aprobación', description: 'Resultado del estudio' },
@@ -600,7 +600,7 @@ function SolicitanteDashboard() {
           Naranja/gradient: sin cita → CTA "Agendar cita".
           Azul: cita solicitada → esperando confirmación del propietario.
           Verde: cita confirmada → fecha lista para la visita.
-          Ámbar: cita realizada pero el propietario aún no habilita el estudio.
+          Ámbar: cita realizada pero el propietario aún no habilita la evaluación.
           Ámbar: ya se definió el pago pero el arrendatario aún no autoriza (§6.3).
           Primario/gradient: ya autorizó y el pago está pendiente → CTA "Pagar estudio".
           Si el pago está completado o asumido, no mostramos banner; el stepper de la card toma el relevo. */}
@@ -618,7 +618,7 @@ function SolicitanteDashboard() {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold mb-1">Tienes una visita pendiente por agendar</h3>
                   <p className="text-sm text-white/90">
-                    Antes de continuar con tu estudio crediticio, agenda una visita al inmueble. El propietario debera confirmar la fecha.
+                    Antes de continuar con tu evaluación crediticia, agenda una visita al inmueble. El propietario debera confirmar la fecha.
                   </p>
                 </div>
                 <Link
@@ -685,13 +685,13 @@ function SolicitanteDashboard() {
                   href={`/expedientes/${exp.id}`}
                   className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 shadow-sm transition-colors shrink-0"
                 >
-                  Ver mi expediente
+                  Ver mi estudio
                 </Link>
               </div>
             </div>
           ))}
 
-          {/* Estudio habilitado, pago pendiente → CTA "Pagar ahora" (gradient primario) */}
+          {/* Evaluación habilitada, pago pendiente → CTA "Pagar ahora" (gradient primario) */}
           {expedientesPagoPendiente.map((exp) => {
             const pago = pagoByExpediente[exp.id]
             const esFallido = pago?.estado === 'fallido'
@@ -707,7 +707,7 @@ function SolicitanteDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold mb-1">
-                      {esFallido ? 'No pudimos procesar tu pago' : 'Paga tu estudio crediticio'}
+                      {esFallido ? 'No pudimos procesar tu pago' : 'Paga tu evaluación crediticia'}
                     </h3>
                     <p className="text-sm text-white/90">
                       {esFallido
@@ -837,7 +837,7 @@ function SolicitanteDashboard() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900">{exp.numero_expediente || 'Expediente'}</span>
+                      <span className="font-semibold text-gray-900">{exp.numero_expediente || 'Estudio'}</span>
                       {isCancelled ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                           Cancelado
@@ -858,7 +858,7 @@ function SolicitanteDashboard() {
                 {isRejected ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <p className="text-sm text-red-700 font-medium">Estudio no aprobado</p>
-                    <p className="text-xs text-red-600 mt-0.5">El expediente fue rechazado tras el estudio crediticio.</p>
+                    <p className="text-xs text-red-600 mt-0.5">El estudio fue rechazado tras la evaluación crediticia.</p>
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -974,7 +974,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
   if (total === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-sm text-gray-400">Sin expedientes en el periodo</p>
+        <p className="text-sm text-gray-400">Sin estudios en el periodo</p>
       </div>
     )
   }
@@ -997,7 +997,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <svg viewBox="0 0 200 200" className="w-48 h-48" role="img" aria-label="Distribucion de expedientes por estado">
+      <svg viewBox="0 0 200 200" className="w-48 h-48" role="img" aria-label="Distribucion de estudios por estado">
         {segments.map((seg) => {
           const color = ESTADO_COLORS[seg.estado] || '#9ca3af'
           return (

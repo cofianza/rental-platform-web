@@ -226,7 +226,7 @@ export function ReasignarEstudioModal({
           El estudio ya esta pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
           <span className="font-medium text-gray-800">sin costo adicional</span>. Conserva su
           vigencia original — reasignarlo no la extiende. Solo se traslada dentro de la misma
-          cartera, y no si el expediente ya genero contrato o tiene una visita agendada.
+          cartera, y no si el estudio ya genero contrato o tiene una visita agendada.
         </p>
 
         {canonOrigen !== null ? (

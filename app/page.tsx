@@ -100,7 +100,7 @@ export default function HomePage() {
                 <div className="space-y-2">
                   {[
                     { name: 'Pago del estudio', status: '✓', state: 'done' },
-                    { name: 'Estudio crediticio', status: '✓ Aprobado', state: 'done' },
+                    { name: 'Evaluación crediticia', status: '✓ Aprobado', state: 'done' },
                     { name: 'Contrato generado', status: '✓ Listo', state: 'done' },
                     { name: 'Firma electrónica', status: '→ WhatsApp', state: 'active' },
                   ].map((step) => (
@@ -419,7 +419,7 @@ export default function HomePage() {
                 body: 'Usa Cofianza como fiador. Panel de gestión, estudios en lote y gana por cada estudio que gestiones.',
                 items: [
                   'Gana por cada estudio que gestiones',
-                  'Panel de expedientes en tiempo real',
+                  'Panel de estudios en tiempo real',
                   'Cofianza firma en tus contratos',
                   'Protocolo de cobro profesional incluido',
                 ],
@@ -566,7 +566,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'El estudio crediticio tiene un costo único al inicio. Si apruebas, pagas una prima de vinculación equivalente al 10% de un canon y luego una comisión mensual. Al terminar sin moras, recuperas el 30% de las comisiones pagadas.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una prima de vinculación equivalente al 10% de un canon y luego una comisión mensual. Al terminar sin moras, recuperas el 30% de las comisiones pagadas.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',

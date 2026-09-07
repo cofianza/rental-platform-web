@@ -154,7 +154,7 @@ export default function MiCuentaPage() {
       if (err instanceof ApiClientError) {
         if (err.code === 'DOCUMENTO_BLOQUEADO_POR_ESTUDIO') {
           toast.error(err.message, {
-            description: 'Tu documento ya fue consultado en un estudio crediticio.',
+            description: 'Tu documento ya fue consultado en una evaluación crediticia.',
             duration: 8000,
           })
           return
@@ -278,7 +278,7 @@ export default function MiCuentaPage() {
 
         {isSolicitante && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-            Una vez que tu documento haya sido consultado en un estudio crediticio, no podrás
+            Una vez que tu documento haya sido consultado en una evaluación crediticia, no podrás
             modificarlo desde aquí. Si necesitas corregirlo, contacta soporte.
           </p>
         )}

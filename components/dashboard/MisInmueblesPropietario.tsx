@@ -191,7 +191,7 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
       <div className="flex flex-wrap gap-2 border-t border-ink-200 bg-ink-50/60 px-4 py-2.5">
         {p.expedienteId && (
           <Link href={`/expedientes/${p.expedienteId}`} className={btnS}>
-            Ver expediente
+            Ver estudio
           </Link>
         )}
         <Link href={`/inmuebles/${p.id}/editar`} className={btnS}>

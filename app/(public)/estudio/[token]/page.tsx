@@ -162,7 +162,7 @@ export default function EstudioFormularioPage() {
             Estudio de Riesgo Crediticio
           </h2>
           <p className="text-sm text-primary-700">
-            Expediente: <strong>{formInfo.expediente_numero}</strong>
+            Estudio: <strong>{formInfo.expediente_numero}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
             )}
@@ -256,7 +256,7 @@ export default function EstudioFormularioPage() {
             Estudio de Riesgo Crediticio
           </h2>
           <p className="text-sm text-primary-700">
-            Expediente: <strong>{formInfo.expediente_numero}</strong>
+            Estudio: <strong>{formInfo.expediente_numero}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
             )}

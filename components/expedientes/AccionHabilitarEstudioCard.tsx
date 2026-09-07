@@ -110,7 +110,7 @@ export function AccionHabilitarEstudioCard({
     try {
       await expedienteService.habilitarEstudio(expedienteId, proveedor)
       const buroLabel = BUROS.find((b) => b.value === proveedor)?.label ?? proveedor
-      toast.success(`Estudio habilitado con ${buroLabel}. Define el pago desde el expediente; al solicitante le llega primero la autorización`)
+      toast.success(`Evaluación habilitada con ${buroLabel}. Define el pago desde el estudio; al solicitante le llega primero la autorización`)
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -118,7 +118,7 @@ export function AccionHabilitarEstudioCard({
         toast.message('El estudio ya estaba habilitado. Refrescando...')
         await onAction()
       } else {
-        toast.error(errObj.message || 'Error al habilitar el estudio')
+        toast.error(errObj.message || 'Error al habilitar la evaluación')
       }
     } finally {
       setSubmitting(false)
@@ -129,7 +129,7 @@ export function AccionHabilitarEstudioCard({
     setSubmitting(true)
     try {
       await expedienteService.omitirCita(expedienteId, motivoOmitir.trim() || undefined)
-      toast.success('Cita omitida. Ya puedes habilitar el estudio.')
+      toast.success('Cita omitida. Ya puedes habilitar la evaluación.')
       setShowOmitir(false)
       setMotivoOmitir('')
       await onAction()
@@ -183,9 +183,9 @@ export function AccionHabilitarEstudioCard({
                 ¿Ya coordinaron la visita por fuera?
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Para habilitar el estudio normalmente se agenda una visita. Si ya la
+                Para habilitar la evaluación normalmente se agenda una visita. Si ya la
                 coordinaron por WhatsApp (u otro medio) y decidieron continuar, puedes
-                omitir la cita y seguir directo con el estudio crediticio.
+                omitir la cita y seguir directo con la evaluación crediticia.
               </p>
               <button
                 onClick={() => setShowOmitir(true)}
@@ -208,7 +208,7 @@ export function AccionHabilitarEstudioCard({
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Confirmas que la visita ya se coordinó por fuera y quieres continuar sin
-              agendar una cita en el sistema. Podrás habilitar el estudio enseguida.
+              agendar una cita en el sistema. Podrás habilitar la evaluación enseguida.
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -222,7 +222,7 @@ export function AccionHabilitarEstudioCard({
                 placeholder="Ej: visita coordinada y realizada por WhatsApp el 2 de julio."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Queda registrado en la bitácora del expediente.</p>
+              <p className="text-xs text-gray-500 mt-1">Queda registrado en la bitácora del estudio.</p>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button
@@ -256,12 +256,12 @@ export function AccionHabilitarEstudioCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-              Acción requerida: ¿habilitamos el estudio crediticio?
+              Acción requerida: ¿habilitamos la evaluación crediticia?
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {citaOmitida
-                ? 'Marcaste la visita como ya realizada. Decide si proceder con el estudio crediticio del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
-                : 'La cita de visita se realizó. Decide si proceder con el estudio crediticio del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
+                ? 'Marcaste la visita como ya realizada. Decide si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
+                : 'La cita de visita se realizó. Decide si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
             </p>
             {/* Selección de buró. Va ANTES del botón porque la decisión se
                 toma al habilitar: el estudio se crea con ese proveedor y
@@ -297,7 +297,7 @@ export function AccionHabilitarEstudioCard({
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {submitting ? <IconLoader size={14} className="animate-spin" /> : <IconShieldCheck size={14} />}
-                Habilitar estudio
+                Habilitar evaluación
               </button>
               <button
                 onClick={() => setShowRechazar(true)}

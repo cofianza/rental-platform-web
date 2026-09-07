@@ -161,7 +161,7 @@ export function GenerarContratoModal({
                   <span className="text-[11px] font-normal text-primary-700">Recomendado</span>
                 </p>
                 <p className="text-xs text-gray-600 mt-0.5">
-                  Se usa la plantilla activa con los datos del expediente. Cofianza queda como
+                  Se usa la plantilla activa con los datos del estudio. Cofianza queda como
                   fiador. Listo para firma electrónica vía Auco.
                 </p>
               </div>

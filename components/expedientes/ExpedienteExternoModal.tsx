@@ -57,7 +57,7 @@ export function ExpedienteExternoModal({
       onClose()
       onCreated?.(expediente.id)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al crear expediente'
+      const msg = err instanceof Error ? err.message : 'Error al crear estudio'
       toast.error(msg)
       setError(msg)
     } finally {
@@ -66,12 +66,12 @@ export function ExpedienteExternoModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Expediente Externo">
+    <Modal isOpen={isOpen} onClose={onClose} title="Estudio Externo">
       <div className="space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-700">
-            Genera un expediente y envia una invitacion por correo al cliente.
-            El cliente se registrara en la plataforma y pasara directamente al estudio crediticio
+            Genera un estudio y envia una invitacion por correo al cliente.
+            El cliente se registrara en la plataforma y pasara directamente a la evaluación crediticia
             <strong> sin necesidad de agendar cita</strong>.
           </p>
         </div>
@@ -109,7 +109,7 @@ export function ExpedienteExternoModal({
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
-            placeholder="Notas internas sobre este expediente..."
+            placeholder="Notas internas sobre este estudio..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>

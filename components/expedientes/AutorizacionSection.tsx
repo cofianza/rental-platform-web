@@ -631,7 +631,7 @@ export function AutorizacionSection({
                 {perfil.presentacion === 'acompanado' && (
                   <p className="text-[11px] text-gray-400 mt-1">
                     Es una intención, no una invitación: la invitación real se emite desde la sección de
-                    co-arrendatario cuando el expediente quede condicionado.
+                    co-arrendatario cuando el estudio quede condicionado.
                   </p>
                 )}
               </div>

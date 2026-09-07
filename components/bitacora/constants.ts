@@ -32,7 +32,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   user: 'Usuario',
   session: 'Sesion',
   config: 'Configuracion',
-  expediente: 'Expediente',
+  expediente: 'Estudio',
   contrato: 'Contrato',
 }
 

@@ -189,7 +189,7 @@ export default function TiemposPorEtapaPage() {
       {/* Header */}
       <PageHeader
         title="Tiempos por Etapa"
-        subtitle="Tiempo promedio en cada etapa del flujo de expedientes"
+        subtitle="Tiempo promedio en cada etapa del flujo de estudios"
         actions={
           <div className="flex items-center gap-2">
             <ExportButton
@@ -313,7 +313,7 @@ export default function TiemposPorEtapaPage() {
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Promedio</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Minimo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Maximo</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-700"># Expedientes</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-700"># Estudios</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-700">Cuello de botella</th>
               </tr>
             </thead>

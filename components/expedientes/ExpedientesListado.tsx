@@ -51,7 +51,7 @@ export function ExpedientesListado() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar expedientes</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar estudios</h3>
         <p className="text-sm text-gray-500 mb-4">{error}</p>
         <button
           onClick={() => fetchExpedientes()}
@@ -68,7 +68,7 @@ export function ExpedientesListado() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Expedientes"
+        title="Estudios"
         subtitle={meta ? `${meta.total} expedientes` : 'Cargando...'}
         actions={
           <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export function ExpedientesListado() {
                 ...(filters.fecha_desde ? { dateFrom: filters.fecha_desde } : {}),
                 ...(filters.fecha_hasta ? { dateTo: filters.fecha_hasta } : {}),
               }}
-              entityName="Expedientes"
+              entityName="Estudios"
             />
             {puedeCrearExpediente && (
               <button

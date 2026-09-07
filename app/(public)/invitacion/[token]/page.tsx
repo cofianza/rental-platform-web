@@ -70,7 +70,7 @@ export default function InvitacionPage() {
     try {
       const result = await canjearInvitacion(token)
       sessionStorage.removeItem('invitacion_token')
-      toast.success('Tu expediente está listo. El siguiente paso es autorizar la consulta en centrales')
+      toast.success('Tu estudio está listo. El siguiente paso es autorizar la consulta en centrales')
       router.push(result.redirect)
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -133,7 +133,7 @@ export default function InvitacionPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Tienes una invitación</h1>
       <p className="text-sm text-gray-600 mb-6">
         <strong>{info.propietario_invitante.nombre_publico}</strong> te invitó a iniciar tu
-        expediente de arrendamiento para el siguiente inmueble:
+        estudio de arrendamiento para el siguiente inmueble:
       </p>
 
       {/* Tarjeta del inmueble */}
@@ -154,7 +154,7 @@ export default function InvitacionPage() {
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">
-          Expediente: <span className="font-mono">{info.expediente.numero}</span>
+          Estudio: <span className="font-mono">{info.expediente.numero}</span>
         </p>
       </div>
 

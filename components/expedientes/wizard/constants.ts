@@ -83,10 +83,10 @@ export const DEPARTAMENTOS_COLOMBIA = [
 export const WIZARD_MESSAGES = {
   // Paso 1
   STEP1_TITLE: 'Seleccionar Inmueble',
-  STEP1_SUBTITLE: 'Busca y selecciona el inmueble para el expediente',
+  STEP1_SUBTITLE: 'Busca y selecciona el inmueble para el estudio',
   SEARCH_INMUEBLE_PLACEHOLDER: 'Buscar por código, dirección o ciudad...',
   INMUEBLE_REQUIRED: 'Debe seleccionar un inmueble',
-  INMUEBLE_HAS_ACTIVE_EXPEDIENTE: 'Este inmueble ya tiene un expediente activo',
+  INMUEBLE_HAS_ACTIVE_EXPEDIENTE: 'Este inmueble ya tiene un estudio activo',
   NO_INMUEBLES_FOUND: 'No se encontraron inmuebles',
   MIN_SEARCH_CHARS: 'Ingresa al menos 2 caracteres para buscar',
 
@@ -103,7 +103,7 @@ export const WIZARD_MESSAGES = {
   STEP3_TITLE: 'Configuración',
   STEP3_SUBTITLE: 'Define cómo se paga el estudio de este prospecto',
   NOTAS_LABEL: 'Notas internas',
-  NOTAS_PLACEHOLDER: 'Notas internas sobre el expediente (opcional)...',
+  NOTAS_PLACEHOLDER: 'Notas internas sobre el estudio (opcional)...',
   NOTAS_MAX_LENGTH: 'Las notas no deben exceder 5000 caracteres',
   ANALISTA_LABEL: 'Asignar responsable',
   ANALISTA_PLACEHOLDER: 'Seleccionar responsable (opcional)',
@@ -115,7 +115,7 @@ export const WIZARD_MESSAGES = {
   CONFIRM_CREATE: 'Enviar solicitud de autorización',
   CREATING: 'Enviando solicitud...',
   SUCCESS: 'Solicitud enviada al prospecto',
-  ERROR: 'Error al enviar la solicitud',
+  ERROR: 'Error al enviar la solicitud de autorización',
 
   // Navegacion
   PREVIOUS: 'Anterior',

@@ -226,7 +226,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 <span className="ml-2 inline-flex px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-200 text-amber-900">paso obligatorio</span>
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
-                El estudio crediticio <span className="font-semibold">no puede ejecutarse</span> hasta que elijas una de
+                La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elijas una de
                 estas opciones. Monto: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>.
               </p>
             </div>
@@ -301,7 +301,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               <ul className="text-sm text-gray-600 space-y-1.5 mb-4 list-disc pl-5">
                 <li>El pago se registra internamente — <span className="font-medium">no hay cobro en línea</span>.</li>
                 <li>Le enviaremos <span className="font-medium">automáticamente</span> el enlace de autorización al arrendatario (correo y WhatsApp).</li>
-                <li>Cuando él firme la autorización, el estudio crediticio corre solo y te avisamos del resultado.</li>
+                <li>Cuando él firme la autorización, la evaluación crediticia corre solo y te avisamos del resultado.</li>
               </ul>
               <div className="flex gap-2">
                 <button
@@ -387,7 +387,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           </svg>
           <div>
             <p className="text-sm font-medium text-green-800">Pago confirmado</p>
-            <p className="text-xs text-green-600">{estado.monto_formateado} COP — el estudio crediticio ya puede ejecutarse</p>
+            <p className="text-xs text-green-600">{estado.monto_formateado} COP — la evaluación crediticia ya puede ejecutarse</p>
           </div>
         </div>
       )}
@@ -968,7 +968,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu estudio crediticio</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu evaluación crediticia</h3>
             <p className="text-sm text-gray-600 mb-1">
               Monto a pagar: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
             </p>

@@ -158,7 +158,7 @@ export default function ExpedienteDetallePage() {
       if (err instanceof Error && err.message.includes('no encontrado')) {
         setNotFound(true)
       } else {
-        const message = err instanceof Error ? err.message : 'Error al cargar el expediente'
+        const message = err instanceof Error ? err.message : 'Error al cargar el estudio'
         setError(message)
       }
     } finally {
@@ -240,10 +240,10 @@ export default function ExpedienteDetallePage() {
       <div className="flex flex-col items-center justify-center py-16">
         <IconFolderOpen size={64} className="text-gray-300 mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Expediente no encontrado
+          Estudio no encontrado
         </h2>
         <p className="text-gray-500 mb-6">
-          El expediente que buscas no existe o fue eliminado.
+          El estudio que buscas no existe o fue eliminado.
         </p>
         <button
           onClick={() => router.push('/expedientes')}
@@ -261,7 +261,7 @@ export default function ExpedienteDetallePage() {
       <div className="flex flex-col items-center justify-center py-16">
         <IconAlertTriangle size={64} className="text-red-300 mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Error al cargar el expediente
+          Error al cargar el estudio
         </h2>
         <p className="text-gray-500 mb-6">{error}</p>
         <button
@@ -381,8 +381,8 @@ export default function ExpedienteDetallePage() {
           tab), solo inmobiliaria (Fase 3.1). El analista interno va en el header. */}
       {user?.rol === 'inmobiliaria' && (
         <ResponsableMiembroCard
-          titulo="Responsable del expediente"
-          ayuda='Si desactivaste "los miembros ven todo", el responsable verá este expediente aunque el inmueble no sea suyo.'
+          titulo="Responsable del estudio"
+          ayuda='Si desactivaste "los miembros ven todo", el responsable verá este estudio aunque el inmueble no sea suyo.'
           miembroResponsableId={expediente.miembro_responsable_id}
           onAssign={async (miembroId) => {
             await expedienteService.asignarMiembroResponsable(id, miembroId)
@@ -419,9 +419,9 @@ export default function ExpedienteDetallePage() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-red-900 mb-0.5">Expediente cancelado</h3>
+                    <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio cancelado</h3>
                     <p className="text-sm text-red-800">
-                      El expediente fue cancelado y no continuara con el proceso.
+                      El estudio fue cancelado y no continuara con el proceso.
                     </p>
                     {expediente.motivo_cancelacion && (
                       <p className="text-sm text-red-700 mt-2">
@@ -442,9 +442,9 @@ export default function ExpedienteDetallePage() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">¡Expediente finalizado!</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">¡Estudio finalizado!</h3>
                     <p className="text-sm text-gray-700">
-                      Todos los pasos del proceso se completaron exitosamente. El expediente queda cerrado para consulta.
+                      Todos los pasos del proceso se completaron exitosamente. El estudio queda cerrado para consulta.
                     </p>
                   </div>
                 </div>
@@ -454,7 +454,7 @@ export default function ExpedienteDetallePage() {
             {/* "Siguiente paso" — solo para el solicitante, al tope.
                 Tres bloques encadenados (cada uno se auto-oculta si no aplica):
                 1) Pago del estudio (CTA "Pagar ahora" o "¡Pago confirmado!").
-                2) Estudio crediticio ("Confirma cédula" / "Consultando..." / resultado).
+                2) Evaluación crediticia ("Confirma cédula" / "Consultando..." / resultado).
                 3) Contrato ("Preparando contrato" / "Revisar y firmar" / "Activo"). */}
             {user?.rol === 'solicitante' && (
               <div className="space-y-4">
@@ -682,7 +682,7 @@ export default function ExpedienteDetallePage() {
                         efímero). Busca por su documento en la lista. */}
                     {solicitanteExpCount !== null && solicitanteExpCount > 1 && (
                       <InfoRow
-                        label="Expedientes"
+                        label="Estudios"
                         value={`${solicitanteExpCount} de esta persona`}
                         highlight
                       />
@@ -725,7 +725,7 @@ export default function ExpedienteDetallePage() {
               {/* Sección Expediente */}
               <div className="border border-gray-200 rounded-lg p-5 lg:col-span-2">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                  Datos del Expediente
+                  Datos del Estudio
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <InfoRow label="Fecha creación" value={formatDate(expediente.created_at)} />
@@ -770,11 +770,11 @@ export default function ExpedienteDetallePage() {
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
             {/* El pago del estudio recién se habilita tras confirmar/realizar la
-                cita y habilitar el estudio (paso 3 del flujo). Mismo gate que el
+                cita y habilitar la evaluación (paso 3 del flujo). Mismo gate que el
                 Resumen; antes de eso, solo un aviso. */}
             {!(expediente.estudio_habilitado ?? false) ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                El pago del estudio estará disponible cuando la visita esté confirmada y el estudio habilitado.
+                El pago del estudio estará disponible cuando la visita esté confirmada y la evaluación habilitada.
               </div>
             ) : (
               !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
@@ -792,7 +792,7 @@ export default function ExpedienteDetallePage() {
                 la firma es lo que dispara el cobro. Gatearla dejaba la opción C
                 muerta en la UI (nunca hay pago confirmado antes de firmar).
                 Pero SÍ se gatea por `estudio_habilitado`, igual que el Resumen:
-                sin estudio habilitado el aviso de arriba dice "el pago estará
+                sin evaluación habilitada el aviso de arriba dice "el pago estará
                 disponible cuando… el estudio esté habilitado" mientras esta
                 card ofrecía mandar el habeas data — dos textos contradictorios
                 en la misma pantalla, y una firma que al llegar no encuentra

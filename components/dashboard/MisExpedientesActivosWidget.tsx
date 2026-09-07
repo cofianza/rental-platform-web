@@ -34,7 +34,7 @@ const ESTADOS_ACTIVOS: EstadoExpediente[] = [
 // accion. Mantener corto (cabe en una linea).
 const SIGUIENTE_PASO: Record<string, { label: string; tone: 'gray' | 'amber' | 'primary' | 'green' }> = {
   borrador: { label: 'Cita previa pendiente', tone: 'gray' },
-  en_revision: { label: 'Estudio crediticio en curso', tone: 'amber' },
+  en_revision: { label: 'Evaluación crediticia en curso', tone: 'amber' },
   informacion_incompleta: { label: 'Solicitante completando documentacion', tone: 'amber' },
   aprobado: { label: 'Genera el contrato para continuar', tone: 'primary' },
   condicionado: { label: 'Revisa documentos del coarrendatario', tone: 'primary' },
@@ -68,7 +68,7 @@ export function MisExpedientesActivosWidget() {
       })
       .catch((err) => {
         if (cancelled) return
-        const msg = err instanceof Error ? err.message : 'Error al cargar tus expedientes'
+        const msg = err instanceof Error ? err.message : 'Error al cargar tus estudios'
         setError(msg)
       })
       .finally(() => {

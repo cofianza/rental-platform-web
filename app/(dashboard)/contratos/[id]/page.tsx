@@ -623,7 +623,7 @@ export default function ContratoDetallePage() {
             <LinkRow
               icon={<IconFolderOpen size={16} />}
               iconClass="bg-primary-50 text-primary-600"
-              label="Ver expediente"
+              label="Ver estudio"
               onClick={() => router.push(`/expedientes/${contrato.expediente_id}`)}
             />
             <LinkRow

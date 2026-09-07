@@ -746,7 +746,7 @@ export const MOCK_USUARIOS: MockUsuario[] = [
 
 export const MOCK_DASHBOARD_KPIS: MockKPI[] = [
   {
-    label: 'Total expedientes',
+    label: 'Total estudios',
     value: 145,
     change: 12,
     trend: 'up',
@@ -919,7 +919,7 @@ export const MOCK_TIMELINE: MockTimelineEvent[] = [
   {
     id: '1',
     tipo: 'creacion',
-    descripcion: 'Expediente creado',
+    descripcion: 'Estudio creado',
     usuario: 'Carlos Andrés Gómez',
     fecha: '2026-02-10 08:00',
   },
@@ -979,13 +979,13 @@ export const MOCK_KPIS: MockKPI[] = [
     trend: 'up',
   },
   {
-    label: 'Expedientes Activos',
+    label: 'Estudios Activos',
     value: 18,
     change: 12.5,
     trend: 'up',
   },
   {
-    label: 'Expedientes Aprobados',
+    label: 'Estudios Aprobados',
     value: 6,
     change: -3.1,
     trend: 'down',

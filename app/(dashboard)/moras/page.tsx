@@ -394,7 +394,7 @@ export default function ReportarMoraPage() {
                   Fase
                 </th>
                 <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Expediente
+                  Estudio
                 </th>
               </tr>
             </thead>
@@ -448,7 +448,7 @@ export default function ReportarMoraPage() {
                         href={`/expedientes/${m.expediente_id}`}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900 whitespace-nowrap"
                       >
-                        Ver expediente <IconChevronRight size={14} />
+                        Ver estudio <IconChevronRight size={14} />
                       </Link>
                     </td>
                   </tr>

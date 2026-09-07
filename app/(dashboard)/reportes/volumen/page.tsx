@@ -191,7 +191,7 @@ export default function VolumenExpedientesPage() {
       const result = await reporteService.getVolumenExpedientes(cleanFilters)
       setData(result)
     } catch (err) {
-      console.error('Error cargando volumen de expedientes:', err)
+      console.error('Error cargando volumen de estudios:', err)
       toast.error('Error al cargar el reporte de volumen')
     } finally {
       setLoading(false)
@@ -212,7 +212,7 @@ export default function VolumenExpedientesPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Volumen de Expedientes"
+        title="Volumen de Estudios"
         subtitle="Creados vs cerrados por periodo"
         actions={
           <div className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export default function VolumenExpedientesPage() {
                 ...(filters.dateTo ? { dateTo: filters.dateTo } : {}),
                 ...(filters.estado ? { estado: filters.estado } : {}),
               }}
-              entityName="Volumen Expedientes"
+              entityName="Volumen Estudios"
             />
             <Link
               href="/reportes"

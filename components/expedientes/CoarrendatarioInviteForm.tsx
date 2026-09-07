@@ -102,7 +102,7 @@ export function CoarrendatarioInviteForm({
               </>
             ) : (
               <>
-                Tu estudio crediticio salió como condicionado. La forma de proceder en Cofianza es
+                Tu evaluación crediticia salió como condicionado. La forma de proceder en Cofianza es
                 invitar a la persona con quien vas a vivir como <strong>co-arrendatario</strong> — los
                 dos toman el arriendo y los respaldamos juntos como un solo arrendatario. <strong>No es
                 un fiador ni codeudor</strong>: es tu copiloto en este arriendo.
@@ -124,8 +124,8 @@ export function CoarrendatarioInviteForm({
         <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">
           <p className="text-sm text-gray-700">
             {esGestor
-              ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su estudio crediticio.'
-              : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su estudio crediticio.'}
+              ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
+              : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
           </p>
 
           <div className="grid grid-cols-2 gap-3">

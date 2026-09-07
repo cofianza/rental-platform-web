@@ -155,7 +155,7 @@ export default function InmuebleDetailPage() {
       const result = await inmuebleService.getExpedientesByInmueble(id)
       setExpedientes(result.data)
     } catch (err) {
-      console.error('Error fetching expedientes:', err)
+      console.error('Error fetching estudios:', err)
     } finally {
       setIsLoadingExpedientes(false)
     }
@@ -488,7 +488,7 @@ export default function InmuebleDetailPage() {
   const tabs = [
     { id: 'info' as TabId, label: 'Información', icon: IconInfo },
     { id: 'contrato' as TabId, label: 'Contrato', icon: IconFileText },
-    { id: 'expedientes' as TabId, label: 'Expedientes', icon: IconFolderOpen },
+    { id: 'expedientes' as TabId, label: 'Estudios', icon: IconFolderOpen },
     { id: 'historial' as TabId, label: 'Historial', icon: IconHistory },
     { id: 'galeria' as TabId, label: 'Galería', icon: IconImages },
   ]
@@ -588,7 +588,7 @@ export default function InmuebleDetailPage() {
                   {isInmobiliaria && (
                     <ResponsableMiembroCard
                       titulo="Responsable del inmueble"
-                      ayuda='Si desactivaste "los miembros ven todo", el responsable verá este inmueble y sus expedientes.'
+                      ayuda='Si desactivaste "los miembros ven todo", el responsable verá este inmueble y sus estudios.'
                       miembroResponsableId={inmueble.miembro_responsable_id}
                       onAssign={async (miembroId) => {
                         await inmuebleService.asignarResponsable(inmueble.id, miembroId)

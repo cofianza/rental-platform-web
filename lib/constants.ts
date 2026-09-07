@@ -85,7 +85,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Operación',
   },
   {
-    label: 'Expedientes',
+    label: 'Estudios',
     href: '/expedientes',
     icon: 'FolderOpen',
     description: 'Casos de arrendamiento',

@@ -73,7 +73,7 @@ export default function FirmaPage() {
               ¿Que puedes hacer?
             </p>
             <p className="text-sm text-amber-700">
-              Contacta al administrador de tu expediente para que te envie un nuevo enlace de firma. El enlace anterior ha sido invalidado por seguridad.
+              Contacta al administrador de tu estudio para que te envie un nuevo enlace de firma. El enlace anterior ha sido invalidado por seguridad.
             </p>
           </div>
         )}

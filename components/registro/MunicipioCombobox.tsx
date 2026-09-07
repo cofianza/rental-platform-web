@@ -153,7 +153,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       {!error && (
         <p className="mt-1 text-xs text-gray-500">
-          Lo necesitamos para emitir tu factura electrónica si pagas el estudio crediticio.
+          Lo necesitamos para emitir tu factura electrónica si pagas la evaluación crediticia.
         </p>
       )}
     </div>

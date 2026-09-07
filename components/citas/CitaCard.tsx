@@ -124,8 +124,8 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     return runAction(
       () => expedienteService.habilitarEstudio(expediente.id),
       userRol === 'propietario'
-        ? 'Estudio habilitado. Al solicitante le llega el enlace para autorizar la consulta'
-        : 'Estudio habilitado. Define el pago desde el expediente',
+        ? 'Evaluación habilitada. Al solicitante le llega el enlace para autorizar la consulta'
+        : 'Evaluación habilitada. Define el pago desde el estudio',
     )
   }
 
@@ -142,7 +142,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               {expediente.numero}
             </Link>
           ) : (
-            <span className="text-xs text-gray-400">Sin expediente</span>
+            <span className="text-xs text-gray-400">Sin estudio</span>
           )}
           {inmueble && (
             <p className="text-sm font-medium text-gray-900 mt-0.5 truncate" title={inmueble.direccion}>
@@ -281,14 +281,14 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               <>
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 bg-green-50 border border-green-200">
                   <IconShieldCheck size={12} />
-                  Estudio habilitado
+                  Evaluación habilitada
                 </span>
                 <PagoEstudioPill estado={pagoEstudioEstado} />
               </>
             ) : expediente.estudio_rechazado ? (
               <span
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
-                title={expediente.motivo_estudio_rechazado || 'El propietario decidio no habilitar el estudio.'}
+                title={expediente.motivo_estudio_rechazado || 'El propietario decidio no habilitar la evaluación.'}
               >
                 Estudio no habilitado
               </span>
@@ -298,7 +298,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
                 className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center justify-center gap-1"
               >
                 <IconShieldCheck size={12} />
-                Habilitar estudio
+                Habilitar evaluación
               </button>
             ) : null}
           </>
@@ -459,7 +459,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleRealizar}
         title="Marcar cita como realizada"
-        message="Confirma que la visita al inmueble se realizo. Tras esto, podras habilitar el estudio crediticio desde la columna de realizadas."
+        message="Confirma que la visita al inmueble se realizo. Tras esto, podras habilitar la evaluación crediticia desde la columna de realizadas."
         confirmLabel="Marcar realizada"
         isLoading={isLoading}
       />
@@ -470,20 +470,20 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleNoAsistio}
         title="Marcar no asistio"
-        message="El solicitante no se presento a la visita. El expediente quedara registrado y podra agendar una nueva cita si lo desea."
+        message="El solicitante no se presento a la visita. El estudio quedara registrado y podra agendar una nueva cita si lo desea."
         confirmLabel="Marcar no asistio"
         variant="danger"
         isLoading={isLoading}
       />
 
-      {/* ConfirmDialog: Habilitar estudio */}
+      {/* ConfirmDialog: Habilitar evaluación */}
       <ConfirmDialog
         isOpen={action === 'habilitar_estudio'}
         onClose={closeModals}
         onConfirm={handleHabilitarEstudio}
-        title="Habilitar estudio crediticio"
+        title="Habilitar evaluación crediticia"
         message="Se habilitara el estudio y al solicitante le llegara el enlace para autorizar la consulta en centrales; el cobro va despues. ¿Continuar?"
-        confirmLabel="Habilitar estudio"
+        confirmLabel="Habilitar evaluación"
         isLoading={isLoading}
       />
     </div>

@@ -109,7 +109,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expediente</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estudio</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inmueble</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Version</th>

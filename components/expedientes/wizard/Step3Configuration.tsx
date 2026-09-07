@@ -57,7 +57,7 @@ const OPCIONES_PAGO: {
     letra: 'A',
     titulo: 'Descontar de tu paquete',
     descripcion:
-      'Usa un estudio del paquete que ya compraste. Es la vía más ágil: el estudio arranca de inmediato.',
+      'Usa un crédito de estudios del paquete que ya compraste. Es la vía más ágil: el estudio arranca de inmediato.',
     Icono: IconCreditCard,
   },
   {
@@ -65,7 +65,7 @@ const OPCIONES_PAGO: {
     letra: 'B',
     titulo: 'Lo pago yo ahora',
     descripcion:
-      'Asumes el costo del estudio en este momento. El estudio avanza apenas se confirme el pago.',
+      'Asumes el costo de la evaluación en este momento. El estudio avanza apenas se confirme el pago.',
     Icono: IconBank,
   },
   {
@@ -349,7 +349,7 @@ export function Step3Configuration({
           </select>
         )}
         <p className="text-xs text-gray-400">
-          El responsable asignado recibira notificaciones del expediente
+          El responsable asignado recibira notificaciones del estudio
         </p>
       </div>
       )}
@@ -359,7 +359,7 @@ export function Step3Configuration({
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <IconUser size={16} className="text-gray-400" />
-            Responsable del expediente
+            Responsable del estudio
             <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
           {isLoadingMiembros ? (
@@ -395,7 +395,7 @@ export function Step3Configuration({
             </select>
           )}
           <p className="text-xs text-gray-400">
-            El miembro asignado será responsable del expediente y recibirá una notificación.
+            El miembro asignado será responsable del estudio y recibirá una notificación.
           </p>
         </div>
       )}
@@ -404,7 +404,7 @@ export function Step3Configuration({
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
         <p className="text-sm text-blue-800">
           <span className="font-medium">Nota:</span> Estos campos son opcionales.
-          Puede dejarlos vacios y actualizarlos posteriormente desde el detalle del expediente.
+          Puede dejarlos vacios y actualizarlos posteriormente desde el detalle del estudio.
         </p>
       </div>
     </div>

@@ -99,7 +99,7 @@ export function WipeTestDataCard() {
               <>
                 <h2 className="text-lg font-bold text-gray-900 mb-2">Borrar datos de prueba</h2>
                 <p className="text-sm text-gray-700 mb-3">
-                  Esta acción borra <strong>de forma irreversible</strong> todos los expedientes, inmuebles,
+                  Esta acción borra <strong>de forma irreversible</strong> todos los estudios, inmuebles,
                   solicitantes, contratos, estudios, citas, pagos, moras, tickets, notificaciones y fotos.
                   <strong> Ninguna cuenta se borra</strong> — todos los usuarios conservan su acceso.
                 </p>

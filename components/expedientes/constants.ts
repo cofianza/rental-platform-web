@@ -35,11 +35,11 @@ export const SORTABLE_COLUMNS = {
  * Mensajes del módulo
  */
 export const EXPEDIENTE_UI_MESSAGES = {
-  EMPTY_STATE: 'No se encontraron expedientes',
-  EMPTY_STATE_FILTERED: 'No hay expedientes que coincidan con los filtros',
-  LOADING: 'Cargando expedientes...',
+  EMPTY_STATE: 'No se encontraron estudios',
+  EMPTY_STATE_FILTERED: 'No hay estudios que coincidan con los filtros',
+  LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',
-  NEW_EXPEDIENTE: 'Nuevo Expediente',
+  NEW_EXPEDIENTE: 'Nuevo Estudio',
   SEARCH_PLACEHOLDER: 'Buscar por código, inmueble o solicitante...',
 } as const

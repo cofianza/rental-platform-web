@@ -224,7 +224,7 @@ export default function EquipoPage() {
   const handleSalir = () => {
     setConfirm({
       title: 'Salir de la inmobiliaria',
-      message: 'Perderás el acceso a su cartera (inmuebles, expedientes, etc.). ¿Continuar?',
+      message: 'Perderás el acceso a su cartera (inmuebles, estudios, etc.). ¿Continuar?',
       confirmLabel: 'Salir',
       variant: 'danger',
       onConfirm: doSalir,
@@ -309,7 +309,7 @@ export default function EquipoPage() {
                   </h2>
                   <p className="text-xs text-gray-500 mt-1 max-w-xl">
                     {data.miembros_ven_todo
-                      ? 'Los miembros ven TODA la cartera de la inmobiliaria (inmuebles, expedientes, moras).'
+                      ? 'Los miembros ven TODA la cartera de la inmobiliaria (inmuebles, estudios, moras).'
                       : 'Cada miembro ve solo lo que creó o lo que le asignes. Los titulares siempre ven todo.'}
                   </p>
                 </div>

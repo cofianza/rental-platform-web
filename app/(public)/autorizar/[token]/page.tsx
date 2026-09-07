@@ -90,7 +90,7 @@ const MOTIVOS_REPORTE: Array<{ key: 'no_soy_yo' | 'datos_incorrectos'; label: st
 const FINALIDADES = [
   {
     Icon: IconActivity,
-    titulo: 'Evaluamos tu solicitud en segundos',
+    titulo: 'Evaluamos tu estudio en segundos',
     sub: 'Riesgo, capacidad de pago y aprobación',
     detalle: [
       'Analizamos tu perfil de riesgo y tu comportamiento de pago para definir si podemos respaldarte y en qué condiciones.',
@@ -229,7 +229,7 @@ export default function AutorizarPage() {
             code === 'AUTORIZACION_ESTADO_INVALIDO' ||
             code === 'AUTORIZACION_NOT_FOUND'
             ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.'
-            : 'No pudimos abrir tu solicitud en este momento. Vuelve a intentarlo en un rato.',
+            : 'No pudimos abrir tu estudio en este momento. Vuelve a intentarlo en un rato.',
         )
         setPageState('error')
       })
@@ -382,7 +382,7 @@ export default function AutorizarPage() {
         return
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
-        setErrorMessage('Este enlace ya no está vigente. Pide que te reenvíen uno nuevo desde el expediente.')
+        setErrorMessage('Este enlace ya no está vigente. Pide que te reenvíen uno nuevo desde el estudio.')
         setPageState('error')
         return
       }
@@ -767,7 +767,7 @@ export default function AutorizarPage() {
 
             {/* §8.3 Solo o acompañado */}
             <div>
-              <p className="text-sm font-bold text-gray-900">¿Presentas la solicitud solo o acompañado?</p>
+              <p className="text-sm font-bold text-gray-900">¿Presentas el estudio solo o acompañado?</p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {[
                   { key: 'solo' as const, Icon: IconUser, label: 'Solo' },

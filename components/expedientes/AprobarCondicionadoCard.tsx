@@ -60,10 +60,10 @@ export function AprobarCondicionadoCard({
       // Sin datos de contrato: solo aprueba. El contrato se genera después en
       // la pestaña Contratos con el formulario completo.
       await expedienteService.aprobarCondicionado(expedienteId)
-      toast.success('Expediente aprobado. Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).')
+      toast.success('Estudio aprobado. Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).')
       onAprobado?.()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo aprobar el expediente.'
+      const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
       toast.error(msg)
     } finally {
       setLoading(false)
@@ -88,7 +88,7 @@ export function AprobarCondicionadoCard({
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
           <p className="text-sm text-gray-700 mb-3">
             El buró marcó la solicitud como condicionada. Tú o el solicitante pueden invitar a un co-arrendatario
-            (abajo) para mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el expediente</strong>: pasará a
+            (abajo) para mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el estudio</strong>: pasará a
             Aprobado y desde la pestaña <strong>Contratos</strong> generarás el contrato con el formulario completo
             (modalidad de fianza y quién paga los servicios públicos).
           </p>
@@ -99,7 +99,7 @@ export function AprobarCondicionadoCard({
               disabled={loading || enviandoEnlace}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
             >
-              {loading ? 'Aprobando…' : 'Aprobar expediente'}
+              {loading ? 'Aprobando…' : 'Aprobar estudio'}
               {!loading && (
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -135,9 +135,9 @@ export function AprobarCondicionadoCard({
       isOpen={confirmAprobarOpen}
       onClose={() => setConfirmAprobarOpen(false)}
       onConfirm={handleAprobar}
-      title="Aprobar expediente condicionado"
-      message="El expediente pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. ¿Continuar?"
-      confirmLabel="Aprobar expediente"
+      title="Aprobar estudio condicionado"
+      message="El estudio pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. ¿Continuar?"
+      confirmLabel="Aprobar estudio"
       isLoading={loading}
     />
     </>

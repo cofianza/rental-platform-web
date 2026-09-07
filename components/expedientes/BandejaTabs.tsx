@@ -62,7 +62,7 @@ export function BandejaTabs({
     <div className="space-y-4">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPIMini label="Total expedientes" value={stats?.total ?? 0} color="bg-primary-600" />
+        <KPIMini label="Total estudios" value={stats?.total ?? 0} color="bg-primary-600" />
         <KPIMini label="En proceso" value={enProceso} color="bg-amber-500" />
         <KPIMini label="Requieren acción" value={requierenAccion} color="bg-orange-500" />
       </div>
@@ -142,7 +142,7 @@ export function BandejaTabs({
               )}
             />
           </span>
-          Mis expedientes
+          Mis estudios
         </button>
       </div>
     </div>

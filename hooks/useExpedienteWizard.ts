@@ -393,7 +393,7 @@ export function useExpedienteWizard() {
       } catch (inicioErr) {
         const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
         toast.warning(
-          `Creamos el expediente, pero no se pudo iniciar el estudio: ${detalle}. Elige la forma de pago desde el expediente.`,
+          `Creamos el estudio, pero no se pudo iniciar el estudio: ${detalle}. Elige la forma de pago desde el estudio.`,
           { duration: 10000 },
         )
       }
@@ -402,7 +402,7 @@ export function useExpedienteWizard() {
 
       return expediente.id
     } catch (err) {
-      let message = 'Error al crear expediente'
+      let message = 'Error al crear estudio'
 
       if (err instanceof ApiClientError) {
         // Manejar errores especificos del backend
@@ -412,7 +412,7 @@ export function useExpedienteWizard() {
           // evalúan en paralelo sobre la misma propiedad. Lo que sí sigue
           // bloqueando es duplicar el MISMO solicitante sobre el MISMO
           // inmueble, que es lo que este error protege.
-          message = 'Este solicitante ya tiene un expediente activo para este inmueble. Abre el existente en vez de crear otro.'
+          message = 'Este solicitante ya tiene un estudio activo para este inmueble. Abre el existente en vez de crear otro.'
         } else if (err.code === 'INMUEBLE_RESERVADO' || err.code === 'INMUEBLE_YA_RESERVADO') {
           // La propiedad se comprometió con un candidato aprobado que ya va
           // camino al contrato: es el único bloqueo por inmueble que queda.

@@ -202,7 +202,7 @@ export default function AprobacionExpedientesPage() {
       const result = await reporteService.getAprobacionExpedientes(cleanFilters)
       setData(result)
     } catch (err) {
-      console.error('Error cargando aprobacion de expedientes:', err)
+      console.error('Error cargando aprobacion de estudios:', err)
       toast.error('Error al cargar el reporte de aprobación')
     } finally {
       setLoading(false)

@@ -1,6 +1,6 @@
 /**
  * CitasSection — Gestión de citas (visitas) dentro del expediente
- * Paso previo al estudio crediticio
+ * Paso previo a la evaluación crediticia
  */
 
 'use client'
@@ -208,14 +208,14 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
                 <>
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-green-700 bg-white border border-green-200">
                     <IconShieldCheck size={12} />
-                    Estudio habilitado
+                    Evaluación habilitada
                   </span>
                   {!estudioYaCorrio && <PagoEstudioPill estado={pagoEstudioEstado} />}
                 </>
               ) : completedCita.expediente?.estudio_rechazado ? (
                 <span
                   className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
-                  title={completedCita.expediente?.motivo_estudio_rechazado || 'El propietario decidio no habilitar el estudio.'}
+                  title={completedCita.expediente?.motivo_estudio_rechazado || 'El propietario decidio no habilitar la evaluación.'}
                 >
                   Estudio no habilitado
                 </span>
@@ -261,7 +261,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               <p className="text-sm text-gray-600">
                 {canManageCitas
                   ? 'Programa una visita confirmada con el solicitante. Recibira una notificacion por correo y WhatsApp.'
-                  : 'Antes de continuar con el estudio crediticio, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmara.'}
+                  : 'Antes de continuar con la evaluación crediticia, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmara.'}
               </p>
             </div>
 

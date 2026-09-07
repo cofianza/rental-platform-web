@@ -18,7 +18,7 @@
  *
  * El estado en la base sigue siendo 'rechazado'; aquí solo cambia lo que lee la
  * persona. `motivo_rechazo` no se muestra al prospecto porque lo escribe el
- * motor con el mismo vocabulario ("el estudio crediticio del titular fue
+ * motor con el mismo vocabulario ("la evaluación crediticia del titular fue
  * rechazado. La solicitud no procede.").
  */
 
@@ -31,7 +31,7 @@ interface ExpedienteRechazadoBannerProps {
 }
 
 const MOTIVO_FALLBACK =
-  'La solicitud no procede tras el estudio crediticio. El expediente queda cerrado sin contrato.'
+  'El estudio no procede tras la evaluación crediticia y queda cerrado sin contrato.'
 
 export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRechazadoBannerProps) {
   if (esProspecto) {
@@ -68,7 +68,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-red-900 mb-0.5">Expediente rechazado</h3>
+          <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio rechazado</h3>
           <p className="text-sm text-red-800">{motivo || MOTIVO_FALLBACK}</p>
           <p className="text-xs text-red-700 mt-2">
             El flujo termina aquí. Si tienes dudas sobre esta decisión, escríbenos.

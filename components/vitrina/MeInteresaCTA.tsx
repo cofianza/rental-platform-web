@@ -207,12 +207,12 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
       } catch (citaError) {
         // Expediente creado pero cita falló: no rollback. Auditoría en console
         // para detectar si el caso ocurre seguido en pruebas/producción.
-        console.error('[MeInteresaCTA] Expediente creado pero cita falló. Requiere intervención:', {
+        console.error('[MeInteresaCTA] Estudio creado pero cita falló. Requiere intervención:', {
           expediente_id: expedienteId,
           error: citaError,
         })
         toast.message(
-          'Expediente creado. No se pudo agendar la cita — agéndala desde tu panel.',
+          'Estudio creado. No se pudo agendar la cita — agéndala desde tu panel.',
         )
         router.push(`/expedientes/${expedienteId}`)
       }

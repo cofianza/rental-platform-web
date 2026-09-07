@@ -123,7 +123,7 @@ function EstadoBadge({ estado }: { estado: ICoarrendatario['estado'] }) {
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
-      mensaje: 'Estamos procesando su estudio crediticio. Cuando termine, te diremos si pasaron juntos.',
+      mensaje: 'Estamos procesando su evaluación crediticia. Cuando termine, te diremos si pasaron juntos.',
     },
     rechazado_invitacion: {
       color: 'bg-red-50 border-red-200 text-red-900',
@@ -133,7 +133,7 @@ function EstadoBadge({ estado }: { estado: ICoarrendatario['estado'] }) {
     estudio_completado: {
       color: 'bg-green-50 border-green-200 text-green-900',
       label: 'Estudio completado',
-      mensaje: 'El estudio del co-arrendatario terminó. Revisa el resumen del expediente para ver el resultado combinado.',
+      mensaje: 'La evaluación del co-arrendatario terminó. Revisa el resumen del estudio para ver el resultado combinado.',
     },
   }
   const c = cfg[estado]

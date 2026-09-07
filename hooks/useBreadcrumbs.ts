@@ -20,7 +20,7 @@ export interface Breadcrumb {
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Inicio',
   inmuebles: 'Inmuebles',
-  expedientes: 'Expedientes',
+  expedientes: 'Estudios',
   usuarios: 'Usuarios',
   reportes: 'Reportes',
   configuracion: 'Configuración',

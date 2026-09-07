@@ -229,7 +229,7 @@ export function EstudiosInmobiliariaView({
               <IconShield size={44} className="mx-auto mb-3 text-gray-300" />
               <p className="text-sm font-medium text-gray-900">No hay estudios para este filtro</p>
               <p className="mt-1 text-sm text-gray-500">
-                Inicia uno desde un expediente con el botón “Nuevo estudio”.
+                Inicia uno con el botón “Nuevo estudio”.
               </p>
             </div>
           ) : (
@@ -238,7 +238,7 @@ export function EstudiosInmobiliariaView({
                 <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
                   <th className="px-6 py-3 font-bold">Prospecto</th>
                   <th className="px-6 py-3 font-bold">Tipo</th>
-                  <th className="px-6 py-3 font-bold">Expediente</th>
+                  <th className="px-6 py-3 font-bold">Estudio</th>
                   <th className="px-6 py-3 font-bold">Estado</th>
                   <th className="px-6 py-3 font-bold">Score</th>
                   <th className="px-6 py-3 font-bold">Fecha</th>

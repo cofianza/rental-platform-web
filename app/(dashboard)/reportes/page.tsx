@@ -20,8 +20,8 @@ import { useAuthStore } from '@/stores/auth.store'
 const REPORTES = [
   {
     id: 'volumen-expedientes',
-    titulo: 'Volumen de Expedientes',
-    descripcion: 'Expedientes creados vs cerrados por periodo con gráfico comparativo.',
+    titulo: 'Volumen de Estudios',
+    descripcion: 'Estudios creados vs cerrados por periodo con gráfico comparativo.',
     icon: IconBarChart3,
     color: 'bg-primary-100 text-primary-600',
     href: '/reportes/volumen',
@@ -29,22 +29,22 @@ const REPORTES = [
   {
     id: 'aprobacion-expedientes',
     titulo: 'Aprobados vs Rechazados',
-    descripcion: 'Tasa de aprobacion de expedientes por periodo con desglose de condicionados.',
+    descripcion: 'Tasa de aprobacion de estudios por periodo con desglose de condicionados.',
     icon: IconCheckCircle,
     color: 'bg-green-100 text-green-600',
     href: '/reportes/aprobacion',
   },
   {
     id: 'expedientes-estado',
-    titulo: 'Expedientes por estado',
-    descripcion: 'Distribución de expedientes según su estado actual en el flujo de trabajo.',
+    titulo: 'Estudios por estado',
+    descripcion: 'Distribución de estudios según su estado actual en el flujo de trabajo.',
     icon: IconBarChart3,
     color: 'bg-primary-100 text-primary-600',
     href: undefined as string | undefined,
   },
   {
     id: 'expedientes-analista',
-    titulo: 'Expedientes por analista',
+    titulo: 'Estudios por analista',
     descripcion: 'Carga de trabajo y rendimiento de cada analista del equipo.',
     icon: IconUsers,
     color: 'bg-blue-100 text-blue-600',

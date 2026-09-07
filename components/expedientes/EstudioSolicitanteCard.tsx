@@ -1,5 +1,5 @@
 /**
- * EstudioSolicitanteCard — UI del estudio crediticio desde la vista del solicitante.
+ * EstudioSolicitanteCard — UI de la evaluación crediticia desde la vista del solicitante.
  *
  * Flujo:
  *   - formulario_completado  → formulario "Confirma tu cédula y envía".
@@ -353,7 +353,7 @@ export function EstudioSolicitanteCard({
             <p className="text-sm font-semibold text-amber-900 mb-0.5">Tu enlace de autorización ya no está vigente</p>
             <p className="text-sm text-amber-800">
               El enlace para autorizar la consulta a centrales de riesgo venció o fue reemplazado sin firmarse.
-              Pide al propietario o a tu asesor que te lo reenvíe desde el expediente.
+              Pide al propietario o a tu asesor que te lo reenvíe desde el estudio.
             </p>
           </div>
         )
@@ -411,7 +411,7 @@ export function EstudioSolicitanteCard({
           </div>
         )}
         <h3 className="text-base font-semibold text-gray-900 mb-1">
-          {esReintento ? 'Corrige tus datos y reintenta' : 'Confirma tus datos para el estudio crediticio'}
+          {esReintento ? 'Corrige tus datos y reintenta' : 'Confirma tus datos para la evaluación crediticia'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           Al hacer click en <strong>Enviar</strong>, consultaremos tu historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.

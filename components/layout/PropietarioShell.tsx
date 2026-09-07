@@ -51,7 +51,7 @@ const NAV: NavGroup[] = [
       { label: 'Interesados', href: '/interesados', Icon: IconUsers },
       // Lista scopeada en el backend: el propietario solo ve expedientes de
       // SUS inmuebles. Orden del flujo: inmueble → expediente → estudio → contrato.
-      { label: 'Expedientes', href: '/expedientes', Icon: IconClipboardList },
+      { label: 'Estudios', href: '/expedientes', Icon: IconClipboardList },
       // Agenda de visitas (kanban). Antes solo se veía dentro de cada expediente.
       { label: 'Visitas', href: '/citas', Icon: IconCalendar },
       { label: 'Evaluar candidato', href: '/estudios', Icon: IconSearch },

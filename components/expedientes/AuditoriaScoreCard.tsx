@@ -2,7 +2,7 @@
  * Auditoria de score — visible solo para rol='administrador'.
  *
  * Muestra el reporte que devuelve GET /expedientes/:id/auditoria-score:
- * compara la decision del sistema sobre el estudio crediticio con la
+ * compara la decision del sistema sobre la evaluación crediticia con la
  * politica oficial (POLITICA DE EVALUACION Y APROBACION POR SCORE).
  *
  * Como hoy el sistema solo evalua el factor "Score externo" (modelo

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { IconLoader, IconCheck } from '@/components/icons'
 
 const CONCEPTO_LABELS: Record<string, string> = {
-  estudio: 'Estudio crediticio',
+  estudio: 'Evaluación crediticia',
   garantia: 'Garantía de arrendamiento',
   primer_canon: 'Primer canon',
   deposito: 'Depósito',

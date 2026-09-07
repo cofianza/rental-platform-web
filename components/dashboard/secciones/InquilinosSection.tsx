@@ -322,7 +322,7 @@ export function InquilinosSection() {
                       </button>
                       <Link
                         href={`/expedientes/${r.expedienteId}`}
-                        aria-label={`Ver expediente de ${r.inquilino}`}
+                        aria-label={`Ver estudio de ${r.inquilino}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-primary-400 hover:text-primary-600 transition-colors"
                       >
                         Ver

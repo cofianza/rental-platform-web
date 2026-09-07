@@ -187,8 +187,8 @@ export function PendientesFacturarSection({
 // que no este en el mapa, devolvemos el slug capitalizado.
 function inferConceptoLabel(concepto: string): string {
   const map: Record<string, string> = {
-    estudio: 'Estudio crediticio',
-    estudio_credito: 'Estudio crediticio',
+    estudio: 'Evaluación crediticia',
+    estudio_credito: 'Evaluación crediticia',
     afianzamiento: 'Afianzamiento',
     creditos_estudios: 'Paquete de créditos de estudios',
     canon: 'Canon de arrendamiento',

@@ -132,7 +132,7 @@ function VerifyEmailContent() {
               {[
                 'Completa los datos para el contrato en Configuración (NIT, representante y cuenta de pago).',
                 'Publica tu primer inmueble en la vitrina.',
-                'Cuando tengas un interesado, crea su expediente y solicita el estudio.',
+                'Cuando tengas un interesado, crea su estudio y solicita la evaluación.',
               ].map((paso, i) => (
                 <li key={i} className="flex items-start gap-2.5">
                   <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-600" />

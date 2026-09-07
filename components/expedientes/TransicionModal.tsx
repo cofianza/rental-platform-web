@@ -76,7 +76,7 @@ export function TransicionModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Cambiar Estado del Expediente"
+      title="Cambiar Estado del Estudio"
       size="md"
     >
       <div className="space-y-6">
@@ -153,7 +153,7 @@ export function TransicionModal({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
           />
           <p className="mt-1 text-xs text-gray-500">
-            Este comentario quedará registrado en el historial del expediente
+            Este comentario quedará registrado en el historial del estudio
           </p>
         </div>
 

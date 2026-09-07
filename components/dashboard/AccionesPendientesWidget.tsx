@@ -83,10 +83,10 @@ export function AccionesPendientesWidget() {
 
       {data.porHabilitar.length > 0 && (
         <CitaSection
-          title="Estudios por habilitar"
+          title="Evaluaciones por habilitar"
           icon={<IconShieldCheck size={16} className="text-green-600" />}
           items={data.porHabilitar}
-          ctaLabel="Habilitar estudio"
+          ctaLabel="Habilitar evaluación"
         />
       )}
 

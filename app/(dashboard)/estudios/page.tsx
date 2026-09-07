@@ -47,7 +47,7 @@ function EstudiosContent() {
   if (userRol === 'propietario') {
     return (
       <div className="space-y-6">
-        <PageHeader title="Evaluar candidato" subtitle="Envía a un prospecto a estudio crediticio y consulta tus evaluaciones." />
+        <PageHeader title="Evaluar candidato" subtitle="Envía a un prospecto a evaluación crediticia y consulta tus evaluaciones." />
         <EstudiosPropietarioView />
       </div>
     )
@@ -92,8 +92,8 @@ function EstudiosAdminView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Estudios"
-        subtitle={meta ? `${meta.total} estudios` : 'Cargando...'}
+        title="Evaluaciones crediticias"
+        subtitle={meta ? `${meta.total} evaluaciones` : 'Cargando...'}
       />
 
       <EstudiosBandejaTabs

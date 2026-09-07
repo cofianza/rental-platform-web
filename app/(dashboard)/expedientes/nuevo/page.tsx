@@ -173,10 +173,10 @@ function NuevoExpedienteContent() {
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Nuevo Expediente
+            Nuevo Estudio
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Complete los pasos para crear un nuevo expediente de arrendamiento
+            Complete los pasos para crear un nuevo estudio de arrendamiento
           </p>
         </div>
 

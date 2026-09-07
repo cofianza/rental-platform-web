@@ -60,7 +60,7 @@ export default function InterestPage() {
         setResult(res.data)
         setStatus('success')
         localStorage.removeItem('cofianza_interested_property')
-        toast.success('Expediente creado exitosamente')
+        toast.success('Estudio creado exitosamente')
 
         // Redirect to expediente detail after 2s
         setTimeout(() => {
@@ -88,7 +88,7 @@ export default function InterestPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 mb-2">Procesando tu solicitud</h1>
               <p className="text-sm text-gray-500">
-                Estamos creando tu expediente y preparando el siguiente paso...
+                Estamos creando tu estudio y preparando el siguiente paso...
               </p>
             </div>
           </>
@@ -100,17 +100,17 @@ export default function InterestPage() {
               <IconCheck size={32} className="text-green-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Expediente creado</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">Estudio creado</h1>
               <p className="text-sm text-gray-500 mb-4">
-                Tu expediente <span className="font-semibold text-gray-700">{result.expediente.numero}</span> fue creado. El siguiente paso es agendar una cita con el propietario.
+                Tu estudio <span className="font-semibold text-gray-700">{result.expediente.numero}</span> fue creado. El siguiente paso es agendar una cita con el propietario.
               </p>
-              <p className="text-xs text-gray-400">Redirigiendo al detalle del expediente...</p>
+              <p className="text-xs text-gray-400">Redirigiendo al detalle del estudio...</p>
             </div>
             <button
               onClick={() => router.push(`/expedientes/${result.expediente.id}`)}
               className="px-6 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Ir al expediente
+              Ir al estudio
             </button>
           </>
         )}

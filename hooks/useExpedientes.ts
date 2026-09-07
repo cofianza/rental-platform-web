@@ -16,7 +16,7 @@ import type { IExpedienteFilters, EstadoExpediente } from '@/types/expediente'
 const DEBOUNCE_DELAY = 300
 
 const EXPEDIENTE_MESSAGES = {
-  FETCH_ERROR: 'Error al cargar los expedientes',
+  FETCH_ERROR: 'Error al cargar los estudios',
   STATS_ERROR: 'Error al cargar estadísticas',
   ANALISTAS_ERROR: 'Error al cargar analistas',
 }

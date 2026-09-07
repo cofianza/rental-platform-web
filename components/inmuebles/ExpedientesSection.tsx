@@ -38,14 +38,14 @@ export function ExpedientesSection({
         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
           <IconFolderOpen size={24} className="text-gray-400" />
         </div>
-        <p className="text-gray-600 mb-4">No hay expedientes asociados a este inmueble</p>
+        <p className="text-gray-600 mb-4">No hay estudios asociados a este inmueble</p>
         {canCreate && (
           <Link
             href={`/expedientes/nuevo?inmueble_id=${inmuebleId}`}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
           >
             <IconPlus size={16} />
-            Crear Expediente
+            Crear Estudio
           </Link>
         )}
       </div>

@@ -5,7 +5,7 @@
  *
  * Mario (5-may-2026): el invitado abre el link que recibe por correo,
  * acepta T&C + política de tratamiento de datos, y ahí mismo se dispara
- * su estudio crediticio. NO necesita crear cuenta.
+ * su evaluación crediticia. NO necesita crear cuenta.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -167,7 +167,7 @@ export default function CoarrendatarioPublicPage() {
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900 leading-relaxed">
             <p className="font-semibold mb-1">¿Qué pasa si aceptas?</p>
             <ul className="list-disc pl-5 space-y-1 text-amber-800">
-              <li>Realizaremos un estudio crediticio rápido a tu nombre.</li>
+              <li>Realizaremos una evaluación crediticia rápida a tu nombre.</li>
               <li>Tu información se trata conforme a la <Link href="/privacidad" target="_blank" className="underline">política de tratamiento de datos</Link>.</li>
               <li>Si juntos cumplen el perfil, los respaldamos como arrendatarios.</li>
               <li>No tienes que crear cuenta ni firmar nada extra ahora — solo aceptar.</li>

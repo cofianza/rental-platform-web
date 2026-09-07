@@ -1,5 +1,5 @@
 /**
- * EstudioEstadoCard — resumen del estado del estudio crediticio para
+ * EstudioEstadoCard — resumen del estado de la evaluación crediticia para
  * propietario/inmobiliaria/admin/operador en la pestaña Resumen del expediente.
  *
  * Auto-oculto cuando no hay estudio activo. Muestra estado + resultado +
@@ -126,7 +126,7 @@ function getSiguientePaso(estudio: IEstudio): string {
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
-    if (estudio.resultado === 'rechazado') return 'Estudio rechazado. El expediente no avanza al contrato.'
+    if (estudio.resultado === 'rechazado') return 'Evaluación rechazada. El estudio no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
@@ -377,7 +377,7 @@ function EstudioPanel({
     <div className={`border rounded-lg p-4 ${styles.card}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-          Estudio crediticio
+          Evaluación crediticia
         </h3>
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${

@@ -196,7 +196,7 @@ export function Step1InmuebleSelection({
         hasActiveExpediente: result.hasActiveExpediente,
       })
     } catch (err) {
-      console.warn('Error al verificar expediente activo:', err)
+      console.warn('Error al verificar estudio activo:', err)
       // En caso de error, permitir continuar
       onUpdate({
         inmueble,
@@ -440,10 +440,10 @@ export function Step1InmuebleSelection({
                 <p className="text-sm font-medium text-blue-800">
                   {(data.inmueble?.estudios_activos ?? 0) > 0
                     ? `Este inmueble ya tiene ${data.inmueble?.estudios_activos} ${(data.inmueble?.estudios_activos ?? 0) === 1 ? 'estudio' : 'estudios'} en curso.`
-                    : 'Este inmueble ya tiene un expediente activo'}
+                    : 'Este inmueble ya tiene un estudio activo'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Expediente: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
+                  Estudio: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Puedes iniciar otro; la propiedad se reserva únicamente cuando uno quede aprobado.

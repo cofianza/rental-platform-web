@@ -229,7 +229,7 @@ export default function InteresadosPage() {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
                 >
                   <IconFileText size={13} />
-                  Crear expediente
+                  Crear estudio
                 </Link>
                 {it.estado !== 'contactado' && (
                   <button
