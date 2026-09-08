@@ -62,7 +62,7 @@ export function EstudiosFilters({
           >
             <option value="">Todos los resultados</option>
             <option value="aprobado">Aprobado</option>
-            <option value="rechazado">Rechazado</option>
+            <option value="rechazado">No aprobable</option>
             <option value="condicionado">Condicionado</option>
             <option value="pendiente">Pendiente</option>
           </select>

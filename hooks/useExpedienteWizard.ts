@@ -130,6 +130,21 @@ function isValidPhone(raw: string): boolean {
   return PHONE_CO_REGEX.test(limpio) || PHONE_INTL_REGEX.test(limpio)
 }
 
+/**
+ * Flujo §5.1: celular y correo del solicitante son obligatorios — el enlace
+ * de autorización va por WhatsApp con copia al correo. Aplica también al
+ * solicitante YA REGISTRADO: una ficha vieja puede no tenerlos. Mismo
+ * predicado que `canProceed` usa para el solicitante nuevo.
+ */
+export function solicitanteTieneContacto(
+  s: { email?: string | null; telefono?: string | null } | null | undefined,
+): boolean {
+  return !!s && !!s.telefono?.trim() && EMAIL_REGEX.test(s.email ?? '')
+}
+
+export const MSG_SOLICITANTE_SIN_CONTACTO =
+  'El solicitante necesita celular y correo para recibir la solicitud. Usa Editar para completarlos.'
+
 function validateStep1(data: WizardStep1Data): Record<string, string> {
   const errors: Record<string, string> = {}
 
@@ -147,6 +162,16 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
   if (!data.solicitante && !data.isNewSolicitante) {
     errors.solicitante = 'Debe buscar o crear un solicitante'
     return errors
+  }
+
+  // §5.1 sobre un solicitante existente: sin celular válido y correo no hay
+  // a dónde mandar el enlace. El formato se exige igual que al crearlo.
+  if (data.solicitante) {
+    const s = data.solicitante
+    if (!solicitanteTieneContacto(s) || !isValidPhone(s.telefono ?? '')) {
+      errors.solicitante = MSG_SOLICITANTE_SIN_CONTACTO
+      return errors
+    }
   }
 
   // Si es nuevo solicitante, validar formulario
@@ -393,7 +418,8 @@ export function useExpedienteWizard() {
       return !!data.step1.inmueble && !data.step1.excedeTope
     }
     if (currentStep === 2) {
-      if (data.step2.solicitante) return true
+      // §5.1: un solicitante ya registrado también necesita celular y correo.
+      if (data.step2.solicitante) return solicitanteTieneContacto(data.step2.solicitante)
       if (data.step2.isNewSolicitante && data.step2.formData) {
         const form = data.step2.formData
         return !!(
@@ -468,15 +494,11 @@ export function useExpedienteWizard() {
           forma_pago: data.step3.forma_pago as FormaPagoEstudio,
           notas: data.step3.notas || undefined,
         })
-        const avisoPorPago: Record<string, string> = {
-          credito: 'Listo: descontamos 1 crédito de tu paquete y el prospecto ya recibió el enlace de autorización.',
-          inmobiliaria: 'Listo: el costo de la evaluación queda a tu cargo y el prospecto ya recibió el enlace de autorización.',
-          prospecto: 'Listo: el prospecto recibió el enlace de autorización; cuando la firme le llegará el enlace de pago.',
-        }
-        toast.success(
-          avisoPorPago[data.step3.forma_pago as string] ??
-            'Solicitud enviada: el prospecto recibirá el enlace de autorización.',
-        )
+        // La respuesta de iniciarEstudio ({ expediente, estudio, forma_pago,
+        // cita_omitida }) no confirma ninguna entrega — ni WhatsApp/correo ni
+        // el enlace de pago de la opción C: la API los manda fire-and-forget.
+        // No se afirma lo que no se sabe.
+        toast.success('Estudio creado. Te avisamos cuando el prospecto autorice.')
       } catch (inicioErr) {
         const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
         toast.warning(

@@ -44,7 +44,7 @@ const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
 
 function estadoBadge(e: IEstudioListItem): { kind: BadgeKind; label: string } {
   if (e.resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
-  if (e.resultado === 'rechazado') return { kind: 'rechazado', label: 'Rechazado' }
+  if (e.resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
   if (e.resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
   switch (e.estado) {
     case 'en_proceso':
@@ -68,7 +68,7 @@ const CHIPS = [
   { id: 'todos', label: 'Todos' },
   { id: 'aprobado', label: 'Aprobados' },
   { id: 'proceso', label: 'En proceso' },
-  { id: 'rechazado', label: 'Rechazados' },
+  { id: 'rechazado', label: 'No aprobables' },
 ] as const
 
 // ── Componente ───────────────────────────────────────────────
@@ -182,7 +182,7 @@ export function EstudiosInmobiliariaView({
           sub="Esperando prospecto"
         />
         <StatCard
-          label="Rechazados"
+          label="No aprobables"
           value={stats?.rechazados ?? 0}
           color="text-red-500"
           sub={

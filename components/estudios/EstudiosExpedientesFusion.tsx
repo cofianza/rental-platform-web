@@ -34,7 +34,7 @@ const CHIPS: { id: EstudioFiltro; label: string }[] = [
   { id: 'requiere_accion', label: 'Requieren mi acción' },
   { id: 'aprobado', label: 'Aprobados' },
   { id: 'en_proceso', label: 'En proceso' },
-  { id: 'rechazado', label: 'Rechazados' },
+  { id: 'rechazado', label: 'No aprobables' },
   { id: 'condicionado', label: 'Condicionados' },
   { id: 'sin_estudio', label: 'Sin estudio' },
 ]
@@ -140,7 +140,7 @@ export function EstudiosExpedientesFusion() {
           sub="Esperando al prospecto o al buró"
         />
         <StatCard
-          label="Rechazados"
+          label="No aprobables"
           value={stats?.rechazados ?? 0}
           color="text-red-500"
           sub={

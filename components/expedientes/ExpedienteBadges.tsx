@@ -61,7 +61,7 @@ export interface ProcessStepBadgeProps {
  *
  * Estados especiales:
  * - cancelado → pill rojo "Cancelado en <paso>".
- * - rechazado → pill rojo "Rechazado".
+ * - rechazado → pill rojo "No aprobable".
  * - condicionado → pill amber "Condicionado".
  * - cualquier otro → "Paso N · Label" con tinte segun avance.
  */
@@ -98,7 +98,7 @@ export function ProcessStepBadge({ estado, citaRealizada, className, cancelado =
           className,
         )}
       >
-        Rechazado
+        No aprobable
       </span>
     )
   }

@@ -21,7 +21,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
-import { IconInfo, IconClock, IconUsers, IconCheckCircle } from '@/components/icons'
+import { IconInfo, IconClock, IconUsers, IconCheckCircle, IconDownload } from '@/components/icons'
+import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 
@@ -73,6 +74,7 @@ export function EstudioSolicitanteCard({
   // manual para no ofrecer dos caminos contradictorios.
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [descargandoCert, setDescargandoCert] = useState(false)
 
   // El prefill solo se aplica UNA vez (primer fetch). Sin esta guarda, los
   // pollings que llaman fetchEstudio re-aplicarían el prefill cada tick y
@@ -274,6 +276,22 @@ export function EstudioSolicitanteCard({
     }
   }
 
+  // Flujo §11: el CRC es del prospecto. GET /estudios/:id/certificado/descargar
+  // admite al rol 'solicitante' (authorize expedientes:read + assertExpedienteAccess
+  // por solicitante_id), así que el botón no promete nada que la API niegue.
+  const handleDescargarCertificado = async () => {
+    if (!estudio) return
+    setDescargandoCert(true)
+    try {
+      const res = await estudioService.descargarCertificado(estudio.id)
+      window.open(res.url, '_blank', 'noopener')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos descargar el certificado. Intenta de nuevo.')
+    } finally {
+      setDescargandoCert(false)
+    }
+  }
+
   if (loading || authLoading) return null
 
   // Antes del pago (solicitado / pago_pendiente) NO mostramos nada — el
@@ -284,10 +302,14 @@ export function EstudioSolicitanteCard({
 
   // Card "Firma tu autorización": el camino correcto cuando hay un enlace de
   // habeas data pendiente — al firmar, el estudio corre automáticamente
-  // (orchestrator.onHabeasDataAutorizado). Vence con fecha real del token.
+  // (orchestrator.onHabeasDataAutorizado). Vence con fecha real del token; si
+  // no la hay, con el plazo del §12 que la API deriva (`expiracion`, que ya
+  // viaja en el listado). El "48 horas" de antes era una promesa de la web.
   const venceTexto = autorizacion?.token_expiracion
     ? `vence el ${new Date(autorizacion.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`
-    : 'vence en 48 horas'
+    : estudio.expiracion?.expiraEn
+      ? `vence el ${formatDate(estudio.expiracion.expiraEn)}`
+      : 'vence en 15 días'
   const cardFirmaAutorizacion = (
     <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
       <div className="flex items-start gap-3">
@@ -509,6 +531,22 @@ export function EstudioSolicitanteCard({
     // Los bloques por `resultado` de mas abajo se conservan como fallback: la
     // web y la API se despliegan por separado, y sin esto una web nueva contra
     // una API vieja dejaria al prospecto sin ningun mensaje.
+    //
+    // El CRC (§11) solo existe para aprobado/condicionado y solo cuando la API
+    // ya lo emitió (certificado_url); se ofrece en la ruta y en los fallbacks.
+    const botonCertificado =
+      estudio.certificado_url && (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado') ? (
+        <button
+          type="button"
+          onClick={handleDescargarCertificado}
+          disabled={descargandoCert}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <IconDownload size={14} />
+          {descargandoCert ? 'Preparando certificado…' : 'Descargar certificado (CRC)'}
+        </button>
+      ) : null
+
     if (estudio.ruta) {
       const r = estudio.ruta
       const tono =
@@ -558,6 +596,7 @@ export function EstudioSolicitanteCard({
                   Sumar un coarrendatario baja el valor de la prima.
                 </p>
               )}
+              {botonCertificado}
             </div>
           </div>
         </div>
@@ -576,6 +615,7 @@ export function EstudioSolicitanteCard({
               <p className="text-sm text-green-800">
                 Pronto el propietario te liberará el contrato para firmar. Te avisaremos en cuanto esté listo.
               </p>
+              {botonCertificado}
             </div>
           </div>
         </div>
@@ -590,10 +630,12 @@ export function EstudioSolicitanteCard({
             </svg>
             <div>
               <p className="text-sm font-semibold text-amber-900 mb-0.5">Estudio condicionado</p>
+              {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
+                  obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">
-                Tu perfil quedó marginal. En Cofianza no pedimos fiador — para continuar, invita a un co-arrendatario
-                (la persona con quien vas a vivir) y los respaldamos juntos como un solo arrendatario.
+                Tu evaluación necesita una revisión adicional. Te avisaremos en cuanto haya una decisión.
               </p>
+              {botonCertificado}
             </div>
           </div>
         </div>

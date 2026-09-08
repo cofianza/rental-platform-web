@@ -18,7 +18,12 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
-import { calibracionService, type IParametroCalibracion, type IHistorialCalibracion } from '@/services/calibracionService'
+import {
+  calibracionService,
+  type IParametroCalibracion,
+  type IHistorialCalibracion,
+  type ICascadaCentrales,
+} from '@/services/calibracionService'
 import { IconLoader, IconLock, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
 
@@ -43,6 +48,18 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
+
+const pct = (n: number, total: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : '—')
+
+function DatoCascada({ label, valor, sub }: { label: string; valor: string; sub?: string }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+      <dt className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</dt>
+      <dd className="mt-1 font-mono text-2xl font-extrabold text-gray-900">{valor}</dd>
+      {sub && <dd className="text-xs text-gray-500">{sub}</dd>}
+    </div>
+  )
+}
 
 function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado: () => void }) {
   const [editando, setEditando] = useState(false)
@@ -153,13 +170,20 @@ export default function AdminCalibracionPage() {
   const { user } = useAuth()
   const [params, setParams] = useState<IParametroCalibracion[]>([])
   const [historial, setHistorial] = useState<IHistorialCalibracion[]>([])
+  // null = no se pudo cargar (la cascada es informativa: no tumba el panel).
+  const [cascada, setCascada] = useState<ICascadaCentrales | null>(null)
   const [loading, setLoading] = useState(true)
 
   const cargar = async () => {
     try {
-      const [p, h] = await Promise.all([calibracionService.listar(), calibracionService.historial()])
+      const [p, h, c] = await Promise.all([
+        calibracionService.listar(),
+        calibracionService.historial(),
+        calibracionService.getCascada(30).catch(() => null),
+      ])
       setParams(p)
       setHistorial(h)
+      setCascada(c)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error cargando la calibración')
     } finally {
@@ -204,6 +228,39 @@ export default function AdminCalibracionPage() {
             Adenda §11: antes de cambiar un parámetro en producción, pide a Tecnología que valide la matriz de
             casos de prueba y confirme que ningún caso crítico cambia de resultado.
           </div>
+
+          {/* Cascada de centrales (Política V4.1 §8): cuántos estudios cerraron
+              con una consulta y cuántos necesitaron la segunda central. Con el
+              motor apagado no hay rastro, y se dice en vez de contar ceros. */}
+          <section className="rounded-xl border border-gray-200 bg-white p-4">
+            <h2 className="text-sm font-bold text-gray-900">Cascada de centrales (últimos 30 días)</h2>
+            {cascada === null ? (
+              <p className="mt-1 text-sm text-gray-400">No se pudo cargar la cascada.</p>
+            ) : cascada.total === 0 ? (
+              <p className="mt-1 text-sm text-gray-400">
+                Sin estudios ejecutados desde {formatDate(cascada.desde)}.
+              </p>
+            ) : (
+              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <DatoCascada label="Estudios" valor={cascada.total.toLocaleString('es-CO')} sub={`desde ${formatDate(cascada.desde)}`} />
+                <DatoCascada
+                  label="Resueltos con una central"
+                  valor={pct(cascada.una_central, cascada.total)}
+                  sub={`${cascada.una_central.toLocaleString('es-CO')} estudios`}
+                />
+                <DatoCascada
+                  label="Con dos centrales"
+                  valor={pct(cascada.dos_centrales, cascada.total)}
+                  sub={`${cascada.dos_centrales.toLocaleString('es-CO')} estudios`}
+                />
+                <DatoCascada
+                  label="Sin dato (motor apagado)"
+                  valor={cascada.sin_dato.toLocaleString('es-CO')}
+                  sub={cascada.sin_dato > 0 ? 'no cuentan en los porcentajes' : undefined}
+                />
+              </dl>
+            )}
+          </section>
 
           <div className="space-y-3">
             {params.map((p) => (

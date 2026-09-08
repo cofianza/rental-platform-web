@@ -25,7 +25,7 @@ function resolveBadge(
 ): { kind: BadgeKind; label: string } {
   if (!estado && !resultado) return { kind: 'sin', label: 'Sin estudio' }
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
-  if (resultado === 'rechazado') return { kind: 'rechazado', label: 'Rechazado' }
+  if (resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
   if (resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
   // "Esperando" a secas no decia esperando QUE: el gestor tenia que abrir el
   // estudio para saber si le tocaba a el, al prospecto o al buro.

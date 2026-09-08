@@ -60,7 +60,7 @@ const ESTADO_LABELS: Record<string, string> = {
   en_revision: 'En Revisión',
   informacion_incompleta: 'Info. Incompleta',
   aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
+  rechazado: 'No aprobable',
   condicionado: 'Condicionado',
   cerrado: 'Finalizado',
 }

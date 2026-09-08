@@ -29,6 +29,19 @@ export interface IHistorialCalibracion {
   created_at: string
 }
 
+/**
+ * Cascada de centrales: cuántos estudios se resolvieron con una sola consulta
+ * y cuántos necesitaron la segunda. `sin_dato` = el motor decisor estaba
+ * apagado (MOTOR_DECIDE_ENABLED) y el estudio no dejó rastro de la cascada.
+ */
+export interface ICascadaCentrales {
+  desde: string
+  total: number
+  una_central: number
+  dos_centrales: number
+  sin_dato: number
+}
+
 export const calibracionService = {
   async listar(): Promise<IParametroCalibracion[]> {
     const res = await apiClient.get<IParametroCalibracion[]>('/admin/calibracion')
@@ -40,6 +53,10 @@ export const calibracionService = {
   },
   async actualizar(clave: string, valor: number, motivo?: string): Promise<IParametroCalibracion> {
     const res = await apiClient.patch<IParametroCalibracion>(`/admin/calibracion/${clave}`, { valor, motivo })
+    return res.data
+  },
+  async getCascada(dias = 30): Promise<ICascadaCentrales> {
+    const res = await apiClient.get<ICascadaCentrales>(`/admin/calibracion/cascada?dias=${dias}`)
     return res.data
   },
 }

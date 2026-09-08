@@ -212,7 +212,7 @@ export function InquilinosSection() {
             { value: 'todos', label: 'Todos' },
             { value: 'aprobado', label: 'Aprobado' },
             { value: 'condicionado', label: 'Condicionado' },
-            { value: 'rechazado', label: 'Rechazado' },
+            { value: 'rechazado', label: 'No aprobable' },
           ]}
         />
         <FiltroSelect

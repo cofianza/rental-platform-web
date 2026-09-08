@@ -23,7 +23,7 @@ interface AuditoriaScoreCardProps {
 const DECISION_LABEL: Record<string, string> = {
   aprobado_automatico: 'Aprobado automático',
   revision_manual: 'Revisión manual',
-  rechazado: 'Rechazado',
+  rechazado: 'No aprobable',
   aprobado: 'Aprobado',
   condicionado: 'Condicionado',
   pendiente: 'Pendiente',

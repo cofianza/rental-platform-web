@@ -59,7 +59,7 @@ export function getProcessStepLabel(
   estado: EstadoExpediente,
   citaRealizada: boolean,
 ): string {
-  if (estado === 'rechazado') return 'Rechazado'
+  if (estado === 'rechazado') return 'No aprobable'
   if (estado === 'condicionado') return 'Condicionado'
   const idx = getProcessStep(estado, citaRealizada)
   return PROCESS_STEPS[idx]?.label ?? 'Solicitud'

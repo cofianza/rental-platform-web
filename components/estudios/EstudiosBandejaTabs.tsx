@@ -50,7 +50,7 @@ export function EstudiosBandejaTabs({
         <KPIMini label="Aprobados" value={stats?.aprobados ?? 0} color="bg-green-500" />
         <KPIMini label="Condicionados" value={stats?.condicionados ?? 0} color="bg-amber-500" />
         <KPIMini label="En proceso" value={stats?.en_proceso ?? 0} color="bg-blue-500" />
-        <KPIMini label="Rechazados" value={stats?.rechazados ?? 0} color="bg-red-500" />
+        <KPIMini label="No aprobables" value={stats?.rechazados ?? 0} color="bg-red-500" />
       </div>
 
       {/* Tabs */}

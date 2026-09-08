@@ -32,9 +32,10 @@ export interface IEstudio {
   proveedor: ProveedorEstudio
   estado: EstadoEstudio
   resultado: ResultadoEstudio
-  /** Ruta del §10. Opcional: no viaja en los listados, solo en el detalle. */
+  /** Ruta del §10. Viaja en el detalle y en el listado por expediente
+   *  (GET /expedientes/:id/estudios); opcional por compatibilidad. */
   ruta?: IRutaResultado
-  /** Expiracion del §12. Opcional: igual que `ruta`, solo en el detalle. */
+  /** Expiracion del §12. Igual que `ruta`: detalle + listado por expediente. */
   expiracion?: IExpiracionEstudio
   /**
    * Background check de Auco (listas restrictivas, antecedentes, afiliacion).

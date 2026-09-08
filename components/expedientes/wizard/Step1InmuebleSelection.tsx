@@ -8,6 +8,7 @@
 import { estudioService } from '@/services/estudioService'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   IconSearch,
   IconLoader,
@@ -15,6 +16,7 @@ import {
   IconHome,
   IconMapPin,
   IconAlertTriangle,
+  IconPlus,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import { inmuebleService } from '@/services/inmuebleService'
@@ -272,7 +274,11 @@ export function Step1InmuebleSelection({
                 </div>
               ) : misInmuebles.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No tienes inmuebles. Usa el buscador de abajo para ver el catálogo completo.
+                  No tienes inmuebles. Usa el buscador de abajo para ver el catálogo completo, o{' '}
+                  <Link href="/inmuebles/nuevo" className="font-semibold text-primary-700 hover:text-primary-800">
+                    crea uno ahora
+                  </Link>
+                  .
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -382,6 +388,15 @@ export function Step1InmuebleSelection({
                 <div className="px-4 py-8 text-center text-gray-500">
                   <IconHome size={32} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">{WIZARD_MESSAGES.NO_INMUEBLES_FOUND}</p>
+                  {/* §4.1: sin inmueble no hay estudio — se ofrece crearlo aquí mismo.
+                      /inmuebles/nuevo no acepta un `returnTo`: vuelve a su listado. */}
+                  <Link
+                    href="/inmuebles/nuevo"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:text-primary-800"
+                  >
+                    <IconPlus size={14} />
+                    Crear inmueble
+                  </Link>
                 </div>
               ) : (
                 <ul>

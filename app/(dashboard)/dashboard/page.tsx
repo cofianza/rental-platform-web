@@ -26,6 +26,7 @@ import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendien
 import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
 import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
 import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesPropietario'
+import { NotaApelacion } from '@/components/expedientes/ExpedienteRechazadoBanner'
 // Vista "Centro de Control" (Resumen) del administrador, mockup
 // htmls/15_COFIANZA_Dashboard_Interno_v2.html. Las demás secciones se movieron
 // a rutas del sidebar; el dashboard del admin muestra solo el Resumen.
@@ -874,6 +875,7 @@ function SolicitanteDashboard() {
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                     <p className="text-sm text-slate-900 font-medium">No aprobable por ahora</p>
                     <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre ti: puedes intentarlo con un inmueble de canon menor, presentar un co-arrendatario o volver a solicitarlo más adelante.</p>
+                    <NotaApelacion className="mt-1.5" />
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">

@@ -116,6 +116,9 @@ export interface IEnviarEnlaceResponse {
 
 export interface IFirmarInput {
   metodo_firma: MetodoFirma
+  /** §8.1: la confirmación de identidad viaja TAMBIÉN con la firma, por si el
+   *  POST /perfil (best-effort) se perdió. Sólo `true`, igual que en el perfil. */
+  identidad_confirmada?: true
   datos_firma?: string
   codigo_otp?: string
   consentimientos_opcionales?: {

@@ -33,7 +33,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { autorizacionPublicService } from '@/services/autorizacionService'
-import type { IAutorizacionPublicData, IPagoProspecto } from '@/types/autorizacion'
+import type { IAutorizacionPublicData, IPagoProspecto, IPerfilProspectoInput } from '@/types/autorizacion'
 import { mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import {
@@ -290,26 +290,35 @@ export default function AutorizarPage() {
     setCoaEmailError(false)
     setPaso(3)
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
+    const perfil: IPerfilProspectoInput = {
+      identidad_confirmada: true,
+      ...(situacion ? { situacion_laboral: situacion } : {}),
+      ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
+      ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
+      ...(presentacion ? { presentacion } : {}),
+      ...(presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
+        ? {
+            coarrendatario: {
+              nombre: coaNombre.trim(),
+              apellido: coaApellido.trim(),
+              ...(coaEmail.trim() ? { email: coaEmail.trim() } : {}),
+              ...(coaTelefono.trim() ? { telefono: coaTelefono.trim() } : {}),
+            },
+          }
+        : {}),
+    }
+    // UN reintento: de todo este POST lo único que pesa es la confirmación de
+    // identidad del §8.1 (la defensa del §12 contra el enlace reenviado), y un
+    // corte de datos móviles no debería perderla en silencio. Sigue sin
+    // bloquear: la firma vuelve a llevar `identidad_confirmada` por si acaso.
     try {
-      await autorizacionPublicService.guardarPerfil(token, {
-        identidad_confirmada: true,
-        ...(situacion ? { situacion_laboral: situacion } : {}),
-        ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
-        ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
-        ...(presentacion ? { presentacion } : {}),
-        ...(presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
-          ? {
-              coarrendatario: {
-                nombre: coaNombre.trim(),
-                apellido: coaApellido.trim(),
-                ...(coaEmail.trim() ? { email: coaEmail.trim() } : {}),
-                ...(coaTelefono.trim() ? { telefono: coaTelefono.trim() } : {}),
-              },
-            }
-          : {}),
-      })
+      await autorizacionPublicService.guardarPerfil(token, perfil)
     } catch {
-      // Silencioso y deliberado: ver el comentario de arriba.
+      try {
+        await autorizacionPublicService.guardarPerfil(token, perfil)
+      } catch {
+        // Silencioso y deliberado: ver el comentario de arriba.
+      }
     }
   }
 
@@ -367,6 +376,9 @@ export default function AutorizarPage() {
     try {
       const result = await autorizacionPublicService.firmar(token, {
         metodo_firma: 'casilla',
+        // §8.1: el paso 1 no se supera sin marcar "soy yo"; se reafirma aquí
+        // porque el POST /perfil que lo llevaba es best-effort.
+        identidad_confirmada: true,
         consentimientos_opcionales: consents,
       })
       setHashDocumento(result.hash_documento)

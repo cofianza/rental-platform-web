@@ -1,6 +1,7 @@
 /**
  * Datos de la empresa (Cofianza) — edición por el administrador.
- * Nombre, NIT, dirección, teléfono, email, web y validez de certificados.
+ * Nombre, NIT, dirección, teléfono, email y web. La vigencia del CRC NO se
+ * edita aquí: es VIGENCIA_CRC_DIAS en /admin/calibracion.
  * Estos datos alimentan los certificados de estudio y la firma de Cofianza.
  */
 
@@ -25,7 +26,6 @@ const CAMPOS: Array<{ key: keyof EmpresaInfo; label: string; type?: string; help
   },
   { key: 'email', label: 'Email', type: 'email', required: true, help: 'Correo de Cofianza para la firma y los certificados.' },
   { key: 'website', label: 'Sitio web' },
-  { key: 'certificateValidityDays', label: 'Validez de certificados (días)', type: 'number' },
 ]
 
 export default function EmpresaPage() {
@@ -48,9 +48,7 @@ export default function EmpresaPage() {
   }, [cargar])
 
   const setCampo = (key: keyof EmpresaInfo, value: string) => {
-    setForm((f) =>
-      f ? { ...f, [key]: key === 'certificateValidityDays' ? Number(value) || 0 : value } : f,
-    )
+    setForm((f) => (f ? { ...f, [key]: value } : f))
   }
 
   const handleGuardar = async (e: React.FormEvent) => {
@@ -68,7 +66,10 @@ export default function EmpresaPage() {
     }
     setSaving(true)
     try {
-      const updated = await updateEmpresa({ ...form, phone })
+      // Solo los campos de esta pantalla: `certificateValidityDays` ya no se
+      // edita aquí (vive en /admin/calibracion) y no se reenvía para no pisarlo.
+      const { name, nit, address, email, website } = form
+      const updated = await updateEmpresa({ name, nit, address, phone, email, website })
       setForm(updated)
       toast.success('Datos de la empresa actualizados')
     } catch (err: unknown) {

@@ -133,7 +133,7 @@ export function CarteraAnaliticaSection() {
               variant="border-amber-300 bg-amber-50 text-amber-700"
             />
             <DecisionCard
-              label="Rechazados"
+              label="No aprobables"
               value={d.rechazados}
               variant="border-red-300 bg-red-50 text-red-500"
             />

@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -17,12 +17,17 @@ import {
   IconPencil,
   IconFileCheck,
   IconArrowRight,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { solicitanteService } from '@/services/solicitanteService'
 import { estudioService, type IEstudioVigente } from '@/services/estudioService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
-import type { WizardStep2Data } from '@/hooks/useExpedienteWizard'
+import {
+  solicitanteTieneContacto,
+  MSG_SOLICITANTE_SIN_CONTACTO,
+  type WizardStep2Data,
+} from '@/hooks/useExpedienteWizard'
 import {
   WIZARD_MESSAGES,
   TIPO_PERSONA_OPTIONS,
@@ -78,6 +83,30 @@ export function Step2Solicitante({
   const handleSelectReciente = (s: ISolicitante) => {
     onUpdate({ solicitante: s, isNewSolicitante: false, formData: null })
   }
+
+  // §5.2 también al elegir del quick-pick, al seleccionar uno existente o al
+  // volver de un borrador: la búsqueda por documento no es el único camino.
+  const consultarVigente = useCallback((tipo: string, numero: string) => {
+    estudioService
+      .buscarVigentePorDocumento(tipo, numero)
+      .then(setEstudioVigente)
+      .catch(() => setEstudioVigente(null))
+  }, [])
+  // Documento ya consultado, para no repetir la llamada que handleSearch
+  // hace en paralelo cuando el solicitante existe.
+  const vigenteDocRef = useRef<string | null>(null)
+  useEffect(() => {
+    const s = data.solicitante
+    if (!s) {
+      vigenteDocRef.current = null
+      return
+    }
+    const key = `${s.tipo_documento}:${s.numero_documento}`
+    if (vigenteDocRef.current === key) return
+    vigenteDocRef.current = key
+    setEstudioVigente(null)
+    consultarVigente(s.tipo_documento, s.numero_documento)
+  }, [data.solicitante, consultarVigente])
 
   // Edición de un solicitante existente (PATCH inmediato). Estado local: no toca
   // el wizard hasta guardar; al guardar, reemplaza el solicitante seleccionado.
@@ -185,6 +214,7 @@ export function Step2Solicitante({
     // Limpiar el aviso anterior: si no, el estudio vigente de la persona
     // buscada antes seguiría en pantalla junto a los datos de otra.
     setEstudioVigente(null)
+    vigenteDocRef.current = `${searchTipoDoc}:${searchNumDoc.trim()}`
 
     try {
       // El aviso del §5.2 es informativo: si la consulta falla, la búsqueda
@@ -238,6 +268,7 @@ export function Step2Solicitante({
     })
     setSearchTipoDoc('cc')
     setSearchNumDoc('')
+    setEstudioVigente(null)
   }
 
   // Limpiar solicitante seleccionado
@@ -247,7 +278,41 @@ export function Step2Solicitante({
       isNewSolicitante: false,
       formData: null,
     })
+    setEstudioVigente(null)
   }
+
+  // §5.2 — ya hay un estudio vigente para este documento. Se calcula ANTES de
+  // los returns por rama: antes vivía solo en el modo búsqueda y nunca se
+  // veía al elegir del quick-pick ni con el solicitante ya seleccionado.
+  const bannerVigente = estudioVigente ? (
+    <div className="rounded-xl border border-primary-200 bg-primary-50/70 p-4">
+      <div className="flex items-start gap-3">
+        <IconFileCheck size={18} className="mt-0.5 shrink-0 text-primary-600" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-primary-900">
+            Esta persona ya tiene un estudio vigente
+          </p>
+          <p className="mt-1 text-sm text-primary-800">
+            {estudioVigente.expediente_numero
+              ? `Estudio ${estudioVigente.expediente_numero}. `
+              : ''}
+            Le quedan {estudioVigente.dias_restantes}{' '}
+            {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia. Puedes
+            reutilizarlo para esta propiedad sin volver a cobrarlo.
+          </p>
+          {estudioVigente.expediente_id && (
+            <Link
+              href={`/expedientes/${estudioVigente.expediente_id}`}
+              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800"
+            >
+              Ver estudio vigente
+              <IconArrowRight size={14} />
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null
 
   // Editando un solicitante existente — reusa el formulario completo.
   if (editingId && editForm) {
@@ -265,6 +330,8 @@ export function Step2Solicitante({
             Cancelar
           </button>
         </div>
+
+        {bannerVigente}
 
         {editError && <p className="text-sm text-red-600">{editError}</p>}
 
@@ -322,11 +389,26 @@ export function Step2Solicitante({
           </p>
         </div>
 
+        {bannerVigente}
+
         <SolicitanteCard
           solicitante={data.solicitante}
           onClear={handleClearSelection}
           onEdit={() => handleEditExisting(data.solicitante!)}
         />
+
+        {/* §5.1: el enlace de autorización va por WhatsApp con copia al correo;
+            una ficha vieja puede no tenerlos y "Siguiente" queda bloqueado. */}
+        {!solicitanteTieneContacto(data.solicitante) && (
+          <div
+            className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+            role="status"
+          >
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>{MSG_SOLICITANTE_SIN_CONTACTO}</span>
+          </div>
+        )}
+        {errors.solicitante && <p className="text-sm text-red-600">{errors.solicitante}</p>}
       </div>
     )
   }
@@ -353,6 +435,8 @@ export function Step2Solicitante({
             Cancelar
           </button>
         </div>
+
+        {bannerVigente}
 
         <SolicitanteForm
           formData={data.formData}
@@ -432,34 +516,7 @@ export function Step2Solicitante({
           </button>
         </div>
 
-        {/* §5.2 — ya hay un estudio vigente para este documento */}
-        {estudioVigente && (
-          <div className="mt-3 rounded-xl border border-primary-200 bg-primary-50/70 p-4">
-            <div className="flex items-start gap-3">
-              <IconFileCheck size={18} className="mt-0.5 shrink-0 text-primary-600" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-primary-900">
-                  Esta persona ya tiene un estudio vigente
-                </p>
-                <p className="mt-1 text-sm text-primary-800">
-                  {estudioVigente.expediente_numero
-                    ? `Estudio ${estudioVigente.expediente_numero}. `
-                    : ''}
-                  Le quedan {estudioVigente.dias_restantes}{' '}
-                  {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia. Puedes
-                  reutilizarlo para esta propiedad sin volver a cobrarlo.
-                </p>
-                <Link
-                  href={`/expedientes/${estudioVigente.expediente_id}`}
-                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800"
-                >
-                  Ver el estudio existente
-                  <IconArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {bannerVigente && <div className="mt-3">{bannerVigente}</div>}
 
         {/* Error de busqueda */}
         {searchError && (

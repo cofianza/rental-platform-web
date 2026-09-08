@@ -20,7 +20,7 @@ const BANDEJAS: Array<{
   { id: 'informacion_incompleta', label: 'Incompletos', estado: 'informacion_incompleta' },
   { id: 'aprobado', label: 'Aprobados', estado: 'aprobado' },
   { id: 'condicionado', label: 'Condicionados', estado: 'condicionado' },
-  { id: 'rechazado', label: 'Rechazados', estado: 'rechazado' },
+  { id: 'rechazado', label: 'No aprobables', estado: 'rechazado' },
   { id: 'cerrado', label: 'Cerrados', estado: 'cerrado' },
   { id: 'borrador', label: 'Borradores', estado: 'borrador' },
 ]

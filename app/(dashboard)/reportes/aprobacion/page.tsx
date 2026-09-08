@@ -225,7 +225,7 @@ export default function AprobacionExpedientesPage() {
       {/* Header */}
       <PageHeader
         title="Tasa de Aprobación"
-        subtitle="Aprobados vs rechazados por periodo"
+        subtitle="Aprobados vs no aprobables por periodo"
         actions={
           <div className="flex items-center gap-2">
             <ExportButton
@@ -302,7 +302,7 @@ export default function AprobacionExpedientesPage() {
         </span>
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-red-500" />
-          Rechazados
+          No aprobables
         </span>
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-amber-500" />
@@ -333,7 +333,7 @@ export default function AprobacionExpedientesPage() {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-4 py-3 font-medium text-gray-700">Periodo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Aprobados</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-700">Rechazados</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-700">No aprobables</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Condicionados</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Total</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Tasa (%)</th>

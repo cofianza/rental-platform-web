@@ -20,6 +20,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
+import { estudioService } from '@/services/estudioService'
 import { IconAlertTriangle } from '@/components/icons'
 
 // useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
@@ -87,7 +88,12 @@ function NuevoExpedienteContent() {
     setPrefillLoading(true)
     ;(async () => {
       try {
-        const inmueble = await inmuebleService.getInmuebleById(inmueblePreseleccionId)
+        // §4.4: el tope de canon también se mira en este atajo — antes saltaba
+        // al paso 2 sin validarlo y el gestor chocaba con el bloqueo al final.
+        const [inmueble, topeCanon] = await Promise.all([
+          inmuebleService.getInmuebleById(inmueblePreseleccionId),
+          estudioService.getTopeCanon().catch(() => null),
+        ])
         let hasActiveExpediente = false
         try {
           const check = await expedienteService.checkActiveExpediente(inmueble.id)
@@ -95,7 +101,8 @@ function NuevoExpedienteContent() {
         } catch {
           // Falla no bloqueante: el step 1 ya valida.
         }
-        updateStep1({ inmueble, hasActiveExpediente })
+        const excedeTope = topeCanon !== null && Number(inmueble.valor_arriendo ?? 0) > topeCanon
+        updateStep1({ inmueble, hasActiveExpediente, excedeTope })
 
         // Si venimos de un INTERESADO de la vitrina, pre-llenar el solicitante
         // (nuevo) con sus datos de contacto: /expedientes/nuevo?inmueble_id=..&
@@ -119,7 +126,9 @@ function NuevoExpedienteContent() {
             },
           })
         }
-        goToStep(2)
+        // Con el canon por encima del tope nos quedamos en el paso 1: el banner
+        // rojo de Step1 es lo que tiene que ver el gestor, no el paso 2.
+        if (!excedeTope) goToStep(2)
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : 'No pudimos cargar el inmueble seleccionado',

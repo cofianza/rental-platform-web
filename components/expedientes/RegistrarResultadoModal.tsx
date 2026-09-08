@@ -25,7 +25,7 @@ type ResultadoValue = 'aprobado' | 'rechazado' | 'condicionado'
 
 const RESULTADOS: { value: ResultadoValue; label: string; color: string; bg: string; border: string }[] = [
   { value: 'aprobado', label: 'Aprobado', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-500 ring-green-200' },
-  { value: 'rechazado', label: 'Rechazado', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-500 ring-red-200' },
+  { value: 'rechazado', label: 'No aprobable', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-500 ring-red-200' },
   { value: 'condicionado', label: 'Condicionado', color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-500 ring-yellow-200' },
 ]
 

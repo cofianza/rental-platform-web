@@ -30,7 +30,7 @@ const REPORTES = [
   },
   {
     id: 'aprobacion-expedientes',
-    titulo: 'Aprobados vs Rechazados',
+    titulo: 'Aprobados vs No aprobables',
     descripcion: 'Tasa de aprobacion de estudios por periodo con desglose de condicionados.',
     icon: IconCheckCircle,
     color: 'bg-green-100 text-green-600',

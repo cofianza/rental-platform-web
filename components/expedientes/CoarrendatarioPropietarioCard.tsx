@@ -268,7 +268,7 @@ function ResultadoEstudioBlock({
   const cfg: Record<string, { color: string; label: string }> = {
     aprobado: { color: 'bg-green-50 border-green-200 text-green-900', label: 'Aprobado' },
     condicionado: { color: 'bg-amber-50 border-amber-200 text-amber-900', label: 'Condicionado' },
-    rechazado: { color: 'bg-red-50 border-red-200 text-red-900', label: 'Rechazado' },
+    rechazado: { color: 'bg-red-50 border-red-200 text-red-900', label: 'No aprobable' },
     pendiente: { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'Pendiente' },
   }
   const resultado = estudio.resultado || 'pendiente'

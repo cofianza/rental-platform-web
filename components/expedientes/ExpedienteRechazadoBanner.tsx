@@ -33,6 +33,24 @@ interface ExpedienteRechazadoBannerProps {
 const MOTIVO_FALLBACK =
   'El estudio no procede tras la evaluación crediticia y queda cerrado sin contrato.'
 
+/**
+ * Política V4.1 §11: canal de apelación. Va en TODA pantalla del prospecto que
+ * diga "No aprobable" — es lo que convierte el "por ahora" en algo accionable.
+ * Sin constante de correo en lib/: el literal es el mismo de /privacidad.
+ */
+export function NotaApelacion({ className = '' }: { className?: string }) {
+  return (
+    <p className={`text-xs text-slate-600 ${className}`}>
+      Puedes presentar una apelación escribiendo a{' '}
+      <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
+        hola@cofianza.co
+      </a>{' '}
+      dentro de los 15 días hábiles siguientes a esta notificación. Cofianza responde en máximo
+      10 días hábiles. La apelación no detiene el proceso de arrendamiento.
+    </p>
+  )
+}
+
 export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRechazadoBannerProps) {
   if (esProspecto) {
     return (
@@ -53,6 +71,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
               Puedes volver a intentarlo más adelante, presentar un co-arrendatario o escribirnos si
               quieres entender qué pesó en la evaluación.
             </p>
+            <NotaApelacion className="mt-2" />
           </div>
         </div>
       </div>
@@ -68,7 +87,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio rechazado</h3>
+          <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio no aprobable</h3>
           <p className="text-sm text-red-800">{motivo || MOTIVO_FALLBACK}</p>
           <p className="text-xs text-red-700 mt-2">
             El flujo termina aquí. Si tienes dudas sobre esta decisión, escríbenos.

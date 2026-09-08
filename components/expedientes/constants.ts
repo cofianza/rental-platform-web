@@ -12,7 +12,7 @@ export const ESTADO_OPTIONS: { value: EstadoExpediente; label: string }[] = [
   { value: 'en_revision', label: 'En Revisión' },
   { value: 'informacion_incompleta', label: 'Info. Incompleta' },
   { value: 'aprobado', label: 'Aprobado' },
-  { value: 'rechazado', label: 'Rechazado' },
+  { value: 'rechazado', label: 'No aprobable' },
   { value: 'condicionado', label: 'Condicionado' },
   { value: 'cerrado', label: 'Finalizado' },
 ]

@@ -56,7 +56,7 @@ interface EstudioEstadoCardProps {
 // pagado, autorizado, formulario_*, documentos_*) se agrupan para no saturar
 // la card; el tab Estudios tiene el detalle fino.
 const ESTADO_LABEL: Record<EstadoEstudio, string> = {
-  solicitado: 'Solicitado',
+  solicitado: 'Esperando autorización',
   pago_pendiente: 'Autorizado, esperando pago',
   pagado: 'Pagado',
   autorizado: 'Autorizado, pendiente formulario',
@@ -72,7 +72,7 @@ const ESTADO_LABEL: Record<EstadoEstudio, string> = {
 const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
   pendiente: 'Pendiente',
   aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
+  rechazado: 'No aprobable',
   condicionado: 'Condicionado',
 }
 
@@ -111,8 +111,10 @@ function getSiguientePaso(estudio: IEstudio): string {
   // mientras no se haya ejecutado el motor." Va ANTES que todo lo demás: si el
   // plazo se venció, lo único accionable es reenviar, y decirle al gestor
   // "esperando al prospecto" cuando ya no va a responder lo deja esperando a él.
+  // El reenvío es la tarjeta "Autorización" (AutorizacionSection), que vive en
+  // el mismo tab Resumen: un segundo botón aquí sería el mismo envío dos veces.
   if (estudio.expiracion?.expirado) {
-    return estudio.expiracion.motivo
+    return 'El prospecto no autorizó dentro del plazo — puedes reenviarle la solicitud.'
   }
 
   if (estudio.estado === 'completado') {
@@ -126,7 +128,7 @@ function getSiguientePaso(estudio: IEstudio): string {
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
-    if (estudio.resultado === 'rechazado') return 'Evaluación rechazada. El estudio no avanza al contrato.'
+    if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
@@ -167,6 +169,8 @@ function getSiguientePaso(estudio: IEstudio): string {
 // Tono de la card por bloque de progreso. Para 'completado' depende del
 // resultado del estudio.
 function getTone(estudio: IEstudio) {
+  // §12: expirado sin autorizar — ámbar, porque tiene salida (reenviar).
+  if (estudio.expiracion?.expirado) return 'warning'
   if (estudio.estado === 'completado') {
     if (estudio.resultado === 'aprobado') return 'success'
     if (estudio.resultado === 'condicionado') return 'warning'
@@ -399,6 +403,11 @@ function EstudioPanel({
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
               {estadoLabel}
             </span>
+            {estudio.expiracion?.expirado && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
+                Expirado
+              </span>
+            )}
             {resultadoLabel && (
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
                 {resultadoLabel}

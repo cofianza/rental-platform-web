@@ -99,7 +99,7 @@ export function ExpedienteProgressBar({
     return (
       <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
         <p className="text-sm font-semibold text-red-700">Estudio no aprobado</p>
-        <p className="text-xs text-red-600 mt-0.5">El estudio fue rechazado tras la evaluación crediticia.</p>
+        <p className="text-xs text-red-600 mt-0.5">El estudio no resultó aprobable tras la evaluación crediticia.</p>
       </div>
     )
   }

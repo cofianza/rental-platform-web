@@ -23,13 +23,13 @@ const SIZES = {
 function getScoreColor(score: number): { stroke: string; text: string; bg: string; label: string } {
   if (score >= 600) return { stroke: '#16a34a', text: 'text-green-600', bg: 'bg-green-50', label: 'Aprobado' }
   if (score >= 400) return { stroke: '#d97706', text: 'text-amber-600', bg: 'bg-amber-50', label: 'Condicionado' }
-  return { stroke: '#dc2626', text: 'text-red-600', bg: 'bg-red-50', label: 'Rechazado' }
+  return { stroke: '#dc2626', text: 'text-red-600', bg: 'bg-red-50', label: 'No aprobable' }
 }
 
 function getResultadoLabel(resultado?: string): string {
   switch (resultado) {
     case 'aprobado': return 'Aprobado'
-    case 'rechazado': return 'Rechazado'
+    case 'rechazado': return 'No aprobable'
     case 'condicionado': return 'Condicionado'
     default: return ''
   }
