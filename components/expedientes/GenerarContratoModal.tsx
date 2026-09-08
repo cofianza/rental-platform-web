@@ -81,6 +81,13 @@ export function GenerarContratoModal({
     }
   }, [isOpen])
 
+  // Cofianza Compartida sin los datos minimos del co-titular generaba un PDF
+  // con la clausula en blanco.
+  const cotitularIncompleto =
+    tipo === 'cofianza' &&
+    modalidad === 'compartida' &&
+    !(cotitular.nombre?.trim() && cotitular.documento?.trim() && cotitular.celular?.trim())
+
   async function handleGenerar() {
     setGenerating(true)
     try {
@@ -269,10 +276,13 @@ export function GenerarContratoModal({
                 <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
                   <p className="text-xs font-semibold text-gray-700">Co-titular de la fianza</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <input placeholder="Nombre completo" value={cotitular.nombre || ''}
+                    <label htmlFor="cot-nombre" className="col-span-2 block text-xs font-medium text-gray-700">Nombre completo *
+                    <input id="cot-nombre" placeholder="Nombre completo" value={cotitular.nombre || ''}
                       onChange={(e) => setCotitular({ ...cotitular, nombre: e.target.value })} disabled={generating}
-                      className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
-                    <select value={cotitular.tipo_documento || 'CC'}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
+                    <label htmlFor="cot-tipo-doc" className="block text-xs font-medium text-gray-700">Tipo de documento
+                    <select id="cot-tipo-doc" value={cotitular.tipo_documento || 'CC'}
                       onChange={(e) => setCotitular({ ...cotitular, tipo_documento: e.target.value })} disabled={generating}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50">
                       <option value="CC">C.C.</option>
@@ -280,21 +290,32 @@ export function GenerarContratoModal({
                       <option value="NIT">NIT</option>
                       <option value="PA">Pasaporte</option>
                     </select>
-                    <input placeholder="N° de documento" value={cotitular.documento || ''}
+                    </label>
+                    <label htmlFor="cot-documento" className=" block text-xs font-medium text-gray-700">N° de documento *
+                    <input id="cot-documento" inputMode="numeric" placeholder="N° de documento" value={cotitular.documento || ''}
                       onChange={(e) => setCotitular({ ...cotitular, documento: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
-                    <input placeholder="Celular" value={cotitular.celular || ''}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
+                    <label htmlFor="cot-celular" className=" block text-xs font-medium text-gray-700">Celular *
+                    <input id="cot-celular" type="tel" inputMode="tel" autoComplete="tel" placeholder="Celular" value={cotitular.celular || ''}
                       onChange={(e) => setCotitular({ ...cotitular, celular: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
-                    <input placeholder="Correo" value={cotitular.correo || ''}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
+                    <label htmlFor="cot-correo" className=" block text-xs font-medium text-gray-700">Correo
+                    <input id="cot-correo" type="email" inputMode="email" autoComplete="email" placeholder="Correo" value={cotitular.correo || ''}
                       onChange={(e) => setCotitular({ ...cotitular, correo: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
-                    <input placeholder="Dirección de notificación" value={cotitular.direccion || ''}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
+                    <label htmlFor="cot-direccion" className="col-span-2 block text-xs font-medium text-gray-700">Dirección de notificación
+                    <input id="cot-direccion" placeholder="Dirección de notificación" value={cotitular.direccion || ''}
                       onChange={(e) => setCotitular({ ...cotitular, direccion: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
-                    <input placeholder="Municipio" value={cotitular.municipio || ''}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
+                    <label htmlFor="cot-municipio" className="col-span-2 block text-xs font-medium text-gray-700">Municipio
+                    <input id="cot-municipio" placeholder="Municipio" value={cotitular.municipio || ''}
                       onChange={(e) => setCotitular({ ...cotitular, municipio: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50" />
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                    </label>
                   </div>
                 </div>
               )}
@@ -335,7 +356,7 @@ export function GenerarContratoModal({
           </button>
           <button
             onClick={handleGenerar}
-            disabled={generating || !fechaInicio || !duracionMeses}
+            disabled={generating || !fechaInicio || !duracionMeses || cotitularIncompleto}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             {generating ? (

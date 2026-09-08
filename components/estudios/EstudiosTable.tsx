@@ -5,6 +5,7 @@
 
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, PROVEEDOR_LABELS, ESTUDIO_UI_MESSAGES } from './constants'
@@ -268,16 +269,29 @@ export function EstudiosTable({
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRowClick(estudio.id)
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
-                  >
-                    <IconExternalLink size={14} />
-                    Ver
-                  </button>
+                  {/* Abrir el estudio completo: el modal solo muestra la
+                      evaluacion y dejaba al analista sin a donde seguir. */}
+                  {estudio.expediente_id ? (
+                    <Link
+                      href={`/expedientes/${estudio.expediente_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700"
+                    >
+                      <IconExternalLink size={14} />
+                      Abrir estudio
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRowClick(estudio.id)
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700"
+                    >
+                      <IconExternalLink size={14} />
+                      Ver
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

@@ -1146,14 +1146,13 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                       className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700">
-                      {opt === 'auto' ? 'Auto-detectar' : opt === 'si' ? 'Sí' : 'No'}
+                      {opt === 'auto' ? 'No sé' : opt === 'si' ? 'Sí' : 'No'}
                     </span>
                   </label>
                 ))}
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Auto-detectar: se infiere por el valor de administración (si paga, asume que sí).
-              </p>
+                Si no lo sabes, lo deducimos: si el inmueble paga administración, asumimos que es propiedad horizontal.</p>
             </div>
 
             {/* Cuarto útil */}
