@@ -176,3 +176,10 @@ export interface IReportarIdentidadInput {
   motivo: 'no_soy_yo' | 'datos_incorrectos'
   detalle?: string
 }
+
+/** Estado del cobro del estudio para la pantalla del prospecto ya firmada. */
+export interface IPagoProspecto {
+  estado: 'preparando' | 'pendiente' | 'procesando' | 'completado' | 'no_aplica'
+  monto_formateado: string | null
+  payment_link_url: string | null
+}

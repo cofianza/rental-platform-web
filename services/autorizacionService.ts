@@ -16,6 +16,7 @@ import type {
   IPerfilProspectoInput,
   IReportarIdentidadInput,
   IBiometriaResponse,
+  IPagoProspecto,
 } from '@/types/autorizacion'
 
 // ============================================
@@ -63,6 +64,12 @@ export const autorizacionPublicService = {
     const res = await publicClient.get<IAutorizacionPublicData>(
       `/public/autorizar/${token}`
     )
+    return res.data
+  },
+
+  /** Estado del cobro tras firmar (opción C: paga el arrendatario). */
+  async getPago(token: string): Promise<IPagoProspecto> {
+    const res = await publicClient.get<IPagoProspecto>(`/public/autorizar/${token}/pago`)
     return res.data
   },
 

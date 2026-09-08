@@ -33,7 +33,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { autorizacionPublicService } from '@/services/autorizacionService'
-import type { IAutorizacionPublicData } from '@/types/autorizacion'
+import type { IAutorizacionPublicData, IPagoProspecto } from '@/types/autorizacion'
 import { cn } from '@/lib/utils'
 import {
   IconShieldCheck,
@@ -205,6 +205,9 @@ export default function AutorizarPage() {
   const [hashDocumento, setHashDocumento] = useState<string | null>(null)
   // §6.3: tras firmar, en la opción C todavía falta el pago. Lo dice el backend.
   const [pagoRequerido, setPagoRequerido] = useState(false)
+  // Tras firmar, el enlace de pago lo crea el orquestador fire-and-forget: la
+  // pantalla lo espera aqui en vez de mandar al prospecto a buscar un correo.
+  const [pago, setPago] = useState<IPagoProspecto | null>(null)
 
   useEffect(() => {
     autorizacionPublicService
@@ -392,6 +395,33 @@ export default function AutorizarPage() {
     }
   }
 
+  useEffect(() => {
+    if (pageState !== 'signed' || !pagoRequerido) return
+    let intentos = 0
+    let vivo = true
+    const consultar = async () => {
+      try {
+        const p = await autorizacionPublicService.getPago(token)
+        if (!vivo) return
+        setPago(p)
+        if (p.payment_link_url || p.estado === 'completado' || p.estado === 'no_aplica') return true
+      } catch {
+        // silencioso: la pantalla ya muestra el respaldo por correo/WhatsApp
+      }
+      return false
+    }
+    const id = setInterval(async () => {
+      intentos += 1
+      const listo = await consultar()
+      if (listo || intentos >= 12) clearInterval(id)
+    }, 4000)
+    void consultar()
+    return () => {
+      vivo = false
+      clearInterval(id)
+    }
+  }, [pageState, pagoRequerido, token])
+
   // ── Pantallas de estado ────────────────────────────────────
   if (pageState === 'loading') {
     return (
@@ -454,9 +484,34 @@ export default function AutorizarPage() {
               Verificación: {hashDocumento}
             </p>
           )}
-          <p className="mt-4 text-sm text-gray-500">
-            {pagoRequerido ? 'Revisa tu correo y tu WhatsApp para completar el pago.' : 'Puedes cerrar esta página.'}
-          </p>
+          {pagoRequerido ? (
+            <div className="mt-5">
+              {pago?.payment_link_url ? (
+                <>
+                  <a
+                    href={pago.payment_link_url}
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-base font-semibold text-white hover:bg-primary-700 sm:w-auto"
+                  >
+                    Pagar {pago.monto_formateado ?? 'el estudio'} ahora
+                  </a>
+                  <p className="mt-2 text-xs text-gray-500">
+                    También te lo enviamos por correo y WhatsApp por si prefieres pagarlo después.
+                  </p>
+                </>
+              ) : pago?.estado === 'completado' ? (
+                <p className="text-sm font-medium text-primary-700">
+                  Tu pago ya está registrado. Estamos ejecutando la evaluación.
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Estamos preparando tu enlace de pago{pago?.monto_formateado ? ` de ${pago.monto_formateado}` : ''}…
+                  también te llegará por correo y WhatsApp.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
+          )}
         </div>
       </Card>
     )
