@@ -15,6 +15,7 @@ import {
   coarrendatarioService,
   type ICoarrendatarioPublicView,
 } from '@/services/coarrendatarioService'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'error'
 
@@ -52,8 +53,10 @@ export default function CoarrendatarioPublicPage() {
         setPhase('lista')
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo cargar la invitación.'
-      setErrorMsg(msg)
+      // El invitado no tiene cuenta ni a quien preguntarle: un 'Too many
+      // requests' del limitador por IP (CGNAT de las operadoras) o un 5xx en
+      // crudo lo dejaban sin saber si fue culpa suya ni que hacer.
+      setErrorMsg(mensajeParaProspecto(err, 'No se pudo cargar la invitación.'))
       setPhase('error')
     }
   }, [token])
@@ -73,8 +76,7 @@ export default function CoarrendatarioPublicPage() {
       setResultMsg(r.mensaje)
       setPhase('aceptado')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo registrar tu aceptación.'
-      setErrorMsg(msg)
+      setErrorMsg(mensajeParaProspecto(err, 'No se pudo registrar tu aceptación.'))
       setPhase('lista')
     }
   }
@@ -86,8 +88,7 @@ export default function CoarrendatarioPublicPage() {
       await coarrendatarioService.rechazar(token)
       setPhase('rechazado')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No pudimos registrar tu respuesta. Intenta de nuevo.'
-      setErrorMsg(msg)
+      setErrorMsg(mensajeParaProspecto(err, 'No pudimos registrar tu respuesta. Intenta de nuevo.'))
       setPhase('lista')
     }
   }

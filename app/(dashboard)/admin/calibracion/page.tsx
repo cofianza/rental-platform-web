@@ -24,6 +24,26 @@ import { formatDate } from '@/lib/constants'
 
 const fmt = (n: number, entero: boolean) => (entero ? n.toLocaleString('es-CO') : String(n))
 
+/**
+ * Nombre humano de cada parámetro. La pantalla los titulaba con su clave de
+ * código (`FACTOR_AJUSTE_INGRESO`) y relegaba la descripción a gris pequeño:
+ * Gerencia tenía que traducir mentalmente antes de decidir qué tocaba.
+ */
+const NOMBRE_PARAMETRO: Record<string, string> = {
+  FACTOR_AJUSTE_INGRESO: 'Factor de ajuste del ingreso',
+  UMBRAL_CASCADA_RECHAZO: 'Umbral de rechazo en cascada',
+  UMBRAL_CASCADA_APROBACION: 'Umbral de aprobación en cascada',
+  UMBRAL_DIFERENCIA_INGRESO: 'Diferencia máxima ingreso declarado vs. estimado',
+  VIGENCIA_CRC_DIAS: 'Vigencia del CRC (días)',
+  DIAS_EXPIRACION_ESTUDIO: 'Expiración del estudio (días)',
+  UMBRAL_COARRENDATARIO: 'Puntaje mínimo del coarrendatario',
+  CANON_MAX_TRANSITORIO: 'Canon máximo sin coafianzamiento',
+  UMBRAL_APROBACION_AUTOMATICA: 'Umbral de aprobación automática',
+  UMBRAL_ZONA_GRIS: 'Inicio de la zona gris',
+}
+
+const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
+
 function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado: () => void }) {
   const [editando, setEditando] = useState(false)
   const [valor, setValor] = useState(String(p.valor))
@@ -41,7 +61,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
     setGuardando(true)
     try {
       await calibracionService.actualizar(p.clave, n, motivo.trim() || undefined)
-      toast.success(`${p.clave} actualizado`)
+      toast.success(`${nombreDe(p.clave)} actualizado`)
       setEditando(false)
       setMotivo('')
       onGuardado()
@@ -56,10 +76,8 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
     <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-sm font-bold text-gray-900">{p.clave}</p>
-          <p className="text-xs text-gray-500">
-            {p.seccion} · {p.descripcion}
-          </p>
+          <p className="text-sm font-bold text-gray-900">{nombreDe(p.clave)}</p>
+          <p className="text-xs text-gray-600">{p.descripcion}</p>
           {p.advertencia && (
             <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
               <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
@@ -67,7 +85,8 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
             </p>
           )}
           <p className="mt-1 text-[11px] text-gray-400">
-            Rango {fmt(p.min, p.entero)} – {fmt(p.max, p.entero)} · default {fmt(p.valorDefault, p.entero)}
+            {p.seccion} · <code>{p.clave}</code> · rango {fmt(p.min, p.entero)} – {fmt(p.max, p.entero)} · default{' '}
+            {fmt(p.valorDefault, p.entero)}
             {p.actualizado_en ? ` · último cambio ${formatDate(p.actualizado_en)}` : ' · sin cambios desde el despliegue'}
           </p>
         </div>
@@ -179,8 +198,11 @@ export default function AdminCalibracionPage() {
       ) : (
         <>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            Adenda §11: antes de cambiar un parámetro en producción debe correrse la matriz de casos de prueba
-            (<code>scripts/check-decision-adenda.ts</code>) y verificar que ningún caso crítico cambie de resultado.
+            {/* Decía "debe correrse scripts/check-decision-adenda.ts", algo que
+                Gerencia no puede hacer desde aquí: el aviso ahora pide lo que
+                sí está en su mano. */}
+            Adenda §11: antes de cambiar un parámetro en producción, pide a Tecnología que valide la matriz de
+            casos de prueba y confirme que ningún caso crítico cambia de resultado.
           </div>
 
           <div className="space-y-3">
@@ -210,7 +232,7 @@ export default function AdminCalibracionPage() {
                     {historial.map((h) => (
                       <tr key={h.id} className="border-t border-gray-100">
                         <td className="px-3 py-2 whitespace-nowrap text-gray-600">{formatDate(h.created_at)}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{h.clave}</td>
+                        <td className="px-3 py-2" title={h.clave}>{nombreDe(h.clave)}</td>
                         <td className="px-3 py-2 text-right font-mono">{h.valor_anterior ?? '—'}</td>
                         <td className="px-3 py-2 text-right font-mono font-bold">{h.valor_nuevo}</td>
                         <td className="px-3 py-2 text-gray-700">{h.usuario_nombre ?? h.usuario_id ?? '—'}</td>

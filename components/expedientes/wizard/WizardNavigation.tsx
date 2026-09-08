@@ -16,6 +16,9 @@ interface WizardNavigationProps {
   canProceed: boolean
   isSubmitting?: boolean
   onSubmit?: () => void
+  /** Por qué "Siguiente" está deshabilitado. Se muestra junto al botón para que
+   *  el bloqueo no parezca un fallo de la app. */
+  blockedReason?: string
 }
 
 export function WizardNavigation({
@@ -26,6 +29,7 @@ export function WizardNavigation({
   canProceed,
   isSubmitting = false,
   onSubmit,
+  blockedReason,
 }: WizardNavigationProps) {
   const isFirstStep = currentStep === 1
   const isLastStep = currentStep === WIZARD_STEPS.length
@@ -63,26 +67,33 @@ export function WizardNavigation({
       )}
 
       {/* Lado derecho: Siguiente o Crear */}
-      <button
-        type="button"
-        onClick={handleNextClick}
-        disabled={!canProceed || isSubmitting}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-      >
-        {isSubmitting ? (
-          <>
-            <IconLoader size={16} className="animate-spin" />
-            {WIZARD_MESSAGES.CREATING}
-          </>
-        ) : isLastStep ? (
-          WIZARD_MESSAGES.CONFIRM_CREATE
-        ) : (
-          <>
-            {WIZARD_MESSAGES.NEXT}
-            <IconArrowRight size={16} />
-          </>
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+        {!canProceed && blockedReason && (
+          <p className="text-xs text-gray-500 sm:mr-1 sm:text-right" role="status">
+            {blockedReason}
+          </p>
         )}
-      </button>
+        <button
+          type="button"
+          onClick={handleNextClick}
+          disabled={!canProceed || isSubmitting}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          {isSubmitting ? (
+            <>
+              <IconLoader size={16} className="animate-spin" />
+              {WIZARD_MESSAGES.CREATING}
+            </>
+          ) : isLastStep ? (
+            WIZARD_MESSAGES.CONFIRM_CREATE
+          ) : (
+            <>
+              {WIZARD_MESSAGES.NEXT}
+              <IconArrowRight size={16} />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

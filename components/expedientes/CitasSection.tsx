@@ -183,7 +183,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
           >
             <IconPlus size={14} />
-            {canManageCitas ? 'Agendar visita' : 'Solicitar cita'}
+            {canManageCitas ? 'Agendar visita' : 'Solicitar visita'}
           </button>
         )}
       </div>
@@ -273,7 +273,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-md hover:shadow-lg transition-all shrink-0"
             >
               <IconCalendar size={16} />
-              {canManageCitas ? 'Agendar visita' : 'Solicitar cita'}
+              {canManageCitas ? 'Agendar visita' : 'Solicitar visita'}
             </button>
           </div>
         </div>

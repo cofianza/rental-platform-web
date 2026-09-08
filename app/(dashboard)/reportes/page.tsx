@@ -11,12 +11,14 @@
 
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconBarChart3, IconUsers, IconDollarSign, IconClock, IconCheckCircle } from '@/components/icons'
+import { IconBarChart3, IconDollarSign, IconClock, IconCheckCircle, IconArrowRight } from '@/components/icons'
 import { CarteraAnaliticaSection } from '@/components/dashboard/CarteraAnaliticaSection'
 import { RentabilidadPropietarioSection } from '@/components/dashboard/RentabilidadPropietarioSection'
 import { useAuthStore } from '@/stores/auth.store'
 
-// Configuración de reportes
+// Configuración de reportes. Solo entran los que EXISTEN: antes había dos
+// tarjetas sin destino ('Estudios por estado' y 'Estudios por analista') que
+// mostraban 'Ver reporte →' y no llevaban a ninguna parte.
 const REPORTES = [
   {
     id: 'volumen-expedientes',
@@ -33,22 +35,6 @@ const REPORTES = [
     icon: IconCheckCircle,
     color: 'bg-green-100 text-green-600',
     href: '/reportes/aprobacion',
-  },
-  {
-    id: 'expedientes-estado',
-    titulo: 'Estudios por estado',
-    descripcion: 'Distribución de estudios según su estado actual en el flujo de trabajo.',
-    icon: IconBarChart3,
-    color: 'bg-primary-100 text-primary-600',
-    href: undefined as string | undefined,
-  },
-  {
-    id: 'expedientes-analista',
-    titulo: 'Estudios por analista',
-    descripcion: 'Carga de trabajo y rendimiento de cada analista del equipo.',
-    icon: IconUsers,
-    color: 'bg-blue-100 text-blue-600',
-    href: undefined as string | undefined,
   },
   {
     id: 'ingresos-pagos',
@@ -116,65 +102,31 @@ export default function ReportesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {REPORTES.map((reporte) => {
           const Icon = reporte.icon
-          const content = (
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-lg ${reporte.color}`}>
-                <Icon size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {reporte.titulo}
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  {reporte.descripcion}
-                </p>
-                <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
-                  Ver reporte →
-                </span>
-              </div>
-            </div>
-          )
-
-          if (reporte.href) {
-            return (
-              <Link
-                key={reporte.id}
-                href={reporte.href}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow block"
-              >
-                {content}
-              </Link>
-            )
-          }
-
           return (
-            <div
+            <Link
               key={reporte.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow opacity-60"
+              href={reporte.href}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow block"
             >
-              {content}
-            </div>
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${reporte.color}`}>
+                  <Icon size={24} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {reporte.titulo}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {reporte.descripcion}
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                    Ver reporte <IconArrowRight size={14} />
+                  </span>
+                </div>
+              </div>
+            </Link>
           )
         })}
-      </div>
-
-      {/* Sección de exportación (placeholder) */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Exportar datos</h3>
-        <div className="flex flex-wrap gap-3">
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            Exportar a CSV
-          </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            Exportar a Excel
-          </button>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            Generar PDF
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mt-3">
-          Funcionalidad de exportación disponible próximamente
-        </p>
       </div>
     </div>
   )

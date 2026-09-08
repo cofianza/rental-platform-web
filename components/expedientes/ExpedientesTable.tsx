@@ -19,6 +19,7 @@ import {
   IconFolderOpen,
   IconPlus,
   IconExternalLink,
+  IconUserCheck,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import type { IExpediente, IExpedienteFilters, IExpedientesMeta } from '@/types/expediente'
@@ -57,6 +58,42 @@ function SortableHeader({
   )
 }
 
+/** Días completos transcurridos desde una fecha ISO. */
+function diasDesde(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+}
+
+/**
+ * Antigüedad en el estado actual + fecha de creación. La cola se prioriza por
+ * "lo más estancado primero", y antes solo se veía la fecha de creación: un
+ * caso abierto hace 2 meses y tocado ayer se veía igual de urgente que uno
+ * parado hace 3 semanas. Los casos cerrados no se pintan de rojo: ya no esperan.
+ */
+function Actividad({ expediente }: { expediente: IExpediente }) {
+  const cerrado =
+    expediente.estado === 'cerrado' || expediente.estado === 'rechazado' || !!expediente.cancelado_at
+  const d = diasDesde(expediente.updated_at)
+
+  return (
+    <div>
+      <p
+        title={formatDate(expediente.updated_at)}
+        className={cn(
+          'text-sm',
+          !cerrado && d >= 7
+            ? 'text-red-600 font-medium'
+            : !cerrado && d >= 3
+              ? 'text-amber-600'
+              : 'text-gray-700'
+        )}
+      >
+        {d === 0 ? 'Hoy' : `hace ${d} d`}
+      </p>
+      <p className="text-xs text-gray-500">Creado {formatDate(expediente.created_at)}</p>
+    </div>
+  )
+}
+
 export interface ExpedientesTableProps {
   expedientes: IExpediente[]
   meta: IExpedientesMeta | null
@@ -69,6 +106,12 @@ export interface ExpedientesTableProps {
    *  asignado al expediente (miembro_responsable_id); si no, cae al analista
    *  interno (vista admin/operador). */
   miembrosResponsablesById?: Record<string, string>
+  /** Asigna el estudio a quien está mirando la lista, sin abrir el detalle ni
+   *  el modal de analistas. Solo se provee a roles que asignan (admin/operador);
+   *  para inmobiliaria no se pasa. */
+  onTomar?: (id: string) => Promise<void>
+  /** Id del estudio que se está asignando ahora mismo (deshabilita su botón). */
+  tomandoId?: string | null
 }
 
 export function ExpedientesTable({
@@ -79,6 +122,8 @@ export function ExpedientesTable({
   onPageChange,
   onLimitChange,
   miembrosResponsablesById,
+  onTomar,
+  tomandoId,
 }: ExpedientesTableProps) {
   const router = useRouter()
 
@@ -156,9 +201,13 @@ export function ExpedientesTable({
                 Responsable
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {/* Dos líneas, igual que la celda: la antigüedad manda, pero
+                    el orden sigue siendo por fecha de creación (la API aún no
+                    ordena por updated_at). */}
+                <div>Última actividad</div>
                 <SortableHeader
                   column="created_at"
-                  label={SORTABLE_COLUMNS.created_at.label}
+                  label="Creado"
                   currentSortBy={filters.sortBy}
                   currentSortOrder={filters.sortOrder}
                   onSort={onSort}
@@ -257,20 +306,33 @@ export function ExpedientesTable({
                 <td className="px-4 py-3">
                   {(() => {
                     const nombre = nombreResponsable(expediente)
-                    return nombre ? (
-                      <div className="flex items-center gap-2">
-                        <Avatar name={nombre} size="sm" />
-                        <span className="text-sm text-gray-700">{nombre}</span>
-                      </div>
+                    if (nombre) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <Avatar name={nombre} size="sm" />
+                          <span className="text-sm text-gray-700">{nombre}</span>
+                        </div>
+                      )
+                    }
+                    return onTomar ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onTomar(expediente.id)
+                        }}
+                        disabled={tomandoId === expediente.id}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
+                      >
+                        <IconUserCheck size={14} />
+                        Tomar
+                      </button>
                     ) : (
                       <span className="text-sm text-gray-500">Sin asignar</span>
                     )
                   })()}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm text-gray-500">
-                    {formatDate(expediente.created_at)}
-                  </span>
+                  <Actividad expediente={expediente} />
                 </td>
                 <td className="px-4 py-3">
                   <button
@@ -345,18 +407,33 @@ export function ExpedientesTable({
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               {(() => {
                 const nombre = nombreResponsable(expediente)
-                return nombre ? (
-                  <div className="flex items-center gap-2">
-                    <Avatar name={nombre} size="sm" />
-                    <span className="text-xs text-gray-600">{nombre}</span>
-                  </div>
+                if (nombre) {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Avatar name={nombre} size="sm" />
+                      <span className="text-xs text-gray-600">{nombre}</span>
+                    </div>
+                  )
+                }
+                return onTomar ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTomar(expediente.id)
+                    }}
+                    disabled={tomandoId === expediente.id}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
+                  >
+                    <IconUserCheck size={14} />
+                    Tomar
+                  </button>
                 ) : (
                   <span className="text-xs text-gray-500">Sin asignar</span>
                 )
               })()}
-              <span className="text-xs text-gray-500">
-                {formatDate(expediente.created_at)}
-              </span>
+              <div className="text-right">
+                <Actividad expediente={expediente} />
+              </div>
             </div>
           </div>
         ))}

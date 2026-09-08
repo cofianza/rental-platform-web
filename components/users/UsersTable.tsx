@@ -5,7 +5,8 @@
  * Tabla responsive con paginación
  */
 
-import { IconEdit, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash, IconLock } from '@/components/icons'
+import Link from 'next/link'
+import { IconEdit, IconEye, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash, IconLock } from '@/components/icons'
 import { RoleBadge, StatusBadge } from './UserBadges'
 import { ITEMS_PER_PAGE_OPTIONS, USER_MESSAGES } from './constants'
 import type { IUserProfile, IUserFilters, IUsersMeta } from '@/types/user'
@@ -88,11 +89,17 @@ export function UsersTable({
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    {/* La ficha /usuarios/[id] existía pero no se podía abrir
+                        desde ningún lado: para consultar un usuario había que
+                        abrir el formulario de edición. */}
+                    <Link
+                      href={`/usuarios/${user.id}`}
+                      className="text-sm font-medium text-gray-900 hover:text-primary-700 hover:underline"
+                    >
                       {user.nombre && user.apellido
                         ? `${user.nombre} ${user.apellido}`
                         : user.nombre || user.apellido || 'Sin nombre'}
-                    </div>
+                    </Link>
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </div>
                 </td>
@@ -111,6 +118,14 @@ export function UsersTable({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Link
+                      href={`/usuarios/${user.id}`}
+                      title="Ver perfil"
+                      aria-label="Ver perfil"
+                      className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                    >
+                      <IconEye size={18} />
+                    </Link>
                     <button
                       onClick={() => onEdit(user)}
                       className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
@@ -161,14 +176,25 @@ export function UsersTable({
           <div key={user.id} className="p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-sm font-medium text-gray-900">
+                <Link
+                  href={`/usuarios/${user.id}`}
+                  className="text-sm font-medium text-gray-900 hover:text-primary-700 hover:underline"
+                >
                   {user.nombre && user.apellido
                     ? `${user.nombre} ${user.apellido}`
                     : user.nombre || user.apellido || 'Sin nombre'}
-                </div>
+                </Link>
                 <div className="text-sm text-gray-500">{user.email}</div>
               </div>
               <div className="flex items-center gap-1">
+                <Link
+                  href={`/usuarios/${user.id}`}
+                  title="Ver perfil"
+                  aria-label="Ver perfil"
+                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                >
+                  <IconEye size={18} />
+                </Link>
                 <button
                   onClick={() => onEdit(user)}
                   className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"

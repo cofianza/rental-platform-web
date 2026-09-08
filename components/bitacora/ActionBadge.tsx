@@ -1,6 +1,6 @@
 'use client'
 
-import { ACTION_LABELS, ACTION_COLORS } from './constants'
+import { ACTION_LABELS, ACTION_PREFIX_COLORS } from './constants'
 
 interface ActionBadgeProps {
   action: string
@@ -10,7 +10,9 @@ const DEFAULT_COLOR = { bg: 'bg-gray-100', text: 'text-gray-800' }
 
 export function ActionBadge({ action }: ActionBadgeProps) {
   const label = ACTION_LABELS[action] || action
-  const colors = ACTION_COLORS[action] || DEFAULT_COLOR
+  // Por prefijo, no por acción exacta: el mapa anterior solo cubría 11 slugs y
+  // el resto de la bitácora quedaba en gris indistinguible.
+  const colors = ACTION_PREFIX_COLORS.find(([p]) => action.startsWith(p))?.[1] ?? DEFAULT_COLOR
 
   return (
     <span

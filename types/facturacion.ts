@@ -2,48 +2,10 @@
  * Tipos para el modulo de Facturacion - HP-354, HP-355, HP-356, HP-357
  */
 
-// ============================================
-// Datos Fiscales (HP-354)
-// ============================================
-
-export type RegimenTributario =
-  | 'simplificado'
-  | 'comun'
-  | 'gran_contribuyente'
-
-export const REGIMEN_TRIBUTARIO_LABELS: Record<RegimenTributario, string> = {
-  simplificado: 'Regimen Simplificado (No responsable de IVA)',
-  comun: 'Regimen Comun (Responsable de IVA)',
-  gran_contribuyente: 'Gran Contribuyente',
-}
-
-export interface IDatosFiscales {
-  id: string
-  usuario_id: string
-  tipo_documento: 'NIT' | 'CC' | 'CE'
-  numero_documento: string
-  razon_social: string
-  regimen_tributario: RegimenTributario
-  direccion_fiscal: string
-  ciudad: string
-  departamento: string
-  email_fiscal: string
-  telefono_fiscal: string
-  created_at: string
-  updated_at: string
-}
-
-export interface IDatosFiscalesInput {
-  tipo_documento: 'NIT' | 'CC' | 'CE'
-  numero_documento: string
-  razon_social: string
-  regimen_tributario: RegimenTributario
-  direccion_fiscal: string
-  ciudad: string
-  departamento: string
-  email_fiscal: string
-  telefono_fiscal: string
-}
+// Los tipos de "datos fiscales del arrendador" se eliminaron: nunca se
+// persistieron (el servicio era un no-op) y el régimen ofrecía nombres
+// derogados por la DIAN en 2019. La tarjeta de facturación lee el perfil
+// del arrendador (perfilArrendadorService), que es lo que la API factura.
 
 // ============================================
 // Facturas (HP-355)

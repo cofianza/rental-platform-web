@@ -37,6 +37,10 @@ export interface IPagoResultadoPublico {
   monto_formateado: string
   fecha_pago: string | null
   expediente_numero: string | null
+  /** El checkout, mientras siga sirviendo (pendiente/procesando/fallido). El
+   *  backend lo anula en completado/cancelado para no invitar a pagar dos
+   *  veces. Es la única salida del arrendatario sin sesión que canceló. */
+  payment_link_url: string | null
 }
 
 class PagoEstudioService {

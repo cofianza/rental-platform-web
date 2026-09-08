@@ -18,6 +18,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
@@ -57,11 +58,21 @@ const ESTADO_COLORS: Record<string, string> = {
 
 const AUTO_REFRESH_MS = 5 * 60 * 1000 // 5 minutes
 
+// Alcance de "Pendientes prioritarios". "Míos" solo aplica al analista, que es
+// quien tiene expedientes asignados a su nombre.
+const ALCANCES: Array<{ key: 'todos' | 'mios' | 'sin_asignar'; label: string }> = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'mios', label: 'Míos' },
+  { key: 'sin_asignar', label: 'Sin asignar' },
+]
+
 // ── Page Component ──────────────────────────────────────────
 
 export default function DashboardPage() {
   const { hasRole } = usePermissions()
+  const userId = useAuthStore((s) => s.user?.id)
   const isAdmin = hasRole('administrador')
+  const isOperador = hasRole('operador_analista')
   const isPropietario = hasRole('propietario')
   const isInmobiliaria = hasRole('inmobiliaria')
   const isSolicitante = hasRole('solicitante')
@@ -79,6 +90,10 @@ export default function DashboardPage() {
   const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({})
   const [activePreset, setActivePreset] = useState(2) // "Mes" by default
   const [filters, setFilters] = useState<DashboardFilters>(() => DATE_PRESETS[2].getValue())
+  // El analista no sabía qué de esta lista era suyo ni qué estaba huérfano:
+  // veía los 10 estudios más viejos de toda la plataforma y tenía que irse a
+  // /expedientes a activar "Mis estudios" para responder esa pregunta.
+  const [alcance, setAlcance] = useState<'todos' | 'mios' | 'sin_asignar'>('todos')
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Fetch data ──────────────────────────────────────────
@@ -93,10 +108,15 @@ export default function DashboardPage() {
       dashboardService.getExpedientesPorEstado(filters),
       expedienteService.getExpedientes({
         search: '',
-        estado: ['borrador', 'en_revision', 'informacion_incompleta'],
-        analista_id: '',
+        // 'condicionado' entra aquí porque la bandeja de expedientes ya lo
+        // cuenta como "Requieren acción": tener dos definiciones distintas de
+        // pendiente hacía que el dashboard y la bandeja no cuadraran.
+        estado: ['borrador', 'en_revision', 'informacion_incompleta', 'condicionado'],
+        analista_id: alcance === 'mios' ? (userId ?? '') : '',
         page: 1,
-        limit: 10,
+        // "Sin asignar" se filtra en cliente (la API no expone ese filtro), así
+        // que pedimos más filas para no quedarnos cortos tras descartar.
+        limit: alcance === 'sin_asignar' ? 30 : 10,
         sortBy: 'created_at',
         sortOrder: 'asc',
       }),
@@ -115,14 +135,18 @@ export default function DashboardPage() {
     }
 
     if (pendientesResult.status === 'fulfilled') {
-      setPendientes(pendientesResult.value.data)
+      const rows =
+        alcance === 'sin_asignar'
+          ? pendientesResult.value.data.filter((e) => !e.analista_id).slice(0, 10)
+          : pendientesResult.value.data
+      setPendientes(rows)
     } else {
       errors.pendientes = 'Error al cargar pendientes'
     }
 
     setSectionErrors(errors)
     setLoading(false)
-  }, [filters])
+  }, [filters, alcance, userId])
 
   useEffect(() => {
     if (!needsOperativo) return
@@ -281,10 +305,29 @@ export default function DashboardPage() {
 
         {/* Pendientes — 2 col */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Pendientes prioritarios</h2>
+          <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 mr-auto">Pendientes prioritarios</h2>
+            {/* Filtro de alcance: sin él, "pendientes" era un montón indistinto
+                de toda la plataforma y el analista no veía ni lo suyo ni lo
+                huérfano. */}
+            <div className="flex items-center gap-1" role="group" aria-label="Alcance">
+              {ALCANCES.filter((a) => a.key !== 'mios' || isOperador).map((a) => (
+                <button
+                  key={a.key}
+                  onClick={() => setAlcance(a.key)}
+                  aria-pressed={alcance === a.key}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                    alcance === a.key
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
             <Link
-              href="/expedientes"
+              href={alcance === 'mios' && userId ? `/expedientes?analista_id=${userId}` : '/expedientes'}
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               Ver todos
@@ -306,7 +349,13 @@ export default function DashboardPage() {
           ) : pendientes.length === 0 ? (
             <div className="text-center py-12">
               <IconCheck size={40} className="mx-auto text-green-300 mb-3" />
-              <p className="text-sm text-gray-500">No hay estudios pendientes</p>
+              <p className="text-sm text-gray-500">
+                {alcance === 'mios'
+                  ? 'No tienes estudios pendientes'
+                  : alcance === 'sin_asignar'
+                    ? 'No hay estudios sin responsable'
+                    : 'No hay estudios pendientes'}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
@@ -331,7 +380,14 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       {formatDate(exp.created_at)}
-                      {exp.analista ? ` · ${exp.analista.nombre} ${exp.analista.apellido}` : ''}
+                      {/* Sin este aviso, un estudio huérfano se veía igual que
+                          uno ya asignado y se quedaba parado sin que nadie lo
+                          notara. */}
+                      {exp.analista ? (
+                        ` · ${exp.analista.nombre} ${exp.analista.apellido}`
+                      ) : (
+                        <span className="text-red-600 font-medium"> · Sin responsable</span>
+                      )}
                     </p>
                   </div>
                   <IconChevronRight size={16} className="text-gray-400 shrink-0" />
@@ -567,7 +623,10 @@ function SolicitanteDashboard() {
                   className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
                 >
                   <IconCalendar size={16} />
-                  Ver detalles de la cita
+                  {/* Decía "Ver detalles de la cita" en el banner de la cita que
+                      todavía no existe: el prospecto no sabía si ya la había
+                      pedido o si aún tenía que agendarla. */}
+                  Agendar visita
                 </Link>
               </div>
             </div>

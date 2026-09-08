@@ -16,9 +16,11 @@ import {
   Step3Configuration,
   Step4Confirmation,
 } from '@/components/expedientes/wizard'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
+import { IconAlertTriangle } from '@/components/icons'
 
 // useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
 // el render bloqueante no rompa el static export. Wrapper minimo.
@@ -48,6 +50,10 @@ function NuevoExpedienteContent() {
     isSubmitting,
     submitError,
     existingExpediente,
+    hayDatos,
+    hasDraft,
+    restoreDraft,
+    clearDraft,
     nextStep,
     prevStep,
     goToStep,
@@ -58,6 +64,13 @@ function NuevoExpedienteContent() {
     canProceed,
     submitExpediente,
   } = useExpedienteWizard()
+
+  // Salir del asistente borra todo lo diligenciado: pedimos confirmación en vez
+  // de navegar en seco.
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  // Borrador de una sesión anterior (pestaña recargada, salto a otra pestaña
+  // del shell): se ofrece continuar en vez de perderlo en silencio.
+  const [ofrecerBorrador, setOfrecerBorrador] = useState(false)
 
   // Pre-seleccion del inmueble cuando se llega via /expedientes/nuevo?inmueble_id=X
   // (eg. desde la pagina de detalle de inmueble). Hace fetch del inmueble +
@@ -117,8 +130,40 @@ function NuevoExpedienteContent() {
     })()
   }, [inmueblePreseleccionId, updateStep1, updateStep2, goToStep, searchParams])
 
+  // Si se llega con inmueble preseleccionado, ese flujo manda: no ofrecemos el
+  // borrador viejo. Solo se pregunta una vez, al montar.
+  const draftCheckedRef = useRef(false)
+  useEffect(() => {
+    if (draftCheckedRef.current) return
+    draftCheckedRef.current = true
+    if (inmueblePreseleccionId) return
+    if (hasDraft()) setOfrecerBorrador(true)
+  }, [inmueblePreseleccionId, hasDraft])
+
+  // Recargar o cerrar la pestaña también perdía todo: el navegador pide
+  // confirmación con su propio diálogo (no se puede personalizar el texto).
+  useEffect(() => {
+    if (!hayDatos || isSubmitting) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [hayDatos, isSubmitting])
+
   // Manejar cancelar
   const handleCancel = () => {
+    if (hayDatos) {
+      setConfirmCancel(true)
+      return
+    }
+    router.push('/expedientes')
+  }
+
+  const salirSinGuardar = () => {
+    clearDraft()
+    setConfirmCancel(false)
     router.push('/expedientes')
   }
 
@@ -180,6 +225,43 @@ function NuevoExpedienteContent() {
           </p>
         </div>
 
+        {/* Borrador recuperable de una salida anterior */}
+        {ofrecerBorrador && (
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Tenías un estudio a medias</p>
+                <p className="text-sm text-amber-800">
+                  Guardamos lo que habías diligenciado en esta pestaña.
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!restoreDraft()) toast.error('No pudimos recuperar el borrador')
+                  setOfrecerBorrador(false)
+                }}
+                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
+              >
+                Continuar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearDraft()
+                  setOfrecerBorrador(false)
+                }}
+                className="rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100"
+              >
+                Empezar de cero
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Step Indicator */}
         <div className="mb-6 sm:mb-8">
           <WizardStepIndicator
@@ -209,6 +291,9 @@ function NuevoExpedienteContent() {
             onPrevious={prevStep}
             onNext={nextStep}
             onCancel={handleCancel}
+            blockedReason={
+              step2EditDirty ? 'Guarda o cancela la edición del solicitante para continuar' : undefined
+            }
           />
         )}
 
@@ -231,6 +316,16 @@ function NuevoExpedienteContent() {
             </button>
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={confirmCancel}
+          onClose={() => setConfirmCancel(false)}
+          onConfirm={salirSinGuardar}
+          title="¿Salir sin crear el estudio?"
+          message="Se perderá lo que llevas diligenciado."
+          confirmLabel="Salir"
+          variant="danger"
+        />
       </div>
     </div>
   )

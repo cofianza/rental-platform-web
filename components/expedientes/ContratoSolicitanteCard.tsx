@@ -215,10 +215,14 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">Versión:</span>
-            <span className="font-medium text-gray-900">v{contrato.version}</span>
-          </div>
+          {/* "Versión: v1" es numeración interna: al arrendatario no le dice
+              nada. Solo aporta cuando hubo una versión anterior. */}
+          {contrato.version > 1 && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Versión:</span>
+              <span className="font-medium text-gray-900">v{contrato.version}</span>
+            </div>
+          )}
           {contrato.duracion_meses && (
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Duración:</span>
@@ -258,8 +262,10 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         <div className="mt-4 pt-4 border-t border-primary-100">
           {!showResendForm ? (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              {/* "Auco" es el proveedor de firma: el arrendatario no sabe
+                  quién es y leerlo aquí solo genera desconfianza. */}
               <p className="text-xs text-gray-500">
-                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo (Auco lo reenvía al mismo canal — WhatsApp + correo) o redirígelo a otra dirección.
+                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.
               </p>
               <div className="flex gap-2 flex-wrap">
                 <button

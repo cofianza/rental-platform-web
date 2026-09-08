@@ -81,7 +81,12 @@ export default function FacturacionPage() {
             onDatosFiscalesIncompletos={() => setActiveTab('datos-fiscales')}
           />
         )}
-        {activeTab === 'facturas' && <FacturasSection key={facturasReloadKey} />}
+        {activeTab === 'facturas' && (
+          <FacturasSection
+            key={facturasReloadKey}
+            onFacturarPendiente={() => setActiveTab('pendientes')}
+          />
+        )}
         {activeTab === 'pagos-cofianza' && <PagosCofianzaSection />}
       </div>
     </div>

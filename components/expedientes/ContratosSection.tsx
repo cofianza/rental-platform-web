@@ -30,6 +30,10 @@ const ESTADO_STYLES: Record<string, { label: string; bg: string; text: string }>
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
+// Estados anteriores al envío a firma. A nivel de módulo (antes se redeclaraba
+// dentro del componente) porque también decide qué acciones ve el dueño.
+const ESTADOS_PRE_FIRMA: EstadoContrato[] = ['borrador', 'en_revision', 'aprobado']
+
 interface ContratosSectionProps {
   expedienteId: string
   /** Estado del expediente — el contrato solo se genera tras la aprobación. */
@@ -79,6 +83,9 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     user?.rol === 'operador_analista' ||
     user?.rol === 'inmobiliaria'
   const canRegenerate = canCreate || user?.rol === 'propietario'
+  // Dueño del inmueble (propietario o inmobiliaria): su único paso siguiente en
+  // un borrador es "Enviar a firma"; el resto de iconos solo le añaden ruido.
+  const esDuenio = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
   // El contrato (paso 5) solo se genera cuando el expediente está APROBADO.
   // En 'condicionado' hay que aprobar explícito primero (card "Aprobar y generar
   // contrato", que transiciona a 'aprobado') o invitar a un co-arrendatario.
@@ -179,7 +186,6 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
     }
   }
 
-  const ESTADOS_PRE_FIRMA = ['borrador', 'en_revision', 'aprobado']
 
   async function handleOpenTransicion(contrato: IContrato) {
     try {
@@ -354,18 +360,24 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
                             </button>
                           )}
-                          <button
-                            onClick={() => router.push(`/contratos/${c.id}`)}
-                            className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
-                            title="Ver detalle"
-                          >
-                            <IconEye size={16} />
-                          </button>
+                          {/* La fila entera ya navega al detalle: el ojo solo
+                              se conserva para roles internos. */}
+                          {!esDuenio && (
+                            <button
+                              onClick={() => router.push(`/contratos/${c.id}`)}
+                              className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                              title="Ver detalle"
+                              aria-label="Ver detalle del contrato"
+                            >
+                              <IconEye size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDownload(c)}
                             disabled={downloadingId === c.id || !c.storage_key}
                             className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                             title="Descargar PDF"
+                            aria-label="Descargar PDF del contrato"
                           >
                             {downloadingId === c.id ? (
                               <IconLoader size={16} className="animate-spin" />
@@ -378,6 +390,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               onClick={() => setRegenerarTarget(c)}
                               className="p-1.5 text-gray-400 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                               title="Editar y regenerar (fecha, plazo, canon, servicios)"
+                              aria-label="Editar y regenerar el contrato"
                             >
                               <IconRefresh size={16} />
                             </button>
@@ -392,11 +405,18 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               {firmaContratoId === c.id ? 'Ocultar firmas' : 'Ver firmas'}
                             </button>
                           )}
-                          {canRegenerate && !TERMINAL_STATES.includes(c.estado) && (
+                          {/* Antes de la firma, "Cambiar estado" solo le ofrece
+                              "Cancelar" al dueño: lo escondemos ahí y se lo
+                              dejamos en pendiente_firma / vigente, donde sí sirve
+                              para terminar o cancelar el contrato. */}
+                          {canRegenerate &&
+                            !TERMINAL_STATES.includes(c.estado) &&
+                            !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
                             <button
                               onClick={() => handleOpenTransicion(c)}
                               className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
                               title="Cambiar estado"
+                              aria-label="Cambiar el estado del contrato"
                             >
                               <IconArrowRight size={16} />
                             </button>

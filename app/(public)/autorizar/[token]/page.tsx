@@ -34,6 +34,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { IAutorizacionPublicData, IPagoProspecto } from '@/types/autorizacion'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import {
   IconShieldCheck,
@@ -389,7 +390,10 @@ export default function AutorizarPage() {
         setPageState('error')
         return
       }
-      setErrorMessage(err instanceof Error ? err.message : 'No pudimos registrar tu autorización. Inténtalo de nuevo.')
+      // Aquí no hay a quién preguntarle: el prospecto no tiene sesión ni
+      // soporte. Un 429 del limitador por IP o un 5xx crudo lo dejaban sin
+      // saber si fue culpa suya.
+      setErrorMessage(mensajeParaProspecto(err, 'No pudimos registrar tu autorización. Inténtalo de nuevo.'))
     } finally {
       setSubmitting(false)
     }
@@ -479,10 +483,15 @@ export default function AutorizarPage() {
               ? ' Te acabamos de enviar por correo y WhatsApp el enlace para pagar el estudio: tu evaluación se ejecuta apenas se confirme el pago.'
               : ' Ya puedes continuar con tu solicitud de fianza.'}
           </p>
+          {/* El SHA-256 completo a la vista se leía como un error de la
+              página. Sigue disponible (es su soporte legal), pero plegado. */}
           {hashDocumento && (
-            <p className="mx-auto mt-4 max-w-md break-all rounded-lg bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400">
-              Verificación: {hashDocumento}
-            </p>
+            <details className="mx-auto mt-4 max-w-md text-left">
+              <summary className="cursor-pointer text-xs text-gray-500">Ver código de verificación</summary>
+              <p className="mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-500">
+                {hashDocumento}
+              </p>
+            </details>
           )}
           {pagoRequerido ? (
             <div className="mt-5">
@@ -858,9 +867,13 @@ export default function AutorizarPage() {
 
               {presentacion === 'acompanado' && (
                 <div className="mt-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  {/* La promesa anterior ("tú no tienes que repetir nada") no
+                      era verificable: si el estudio queda condicionado, la card
+                      del co-arrendatario sí le pide la cédula. Prometemos solo
+                      lo que la card cumple. */}
                   <p className="text-xs text-gray-500">
-                    Déjanos sus datos. Cuando avancemos con tu estudio le enviaremos su propia solicitud a su
-                    correo — tú no tienes que repetir nada.
+                    Déjanos sus datos. Cuando avancemos con tu estudio solo te pediremos su cédula: sus datos
+                    ya quedan guardados.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -939,7 +952,9 @@ export default function AutorizarPage() {
               Paso 3 · Opcional
             </span>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Saca más de tu cuenta</h2>
+              {/* "Tu cuenta" hacía dudar al prospecto: llegó por un enlace de
+                  WhatsApp y no tiene ninguna cuenta creada. */}
+              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Permisos opcionales a tu favor</h2>
               <p className="mt-1 text-sm text-gray-500">
                 {BENEFICIOS.length === 3 ? 'Tres' : BENEFICIOS.length} permisos opcionales que trabajan a tu favor. Tú eliges cuáles encender — y los cambias cuando
                 quieras. Tu fianza funciona igual, los actives o no.

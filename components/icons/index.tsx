@@ -595,6 +595,30 @@ export function IconUserCheck({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Usuario + (alta/invitación). Se usa en el menú para "Miembros de
+// inmobiliarias": antes compartía el icono Building2 con "Inmobiliarias" y en
+// el sidebar colapsado (solo icono) ambas entradas eran indistinguibles.
+export function IconUserPlus({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <line x1="19" x2="19" y1="8" y2="14" />
+      <line x1="22" x2="16" y1="11" y2="11" />
+    </svg>
+  )
+}
+
 // Usuario inactivo/X (HP-117: desactivar usuario)
 export function IconUserX({ className, size = defaultSize }: IconProps) {
   return (
@@ -1207,6 +1231,7 @@ export const ICON_MAP = {
   Loader: IconLoader,
   Edit: IconEdit,
   UserCheck: IconUserCheck,
+  UserPlus: IconUserPlus,
   UserX: IconUserX,
   AlertTriangle: IconAlertTriangle,
   ChevronLeft: IconChevronLeft,

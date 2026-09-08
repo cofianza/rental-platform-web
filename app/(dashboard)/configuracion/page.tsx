@@ -8,12 +8,12 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconSettings, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
   id: string
-  href?: string
+  href: string
   titulo: string
   descripcion: string
   icon: typeof IconBuilding2
@@ -114,20 +114,33 @@ const SECCIONES: Array<{
     soloRoles: ['administrador', 'operador_analista'],
   },
   {
-    id: 'notificaciones',
-    href: '/notificaciones',
-    titulo: 'Notificaciones',
-    descripcion: 'Configura alertas por email, SMS y notificaciones push del sistema.',
-    icon: IconBell,
-    color: 'bg-amber-100 text-amber-600',
+    // Rutas huérfanas (no están en el sidebar): este hub es su única entrada.
+    id: 'tipos-documento',
+    href: '/tipos-documento',
+    titulo: 'Tipos de documento',
+    descripcion: 'Catálogo de documentos que se le piden al solicitante en cada estudio.',
+    icon: IconFileText,
+    color: 'bg-slate-100 text-slate-600',
+    soloRoles: ['administrador'],
   },
   {
-    id: 'integraciones',
-    titulo: 'Integraciones',
-    descripcion: 'Conecta con pasarelas de pago, centrales de riesgo y servicios externos.',
-    icon: IconSettings,
-    color: 'bg-purple-100 text-purple-600',
+    id: 'paquetes-creditos',
+    href: '/admin/paquetes-creditos-estudios',
+    titulo: 'Paquetes de créditos de estudios',
+    descripcion: 'Precios, cantidades y vigencia de los paquetes que compran las inmobiliarias.',
+    icon: IconCreditCard,
+    color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['administrador'],
+  },
+  {
+    // /notificaciones es el historial de avisos, no una pantalla de
+    // preferencias: el título y la descripción decían lo contrario.
+    id: 'notificaciones',
+    href: '/notificaciones',
+    titulo: 'Historial de notificaciones',
+    descripcion: 'Consulta todo lo que te hemos notificado: visitas, evaluaciones, contratos y pagos.',
+    icon: IconBell,
+    color: 'bg-amber-100 text-amber-600',
   },
   {
     id: 'usuarios-permisos',
@@ -159,8 +172,12 @@ export default function ConfiguracionPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-200">
         {seccionesVisibles.map((seccion) => {
           const Icon = seccion.icon
-          const content = (
-            <>
+          return (
+            <Link
+              key={seccion.id}
+              href={seccion.href}
+              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
+            >
               <div className={`p-3 rounded-lg ${seccion.color}`}>
                 <Icon size={24} />
               </div>
@@ -173,48 +190,9 @@ export default function ConfiguracionPage() {
                 </p>
               </div>
               <IconChevronRight size={20} className="text-gray-400" />
-            </>
-          )
-          return 'href' in seccion && seccion.href ? (
-            <Link
-              key={seccion.id}
-              href={seccion.href}
-              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
-            >
-              {content}
             </Link>
-          ) : (
-            <button
-              key={seccion.id}
-              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
-            >
-              {content}
-            </button>
           )
         })}
-      </div>
-
-      {/* Información adicional */}
-      <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Información del sistema</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500">Versión:</span>
-            <span className="ml-2 text-gray-900">2.0.0</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Última actualización:</span>
-            <span className="ml-2 text-gray-900">17/02/2026</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Ambiente:</span>
-            <span className="ml-2 text-gray-900">Desarrollo</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Soporte:</span>
-            <span className="ml-2 text-primary-600">soporte@cofianza.com</span>
-          </div>
-        </div>
       </div>
     </div>
   )

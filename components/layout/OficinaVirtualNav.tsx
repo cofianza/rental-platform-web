@@ -96,7 +96,10 @@ const TABS: TabDef[] = [
     label: 'Configuración',
     href: '/configuracion',
     icon: IconSettings,
-    matchers: ['/configuracion', '/disponibilidad'],
+    // /notificaciones cuelga de este hub ("Historial de notificaciones"): sin
+    // el matcher, al entrar desde la campana ninguna pestaña quedaba activa y
+    // la página parecía estar fuera del sistema.
+    matchers: ['/configuracion', '/disponibilidad', '/notificaciones'],
   },
 ]
 

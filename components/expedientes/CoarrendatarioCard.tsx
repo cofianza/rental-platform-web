@@ -15,6 +15,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
+import { autorizacionService } from '@/services/autorizacionService'
+import type { IPerfilProspecto } from '@/types/autorizacion'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 
@@ -51,6 +53,25 @@ export function CoarrendatarioCard({
 
   useEffect(() => { fetchCoa() }, [fetchCoa])
 
+  // Al autorizar, el prospecto ya escribió nombre/apellido/correo/WhatsApp de
+  // la persona con quien va a vivir, y ahí le prometimos que "no tenía que
+  // repetir nada". Sin esto la card llegaba en blanco y le tocaba teclearlo
+  // todo de nuevo justo cuando acaba de recibir una mala noticia.
+  const [intencion, setIntencion] = useState<IPerfilProspecto['coarrendatario_intencion']>(null)
+  const [intencionLista, setIntencionLista] = useState(false)
+  const intencionPedidaRef = useRef(false)
+  useEffect(() => {
+    const aplica = !coa && !loading && expedienteEstado === 'condicionado' && userRol === 'solicitante'
+    if (!aplica) { setIntencionLista(true); return }
+    if (intencionPedidaRef.current) return
+    intencionPedidaRef.current = true
+    autorizacionService
+      .getStatus(expedienteId)
+      .then((a) => setIntencion(a?.perfil_prospecto?.coarrendatario_intencion ?? null))
+      .catch(() => setIntencion(null))
+      .finally(() => setIntencionLista(true))
+  }, [coa, loading, expedienteEstado, userRol, expedienteId])
+
   // Polling sutil mientras está pendiente_aceptacion o aceptado (sin resultado)
   // para que el solicitante vea el cambio sin recargar.
   useEffect(() => {
@@ -68,10 +89,14 @@ export function CoarrendatarioCard({
 
   // ── Sin coarrendatario: invitar ────────────────────────────────────
   if (!coa) {
+    // Esperamos la intención antes de montar el form: sus campos se
+    // inicializan una sola vez y llegar tarde equivale a no traerla.
+    if (!intencionLista) return null
     return (
       <CoarrendatarioInviteForm
         expedienteId={expedienteId}
         audience="solicitante"
+        initial={intencion}
         onInvited={() => { fetchCoa(); onUpdate?.() }}
       />
     )

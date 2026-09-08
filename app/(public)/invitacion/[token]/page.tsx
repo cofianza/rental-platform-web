@@ -19,6 +19,7 @@ import {
   canjearInvitacion,
   type InvitacionInfo,
 } from '@/services/invitacionService'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 type Status = 'loading' | 'error' | 'ready'
 
@@ -55,7 +56,9 @@ export default function InvitacionPage() {
         setStatus('error')
         const errObj = err as { code?: string; message?: string }
         setErrorCode(errObj.code || 'UNKNOWN_ERROR')
-        setErrorMsg(errObj.message || 'No se pudo cargar la invitación.')
+        // Quien llega por el correo del propietario no tiene cuenta ni a quien
+        // preguntarle: 'Too many requests' aqui es un callejon sin salida.
+        setErrorMsg(mensajeParaProspecto(err, 'No se pudo cargar la invitación.'))
       })
   }, [token])
 
@@ -73,8 +76,7 @@ export default function InvitacionPage() {
       toast.success('Tu estudio está listo. El siguiente paso es autorizar la consulta en centrales')
       router.push(result.redirect)
     } catch (err: unknown) {
-      const errObj = err as { code?: string; message?: string }
-      toast.error(errObj.message || 'No se pudo canjear la invitación')
+      toast.error(mensajeParaProspecto(err, 'No se pudo canjear la invitación'))
       setCanjeando(false)
     }
   }

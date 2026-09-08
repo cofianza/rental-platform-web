@@ -453,7 +453,7 @@ export function EstudioSolicitanteCard({
 
         <div className="text-xs text-gray-500 mb-4 space-y-1">
           <p>
-            Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en el buró de crédito.
+            Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en las centrales de riesgo.
           </p>
           <p className="text-amber-700">
             <strong>Importante:</strong> solo consultamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería (CE).

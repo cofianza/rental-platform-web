@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
 import type { Tab } from '@/components/ui/Tabs'
@@ -16,6 +17,7 @@ import {
   IconEdit,
   IconRefresh,
   IconUser,
+  IconUserCheck,
   IconFolderOpen,
   IconAlertTriangle,
   IconX,
@@ -82,6 +84,10 @@ export default function ExpedienteDetallePage() {
     user?.rol === 'administrador'
     || user?.rol === 'operador_analista'
     || user?.rol === 'gerencia_consulta'
+
+  // Gerencia consulta ve el expediente pero no asigna: el bloque de
+  // "Responsable" se le ocultaba mal (isInternalRole la incluye).
+  const puedeAsignar = user?.rol === 'administrador' || user?.rol === 'operador_analista'
 
   const tabs: Tab[] = user?.rol === 'solicitante'
     ? [{ id: 'resumen', label: 'Resumen' }]
@@ -231,6 +237,13 @@ export default function ExpedienteDetallePage() {
     }
   }
 
+  // Igual que handleAsignarResponsable pero sin modal. Tragamos el error
+  // porque aquel relanza para que el modal lo muestre, y aquí no hay modal.
+  const tomarloYo = () => {
+    if (!user) return
+    handleAsignarResponsable(user.id).catch(() => {})
+  }
+
   // Estado de carga
   if (isLoading) {
     return <ExpedienteDetalleSkeleton />
@@ -327,7 +340,7 @@ export default function ExpedienteDetallePage() {
                 admin/operador, así que se muestra únicamente a roles internos.
                 Para inmobiliaria/propietario el responsable relevante es el
                 "Responsable del expediente" (miembro) del tab Resumen. */}
-            {isInternalRole && (
+            {puedeAsignar && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Responsable:</span>
                 {nombreAnalista ? (
@@ -346,6 +359,18 @@ export default function ExpedienteDetallePage() {
                   >
                     <IconUser size={14} />
                     Asignar responsable
+                  </button>
+                )}
+                {/* Tomar el caso sin abrir el modal y buscarse en la lista de
+                    analistas: es el 90% de las asignaciones reales. */}
+                {user && expediente.analista?.id !== user.id && (
+                  <button
+                    onClick={() => tomarloYo()}
+                    disabled={isAsignando}
+                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 disabled:opacity-50 transition-colors"
+                  >
+                    <IconUserCheck size={14} />
+                    {nombreAnalista ? 'Tomarlo yo' : 'Asignármelo'}
                   </button>
                 )}
               </div>
@@ -681,8 +706,8 @@ export default function ExpedienteDetallePage() {
                     {solicitanteExpCount !== null && solicitanteExpCount > 1 && (
                       <InfoRow
                         label="Estudios"
-                        value={`${solicitanteExpCount} de esta persona`}
-                        highlight
+                        value={`${solicitanteExpCount} de esta persona · ver todos`}
+                        href={`/expedientes?search=${encodeURIComponent(expediente.solicitante.numero_documento)}`}
                       />
                     )}
                     <InfoRow label="Email" value={expediente.solicitante.email} />
@@ -866,19 +891,28 @@ function InfoRow({
   label,
   value,
   highlight = false,
+  href,
 }: {
   label: string
   value: string | number | null | undefined
   highlight?: boolean
+  /** Si viene, el valor se vuelve enlace (evita copiar/pegar el dato a mano). */
+  href?: string
 }) {
   if (value === null || value === undefined) return null
 
   return (
     <div className="flex justify-between items-start gap-4">
       <span className="text-gray-500 shrink-0">{label}:</span>
-      <span className={`text-right ${highlight ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-        {value}
-      </span>
+      {href ? (
+        <Link href={href} className="text-right font-semibold text-primary-700 hover:underline">
+          {value}
+        </Link>
+      ) : (
+        <span className={`text-right ${highlight ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+          {value}
+        </span>
+      )}
     </div>
   )
 }

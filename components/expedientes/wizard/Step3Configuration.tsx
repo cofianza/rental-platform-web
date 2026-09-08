@@ -12,7 +12,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   IconFileText,
   IconUser,
@@ -102,22 +103,34 @@ export function Step3Configuration({
   const [saldo, setSaldo] = useState<number | null>(null)
   const [saldoError, setSaldoError] = useState(false)
 
-  useEffect(() => {
-    let cancel = false
+  const cargarSaldo = useCallback(() => {
     creditosEstudiosService
       .getMiSaldo()
       .then((s) => {
-        if (!cancel) setSaldo(s.saldo_total)
+        setSaldo(s.saldo_total)
+        setSaldoError(false)
       })
       .catch(() => {
         // Sin saldo legible no bloqueamos el paso: la opción A queda
         // deshabilitada y las otras dos siguen disponibles.
-        if (!cancel) setSaldoError(true)
+        setSaldoError(true)
       })
-    return () => {
-      cancel = true
-    }
   }, [])
+
+  useEffect(() => {
+    cargarSaldo()
+  }, [cargarSaldo])
+
+  // Si el gestor se va a comprar un paquete en otra pestaña, al volver aquí
+  // reconsultamos el saldo: sin esto la opción A seguía deshabilitada aunque ya
+  // hubiera créditos, y tocaba rehacer los 3 pasos.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible') cargarSaldo()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [cargarSaldo])
 
   // Cargar miembros activos de la inmobiliaria (para asignar responsable al crear).
   useEffect(() => {
@@ -244,8 +257,26 @@ export function Step3Configuration({
                         <span className="text-gray-400">Consultando saldo…</span>
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
-                          No te quedan estudios en el paquete. Recárgalo desde Facturación
-                          o elige otra opción.
+                          No te quedan estudios en el paquete.{' '}
+                          {esInmobiliaria ? (
+                            <>
+                              {/* La compra NO vive en "Pagos a Cofianza": está en
+                                  configuración de créditos. Sin este enlace el
+                                  gestor salía a buscarla y perdía el asistente. */}
+                              <Link
+                                href="/configuracion/creditos-estudios"
+                                target="_blank"
+                                rel="noopener"
+                                className="font-semibold underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Compra un paquete
+                              </Link>{' '}
+                              (se abre en otra pestaña; al volver actualizamos tu saldo) o elige otra opción.
+                            </>
+                          ) : (
+                            'Elige otra opción.'
+                          )}
                         </span>
                       ) : (
                         <span className="text-gray-600">

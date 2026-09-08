@@ -353,6 +353,14 @@ export default function EquipoPage() {
                     {m.nombre && m.email && (
                       <p className="text-xs text-gray-500 truncate">{m.email}</p>
                     )}
+                    {/* Carga de trabajo: el titular que reparte estudios entre
+                        varios miembros no tenía cómo ver quién lleva cuántos. */}
+                    {m.estado === 'activo' && (
+                      <p className="text-xs text-gray-500">
+                        {m.estudios_activos ?? 0}{' '}
+                        {(m.estudios_activos ?? 0) === 1 ? 'estudio activo' : 'estudios activos'}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3 flex-shrink-0">

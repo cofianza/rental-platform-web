@@ -1,14 +1,19 @@
 /**
  * Pagina de notificaciones — historial completo paginado.
  *
- * El campanario del header muestra solo las 30 mas recientes; aqui el
- * usuario puede revisar todo lo que paso. Usa el mismo store que el
- * dropdown para que las acciones (marcar leida) se propaguen en tiempo real.
+ * El campanario del header muestra solo las mas recientes; aqui el usuario
+ * puede revisar todo lo que paso: la lista carga de 50 en 50 con "Cargar mas"
+ * hasta agotar el total que reporta el backend.
+ *
+ * La lista se guarda en estado local (`todas`) y NO en el store: el store
+ * trunca a 50 (MAX_KEEP) porque alimenta la campana. Aun asi se usa el store
+ * como fuente de verdad del estado de lectura de esas 50 primeras, para que
+ * marcar-leida y el realtime se reflejen aqui al instante.
  */
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -77,6 +82,9 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
 
 const FALLBACK_ICON: NotifIconEntry = { icon: IconBell, badge: 'bg-slate-50 text-slate-500' }
 
+/** Notificaciones por peticion. Coincide con el cap del store (MAX_KEEP). */
+const PAGE_SIZE = 50
+
 /** Badge redondeado con el icono semantico de la notificacion. */
 function NotificationIcon({ tipo, titulo }: { tipo: string; titulo: string }) {
   const { icon: Icon, badge } = TIPO_ICON[tipo] ?? FALLBACK_ICON
@@ -109,19 +117,50 @@ export default function NotificacionesPage() {
   const unreadCount = useNotificationStore((s) => s.unreadCount)
 
   const [loading, setLoading] = useState(true)
+  // Historial acumulado (todas las paginas cargadas), independiente del store.
+  const [todas, setTodas] = useState<INotificacion[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   useEffect(() => {
     setLoading(true)
     notificacionService
-      .list({ limit: 50 })
-      .then((res) => setItems(res.data))
+      .list({ limit: PAGE_SIZE })
+      .then((res) => {
+        setItems(res.data)
+        setTodas(res.data)
+        setTotal(res.total)
+      })
       .catch((err) => toast.error(err instanceof Error ? err.message : 'Error al cargar notificaciones'))
       .finally(() => setLoading(false))
   }, [setItems])
 
+  // Estado de lectura vigente de las 50 primeras (store: realtime + acciones).
+  const leidasStore = useMemo(() => new Map(items.map((n) => [n.id, n.leida_at])), [items])
+  const estaLeida = (n: INotificacion) => Boolean(leidasStore.get(n.id) ?? n.leida_at)
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const res = await notificacionService.list({ page: page + 1, limit: PAGE_SIZE })
+      // Filtramos por id: si llego una notificacion nueva entre peticiones, la
+      // pagina 2 se desplaza y podria repetir un elemento de la 1.
+      setTodas((prev) => [...prev, ...res.data.filter((n) => !prev.some((p) => p.id === n.id))])
+      setTotal(res.total)
+      setPage((p) => p + 1)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudieron cargar mas notificaciones')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
   const handleClick = async (n: INotificacion) => {
-    if (!n.leida_at) {
-      markRead(n.id, new Date().toISOString())
+    if (!estaLeida(n)) {
+      const ahora = new Date().toISOString()
+      markRead(n.id, ahora)
+      setTodas((prev) => prev.map((x) => (x.id === n.id ? { ...x, leida_at: ahora } : x)))
       notificacionService.markAsRead(n.id).catch(() => {})
     }
     if (n.link) router.push(n.link)
@@ -129,7 +168,10 @@ export default function NotificacionesPage() {
 
   const handleMarkAll = async () => {
     if (unreadCount === 0) return
-    markAllRead(new Date().toISOString())
+    const ahora = new Date().toISOString()
+    markAllRead(ahora)
+    // El backend marca TODO el historial, no solo lo que esta en pantalla.
+    setTodas((prev) => prev.map((x) => (x.leida_at ? x : { ...x, leida_at: ahora })))
     try {
       await notificacionService.markAllAsRead()
     } catch {
@@ -144,7 +186,7 @@ export default function NotificacionesPage() {
         subtitle={
           unreadCount > 0
             ? `${unreadCount} sin leer`
-            : items.length === 0
+            : todas.length === 0
             ? 'Sin actividad reciente'
             : 'Todo al dia'
         }
@@ -161,11 +203,11 @@ export default function NotificacionesPage() {
       />
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading && items.length === 0 ? (
+        {loading && todas.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <IconLoader size={24} className="animate-spin text-gray-400" />
           </div>
-        ) : items.length === 0 ? (
+        ) : todas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-700">Sin notificaciones</p>
@@ -173,8 +215,8 @@ export default function NotificacionesPage() {
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {items.map((n) => {
-              const unread = !n.leida_at
+            {todas.map((n) => {
+              const unread = !estaLeida(n)
               return (
                 <li key={n.id}>
                   <button
@@ -199,6 +241,27 @@ export default function NotificacionesPage() {
               )
             })}
           </ul>
+        )}
+
+        {/* Pie de paginacion: antes la lista cortaba en 50 sin decirlo, asi
+            que un aviso de hace semanas parecia no existir. */}
+        {todas.length > 0 && (
+          <div className="border-t border-gray-100 px-4 py-3 flex flex-col items-center gap-2">
+            {todas.length < total && (
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60"
+              >
+                {loadingMore && <IconLoader size={16} className="animate-spin" />}
+                Cargar mas ({total - todas.length} anteriores)
+              </button>
+            )}
+            <p className="text-xs text-gray-400">
+              Mostrando {todas.length} de {total}
+            </p>
+          </div>
         )}
       </div>
     </div>

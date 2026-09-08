@@ -18,6 +18,8 @@ export interface Miembro {
   apellido: string | null
   invitado_en: string
   es_yo: boolean
+  /** Estudios de la organización asignados a este miembro y todavía en curso. */
+  estudios_activos?: number
 }
 
 export interface MiembrosResponse {

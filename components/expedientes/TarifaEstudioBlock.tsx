@@ -75,19 +75,43 @@ export function TarifaEstudioBlock({ estudio, userRol }: { estudio: IEstudio; us
     }
   }
 
+  // La tarifa es el dato comercial del estudio; en text-xs al pie pasaba
+  // desapercibida. Bloque propio, cifras legibles y una etiqueta que avisa a
+  // simple vista si hay condiciones especiales negociadas.
   return (
-    <div className="mt-2 text-xs text-gray-700 space-y-0.5">
-      <p>
-        Tarifa mensual: <span className="font-semibold">{t.tarifa_mensual_pct}% + IVA</span>
-        {t.tarifa_mensual_cop != null && ` (${formatCurrency(t.tarifa_mensual_cop)})`}
-        {' · '}Prima: <span className="font-semibold">{t.prima_vinculacion_pct}%</span>
-        {t.prima_vinculacion_cop != null && ` (${formatCurrency(t.prima_vinculacion_cop)})`}
-        {' · '}Cashback: <span className="font-semibold">{t.cashback_pct}%</span>{' '}
-        <span className="text-gray-500">({VIA_LABEL[t.via]})</span>
-      </p>
+    <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tarifa</span>
+        {o && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            Condiciones especiales
+          </span>
+        )}
+      </div>
+      <dl className="flex flex-wrap gap-x-4 gap-y-1">
+        <div>
+          <dt className="text-xs text-gray-500">Mensual</dt>
+          <dd className="font-semibold">
+            {t.tarifa_mensual_pct}% + IVA
+            {t.tarifa_mensual_cop != null && ` (${formatCurrency(t.tarifa_mensual_cop)})`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-gray-500">Prima</dt>
+          <dd className="font-semibold">
+            {t.prima_vinculacion_pct}%
+            {t.prima_vinculacion_cop != null && ` (${formatCurrency(t.prima_vinculacion_cop)})`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-gray-500">Cashback</dt>
+          <dd className="font-semibold">{t.cashback_pct}%</dd>
+        </div>
+      </dl>
+      <p className="text-xs text-gray-500">Vía: {VIA_LABEL[t.via]}</p>
       {o && (
-        <p className="text-amber-700">
-          Condiciones especiales autorizadas por {o.autorizado_por_nombre || 'Gerencia'} el {formatDate(o.autorizado_en)}
+        <p className="text-xs text-amber-700">
+          Autorizadas por {o.autorizado_por_nombre || 'Gerencia'} el {formatDate(o.autorizado_en)}
           {o.motivo ? ` — ${o.motivo}` : ''}
         </p>
       )}

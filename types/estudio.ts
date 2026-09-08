@@ -110,6 +110,15 @@ export interface IEstudioPublicForm {
   inmueble_direccion: string
   inmueble_ciudad: string
   solicitante_nombre: string
+  /** Lo que el expediente ya sabe del solicitante: sirve para precargar el
+   *  formulario en vez de hacerle teclear de nuevo lo mismo. Opcional porque
+   *  las respuestas anteriores al despliegue del backend no lo traen. */
+  solicitante?: {
+    email: string | null
+    telefono: string | null
+    tipo_documento: string | null
+    numero_documento: string | null
+  }
   ya_completado: boolean
   datos_formulario: Record<string, unknown> | null
 }

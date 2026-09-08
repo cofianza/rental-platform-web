@@ -1,8 +1,10 @@
 /**
  * Widget de acciones pendientes — dashboard del propietario/inmobiliaria.
  * Muestra 4 categorias: confirmar cita, realizar cita, habilitar estudio,
- * generar contrato. Cada item es un link al panel correspondiente:
- *   - Acciones de cita → /citas (kanban con la accion)
+ * generar contrato. Cada item lleva al sitio exacto de SU accion, no al
+ * tablero completo (antes todas las filas apuntaban a /citas a secas):
+ *   - Confirmar / marcar realizada → /citas#cita-[id] (la tarjeta del kanban)
+ *   - Habilitar evaluacion → /expedientes/[id] (detalle del estudio)
  *   - Generar contrato → /expedientes/[id] (donde vive AccionContratoPendienteCard)
  * No duplicamos modales aqui — el usuario ejecuta desde el destino.
  */
@@ -76,6 +78,7 @@ export function AccionesPendientesWidget() {
           icon={<IconCalendar size={16} className="text-blue-600" />}
           items={data.porConfirmar}
           ctaLabel="Confirmar"
+          destino="cita"
         />
       )}
 
@@ -85,6 +88,7 @@ export function AccionesPendientesWidget() {
           icon={<IconClock size={16} className="text-amber-600" />}
           items={data.porRealizar}
           ctaLabel="Marcar realizada"
+          destino="cita"
         />
       )}
 
@@ -94,6 +98,7 @@ export function AccionesPendientesWidget() {
           icon={<IconShieldCheck size={16} className="text-green-600" />}
           items={data.porHabilitar}
           ctaLabel="Habilitar evaluación"
+          destino="expediente"
         />
       )}
 
@@ -114,11 +119,14 @@ function CitaSection({
   icon,
   items,
   ctaLabel,
+  destino,
 }: {
   title: string
   icon: React.ReactNode
   items: ICita[]
   ctaLabel: string
+  /** Donde se ejecuta la accion: la tarjeta del kanban o el detalle del estudio. */
+  destino: 'expediente' | 'cita'
 }) {
   return (
     <div>
@@ -130,23 +138,34 @@ function CitaSection({
       </div>
       <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
         {items.map((cita) => (
-          <CitaItemRow key={cita.id} cita={cita} ctaLabel={ctaLabel} />
+          <CitaItemRow key={cita.id} cita={cita} ctaLabel={ctaLabel} destino={destino} />
         ))}
       </ul>
     </div>
   )
 }
 
-function CitaItemRow({ cita, ctaLabel }: { cita: ICita; ctaLabel: string }) {
+function CitaItemRow({
+  cita,
+  ctaLabel,
+  destino,
+}: {
+  cita: ICita
+  ctaLabel: string
+  destino: 'expediente' | 'cita'
+}) {
   const expediente = cita.expediente
   const inmueble = expediente?.inmueble
   const solicitante = expediente?.solicitante
   const fecha = cita.fecha_confirmada || cita.fecha_propuesta
+  // El hash lo consume /citas para hacer scroll hasta la tarjeta (id="cita-<id>").
+  const href =
+    destino === 'expediente' && expediente ? `/expedientes/${expediente.id}` : `/citas#cita-${cita.id}`
 
   return (
     <li>
       <Link
-        href="/citas"
+        href={href}
         className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors"
       >
         <div className="flex-1 min-w-0">

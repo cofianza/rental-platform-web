@@ -6,7 +6,7 @@
 'use client'
 
 import { scrollToFirstError } from '@/components/auth/registro-ui'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -247,12 +247,50 @@ const FIELD_LABELS: Record<string, string> = {
   area_m2: 'área', habitaciones: 'habitaciones', banos: 'baños', parqueaderos: 'parqueaderos', administracion: 'administración',
 }
 
+// Prefijo del código autogenerado. El propietario particular no tiene un sistema
+// de códigos como una inmobiliaria: le inventábamos la tarea de crear uno.
+const PREFIJO_TIPO: Record<string, string> = {
+  apartamento: 'APT',
+  apartaestudio: 'AES',
+  casa: 'CASA',
+  casa_finca: 'CFIN',
+  finca: 'FIN',
+  oficina: 'OF',
+  local: 'LOC',
+  bodega: 'BOD',
+  lote: 'LOT',
+  parqueadero: 'PARQ',
+}
+
+/**
+ * Pliega en un `<details>` los campos que solo le importan a una inmobiliaria
+ * (código interno, datos de cláusulas). Para el propietario particular publicar
+ * desde el celular no debería exigir 25 campos; para los demás roles no cambia
+ * nada: se renderiza el contenido tal cual.
+ */
+function Avanzado({ plegar, children }: { plegar: boolean; children: ReactNode }) {
+  if (!plegar) return <>{children}</>
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-primary-700">
+        <IconChevronRight size={14} className="transition-transform group-open:rotate-90" />
+        Opciones avanzadas
+      </summary>
+      <div className="mt-4">{children}</div>
+    </details>
+  )
+}
+
 export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
   const isPropietarioUser = authUser?.rol === 'propietario'
   const isInmobiliariaUser = authUser?.rol === 'inmobiliaria'
   const isAutoAssignOwner = isPropietarioUser || isInmobiliariaUser
+  // El propietario vuelve a /dashboard: /inmuebles no está en su navegación.
+  const rutaListado = isPropietarioUser ? '/dashboard' : '/inmuebles'
+  const esPropietarioNuevo = isPropietarioUser && mode === 'create'
+  const [codigoTocado, setCodigoTocado] = useState(false)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const formRef = useRef<HTMLFormElement>(null)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -271,6 +309,18 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
       setFormData((prev) => ({ ...prev, propietario_id: authUser.id }))
     }
   }, [isAutoAssignOwner, authUser, mode])
+
+  // Código sugerido para el propietario particular: no tiene un sistema de
+  // códigos propio, así que lo generamos a partir del tipo. Si lo edita a mano
+  // (codigoTocado) dejamos de pisárselo.
+  useEffect(() => {
+    if (!esPropietarioNuevo || codigoTocado) return
+    const prefijo = PREFIJO_TIPO[formData.tipo] ?? 'INM'
+    setFormData((prev) => ({
+      ...prev,
+      codigo: `${prefijo}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+    }))
+  }, [esPropietarioNuevo, codigoTocado, formData.tipo])
 
   // Cargar datos del inmueble al editar
   useEffect(() => {
@@ -454,7 +504,13 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           setUploadingFotos(false)
         }
 
-        toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS)
+        // "Y ahora qué": el toast dice si quedó publicado y qué puede hacer
+        // desde la tarjeta, porque el listado no lo explica.
+        toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS, {
+          description: formData.visible_vitrina
+            ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puedes pausarlo o evaluar un candidato.'
+            : 'No está en la vitrina: actívalo desde la tarjeta cuando quieras publicarlo.',
+        })
       } else if (inmueble) {
         const updateData: IInmuebleUpdateData = {
           codigo: formData.codigo.trim(),
@@ -513,7 +569,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         toast.success(INMUEBLE_MESSAGES.UPDATE_SUCCESS)
       }
 
-      router.push('/inmuebles')
+      router.push(rutaListado)
     } catch (err: unknown) {
       console.error('Error saving inmueble:', err)
       // Caso especifico: codigo duplicado para el mismo propietario. Asi el
@@ -580,13 +636,14 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     <div className="space-y-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
+        {/* "Inicio" es el dashboard, no la landing pública. */}
+        <Link href="/dashboard" className="hover:text-primary-600 flex items-center gap-1">
           <IconHome size={16} />
           Inicio
         </Link>
         <IconChevronRight size={14} />
-        <Link href="/inmuebles" className="hover:text-primary-600">
-          Inmuebles
+        <Link href={rutaListado} className="hover:text-primary-600">
+          {isPropietarioUser ? 'Mis inmuebles' : 'Inmuebles'}
         </Link>
         <IconChevronRight size={14} />
         <span className="text-gray-900 font-medium">
@@ -782,30 +839,39 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           {/* Código de propiedad — campo destacado, obligatorio. Cada
               inmobiliaria/propietario define su sistema (APT-001, etc).
               Es único por propietario. */}
-          <div className="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
-            <label htmlFor="codigo" className="block text-sm font-semibold text-primary-900 mb-1.5">
-              Código de la propiedad *
-            </label>
-            <input
-              type="text"
-              id="codigo"
-              value={formData.codigo}
-              onChange={(e) => handleChange('codigo', e.target.value)}
-              disabled={isSubmitting}
-              placeholder="Ej: APT-001, CASA-SAB, OF-302"
-              maxLength={30}
-              className={`w-full px-3 py-2 text-base font-mono font-semibold bg-white border rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${
-                errors.codigo ? 'border-red-400' : 'border-primary-300'
-              }`}
-            />
-            {errors.codigo ? (
-              <p className="mt-1.5 text-xs text-red-600">{errors.codigo}</p>
-            ) : (
-              <p className="mt-1.5 text-xs text-primary-700">
-                Identificador interno que usas para tus reportes. Letras, números, guiones, máx 30 caracteres.
-                Debe ser único dentro de tus inmuebles.
-              </p>
-            )}
+          <div className="mb-6">
+            <Avanzado plegar={isPropietarioUser}>
+              <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                <label htmlFor="codigo" className="block text-sm font-semibold text-primary-900 mb-1.5">
+                  Código de la propiedad *
+                </label>
+                <input
+                  type="text"
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => {
+                    // Al escribirlo a mano dejamos de sugerirlo automáticamente.
+                    setCodigoTocado(true)
+                    handleChange('codigo', e.target.value)
+                  }}
+                  disabled={isSubmitting}
+                  placeholder="Ej: APT-001, CASA-SAB, OF-302"
+                  maxLength={30}
+                  className={`w-full px-3 py-2 text-base font-mono font-semibold bg-white border rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${
+                    errors.codigo ? 'border-red-400' : 'border-primary-300'
+                  }`}
+                />
+                {errors.codigo ? (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.codigo}</p>
+                ) : (
+                  <p className="mt-1.5 text-xs text-primary-700">
+                    {isPropietarioUser
+                      ? 'Lo generamos por ti; cámbialo si quieres. Debe ser único dentro de tus inmuebles.'
+                      : 'Identificador interno que usas para tus reportes. Letras, números, guiones, máx 30 caracteres. Debe ser único dentro de tus inmuebles.'}
+                  </p>
+                )}
+              </div>
+            </Avanzado>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1014,18 +1080,21 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               max={999999999}
             />
 
-            {/* Valor comercial */}
-            <CurrencyInput
-              label="Valor Comercial (COP)"
-              tooltip="Precio estimado de venta del inmueble en el mercado. Es referencial, no obligatorio."
-              id="valor_comercial"
-              value={formData.valor_comercial}
-              onChange={(val) => handleChange('valor_comercial', val)}
-              disabled={isSubmitting}
-              placeholder="Ej: 450.000.000"
-              error={errors.valor_comercial}
-              max={99999999999}
-            />
+            {/* Valor comercial — dato referencial de inmobiliaria; al
+                propietario particular no le pedimos el precio de venta. */}
+            {!isPropietarioUser && (
+              <CurrencyInput
+                label="Valor Comercial (COP)"
+                tooltip="Precio estimado de venta del inmueble en el mercado. Es referencial, no obligatorio."
+                id="valor_comercial"
+                value={formData.valor_comercial}
+                onChange={(val) => handleChange('valor_comercial', val)}
+                disabled={isSubmitting}
+                placeholder="Ej: 450.000.000"
+                error={errors.valor_comercial}
+                max={99999999999}
+              />
+            )}
           </div>
         </div>
 
@@ -1080,7 +1149,9 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               />
             </div>
 
-            {/* Notas internas */}
+            {/* Notas internas — herramienta de equipo; el propietario
+                particular no tiene "administradores" a quien dejarle notas. */}
+            {!isPropietarioUser && (
             <div>
               <label htmlFor="notas_internas" className="block text-sm font-medium text-gray-700 mb-1">
                 Notas Internas
@@ -1099,6 +1170,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                 Estas notas no serán visibles en la vitrina pública
               </p>
             </div>
+            )}
 
             {/* Visible en vitrina */}
             <div className="flex items-center">
@@ -1123,6 +1195,9 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             de arrendamiento generado para este inmueble.
             ============================================ */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
+          {/* Para el propietario particular esto es jerga de cláusulas: se
+              pliega y, si no lo toca, lo deducimos igual. */}
+          <Avanzado plegar={isPropietarioUser}>
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Datos para contrato</h2>
           <p className="text-xs text-gray-500 mb-4">
             Estos datos aparecen en el contrato de arrendamiento generado para este inmueble.
@@ -1131,9 +1206,9 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             {/* Propiedad horizontal */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                ¿Inmueble en propiedad horizontal?
+                ¿Está en un conjunto o edificio con administración?
               </label>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {(['auto', 'si', 'no'] as const).map((opt) => (
                   <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -1146,7 +1221,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
                       className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700">
-                      {opt === 'auto' ? 'No sé' : opt === 'si' ? 'Sí' : 'No'}
+                      {opt === 'auto' ? 'Lo detectamos por la administración' : opt === 'si' ? 'Sí' : 'No'}
                     </span>
                   </label>
                 ))}
@@ -1174,7 +1249,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
             <div>
               <label htmlFor="ubicacion_detallada" className="block text-sm font-medium text-gray-700 mb-1">
                 Ubicación detallada (opcional)
-                <FieldTooltip text="Texto que aparece en la cláusula SEGUNDA del contrato. Si lo dejas vacío, se construye automáticamente con dirección + barrio + ciudad + departamento." />
+                <FieldTooltip text="Cómo describir la ubicación en el contrato. Si lo dejas vacío usamos dirección + barrio + ciudad." />
               </label>
               <textarea
                 id="ubicacion_detallada"
@@ -1191,12 +1266,13 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
               />
             </div>
           </div>
+          </Avanzado>
         </div>
 
         {/* Botones */}
         <div className="flex justify-end gap-4">
           <Link
-            href="/inmuebles"
+            href={rutaListado}
             className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
           >
             Cancelar

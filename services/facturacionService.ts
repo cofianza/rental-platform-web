@@ -14,8 +14,6 @@ import { apiClient } from '@/lib/api'
 import { API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
-  IDatosFiscales,
-  IDatosFiscalesInput,
   IFactura,
   IFacturaListResponse,
   IFacturaFilters,
@@ -136,34 +134,9 @@ function adaptFactura(row: BackendFactura): IFactura {
 // ============================================
 
 class FacturacionService {
-  // ── Datos Fiscales (no usados por Factus — Cofianza configura sus datos
-  //    de emisor en el panel de Factus, no en nuestro sistema). Devolvemos
-  //    null/no-op para que la UI no rompa.
-  // ------------------------------------------
-
-  async getDatosFiscales(): Promise<IDatosFiscales | null> {
-    return null
-  }
-
-  async saveDatosFiscales(input: IDatosFiscalesInput): Promise<IDatosFiscales> {
-    // Placeholder — los datos del cliente se toman del solicitante; los del
-    // emisor (Cofianza) se configuran en el panel de Factus.
-    return {
-      id: 'noop',
-      usuario_id: 'noop',
-      tipo_documento: input.tipo_documento,
-      numero_documento: input.numero_documento,
-      razon_social: input.razon_social,
-      regimen_tributario: input.regimen_tributario,
-      direccion_fiscal: input.direccion_fiscal,
-      ciudad: input.ciudad,
-      departamento: input.departamento,
-      email_fiscal: input.email_fiscal,
-      telefono_fiscal: input.telefono_fiscal || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-  }
+  // Sin get/saveDatosFiscales: eran placeholders no-op. Los datos del emisor
+  // (Cofianza) viven en el panel de Factus y los del cliente salen del perfil
+  // del arrendador — DatosFiscalesSection los lee de perfilArrendadorService.
 
   // ── Pendientes de facturar (pagos completados sin factura) ────────
 

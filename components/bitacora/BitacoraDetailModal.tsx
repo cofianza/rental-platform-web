@@ -1,9 +1,21 @@
 'use client'
 
+import Link from 'next/link'
 import { Modal } from '@/components/ui/Modal'
+import { IconExternalLink } from '@/components/icons'
 import { ActionBadge } from './ActionBadge'
 import { ENTITY_LABELS } from './constants'
 import type { IAuditLog } from '@/types/bitacora'
+
+/** Entidades que tienen pantalla propia a la que saltar desde la bitácora. */
+const ENTITY_ROUTES: Record<string, string> = {
+  expediente: '/expedientes',
+  contrato: '/contratos',
+  user: '/usuarios',
+  inmueble: '/inmuebles',
+}
+
+const LINK_CLASS = 'inline-flex items-center gap-1 font-mono text-xs text-primary-600 hover:underline'
 
 interface BitacoraDetailModalProps {
   log: IAuditLog | null
@@ -33,6 +45,13 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 export function BitacoraDetailModal({ log, onClose }: BitacoraDetailModalProps) {
   if (!log) return null
 
+  // El UUID se mostraba pelado: para ver de qué caso hablaba el registro había
+  // que copiarlo y buscarlo a mano. Cuando la entidad no tiene pantalla propia
+  // (pago, documento, autorización…) saltamos al estudio que la contiene.
+  const rutaEntidad = ENTITY_ROUTES[log.entidad]
+  const expedienteRelacionado =
+    !rutaEntidad && typeof log.detalle?.expediente_id === 'string' ? log.detalle.expediente_id : null
+
   return (
     <Modal isOpen={!!log} onClose={onClose} title="Detalle de registro" size="lg">
       <div className="space-y-1">
@@ -44,9 +63,26 @@ export function BitacoraDetailModal({ log, onClose }: BitacoraDetailModalProps) 
           <ActionBadge action={log.accion} />
         </DetailRow>
         <DetailRow label="Entidad">{ENTITY_LABELS[log.entidad] || log.entidad}</DetailRow>
-        {log.entidad_id && <DetailRow label="ID Entidad">
-          <span className="font-mono text-xs">{log.entidad_id}</span>
-        </DetailRow>}
+        {log.entidad_id && (
+          <DetailRow label="ID Entidad">
+            {rutaEntidad ? (
+              <Link href={`${rutaEntidad}/${log.entidad_id}`} className={LINK_CLASS}>
+                {log.entidad_id}
+                <IconExternalLink size={14} />
+              </Link>
+            ) : expedienteRelacionado ? (
+              <>
+                <span className="font-mono text-xs">{log.entidad_id}</span>
+                <Link href={`/expedientes/${expedienteRelacionado}`} className={`${LINK_CLASS} ml-2`}>
+                  Ver estudio
+                  <IconExternalLink size={14} />
+                </Link>
+              </>
+            ) : (
+              <span className="font-mono text-xs">{log.entidad_id}</span>
+            )}
+          </DetailRow>
+        )}
         <DetailRow label="Direccion IP">
           <span className="font-mono">{log.ip || '-'}</span>
         </DetailRow>

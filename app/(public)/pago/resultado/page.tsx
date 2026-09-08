@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { apiClient } from '@/lib/api'
+import { getResultadoPagoPublico, type IPagoResultadoPublico } from '@/services/pagoEstudioService'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -24,6 +25,10 @@ function PagoResultadoContent() {
   // MP/pasarela agrega el id del pago a la URL de retorno; lo usamos para
   // confirmar el pago en el backend (red de seguridad por si el webhook no llega).
   const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id')
+  // El id del pago viaja en la URL de retorno (lo pone el backend al crear el
+  // checkout): sin el, quien cancela y no tiene sesion se queda sin ninguna
+  // accion posible en esta pantalla.
+  const pagoId = searchParams.get('pago')
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isAuthInitialized = useAuthStore((s) => s.isInitialized)
 
@@ -32,6 +37,18 @@ function PagoResultadoContent() {
   // El auto-cierre espera a que la reconciliación termine: cerrar la pestaña
   // a mitad del POST podía abortar la confirmación del pago.
   const [reconcileDone, setReconcileDone] = useState(false)
+  const [resultado, setResultado] = useState<IPagoResultadoPublico | null>(null)
+
+  // Solo cuando NO fue exito: es ahi donde hace falta el link para reintentar
+  // y el numero del estudio en lugar de un uuid recortado.
+  useEffect(() => {
+    if (!pagoId || status === 'success') return
+    let vivo = true
+    getResultadoPagoPublico(pagoId)
+      .then((r) => { if (vivo) setResultado(r) })
+      .catch(() => { /* la pantalla ya funciona sin esto */ })
+    return () => { vivo = false }
+  }, [pagoId, status])
 
   useEffect(() => {
     // Small delay to let the page render with branding before showing result
@@ -101,6 +118,10 @@ function PagoResultadoContent() {
   const isCancelled = status === 'cancelled'
   // PSE/efectivo: el pago quedó en proceso en la pasarela — NO es éxito todavía.
   const isPending = status === 'pending'
+  // La única acción posible para el invitado sin sesión que canceló o al que
+  // le rechazaron el pago: el checkout sigue vivo y el backend lo devuelve
+  // mientras el pago no esté completado ni cancelado.
+  const retryHref = !isSuccess ? resultado?.payment_link_url ?? null : null
 
   return (
     <div className="max-w-md mx-auto py-8">
@@ -136,8 +157,8 @@ function PagoResultadoContent() {
             : isPending
               ? 'Tu pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Te avisaremos cuando se confirme — no necesitas volver a pagar.'
               : isCancelled
-                ? 'Has cancelado el proceso de pago. Puedes volver a intentarlo usando el link que recibiste por correo.'
-                : 'Hubo un problema al procesar tu pago. Por favor intenta nuevamente usando el link que recibiste por correo.'}
+                ? `Has cancelado el proceso de pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Puedes volver a intentarlo usando el link que recibiste por correo.'}`
+                : `Hubo un problema al procesar tu pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Por favor intenta nuevamente usando el link que recibiste por correo.'}`}
         </p>
       </div>
 
@@ -167,11 +188,14 @@ function PagoResultadoContent() {
               {isSuccess ? 'Completado' : isPending ? 'En proceso' : isCancelled ? 'Cancelado' : 'Fallido'}
             </span>
           </div>
-          {expedienteId && (
+          {/* Antes se mostraba `expedienteId.slice(0,8)`: un pedazo de uuid que
+              el arrendatario no reconoce ni puede citarle a nadie. Si no
+              tenemos el número real del estudio, mejor no mostrar la fila. */}
+          {resultado?.expediente_numero && (
             <div className="flex justify-between py-2.5">
-              <span className="text-sm text-gray-500">Referencia</span>
-              <span className="text-sm font-medium text-gray-900 font-mono">
-                {expedienteId.slice(0, 8)}...
+              <span className="text-sm text-gray-500">Estudio</span>
+              <span className="text-sm font-medium text-gray-900">
+                {resultado.expediente_numero}
               </span>
             </div>
           )}
@@ -236,13 +260,31 @@ function PagoResultadoContent() {
         </div>
       )}
 
+      {/* Sin este botón la pantalla decía "intenta con el link del correo" y no
+          ofrecía nada más: el prospecto no tiene sesión y quedaba sin salida. */}
+      {retryHref && (
+        <div className="mt-6">
+          <a
+            href={retryHref}
+            className="inline-flex w-full items-center justify-center px-5 py-3 text-base font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            Volver a intentar el pago
+          </a>
+        </div>
+      )}
+
       {/* CTA en pago cancelado/fallido (sin auto-cierre): permitir volver al
-          expediente si hay sesion, para reintentar el pago. */}
+          expediente si hay sesion, para reintentar el pago. Pasa a secundario
+          cuando el checkout sigue vivo: ahi la accion principal es reintentar. */}
       {!isSuccess && isAuthInitialized && isAuthenticated && (
-        <div className="mt-6 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <Link
             href={expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'}
-            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+            className={`inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+              retryHref
+                ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                : 'text-white bg-primary-600 hover:bg-primary-700 shadow-sm'
+            }`}
           >
             {expedienteId ? 'Ver mi estudio' : 'Ir a mi panel'}
           </Link>

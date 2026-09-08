@@ -128,12 +128,16 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Operación',
   },
   {
+    // Sin 'administrador': la disponibilidad son los horarios de visita del
+    // dueño del inmueble, y el admin no tiene inmuebles propios que agendar.
+    // La ruta sigue permitiéndole entrar por deep link (ALLOWED_ROLES en
+    // app/(dashboard)/disponibilidad/page.tsx) para soporte.
     label: 'Disponibilidad',
     href: '/disponibilidad',
     icon: 'Clock',
     description: 'Horarios para agendar visitas',
     resource: 'disponibilidad',
-    requiredRoles: ['propietario', 'inmobiliaria', 'administrador'],
+    requiredRoles: ['propietario', 'inmobiliaria'],
     group: 'Operación',
   },
 
@@ -169,7 +173,21 @@ export const NAV_ITEMS: NavItem[] = [
     // Excluido propietario: la facturacion la maneja la inmobiliaria a su
     // nombre, no el propietario individual. El propietario consulta los
     // pagos y contratos en su expediente; no necesita el panel fiscal.
-    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria', 'solicitante'],
+    // Excluido solicitante: este label habla de las comisiones que la
+    // inmobiliaria le paga a Cofianza. El arrendatario paga una sola
+    // evaluación, así que tiene su propia entrada (misma ruta, otro nombre).
+    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria'],
+    group: 'Financiero',
+  },
+  {
+    // Misma ruta que "Pagos a Cofianza", pero con el lenguaje del arrendatario:
+    // lo suyo es el pago de su evaluación y la factura correspondiente.
+    label: 'Mis pagos y facturas',
+    href: '/facturacion',
+    icon: 'Receipt',
+    description: 'El pago de tu evaluación y tus facturas',
+    resource: 'facturas',
+    requiredRoles: ['solicitante'],
     group: 'Financiero',
   },
   {
@@ -205,10 +223,12 @@ export const NAV_ITEMS: NavItem[] = [
     // Reusa el recurso 'usuarios' para el chequeo RBAC (el admin lo tiene);
     // distinto de /inmobiliarias (perfiles aliados) — aquí se administran los
     // miembros de cada organización multi-tenant.
-    label: 'Equipos inmobiliarias',
+    // Icono propio (no Building2): en el sidebar colapsado compartía icono con
+    // "Inmobiliarias" y las dos entradas eran indistinguibles.
+    label: 'Miembros de inmobiliarias',
     href: '/admin/inmobiliarias',
-    icon: 'Building2',
-    description: 'Miembros y titulares de cada inmobiliaria aliada',
+    icon: 'UserPlus',
+    description: 'Titulares, miembros e invitaciones de cada inmobiliaria aliada',
     resource: 'usuarios',
     requiredRoles: ['administrador'],
     group: 'Administración',
@@ -233,7 +253,8 @@ export const NAV_ITEMS: NavItem[] = [
     // Adenda 1 §11: parámetros del modelo editables por Gerencia sin desarrollo.
     label: 'Calibración del modelo',
     href: '/admin/calibracion',
-    icon: 'Settings',
+    // Icono propio: con 'Settings' se confundía con "Configuración" al colapsar.
+    icon: 'Activity',
     description: 'Parámetros del scorecard V4.1 y su historial',
     resource: 'configuracion',
     requiredRoles: ['administrador'],

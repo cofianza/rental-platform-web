@@ -4,7 +4,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { IInmueble } from '@/types/inmueble'
@@ -91,6 +91,24 @@ const initialErrors: WizardErrors = {
   step1: {},
   step2: {},
   step3: {},
+}
+
+// ============================================
+// Borrador en sessionStorage
+// ============================================
+
+/**
+ * PORQUÉ: el estado del asistente vive en memoria, así que tocar cualquier
+ * pestaña del shell (o recargar) borraba un solicitante recién diligenciado sin
+ * aviso. Guardamos un borrador por pestaña para poder ofrecer "continuar".
+ * sessionStorage (no localStorage): datos personales que no deben sobrevivir al
+ * cierre de la pestaña.
+ */
+const DRAFT_KEY = 'expediente_wizard_draft'
+
+interface WizardDraft {
+  currentStep: number
+  data: WizardData
 }
 
 // ============================================
@@ -192,6 +210,60 @@ export function useExpedienteWizard() {
   // 3.1: si el solicitante ya tiene un expediente activo para este inmueble, el
   // backend devuelve el expediente existente para que ofrezcamos "Ver expediente".
   const [existingExpediente, setExistingExpediente] = useState<{ id: string; numero: string | null } | null>(null)
+
+  // ============================================
+  // Borrador (anti-pérdida de datos)
+  // ============================================
+
+  // "Hay algo que perder": inmueble elegido, solicitante elegido o formulario
+  // de solicitante nuevo empezado.
+  const hayDatos = !!data.step1.inmueble || !!data.step2.solicitante || !!data.step2.formData
+
+  const clearDraft = useCallback(() => {
+    try {
+      sessionStorage.removeItem(DRAFT_KEY)
+    } catch {
+      // Modo privado / storage bloqueado: sin borrador, todo lo demás sigue igual.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hayDatos) return
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ currentStep, data } satisfies WizardDraft))
+    } catch {
+      // Cuota llena o storage bloqueado: el asistente funciona igual, solo que
+      // sin red de seguridad.
+    }
+  }, [hayDatos, currentStep, data])
+
+  /** Restaura el borrador guardado. Devuelve false si no había o no se pudo leer. */
+  const restoreDraft = useCallback((): boolean => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY)
+      if (!raw) return false
+      const draft = JSON.parse(raw) as WizardDraft
+      if (!draft?.data?.step1) return false
+      setData({
+        step1: { ...initialStep1, ...draft.data.step1 },
+        step2: { ...initialStep2, ...draft.data.step2 },
+        step3: { ...initialStep3, ...draft.data.step3 },
+      })
+      setCurrentStep(draft.currentStep >= 1 && draft.currentStep <= 4 ? draft.currentStep : 1)
+      return true
+    } catch {
+      return false
+    }
+  }, [])
+
+  /** true si hay un borrador guardado que ofrecer (sin restaurarlo todavía). */
+  const hasDraft = useCallback((): boolean => {
+    try {
+      return !!sessionStorage.getItem(DRAFT_KEY)
+    } catch {
+      return false
+    }
+  }, [])
 
   // ============================================
   // Navegacion
@@ -407,6 +479,9 @@ export function useExpedienteWizard() {
         )
       }
 
+      // El estudio ya existe: el borrador dejó de tener sentido y no debe
+      // ofrecerse "continuar" con datos ya enviados.
+      clearDraft()
       router.push(`/expedientes/${expediente.id}`)
 
       return expediente.id
@@ -447,7 +522,7 @@ export function useExpedienteWizard() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [data, router])
+  }, [data, router, clearDraft])
 
   // ============================================
   // Reset
@@ -460,7 +535,8 @@ export function useExpedienteWizard() {
     setIsSubmitting(false)
     setSubmitError(null)
     setExistingExpediente(null)
-  }, [])
+    clearDraft()
+  }, [clearDraft])
 
   // ============================================
   // Return
@@ -474,6 +550,13 @@ export function useExpedienteWizard() {
     isSubmitting,
     submitError,
     existingExpediente,
+    /** Hay algo diligenciado que se perdería al salir. */
+    hayDatos,
+
+    // Borrador
+    hasDraft,
+    restoreDraft,
+    clearDraft,
 
     // Navegacion
     goToStep,

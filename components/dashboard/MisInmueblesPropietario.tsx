@@ -416,12 +416,20 @@ export function MisInmueblesPropietario() {
         subtitle="Gestiona tus propiedades, agrégalas a la vitrina comercial de Cofianza y administra inquilinos."
       />
 
-      <KpiRow cols={5}>
-        <Kpi label="Total" value={r?.total ?? 0} Icon={IconHome} />
+      {/* 4 KPIs, no 5: con 1-2 inmuebles "Total" es redundante con la lista de
+          abajo. Y "Ingreso mes" mentía: no es plata recaudada, es la suma de
+          los cánones contratados (con mora o sin ella). */}
+      <KpiRow cols={4}>
         <Kpi label="Arrendados" value={r?.arrendados ?? 0} tone="green" Icon={IconCheckCircle} />
         <Kpi label="Disponibles" value={r?.disponibles ?? 0} tone="orange" Icon={IconClock} />
         <Kpi label="En vitrina" value={r?.enVitrina ?? 0} tone="blue" Icon={IconBuilding2} />
-        <Kpi label="Ingreso mes" value={moneyCompact(r?.ingresoMes ?? 0)} tone="green" Icon={IconDollarSign} />
+        <Kpi
+          label="Canon contratado / mes"
+          sub="Suma de los cánones de tus contratos vigentes"
+          value={moneyCompact(r?.ingresoMes ?? 0)}
+          tone="green"
+          Icon={IconDollarSign}
+        />
       </KpiRow>
 
       <div className="mb-3 flex items-center justify-between gap-3">

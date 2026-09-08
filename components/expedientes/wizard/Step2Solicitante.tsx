@@ -15,7 +15,6 @@ import {
   IconX,
   IconPlus,
   IconPencil,
-  IconAlertTriangle,
   IconFileCheck,
   IconArrowRight,
 } from '@/components/icons'
@@ -267,38 +266,6 @@ export function Step2Solicitante({
           </button>
         </div>
 
-        {/* Aviso prominente: hay cambios sin guardar. Mientras esté visible, el
-            wizard bloquea "Siguiente" (vía onEditingDirtyChange) — el usuario
-            DEBE guardar o cancelar antes de avanzar. */}
-        {isEditDirty && (
-          <div className="flex flex-col gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
-                <IconAlertTriangle size={22} className="text-amber-600" />
-              </span>
-              <div>
-                <p className="text-base font-bold text-amber-900 sm:text-lg">
-                  Hiciste cambios sin guardar
-                </p>
-                <p className="mt-0.5 text-sm text-amber-800">
-                  Para que se apliquen debes hacer clic en{' '}
-                  <span className="font-semibold">«Guardar cambios»</span>. Si avanzas sin guardar,
-                  se perderán.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleSaveEdit}
-              disabled={isSavingEdit}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
-            >
-              {isSavingEdit && <IconLoader size={16} className="animate-spin" />}
-              Guardar cambios
-            </button>
-          </div>
-        )}
-
         {editError && <p className="text-sm text-red-600">{editError}</p>}
 
         <SolicitanteForm
@@ -307,7 +274,7 @@ export function Step2Solicitante({
           onUpdateField={(field, value) => setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev))}
         />
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleSaveEdit}
@@ -328,6 +295,14 @@ export function Step2Solicitante({
           >
             Cancelar
           </button>
+          {/* Nota discreta en vez del banner de alarma: el bloqueo de
+              "Siguiente" ya es visible justo debajo, no hace falta un recuadro
+              de dos líneas ni un segundo botón "Guardar cambios". */}
+          {isEditDirty && (
+            <p className="text-sm text-amber-700 sm:ml-2" role="status">
+              Guarda o cancela los cambios para poder continuar.
+            </p>
+          )}
         </div>
       </div>
     )

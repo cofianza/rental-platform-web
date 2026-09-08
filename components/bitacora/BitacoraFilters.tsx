@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { IconX } from '@/components/icons'
-import { ACTION_OPTIONS, ENTITY_OPTIONS } from './constants'
+import { ACTION_GROUPS, ENTITY_OPTIONS } from './constants'
 import { userService } from '@/services/userService'
 import type { IAuditLogFilters } from '@/types/bitacora'
 
@@ -74,10 +74,17 @@ export function BitacoraFilters({
             className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
           >
-            {ACTION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+            <option value="">Todas las acciones</option>
+            {/* Agrupado por módulo: el listado plano solo ofrecía 9 acciones de
+                las ~120 que audita la API. */}
+            {ACTION_GROUPS.map((grupo) => (
+              <optgroup key={grupo.label} label={grupo.label}>
+                {grupo.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>

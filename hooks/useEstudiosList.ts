@@ -10,6 +10,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { useEstudiosListStore, DEFAULT_ESTUDIO_FILTERS } from '@/stores/estudiosListStore'
 import { estudioService } from '@/services/estudioService'
+import { BANDEJAS } from '@/components/estudios/constants'
 import type { IEstudioFilters, EstadoEstudio } from '@/types/estudio'
 
 const DEBOUNCE_DELAY = 300
@@ -60,7 +61,16 @@ export function useEstudiosList() {
     if (estado) {
       const estados = estado.split(',') as EstadoEstudio[]
       urlFilters.estado = estados
-      if (estados.length === 1) storeSetActiveBandeja(estados[0])
+      // Al volver desde una URL compartida se perdía la bandeja activa salvo
+      // que fuera un estado único; ahora resolvemos la definición completa
+      // (estados + resultado) para que el tab siga marcado.
+      const bandeja = BANDEJAS.find(
+        (b) =>
+          b.estados.length === estados.length &&
+          b.estados.every((e) => estados.includes(e)) &&
+          (b.resultado ?? '') === (resultado ?? ''),
+      )
+      if (bandeja) storeSetActiveBandeja(bandeja.id)
     }
     if (resultado) urlFilters.resultado = resultado
     if (proveedor) urlFilters.proveedor = proveedor
@@ -178,7 +188,7 @@ export function useEstudiosList() {
 
   // Set active bandeja
   const setActiveBandeja = useCallback(
-    (bandeja: EstadoEstudio | null) => {
+    (bandeja: string | null) => {
       storeSetActiveBandeja(bandeja)
     },
     [storeSetActiveBandeja]

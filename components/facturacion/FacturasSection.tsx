@@ -46,7 +46,15 @@ function formatDate(dateString: string): string {
 // Component
 // ============================================
 
-export function FacturasSection() {
+interface FacturasSectionProps {
+  /** Lleva a la pestaña "Pendientes de facturación": una factura solo nace de
+   *  un pago confirmado, no de un formulario en blanco. Sin este callback no
+   *  se pinta el CTA (antes era un botón que solo respondía con un toast de
+   *  "disponible cuando el backend esté conectado"). */
+  onFacturarPendiente?: () => void
+}
+
+export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = {}) {
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.rol === 'administrador'
 
@@ -153,15 +161,15 @@ export function FacturasSection() {
         <IconFileText size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Sin facturas</h3>
         <p className="text-sm text-gray-500 mb-6">
-          Aún no tienes facturas registradas en el sistema.
+          Las facturas se emiten desde un pago confirmado en la pestaña Pendientes de facturación.
         </p>
-        {isAdmin && (
+        {isAdmin && onFacturarPendiente && (
           <button
-            onClick={() => toast.info('Funcionalidad disponible cuando el backend este conectado')}
+            onClick={onFacturarPendiente}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <IconPlus size={18} />
-            Crear Factura
+            Facturar un pago pendiente
           </button>
         )}
       </div>
@@ -227,14 +235,14 @@ export function FacturasSection() {
             <IconRefresh size={18} className={pageState === 'loading' ? 'animate-spin' : ''} />
           </button>
 
-          {/* Admin: Create button */}
-          {isAdmin && (
+          {/* Admin: ir a la pestaña donde SÍ se puede emitir */}
+          {isAdmin && onFacturarPendiente && (
             <button
-              onClick={() => toast.info('Funcionalidad disponible cuando el backend este conectado')}
+              onClick={onFacturarPendiente}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
             >
               <IconPlus size={18} />
-              Crear Factura
+              Facturar un pago pendiente
             </button>
           )}
         </div>

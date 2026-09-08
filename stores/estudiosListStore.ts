@@ -4,12 +4,8 @@
  */
 
 import { create } from 'zustand'
-import type {
-  IEstudioListItem,
-  IEstudioFilters,
-  IEstudiosMeta,
-  EstadoEstudio,
-} from '@/types/estudio'
+import { BANDEJAS } from '@/components/estudios/constants'
+import type { IEstudioListItem, IEstudioFilters, IEstudiosMeta } from '@/types/estudio'
 
 export const DEFAULT_ESTUDIO_FILTERS: IEstudioFilters = {
   search: '',
@@ -30,7 +26,8 @@ interface IEstudiosListState {
   filters: IEstudioFilters
   isLoading: boolean
   error: string | null
-  activeBandeja: EstadoEstudio | null
+  /** Id de la bandeja activa (ver BANDEJAS), no un estado suelto. */
+  activeBandeja: string | null
 }
 
 interface EstudiosListActions {
@@ -40,7 +37,7 @@ interface EstudiosListActions {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   resetFilters: () => void
-  setActiveBandeja: (bandeja: EstadoEstudio | null) => void
+  setActiveBandeja: (bandeja: string | null) => void
 }
 
 type EstudiosListStore = IEstudiosListState & EstudiosListActions
@@ -70,13 +67,19 @@ export const useEstudiosListStore = create<EstudiosListStore>((set) => ({
       filters: DEFAULT_ESTUDIO_FILTERS,
       activeBandeja: null,
     }),
+  // Una bandeja ya no es un estado: puede agrupar varios (p. ej. "Listos para
+  // ejecutar") o filtrar además por resultado ("Revisión manual").
   setActiveBandeja: (bandeja) =>
-    set((state) => ({
-      activeBandeja: bandeja,
-      filters: {
-        ...state.filters,
-        estado: bandeja ? [bandeja] : [],
-        page: 1,
-      },
-    })),
+    set((state) => {
+      const def = BANDEJAS.find((b) => b.id === bandeja)
+      return {
+        activeBandeja: bandeja,
+        filters: {
+          ...state.filters,
+          estado: def?.estados ?? [],
+          resultado: def?.resultado ?? '',
+          page: 1,
+        },
+      }
+    }),
 }))

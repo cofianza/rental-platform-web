@@ -10,10 +10,13 @@
 
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
+import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import { BandejaTabs } from './BandejaTabs'
 import { ExpedientesFilters } from './ExpedientesFilters'
@@ -27,6 +30,10 @@ export function ExpedientesListado() {
   // El solicitante no crea expedientes — el flujo arranca con la cita previa
   // que dispara el propietario/inmobiliaria desde su panel. Ocultamos el CTA.
   const puedeCrearExpediente = user?.rol !== 'solicitante'
+  // Solo quien asigna analistas puede "Tomar" desde la lista. Gerencia consulta
+  // e inmobiliaria no asignan analista interno.
+  const puedeAsignar = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  const [tomandoId, setTomandoId] = useState<string | null>(null)
   const {
     expedientes,
     meta,
@@ -129,6 +136,23 @@ export function ExpedientesListado() {
             onSort={handleSort}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+            tomandoId={tomandoId}
+            onTomar={
+              puedeAsignar
+                ? async (id) => {
+                    setTomandoId(id)
+                    try {
+                      await expedienteService.asignarResponsable(id, user!.id)
+                      toast.success('Estudio asignado a ti')
+                      await fetchExpedientes()
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : 'No se pudo asignar')
+                    } finally {
+                      setTomandoId(null)
+                    }
+                  }
+                : undefined
+            }
           />
         )}
       </div>

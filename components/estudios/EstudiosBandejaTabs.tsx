@@ -11,27 +11,14 @@
 import { useEffect, useState } from 'react'
 import { ESTADOS_ESTUDIO, type EstadoEstudioType } from '@/lib/constants'
 import type { IEstudiosMeta, IEstudiosStats } from '@/types/estudio'
-import type { EstadoEstudio } from '@/types/estudio'
 import { estudioService } from '@/services/estudioService'
 import { cn } from '@/lib/utils'
-
-const BANDEJAS: Array<{
-  id: EstadoEstudio | null
-  label: string
-  estado: EstadoEstudio | null
-}> = [
-  { id: null, label: 'Todos', estado: null },
-  { id: 'solicitado', label: 'Solicitados', estado: 'solicitado' },
-  { id: 'en_proceso', label: 'En proceso', estado: 'en_proceso' },
-  { id: 'completado', label: 'Completados', estado: 'completado' },
-  { id: 'fallido', label: 'Fallidos', estado: 'fallido' },
-  { id: 'cancelado', label: 'Cancelados', estado: 'cancelado' },
-]
+import { BANDEJAS } from './constants'
 
 export interface EstudiosBandejaTabsProps {
-  activeBandeja: EstadoEstudio | null
+  activeBandeja: string | null
   meta: IEstudiosMeta | null
-  onBandejaChange: (bandeja: EstadoEstudio | null) => void
+  onBandejaChange: (bandeja: string | null) => void
 }
 
 export function EstudiosBandejaTabs({
@@ -50,15 +37,18 @@ export function EstudiosBandejaTabs({
 
   return (
     <div className="space-y-4">
-      {/* KPI Cards — 4 cards segun nueva propuesta UI Mario (12-may-2026):
-          Este mes / Aprobados / En proceso / Rechazados. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* KPI Cards — nueva propuesta UI Mario (12-may-2026): Este mes /
+          Aprobados / En proceso / Rechazados. "Condicionados" se sumó porque
+          stats ya lo devolvía y es la cola que exige decisión humana (§14):
+          sin él, esos casos no se contaban en ninguna parte. */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <KPIMini
           label="Este mes"
           value={stats?.este_mes ?? meta?.total ?? 0}
           color="bg-primary-600"
         />
         <KPIMini label="Aprobados" value={stats?.aprobados ?? 0} color="bg-green-500" />
+        <KPIMini label="Condicionados" value={stats?.condicionados ?? 0} color="bg-amber-500" />
         <KPIMini label="En proceso" value={stats?.en_proceso ?? 0} color="bg-blue-500" />
         <KPIMini label="Rechazados" value={stats?.rechazados ?? 0} color="bg-red-500" />
       </div>
@@ -67,15 +57,27 @@ export function EstudiosBandejaTabs({
       <div className="overflow-x-auto">
         <nav className="flex gap-1 min-w-max" aria-label="Bandejas de estudios">
           {BANDEJAS.map((bandeja) => {
-            const isActive = activeBandeja === bandeja.estado
-            const config = bandeja.estado
-              ? ESTADOS_ESTUDIO[bandeja.estado as EstadoEstudioType]
-              : null
+            // Sin bandeja explícita (primera carga o filtros limpios) el estado
+            // real es "Todos".
+            const isActive = (activeBandeja ?? 'todos') === bandeja.id
+            // El punto de color solo tiene sentido cuando la bandeja es un
+            // estado único; las agrupadas no tienen un color propio.
+            const config =
+              bandeja.estados.length === 1
+                ? ESTADOS_ESTUDIO[bandeja.estados[0] as EstadoEstudioType]
+                : null
+            // Sin contador el operador no sabía si una bandeja tenía trabajo
+            // dentro o estaba vacía: había que entrar a cada una.
+            const count = bandeja.resultado
+              ? (stats?.por_resultado[bandeja.resultado] ?? 0)
+              : bandeja.estados.length
+                ? bandeja.estados.reduce((n, e) => n + (stats?.por_estado[e] ?? 0), 0)
+                : (stats?.total ?? 0)
 
             return (
               <button
-                key={bandeja.label}
-                onClick={() => onBandejaChange(bandeja.estado)}
+                key={bandeja.id}
+                onClick={() => onBandejaChange(bandeja.id)}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
                   isActive
@@ -85,17 +87,16 @@ export function EstudiosBandejaTabs({
                     : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 )}
               >
-                {bandeja.estado && (
+                {config && (
                   <span
                     className={cn(
                       'w-2 h-2 rounded-full',
-                      isActive && config
-                        ? config.textColor.replace('text-', 'bg-')
-                        : 'bg-gray-400'
+                      isActive ? config.textColor.replace('text-', 'bg-') : 'bg-gray-400'
                     )}
                   />
                 )}
                 {bandeja.label}
+                <span className="bg-white/60 px-1.5 rounded text-xs">{count}</span>
               </button>
             )
           })}

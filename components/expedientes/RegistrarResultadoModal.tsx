@@ -10,6 +10,8 @@ import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { IconLoader, IconUpload, IconFileText, IconX, IconCheck } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
+import { PROVEEDOR_LABELS } from '@/components/estudios/constants'
+import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IRegistrarResultadoInput } from '@/types/estudio'
 
 interface RegistrarResultadoModalProps {
@@ -28,6 +30,25 @@ const RESULTADOS: { value: ResultadoValue; label: string; color: string; bg: str
 ]
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
+
+/** Datos que el prospecto declaró en el formulario de la evaluación. */
+interface DatosFormulario {
+  nombre_completo?: string
+  tipo_documento?: string
+  numero_documento?: string
+  ingresos_mensuales?: number
+}
+
+/** Fila del resumen: sin valor no se pinta, para no dejar guiones sueltos. */
+function DatoResumen({ label, value }: { label: string; value: React.ReactNode }) {
+  if (value === null || value === undefined || value === '') return null
+  return (
+    <div className="flex gap-2">
+      <dt className="shrink-0 text-gray-500">{label}:</dt>
+      <dd className="min-w-0 font-medium text-gray-900">{value}</dd>
+    </div>
+  )
+}
 
 export function RegistrarResultadoModal({
   isOpen,
@@ -157,10 +178,40 @@ export function RegistrarResultadoModal({
 
   if (!estudio) return null
 
+  // El analista decidía aprobado/rechazado/condicionado —irreversible— sin ver
+  // nada del caso: tenía que abrir otra pestaña o fiarse de la memoria. Este
+  // resumen de solo lectura pone delante lo que el estudio ya sabe.
+  const datos = (estudio.datos_formulario ?? {}) as DatosFormulario
+  const documento = [datos.tipo_documento, datos.numero_documento].filter(Boolean).join(' ')
+  const canon = estudio.canon_evaluado != null ? Number(estudio.canon_evaluado) : null
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={handleClose} title="Registrar Resultado del Estudio" size="lg">
         <div className="space-y-5">
+          <dl className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm space-y-1">
+            <DatoResumen label="Persona evaluada" value={datos.nombre_completo} />
+            <DatoResumen label="Documento" value={documento} />
+            <DatoResumen
+              label="Buró"
+              value={PROVEEDOR_LABELS[estudio.proveedor] ?? estudio.proveedor}
+            />
+            <DatoResumen
+              label="Canon evaluado"
+              value={canon != null && Number.isFinite(canon) ? formatCurrency(canon) : null}
+            />
+            <DatoResumen
+              label="Ingresos declarados"
+              value={
+                typeof datos.ingresos_mensuales === 'number'
+                  ? formatCurrency(datos.ingresos_mensuales)
+                  : null
+              }
+            />
+            <DatoResumen label="Score actual" value={estudio.score ?? null} />
+            <DatoResumen label="Observaciones" value={estudio.observaciones ?? null} />
+          </dl>
+
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
               {error}

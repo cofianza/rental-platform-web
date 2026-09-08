@@ -32,6 +32,8 @@ import {
 } from '@/services/morasService'
 import { formatCurrency } from '@/lib/constants'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
+import { SearchInput } from '@/components/ui/SearchInput'
+import { useAuthStore } from '@/stores/auth.store'
 
 interface ContratoSelectItem {
   id: string
@@ -82,9 +84,16 @@ const FILTROS: Array<{ key: 'todas' | MoraEstado; label: string }> = [
 ]
 
 export default function ReportarMoraPage() {
+  // La pantalla estaba escrita para el propietario ("Avisa a Cofianza…"), pero
+  // quien más la usa es el operador de Cofianza: para él esto es una cola de
+  // gestión, no un formulario de aviso.
+  const rol = useAuthStore((s) => s.user?.rol)
+  const esInterno = rol === 'administrador' || rol === 'operador_analista'
   const [stats, setStats] = useState<IMorasStats | null>(null)
   const [moras, setMoras] = useState<IMoraTicket[]>([])
   const [contratos, setContratos] = useState<ContratoSelectItem[]>([])
+  const [totalContratos, setTotalContratos] = useState(0)
+  const [filtroContrato, setFiltroContrato] = useState('')
   const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
   const [loading, setLoading] = useState(true)
   const [detalleId, setDetalleId] = useState<string | null>(null)
@@ -97,6 +106,11 @@ export default function ReportarMoraPage() {
   // elegir el contrato en un selector de todos.
   const [contratoId, setContratoId] = useState(
     typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('contrato_id') ?? '') : '',
+  )
+  // Deep link desde la tarjeta del inmueble (?contrato_id=): el formulario
+  // tiene que abrirse aunque para el operador vaya plegado por defecto.
+  const [deepLinkContrato] = useState(
+    () => typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('contrato_id'),
   )
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [monto, setMonto] = useState('')
@@ -147,9 +161,24 @@ export default function ReportarMoraPage() {
           }
         })
         setContratos(items)
+        setTotalContratos(res.meta.total)
       })
       .catch(() => setContratos([]))
   }, [])
+
+  // El select traía 100 contratos sin forma de buscar: encontrar el correcto
+  // era ir bajando a ojo.
+  const contratosFiltrados = filtroContrato
+    ? contratos.filter((c) =>
+        `${c.numero} ${c.inquilino}`.toLowerCase().includes(filtroContrato.toLowerCase()),
+      )
+    : contratos
+
+  // El operador atiende primero lo más viejo; el orden que llegaba de la API
+  // no lo dejaba claro.
+  const lista = esInterno
+    ? [...moras].sort((a, b) => a.reportado_at.localeCompare(b.reportado_at))
+    : moras
 
   const contratoSeleccionado = contratos.find((c) => c.id === contratoId)
   useEffect(() => {
@@ -191,31 +220,16 @@ export default function ReportarMoraPage() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Reportar Mora"
-        subtitle="Avisa a Cofianza cuando un inquilino se atrasa. El sistema escala automáticamente en 3 fases (Recordatorio → Urgencia → Legal)."
-      />
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? 0} sub="Este mes" />
-        <KpiCard label="Resueltas" value={stats?.resueltas ?? 0} color="primary" sub="Pagadas" />
-        <KpiCard label="En gestión" value={stats?.en_gestion ?? 0} color="coral" sub="Activas" />
-        <KpiCard
-          label="Monto en mora"
-          value={formatCompactCOP(stats?.monto_total ?? 0)}
-          color="red"
-          sub="Total adeudado"
-        />
-      </div>
-
-      {/* Form de reporte */}
-      <form
-        onSubmit={handleReportar}
-        className="bg-white rounded-xl border border-gray-200 p-5 space-y-4"
-      >
+  // Para el operador esto es una cola de gestión: el formulario de reporte
+  // le comía la mitad superior de la pantalla y empujaba la cola hacia abajo,
+  // así que lo dejamos plegado y detrás de la tabla.
+  const formularioReporte = (
+    <details open={!esInterno || deepLinkContrato} className="bg-white rounded-xl border border-gray-200">
+      <summary className="cursor-pointer px-5 py-4 text-sm font-bold text-gray-900 marker:text-gray-400">
+        {esInterno ? 'Registrar mora manualmente' : 'Reportar una mora'}
+      </summary>
+      <div className="px-5 pb-5">
+      <form onSubmit={handleReportar} className="space-y-4">
         <div className="flex items-start gap-3 bg-primary-50 border-l-4 border-primary-500 rounded-r-lg p-3 text-sm text-primary-900">
           <IconAlertTriangle size={18} className="text-primary-600 shrink-0 mt-0.5" />
           <p>
@@ -230,6 +244,15 @@ export default function ReportarMoraPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Contrato <span className="text-coral-500">*</span>
             </label>
+            {/* El filtro vive dentro del formulario de reporte: sin esto, un
+                Enter mientras se busca el contrato enviaba la mora a medias. */}
+            <div onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}>
+              <SearchInput
+                placeholder="Filtrar por código o inquilino"
+                onSearch={setFiltroContrato}
+                className="mb-2"
+              />
+            </div>
             <select
               value={contratoId}
               onChange={(e) => setContratoId(e.target.value)}
@@ -237,16 +260,21 @@ export default function ReportarMoraPage() {
               required
             >
               <option value="">— Selecciona contrato —</option>
-              {contratos.map((c) => (
+              {contratosFiltrados.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.numero}
                   {c.inquilino !== '—' ? ` — ${c.inquilino}` : ''} · {formatCurrency(c.monto)}
                 </option>
               ))}
             </select>
-            {contratos.length === 0 && (
+            {contratos.length === 0 ? (
               <p className="text-xs text-amber-600 mt-1">
                 No hay contratos vigentes para reportar
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                {contratosFiltrados.length} contrato{contratosFiltrados.length === 1 ? '' : 's'}
+                {totalContratos > contratos.length && ' · solo se listan los primeros 100; usa el filtro'}
               </p>
             )}
           </div>
@@ -330,143 +358,200 @@ export default function ReportarMoraPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-coral-500 hover:bg-coral-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
           >
             {reportando ? <IconLoader size={16} className="animate-spin" /> : <IconAlertTriangle size={16} />}
-            {reportando ? 'Reportando…' : 'Reportar a Cofianza'}
+            {reportando ? 'Reportando…' : esInterno ? 'Registrar mora' : 'Reportar a Cofianza'}
           </button>
         </div>
       </form>
-
-      {/* Tabla de moras */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 flex flex-wrap items-center gap-3">
-          <div className="mr-auto">
-            <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
-              <span className="inline-block h-2 w-2 rounded-full bg-coral-500" />
-              Seguimiento de moras
-            </h3>
-            <p className="mt-0.5 text-xs text-gray-500">
-              Haz clic en una fila para ver el detalle y el chat del inquilino.
-            </p>
-          </div>
-          {FILTROS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFiltro(f.key)}
-              className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors ${
-                filtro === f.key
-                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
-              }`}
-            >
-              {f.key !== 'todas' && (
-                <span className={`h-1.5 w-1.5 rounded-full ${FASE_CONFIG[f.key as MoraEstado].bdot}`} />
-              )}
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="p-8 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
-            <IconLoader size={16} className="animate-spin" /> Cargando moras…
-          </div>
-        ) : moras.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
-            {filtro === 'todas'
-              ? 'Aún no hay moras reportadas. Cuando reportes una aparecerá aquí.'
-              : 'Sin resultados para este filtro.'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-max text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Ticket
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Inquilino
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Inmueble
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Monto
-                </th>
-                <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Días
-                </th>
-                <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Coa.
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Fase
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
-                  Estudio
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {moras.map((m) => {
-                const dias = Math.floor(
-                  (Date.now() - new Date(m.reportado_at).getTime()) / 86_400_000,
-                )
-                const cfg = FASE_CONFIG[m.estado]
-                return (
-                  <tr
-                    key={m.id}
-                    onClick={() => setDetalleId(m.id)}
-                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">
-                      {m.ticket_numero}
-                    </td>
-                    <td className="px-4 py-3 text-gray-900">{m.inquilino_nombre}</td>
-                    <td className="px-4 py-3 text-gray-600 truncate max-w-[200px]">
-                      {m.inmueble_codigo && (
-                        <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-1.5">
-                          {m.inmueble_codigo}
-                        </span>
-                      )}
-                      {m.inmueble_direccion ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900">
-                      {formatCurrency(m.monto_mora)}
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-700">{dias}</td>
-                    <td className="px-4 py-3 text-center">
-                      {m.coarrendatario_nombre ? (
-                        <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
-                          Sí
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border ${cfg.chip} ${cfg.chipText}`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.bdot}`} />
-                        {cfg.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/expedientes/${m.expediente_id}`}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900 whitespace-nowrap"
-                      >
-                        Ver estudio <IconChevronRight size={14} />
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          </div>
-        )}
       </div>
+    </details>
+  )
+
+  const tablaMoras = (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-200 flex flex-wrap items-center gap-3">
+        <div className="mr-auto">
+          <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-coral-500" />
+            Seguimiento de moras
+          </h3>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Haz clic en una fila para ver el detalle y el chat del inquilino.
+            {esInterno && ' Ordenadas de más antigua a más reciente.'}
+          </p>
+        </div>
+        {FILTROS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFiltro(f.key)}
+            className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors ${
+              filtro === f.key
+                ? 'border-primary-600 bg-primary-50 text-primary-700'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
+            }`}
+          >
+            {f.key !== 'todas' && (
+              <span className={`h-1.5 w-1.5 rounded-full ${FASE_CONFIG[f.key as MoraEstado].bdot}`} />
+            )}
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="p-8 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
+          <IconLoader size={16} className="animate-spin" /> Cargando moras…
+        </div>
+      ) : moras.length === 0 ? (
+        <div className="p-8 text-center text-gray-500 text-sm">
+          {filtro === 'todas'
+            ? 'Aún no hay moras reportadas. Cuando reportes una aparecerá aquí.'
+            : 'Sin resultados para este filtro.'}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-max text-sm">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Ticket
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Inquilino
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Inmueble
+              </th>
+              <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Monto
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Días
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Escala en
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Coa.
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Fase
+              </th>
+              <th className="px-4 py-3 text-right font-semibold text-gray-600 text-xs uppercase tracking-wide">
+                Estudio
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((m) => {
+              const dias = Math.floor(
+                (Date.now() - new Date(m.reportado_at).getTime()) / 86_400_000,
+              )
+              // Nada en la tabla decía cuándo escalaría sola la mora, así que
+              // el operador no sabía a cuál llegarle hoy.
+              const escalaEn =
+                m.estado === 'fase_1' ? 4 - dias : m.estado === 'fase_2' ? 10 - dias : null
+              const cfg = FASE_CONFIG[m.estado]
+              return (
+                <tr
+                  key={m.id}
+                  onClick={() => setDetalleId(m.id)}
+                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                >
+                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">
+                    {m.ticket_numero}
+                  </td>
+                  <td className="px-4 py-3 text-gray-900">{m.inquilino_nombre}</td>
+                  <td className="px-4 py-3 text-gray-600 truncate max-w-[200px]">
+                    {m.inmueble_codigo && (
+                      <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-1.5">
+                        {m.inmueble_codigo}
+                      </span>
+                    )}
+                    {m.inmueble_direccion ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-gray-900">
+                    {formatCurrency(m.monto_mora)}
+                  </td>
+                  <td className="px-4 py-3 text-center text-gray-700">{dias}</td>
+                  <td
+                    className={`px-4 py-3 text-center ${
+                      escalaEn !== null && escalaEn <= 1
+                        ? 'font-semibold text-amber-700'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {escalaEn === null ? '—' : escalaEn <= 0 ? 'Hoy (cron)' : `${escalaEn} d`}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {m.coarrendatario_nombre ? (
+                      <span className="inline-flex items-center rounded-md bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+                        Sí
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border ${cfg.chip} ${cfg.chipText}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.bdot}`} />
+                      {cfg.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/expedientes/${m.expediente_id}`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900 whitespace-nowrap"
+                    >
+                      Ver estudio <IconChevronRight size={14} />
+                    </Link>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={esInterno ? 'Gestión de mora' : 'Reportar Mora'}
+        subtitle={
+          esInterno
+            ? 'Cola de moras reportadas por propietarios e inmobiliarias. Escala sola a los 4 y 10 días; aquí gestionas cada caso.'
+            : 'Avisa a Cofianza cuando un inquilino se atrasa. El sistema escala automáticamente en 3 fases (Recordatorio → Urgencia → Legal).'
+        }
+      />
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? 0} sub="Este mes" />
+        <KpiCard label="Resueltas" value={stats?.resueltas ?? 0} color="primary" sub="Pagadas" />
+        <KpiCard label="En gestión" value={stats?.en_gestion ?? 0} color="coral" sub="Activas" />
+        <KpiCard
+          label="Monto en mora"
+          value={formatCompactCOP(stats?.monto_total ?? 0)}
+          color="red"
+          sub="Total adeudado"
+        />
+      </div>
+
+      {esInterno ? (
+        <>
+          {tablaMoras}
+          {formularioReporte}
+        </>
+      ) : (
+        <>
+          {formularioReporte}
+          {tablaMoras}
+        </>
+      )}
 
       {/* Modal detalle */}
       {detalleId && (

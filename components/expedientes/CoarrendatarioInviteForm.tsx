@@ -34,24 +34,32 @@ const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documen
 interface CoarrendatarioInviteFormProps {
   expedienteId: string
   audience: 'solicitante' | 'gestor'
+  /** Lo que el prospecto YA nos contó en el paso 2 de la autorizacion
+   *  ("con quien vas a vivir"). Ahi se le prometio que no tendria que repetir
+   *  nada; si el estudio queda condicionado y esta card llega vacia, la
+   *  promesa se rompe y le toca teclear los mismos cuatro campos otra vez. */
+  initial?: { nombre?: string; apellido?: string; email?: string; telefono?: string } | null
   onInvited?: () => void
 }
 
 export function CoarrendatarioInviteForm({
   expedienteId,
   audience,
+  initial,
   onInvited,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
 
-  const [showForm, setShowForm] = useState(false)
+  // Con datos precargados abrimos el formulario de una: esconderlo tras
+  // "Agregar co-arrendatario" ocultaria justo la prueba de que ya los tenemos.
+  const [showForm, setShowForm] = useState(!!initial)
   const [submitting, setSubmitting] = useState(false)
-  const [nombre, setNombre] = useState('')
-  const [apellido, setApellido] = useState('')
+  const [nombre, setNombre] = useState(initial?.nombre ?? '')
+  const [apellido, setApellido] = useState(initial?.apellido ?? '')
   const [tipoDoc, setTipoDoc] = useState<IInvitarCoarrendatarioInput['tipo_documento']>('cc')
   const [numDoc, setNumDoc] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefono, setTelefono] = useState('')
+  const [email, setEmail] = useState(initial?.email ?? '')
+  const [telefono, setTelefono] = useState(initial?.telefono ?? '')
 
   const handleInvitar = async () => {
     if (!nombre.trim() || !apellido.trim() || !numDoc.trim() || !email.trim()) {
@@ -123,9 +131,11 @@ export function CoarrendatarioInviteForm({
       ) : (
         <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">
           <p className="text-sm text-gray-700">
-            {esGestor
-              ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
-              : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
+            {initial?.nombre
+              ? `Ya nos contaste de ${initial.nombre}: confirma su cédula y envíale la invitación.`
+              : esGestor
+                ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
+                : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
           </p>
 
           <div className="grid grid-cols-2 gap-3">

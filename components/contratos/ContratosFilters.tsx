@@ -1,7 +1,7 @@
 'use client'
 
 import { IconSearch, IconLoader, IconX, IconCalendar } from '@/components/icons'
-import { ESTADOS_CONTRATO, type EstadoContratoKey } from '@/lib/constants'
+import { ESTADOS_CONTRATO } from '@/lib/constants'
 import type { IContratoListFilters } from '@/types/contrato'
 
 interface ContratosFiltersProps {
@@ -39,7 +39,7 @@ export function ContratosFilters({
           type="text"
           value={filters.search || ''}
           onChange={(e) => onFilterChange({ search: e.target.value || undefined })}
-          placeholder="Buscar por nombre de archivo..."
+          placeholder="Buscar por arrendatario, cédula, dirección o código…"
           className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
         {filters.search && (

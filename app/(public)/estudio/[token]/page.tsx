@@ -48,6 +48,17 @@ export default function EstudioFormularioPage() {
       try {
         const data = await estudioPublicService.getFormulario(token)
         setFormInfo(data)
+        // El enlace nace del expediente, donde la inmobiliaria ya registro
+        // estos datos: llegaba en blanco y el solicitante tenia que volver a
+        // teclear su propio nombre, cedula, correo y telefono.
+        if (!data.ya_completado) {
+          setNombre(data.solicitante_nombre || '')
+          setEmail(data.solicitante?.email ?? '')
+          setTelefono(data.solicitante?.telefono ?? '')
+          setNumDoc(data.solicitante?.numero_documento ?? '')
+          const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
+          setTipoDoc(['CC', 'CE', 'TI', 'NIT'].includes(t) ? t : 'CC')
+        }
         setPageState(data.ya_completado ? 'completed' : 'form')
       } catch (err) {
         const e = err as { statusCode?: number; code?: string; message?: string }
@@ -72,12 +83,12 @@ export default function EstudioFormularioPage() {
     setFormError(null)
 
     if (!nombre.trim() || !numDoc.trim() || !email.trim() || !telefono.trim()) {
-      setFormError('Por favor complete todos los campos obligatorios')
+      setFormError('Completa los campos obligatorios')
       return
     }
 
     if (!acepta) {
-      setFormError('Debe aceptar los terminos y condiciones')
+      setFormError('Debes aceptar los términos y condiciones')
       return
     }
 
@@ -147,7 +158,7 @@ export default function EstudioFormularioPage() {
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
         <p className="text-gray-500">
-          Gracias por completar la informacion. Tu estudio de riesgo crediticio esta siendo procesado.
+          Gracias. Tu evaluación crediticia está en proceso.
         </p>
         <p className="text-sm text-gray-400 mt-4">
           Puedes cerrar esta ventana.
@@ -167,7 +178,7 @@ export default function EstudioFormularioPage() {
         {/* Info banner */}
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
-            Estudio de Riesgo Crediticio
+            Tu estudio
           </h2>
           <p className="text-sm text-primary-700">
             Estudio: <strong>{formInfo.expediente_numero}</strong>
@@ -260,8 +271,10 @@ export default function EstudioFormularioPage() {
       {/* Info banner */}
       {formInfo && (
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+          {/* "Estudio de Riesgo Crediticio" suena a juicio sobre la persona;
+              esto es un tramite y asi se nombra. */}
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
-            Estudio de Riesgo Crediticio
+            Completa tus datos para tu estudio
           </h2>
           <p className="text-sm text-primary-700">
             Estudio: <strong>{formInfo.expediente_numero}</strong>
@@ -274,7 +287,7 @@ export default function EstudioFormularioPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
-        <h3 className="text-lg font-semibold text-gray-900">Datos personales</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Confirma tus datos</h3>
 
         {formError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -293,7 +306,7 @@ export default function EstudioFormularioPage() {
             onChange={(e) => setNombre(e.target.value)}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Ingrese su nombre completo"
+            placeholder="Tu nombre completo"
           />
         </div>
 
@@ -398,7 +411,7 @@ export default function EstudioFormularioPage() {
         {/* Empresa */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Empresa donde trabaja <span className="text-gray-400">(opcional)</span>
+            Empresa donde trabajas <span className="text-gray-400">(opcional)</span>
           </label>
           <input
             type="text"
