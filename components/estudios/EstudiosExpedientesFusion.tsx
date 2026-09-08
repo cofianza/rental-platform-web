@@ -174,6 +174,7 @@ export function EstudiosExpedientesFusion() {
         <ExpedientesFilters
           filters={filters}
           analistas={analistas}
+          miembros={miembrosById}
           isLoading={isLoading}
           onFilterChange={setFilters}
           onClearFilters={clearFilters}

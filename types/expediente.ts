@@ -130,7 +130,9 @@ export interface IExpedienteFilters {
   estudio_filtro?: EstudioFiltro
   page: number
   limit: number
-  sortBy: 'created_at' | 'numero' | 'estado'
+  /** Miembro del equipo de la inmobiliaria (distinto del analista interno). */
+  miembro_responsable_id?: string
+  sortBy: 'created_at' | 'numero' | 'estado' | 'updated_at'
   sortOrder: 'asc' | 'desc'
 }
 

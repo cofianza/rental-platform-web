@@ -201,10 +201,15 @@ export function ExpedientesTable({
                 Responsable
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {/* Dos líneas, igual que la celda: la antigüedad manda, pero
-                    el orden sigue siendo por fecha de creación (la API aún no
-                    ordena por updated_at). */}
-                <div>Última actividad</div>
+                {/* Dos ordenamientos reales: por movimiento (lo que importa
+                    para no dejar un estudio quieto) y por fecha de creación. */}
+                <SortableHeader
+                  column="updated_at"
+                  label="Última actividad"
+                  currentSortBy={filters.sortBy}
+                  currentSortOrder={filters.sortOrder}
+                  onSort={onSort}
+                />
                 <SortableHeader
                   column="created_at"
                   label="Creado"

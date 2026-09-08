@@ -41,6 +41,8 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   }
 
   if (filters.analista_id) params.append('analista_id', filters.analista_id)
+  if (filters.miembro_responsable_id)
+    params.append('miembro_responsable_id', filters.miembro_responsable_id)
   if (filters.inmueble_id) params.append('inmueble_id', filters.inmueble_id)
   if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
   if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)

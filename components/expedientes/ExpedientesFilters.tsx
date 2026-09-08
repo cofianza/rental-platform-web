@@ -12,6 +12,10 @@ import type { IExpedienteFilters, IAnalistaOption } from '@/types/expediente'
 export interface ExpedientesFiltersProps {
   filters: IExpedienteFilters
   analistas: IAnalistaOption[]
+  /** Miembros del equipo de la inmobiliaria (perfil_id → nombre). Cuando llegan,
+   *  el select filtra por miembro_responsable_id en vez de analista_id: el
+   *  select interno siempre salia vacio para la inmobiliaria. */
+  miembros?: Record<string, string>
   isLoading: boolean
   onFilterChange: (filters: Partial<IExpedienteFilters>) => void
   onClearFilters: () => void
@@ -21,11 +25,14 @@ export interface ExpedientesFiltersProps {
 export function ExpedientesFilters({
   filters,
   analistas,
+  miembros,
   isLoading,
   onFilterChange,
   onClearFilters,
   hasActiveFilters,
 }: ExpedientesFiltersProps) {
+  const usaMiembros = Object.keys(miembros ?? {}).length > 0
+
   return (
     <div className="space-y-4">
       {/* Búsqueda y filtros principales */}
@@ -59,16 +66,29 @@ export function ExpedientesFilters({
         {/* Filtro de responsable */}
         <div className="lg:w-56">
           <select
-            value={filters.analista_id}
-            onChange={(e) => onFilterChange({ analista_id: e.target.value })}
+            aria-label="Filtrar por responsable"
+            value={usaMiembros ? (filters.miembro_responsable_id ?? '') : filters.analista_id}
+            onChange={(e) =>
+              onFilterChange(
+                usaMiembros
+                  ? { miembro_responsable_id: e.target.value }
+                  : { analista_id: e.target.value },
+              )
+            }
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
           >
             <option value="">Todos los responsables</option>
-            {analistas.map((analista) => (
-              <option key={analista.id} value={analista.id}>
-                {analista.nombre}
-              </option>
-            ))}
+            {usaMiembros
+              ? Object.entries(miembros ?? {}).map(([id, nombre]) => (
+                  <option key={id} value={id}>
+                    {nombre}
+                  </option>
+                ))
+              : analistas.map((analista) => (
+                  <option key={analista.id} value={analista.id}>
+                    {analista.nombre}
+                  </option>
+                ))}
           </select>
         </div>
 
