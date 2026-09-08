@@ -5,6 +5,7 @@
 
 'use client'
 
+import { NAV_ITEMS } from '@/lib/constants'
 import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 
@@ -19,14 +20,21 @@ export interface Breadcrumb {
  */
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Inicio',
-  inmuebles: 'Inmuebles',
-  expedientes: 'Estudios',
-  usuarios: 'Usuarios',
-  reportes: 'Reportes',
-  configuracion: 'Configuración',
+  estudios: 'Evaluaciones crediticias',
+  interesados: 'Interesados',
+  'tipos-documento': 'Tipos de documento',
+  'plantillas-contrato': 'Plantillas de contrato',
   nuevo: 'Nuevo',
   editar: 'Editar',
 }
+
+/** El nombre del menú manda: antes la miga decía otra cosa que el sidebar. */
+const NAV_LABELS: Record<string, string> = Object.fromEntries(
+  NAV_ITEMS.map((i) => [i.href, i.label]),
+)
+
+/** Segmentos que no son una página: se acumulan en la ruta pero no se muestran. */
+const NO_NAVEGABLES = new Set(['admin'])
 
 /**
  * Hook que genera breadcrumbs automáticamente desde la ruta actual
@@ -60,8 +68,11 @@ export function useBreadcrumbs(): Breadcrumb[] {
     segments.forEach((segment, index) => {
       accumulatedPath += `/${segment}`
 
-      // Determinar la etiqueta
-      let label = ROUTE_LABELS[segment]
+      // /admin no tiene página propia: llevaba a un 404.
+      if (NO_NAVEGABLES.has(segment)) return
+
+      // Determinar la etiqueta (el menú tiene prioridad)
+      let label = NAV_LABELS[accumulatedPath] ?? ROUTE_LABELS[segment]
 
       // Si no hay mapeo, intentar detectar si es un ID (número o UUID)
       if (!label) {

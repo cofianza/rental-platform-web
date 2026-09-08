@@ -7,7 +7,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { RoleBadge, StatusBadge } from '@/components/users'
 import {
@@ -17,34 +16,11 @@ import {
   IconMail,
   IconPhone,
   IconCalendar,
-  IconHome,
-  IconChevronRight,
 } from '@/components/icons'
 import { userService } from '@/services/userService'
 import { useAuth } from '@/hooks/useAuth'
 import type { IUserProfile } from '@/types/user'
 
-/**
- * Breadcrumbs component
- */
-function Breadcrumbs({ userName }: { userName?: string }) {
-  return (
-    <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-      <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
-        <IconHome size={16} />
-        Inicio
-      </Link>
-      <IconChevronRight size={14} />
-      <Link href="/usuarios" className="hover:text-primary-600">
-        Usuarios
-      </Link>
-      <IconChevronRight size={14} />
-      <span className="text-gray-900 font-medium">
-        {userName || 'Detalle'}
-      </span>
-    </nav>
-  )
-}
 
 /**
  * Componente de información
@@ -120,7 +96,6 @@ export default function UsuarioDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs />
         <div className="flex items-center justify-center h-64">
           <IconLoader size={32} className="text-primary-600 animate-spin" />
         </div>
@@ -132,7 +107,6 @@ export default function UsuarioDetailPage() {
   if (error || !user) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs />
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 mb-4">{error || 'Usuario no encontrado'}</p>
           <div className="flex items-center justify-center gap-3">
@@ -160,8 +134,6 @@ export default function UsuarioDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs userName={fullName} />
 
       {/* Header */}
       <div className="flex items-start justify-between">

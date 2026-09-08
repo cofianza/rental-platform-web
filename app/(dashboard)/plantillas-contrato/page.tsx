@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconHome, IconChevronRight, IconPlus, IconLoader } from '@/components/icons'
+import { IconPlus, IconLoader } from '@/components/icons'
 import {
   PlantillasFilters,
   PlantillasTable,
@@ -18,18 +17,6 @@ import type {
   IPlantillaContratoFormData,
 } from '@/types/plantilla-contrato'
 
-function Breadcrumbs() {
-  return (
-    <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-      <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
-        <IconHome size={16} />
-        Inicio
-      </Link>
-      <IconChevronRight size={14} />
-      <span className="text-gray-900 font-medium">Plantillas de Contrato</span>
-    </nav>
-  )
-}
 
 export default function PlantillasContratoPage() {
   const { user } = useAuth()
@@ -156,7 +143,6 @@ export default function PlantillasContratoPage() {
 
   return (
     <div className="p-6">
-      <Breadcrumbs />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

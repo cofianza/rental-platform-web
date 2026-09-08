@@ -7,10 +7,9 @@
 
 import { useState, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
-import { IconLoader, IconHome, IconChevronRight } from '@/components/icons'
+import { IconLoader } from '@/components/icons'
 import {
   InmueblesFilters,
   InmueblesTable,
@@ -27,21 +26,6 @@ import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesProp
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 
-/**
- * Breadcrumbs component
- */
-function Breadcrumbs() {
-  return (
-    <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-      <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
-        <IconHome size={16} />
-        Inicio
-      </Link>
-      <IconChevronRight size={14} />
-      <span className="text-gray-900 font-medium">Inmuebles</span>
-    </nav>
-  )
-}
 
 function InmueblesContent() {
   const router = useRouter()
@@ -148,7 +132,6 @@ function InmueblesContent() {
   if (isInmobiliaria) {
     return (
       <div className="space-y-6">
-        <Breadcrumbs />
         <PageHeader
           title="Propiedades y Vitrina"
           subtitle={
@@ -190,8 +173,6 @@ function InmueblesContent() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs />
 
       {/* Header */}
       <PageHeader
