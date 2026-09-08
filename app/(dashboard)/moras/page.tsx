@@ -88,10 +88,16 @@ export default function ReportarMoraPage() {
   const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
   const [loading, setLoading] = useState(true)
   const [detalleId, setDetalleId] = useState<string | null>(null)
-  const [reportando, setReportando] = useState(false)
+  const [reportando, setReportando] = useState(
+    typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('contrato_id'),
+  )
 
   // Form state
-  const [contratoId, setContratoId] = useState('')
+  // Llega desde la tarjeta del inmueble (?contrato_id=): evita volver a
+  // elegir el contrato en un selector de todos.
+  const [contratoId, setContratoId] = useState(
+    typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('contrato_id') ?? '') : '',
+  )
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')

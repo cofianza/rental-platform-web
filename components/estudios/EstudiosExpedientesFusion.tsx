@@ -134,9 +134,9 @@ export function EstudiosExpedientesFusion() {
         />
         <StatCard
           label="En proceso"
-          value={stats?.en_proceso ?? 0}
+          value={stats?.por_resultado?.pendiente ?? stats?.en_proceso ?? 0}
           color="text-blue-600"
-          sub="Esperando prospecto"
+          sub="Esperando al prospecto o al buró"
         />
         <StatCard
           label="Rechazados"

@@ -22,6 +22,7 @@ import {
   IconSettings,
   IconClipboardList,
   IconCalendar,
+  IconClock
 } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -54,6 +55,8 @@ const NAV: NavGroup[] = [
       { label: 'Estudios', href: '/expedientes', Icon: IconClipboardList },
       // Agenda de visitas (kanban). Antes solo se veía dentro de cada expediente.
       { label: 'Visitas', href: '/citas', Icon: IconCalendar },
+      // Sin esto, los horarios se quedaban en el default L-V 9-17 sin donde cambiarlos.
+      { label: 'Horarios de visita', href: '/disponibilidad', Icon: IconClock },
       { label: 'Evaluar candidato', href: '/estudios', Icon: IconSearch },
       { label: 'Contratos', href: '/contratos', Icon: IconFileText },
     ],

@@ -207,9 +207,14 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
             Evaluar candidato
           </Link>
         )}
-        {p.pago === 'mora' && (
-          <Link href="/moras" className={btnD}>
+        {arrendado && p.contratoId && p.pago !== 'mora' && (
+          <Link href={`/moras?contrato_id=${p.contratoId}`} className={btnD}>
             Reportar mora
+          </Link>
+        )}
+        {p.pago === 'mora' && (
+          <Link href="/moras" className={btnS}>
+            Ver mora
           </Link>
         )}
       </div>

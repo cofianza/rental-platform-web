@@ -727,13 +727,13 @@ export default function ExpedienteDetallePage() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <InfoRow label="Fecha creación" value={formatDate(expediente.created_at)} />
-                  {expediente.creador && user?.rol !== 'solicitante' && (
+                  {expediente.creador && (isInternalRole || user?.rol === 'inmobiliaria') && (
                     <InfoRow
                       label="Creado por"
                       value={`${expediente.creador.nombre} ${expediente.creador.apellido}`.trim()}
                     />
                   )}
-                  {user?.rol !== 'solicitante' && (
+                  {isInternalRole && (
                     <InfoRow
                       label="Responsable"
                       value={nombreAnalista || 'Sin asignar'}
@@ -767,42 +767,15 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
           <div className="p-6 space-y-6">
-            {/* El pago del estudio recién se habilita tras confirmar/realizar la
-                cita y habilitar la evaluación (paso 3 del flujo). Mismo gate que el
-                Resumen; antes de eso, solo un aviso. */}
-            {!(expediente.estudio_habilitado ?? false) ? (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                El pago del estudio estará disponible cuando la visita esté confirmada y la evaluación habilitada.
-              </div>
-            ) : (
-              !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
-                <PagoEstudioSection
-                  expedienteId={id}
-                  userRole={user?.rol}
-                  onPagoCompletado={fetchExpediente}
-                  solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
-                  solicitanteEmail={expediente.solicitante?.email}
-                  solicitanteTelefono={expediente.solicitante?.telefono}
-                />
-              )
-            )}
-            {/* §6.3: la autorización ya NO se gatea por el pago — es al revés,
-                la firma es lo que dispara el cobro. Gatearla dejaba la opción C
-                muerta en la UI (nunca hay pago confirmado antes de firmar).
-                Pero SÍ se gatea por `estudio_habilitado`, igual que el Resumen:
-                sin evaluación habilitada el aviso de arriba dice "el pago estará
-                disponible cuando… el estudio esté habilitado" mientras esta
-                card ofrecía mandar el habeas data — dos textos contradictorios
-                en la misma pantalla, y una firma que al llegar no encuentra
-                estudio y quema su vigencia. */}
-            {(expediente.estudio_habilitado ?? false) && (
-              <AutorizacionSection
-                expedienteId={id}
-                solicitanteEmail={expediente.solicitante?.email}
-                solicitanteTelefono={expediente.solicitante?.telefono}
-                onContactoActualizado={fetchExpediente}
-              />
-            )}
+            {/* El pago y la autorizacion viven en Resumen (§6.3): aqui se repetian
+                las mismas tres tarjetas y la accion util quedaba enterrada. */}
+            <p className="text-sm text-gray-500">
+              La autorización del prospecto y el pago de la evaluación se gestionan en{' '}
+              <button type="button" onClick={() => setActiveTab('resumen')} className="font-medium text-primary-700 underline">
+                Resumen
+              </button>
+              .
+            </p>
             <EstudiosSection
               expedienteId={id}
               solicitante={expediente.solicitante}

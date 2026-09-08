@@ -390,7 +390,15 @@ export function useExpedienteWizard() {
           forma_pago: data.step3.forma_pago as FormaPagoEstudio,
           notas: data.step3.notas || undefined,
         })
-        toast.success('Solicitud enviada: el prospecto recibirá el enlace de autorización.')
+        const avisoPorPago: Record<string, string> = {
+          credito: 'Listo: descontamos 1 crédito de tu paquete y el prospecto ya recibió el enlace de autorización.',
+          inmobiliaria: 'Listo: el costo de la evaluación queda a tu cargo y el prospecto ya recibió el enlace de autorización.',
+          prospecto: 'Listo: el prospecto recibió el enlace de autorización; cuando la firme le llegará el enlace de pago.',
+        }
+        toast.success(
+          avisoPorPago[data.step3.forma_pago as string] ??
+            'Solicitud enviada: el prospecto recibirá el enlace de autorización.',
+        )
       } catch (inicioErr) {
         const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
         toast.warning(

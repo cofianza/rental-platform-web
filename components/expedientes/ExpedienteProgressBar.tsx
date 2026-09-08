@@ -108,7 +108,7 @@ export function ExpedienteProgressBar({
     return (
       <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
         <p className="text-sm font-semibold text-amber-700">Estudio condicionado</p>
-        <p className="text-xs text-amber-600 mt-0.5">Invita a un co-arrendatario para que los respaldemos juntos.</p>
+        <p className="text-xs text-amber-600 mt-0.5">Riesgo medio: se puede aprobar así, pedir soportes o sumar un co-arrendatario.</p>
       </div>
     )
   }

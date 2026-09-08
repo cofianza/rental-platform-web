@@ -90,6 +90,9 @@ export function Step1InmuebleSelection({
   // "Mis inmuebles" — solo para propietario/inmobiliaria. El backend ya
   // filtra automaticamente por propietario_id = req.user.id en este rol.
   const [misInmuebles, setMisInmuebles] = useState<IInmueble[]>([])
+  // Solo los seleccionables y de a 8: una inmobiliaria con 40 propiedades hacia
+  // scroll por 20 tarjetas (arrendadas incluidas) antes de ver el buscador.
+  const [verTodosMios, setVerTodosMios] = useState(false)
   const [isLoadingMios, setIsLoadingMios] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -238,7 +241,7 @@ export function Step1InmuebleSelection({
           {usaDropdownPropios && (
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
-                Mis inmuebles
+                {verTodosMios ? 'Todos mis inmuebles' : 'Mis inmuebles disponibles'}
               </label>
               {isLoadingMios ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -250,7 +253,7 @@ export function Step1InmuebleSelection({
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {misInmuebles.map((i) => {
+                  {(verTodosMios ? misInmuebles : misInmuebles.filter(esSeleccionable).slice(0, 8)).map((i) => {
                     const seleccionable = esSeleccionable(i)
                     const badge = estadoBadge(i)
                     const motivoBloqueo = motivoNoSeleccionable(i)
@@ -303,6 +306,15 @@ export function Step1InmuebleSelection({
                     )
                   })}
                 </div>
+              )}
+              {!verTodosMios && misInmuebles.length > misInmuebles.filter(esSeleccionable).slice(0, 8).length && (
+                <button
+                  type="button"
+                  onClick={() => setVerTodosMios(true)}
+                  className="mt-2 text-sm font-medium text-primary-700 hover:underline"
+                >
+                  Ver todos mis inmuebles ({misInmuebles.length})
+                </button>
               )}
               <p className="text-xs text-gray-500 mt-2">
                 Puedes evaluar varios candidatos para la misma propiedad al tiempo. Solo se reserva cuando uno queda aprobado. ¿No la encuentras? Usa el buscador.
