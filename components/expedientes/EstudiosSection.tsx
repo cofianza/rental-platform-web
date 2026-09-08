@@ -446,10 +446,10 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                         <button
                           onClick={() => setResultadoTarget(estudio)}
                           disabled={actionLoading}
-                          title="Registrar resultado"
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50"
                         >
-                          <IconClipboardList size={18} />
+                          <IconClipboardList size={16} />
+                          Registrar resultado
                         </button>
                       )}
                       <button

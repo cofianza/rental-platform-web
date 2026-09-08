@@ -21,6 +21,9 @@ export interface IPerfilArrendador {
   afianzadora_actual: string | null
   representante_legal: string | null
   domicilio_direccion: string | null
+  /** Dirección y teléfono del perfil: la API los usa al facturar. */
+  direccion?: string | null
+  telefono?: string | null
   domicilio_ciudad: string | null
   ciudad: string | null
   matricula_arrendador: string | null

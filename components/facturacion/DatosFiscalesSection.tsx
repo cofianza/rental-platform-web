@@ -95,10 +95,10 @@ export function DatosFiscalesSection() {
       <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Dato label="Razón social / Nombre" value={perfil?.razon_social || nombre || null} />
         <Dato label="NIT o documento" value={perfil?.nit || perfil?.numero_documento || null} />
-        <Dato label="Dirección de facturación" value={perfil?.domicilio_direccion || null} />
+        <Dato label="Dirección de facturación" value={perfil?.direccion || perfil?.domicilio_direccion || null} />
         <Dato label="Ciudad" value={perfil?.ciudad || perfil?.domicilio_ciudad || null} />
         <Dato label="Correo" value={perfil?.email_recaudo || user?.email || null} />
-        <Dato label="Teléfono" value={perfil?.whatsapp_recaudo || null} />
+        <Dato label="Teléfono" value={perfil?.telefono || perfil?.whatsapp_recaudo || null} />
       </dl>
 
       {puedeEditar && (

@@ -53,6 +53,18 @@ export default function CitasPage() {
   // null = cargando, undefined = no aplica.
   const [pagoEstudioByExp, setPagoEstudioByExp] = useState<Record<string, string | null>>({})
 
+  // Llega desde el widget con #cita-<id>: el navegador no puede saltar solo
+  // porque las tarjetas se pintan despues del fetch.
+  useEffect(() => {
+    if (isLoading || citas.length === 0) return
+    const id = window.location.hash.slice(1)
+    if (!id.startsWith('cita-')) return
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+    return () => clearTimeout(t)
+  }, [isLoading, citas.length])
+
   // Guard de rol: redirige a 403 si no tiene acceso.
   useEffect(() => {
     if (isInitialized && !hasRole([...ALLOWED_ROLES])) {

@@ -816,7 +816,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         )
         // Damos un beat para que el toast se vea antes de navegar.
         setTimeout(() => {
-          window.location.href = '/facturacion'
+          window.location.href = '/facturacion#datos-fiscales'
         }, 600)
         return
       }

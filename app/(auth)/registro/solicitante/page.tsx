@@ -5,6 +5,7 @@
 
 'use client'
 
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -168,7 +169,9 @@ function RegistroSolicitanteContent() {
 
       router.push('/dashboard')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error de conexion'
+      // Mismo traductor que los flujos publicos: sin conexion, demasiados
+      // intentos y caidas del servidor dejan de llegar como texto crudo.
+      const msg = mensajeParaProspecto(err, 'No pudimos crear tu cuenta. Intentalo de nuevo en un momento.')
       setErrors({ general: msg })
       toast.error(msg)
     } finally {

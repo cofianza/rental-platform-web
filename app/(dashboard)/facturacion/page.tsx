@@ -44,7 +44,8 @@ export default function FacturacionPage() {
         ...(isInmobiliaria ? [{ id: 'pagos-cofianza', label: 'Pagos a Cofianza' }] : []),
       ]
 
-  const [activeTab, setActiveTab] = useState('datos-fiscales')
+  // El solicitante entra a pagar/facturar, no a editar datos fiscales.
+  const [activeTab, setActiveTab] = useState(isSolicitante ? 'pendientes' : 'datos-fiscales')
   // Bump cuando se emite una factura para forzar refresh del tab Mis facturas
   // si el usuario navega despues. FacturasSection no expone refetch directo.
   const [facturasReloadKey, setFacturasReloadKey] = useState(0)
@@ -52,7 +53,7 @@ export default function FacturacionPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isSolicitante ? 'Facturación' : 'Facturación'}
+        title={isSolicitante ? 'Mis pagos y facturas' : 'Facturación'}
         subtitle={
           isSolicitante
             ? 'Completa tus datos fiscales, factura tus pagos pendientes y consulta tu historial.'

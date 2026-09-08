@@ -158,7 +158,9 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/moras',
     icon: 'AlertTriangle',
     description: 'Cobranza y gestión de mora',
-    requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta'],
+    // gerencia_consulta fuera: la pantalla es una cola de trabajo (registrar,
+    // escalar, marcar pagada) y ese rol solo consulta.
+    requiredRoles: ['administrador', 'operador_analista'],
     group: 'Financiero',
   },
   {

@@ -130,7 +130,9 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+    // El widget "Tus proximas acciones" enlaza a /citas#cita-<id>: sin el ancla
+    // el usuario caia arriba del tablero a buscar la cita a ojo.
+    <div id={`cita-${cita.id}`} className="scroll-mt-24 bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
       {/* Header: número de expediente + estado */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0">
