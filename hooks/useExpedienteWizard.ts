@@ -20,6 +20,8 @@ import { ApiClientError } from '@/lib/api'
 export interface WizardStep1Data {
   inmueble: IInmueble | null
   hasActiveExpediente: boolean
+  /** Flujo §4.4: el canon supera el tope que Cofianza puede afianzar hoy. */
+  excedeTope?: boolean
 }
 
 export interface WizardStep2Data {
@@ -65,6 +67,7 @@ export interface WizardErrors {
 const initialStep1: WizardStep1Data = {
   inmueble: null,
   hasActiveExpediente: false,
+  excedeTope: false,
 }
 
 const initialStep2: WizardStep2Data = {
@@ -384,7 +387,10 @@ export function useExpedienteWizard() {
 
   const canProceed = useCallback((): boolean => {
     if (currentStep === 1) {
-      return !!data.step1.inmueble
+      // §4.4: el flujo se detiene aqui, antes de capturar al prospecto y de
+      // crear nada. Antes se validaba solo al enviar: el gestor recorria los
+      // cuatro pasos para chocar al final con un expediente ya creado.
+      return !!data.step1.inmueble && !data.step1.excedeTope
     }
     if (currentStep === 2) {
       if (data.step2.solicitante) return true

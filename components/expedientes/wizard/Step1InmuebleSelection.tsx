@@ -5,6 +5,7 @@
 
 'use client'
 
+import { estudioService } from '@/services/estudioService'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import {
@@ -177,6 +178,26 @@ export function Step1InmuebleSelection({
   }
 
   // Seleccionar inmueble
+  // §4.4: el tope se consulta una vez y se compara al seleccionar.
+  const [topeCanon, setTopeCanon] = useState<number | null>(null)
+  useEffect(() => {
+    let vivo = true
+    estudioService
+      .getTopeCanon()
+      .then((t) => {
+        if (vivo) setTopeCanon(t)
+      })
+      .catch(() => {
+        // Sin el tope no se bloquea nada: el API lo valida igual al enviar.
+      })
+    return () => {
+      vivo = false
+    }
+  }, [])
+
+  const excedeElTope = (inmueble: IInmueble) =>
+    topeCanon !== null && Number(inmueble.valor_arriendo ?? 0) > topeCanon
+
   const handleSelectInmueble = async (inmueble: IInmueble) => {
     setShowDropdown(false)
     setSearchTerm('')
@@ -197,6 +218,7 @@ export function Step1InmuebleSelection({
       onUpdate({
         inmueble,
         hasActiveExpediente: result.hasActiveExpediente,
+        excedeTope: excedeElTope(inmueble),
       })
     } catch (err) {
       console.warn('Error al verificar estudio activo:', err)
@@ -204,6 +226,7 @@ export function Step1InmuebleSelection({
       onUpdate({
         inmueble,
         hasActiveExpediente: false,
+        excedeTope: excedeElTope(inmueble),
       })
     } finally {
       setIsCheckingExpediente(false)
@@ -441,6 +464,26 @@ export function Step1InmuebleSelection({
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <IconLoader size={16} className="animate-spin" />
               <span>Verificando disponibilidad...</span>
+            </div>
+          )}
+
+          {/* §4.4: canon por encima del tope — bloquea el avance aqui mismo. */}
+          {data.excedeTope && data.inmueble && topeCanon !== null && (
+            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <IconAlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800">
+                  El canon de este inmueble excede el máximo que Cofianza puede afianzar hoy
+                </p>
+                <p className="text-xs text-red-700 mt-1">
+                  Canon: <span className="font-medium">{formatCurrency(Number(data.inmueble.valor_arriendo ?? 0))}</span>
+                  {' · '}Máximo sin acuerdo de coafianzamiento:{' '}
+                  <span className="font-medium">{formatCurrency(topeCanon)}</span>
+                </p>
+                <p className="text-xs text-red-700 mt-1">
+                  Elige otro inmueble dentro del tope, o escríbenos para revisar el caso. No se ha creado ni cobrado nada.
+                </p>
+              </div>
             </div>
           )}
 

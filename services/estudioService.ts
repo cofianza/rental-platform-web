@@ -59,6 +59,12 @@ export const estudioService = {
   /**
    * Stats globales para los KPI cards del listado.
    */
+  /** Flujo §4.4: tope de canon vigente, para validar en el paso 1 del asistente. */
+  async getTopeCanon(): Promise<number> {
+    const res = await apiClient.get<{ tope_cop: number }>('/estudios/tope-canon')
+    return res.data.tope_cop
+  },
+
   async getStats(): Promise<IEstudiosStats> {
     const res = await apiClient.get<IEstudiosStats>('/estudios/stats')
     return res.data
