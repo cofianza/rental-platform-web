@@ -183,69 +183,6 @@ export default function DashboardPage() {
 
         {/* Creditos de estudios — exclusivo para inmobiliaria */}
         {isInmobiliaria && <SaldoCreditosCard />}
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
-            href="/inmuebles"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-primary-300 hover:shadow-sm transition-all group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary-50 rounded-lg group-hover:bg-primary-100">
-                <IconFolderOpen size={24} className="text-primary-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Mis Inmuebles</h3>
-                <p className="text-sm text-gray-500">Ver y gestionar propiedades</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/expedientes"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-primary-300 hover:shadow-sm transition-all group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-50 rounded-lg group-hover:bg-amber-100">
-                <IconClock size={24} className="text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Solicitudes</h3>
-                <p className="text-sm text-gray-500">Estudios de arrendamiento</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/contratos"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:border-primary-300 hover:shadow-sm transition-all group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-50 rounded-lg group-hover:bg-green-100">
-                <IconCheck size={24} className="text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Contratos</h3>
-                <p className="text-sm text-gray-500">Contratos activos y firmados</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Info banner */}
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-start gap-3">
-          <IconFolderOpen size={20} className="text-primary-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-primary-800">
-              {isPropietario
-                ? 'Publica tus inmuebles en la vitrina para recibir solicitudes de arrendatarios automáticamente.'
-                : 'Gestiona los inmuebles de tus clientes y recibe solicitudes de arrendatarios desde la vitrina pública.'}
-            </p>
-            <Link href="/inmuebles" className="text-sm text-primary-600 font-medium hover:underline mt-1 inline-block">
-              Ir a Inmuebles →
-            </Link>
-          </div>
-        </div>
       </div>
     )
   }

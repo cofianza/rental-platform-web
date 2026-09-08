@@ -105,7 +105,7 @@ export function MisExpedientesActivosWidget() {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Solicitudes activas</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Estudios activos</h2>
         <Link
           href="/expedientes"
           className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"

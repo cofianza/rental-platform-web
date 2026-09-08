@@ -27,17 +27,25 @@ function resolveBadge(
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
   if (resultado === 'rechazado') return { kind: 'rechazado', label: 'Rechazado' }
   if (resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
+  // "Esperando" a secas no decia esperando QUE: el gestor tenia que abrir el
+  // estudio para saber si le tocaba a el, al prospecto o al buro.
   switch (estado) {
-    case 'en_proceso':
-    case 'pagado':
+    case 'solicitado':
+      return { kind: 'esperando', label: 'Esperando autorización' }
+    case 'pago_pendiente':
+      return { kind: 'esperando', label: 'Esperando pago' }
     case 'autorizado':
+    case 'formulario_enviado':
+      return { kind: 'esperando', label: 'Esperando datos del prospecto' }
+    case 'pagado':
     case 'formulario_completado':
     case 'documentos_cargados':
-      return { kind: 'procesando', label: 'En proceso' }
+    case 'en_proceso':
+      return { kind: 'procesando', label: 'Consultando buró' }
     case 'completado':
       return { kind: 'procesando', label: 'Completado' }
     case 'fallido':
-      return { kind: 'rechazado', label: 'Fallido' }
+      return { kind: 'rechazado', label: 'Consulta fallida' }
     case 'cancelado':
       return { kind: 'esperando', label: 'Cancelado' }
     default:
