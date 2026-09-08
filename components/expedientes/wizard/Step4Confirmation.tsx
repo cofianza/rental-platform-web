@@ -56,7 +56,7 @@ export function Step4Confirmation({
   // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
   const FORMA_PAGO_LABEL: Record<string, string> = {
     credito: 'Descontado del paquete de estudios (opción A)',
-    inmobiliaria: 'Lo paga la inmobiliaria ahora (opción B)',
+    inmobiliaria: 'El costo queda a tu cargo, sin cobro en línea (opción B)',
     prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
   }
 

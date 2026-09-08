@@ -64,9 +64,9 @@ const OPCIONES_PAGO: {
   {
     valor: 'inmobiliaria',
     letra: 'B',
-    titulo: 'Lo pago yo ahora',
+    titulo: 'El costo queda a mi cargo',
     descripcion:
-      'Asumes el costo de la evaluación en este momento. El estudio avanza apenas se confirme el pago.',
+      'Sin cobro en línea: el valor se registra a tu cuenta con Cofianza y lo verás en Pagos a Cofianza. El estudio arranca de inmediato.',
     Icono: IconBank,
   },
   {

@@ -289,9 +289,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <span className="text-sm font-semibold text-gray-900">Yo asumo el costo</span>
-                  <span className="text-xs text-gray-500">Se registra internamente</span>
-                  <span className="text-[11px] text-gray-500 leading-snug">Sin cobro en línea; el costo queda a tu cargo.</span>
+                  <span className="text-sm font-semibold text-gray-900">El costo queda a mi cargo</span>
+                  <span className="text-xs text-gray-500">Sin cobro en línea</span>
+                  <span className="text-[11px] text-gray-500 leading-snug">Se registra a tu cuenta con Cofianza; el estudio arranca de inmediato.</span>
                 </button>
               )}
               <button
@@ -316,7 +316,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 ¿Confirmas que asumes el costo del estudio ({estado.monto_formateado} COP)?
               </p>
               <ul className="text-sm text-gray-600 space-y-1.5 mb-4 list-disc pl-5">
-                <li>El pago se registra internamente — <span className="font-medium">no hay cobro en línea</span>.</li>
+                <li>No hay cobro en línea: el valor queda registrado a tu cuenta con Cofianza y lo verás en <span className="font-medium">Pagos a Cofianza</span>.</li>
                 <li>Le enviaremos <span className="font-medium">automáticamente</span> el enlace de autorización al arrendatario (correo y WhatsApp).</li>
                 <li>Cuando él firme la autorización, la evaluación crediticia corre solo y te avisamos del resultado.</li>
               </ul>
@@ -388,7 +388,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 disabled={isSubmitting}
                 className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
               >
-                Yo asumo el costo
+                El costo queda a mi cargo
               </button>
             )}
           </div>
