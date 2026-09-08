@@ -5,6 +5,7 @@
 
 'use client'
 
+import { PrimerosPasosWidget } from '@/components/dashboard/PrimerosPasosWidget'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { PageHeader, KPICard, Badge } from '@/components/ui'
@@ -174,6 +175,7 @@ export default function DashboardPage() {
             tabs), igual al mockup 13_v2 — ya no se renderiza aquí. */}
 
         {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio, generar contrato) */}
+        <PrimerosPasosWidget />
         <AccionesPendientesWidget />
 
         {/* Listado de expedientes activos: visibilidad pasiva del estado de cada solicitud */}

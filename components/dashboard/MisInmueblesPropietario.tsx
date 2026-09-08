@@ -6,6 +6,7 @@
 
 'use client'
 
+import { PrimerosPasosWidget } from '@/components/dashboard/PrimerosPasosWidget'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
@@ -409,6 +410,7 @@ export function MisInmueblesPropietario() {
 
   return (
     <div>
+      <PrimerosPasosWidget />
       <SeccionHeader
         title="Mis inmuebles"
         subtitle="Gestiona tus propiedades, agrégalas a la vitrina comercial de Cofianza y administra inquilinos."
