@@ -238,6 +238,21 @@ export function ExpedientesTable({
                     resultado={expediente.estudio_vigente?.resultado}
                     score={expediente.estudio_vigente?.score}
                   />
+                  {expediente.depende_de && (
+                    <span
+                      className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                        expediente.depende_de === 'gestor'
+                          ? 'border-coral-200 bg-coral-50 text-coral-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-600'
+                      }`}
+                    >
+                      {expediente.depende_de === 'gestor'
+                        ? 'Te toca a ti'
+                        : expediente.depende_de === 'prospecto'
+                          ? 'Esperando al prospecto'
+                          : 'Cofianza procesando'}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   {(() => {

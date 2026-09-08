@@ -25,6 +25,7 @@ export type EstudioFiltro =
   | 'condicionado'
   | 'en_proceso'
   | 'sin_estudio'
+  | 'requiere_accion'
 
 /**
  * Inmueble asociado al expediente
@@ -81,6 +82,10 @@ export interface IExpediente {
    *  existe al menos una cita en estado='realizada'. Permite mapear el paso
    *  del proceso (Cita previa vs Estudio) cuando estado='borrador'. */
   cita_realizada?: boolean
+  /** El estudio espera una acción tuya (habilitar, definir pago, decidir condicionado, generar contrato). */
+  requiere_accion?: boolean
+  /** De quién depende ahora mismo el estudio. */
+  depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
   /** Flag del workflow paso 3: el propietario habilito el estudio crediticio. */
   estudio_habilitado?: boolean
   /** Flag del workflow paso 3: el propietario decidio NO proceder. Mutuamente
