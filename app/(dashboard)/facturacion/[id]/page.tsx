@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -22,7 +22,6 @@ import {
   IconAlertTriangle,
   IconArrowLeft,
   IconDownload,
-  IconUpload,
   IconTrash,
   IconX,
   IconFileText,
@@ -79,11 +78,7 @@ export default function FacturaDetallePage() {
   const [anulando, setAnulando] = useState(false)
 
   // Upload states
-  const [uploadingPdf, setUploadingPdf] = useState(false)
-  const [uploadingXml, setUploadingXml] = useState(false)
   const [deleteDocTarget, setDeleteDocTarget] = useState<'pdf' | 'xml' | null>(null)
-  const pdfInputRef = useRef<HTMLInputElement>(null)
-  const xmlInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch factura
   const fetchFactura = useCallback(async () => {
@@ -138,29 +133,6 @@ export default function FacturaDetallePage() {
     }
   }
 
-  // Handle upload
-  const handleUpload = async (tipo: 'pdf' | 'xml', file: File) => {
-    if (tipo === 'pdf') setUploadingPdf(true)
-    else setUploadingXml(true)
-
-    try {
-      // 1. Get presigned URL
-      const presigned = await facturacionService.getUploadPresignedUrl(id, tipo)
-
-      // 2. Upload file (mock - in real implementation would upload to presigned URL)
-
-      // 3. Confirm upload
-      const updated = await facturacionService.confirmarUploadDocumento(id, tipo, presigned.storage_key)
-      setFactura(updated)
-
-      toast.success(`${tipo.toUpperCase()} subido correctamente`)
-    } catch (err) {
-      toast.error(`Error al subir ${tipo.toUpperCase()}`)
-    } finally {
-      if (tipo === 'pdf') setUploadingPdf(false)
-      else setUploadingXml(false)
-    }
-  }
 
   // Handle delete document
   const handleDeleteDocument = (tipo: 'pdf' | 'xml') => setDeleteDocTarget(tipo)
@@ -414,32 +386,9 @@ export default function FacturaDetallePage() {
                         </button>
                       )}
                     </>
-                  ) : isAdmin && !isCancelada ? (
-                    <>
-                      <input
-                        ref={pdfInputRef}
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleUpload('pdf', file)
-                        }}
-                      />
-                      <button
-                        onClick={() => pdfInputRef.current?.click()}
-                        disabled={uploadingPdf}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                      >
-                        {uploadingPdf ? (
-                          <IconLoader size={14} className="animate-spin" />
-                        ) : (
-                          <IconUpload size={14} />
-                        )}
-                        Subir
-                      </button>
-                    </>
-                  ) : null}
+                  ) : (
+                      <span className="text-xs text-gray-500">Lo emite y archiva Factus</span>
+                    ) }
                 </div>
               </div>
 
@@ -476,32 +425,9 @@ export default function FacturaDetallePage() {
                         </button>
                       )}
                     </>
-                  ) : isAdmin && !isCancelada ? (
-                    <>
-                      <input
-                        ref={xmlInputRef}
-                        type="file"
-                        accept=".xml,text/xml,application/xml"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleUpload('xml', file)
-                        }}
-                      />
-                      <button
-                        onClick={() => xmlInputRef.current?.click()}
-                        disabled={uploadingXml}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                      >
-                        {uploadingXml ? (
-                          <IconLoader size={14} className="animate-spin" />
-                        ) : (
-                          <IconUpload size={14} />
-                        )}
-                        Subir
-                      </button>
-                    </>
-                  ) : null}
+                  ) : (
+                      <span className="text-xs text-gray-500">Lo emite y archiva Factus</span>
+                    ) }
                 </div>
               </div>
             </div>

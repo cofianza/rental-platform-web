@@ -23,5 +23,5 @@ export const ESTUDIO_UI_MESSAGES = {
   LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',
-  SEARCH_PLACEHOLDER: 'Buscar por estudio, solicitante o proveedor...',
+  SEARCH_PLACEHOLDER: 'Buscar por número de estudio, nombre o cédula',
 } as const
