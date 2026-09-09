@@ -187,7 +187,7 @@ function TarifaOverrideModal({
       tarifa_mensual_pct: num(tarifa),
       prima_vinculacion_pct: num(prima),
       cashback_pct: num(cashback),
-      motivo: motivo.trim(),
+      motivo: motivo.trim() || undefined,
     }
     const pcts = [input.tarifa_mensual_pct, input.prima_vinculacion_pct, input.cashback_pct]
     if (pcts.every((p) => p === undefined)) {
@@ -196,10 +196,6 @@ function TarifaOverrideModal({
     }
     if (pcts.some((p) => p !== undefined && (!Number.isFinite(p) || p < 0 || p > 100))) {
       toast.error('Los porcentajes van de 0 a 100')
-      return
-    }
-    if (input.motivo.length < 5) {
-      toast.error('Indica el motivo de la condición especial')
       return
     }
     setGuardando(true)
@@ -242,7 +238,7 @@ function TarifaOverrideModal({
           </label>
         ))}
         <label className="block text-xs font-medium text-gray-700">
-          Motivo (obligatorio)
+          Motivo (opcional)
           <textarea
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}

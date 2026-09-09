@@ -434,5 +434,6 @@ export interface ITarifaOverrideInput {
   tarifa_mensual_pct?: number
   prima_vinculacion_pct?: number
   cashback_pct?: number
-  motivo: string
+  /** Opcional por decisión de Gerencia (2026-09-09): queda el registro de quién y cuándo. */
+  motivo?: string
 }
