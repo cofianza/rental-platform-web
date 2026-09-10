@@ -10,6 +10,7 @@
 
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -124,258 +125,255 @@ export function GenerarContratoModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={generating ? undefined : onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Generar contrato</h2>
+    <Modal isOpen={isOpen} onClose={generating ? () => {} : onClose} bare ariaLabel="Generar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">Generar contrato</h2>
+        <button
+          onClick={onClose}
+          disabled={generating}
+          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+        >
+          <IconX size={20} />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        {/* Tipo de generación — radio Cofianza vs Otrosí (Mario 12-may-2026) */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+            ¿Cómo generamos el contrato?
+          </label>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={() => setTipo('cofianza')}
             disabled={generating}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+            className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+              tipo === 'cofianza'
+                ? 'bg-primary-50 border-primary-400 ring-1 ring-primary-300'
+                : 'bg-white border-gray-200 hover:border-gray-300'
+            }`}
           >
-            <IconX size={20} />
+            <input
+              type="radio"
+              checked={tipo === 'cofianza'}
+              onChange={() => setTipo('cofianza')}
+              className="mt-1 accent-primary-600 shrink-0"
+              tabIndex={-1}
+            />
+            <IconFileText size={20} className="text-primary-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-gray-900">
+                Contrato con plantilla Cofianza{' '}
+                <span className="text-[11px] font-normal text-primary-700">Recomendado</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Se usa la plantilla activa con los datos del estudio. Cofianza queda como
+                fiador. Listo para firma electrónica vía Auco.
+              </p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTipo('otrosi')}
+            disabled={generating}
+            className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+              tipo === 'otrosi'
+                ? 'bg-coral-50 border-coral-400 ring-1 ring-coral-300'
+                : 'bg-white border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <input
+              type="radio"
+              checked={tipo === 'otrosi'}
+              onChange={() => setTipo('otrosi')}
+              className="mt-1 accent-coral-500 shrink-0"
+              tabIndex={-1}
+            />
+            <IconUpload size={20} className="text-coral-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Otrosí + PDF propio</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Tienes tu propio modelo de contrato. Creamos el registro y te llevamos directo a
+                subir tu PDF firmado — Cofianza queda vinculada como fiador vía Otrosí.
+              </p>
+            </div>
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-          {/* Tipo de generación — radio Cofianza vs Otrosí (Mario 12-may-2026) */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
-              ¿Cómo generamos el contrato?
-            </label>
-            <button
-              type="button"
-              onClick={() => setTipo('cofianza')}
-              disabled={generating}
-              className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                tipo === 'cofianza'
-                  ? 'bg-primary-50 border-primary-400 ring-1 ring-primary-300'
-                  : 'bg-white border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <input
-                type="radio"
-                checked={tipo === 'cofianza'}
-                onChange={() => setTipo('cofianza')}
-                className="mt-1 accent-primary-600 shrink-0"
-                tabIndex={-1}
-              />
-              <IconFileText size={20} className="text-primary-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Contrato con plantilla Cofianza{' '}
-                  <span className="text-[11px] font-normal text-primary-700">Recomendado</span>
-                </p>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Se usa la plantilla activa con los datos del estudio. Cofianza queda como
-                  fiador. Listo para firma electrónica vía Auco.
-                </p>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTipo('otrosi')}
-              disabled={generating}
-              className={`w-full text-left flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                tipo === 'otrosi'
-                  ? 'bg-coral-50 border-coral-400 ring-1 ring-coral-300'
-                  : 'bg-white border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <input
-                type="radio"
-                checked={tipo === 'otrosi'}
-                onChange={() => setTipo('otrosi')}
-                className="mt-1 accent-coral-500 shrink-0"
-                tabIndex={-1}
-              />
-              <IconUpload size={20} className="text-coral-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Otrosí + PDF propio</p>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Tienes tu propio modelo de contrato. Creamos el registro y te llevamos directo a
-                  subir tu PDF firmado — Cofianza queda vinculada como fiador vía Otrosí.
-                </p>
-              </div>
-            </button>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Fecha de inicio del contrato
+          </label>
+          <input
+            type="date"
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+            disabled={generating}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha de inicio del contrato
-            </label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              disabled={generating}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Duración (meses)
+          </label>
+          <input
+            type="number"
+            value={duracionMeses}
+            onChange={(e) => setDuracionMeses(e.target.value)}
+            min={1}
+            max={120}
+            disabled={generating}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Por defecto 12 meses, prorrogables tácitamente segun la cláusula QUINTA.
+          </p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Duración (meses)
-            </label>
-            <input
-              type="number"
-              value={duracionMeses}
-              onChange={(e) => setDuracionMeses(e.target.value)}
-              min={1}
-              max={120}
-              disabled={generating}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Por defecto 12 meses, prorrogables tácitamente segun la cláusula QUINTA.
+        {tipo === 'cofianza' && (
+          <div className="space-y-4 pt-3 border-t border-gray-200">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+              Condiciones de la fianza
             </p>
-          </div>
 
-          {tipo === 'cofianza' && (
-            <div className="space-y-4 pt-3 border-t border-gray-200">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Condiciones de la fianza
-              </p>
-
-              {/* Modalidad */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad de fianza</label>
-                <select
-                  value={modalidad}
-                  onChange={(e) => setModalidad(e.target.value as ModalidadFianza)}
-                  disabled={generating}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-                >
-                  {MODALIDADES.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-                {/* Descripción de la modalidad seleccionada. */}
-                {(() => {
-                  const m = MODALIDADES.find((x) => x.value === modalidad)
-                  if (!m) return null
-                  return (
-                    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
-                      <p>
-                        <span className="font-medium text-gray-800">Comisión {m.comision}</span> ·{' '}
-                        <span className="font-medium text-gray-800">Prima {m.prima}</span>
-                      </p>
-                      <p className="mt-0.5">
-                        Cubre cánones, servicios públicos, administración PH y cláusula penal
-                        {m.cubreDanos ? ', más daños al inmueble.' : '. No cubre daños al inmueble.'}
-                      </p>
-                      {m.nota && <p className="mt-0.5 text-primary-700">{m.nota}</p>}
-                    </div>
-                  )
-                })()}
-              </div>
-
-              {/* Co-titular — solo en Cofianza Compartida */}
-              {modalidad === 'compartida' && (
-                <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs font-semibold text-gray-700">Co-titular de la fianza</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label htmlFor="cot-nombre" className="col-span-2 block text-xs font-medium text-gray-700">Nombre completo *
-                    <input id="cot-nombre" placeholder="Nombre completo" value={cotitular.nombre || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, nombre: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
-                    <label htmlFor="cot-tipo-doc" className="block text-xs font-medium text-gray-700">Tipo de documento
-                    <select id="cot-tipo-doc" value={cotitular.tipo_documento || 'CC'}
-                      onChange={(e) => setCotitular({ ...cotitular, tipo_documento: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50">
-                      <option value="CC">C.C.</option>
-                      <option value="CE">C.E.</option>
-                      <option value="NIT">NIT</option>
-                      <option value="PA">Pasaporte</option>
-                    </select>
-                    </label>
-                    <label htmlFor="cot-documento" className=" block text-xs font-medium text-gray-700">N° de documento *
-                    <input id="cot-documento" inputMode="numeric" placeholder="N° de documento" value={cotitular.documento || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, documento: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
-                    <label htmlFor="cot-celular" className=" block text-xs font-medium text-gray-700">Celular *
-                    <input id="cot-celular" type="tel" inputMode="tel" autoComplete="tel" placeholder="Celular" value={cotitular.celular || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, celular: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
-                    <label htmlFor="cot-correo" className=" block text-xs font-medium text-gray-700">Correo
-                    <input id="cot-correo" type="email" inputMode="email" autoComplete="email" placeholder="Correo" value={cotitular.correo || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, correo: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
-                    <label htmlFor="cot-direccion" className="col-span-2 block text-xs font-medium text-gray-700">Dirección de notificación
-                    <input id="cot-direccion" placeholder="Dirección de notificación" value={cotitular.direccion || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, direccion: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
-                    <label htmlFor="cot-municipio" className="col-span-2 block text-xs font-medium text-gray-700">Municipio
-                    <input id="cot-municipio" placeholder="Municipio" value={cotitular.municipio || ''}
-                      onChange={(e) => setCotitular({ ...cotitular, municipio: e.target.value })} disabled={generating}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                    </label>
+            {/* Modalidad */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad de fianza</label>
+              <select
+                value={modalidad}
+                onChange={(e) => setModalidad(e.target.value as ModalidadFianza)}
+                disabled={generating}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+              >
+                {MODALIDADES.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              {/* Descripción de la modalidad seleccionada. */}
+              {(() => {
+                const m = MODALIDADES.find((x) => x.value === modalidad)
+                if (!m) return null
+                return (
+                  <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
+                    <p>
+                      <span className="font-medium text-gray-800">Comisión {m.comision}</span> ·{' '}
+                      <span className="font-medium text-gray-800">Prima {m.prima}</span>
+                    </p>
+                    <p className="mt-0.5">
+                      Cubre cánones, servicios públicos, administración PH y cláusula penal
+                      {m.cubreDanos ? ', más daños al inmueble.' : '. No cubre daños al inmueble.'}
+                    </p>
+                    {m.nota && <p className="mt-0.5 text-primary-700">{m.nota}</p>}
                   </div>
-                </div>
-              )}
+                )
+              })()}
+            </div>
 
-              {/* Reparto de servicios públicos */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Servicios públicos — ¿quién paga?
-                </label>
-                <div className="space-y-1.5">
-                  {SERVICIOS_CONTRATO.map((s) => (
-                    <div key={s.key} className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-gray-600">{s.label}</span>
-                      <select
-                        value={servicios[s.key]}
-                        onChange={(e) => setServicios({ ...servicios, [s.key]: e.target.value as CargoServicio })}
-                        disabled={generating}
-                        className="px-2 py-1 border border-gray-300 rounded-md text-xs disabled:bg-gray-50"
-                      >
-                        <option value="arrendatario">Arrendatario</option>
-                        <option value="arrendador">Arrendador</option>
-                      </select>
-                    </div>
-                  ))}
+            {/* Co-titular — solo en Cofianza Compartida */}
+            {modalidad === 'compartida' && (
+              <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <p className="text-xs font-semibold text-gray-700">Co-titular de la fianza</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label htmlFor="cot-nombre" className="col-span-2 block text-xs font-medium text-gray-700">Nombre completo *
+                  <input id="cot-nombre" placeholder="Nombre completo" value={cotitular.nombre || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, nombre: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
+                  <label htmlFor="cot-tipo-doc" className="block text-xs font-medium text-gray-700">Tipo de documento
+                  <select id="cot-tipo-doc" value={cotitular.tipo_documento || 'CC'}
+                    onChange={(e) => setCotitular({ ...cotitular, tipo_documento: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50">
+                    <option value="CC">C.C.</option>
+                    <option value="CE">C.E.</option>
+                    <option value="NIT">NIT</option>
+                    <option value="PA">Pasaporte</option>
+                  </select>
+                  </label>
+                  <label htmlFor="cot-documento" className=" block text-xs font-medium text-gray-700">N° de documento *
+                  <input id="cot-documento" inputMode="numeric" placeholder="N° de documento" value={cotitular.documento || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, documento: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
+                  <label htmlFor="cot-celular" className=" block text-xs font-medium text-gray-700">Celular *
+                  <input id="cot-celular" type="tel" inputMode="tel" autoComplete="tel" placeholder="Celular" value={cotitular.celular || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, celular: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
+                  <label htmlFor="cot-correo" className=" block text-xs font-medium text-gray-700">Correo
+                  <input id="cot-correo" type="email" inputMode="email" autoComplete="email" placeholder="Correo" value={cotitular.correo || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, correo: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
+                  <label htmlFor="cot-direccion" className="col-span-2 block text-xs font-medium text-gray-700">Dirección de notificación
+                  <input id="cot-direccion" placeholder="Dirección de notificación" value={cotitular.direccion || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, direccion: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
+                  <label htmlFor="cot-municipio" className="col-span-2 block text-xs font-medium text-gray-700">Municipio
+                  <input id="cot-municipio" placeholder="Municipio" value={cotitular.municipio || ''}
+                    onChange={(e) => setCotitular({ ...cotitular, municipio: e.target.value })} disabled={generating}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
+                  </label>
                 </div>
+              </div>
+            )}
+
+            {/* Reparto de servicios públicos */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Servicios públicos — ¿quién paga?
+              </label>
+              <div className="space-y-1.5">
+                {SERVICIOS_CONTRATO.map((s) => (
+                  <div key={s.key} className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600">{s.label}</span>
+                    <select
+                      value={servicios[s.key]}
+                      onChange={(e) => setServicios({ ...servicios, [s.key]: e.target.value as CargoServicio })}
+                      disabled={generating}
+                      className="px-2 py-1 border border-gray-300 rounded-md text-xs disabled:bg-gray-50"
+                    >
+                      <option value="arrendatario">Arrendatario</option>
+                      <option value="arrendador">Arrendador</option>
+                    </select>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            disabled={generating}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleGenerar}
-            disabled={generating || !fechaInicio || !duracionMeses || cotitularIncompleto}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
-          >
-            {generating ? (
-              <IconLoader size={16} className="animate-spin" />
-            ) : tipo === 'otrosi' ? (
-              <IconUpload size={16} />
-            ) : (
-              <IconFileText size={16} />
-            )}
-            {generating
-              ? tipo === 'otrosi'
-                ? 'Creando…'
-                : 'Generando…'
-              : tipo === 'otrosi'
-                ? 'Crear y subir mi PDF →'
-                : 'Generar contrato PDF'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+
+      <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button
+          onClick={onClose}
+          disabled={generating}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleGenerar}
+          disabled={generating || !fechaInicio || !duracionMeses || cotitularIncompleto}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+        >
+          {generating ? (
+            <IconLoader size={16} className="animate-spin" />
+          ) : tipo === 'otrosi' ? (
+            <IconUpload size={16} />
+          ) : (
+            <IconFileText size={16} />
+          )}
+          {generating
+            ? tipo === 'otrosi'
+              ? 'Creando…'
+              : 'Generando…'
+            : tipo === 'otrosi'
+              ? 'Crear y subir mi PDF →'
+              : 'Generar contrato PDF'}
+        </button>
+      </div>
+    </Modal>
   )
 }
