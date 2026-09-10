@@ -1,5 +1,6 @@
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
 import { IconX, IconHistory, IconLoader, IconAlertTriangle } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
@@ -60,9 +61,8 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
   const variableEntries = flattenVariables(contrato.datos_variables || {})
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
+    <>
+      <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del contrato" className="rounded-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
@@ -239,7 +239,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
             Cerrar
           </button>
         </div>
-      </div>
+      </Modal>
 
       {/* Compare versions modal */}
       {compareVersions && (
@@ -258,7 +258,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
         onClose={() => setHistorialOpen(false)}
         contratoId={contrato.id}
       />
-    </div>
+    </>
   )
 }
 

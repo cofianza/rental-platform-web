@@ -15,6 +15,7 @@
 
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconRefresh } from '@/components/icons'
@@ -105,130 +106,127 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={submitting ? undefined : onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Editar y regenerar contrato</h2>
-          <button
-            onClick={onClose}
+    <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Regenerar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">Editar y regenerar contrato</h2>
+        <button
+          onClick={onClose}
+          disabled={submitting}
+          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+        >
+          <IconX size={20} />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-5 overflow-y-auto">
+        <p className="text-sm text-gray-600">
+          Ajusta los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
+          La identidad del arrendatario no es editable.
+        </p>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
+          <input
+            type="date"
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
             disabled={submitting}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            <IconX size={20} />
-          </button>
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+          />
         </div>
 
-        <div className="p-6 space-y-5 overflow-y-auto">
-          <p className="text-sm text-gray-600">
-            Ajusta los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
-            La identidad del arrendatario no es editable.
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Duración (meses)</label>
+          <input
+            type="number"
+            value={duracionMeses}
+            onChange={(e) => setDuracionMeses(e.target.value)}
+            min={1}
+            max={120}
+            disabled={submitting}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valor del canon (opcional)
+          </label>
+          <input
+            type="number"
+            value={valorArriendo}
+            onChange={(e) => setValorArriendo(e.target.value)}
+            placeholder="Sin cambios se conserva el canon actual"
+            min={0}
+            disabled={submitting}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Si no lo cambias, se conserva el canon actual del contrato. Un canon nuevo no puede
+            superar el <strong>10%</strong> sobre el valor del inmueble.
           </p>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duración (meses)</label>
-            <input
-              type="number"
-              value={duracionMeses}
-              onChange={(e) => setDuracionMeses(e.target.value)}
-              min={1}
-              max={120}
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Valor del canon (opcional)
-            </label>
-            <input
-              type="number"
-              value={valorArriendo}
-              onChange={(e) => setValorArriendo(e.target.value)}
-              placeholder="Sin cambios se conserva el canon actual"
-              min={0}
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Si no lo cambias, se conserva el canon actual del contrato. Un canon nuevo no puede
-              superar el <strong>10%</strong> sobre el valor del inmueble.
-            </p>
-          </div>
-
-          {/* 4.1e — distribución de obligaciones (opt-in para no resetear la actual) */}
-          <div className="border-t border-gray-100 pt-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                checked={reasignarServicios}
-                onChange={(e) => setReasignarServicios(e.target.checked)}
-                disabled={submitting}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              Reasignar quién paga los servicios
-            </label>
-            {reasignarServicios && (
-              <div className="mt-3 space-y-2">
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  Solo se actualizan los servicios que cambies; el resto conserva su asignación actual.
-                </p>
-                {SERVICIOS_CONTRATO.map((s) => (
-                  <div key={s.key} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-gray-700">{s.label}</span>
-                    <select
-                      value={servicios[s.key]}
-                      onChange={(e) =>
-                        setServicios({ ...servicios, [s.key]: e.target.value as CargoOpt })
-                      }
-                      disabled={submitting}
-                      className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
-                    >
-                      <option value="">(sin cambio)</option>
-                      <option value="arrendatario">Arrendatario</option>
-                      <option value="arrendador">Arrendador</option>
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            disabled={submitting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !fechaInicio || !duracionMeses}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
-          >
-            {submitting ? (
-              <IconLoader size={16} className="animate-spin" />
-            ) : (
-              <IconRefresh size={16} />
-            )}
-            {submitting ? 'Regenerando…' : 'Guardar y regenerar'}
-          </button>
+        {/* 4.1e — distribución de obligaciones (opt-in para no resetear la actual) */}
+        <div className="border-t border-gray-100 pt-4">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={reasignarServicios}
+              onChange={(e) => setReasignarServicios(e.target.checked)}
+              disabled={submitting}
+              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            Reasignar quién paga los servicios
+          </label>
+          {reasignarServicios && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                Solo se actualizan los servicios que cambies; el resto conserva su asignación actual.
+              </p>
+              {SERVICIOS_CONTRATO.map((s) => (
+                <div key={s.key} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-700">{s.label}</span>
+                  <select
+                    value={servicios[s.key]}
+                    onChange={(e) =>
+                      setServicios({ ...servicios, [s.key]: e.target.value as CargoOpt })
+                    }
+                    disabled={submitting}
+                    className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                  >
+                    <option value="">(sin cambio)</option>
+                    <option value="arrendatario">Arrendatario</option>
+                    <option value="arrendador">Arrendador</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button
+          onClick={onClose}
+          disabled={submitting}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !fechaInicio || !duracionMeses}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+        >
+          {submitting ? (
+            <IconLoader size={16} className="animate-spin" />
+          ) : (
+            <IconRefresh size={16} />
+          )}
+          {submitting ? 'Regenerando…' : 'Guardar y regenerar'}
+        </button>
+      </div>
+    </Modal>
   )
 }
