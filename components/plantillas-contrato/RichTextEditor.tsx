@@ -99,9 +99,22 @@ function VariableDropdown({ onInsert }: { onInsert: (variable: string) => void }
         setIsOpen(false)
       }
     }
+    // Escape cierra solo el menú. En captura y con preventDefault: el editor
+    // vive dentro de un Modal que también escucha Escape, y sin esto se
+    // cerraba el editor completo con todo el texto escrito.
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      e.stopPropagation()
+      setIsOpen(false)
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscape, true)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+        document.removeEventListener('keydown', handleEscape, true)
+      }
     }
   }, [isOpen])
 

@@ -75,13 +75,23 @@ export function Modal({
   const contentRef = useRef<HTMLDivElement>(null)
   const restaurarFocoRef = useRef<HTMLElement | null>(null)
   const idRef = useRef(Symbol('modal'))
+  // onClose va en un ref: la mayoría de padres lo pasa inline, y como el efecto
+  // de foco dependía de él, cada tecla en un campo del diálogo lo desmontaba y
+  // montaba otra vez — el foco saltaba al botón de fondo y volvía, rompiendo
+  // las tildes (teclas muertas) y el lector de pantalla.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   // Escape cierra; Tab/Shift+Tab se quedan dentro del dialogo (trampa de foco).
+  // Un popup interno que ya atendió Escape (preventDefault) no cierra el diálogo.
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (pila[pila.length - 1] !== idRef.current) return
+      if (event.defaultPrevented) return
       if (event.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
       if (event.key !== 'Tab' || !contentRef.current) return
@@ -103,7 +113,7 @@ export function Modal({
         primero.focus()
       }
     },
-    [onClose]
+    []
   )
 
   useEffect(() => {

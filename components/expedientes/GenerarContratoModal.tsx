@@ -128,7 +128,7 @@ export function GenerarContratoModal({
     <Modal isOpen={isOpen} onClose={generating ? () => {} : onClose} bare ariaLabel="Generar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Generar contrato</h2>
-        <button
+        <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
           disabled={generating}
           className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"

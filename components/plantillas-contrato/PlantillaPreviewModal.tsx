@@ -32,7 +32,7 @@ export function PlantillaPreviewModal({
             Compilado con datos de ejemplo
           </p>
         </div>
-        <button
+        <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
           className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
         >

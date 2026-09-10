@@ -60,7 +60,7 @@ export function EnviarFirmaModal({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Enviar para Firma</h2>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded">
+        <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded">
           <IconX size={20} />
         </button>
       </div>

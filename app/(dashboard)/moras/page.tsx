@@ -738,7 +738,7 @@ function MoraDetalleModal({
               </p>
             )}
           </div>
-          <button
+          <button data-modal-close aria-label="Cerrar"
             type="button"
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100"

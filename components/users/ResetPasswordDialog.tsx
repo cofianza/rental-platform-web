@@ -81,7 +81,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
   const fullName = `${user.nombre ?? ''} ${user.apellido ?? ''}`.trim() || user.email
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Restablecer contraseña" closeOnBackdrop={false} className="rounded-lg w-full max-w-md mx-4">
+    <Modal isOpen={isOpen} onClose={loading ? () => {} : onClose} bare ariaLabel="Restablecer contraseña" closeOnBackdrop={false} className="rounded-lg w-full max-w-md mx-4">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
           </div>
           <h2 className="text-lg font-semibold text-gray-900">Restablecer contraseña</h2>
         </div>
-        <button
+        <button type="button" data-modal-close
           onClick={onClose}
           disabled={loading}
           className="text-gray-400 hover:text-gray-600 disabled:opacity-40"

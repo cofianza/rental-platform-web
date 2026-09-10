@@ -87,7 +87,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, submit
     <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Enviar a firma" closeOnBackdrop={false} className="rounded-xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Enviar a firma</h2>
-        <button
+        <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
           disabled={submitting}
           className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"

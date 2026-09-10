@@ -66,7 +66,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
-          <button
+          <button type="button" data-modal-close aria-label="Cerrar"
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
           >

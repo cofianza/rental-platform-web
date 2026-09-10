@@ -60,7 +60,7 @@ export function CompararVersionesModal({
         <h2 className="text-lg font-semibold text-gray-900">
           Comparar Version v{v1} vs v{v2}
         </h2>
-        <button
+        <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
           className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
         >

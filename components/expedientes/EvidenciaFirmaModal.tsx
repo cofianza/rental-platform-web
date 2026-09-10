@@ -61,7 +61,7 @@ export function EvidenciaFirmaModal({ isOpen, onClose, solicitudId, nombreFirman
             <p className="text-xs text-gray-500">{nombreFirmante}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100">
+        <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100">
           <IconX size={18} />
         </button>
       </div>
