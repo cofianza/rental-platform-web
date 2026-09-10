@@ -267,8 +267,8 @@ export default function AutorizarPage() {
   // índice traduce el paso 'bio' a su posición para poder compararlo.
   const conBiometria = !!data?.biometria?.requerida
   const pasosBarra = conBiometria
-    ? ['Autorización', 'Sobre ti', 'Beneficios', 'Identidad', 'Confirmar']
-    : ['Autorización', 'Sobre ti', 'Beneficios', 'Confirmar']
+    ? ['Autorización', 'Sobre ti', 'Permisos', 'Identidad', 'Confirmar']
+    : ['Autorización', 'Sobre ti', 'Permisos', 'Confirmar']
   const pasoIndice = paso === 'bio' ? 4 : paso === 4 && conBiometria ? 5 : paso
 
   // PASO 5 → backend. Una sola llamada al salir de "Sobre ti", con la

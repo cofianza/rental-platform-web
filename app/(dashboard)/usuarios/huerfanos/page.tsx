@@ -101,20 +101,20 @@ export default function HuerfanosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Limpieza de cuentas huérfanas"
-        subtitle="auth.users sin entrada en perfiles — registros incompletos"
+        subtitle="Cuentas que se crearon pero nunca terminaron el registro"
       />
 
       <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
         <div className="text-sm text-amber-900 space-y-1">
           <p>
-            Estos usuarios <strong>existen en auth.users</strong> pero no aparecen en el listado normal de
-            <Link href="/usuarios" className="text-amber-900 underline ml-1">/usuarios</Link>
+            Estas cuentas <strong>existen para iniciar sesión</strong> pero no aparecen en
+            <Link href="/usuarios" className="text-amber-900 underline ml-1">Usuarios</Link>
             porque su perfil nunca llegó a crearse (un registro que falló a mitad).
           </p>
           <p>
-            Eliminar aquí los borra definitivamente de auth.users. Si quien apareció era una persona real
-            que sí debe poder registrarse, este botón libera el email para reintentar.
+            Eliminar aquí borra la cuenta definitivamente. Si era una persona real que sí debe poder
+            registrarse, esto libera el correo para que lo intente de nuevo.
           </p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function HuerfanosPage() {
       {orphans && orphans.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-sm text-gray-600">
-            No hay cuentas huérfanas. Todos los usuarios en auth.users tienen perfil asociado.
+            No hay cuentas huérfanas: todas las cuentas tienen su perfil completo.
           </p>
         </div>
       )}

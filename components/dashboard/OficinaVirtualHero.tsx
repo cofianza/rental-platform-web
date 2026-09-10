@@ -6,6 +6,7 @@
 
 'use client'
 
+import { IconPlus } from '@/components/icons'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -54,7 +55,8 @@ export function OficinaVirtualHero() {
               href="/inmuebles/nuevo"
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all"
             >
-              + Agregar propiedad
+              <IconPlus size={16} />
+              Agregar propiedad
             </Link>
           )}
         </div>
