@@ -6,6 +6,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -88,6 +89,9 @@ export default function ExpedienteDetallePage() {
   // Gerencia consulta ve el expediente pero no asigna: el bloque de
   // "Responsable" se le ocultaba mal (isInternalRole la incluye).
   const puedeAsignar = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Gerencia y el miembro solo lectura ven el estudio completo, pero sin las
+  // tarjetas de acción: el API les rechaza cualquier cambio.
+  const puedeEditar = usePuedeEditar()
 
   const tabs: Tab[] = user?.rol === 'solicitante'
     ? [{ id: 'resumen', label: 'Resumen' }]
@@ -518,12 +522,14 @@ export default function ExpedienteDetallePage() {
                     (expediente aprobado sin contrato). Se auto-oculta en el
                     resto de estados, así que solo aparece encima del estudio
                     justo cuando es el siguiente paso. */}
-                <AccionContratoPendienteCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  onGenerated={fetchExpediente}
-                />
+                {puedeEditar && (
+                  <AccionContratoPendienteCard
+                    expedienteId={id}
+                    expedienteEstado={expediente.estado}
+                    userRol={user?.rol}
+                    onGenerated={fetchExpediente}
+                  />
+                )}
 
                 {/* Estado del estudio: es el centro del expediente.
                     Se auto-oculta si aún no hay estudio (entonces manda la
@@ -544,15 +550,17 @@ export default function ExpedienteDetallePage() {
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}
-                <AccionHabilitarEstudioCard
-                  expedienteId={id}
-                  estudioHabilitado={expediente.estudio_habilitado ?? false}
-                  estudioRechazado={expediente.estudio_rechazado}
-                  citaOmitida={expediente.cita_omitida}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  onAction={fetchExpediente}
-                />
+                {puedeEditar && (
+                  <AccionHabilitarEstudioCard
+                    expedienteId={id}
+                    estudioHabilitado={expediente.estudio_habilitado ?? false}
+                    estudioRechazado={expediente.estudio_rechazado}
+                    citaOmitida={expediente.cita_omitida}
+                    expedienteEstado={expediente.estado}
+                    userRol={user?.rol}
+                    onAction={fetchExpediente}
+                  />
+                )}
                 {/* §6.3 — INVERSIÓN DEL ORDEN: primero la autorización, después
                     el cobro. Hasta 2026-09-04 esta card vivía escondida en el
                     tab Estudios y detrás de un gate `estudioPagado`; con el
@@ -564,6 +572,7 @@ export default function ExpedienteDetallePage() {
                     solicitanteEmail={expediente.solicitante?.email}
                     solicitanteTelefono={expediente.solicitante?.telefono}
                     onContactoActualizado={fetchExpediente}
+                    soloLectura={!puedeEditar}
                   />
                 )}
                 {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
@@ -574,7 +583,8 @@ export default function ExpedienteDetallePage() {
                     expediente pasa a revisión/aprobado/cerrado, el estudio ya
                     se ejecutó y pedir pago no tiene sentido (era el bug del
                     expediente cerrado mostrando "define quién paga"). */}
-                {(expediente.estudio_habilitado ?? false) &&
+                {puedeEditar &&
+                  (expediente.estudio_habilitado ?? false) &&
                   !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
                   <PagoEstudioSection
                     expedienteId={id}
@@ -585,12 +595,14 @@ export default function ExpedienteDetallePage() {
                     solicitanteTelefono={expediente.solicitante?.telefono}
                   />
                 )}
-                <AprobarCondicionadoCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  onAprobado={fetchExpediente}
-                />
+                {puedeEditar && (
+                  <AprobarCondicionadoCard
+                    expedienteId={id}
+                    expedienteEstado={expediente.estado}
+                    userRol={user?.rol}
+                    onAprobado={fetchExpediente}
+                  />
+                )}
 
                 {/* ── Estado / informativo (debajo de las acciones) ── */}
                 <ContratoEstadoCard
@@ -817,12 +829,14 @@ export default function ExpedienteDetallePage() {
                 Resumen le bloquea con banner explicativo. */}
             {!bloqueadoPorPerfil && (
               <>
-                <AprobarCondicionadoCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  onAprobado={fetchExpediente}
-                />
+                {puedeEditar && (
+                  <AprobarCondicionadoCard
+                    expedienteId={id}
+                    expedienteEstado={expediente.estado}
+                    userRol={user?.rol}
+                    onAprobado={fetchExpediente}
+                  />
+                )}
                 <CoarrendatarioPropietarioCard
                   expedienteId={id}
                   expedienteEstado={expediente.estado}

@@ -12,6 +12,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconCheck, IconChevronRight } from '@/components/icons'
@@ -19,6 +20,7 @@ import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { dashboardService } from '@/services/dashboardService'
 
 export function PrimerosPasosWidget() {
+  const puedeEditar = usePuedeEditar()
   const { completitud, loading, noAplica } = usePerfilCompletitud()
   const [propiedades, setPropiedades] = useState<number | null>(null)
 
@@ -37,7 +39,8 @@ export function PrimerosPasosWidget() {
     }
   }, [])
 
-  if (loading || noAplica || propiedades === null) return null
+  // Solo lectura: los pasos (completar perfil, crear propiedad) no son suyos.
+  if (!puedeEditar || loading || noAplica || propiedades === null) return null
   const perfilCompleto = completitud?.completo ?? false
   const tienePropiedad = propiedades > 0
   if (perfilCompleto && tienePropiedad) return null

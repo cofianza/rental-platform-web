@@ -14,6 +14,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ const CHIPS: { id: EstudioFiltro; label: string }[] = [
 ]
 
 export function EstudiosExpedientesFusion() {
+  const puedeEditar = usePuedeEditar()
   const router = useRouter()
   const {
     expedientes,
@@ -114,13 +116,15 @@ export function EstudiosExpedientesFusion() {
             <IconSearch size={14} />
             {saldo ? saldo.saldo_total : saldoError ? '—' : '…'} estudios disponibles
           </span>
-          <button
-            onClick={() => router.push('/expedientes/nuevo')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
-          >
-            <IconPlus size={16} />
-            Nuevo estudio
-          </button>
+          {puedeEditar && (
+            <button
+              onClick={() => router.push('/expedientes/nuevo')}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
+            >
+              <IconPlus size={16} />
+              Nuevo estudio
+            </button>
+          )}
         </div>
       </div>
 

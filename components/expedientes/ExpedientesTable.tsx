@@ -5,6 +5,8 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
 import { ExpedienteBadge, ProcessStepBadge } from './ExpedienteBadges'
@@ -126,6 +128,10 @@ export function ExpedientesTable({
   tomandoId,
 }: ExpedientesTableProps) {
   const router = useRouter()
+  const rol = useAuthStore((st) => st.user?.rol)
+  // Solo lectura y el prospecto no crean estudios: sin esto el estado vacío les
+  // ofrecía un botón que termina en 403.
+  const puedeCrear = usePuedeEditar() && rol !== 'solicitante'
 
   // Nombre a mostrar en la columna Responsable: prioriza el miembro de la
   // inmobiliaria asignado al expediente; si no hay (o no se proveyó el mapa),
@@ -152,13 +158,15 @@ export function ExpedientesTable({
         <p className="text-sm text-gray-500 mb-4">
           {EXPEDIENTE_UI_MESSAGES.EMPTY_STATE_FILTERED}
         </p>
-        <button
-          onClick={() => router.push('/expedientes/nuevo')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <IconPlus size={18} />
-          {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
-        </button>
+        {puedeCrear && (
+          <button
+            onClick={() => router.push('/expedientes/nuevo')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <IconPlus size={18} />
+            {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
+          </button>
+        )}
       </div>
     )
   }

@@ -10,6 +10,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -29,7 +30,8 @@ export function ExpedientesListado() {
   const user = useAuthStore((s) => s.user)
   // El solicitante no crea expedientes — el flujo arranca con la cita previa
   // que dispara el propietario/inmobiliaria desde su panel. Ocultamos el CTA.
-  const puedeCrearExpediente = user?.rol !== 'solicitante'
+  const puedeEditar = usePuedeEditar()
+  const puedeCrearExpediente = user?.rol !== 'solicitante' && puedeEditar
   // Solo quien asigna analistas puede "Tomar" desde la lista. Gerencia consulta
   // e inmobiliaria no asignan analista interno.
   const puedeAsignar = user?.rol === 'administrador' || user?.rol === 'operador_analista'

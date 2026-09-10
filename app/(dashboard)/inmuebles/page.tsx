@@ -5,6 +5,7 @@
  * Listado con filtros, paginación y ordenamiento
  */
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -68,9 +69,11 @@ function InmueblesContent() {
     (isPropietario || isInmobiliaria) && completitud !== null && !completitud.completo
 
   // Permisos de CRUD
-  const canCreateRol = isAdmin || isOperador || isPropietario || isInmobiliaria
+  // Solo lectura (miembro 'solo_lectura'): el API le niega crear y editar.
+  const puedeEditar = usePuedeEditar()
+  const canCreateRol = (isAdmin || isOperador || isPropietario || isInmobiliaria) && puedeEditar
   const canCreate = canCreateRol && !perfilIncompleto
-  const canEdit = isAdmin || isOperador || isPropietario || isInmobiliaria
+  const canEdit = (isAdmin || isOperador || isPropietario || isInmobiliaria) && puedeEditar
   const canDelete = isAdmin // Solo admin puede eliminar
 
   // Handlers

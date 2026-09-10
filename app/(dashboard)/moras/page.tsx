@@ -9,6 +9,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
@@ -89,6 +90,7 @@ export default function ReportarMoraPage() {
   // gestión, no un formulario de aviso.
   const rol = useAuthStore((s) => s.user?.rol)
   const esInterno = rol === 'administrador' || rol === 'operador_analista'
+  const puedeEditarPagina = usePuedeEditar()
   const [stats, setStats] = useState<IMorasStats | null>(null)
   const [moras, setMoras] = useState<IMoraTicket[]>([])
   const [contratos, setContratos] = useState<ContratoSelectItem[]>([])
@@ -550,11 +552,11 @@ export default function ReportarMoraPage() {
       {esInterno ? (
         <>
           {tablaMoras}
-          {formularioReporte}
+          {puedeEditarPagina && formularioReporte}
         </>
       ) : (
         <>
-          {formularioReporte}
+          {puedeEditarPagina && formularioReporte}
           {tablaMoras}
         </>
       )}
@@ -709,6 +711,9 @@ function MoraDetalleModal({
 
   const cfg = mora ? FASE_CONFIG[mora.estado] : null
   const esTerminal = mora?.estado === 'pagada' || mora?.estado === 'cancelada'
+  // Solo lectura: ve el caso y el historial, pero no escribe ni cambia la fase.
+  const puedeEditar = usePuedeEditar()
+  const sinAcciones = esTerminal || !puedeEditar
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -827,7 +832,7 @@ function MoraDetalleModal({
                   )}
                 </div>
 
-                {!esTerminal && (
+                {!sinAcciones && (
                   <div className="mt-3 flex gap-2">
                     <input
                       type="text"
@@ -857,7 +862,7 @@ function MoraDetalleModal({
           )}
         </div>
 
-        {mora && !esTerminal && (
+        {mora && !sinAcciones && (
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center gap-2 justify-end">
             <button
               type="button"

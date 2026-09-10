@@ -7,6 +7,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
 import { useEffect, useState, useCallback } from 'react'
@@ -91,6 +92,7 @@ function crearExpedienteHref(it: Interesado): string {
 }
 
 export default function InteresadosPage() {
+  const puedeEditar = usePuedeEditar()
   const [items, setItems] = useState<Interesado[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<InteresadoEstado | 'todos'>('todos')
@@ -225,52 +227,54 @@ export default function InteresadosPage() {
                 )}
               </div>
 
-              {/* Acciones */}
-              <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                {/* Convertir el interesado en expediente (datos pre-llenados) */}
-                <Link
-                  href={crearExpedienteHref(it)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
-                >
-                  <IconFileText size={13} />
-                  Crear estudio
-                </Link>
-                {it.estado !== 'contactado' && (
-                  <button
-                    type="button"
-                    onClick={() => cambiarEstado(it.id, 'contactado')}
-                    disabled={updatingId === it.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100 disabled:opacity-50"
+              {/* Acciones — el miembro solo lectura no crea estudios ni cambia el estado del interesado */}
+              {puedeEditar && (
+                <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                  {/* Convertir el interesado en expediente (datos pre-llenados) */}
+                  <Link
+                    href={crearExpedienteHref(it)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
                   >
-                    {updatingId === it.id ? (
-                      <IconLoader size={13} className="animate-spin" />
-                    ) : (
-                      <IconCheck size={13} />
-                    )}
-                    Contactado
-                  </button>
-                )}
-                {it.estado !== 'descartado' ? (
-                  <button
-                    type="button"
-                    onClick={() => cambiarEstado(it.id, 'descartado')}
-                    disabled={updatingId === it.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    <IconX size={13} />
-                    Descartar
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => cambiarEstado(it.id, 'nuevo')}
-                    disabled={updatingId === it.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Reabrir
-                  </button>
-                )}
-              </div>
+                    <IconFileText size={13} />
+                    Crear estudio
+                  </Link>
+                  {it.estado !== 'contactado' && (
+                    <button
+                      type="button"
+                      onClick={() => cambiarEstado(it.id, 'contactado')}
+                      disabled={updatingId === it.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100 disabled:opacity-50"
+                    >
+                      {updatingId === it.id ? (
+                        <IconLoader size={13} className="animate-spin" />
+                      ) : (
+                        <IconCheck size={13} />
+                      )}
+                      Contactado
+                    </button>
+                  )}
+                  {it.estado !== 'descartado' ? (
+                    <button
+                      type="button"
+                      onClick={() => cambiarEstado(it.id, 'descartado')}
+                      disabled={updatingId === it.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <IconX size={13} />
+                      Descartar
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => cambiarEstado(it.id, 'nuevo')}
+                      disabled={updatingId === it.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Reabrir
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

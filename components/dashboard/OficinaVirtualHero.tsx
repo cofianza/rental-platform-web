@@ -6,6 +6,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
@@ -23,6 +24,7 @@ function formatCompactCOP(monto: number): string {
 }
 
 export function OficinaVirtualHero() {
+  const puedeEditar = usePuedeEditar()
   const [stats, setStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -47,12 +49,14 @@ export function OficinaVirtualHero() {
             {titulo}
           </h1>
           <p className="text-sm md:text-[15px] text-white/85 mb-4">{subtitulo}</p>
-          <Link
-            href="/inmuebles/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all"
-          >
-            + Agregar propiedad
-          </Link>
+          {puedeEditar && (
+            <Link
+              href="/inmuebles/nuevo"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all"
+            >
+              + Agregar propiedad
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 md:gap-4 min-w-0">

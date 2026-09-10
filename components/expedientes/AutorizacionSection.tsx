@@ -22,6 +22,8 @@ interface AutorizacionSectionProps {
   solicitanteTelefono?: string | null
   /** Refresca el expediente padre cuando el contacto del solicitante cambió. */
   onContactoActualizado?: () => void
+  /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
+  soloLectura?: boolean
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -47,6 +49,7 @@ export function AutorizacionSection({
   solicitanteEmail,
   solicitanteTelefono,
   onContactoActualizado,
+  soloLectura = false,
 }: AutorizacionSectionProps) {
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [loading, setLoading] = useState(true)
@@ -149,17 +152,19 @@ export function AutorizacionSection({
               </>
             )}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setEmailEdit(solicitanteEmail ?? '')
-              setTelEdit(solicitanteTelefono ?? '')
-              setEditContacto(true)
-            }}
-            className="text-xs font-semibold text-primary-700 hover:text-primary-800"
-          >
-            Corregir contacto
-          </button>
+          {!soloLectura && (
+            <button
+              type="button"
+              onClick={() => {
+                setEmailEdit(solicitanteEmail ?? '')
+                setTelEdit(solicitanteTelefono ?? '')
+                setEditContacto(true)
+              }}
+              className="text-xs font-semibold text-primary-700 hover:text-primary-800"
+            >
+              Corregir contacto
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -305,18 +310,20 @@ export function AutorizacionSection({
             Es el primer paso: el cobro del estudio se le pide después de que firme.
           </p>
           {contactoDestino}
-          <button
-            onClick={handleEnviarEnlace}
-            disabled={sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
-          >
-            {sending ? (
-              <IconLoader size={16} className="animate-spin" />
-            ) : (
-              <IconMail size={16} />
-            )}
-            Enviar autorizacion al arrendatario
-          </button>
+          {!soloLectura && (
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={sending}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              {sending ? (
+                <IconLoader size={16} className="animate-spin" />
+              ) : (
+                <IconMail size={16} />
+              )}
+              Enviar autorizacion al arrendatario
+            </button>
+          )}
         </div>
       )}
 
@@ -336,18 +343,20 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          <button
-            onClick={handleEnviarEnlace}
-            disabled={sending}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
-          >
-            {sending ? (
-              <IconLoader size={14} className="animate-spin" />
-            ) : (
-              <IconMail size={14} />
-            )}
-            Reenviar enlace
-          </button>
+          {!soloLectura && (
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={sending}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
+            >
+              {sending ? (
+                <IconLoader size={14} className="animate-spin" />
+              ) : (
+                <IconMail size={14} />
+              )}
+              Reenviar enlace
+            </button>
+          )}
         </div>
       )}
 
@@ -510,18 +519,20 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          <button
-            onClick={handleEnviarEnlace}
-            disabled={sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
-          >
-            {sending ? (
-              <IconLoader size={16} className="animate-spin" />
-            ) : (
-              <IconMail size={16} />
-            )}
-            Enviar nueva autorizacion
-          </button>
+          {!soloLectura && (
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={sending}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              {sending ? (
+                <IconLoader size={16} className="animate-spin" />
+              ) : (
+                <IconMail size={16} />
+              )}
+              Enviar nueva autorizacion
+            </button>
+          )}
         </div>
       )}
 
@@ -538,18 +549,20 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          <button
-            onClick={handleEnviarEnlace}
-            disabled={sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
-          >
-            {sending ? (
-              <IconLoader size={16} className="animate-spin" />
-            ) : (
-              <IconMail size={16} />
-            )}
-            Enviar nueva autorizacion
-          </button>
+          {!soloLectura && (
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={sending}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              {sending ? (
+                <IconLoader size={16} className="animate-spin" />
+              ) : (
+                <IconMail size={16} />
+              )}
+              Enviar nueva autorizacion
+            </button>
+          )}
         </div>
       )}
 

@@ -16,6 +16,7 @@
 
 'use client'
 
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
 import { useRouter } from 'next/navigation'
@@ -116,6 +117,7 @@ const CHIPS: Array<{
 
 export function PropiedadesInmobiliariaView() {
   const router = useRouter()
+  const puedeEditar = usePuedeEditar()
   const { user } = useAuth()
   const { inmuebles, meta, filters, isLoading, setFilters, updateInmuebleInList } = useInmuebles()
 
@@ -184,14 +186,16 @@ export function PropiedadesInmobiliariaView() {
             <IconBuilding2 size={14} />
             {meta ? meta.total : '…'} propiedades
           </span>
-          <button
-            type="button"
-            onClick={handleCreateClick}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
-          >
-            <IconPlus size={16} />
-            Agregar propiedad
-          </button>
+          {puedeEditar && (
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
+            >
+              <IconPlus size={16} />
+              Agregar propiedad
+            </button>
+          )}
         </div>
       </div>
 
