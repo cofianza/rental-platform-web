@@ -322,7 +322,7 @@ export default function AprobacionExpedientesPage() {
       </div>
 
       {/* Summary Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
         {loading ? (
           <div className="p-4">
             <TableSkeleton />
