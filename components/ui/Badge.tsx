@@ -18,6 +18,8 @@ import {
 export interface BadgeProps {
   estado: EstadoExpediente | EstadoInmueble | string
   className?: string
+  /** Reemplaza la etiqueta del estado (mismo color). */
+  label?: string
 }
 
 /**
@@ -31,7 +33,7 @@ function formatLabel(estado: string): string {
     .join(' ')
 }
 
-export function Badge({ estado, className }: BadgeProps) {
+export function Badge({ estado, className, label: labelOverride }: BadgeProps) {
   // Intentar obtener configuración desde constantes
   const config =
     ESTADOS_EXPEDIENTE[estado as EstadoExpediente] ||
@@ -40,7 +42,7 @@ export function Badge({ estado, className }: BadgeProps) {
     ESTADOS_RESULTADO_ESTUDIO[estado as ResultadoEstudioType]
 
   // Si no hay configuración, usar valores por defecto
-  const label = config?.label || formatLabel(estado)
+  const label = labelOverride || config?.label || formatLabel(estado)
   const bgColor = config?.bgColor || 'bg-gray-100'
   const textColor = config?.textColor || 'text-gray-700'
   const borderColor = config?.borderColor || 'border-gray-300'

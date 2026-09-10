@@ -16,12 +16,14 @@ export interface ExpedienteBadgeProps {
    *  formal. Aplica para expedientes con `cancelado_at` poblado en BD —
    *  fueron cancelados mid-flow, no cerrados naturalmente. */
   cancelado?: boolean
+  /** Reemplaza la etiqueta del estado (mismo color). */
+  label?: string
 }
 
 /**
  * Badge de estado de expediente
  */
-export function ExpedienteBadge({ estado, className, size = 'md', cancelado = false }: ExpedienteBadgeProps) {
+export function ExpedienteBadge({ estado, className, size = 'md', cancelado = false, label }: ExpedienteBadgeProps) {
   if (cancelado) {
     return (
       <span
@@ -38,6 +40,7 @@ export function ExpedienteBadge({ estado, className, size = 'md', cancelado = fa
   return (
     <Badge
       estado={estado}
+      label={label}
       className={cn(size === 'sm' && 'text-[10px] px-2 py-0.5', className)}
     />
   )
