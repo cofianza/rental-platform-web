@@ -233,9 +233,9 @@ export default function ReportarMoraPage() {
         <div className="flex items-start gap-3 bg-primary-50 border-l-4 border-primary-500 rounded-r-lg p-3 text-sm text-primary-900">
           <IconAlertTriangle size={18} className="text-primary-600 shrink-0 mt-0.5" />
           <p>
-            <strong>Flujo automático de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
-            al inquilino (Fase 1). Si no paga en 4 días escalamos a Fase 2 (Urgencia). A los 10 días
-            entra en Fase 3 (Legal) y Cofianza toma control.
+            <strong>Flujo de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
+            al inquilino (Fase 1). Si no paga en 4 días pasa a Fase 2 (Urgencia) y a los 10 días
+            a Fase 3 (Legal), donde Cofianza toma control.
           </p>
         </div>
 
@@ -480,7 +480,13 @@ export default function ReportarMoraPage() {
                         : 'text-gray-700'
                     }`}
                   >
-                    {escalaEn === null ? '—' : escalaEn <= 0 ? 'Hoy (cron)' : `${escalaEn} d`}
+                    {escalaEn === null
+                      ? '—'
+                      : escalaEn === 0
+                        ? 'Hoy'
+                        : escalaEn < 0
+                          ? `Vencida hace ${-escalaEn} d`
+                          : `${escalaEn} d`}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {m.coarrendatario_nombre ? (
@@ -523,7 +529,7 @@ export default function ReportarMoraPage() {
         title={esInterno ? 'Gestión de mora' : 'Reportar Mora'}
         subtitle={
           esInterno
-            ? 'Cola de moras reportadas por propietarios e inmobiliarias. Escala sola a los 4 y 10 días; aquí gestionas cada caso.'
+            ? 'Cola de moras reportadas por propietarios e inmobiliarias. Cada caso pasa a Fase 2 a los 4 días y a Fase 3 a los 10; la columna “Escala en” marca los que ya toca escalar.'
             : 'Avisa a Cofianza cuando un inquilino se atrasa. El sistema escala automáticamente en 3 fases (Recordatorio → Urgencia → Legal).'
         }
       />
