@@ -441,10 +441,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               (no se puede re-crear el link mientras el pago siga pendiente). */}
           {reenviarEmail !== null && (
             <div className="mb-3">
-              <label className="block text-[11px] font-medium text-amber-800 mb-1">
+              <label htmlFor="pago-reenviarEmail" className="block text-[11px] font-medium text-amber-800 mb-1">
                 Correo destino corregido
               </label>
-              <input
+              <input id="pago-reenviarEmail"
                 type="email"
                 value={reenviarEmail}
                 onChange={(e) => setReenviarEmail(e.target.value)}
@@ -667,10 +667,10 @@ function EnviarLinkModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-nombre" className="block text-sm font-medium text-gray-700 mb-1">
             Nombre del arrendatario <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="pago-nombre"
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -681,10 +681,10 @@ function EnviarLinkModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-email" className="block text-sm font-medium text-gray-700 mb-1">
             Email del arrendatario <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="pago-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -1133,10 +1133,10 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
 
       {faltantes.includes('numero_documento') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-datos-numero_documento" className="block text-sm font-medium text-gray-700 mb-1">
             {PAGO_FACTURA_LABEL.numero_documento} <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="pago-datos-numero_documento"
             type="text"
             value={datos.numero_documento || ''}
             onChange={(e) => set('numero_documento', e.target.value)}
@@ -1148,10 +1148,10 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
 
       {faltantes.includes('direccion') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-datos-direccion" className="block text-sm font-medium text-gray-700 mb-1">
             {PAGO_FACTURA_LABEL.direccion} <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="pago-datos-direccion"
             type="text"
             value={datos.direccion || ''}
             onChange={(e) => set('direccion', e.target.value)}
@@ -1164,10 +1164,10 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
       <div className="grid grid-cols-2 gap-3">
         {faltantes.includes('email') && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-datos-email" className="block text-sm font-medium text-gray-700 mb-1">
               {PAGO_FACTURA_LABEL.email} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="pago-datos-email"
               type="email"
               value={datos.email || ''}
               onChange={(e) => set('email', e.target.value)}
@@ -1179,10 +1179,10 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
 
         {faltantes.includes('telefono') && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-datos-telefono" className="block text-sm font-medium text-gray-700 mb-1">
               {PAGO_FACTURA_LABEL.telefono} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="pago-datos-telefono"
               type="tel"
               value={datos.telefono || ''}
               onChange={(e) => set('telefono', e.target.value)}
@@ -1195,10 +1195,10 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
 
       {faltantes.includes('municipio_codigo') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-datos-municipio_codigo" className="block text-sm font-medium text-gray-700 mb-1">
             Municipio <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="pago-datos-municipio_codigo"
             type="text"
             value={datos.municipio_codigo || ''}
             onChange={(e) => set('municipio_codigo', e.target.value)}

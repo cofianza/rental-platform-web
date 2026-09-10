@@ -688,10 +688,10 @@ function SolicitanteForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Tipo de persona */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-tipo_persona" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_TIPO_PERSONA} <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="solicitante-formData-tipo_persona"
               value={formData.tipo_persona || ''}
               onChange={(e) => onUpdateField('tipo_persona', e.target.value)}
               className={selectClasses(!!errors.tipo_persona)}
@@ -713,10 +713,10 @@ function SolicitanteForm({
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-nombre" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_NOMBRE} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="solicitante-formData-nombre"
               type="text"
               value={formData.nombre || ''}
               onChange={(e) => onUpdateField('nombre', e.target.value)}
@@ -730,10 +730,10 @@ function SolicitanteForm({
 
           {/* Apellido */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-apellido" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_APELLIDO} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="solicitante-formData-apellido"
               type="text"
               value={formData.apellido || ''}
               onChange={(e) => onUpdateField('apellido', e.target.value)}
@@ -747,10 +747,10 @@ function SolicitanteForm({
 
           {/* Tipo de documento */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-tipo_documento" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_TIPO_DOCUMENTO} <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="solicitante-formData-tipo_documento"
               value={formData.tipo_documento || ''}
               onChange={(e) => onUpdateField('tipo_documento', e.target.value)}
               className={selectClasses(!!errors.tipo_documento)}
@@ -769,10 +769,10 @@ function SolicitanteForm({
 
           {/* Numero de documento */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-numero_documento" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_NUMERO_DOCUMENTO} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="solicitante-formData-numero_documento"
               type="text"
               value={formData.numero_documento || ''}
               onChange={(e) => onUpdateField('numero_documento', e.target.value)}
@@ -794,10 +794,10 @@ function SolicitanteForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-email" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_EMAIL} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="solicitante-formData-email"
               type="email"
               value={formData.email || ''}
               onChange={(e) => onUpdateField('email', e.target.value)}
@@ -845,10 +845,10 @@ function SolicitanteForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Direccion */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-direccion" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_DIRECCION}
             </label>
-            <input
+            <input id="solicitante-formData-direccion"
               type="text"
               value={formData.direccion || ''}
               onChange={(e) => onUpdateField('direccion', e.target.value)}
@@ -859,10 +859,10 @@ function SolicitanteForm({
 
           {/* Departamento */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-departamento" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_DEPARTAMENTO}
             </label>
-            <select
+            <select id="solicitante-formData-departamento"
               value={formData.departamento || ''}
               onChange={(e) => onUpdateField('departamento', e.target.value)}
               className={selectClasses(false)}
@@ -878,10 +878,10 @@ function SolicitanteForm({
 
           {/* Ciudad */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-ciudad" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_CIUDAD}
             </label>
-            <input
+            <input id="solicitante-formData-ciudad"
               type="text"
               value={formData.ciudad || ''}
               onChange={(e) => onUpdateField('ciudad', e.target.value)}
@@ -900,10 +900,10 @@ function SolicitanteForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Ocupacion */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-ocupacion" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_OCUPACION}
             </label>
-            <input
+            <input id="solicitante-formData-ocupacion"
               type="text"
               value={formData.ocupacion || ''}
               onChange={(e) => onUpdateField('ocupacion', e.target.value)}
@@ -914,10 +914,10 @@ function SolicitanteForm({
 
           {/* Actividad economica */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-actividad_economica" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_ACTIVIDAD_ECONOMICA}
             </label>
-            <input
+            <input id="solicitante-formData-actividad_economica"
               type="text"
               value={formData.actividad_economica || ''}
               onChange={(e) => onUpdateField('actividad_economica', e.target.value)}
@@ -928,10 +928,10 @@ function SolicitanteForm({
 
           {/* Empresa */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-empresa" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_EMPRESA}
             </label>
-            <input
+            <input id="solicitante-formData-empresa"
               type="text"
               value={formData.empresa || ''}
               onChange={(e) => onUpdateField('empresa', e.target.value)}
@@ -942,10 +942,10 @@ function SolicitanteForm({
 
           {/* Ingresos mensuales */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-ingresos_mensuales" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_INGRESOS}
             </label>
-            <input
+            <input id="solicitante-formData-ingresos_mensuales"
               type="number"
               value={formData.ingresos_mensuales || ''}
               onChange={(e) =>
@@ -970,10 +970,10 @@ function SolicitanteForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Nivel educativo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-nivel_educativo" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_NIVEL_EDUCATIVO}
             </label>
-            <select
+            <select id="solicitante-formData-nivel_educativo"
               value={formData.nivel_educativo || ''}
               onChange={(e) => onUpdateField('nivel_educativo', e.target.value || undefined)}
               className={selectClasses(false)}
@@ -989,10 +989,10 @@ function SolicitanteForm({
 
           {/* Parentesco */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="solicitante-formData-parentesco" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_PARENTESCO}
             </label>
-            <input
+            <input id="solicitante-formData-parentesco"
               type="text"
               value={formData.parentesco || ''}
               onChange={(e) => onUpdateField('parentesco', e.target.value)}

@@ -297,10 +297,10 @@ export default function EstudioFormularioPage() {
 
         {/* Nombre */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="estudio-nombre" className="block text-sm font-medium text-gray-700 mb-1">
             Nombre completo <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="estudio-nombre"
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -313,10 +313,10 @@ export default function EstudioFormularioPage() {
         {/* Tipo y numero de documento */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-tipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
               Tipo documento <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="estudio-tipoDoc"
               value={tipoDoc}
               onChange={(e) => setTipoDoc(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -331,10 +331,10 @@ export default function EstudioFormularioPage() {
             </p>
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-numDoc" className="block text-sm font-medium text-gray-700 mb-1">
               Número de documento <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="estudio-numDoc"
               type="text"
               value={numDoc}
               onChange={(e) => setNumDoc(e.target.value)}
@@ -349,10 +349,10 @@ export default function EstudioFormularioPage() {
         {/* Email y telefono */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-email" className="block text-sm font-medium text-gray-700 mb-1">
               Correo electrónico <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="estudio-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -362,10 +362,10 @@ export default function EstudioFormularioPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-telefono" className="block text-sm font-medium text-gray-700 mb-1">
               Teléfono <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="estudio-telefono"
               type="tel"
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
@@ -381,10 +381,10 @@ export default function EstudioFormularioPage() {
         {/* Ingresos y ocupacion */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-ingresos" className="block text-sm font-medium text-gray-700 mb-1">
               Ingresos mensuales <span className="text-gray-400">(opcional)</span>
             </label>
-            <input
+            <input id="estudio-ingresos"
               type="number"
               value={ingresos}
               onChange={(e) => setIngresos(e.target.value)}
@@ -395,10 +395,10 @@ export default function EstudioFormularioPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-ocupacion" className="block text-sm font-medium text-gray-700 mb-1">
               Ocupación <span className="text-gray-400">(opcional)</span>
             </label>
-            <input
+            <input id="estudio-ocupacion"
               type="text"
               value={ocupacion}
               onChange={(e) => setOcupacion(e.target.value)}
@@ -410,10 +410,10 @@ export default function EstudioFormularioPage() {
 
         {/* Empresa */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="estudio-empresa" className="block text-sm font-medium text-gray-700 mb-1">
             Empresa donde trabajas <span className="text-gray-400">(opcional)</span>
           </label>
-          <input
+          <input id="estudio-empresa"
             type="text"
             value={empresa}
             onChange={(e) => setEmpresa(e.target.value)}
@@ -424,10 +424,10 @@ export default function EstudioFormularioPage() {
 
         {/* Direccion */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="estudio-direccion" className="block text-sm font-medium text-gray-700 mb-1">
             Dirección de residencia <span className="text-gray-400">(opcional)</span>
           </label>
-          <input
+          <input id="estudio-direccion"
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
