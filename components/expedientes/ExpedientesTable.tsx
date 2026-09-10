@@ -24,7 +24,7 @@ import {
   IconUserCheck,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
-import type { EstadoExpediente, IExpediente, IExpedienteFilters, IExpedientesMeta } from '@/types/expediente'
+import type { IExpediente, IExpedienteFilters, IExpedientesMeta } from '@/types/expediente'
 
 interface SortableHeaderProps {
   column: IExpedienteFilters['sortBy']
@@ -116,22 +116,22 @@ export interface ExpedientesTableProps {
   tomandoId?: string | null
 }
 
-// Antes del resultado, el estado real vive en la evaluación (columna de al
-// lado): el "Borrador" del expediente contradecía un estudio ya enviado al
-// prospecto, porque el Flujo §11 define Borrador como "asistente iniciado y no
-// enviado". Si ya hay evaluación, la fila no repite el estado del expediente;
-// si no la hay, el borrador se llama por lo que es: sin enviar.
-const ANTES_DEL_RESULTADO: EstadoExpediente[] = ['borrador', 'en_revision', 'informacion_incompleta']
-
+// Un estudio ya enviado al prospecto sigue en estado de expediente 'borrador'
+// (Flujo §11 reserva "Borrador" para el asistente no enviado): si hay una
+// evaluación viva, su badge —en la columna de al lado— dice el paso real y la
+// fila no repite "Borrador". Sin evaluación (o con la evaluación cancelada) el
+// borrador se llama por lo que es: sin enviar. En revisión e información
+// incompleta se muestran siempre: la evaluación no los explica.
 function EstadoExpedienteFila({ expediente }: { expediente: IExpediente }) {
-  const antesDelResultado = !expediente.cancelado_at && ANTES_DEL_RESULTADO.includes(expediente.estado)
-  if (antesDelResultado && expediente.estudio_vigente) return null
+  const esBorrador = !expediente.cancelado_at && expediente.estado === 'borrador'
+  const evaluacionViva = !!expediente.estudio_vigente && expediente.estudio_vigente.estado !== 'cancelado'
+  if (esBorrador && evaluacionViva) return null
   return (
     <ExpedienteBadge
       estado={expediente.estado}
       size="sm"
       cancelado={!!expediente.cancelado_at}
-      label={antesDelResultado && expediente.estado === 'borrador' ? 'Sin enviar' : undefined}
+      label={esBorrador ? 'Sin enviar' : undefined}
     />
   )
 }
