@@ -5,6 +5,7 @@
 
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -655,59 +656,54 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
 
       {/* Modal editar descripción */}
       {editingFoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Editar descripción
-            </h3>
+        <Modal isOpen onClose={() => setEditingFoto(null)} bare ariaLabel="Editar descripción de la foto" closeOnBackdrop={false} className="rounded-lg w-full max-w-md mx-4 p-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Editar descripción
+          </h3>
 
-            <div className="mb-4">
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
-                <Image
-                  src={editingFoto.url}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <input
-                type="text"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Ej: Sala principal, Cocina, Habitación 1..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
-                maxLength={100}
+          <div className="mb-4">
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
+              <Image
+                src={editingFoto.url}
+                alt="Preview"
+                fill
+                className="object-cover"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {editDescription.length}/100 caracteres
-              </p>
             </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setEditingFoto(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveDescription}
-                disabled={isSavingDescription}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {isSavingDescription ? (
-                  <IconLoader size={16} className="animate-spin" />
-                ) : (
-                  <IconCheck size={16} />
-                )}
-                Guardar
-              </button>
-            </div>
+            <input
+              type="text"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Ej: Sala principal, Cocina, Habitación 1..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+              maxLength={100}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {editDescription.length}/100 caracteres
+            </p>
           </div>
-        </div>
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setEditingFoto(null)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveDescription}
+              disabled={isSavingDescription}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSavingDescription ? (
+                <IconLoader size={16} className="animate-spin" />
+              ) : (
+                <IconCheck size={16} />
+              )}
+              Guardar
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Diálogo confirmar eliminar */}

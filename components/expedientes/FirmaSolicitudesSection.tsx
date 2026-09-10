@@ -1,5 +1,6 @@
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle, IconShieldCheck } from '@/components/icons'
@@ -252,61 +253,59 @@ export function FirmaSolicitudesSection({
 
       {/* Confirmation modal for reenviar */}
       {reenviarTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                <IconAlertTriangle size={20} className="text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Reenviar enlace de firma</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Se enviará un nuevo enlace a:
-                </p>
-              </div>
+        <Modal isOpen onClose={() => setReenviarTarget(null)} bare ariaLabel="Reenviar solicitud de firma" closeOnBackdrop={false} className="rounded-xl max-w-sm w-full mx-4 p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <IconAlertTriangle size={20} className="text-amber-600" />
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-              <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
-              <div>
-                <label className="block text-[11px] font-medium text-gray-500 mb-1">
-                  Correo destino (corrígelo si estaba mal escrito)
-                </label>
-                <input
-                  type="email"
-                  value={reenviarEmail}
-                  onChange={(e) => setReenviarEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              <p className="text-xs text-gray-500">
-                Envíos: {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
+            <div>
+              <h3 className="font-semibold text-gray-900">Reenviar enlace de firma</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Se enviará un nuevo enlace a:
               </p>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <p className="text-xs text-amber-800">
-                El enlace anterior quedará <span className="font-semibold">invalidado</span> por seguridad. El firmante deberá usar el nuevo enlace.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setReenviarTarget(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleReenviarConfirmed}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
-              >
-                Reenviar enlace
-              </button>
             </div>
           </div>
-        </div>
+
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+            <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                Correo destino (corrígelo si estaba mal escrito)
+              </label>
+              <input
+                type="email"
+                value={reenviarEmail}
+                onChange={(e) => setReenviarEmail(e.target.value)}
+                placeholder="correo@ejemplo.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Envíos: {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
+            </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-xs text-amber-800">
+              El enlace anterior quedará <span className="font-semibold">invalidado</span> por seguridad. El firmante deberá usar el nuevo enlace.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setReenviarTarget(null)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleReenviarConfirmed}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+            >
+              Reenviar enlace
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )

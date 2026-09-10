@@ -9,6 +9,7 @@
 
 'use client'
 
+import { Modal } from '@/components/ui/Modal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useEffect, useState, useCallback } from 'react'
@@ -716,9 +717,8 @@ function MoraDetalleModal({
   const sinAcciones = esTerminal || !puedeEditar
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <>
+      <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del caso de mora" closeOnBackdrop={false} className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col mx-4">
         <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-gray-200">
           <div>
             <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
@@ -893,7 +893,7 @@ function MoraDetalleModal({
             )}
           </div>
         )}
-      </div>
+      </Modal>
       <ConfirmDialog
         isOpen={pagarAbierto}
         onClose={() => setPagarAbierto(false)}
@@ -930,7 +930,7 @@ function MoraDetalleModal({
         confirmLabel="Cancelar caso"
         variant="danger"
       />
-    </div>
+    </>
   )
 }
 
