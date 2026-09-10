@@ -143,7 +143,7 @@ function getSiguientePaso(estudio: IEstudio): string {
   // §6.3: el orden es AUTORIZACION -> PAGO -> EJECUCION. 'solicitado' es la
   // espera de la firma; 'pago_pendiente' es la espera del cobro, ya autorizado.
   if (estudio.estado === 'solicitado') {
-    return 'Esperando que el solicitante autorice la consulta en centrales de riesgo.'
+    return 'Esperando que el prospecto autorice la consulta en centrales de riesgo.'
   }
   if (estudio.estado === 'pago_pendiente') {
     return 'Ya autorizó. Esperando el pago del estudio: no se consulta a centrales hasta confirmarlo.'

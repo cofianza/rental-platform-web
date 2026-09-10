@@ -112,7 +112,7 @@ export function AutorizacionSection({
     setSending(true)
     try {
       const result = await autorizacionService.enviarEnlace(expedienteId, contacto)
-      toast.success('Enlace de autorizacion enviado al arrendatario')
+      toast.success('Solicitud de autorización enviada al prospecto')
       setAutorizacion({
         id: result.id,
         estado: 'pendiente',
@@ -306,8 +306,8 @@ export function AutorizacionSection({
       {!autorizacion && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
-            El arrendatario debe autorizar la consulta en centrales de riesgo antes de que corra el estudio.
-            Es el primer paso: el cobro del estudio se le pide después de que firme.
+            El prospecto debe autorizar la consulta en centrales de riesgo antes de que corra la evaluación.
+            Es el primer paso: el cobro se le pide después de que autorice.
           </p>
           {contactoDestino}
           {!soloLectura && (
@@ -321,7 +321,7 @@ export function AutorizacionSection({
               ) : (
                 <IconMail size={16} />
               )}
-              Enviar autorizacion al arrendatario
+              Enviar solicitud de autorización al prospecto
             </button>
           )}
         </div>
@@ -333,11 +333,11 @@ export function AutorizacionSection({
           <div className="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <IconClock size={18} className="text-yellow-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-yellow-800">Esperando firma del arrendatario</p>
+              <p className="text-sm font-medium text-yellow-800">Solicitud de autorización enviada</p>
               <p className="text-xs text-yellow-600 mt-1">
-                Enlace enviado el {formatDate(autorizacion?.created_at)}.
+                Enviada el {formatDate(autorizacion?.created_at)}.
                 {autorizacion?.token_expiracion && (
-                  <> Expira el {formatDate(autorizacion.token_expiracion)}.</>
+                  <> Vence el {formatDate(autorizacion.token_expiracion)}.</>
                 )}
               </p>
             </div>

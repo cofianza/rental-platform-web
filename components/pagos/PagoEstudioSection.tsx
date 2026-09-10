@@ -1,5 +1,6 @@
 'use client'
 
+import { IconClock } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -341,20 +342,18 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         </div>
       )}
 
-      {/* Esperando que el arrendatario autorice (§6.3, opción C).
-          Todavía no hay fila de pago: el cobro se le genera al firmar. Los
-          escapes siguen disponibles porque no hay link vivo que cancelar. */}
+      {/* Opción C antes de la autorización (§6.3). Todavía no hay fila de
+          pago: el cobro se le genera al autorizar. La espera ya la dicen la
+          tarjeta del estado y la de autorización; aquí va solo lo del cobro.
+          Los escapes siguen disponibles porque no hay link vivo que cancelar. */}
       {estado.estado === 'esperando_autorizacion' && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
-            <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconClock size={20} className="text-amber-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800">Esperando que el arrendatario autorice</p>
+              <p className="text-sm font-medium text-amber-800">Cobro al prospecto: {estado.monto_formateado} COP</p>
               <p className="text-xs text-amber-600">
-                Le enviamos el enlace de autorización por correo y WhatsApp. Apenas lo firme le llega el cobro de {estado.monto_formateado} COP,
-                y el estudio corre cuando el pago se confirme.
+                Le llega apenas autorice la consulta, y la evaluación corre cuando el pago se confirme.
               </p>
             </div>
           </div>
