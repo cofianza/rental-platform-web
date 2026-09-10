@@ -5,6 +5,7 @@
 
 export { Avatar, type AvatarProps } from './Avatar'
 export { Badge, type BadgeProps } from './Badge'
+export { Button, buttonClasses, type ButtonProps } from './Button'
 export { KPICard, type KPICardProps } from './KPICard'
 export { PageHeader, type PageHeaderProps } from './PageHeader'
 export { DataTable, type DataTableProps, type Column } from './DataTable'

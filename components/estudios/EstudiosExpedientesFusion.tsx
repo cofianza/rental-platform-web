@@ -14,6 +14,7 @@
 
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -122,13 +123,10 @@ export function EstudiosExpedientesFusion() {
                 : '… créditos disponibles'}
           </span>
           {puedeEditar && (
-            <button
-              onClick={() => router.push('/expedientes/nuevo')}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
-            >
+            <Button variante="accent" onClick={() => router.push('/expedientes/nuevo')}>
               <IconPlus size={16} />
               Nuevo estudio
-            </button>
+            </Button>
           )}
         </div>
       </div>

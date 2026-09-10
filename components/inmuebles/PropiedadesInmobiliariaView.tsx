@@ -16,6 +16,7 @@
 
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
@@ -187,14 +188,10 @@ export function PropiedadesInmobiliariaView() {
             {meta ? meta.total : '…'} propiedades
           </span>
           {puedeEditar && (
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
-            >
+            <Button variante="accent" onClick={handleCreateClick}>
               <IconPlus size={16} />
               Agregar propiedad
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@
 
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -387,12 +388,7 @@ export default function ExpedienteDetallePage() {
         {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
           <div className="flex gap-3 ml-12 lg:ml-0">
             {transiciones.length > 0 && (
-              <button
-                onClick={() => setShowTransicionModal(true)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-              >
-                Cambiar estado
-              </button>
+              <Button onClick={() => setShowTransicionModal(true)}>Cambiar estado</Button>
             )}
           </div>
         )}

@@ -10,6 +10,7 @@
 
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -108,13 +109,10 @@ export function ExpedientesListado() {
               entityName="Estudios"
             />
             {puedeCrearExpediente && (
-              <button
-                onClick={() => router.push('/expedientes/nuevo')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-              >
-                <IconPlus size={18} />
+              <Button onClick={() => router.push('/expedientes/nuevo')}>
+                <IconPlus size={16} />
                 {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
-              </button>
+              </Button>
             )}
           </div>
         }
