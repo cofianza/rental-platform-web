@@ -134,7 +134,7 @@ export default function HuerfanosPage() {
       {orphans && orphans.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-sm text-gray-600">
-            No hay cuentas huérfanas: todas las cuentas tienen su perfil completo.
+            No hay cuentas huérfanas: todas las cuentas terminaron de registrarse.
           </p>
         </div>
       )}

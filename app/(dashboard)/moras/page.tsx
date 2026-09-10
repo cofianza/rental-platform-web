@@ -237,8 +237,8 @@ export default function ReportarMoraPage() {
           <IconAlertTriangle size={18} className="text-primary-600 shrink-0 mt-0.5" />
           <p>
             <strong>Flujo de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
-            al inquilino (Fase 1). Si no paga en 4 días pasa a Fase 2 (Urgencia) y a los 10 días
-            a Fase 3 (Legal), donde Cofianza toma control.
+            al inquilino (Fase 1). Si no paga en 4 días, Cofianza lo pasa a Fase 2 (Urgencia) y a
+            los 10 días a Fase 3 (Legal), donde toma el control del caso.
           </p>
         </div>
 
@@ -533,7 +533,7 @@ export default function ReportarMoraPage() {
         subtitle={
           esInterno
             ? 'Cola de moras reportadas por propietarios e inmobiliarias. Cada caso pasa a Fase 2 a los 4 días y a Fase 3 a los 10; la columna “Escala en” marca los que ya toca escalar.'
-            : 'Avisa a Cofianza cuando un inquilino se atrasa. El sistema escala automáticamente en 3 fases (Recordatorio → Urgencia → Legal).'
+            : 'Avisa a Cofianza cuando un inquilino se atrasa. Cofianza gestiona el caso en 3 fases (Recordatorio → Urgencia → Legal).'
         }
       />
 
