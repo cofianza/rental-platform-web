@@ -31,6 +31,10 @@ export interface BandejaTabsProps {
   stats: IExpedientesStats | null
   onBandejaChange: (bandeja: EstadoExpediente | null) => void
   onToggleMisExpedientes: () => void
+  /** Propietario: pestaña "Requieren mi acción", sin el KPI ni el toggle de analista. */
+  vistaGestor?: boolean
+  requiereAccionActivo?: boolean
+  onRequiereAccion?: () => void
 }
 
 export function BandejaTabs({
@@ -39,6 +43,9 @@ export function BandejaTabs({
   stats,
   onBandejaChange,
   onToggleMisExpedientes,
+  vistaGestor = false,
+  requiereAccionActivo = false,
+  onRequiereAccion,
 }: BandejaTabsProps) {
   const getCount = (estado: EstadoExpediente | null): number => {
     if (!stats) return 0
@@ -61,10 +68,12 @@ export function BandejaTabs({
   return (
     <div className="space-y-4">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* "Requieren acción" aquí es la cola de Cofianza (incompletos +
+          condicionados); para el propietario la mide la pestaña de abajo. */}
+      <div className={cn('grid grid-cols-1 gap-4', vistaGestor ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
         <KPIMini label="Total estudios" value={stats?.total ?? 0} color="bg-primary-600" />
         <KPIMini label="En proceso" value={enProceso} color="bg-amber-500" />
-        <KPIMini label="Requieren acción" value={requierenAccion} color="bg-orange-500" />
+        {!vistaGestor && <KPIMini label="Requieren acción" value={requierenAccion} color="bg-orange-500" />}
       </div>
 
       {/* Tabs + Toggle */}
@@ -72,8 +81,22 @@ export function BandejaTabs({
         {/* Bandeja tabs con scroll horizontal */}
         <div className="flex-1 overflow-x-auto">
           <nav className="flex gap-1 min-w-max" aria-label="Bandejas">
+            {vistaGestor && onRequiereAccion && (
+              <button
+                onClick={onRequiereAccion}
+                aria-pressed={requiereAccionActivo}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border',
+                  requiereAccionActivo
+                    ? 'bg-coral-50 text-coral-700 border-coral-300'
+                    : 'text-gray-600 hover:bg-gray-100 border-transparent'
+                )}
+              >
+                Requieren mi acción
+              </button>
+            )}
             {BANDEJAS.map((bandeja) => {
-              const isActive = activeBandeja === bandeja.estado
+              const isActive = !requiereAccionActivo && activeBandeja === bandeja.estado
               const count = getCount(bandeja.estado)
               const config = bandeja.estado ? ESTADOS_EXPEDIENTE[bandeja.estado] : null
 
@@ -119,31 +142,33 @@ export function BandejaTabs({
           </nav>
         </div>
 
-        {/* Toggle Mis Expedientes */}
-        <button
-          onClick={onToggleMisExpedientes}
-          className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',
-            misExpedientes
-              ? 'bg-primary-50 text-primary-700 border-primary-300'
-              : 'text-gray-600 hover:bg-gray-100 border-gray-200'
-          )}
-        >
-          <span
+        {/* Toggle Mis Expedientes (analista de Cofianza) */}
+        {!vistaGestor && (
+          <button
+            onClick={onToggleMisExpedientes}
             className={cn(
-              'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-              misExpedientes ? 'bg-primary-600' : 'bg-gray-300'
+              'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',
+              misExpedientes
+                ? 'bg-primary-50 text-primary-700 border-primary-300'
+                : 'text-gray-600 hover:bg-gray-100 border-gray-200'
             )}
           >
             <span
               className={cn(
-                'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
-                misExpedientes ? 'translate-x-4' : 'translate-x-1'
+                'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                misExpedientes ? 'bg-primary-600' : 'bg-gray-300'
               )}
-            />
-          </span>
-          Mis estudios
-        </button>
+            >
+              <span
+                className={cn(
+                  'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
+                  misExpedientes ? 'translate-x-4' : 'translate-x-1'
+                )}
+              />
+            </span>
+            Mis estudios
+          </button>
+        )}
       </div>
     </div>
   )

@@ -55,6 +55,21 @@ export function ExpedientesListado() {
     fetchExpedientes,
   } = useExpedientes()
 
+  // El propietario es gestor de sus estudios, igual que la inmobiliaria: le
+  // sirve "Requieren mi acción" (mismo filtro del RPC que usa la vista de la
+  // inmobiliaria) y no el toggle "Mis estudios", que filtra por analista de
+  // Cofianza y a él le devolvía la lista vacía.
+  const vistaGestor = user?.rol === 'propietario'
+  const requiereAccionActivo = filters.estudio_filtro === 'requiere_accion'
+  const elegirBandeja = (bandeja: Parameters<typeof setActiveBandeja>[0]) => {
+    setActiveBandeja(bandeja)
+    if (requiereAccionActivo) setFilters({ estudio_filtro: 'todos', page: 1 })
+  }
+  const verRequiereAccion = () => {
+    setActiveBandeja(null)
+    setFilters({ estudio_filtro: 'requiere_accion', page: 1 })
+  }
+
   // Estado de error
   if (error) {
     return (
@@ -110,8 +125,11 @@ export function ExpedientesListado() {
         activeBandeja={activeBandeja}
         misExpedientes={misExpedientes}
         stats={stats}
-        onBandejaChange={setActiveBandeja}
+        onBandejaChange={elegirBandeja}
         onToggleMisExpedientes={toggleMisExpedientes}
+        vistaGestor={vistaGestor}
+        requiereAccionActivo={requiereAccionActivo}
+        onRequiereAccion={verRequiereAccion}
       />
 
       {/* Filtros (sin chips de estado, ahora están en bandejas) */}
