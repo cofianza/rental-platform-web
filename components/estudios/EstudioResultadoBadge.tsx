@@ -1,7 +1,7 @@
 /**
  * EstudioResultadoBadge — badge tipo pill (punto + label) del estado/resultado
  * del estudio de un expediente. Compartido por la columna "Estudio" del listado
- * fusionado y donde se necesite. Si no hay estudio → "Sin estudio".
+ * fusionado y donde se necesite. Si no hay evaluación → "Sin evaluación".
  */
 
 'use client'
@@ -25,7 +25,7 @@ function resolveBadge(
   resultado?: ResultadoEstudio | null,
   expirado?: boolean,
 ): { kind: BadgeKind; label: string } {
-  if (!estado && !resultado) return { kind: 'sin', label: 'Sin estudio' }
+  if (!estado && !resultado) return { kind: 'sin', label: 'Sin evaluación' }
   // Flujo §11/§12: el prospecto no autorizó dentro del plazo. Sin esto seguía
   // diciendo "Esperando autorización" para siempre.
   if (expirado && (!resultado || resultado === 'pendiente')) return { kind: 'expirado', label: 'Expirado' }

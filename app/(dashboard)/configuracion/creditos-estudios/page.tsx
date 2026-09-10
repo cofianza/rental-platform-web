@@ -193,7 +193,7 @@ export default function CreditosEstudiosPage() {
             <div>
               <p className="text-sm text-gray-500">Saldo total</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">{saldo?.saldo_total ?? 0}</p>
-              <p className="text-xs text-gray-500 mt-1">estudios disponibles</p>
+              <p className="text-xs text-gray-500 mt-1">créditos disponibles</p>
             </div>
             <div className="p-3 rounded-full bg-primary-100 text-primary-600">
               <IconCheckCircle size={28} />

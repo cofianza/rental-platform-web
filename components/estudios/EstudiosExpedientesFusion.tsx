@@ -37,7 +37,7 @@ const CHIPS: { id: EstudioFiltro; label: string }[] = [
   { id: 'en_proceso', label: 'En proceso' },
   { id: 'rechazado', label: 'No aprobables' },
   { id: 'condicionado', label: 'Condicionados' },
-  { id: 'sin_estudio', label: 'Sin estudio' },
+  { id: 'sin_estudio', label: 'Sin evaluación' },
 ]
 
 export function EstudiosExpedientesFusion() {
@@ -82,6 +82,7 @@ export function EstudiosExpedientesFusion() {
   // Tasa de aprobación honesta: aprobados / decididos.
   const decididos = stats ? stats.aprobados + stats.rechazados + stats.condicionados : 0
   const tasa = decididos > 0 ? Math.round((stats!.aprobados / decididos) * 1000) / 10 : null
+  const tasaNoAprobable = decididos > 0 ? Math.round((stats!.rechazados / decididos) * 1000) / 10 : null
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
 
   if (error) {
@@ -114,7 +115,11 @@ export function EstudiosExpedientesFusion() {
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
             <IconSearch size={14} />
-            {saldo ? saldo.saldo_total : saldoError ? '—' : '…'} estudios disponibles
+            {saldo
+              ? `${saldo.saldo_total} ${saldo.saldo_total === 1 ? 'crédito disponible' : 'créditos disponibles'}`
+              : saldoError
+                ? '— créditos disponibles'
+                : '… créditos disponibles'}
           </span>
           {puedeEditar && (
             <button
@@ -128,30 +133,34 @@ export function EstudiosExpedientesFusion() {
         </div>
       </div>
 
-      {/* Stat cards (estudios de mis expedientes) */}
+      {/* Tarjetas: cuentan EVALUACIONES. Las que tienen chip equivalente lo
+          activan al hacer clic, para no tener dos controles que parecen
+          filtrar y solo uno lo hace. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Este mes" value={stats?.este_mes ?? 0} sub="Estudios iniciados" />
+        <StatCard label="Este mes" value={stats?.este_mes ?? 0} sub="Evaluaciones iniciadas" />
         <StatCard
           label="Aprobados"
           value={stats?.aprobados ?? 0}
           color="text-primary-600"
           sub={tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
+          activo={activeChip === 'aprobado'}
+          onClick={() => setFilters({ estudio_filtro: 'aprobado', page: 1 })}
         />
         <StatCard
           label="En proceso"
           value={stats?.por_resultado?.pendiente ?? stats?.en_proceso ?? 0}
           color="text-blue-600"
           sub="Esperando al prospecto o al buró"
+          activo={activeChip === 'en_proceso'}
+          onClick={() => setFilters({ estudio_filtro: 'en_proceso', page: 1 })}
         />
         <StatCard
           label="No aprobables"
           value={stats?.rechazados ?? 0}
           color="text-red-500"
-          sub={
-            stats && stats.condicionados > 0
-              ? `${stats.condicionados} condicionado${stats.condicionados === 1 ? '' : 's'}`
-              : 'Sin condicionados'
-          }
+          sub={tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
+          activo={activeChip === 'rechazado'}
+          onClick={() => setFilters({ estudio_filtro: 'rechazado', page: 1 })}
         />
       </div>
 
@@ -214,17 +223,37 @@ function StatCard({
   value,
   sub,
   color = 'text-gray-900',
+  activo = false,
+  onClick,
 }: {
   label: string
   value: number
   sub: string
   color?: string
+  activo?: boolean
+  onClick?: () => void
 }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+  const contenido = (
+    <>
       <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
       <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
       <div className="mt-1 text-xs text-gray-500">{sub}</div>
-    </div>
+    </>
+  )
+  if (!onClick) {
+    return <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">{contenido}</div>
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activo}
+      className={cn(
+        'rounded-xl border bg-white px-5 py-4 text-left transition-colors hover:border-primary-600',
+        activo ? 'border-primary-600 ring-1 ring-primary-600' : 'border-gray-200',
+      )}
+    >
+      {contenido}
+    </button>
   )
 }

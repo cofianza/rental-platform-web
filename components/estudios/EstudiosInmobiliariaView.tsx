@@ -153,7 +153,7 @@ export function EstudiosInmobiliariaView({
           {showSaldo && (
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
               <IconSearch size={14} />
-              {saldo ? saldo.saldo_total : '…'} estudios disponibles
+              {saldo ? saldo.saldo_total : '…'} créditos disponibles
             </span>
           )}
           <Link
