@@ -315,6 +315,7 @@ export function ExpedientesTable({
                     estado={expediente.estudio_vigente?.estado}
                     resultado={expediente.estudio_vigente?.resultado}
                     score={expediente.estudio_vigente?.score}
+                    expirado={expediente.estudio_vigente?.expirado}
                   />
                   {expediente.depende_de && (
                     <span
@@ -406,6 +407,7 @@ export function ExpedientesTable({
                   estado={expediente.estudio_vigente?.estado}
                   resultado={expediente.estudio_vigente?.resultado}
                   score={expediente.estudio_vigente?.score}
+                  expirado={expediente.estudio_vigente?.expirado}
                 />
               </div>
             </div>

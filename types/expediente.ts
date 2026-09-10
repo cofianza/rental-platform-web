@@ -15,6 +15,8 @@ export interface IEstudioVigente {
   resultado: ResultadoEstudio
   score?: number | null
   created_at: string
+  /** La autorización del prospecto venció sin firmarse (Flujo §12). Lo calcula el RPC de la lista. */
+  expirado?: boolean
 }
 
 /** Filtro de la vista fusionada por el estado del estudio vigente. */
