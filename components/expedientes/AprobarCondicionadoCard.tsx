@@ -86,16 +86,11 @@ export function AprobarCondicionadoCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
-          <p className="text-sm text-gray-700 mb-2">
-            Condicionado = riesgo medio: Cofianza puede respaldar el arriendo, pero conviene reforzar el perfil.
-            Tienes tres salidas: <strong>aprobar</strong> (pasa a Aprobado y generas el contrato),
-            <strong> pedir soportes</strong> al solicitante, o <strong>sumar un co-arrendatario</strong>.
-          </p>
           <p className="text-sm text-gray-700 mb-3">
-            El buró marcó la solicitud como condicionada. Tú o el solicitante pueden invitar a un co-arrendatario
-            (abajo) para mejorar el perfil combinado. Si decides proceder igual, <strong>aprueba el estudio</strong>: pasará a
-            Aprobado y desde la pestaña <strong>Contratos</strong> generarás el contrato con el formulario completo
-            (modalidad de fianza y quién paga los servicios públicos).
+            Condicionado = riesgo medio: Cofianza puede respaldar el arriendo, pero conviene reforzar el perfil.
+            Tienes tres salidas: <strong>aprobar</strong> (pasa a Aprobado y generas el contrato en la pestaña
+            <strong> Contratos</strong>), <strong>pedir soportes</strong> al solicitante, o{' '}
+            <strong>sumar un co-arrendatario</strong> (abajo).
           </p>
 
           <div className="flex flex-wrap gap-2">
