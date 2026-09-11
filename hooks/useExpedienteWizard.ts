@@ -490,10 +490,18 @@ export function useExpedienteWizard() {
       // peor que entrar sin estudio, así que navegamos igual y le decimos al
       // gestor qué le quedó pendiente (puede elegir el pago desde el panel).
       try {
-        await expedienteService.iniciarEstudio(expediente.id, {
+        const inicio = await expedienteService.iniciarEstudio(expediente.id, {
           forma_pago: data.step3.forma_pago as FormaPagoEstudio,
           notas: data.step3.notas || undefined,
         })
+        // Opción B (Adenda 2 §7): el gestor paga ya en Mercado Pago. Al volver,
+        // /pago/resultado concilia el pago y lo trae de vuelta al estudio.
+        if (inicio.payment_link_url) {
+          clearDraft()
+          toast.success('Estudio creado. Te llevamos a Mercado Pago para pagarlo.')
+          window.location.assign(inicio.payment_link_url)
+          return expediente.id
+        }
         // La respuesta de iniciarEstudio ({ expediente, estudio, forma_pago,
         // cita_omitida }) no confirma ninguna entrega — ni WhatsApp/correo ni
         // el enlace de pago de la opción C: la API los manda fire-and-forget.

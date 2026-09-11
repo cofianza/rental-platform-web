@@ -64,9 +64,10 @@ const OPCIONES_PAGO: {
   {
     valor: 'inmobiliaria',
     letra: 'B',
-    titulo: 'El costo queda a mi cargo',
+    // Adenda 2 §7: la opción B se paga en línea; "a cuenta" no se aprobó.
+    titulo: 'Pagar ahora con Mercado Pago',
     descripcion:
-      'Sin cobro en línea: el valor se registra a tu cuenta con Cofianza y lo verás en Pagos a Cofianza. El estudio arranca de inmediato.',
+      'Pagas tú el estudio en línea (tarjeta o PSE). Al terminar el asistente te llevamos al pago; el estudio sigue cuando se confirme.',
     Icono: IconBank,
   },
   {

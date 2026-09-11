@@ -49,8 +49,13 @@ class PagoEstudioService {
     return response.data
   }
 
-  async asumir(expedienteId: string): Promise<IPago> {
-    const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pago-estudio/asumir`)
+  /** Opción B (Adenda 2 §7): el gestor paga ahora por la pasarela. Devuelve el
+   *  pago con `payment_link_url` para abrir el checkout. `reemplazarPendiente`
+   *  cancela antes el enlace vivo del prospecto. No hay "a cuenta". */
+  async pagar(expedienteId: string, reemplazarPendiente = false): Promise<IPago> {
+    const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pago-estudio/pagar`, {
+      reemplazar_pendiente: reemplazarPendiente,
+    })
     return response.data
   }
 
@@ -73,11 +78,6 @@ class PagoEstudioService {
       `/expedientes/${expedienteId}/pago-estudio/reenviar`,
       body || {},
     )
-    return response.data
-  }
-
-  async cancelarYAsumir(expedienteId: string): Promise<IPago> {
-    const response = await apiClient.post<IPago>(`/expedientes/${expedienteId}/pago-estudio/cancelar-y-asumir`)
     return response.data
   }
 

@@ -10,12 +10,13 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
+import { useAuthStore } from '@/stores/auth.store'
 
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
   /** Rol del usuario actual — el solicitante ve un CTA "Pagar ahora" en lugar
-   *  de los controles admin (enviar link / asumir costo). */
+   *  de los controles del gestor (enviar link / pagar él). */
   userRole?: string
   /** Si true, renderiza null cuando no hay acción relevante (sin_definir /
    *  cancelado). Útil para incluir la sección en el tab Resumen sin dejar
@@ -36,19 +37,13 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [error, setError] = useState<string | null>(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
-  // Confirmación inline de "La inmobiliaria paga": antes de registrar, se
-  // explica qué va a pasar (registro interno + autorización auto-enviada).
-  const [confirmAsumir, setConfirmAsumir] = useState(false)
-
   const puedeUsarCreditos = userRole === 'inmobiliaria'
-  // "Yo asumo el costo" queda OCULTO (no eliminado — el botón y su flujo siguen
-  // abajo intactos) para:
-  //   - inmobiliaria → ya paga al comprar créditos (sería redundante)
-  //   - propietario  → decisión: el propietario solo envía link al solicitante
-  // Para reactivarlo en alguno de los dos, quita su rol de esta condición.
-  // Sigue disponible para admin/operador.
-  const mostrarAsumir = userRole !== 'inmobiliaria' && userRole !== 'propietario'
-  const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (mostrarAsumir ? 1 : 0) + 1
+  // Opción B (Adenda 2 §7): el gestor paga él mismo por Mercado Pago. Ya no
+  // existe "el costo queda a mi cargo" (a cuenta): no se aprobó.
+  const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + 2
+  // El checkout pendiente es del propio gestor (opción B), no un enlace
+  // enviado al prospecto: se ofrece reabrirlo en vez de "reenviar correo".
+  const miEmail = useAuthStore((s) => s.user?.email)?.toLowerCase()
 
   const fetchEstado = useCallback(async () => {
     try {
@@ -114,16 +109,17 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }
 
-  const handleAsumir = async () => {
+  // Opción B: abre el checkout de Mercado Pago. Al volver, /pago/resultado
+  // concilia el pago y trae al gestor de vuelta a este estudio.
+  const handlePagar = async (reemplazarPendiente = false) => {
     setIsSubmitting(true)
     setError(null)
     try {
-      await pagoEstudioService.asumir(expedienteId)
-      await fetchEstado()
-      onPagoCompletado?.()
+      const pago = await pagoEstudioService.pagar(expedienteId, reemplazarPendiente)
+      if (!pago.payment_link_url) throw new Error('La pasarela no devolvió el enlace de pago. Intenta de nuevo.')
+      window.location.assign(pago.payment_link_url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrar pago')
-    } finally {
+      setError(err instanceof Error ? err.message : 'No se pudo abrir el pago')
       setIsSubmitting(false)
     }
   }
@@ -157,20 +153,6 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }
 
-  const handleCancelarYAsumir = async () => {
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      await pagoEstudioService.cancelarYAsumir(expedienteId)
-      await fetchEstado()
-      onPagoCompletado?.()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cancelar y asumir')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   // Inmobiliaria: el "cancelar" del estado pendiente cobra con crédito (no asume gratis).
   const handleCancelarYLiberar = async () => {
     setIsSubmitting(true)
@@ -186,10 +168,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }
 
-  // Inmobiliaria paga con crédito; los demás (propietario/admin) asumen el costo.
+  // Inmobiliaria paga con crédito; los demás (propietario/admin) pagan ellos
+  // mismos por Mercado Pago (opción B).
   const cancelarConCredito = userRole === 'inmobiliaria'
-  const onCancelar = cancelarConCredito ? handleCancelarYLiberar : handleCancelarYAsumir
-  const labelCancelar = cancelarConCredito ? 'Cancelar y liberar con crédito' : 'Cancelar y asumir costo'
+  const onCancelar = cancelarConCredito ? handleCancelarYLiberar : () => { void handlePagar(true) }
+  const labelCancelar = cancelarConCredito ? 'Cancelar y liberar con crédito' : 'Cancelar y pagar yo (Mercado Pago)'
 
   if (isLoading) {
     return (
@@ -200,7 +183,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   if (!estado) return null
 
   // ── Vista solicitante ─────────────────────────────────────────────────
-  // El solicitante no puede "asumir" ni "enviar link". Solo paga si hay
+  // El solicitante no puede "pagar por el gestor" ni "enviar link". Solo paga si hay
   // link de Stripe generado, o espera a que definan la forma de pago.
   if (userRole === 'solicitante') {
     if (hideIfNoAction && (estado.estado === 'sin_definir' || estado.estado === 'cancelado' || estado.estado === 'esperando_autorizacion')) {
@@ -236,8 +219,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             </div>
           </div>
 
-          {!confirmAsumir ? (
-            <div className={`grid grid-cols-1 ${numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+          <div className={`grid grid-cols-1 ${numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
               {/* Liberar con credito (inmobiliaria) */}
               {puedeUsarCreditos && (
                 (saldoCreditos?.saldo_total ?? 0) > 0 ? (
@@ -281,20 +263,18 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   </Link>
                 )
               )}
-              {mostrarAsumir && (
-                <button
-                  onClick={() => setConfirmAsumir(true)}
-                  disabled={isSubmitting}
-                  className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
-                >
-                  <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-900">El costo queda a mi cargo</span>
-                  <span className="text-xs text-gray-500">Sin cobro en línea</span>
-                  <span className="text-[11px] text-gray-500 leading-snug">Se registra a tu cuenta con Cofianza; el estudio arranca de inmediato.</span>
-                </button>
-              )}
+              <button
+                onClick={() => { void handlePagar() }}
+                disabled={isSubmitting}
+                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
+              >
+                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
+                <span className="text-xs text-gray-500">Tarjeta o PSE</span>
+                <span className="text-[11px] text-gray-500 leading-snug">El estudio sigue cuando se confirma el pago.</span>
+              </button>
               <button
                 onClick={() => setShowLinkModal(true)}
                 disabled={isSubmitting}
@@ -307,38 +287,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 <span className="text-xs text-gray-500">Él paga con tarjeta o PSE</span>
                 <span className="text-[11px] text-gray-500 leading-snug">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
               </button>
-            </div>
-          ) : (
-            /* Confirmación de "Yo asumo el costo": explica las consecuencias
-               ANTES de registrar — evita clicks a ciegas. Solo la alcanzan
-               propietario/admin (la inmobiliaria no tiene esta opción). */
-            <div className="bg-white border-2 border-primary-200 rounded-lg p-5">
-              <p className="text-sm font-semibold text-gray-900 mb-2">
-                ¿Confirmas que asumes el costo del estudio ({estado.monto_formateado} COP)?
-              </p>
-              <ul className="text-sm text-gray-600 space-y-1.5 mb-4 list-disc pl-5">
-                <li>No hay cobro en línea: el valor queda registrado a tu cuenta con Cofianza y lo verás en <span className="font-medium">Pagos a Cofianza</span>.</li>
-                <li>Le enviaremos <span className="font-medium">automáticamente</span> el enlace de autorización al arrendatario (correo y WhatsApp).</li>
-                <li>Cuando él firme la autorización, la evaluación crediticia corre solo y te avisamos del resultado.</li>
-              </ul>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setConfirmAsumir(false); void handleAsumir() }}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50"
-                >
-                  Sí, registrar y continuar
-                </button>
-                <button
-                  onClick={() => setConfirmAsumir(false)}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  Volver
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -381,15 +330,13 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               </button>
               </>
             )}
-            {mostrarAsumir && (
-              <button
-                onClick={() => { void handleAsumir() }}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
-              >
-                El costo queda a mi cargo
-              </button>
-            )}
+            <button
+              onClick={() => { void handlePagar() }}
+              disabled={isSubmitting}
+              className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
+            >
+              Pagar yo con Mercado Pago
+            </button>
           </div>
         </div>
       )}
@@ -422,8 +369,26 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         </div>
       )}
 
-      {/* Pendiente */}
-      {estado.estado === 'pendiente' && (
+      {/* Pendiente — checkout del propio gestor (opción B) */}
+      {estado.estado === 'pendiente' && !!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-amber-800">Tu pago está pendiente en Mercado Pago</p>
+            <p className="text-xs text-amber-600">{estado.monto_formateado} COP — el estudio sigue cuando se confirme.</p>
+          </div>
+          {estado.pago?.payment_link_url && (
+            <a
+              href={estado.pago.payment_link_url}
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+            >
+              Abrir Mercado Pago
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Pendiente — enlace enviado al arrendatario */}
+      {estado.estado === 'pendiente' && !(!!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail) && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
             <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -502,7 +467,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             <div>
               <p className="text-sm font-medium text-blue-800">Pago en proceso</p>
               <p className="text-xs text-blue-600">
-                {estado.monto_formateado} COP — el arrendatario inició el pago (PSE/efectivo); se confirma automáticamente.
+                {estado.monto_formateado} COP — el pago se inició (PSE/efectivo); se confirma automáticamente.
               </p>
             </div>
           </div>
@@ -537,11 +502,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               Reenviar link
             </button>
             <button
-              onClick={handleAsumir}
+              onClick={() => { void handlePagar() }}
               disabled={isSubmitting}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              Inmobiliaria asume
+              Pagar yo con Mercado Pago
             </button>
           </div>
         </div>

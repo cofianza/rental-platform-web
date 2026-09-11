@@ -597,7 +597,7 @@ export default function ExpedienteDetallePage() {
                 )}
                 {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
                     estudio, la inmobiliaria/propietario decide aquí quién
-                    asume el costo (crédito / asumir / link al arrendatario)
+                    asume el costo (crédito / Mercado Pago / link al arrendatario)
                     sin tener que descubrir el tab Pagos.
                     Solo mientras el estudio NO haya corrido: una vez el
                     expediente pasa a revisión/aprobado/cerrado, el estudio ya

@@ -467,12 +467,15 @@ class ExpedienteService {
     estudio: { id: string }
     forma_pago: 'credito' | 'inmobiliaria' | 'prospecto'
     cita_omitida: boolean
+    /** Opción B: checkout de Mercado Pago que el gestor debe abrir para pagar. */
+    payment_link_url?: string | null
   }> {
     const response = await apiClient.post<{
       expediente: { id: string; numero: string }
       estudio: { id: string }
       forma_pago: 'credito' | 'inmobiliaria' | 'prospecto'
       cita_omitida: boolean
+      payment_link_url?: string | null
     }>(`/expedientes/${expedienteId}/iniciar-estudio`, input)
     return response.data
   }
