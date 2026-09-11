@@ -4,8 +4,8 @@
  * Con la plantilla unica V2, el flujo se reduce a: el usuario elige
  * fecha de inicio y duracion, y el backend genera el PDF con la
  * plantilla activa por defecto. Datos del arrendador, inmueble,
- * arrendatario y coarrendatario salen del expediente; el resto
- * (afianzamiento, comision) sale de configuracion_sistema.
+ * arrendatario y coarrendatario salen del expediente; la comisión mensual y la
+ * prima, del estudio (las mismas del CRC).
  */
 
 'use client'
@@ -21,27 +21,23 @@ import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/c
 
 type TipoGeneracion = 'cofianza' | 'otrosi'
 
-// Descripciones espejo de la tabla `modalidades_fianza` del backend (fuente de
-// verdad para el contrato: comision_texto/prima_texto/cubre_danos). Si esos
-// valores cambian en BD, actualizarlos también aquí.
+// Espejo de la cobertura de `modalidades_fianza` (cubre_danos). La modalidad ya
+// no fija el precio: la comisión mensual y la prima salen de cómo se aprobó el
+// estudio, las mismas del certificado CRC (Adendas 1 §5 y 2 §6).
 const MODALIDADES: {
   value: ModalidadFianza
   label: string
-  comision: string
-  prima: string
   cubreDanos: boolean
   nota?: string
 }[] = [
-  { value: 'plena', label: 'Cofianza Plena', comision: '5%', prima: '50%', cubreDanos: false },
+  { value: 'plena', label: 'Cofianza Plena', cubreDanos: false },
   {
     value: 'compartida',
     label: 'Cofianza Compartida',
-    comision: '4%',
-    prima: '60%',
     cubreDanos: false,
     nota: 'Requiere registrar un co-titular de la fianza.',
   },
-  { value: 'plus', label: 'Cofianza Plus', comision: '6%', prima: '50%', cubreDanos: true },
+  { value: 'plus', label: 'Cofianza Plus', cubreDanos: true },
 ]
 
 const SERVICIOS_DEFAULT: Record<string, CargoServicio> = Object.fromEntries(
@@ -257,12 +253,12 @@ export function GenerarContratoModal({
                 return (
                   <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
                     <p>
-                      <span className="font-medium text-gray-800">Comisión {m.comision}</span> ·{' '}
-                      <span className="font-medium text-gray-800">Prima {m.prima}</span>
-                    </p>
-                    <p className="mt-0.5">
                       Cubre cánones, servicios públicos, administración PH y cláusula penal
                       {m.cubreDanos ? ', más daños al inmueble.' : '. No cubre daños al inmueble.'}
+                    </p>
+                    <p className="mt-0.5">
+                      La comisión mensual y la prima de vinculación son las del certificado del estudio (CRC),
+                      según cómo se aprobó.
                     </p>
                     {m.nota && <p className="mt-0.5 text-primary-700">{m.nota}</p>}
                   </div>
