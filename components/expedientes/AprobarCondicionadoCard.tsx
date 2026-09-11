@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/Modal'
 import { expedienteService } from '@/services/expedienteService'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
+import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -41,6 +42,8 @@ export function AprobarCondicionadoCard({
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
+  // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
+  const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
@@ -60,16 +63,21 @@ export function AprobarCondicionadoCard({
   }
 
   const handleAprobar = async () => {
+    if (!evaluacionCompleta(evaluacion)) return
     setLoading(true)
     try {
       // Sin datos de contrato: solo aprueba. El contrato se genera después en
       // la pestaña Contratos con el formulario completo.
-      await expedienteService.aprobarCondicionado(expedienteId, {
+      const res = await expedienteService.aprobarCondicionado(expedienteId, {
         fundamento: fundamento.trim(),
         documentos_consultados: documentos,
+        evaluacion,
       })
       setConfirmAprobarOpen(false)
-      toast.success('Estudio aprobado. Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).')
+      const p = res.puntaje_revision_manual
+      toast.success(
+        `Estudio aprobado.${p?.puntaje_normalizado != null ? ` Puntaje recalculado: ${p.puntaje_normalizado} (sobre ${p.denominador} puntos).` : ''} Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).`,
+      )
       onAprobado?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
@@ -188,6 +196,7 @@ export function AprobarCondicionadoCard({
           />
         </div>
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
+        <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
           <button
             type="button"
@@ -200,7 +209,7 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || fundamento.trim().length < 10}
+            disabled={loading || fundamento.trim().length < 10 || !evaluacionCompleta(evaluacion)}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}

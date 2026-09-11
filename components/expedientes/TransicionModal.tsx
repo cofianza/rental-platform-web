@@ -10,15 +10,22 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
-import type { ITransicionDisponible } from '@/types/expediente'
+import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
 import { DocumentosConsultados } from './DocumentosConsultados'
+import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 
 export interface TransicionModalProps {
   isOpen: boolean
   onClose: () => void
   estadoActual: EstadoExpediente
   transicionesDisponibles: ITransicionDisponible[]
-  onConfirmar: (estadoDestino: EstadoExpediente, comentario: string, etiqueta?: string, documentosConsultados?: string[]) => Promise<void>
+  onConfirmar: (
+    estadoDestino: EstadoExpediente,
+    comentario: string,
+    etiqueta?: string,
+    documentosConsultados?: string[],
+    evaluacion?: IEvaluacionRevisionManual,
+  ) => Promise<void>
   isLoading?: boolean
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
    *  documentos consultados (Adenda 2 §5.1). */
@@ -42,6 +49,7 @@ export function TransicionModal({
   const [labelSeleccionado, setLabelSeleccionado] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
+  const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [error, setError] = useState<string | null>(null)
   // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
   const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
@@ -51,6 +59,7 @@ export function TransicionModal({
     setLabelSeleccionado(null)
     setComentario('')
     setDocumentos([])
+    setEvaluacion({})
     setError(null)
     onClose()
   }
@@ -59,6 +68,8 @@ export function TransicionModal({
     (t) => t.etiqueta === labelSeleccionado,
   )
   const estadoSeleccionado = transicionSeleccionada?.estado_destino ?? null
+  // Adenda 2 §4.3: aprobar una revisión manual recalcula el puntaje con V7/V9.
+  const pideEvaluacion = esRevisionManual && estadoSeleccionado === 'aprobado'
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
@@ -71,12 +82,18 @@ export function TransicionModal({
       return
     }
 
+    if (pideEvaluacion && !evaluacionCompleta(evaluacion)) {
+      setError('Puntúa la estabilidad laboral y el historial de arrendamiento')
+      return
+    }
+
     setError(null)
     await onConfirmar(
       estadoSeleccionado,
       comentario.trim(),
       transicionSeleccionada?.etiqueta,
       esRevisionManual ? documentos : undefined,
+      pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
     )
     handleClose()
   }
@@ -173,6 +190,10 @@ export function TransicionModal({
 
         {esRevisionManual && expedienteId && (
           <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={isLoading} />
+        )}
+
+        {pideEvaluacion && (
+          <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={isLoading} />
         )}
 
         {/* Mensaje de error */}

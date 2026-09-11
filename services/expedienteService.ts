@@ -20,6 +20,8 @@ import type {
   ITimelineEvento,
   ITimelinePagination,
   IHistorialTransicion,
+  IEvaluacionRevisionManual,
+  IPuntajeRevisionManual,
 } from '@/types/expediente'
 
 // ============================================
@@ -236,6 +238,7 @@ class ExpedienteService {
         comentario: data.comentario,
         ...(data.etiqueta ? { etiqueta: data.etiqueta } : {}),
         ...(data.documentos_consultados ? { documentos_consultados: data.documentos_consultados } : {}),
+        ...(data.evaluacion ? { evaluacion: data.evaluacion } : {}),
       }
     )) as any
 
@@ -521,17 +524,19 @@ class ExpedienteService {
    */
   async aprobarCondicionado(
     expedienteId: string,
-    revision: { fundamento: string; documentos_consultados: string[] },
+    revision: { fundamento: string; documentos_consultados: string[]; evaluacion: IEvaluacionRevisionManual },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estado: 'aprobado' }
     contrato_id: string | null
+    puntaje_revision_manual?: IPuntajeRevisionManual | null
   }> {
     // Sin datosContrato: solo aprueba (transición a 'aprobado'); el contrato se
     // genera luego desde la pestaña Contratos con el formulario completo.
     const response = await apiClient.post<{
       expediente: { id: string; numero: string; estado: 'aprobado' }
       contrato_id: string | null
+      puntaje_revision_manual?: IPuntajeRevisionManual | null
     }>(`/expedientes/${expedienteId}/aprobar-condicionado`, { ...revision, ...(datosContrato ?? {}) })
     return response.data
   }

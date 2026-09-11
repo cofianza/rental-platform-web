@@ -63,6 +63,7 @@ import type {
   IExpedienteDetalle,
   ITransicionDisponible,
   EstadoExpediente,
+  IEvaluacionRevisionManual,
 } from '@/types/expediente'
 
 export default function ExpedienteDetallePage() {
@@ -222,6 +223,7 @@ export default function ExpedienteDetallePage() {
     comentario: string,
     etiqueta?: string,
     documentosConsultados?: string[],
+    evaluacion?: IEvaluacionRevisionManual,
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -230,6 +232,7 @@ export default function ExpedienteDetallePage() {
         comentario,
         etiqueta,
         documentos_consultados: documentosConsultados,
+        evaluacion,
       })
       setExpediente(expedienteActualizado)
 

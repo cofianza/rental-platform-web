@@ -287,6 +287,20 @@ export interface IEjecutarTransicion {
   etiqueta?: string
   /** Adenda 2 §5.1: al resolver un condicionado, lo que el analista consultó. */
   documentos_consultados?: string[]
+  /** Adenda 2 §4.3: obligatoria al aprobar un condicionado. */
+  evaluacion?: IEvaluacionRevisionManual
+}
+
+/** Adenda 2 §4.3: V7 y V9 que puntúa el analista (códigos de OPCIONES_V7/V9 del API). */
+export interface IEvaluacionRevisionManual {
+  estabilidad_laboral: string
+  arrendamiento_previo: string
+}
+
+/** Recálculo que devuelve el API al aprobar una revisión manual. */
+export interface IPuntajeRevisionManual {
+  puntaje_normalizado: number | null
+  denominador: number
 }
 
 /**
