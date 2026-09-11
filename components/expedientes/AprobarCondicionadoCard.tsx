@@ -2,11 +2,12 @@
  * AprobarCondicionadoCard — visible para propietario/inmobiliaria/admin/operador
  * cuando el expediente está en 'condicionado'.
  *
- * Flujo: el buró devolvió el estudio como condicionado. La inmobiliaria decide
- * si proceder de todos modos. Al aprobar, el expediente pasa a 'aprobado'
- * (SIN generar contrato aquí) y el contrato se genera luego desde la pestaña
- * Contratos con el formulario completo (modalidad de fianza + servicios
- * públicos / quién paga). La otra salida es invitar a un co-arrendatario.
+ * Adenda 2 §5: la revisión manual la resuelve SOLO un analista de Cofianza
+ * (admin/operador), que es quien ve "Aprobar estudio". El dueño ve el estado y
+ * puede aportar: pedir soportes al solicitante o sumar un co-arrendatario.
+ * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí) y el
+ * contrato se genera luego desde la pestaña Contratos con el formulario
+ * completo (modalidad de fianza + servicios públicos / quién paga).
  */
 
 'use client'
@@ -37,13 +38,10 @@ export function AprobarCondicionadoCard({
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
 
-  const puedeAprobar =
-    userRol === 'administrador' ||
-    userRol === 'operador_analista' ||
-    userRol === 'propietario' ||
-    userRol === 'inmobiliaria'
+  const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
+  const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
 
-  if (expedienteEstado !== 'condicionado' || !puedeAprobar) return null
+  if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
 
   const handleEnviarEnlace = async () => {
     setEnviandoEnlace(true)
@@ -88,8 +86,19 @@ export function AprobarCondicionadoCard({
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
-          {sinInfoBuro ? (
+          <h3 className="text-base font-semibold text-gray-900 mb-0.5">
+            {esCofianza ? 'Estudio condicionado — decisión pendiente' : 'Estudio condicionado — en revisión por Cofianza'}
+          </h3>
+          {!esCofianza ? (
+            <p className="text-sm text-gray-700 mb-3">
+              {sinInfoBuro
+                ? 'El buró no tiene información crediticia de esta persona (no es un rechazo). '
+                : 'Riesgo medio. '}
+              Un analista de Cofianza revisa el caso y decide. Mientras tanto puedes{' '}
+              {sinInfoBuro && <><strong>consultar el otro buró</strong>, </>}
+              <strong>pedir soportes</strong> al solicitante o <strong>sumar un co-arrendatario</strong> (abajo).
+            </p>
+          ) : sinInfoBuro ? (
             <p className="text-sm text-gray-700 mb-3">
               El buró no tiene información crediticia de esta persona: no es un rechazo, pero tampoco hay score
               para medir el riesgo. Puedes <strong>consultar el otro buró</strong>, <strong>pedir soportes</strong> al
@@ -106,18 +115,20 @@ export function AprobarCondicionadoCard({
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setConfirmAprobarOpen(true)}
-              disabled={loading || enviandoEnlace}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
-            >
-              {loading ? 'Aprobando…' : 'Aprobar estudio'}
-              {!loading && (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              )}
-            </button>
+            {esCofianza && (
+              <button
+                onClick={() => setConfirmAprobarOpen(true)}
+                disabled={loading || enviandoEnlace}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {loading ? 'Aprobando…' : 'Aprobar estudio'}
+                {!loading && (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                )}
+              </button>
+            )}
             <button
               onClick={handleEnviarEnlace}
               disabled={loading || enviandoEnlace}

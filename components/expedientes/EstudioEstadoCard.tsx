@@ -103,7 +103,7 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
-function getSiguientePaso(estudio: IEstudio): string {
+function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
   const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
@@ -127,7 +127,12 @@ function getSiguientePaso(estudio: IEstudio): string {
       const base = `Estudio aprobado por ${buro}. Siguiente paso: generar contrato.`
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
-    if (estudio.resultado === 'condicionado') return 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
+    // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
+    if (estudio.resultado === 'condicionado') {
+      return esCofianza
+        ? 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
+        : 'Estudio condicionado. Lo revisa un analista de Cofianza.'
+    }
     if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'
   }
@@ -374,7 +379,10 @@ function EstudioPanel({
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
-  const siguientePaso = getSiguientePaso(estudio)
+  const siguientePaso = getSiguientePaso(
+    estudio,
+    userRol === 'administrador' || userRol === 'operador_analista',
+  )
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
 
   return (
