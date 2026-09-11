@@ -1,7 +1,8 @@
 /**
  * ScoreGauge
  * Indicador visual semicircular del score CreditVision
- * Rojo (0-399) | Amarillo (400-599) | Verde (600-999)
+ * Rojo (0-449) | Amarillo (450-599) | Verde (600-999)
+ * Adenda 2 §2: bajo 450 es rechazo; 450-599 revisión manual.
  */
 
 'use client'
@@ -22,7 +23,7 @@ const SIZES = {
 
 function getScoreColor(score: number): { stroke: string; text: string; bg: string; label: string } {
   if (score >= 600) return { stroke: '#16a34a', text: 'text-green-600', bg: 'bg-green-50', label: 'Aprobado' }
-  if (score >= 400) return { stroke: '#d97706', text: 'text-amber-600', bg: 'bg-amber-50', label: 'Condicionado' }
+  if (score >= 450) return { stroke: '#d97706', text: 'text-amber-600', bg: 'bg-amber-50', label: 'Condicionado' }
   return { stroke: '#dc2626', text: 'text-red-600', bg: 'bg-red-50', label: 'No aprobable' }
 }
 

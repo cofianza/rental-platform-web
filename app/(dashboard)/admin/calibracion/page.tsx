@@ -45,6 +45,8 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   CANON_MAX_TRANSITORIO: 'Canon máximo sin coafianzamiento',
   UMBRAL_APROBACION_AUTOMATICA: 'Umbral de aprobación automática',
   UMBRAL_ZONA_GRIS: 'Inicio de la zona gris',
+  UMBRAL_SCORE_RECHAZO: 'Score mínimo de la central',
+  UMBRAL_SCORE_REVISION: 'Tope de la banda de revisión por score',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
