@@ -371,7 +371,7 @@ export function AutorizacionSection({
               </p>
               {autorizacion?.metodo_firma && (
                 <p className="text-xs text-green-600">
-                  Metodo: {METODO_LABELS[autorizacion.metodo_firma] || autorizacion.metodo_firma}
+                  Método: {METODO_LABELS[autorizacion.metodo_firma] || autorizacion.metodo_firma}
                 </p>
               )}
               {autorizacion?.hash_documento && (
@@ -468,7 +468,7 @@ export function AutorizacionSection({
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
           >
             <IconAlertTriangle size={14} />
-            Revocar autorizacion
+            Revocar autorización
           </button>
 
           {/* Revocar dialog */}
