@@ -28,6 +28,8 @@ export interface ExpedienteProgressBarProps {
   /** 3.2: la cita se omitió (visita coordinada por fuera) — el paso "Cita
    *  previa" cuenta como resuelto aunque no exista una cita 'realizada'. */
   citaOmitida?: boolean
+  /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
+  sinInfoBuro?: boolean
   className?: string
 }
 
@@ -36,6 +38,7 @@ export function ExpedienteProgressBar({
   estadoActual,
   estadoPreCancelacion,
   citaOmitida,
+  sinInfoBuro,
   className,
 }: ExpedienteProgressBarProps) {
   const [citaRealizada, setCitaRealizada] = useState(false)
@@ -108,7 +111,11 @@ export function ExpedienteProgressBar({
     return (
       <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
         <p className="text-sm font-semibold text-amber-700">Estudio condicionado</p>
-        <p className="text-xs text-amber-600 mt-0.5">Riesgo medio: se puede aprobar así, pedir soportes o sumar un co-arrendatario.</p>
+        <p className="text-xs text-amber-600 mt-0.5">
+          {sinInfoBuro
+            ? 'El buró no tiene información crediticia de esta persona. No es un rechazo: se decide con otro buró, soportes o un co-arrendatario.'
+            : 'Riesgo medio: se puede aprobar así, pedir soportes o sumar un co-arrendatario.'}
+        </p>
       </div>
     )
   }

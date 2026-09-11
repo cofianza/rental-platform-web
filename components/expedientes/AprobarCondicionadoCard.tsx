@@ -21,6 +21,8 @@ interface AprobarCondicionadoCardProps {
   expedienteId: string
   expedienteEstado: string
   userRol?: string
+  /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
+  sinInfoBuro?: boolean
   onAprobado?: () => void
 }
 
@@ -28,6 +30,7 @@ export function AprobarCondicionadoCard({
   expedienteId,
   expedienteEstado,
   userRol,
+  sinInfoBuro,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -86,12 +89,21 @@ export function AprobarCondicionadoCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado — decisión pendiente</h3>
-          <p className="text-sm text-gray-700 mb-3">
-            Condicionado = riesgo medio: Cofianza puede respaldar el arriendo, pero conviene reforzar el perfil.
-            Tienes tres salidas: <strong>aprobar</strong> (pasa a Aprobado y generas el contrato en la pestaña
-            <strong> Contratos</strong>), <strong>pedir soportes</strong> al solicitante, o{' '}
-            <strong>sumar un co-arrendatario</strong> (abajo).
-          </p>
+          {sinInfoBuro ? (
+            <p className="text-sm text-gray-700 mb-3">
+              El buró no tiene información crediticia de esta persona: no es un rechazo, pero tampoco hay score
+              para medir el riesgo. Puedes <strong>consultar el otro buró</strong>, <strong>pedir soportes</strong> al
+              solicitante, <strong>sumar un co-arrendatario</strong> (abajo) o <strong>aprobar</strong> con lo que
+              tienes (generas el contrato en la pestaña <strong>Contratos</strong>).
+            </p>
+          ) : (
+            <p className="text-sm text-gray-700 mb-3">
+              Condicionado = riesgo medio: Cofianza puede respaldar el arriendo, pero conviene reforzar el perfil.
+              Tienes tres salidas: <strong>aprobar</strong> (pasa a Aprobado y generas el contrato en la pestaña
+              <strong> Contratos</strong>), <strong>pedir soportes</strong> al solicitante, o{' '}
+              <strong>sumar un co-arrendatario</strong> (abajo).
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <button

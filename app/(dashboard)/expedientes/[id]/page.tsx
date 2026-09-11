@@ -50,9 +50,11 @@ import {
   EstudioEstadoCard,
   AuditoriaScoreCard,
 } from '@/components/expedientes'
+import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
+import { estudioService } from '@/services/estudioService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
@@ -142,6 +144,27 @@ export default function ExpedienteDetallePage() {
       .catch(() => { if (!cancel) setSolicitanteExpCount(null) })
     return () => { cancel = true }
   }, [solicitanteId, esRolGestor])
+
+  // Condicionado SIN score = el buró no tenía datos de la persona, no "riesgo
+  // medio". El banner y la tarjeta de decisión cambian el texto con esto.
+  const [sinInfoBuro, setSinInfoBuro] = useState(false)
+  const estadoExpediente = expediente?.estado
+  const actualizadoEn = expediente?.updated_at
+  useEffect(() => {
+    if (estadoExpediente !== 'condicionado') return
+    let cancel = false
+    estudioService
+      .getEstudiosForExpediente(id, 1, 10)
+      .then(({ data }) => {
+        const titular = data
+          .filter((e) => e.estado !== 'cancelado' && e.tipo !== 'con_coarrendatario')
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+        if (!cancel) setSinInfoBuro(!!titular && esCondicionadoSinInfo(titular))
+      })
+      .catch(() => { if (!cancel) setSinInfoBuro(false) })
+    return () => { cancel = true }
+  }, [id, estadoExpediente, actualizadoEn])
+  const condicionadoSinInfo = estadoExpediente === 'condicionado' && sinInfoBuro
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -401,6 +424,7 @@ export default function ExpedienteDetallePage() {
           estadoActual={expediente.estado}
           estadoPreCancelacion={expediente.estado_pre_cancelacion}
           citaOmitida={expediente.cita_omitida}
+          sinInfoBuro={condicionadoSinInfo}
         />
       </div>
 
@@ -596,6 +620,7 @@ export default function ExpedienteDetallePage() {
                     expedienteId={id}
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
+                    sinInfoBuro={condicionadoSinInfo}
                     onAprobado={fetchExpediente}
                   />
                 )}
@@ -830,6 +855,7 @@ export default function ExpedienteDetallePage() {
                     expedienteId={id}
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
+                    sinInfoBuro={condicionadoSinInfo}
                     onAprobado={fetchExpediente}
                   />
                 )}
