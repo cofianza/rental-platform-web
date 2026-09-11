@@ -81,39 +81,9 @@ export function ReEvaluacionSection({
   const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Derived state
-  const isReevaluable =
-    estudio.estado === 'completado' &&
-    (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
-
-  if (!isReevaluable) return null
-
-  // Get documents for current estudio from historial
-  const currentHistorialItem = historial?.historial.find((h) => h.id === estudio.id)
-  const documentosSoporte = currentHistorialItem?.documentos_soporte || []
-  const puedeReevaluar = historial?.puede_reevaluar ?? false
-  const totalEnCadena = historial?.total_en_cadena ?? 1
-
-  // Check if a child re-evaluation already exists
-  const hasChildReeval = historial?.historial.some(
-    (h) => h.estudio_padre_id === estudio.id,
-  ) ?? false
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!MIME_TYPES_ALLOWED.includes(file.type)) {
-      toast.error('Solo se permiten archivos PDF, JPG o PNG')
-      return
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('El archivo no debe exceder 10MB')
-      return
-    }
-    setSelectedFile(file)
-  }
-
+  // Todos los hooks van antes de la salida temprana: con el return null
+  // primero, si isReevaluable cambiaba con la sección montada React veía
+  // un número distinto de hooks entre renders (rules-of-hooks).
   const handleUpload = useCallback(async () => {
     if (!selectedFile) return
 
@@ -155,6 +125,39 @@ export function ReEvaluacionSection({
       setUploading(false)
     }
   }, [selectedFile, proposito, estudio.id, onDocumentoAdded])
+
+  // Derived state
+  const isReevaluable =
+    estudio.estado === 'completado' &&
+    (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
+
+  if (!isReevaluable) return null
+
+  // Get documents for current estudio from historial
+  const currentHistorialItem = historial?.historial.find((h) => h.id === estudio.id)
+  const documentosSoporte = currentHistorialItem?.documentos_soporte || []
+  const puedeReevaluar = historial?.puede_reevaluar ?? false
+  const totalEnCadena = historial?.total_en_cadena ?? 1
+
+  // Check if a child re-evaluation already exists
+  const hasChildReeval = historial?.historial.some(
+    (h) => h.estudio_padre_id === estudio.id,
+  ) ?? false
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!MIME_TYPES_ALLOWED.includes(file.type)) {
+      toast.error('Solo se permiten archivos PDF, JPG o PNG')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('El archivo no debe exceder 10MB')
+      return
+    }
+    setSelectedFile(file)
+  }
 
   const handleSolicitarReEvaluacion = async () => {
     setRequesting(true)
