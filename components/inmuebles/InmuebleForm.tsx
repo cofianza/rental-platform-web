@@ -10,7 +10,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconChevronRight, IconHome, IconPlus, IconX, IconImage } from '@/components/icons'
+import { IconLoader, IconChevronRight, IconHome, IconX, IconImage } from '@/components/icons'
 import { PageHeader } from '@/components/ui'
 import { ImageUploader } from './ImageUploader'
 import { PropietarioSelector } from './PropietarioSelector'
@@ -52,13 +52,6 @@ function FieldTooltip({ text }: { text: string }) {
 function formatCOPDisplay(value: number | ''): string {
   if (value === '' || value === 0) return ''
   return new Intl.NumberFormat('es-CO').format(Number(value))
-}
-
-function parseCOPInput(display: string): number | '' {
-  const cleaned = display.replace(/\./g, '').replace(/,/g, '').replace(/\s/g, '')
-  if (!cleaned) return ''
-  const num = parseInt(cleaned, 10)
-  return isNaN(num) ? '' : num
 }
 
 function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max, tooltip }: {
@@ -301,7 +294,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
     apellido: string
   } | null>(null)
   const [fotosAdicionales, setFotosAdicionales] = useState<{ file: File; preview: string }[]>([])
-  const [uploadingFotos, setUploadingFotos] = useState(false)
 
   // Auto-asignar propietario_id si el usuario es propietario o inmobiliaria
   useEffect(() => {
@@ -486,7 +478,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
 
         // Upload fotos adicionales si hay
         if (fotosAdicionales.length > 0 && newInmueble?.id) {
-          setUploadingFotos(true)
           let uploaded = 0
           for (const foto of fotosAdicionales) {
             try {
@@ -501,7 +492,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           if (uploaded > 0) {
             toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
           }
-          setUploadingFotos(false)
         }
 
         // "Y ahora qué": el toast dice si quedó publicado y qué puede hacer
@@ -548,7 +538,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
 
         // Upload fotos adicionales si hay (en modo edicion)
         if (fotosAdicionales.length > 0) {
-          setUploadingFotos(true)
           let uploaded = 0
           for (const foto of fotosAdicionales) {
             try {
@@ -563,7 +552,6 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           if (uploaded > 0) {
             toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
           }
-          setUploadingFotos(false)
         }
 
         toast.success(INMUEBLE_MESSAGES.UPDATE_SUCCESS)

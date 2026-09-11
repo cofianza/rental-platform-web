@@ -114,7 +114,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
     try {
       const result = await facturacionService.getDownloadUrl(factura.id, tipo)
       window.open(result.url, '_blank')
-    } catch (err) {
+    } catch {
       toast.error(`Error al descargar ${tipo.toUpperCase()}`)
     }
   }

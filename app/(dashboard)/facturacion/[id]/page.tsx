@@ -7,7 +7,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
@@ -61,7 +61,6 @@ function formatDateTime(dateString: string): string {
 
 export default function FacturaDetallePage() {
   const params = useParams()
-  const router = useRouter()
   const id = params.id as string
 
   const user = useAuthStore((s) => s.user)
@@ -126,7 +125,7 @@ export default function FacturaDetallePage() {
       setShowAnularModal(false)
       setAnularMotivo('')
       toast.success('Factura anulada correctamente')
-    } catch (err) {
+    } catch {
       toast.error('Error al anular factura')
     } finally {
       setAnulando(false)

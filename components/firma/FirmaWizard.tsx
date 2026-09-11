@@ -82,11 +82,6 @@ export function FirmaWizard({ data, token }: FirmaWizardProps) {
     return () => clearInterval(interval)
   }, [data.token_expiracion])
 
-  // Navigate between steps
-  const goToStep = useCallback((step: FirmaWizardStep) => {
-    setState((s) => ({ ...s, step, error: null }))
-  }, [])
-
   const nextStep = useCallback(() => {
     setState((s) => ({
       ...s,

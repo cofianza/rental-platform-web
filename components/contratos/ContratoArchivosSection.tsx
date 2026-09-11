@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import {
   IconFolderOpen,
-  IconUpload,
   IconDownload,
   IconTrash,
   IconLoader,

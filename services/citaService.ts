@@ -60,11 +60,6 @@ class CitaService {
     }
   }
 
-  async getCitaById(id: string): Promise<ICita> {
-    const res = await apiClient.get<ICita>(`${this.basePath}/${id}`)
-    return res.data
-  }
-
   async confirmarCita(id: string, data: IConfirmarCita): Promise<ICita> {
     const res = await apiClient.post<ICita>(`${this.basePath}/${id}/confirmar`, data)
     return res.data

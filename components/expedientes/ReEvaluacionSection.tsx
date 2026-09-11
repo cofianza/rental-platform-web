@@ -8,12 +8,10 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   IconUpload,
   IconFileText,
-  IconLoader,
   IconTrash,
   IconAlertTriangle,
   IconCheck,

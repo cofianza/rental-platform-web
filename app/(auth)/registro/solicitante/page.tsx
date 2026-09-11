@@ -55,7 +55,6 @@ function RegistroSolicitanteContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const propertyId = searchParams.get('property_id') || ''
-  const intent = searchParams.get('intent') || ''
 
   const [property, setProperty] = useState<PublicProperty | null>(null)
   const [loadingProperty, setLoadingProperty] = useState(!!propertyId)

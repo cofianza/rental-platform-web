@@ -2,7 +2,6 @@ import { apiClient } from '@/lib/api'
 import type {
   IAuditLogFilters,
   IAuditLogsResponse,
-  IAuditLogResponse,
   IAuditStatsResponse,
   IAuditLog,
   IAuditLogsMeta,
@@ -43,13 +42,6 @@ class BitacoraService {
         totalPages: response.meta?.totalPages ?? 0,
       },
     }
-  }
-
-  async getLogById(id: string): Promise<IAuditLog> {
-    const response = (await apiClient.get(
-      `/audit-logs/${id}`,
-    )) as unknown as IAuditLogResponse
-    return response.data
   }
 
   async getStats(): Promise<IAuditStats> {

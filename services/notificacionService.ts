@@ -41,11 +41,6 @@ class NotificacionService {
     }
   }
 
-  async getUnreadCount(): Promise<number> {
-    const res = await apiClient.get<{ count: number }>(`${this.basePath}/no-leidas/count`)
-    return res.data.count
-  }
-
   async markAsRead(id: string): Promise<INotificacion> {
     const res = await apiClient.patch<INotificacion>(`${this.basePath}/${id}/leida`, {})
     return res.data

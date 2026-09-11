@@ -34,11 +34,6 @@ export interface IAuditLogsResponse {
   meta: IAuditLogsMeta
 }
 
-export interface IAuditLogResponse {
-  success: boolean
-  data: IAuditLog
-}
-
 export interface IAuditStats {
   byAction: { action: string; count: number }[]
   byDay: { date: string; count: number }[]

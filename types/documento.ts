@@ -211,30 +211,6 @@ export interface IDocumentoUrlResponse {
 // Tipos para validacion de documentos
 // ============================================
 
-/**
- * Historial de revision de un documento (incluye versiones anteriores)
- */
-export interface IRevisionHistorial {
-  id: string
-  estado: EstadoDocumento
-  motivo_rechazo: string | null
-  validado_por: string | null
-  fecha_revision: string | null
-  version: number
-  nombre_original: string
-  created_at: string
-  validador?: { id: string; nombre: string; apellido: string } | null
-}
-
-/**
- * Respuesta de pendientes de revision
- */
-export interface IPendientesRevisionResponse {
-  documentos: IDocumento[]
-  total_documentos: number
-  pendientes: number
-}
-
 // ============================================
 // Payloads para admin de tipos de documento
 // ============================================

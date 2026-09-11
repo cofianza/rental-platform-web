@@ -27,7 +27,6 @@ export function FirmaStepIndicator({
           const stepNum = index + 1
           const isCompleted = stepNum <= completedSteps
           const isCurrent = stepNum === currentStep
-          const isPending = stepNum > currentStep
 
           return (
             <div key={label} className="flex items-center flex-1">

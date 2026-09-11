@@ -46,9 +46,6 @@ function VitrinaToggle({
     }
   }
 
-  // Estado visual simplificado
-  const isActive = inmueble.visible_vitrina && !disabled
-
   return (
     <div
       className="flex items-center gap-2"

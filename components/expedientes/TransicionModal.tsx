@@ -67,8 +67,6 @@ export function TransicionModal({
     handleClose()
   }
 
-  const configActual = ESTADOS_EXPEDIENTE[estadoActual]
-
   // Asegurar que transicionesDisponibles sea siempre un array
   const transiciones = Array.isArray(transicionesDisponibles) ? transicionesDisponibles : []
 
