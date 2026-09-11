@@ -503,24 +503,29 @@ function EstudioPanel({
               onRetried={onRetried}
             />
           )}
-          {puedeReasignar && (
-            <button
-              type="button"
-              onClick={() => setReasignarAbierto(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <IconBuilding2 size={14} />
-              Reasignar a otra propiedad
-            </button>
-          )}
-          {onVerEstudios && (
-            <button
-              type="button"
-              onClick={onVerEstudios}
-              className="text-xs font-medium text-primary-700 hover:text-primary-800"
-            >
-              Ver detalle de la evaluación →
-            </button>
+          {(puedeReasignar || onVerEstudios) && (
+            // Fila propia con gap: sueltos, los dos botones inline quedaban pegados.
+            <div className="flex flex-wrap items-center gap-4">
+              {puedeReasignar && (
+                <button
+                  type="button"
+                  onClick={() => setReasignarAbierto(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <IconBuilding2 size={14} />
+                  Reasignar a otra propiedad
+                </button>
+              )}
+              {onVerEstudios && (
+                <button
+                  type="button"
+                  onClick={onVerEstudios}
+                  className="text-xs font-medium text-primary-700 hover:text-primary-800"
+                >
+                  Ver detalle de la evaluación →
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
