@@ -23,6 +23,7 @@ import {
   type IParametroCalibracion,
   type IHistorialCalibracion,
   type ICascadaCentrales,
+  type IRevisionManual,
 } from '@/services/calibracionService'
 import { IconLoader, IconLock, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
@@ -174,18 +175,21 @@ export default function AdminCalibracionPage() {
   const [historial, setHistorial] = useState<IHistorialCalibracion[]>([])
   // null = no se pudo cargar (la cascada es informativa: no tumba el panel).
   const [cascada, setCascada] = useState<ICascadaCentrales | null>(null)
+  const [revision, setRevision] = useState<IRevisionManual | null>(null)
   const [loading, setLoading] = useState(true)
 
   const cargar = async () => {
     try {
-      const [p, h, c] = await Promise.all([
+      const [p, h, c, r] = await Promise.all([
         calibracionService.listar(),
         calibracionService.historial(),
         calibracionService.getCascada(30).catch(() => null),
+        calibracionService.getRevisionManual(30).catch(() => null),
       ])
       setParams(p)
       setHistorial(h)
       setCascada(c)
+      setRevision(r)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error cargando la calibración')
     } finally {
@@ -261,6 +265,50 @@ export default function AdminCalibracionPage() {
                   sub={cascada.sin_dato > 0 ? 'no cuentan en los porcentajes' : undefined}
                 />
               </dl>
+            )}
+          </section>
+
+          {/* Adenda 2 §5.1 y §8: revisión manual frente al SLA de la Política
+              (2 horas hábiles), escalados por falta de ingreso y caídas de
+              DataCrédito. Informativo: si falla no tumba el panel. */}
+          <section className="rounded-xl border border-gray-200 bg-white p-4">
+            <h2 className="text-sm font-bold text-gray-900">Revisión manual y DataCrédito (últimos 30 días)</h2>
+            {revision === null ? (
+              <p className="mt-1 text-sm text-gray-400">No se pudo cargar el resumen.</p>
+            ) : (
+              <>
+                <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <DatoCascada label="En revisión ahora" valor={revision.en_revision_ahora.toLocaleString('es-CO')} />
+                  <DatoCascada
+                    label="Resueltas"
+                    valor={revision.resueltas.toLocaleString('es-CO')}
+                    sub={revision.resueltas > 0 ? `${pct(revision.dentro_del_sla, revision.resueltas)} dentro del SLA` : undefined}
+                  />
+                  <DatoCascada
+                    label="Tiempo promedio"
+                    valor={revision.promedio_horas_habiles === null ? '—' : `${revision.promedio_horas_habiles} h`}
+                    sub={`hábiles · SLA ${revision.sla_horas_habiles} h`}
+                  />
+                  <DatoCascada label="Escaladas sin ingreso" valor={revision.escaladas_sin_ingreso.toLocaleString('es-CO')} sub="Adenda 2 §3" />
+                </dl>
+                <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <DatoCascada label="Consultas a DataCrédito" valor={revision.datacredito.consultas.toLocaleString('es-CO')} />
+                  <DatoCascada label="Caídas de DataCrédito" valor={revision.datacredito.caidas.toLocaleString('es-CO')} />
+                  <DatoCascada
+                    label="Tasa de caída"
+                    valor={revision.datacredito.tasa_caida_pct === null ? '—' : `${revision.datacredito.tasa_caida_pct}%`}
+                    sub="revisión a los 3 meses (Adenda 2 §8)"
+                  />
+                  <DatoCascada
+                    label="Errores del dato"
+                    valor={revision.datacredito.errores_de_dato.toLocaleString('es-CO')}
+                    sub="documento o apellido, no la central"
+                  />
+                </dl>
+                <p className="mt-2 text-xs text-gray-400">
+                  Horas hábiles: lunes a viernes de 8:00 a 18:00 (sin descontar festivos). Las caídas se distinguen desde el 11 de septiembre de 2026.
+                </p>
+              </>
             )}
           </section>
 

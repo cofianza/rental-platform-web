@@ -235,6 +235,7 @@ class ExpedienteService {
         nuevo_estado: data.estado_destino,
         comentario: data.comentario,
         ...(data.etiqueta ? { etiqueta: data.etiqueta } : {}),
+        ...(data.documentos_consultados ? { documentos_consultados: data.documentos_consultados } : {}),
       }
     )) as any
 
@@ -520,6 +521,7 @@ class ExpedienteService {
    */
   async aprobarCondicionado(
     expedienteId: string,
+    revision: { fundamento: string; documentos_consultados: string[] },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estado: 'aprobado' }
@@ -530,7 +532,7 @@ class ExpedienteService {
     const response = await apiClient.post<{
       expediente: { id: string; numero: string; estado: 'aprobado' }
       contrato_id: string | null
-    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, datosContrato ?? {})
+    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, { ...revision, ...(datosContrato ?? {}) })
     return response.data
   }
 

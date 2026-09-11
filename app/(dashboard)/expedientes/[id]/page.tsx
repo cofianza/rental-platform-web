@@ -221,6 +221,7 @@ export default function ExpedienteDetallePage() {
     estadoDestino: EstadoExpediente,
     comentario: string,
     etiqueta?: string,
+    documentosConsultados?: string[],
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -228,6 +229,7 @@ export default function ExpedienteDetallePage() {
         estado_destino: estadoDestino,
         comentario,
         etiqueta,
+        documentos_consultados: documentosConsultados,
       })
       setExpediente(expedienteActualizado)
 
@@ -907,6 +909,7 @@ export default function ExpedienteDetallePage() {
         transicionesDisponibles={transiciones}
         onConfirmar={handleEjecutarTransicion}
         isLoading={isExecutingTransicion}
+        expedienteId={id}
       />
 
       {/* Modal de asignación de responsable */}

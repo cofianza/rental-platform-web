@@ -11,14 +11,18 @@ import { Badge } from '@/components/ui/Badge'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible } from '@/types/expediente'
+import { DocumentosConsultados } from './DocumentosConsultados'
 
 export interface TransicionModalProps {
   isOpen: boolean
   onClose: () => void
   estadoActual: EstadoExpediente
   transicionesDisponibles: ITransicionDisponible[]
-  onConfirmar: (estadoDestino: EstadoExpediente, comentario: string, etiqueta?: string) => Promise<void>
+  onConfirmar: (estadoDestino: EstadoExpediente, comentario: string, etiqueta?: string, documentosConsultados?: string[]) => Promise<void>
   isLoading?: boolean
+  /** Con él, al salir de 'condicionado' (revisión manual) se piden los
+   *  documentos consultados (Adenda 2 §5.1). */
+  expedienteId?: string
 }
 
 export function TransicionModal({
@@ -28,6 +32,7 @@ export function TransicionModal({
   transicionesDisponibles,
   onConfirmar,
   isLoading = false,
+  expedienteId,
 }: TransicionModalProps) {
   // Identificamos la transicion seleccionada por su label, no solo por
   // estado destino — pueden existir dos transiciones al mismo destino con
@@ -36,12 +41,16 @@ export function TransicionModal({
   // a la vez y permite key-uniqueness en el .map.
   const [labelSeleccionado, setLabelSeleccionado] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
+  const [documentos, setDocumentos] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
+  const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
 
   const handleClose = () => {
     if (isLoading) return
     setLabelSeleccionado(null)
     setComentario('')
+    setDocumentos([])
     setError(null)
     onClose()
   }
@@ -63,7 +72,12 @@ export function TransicionModal({
     }
 
     setError(null)
-    await onConfirmar(estadoSeleccionado, comentario.trim(), transicionSeleccionada?.etiqueta)
+    await onConfirmar(
+      estadoSeleccionado,
+      comentario.trim(),
+      transicionSeleccionada?.etiqueta,
+      esRevisionManual ? documentos : undefined,
+    )
     handleClose()
   }
 
@@ -151,9 +165,15 @@ export function TransicionModal({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
           />
           <p className="mt-1 text-xs text-gray-500">
-            Este comentario quedará registrado en el historial del estudio
+            {esRevisionManual
+              ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
+              : 'Este comentario quedará registrado en el historial del estudio'}
           </p>
         </div>
+
+        {esRevisionManual && expedienteId && (
+          <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={isLoading} />
+        )}
 
         {/* Mensaje de error */}
         {error && (

@@ -42,6 +42,21 @@ export interface ICascadaCentrales {
   sin_dato: number
 }
 
+/**
+ * Adenda 2 §5.1 y §8: revisión manual (volumen y tiempo frente al SLA de 2
+ * horas hábiles), escalados por falta de ingreso y caídas de DataCrédito.
+ */
+export interface IRevisionManual {
+  desde: string
+  sla_horas_habiles: number
+  en_revision_ahora: number
+  resueltas: number
+  promedio_horas_habiles: number | null
+  dentro_del_sla: number
+  escaladas_sin_ingreso: number
+  datacredito: { consultas: number; caidas: number; errores_de_dato: number; tasa_caida_pct: number | null }
+}
+
 export const calibracionService = {
   async listar(): Promise<IParametroCalibracion[]> {
     const res = await apiClient.get<IParametroCalibracion[]>('/admin/calibracion')
@@ -57,6 +72,10 @@ export const calibracionService = {
   },
   async getCascada(dias = 30): Promise<ICascadaCentrales> {
     const res = await apiClient.get<ICascadaCentrales>(`/admin/calibracion/cascada?dias=${dias}`)
+    return res.data
+  },
+  async getRevisionManual(dias = 30): Promise<IRevisionManual> {
+    const res = await apiClient.get<IRevisionManual>(`/admin/calibracion/revision-manual?dias=${dias}`)
     return res.data
   },
 }

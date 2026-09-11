@@ -14,9 +14,10 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ConfirmDialog } from '@/components/ui'
+import { Modal } from '@/components/ui/Modal'
 import { expedienteService } from '@/services/expedienteService'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
+import { DocumentosConsultados } from './DocumentosConsultados'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -37,6 +38,9 @@ export function AprobarCondicionadoCard({
   const [loading, setLoading] = useState(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
+  // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
+  const [fundamento, setFundamento] = useState('')
+  const [documentos, setDocumentos] = useState<string[]>([])
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
@@ -60,7 +64,11 @@ export function AprobarCondicionadoCard({
     try {
       // Sin datos de contrato: solo aprueba. El contrato se genera después en
       // la pestaña Contratos con el formulario completo.
-      await expedienteService.aprobarCondicionado(expedienteId)
+      await expedienteService.aprobarCondicionado(expedienteId, {
+        fundamento: fundamento.trim(),
+        documentos_consultados: documentos,
+      })
+      setConfirmAprobarOpen(false)
       toast.success('Estudio aprobado. Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).')
       onAprobado?.()
     } catch (err) {
@@ -154,15 +162,52 @@ export function AprobarCondicionadoCard({
       </div>
     </div>
 
-    <ConfirmDialog
+    <Modal
       isOpen={confirmAprobarOpen}
-      onClose={() => setConfirmAprobarOpen(false)}
-      onConfirm={handleAprobar}
-      title="Aprobar estudio condicionado"
-      message="El estudio pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. ¿Continuar?"
-      confirmLabel="Aprobar estudio"
-      isLoading={loading}
-    />
+      onClose={() => { if (!loading) setConfirmAprobarOpen(false) }}
+      title="Aprobar estudio en revisión manual"
+      size="md"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          El estudio pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. Tu decisión queda
+          registrada con tu usuario, la fecha, el fundamento y los documentos que consultaste.
+        </p>
+        <div>
+          <label htmlFor="fundamento-revision" className="block text-sm font-medium text-gray-700 mb-1">
+            Fundamento de la decisión <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            id="fundamento-revision"
+            value={fundamento}
+            onChange={(e) => setFundamento(e.target.value)}
+            rows={3}
+            disabled={loading}
+            placeholder="Por qué apruebas este caso (mínimo 10 caracteres)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+          />
+        </div>
+        <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
+        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={() => setConfirmAprobarOpen(false)}
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => { void handleAprobar() }}
+            disabled={loading || fundamento.trim().length < 10}
+            className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          >
+            {loading ? 'Aprobando…' : 'Aprobar estudio'}
+          </button>
+        </div>
+      </div>
+    </Modal>
     </>
   )
 }

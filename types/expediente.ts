@@ -285,6 +285,8 @@ export interface IEjecutarTransicion {
    *  aprobado → cerrado puede ser "Cerrar expediente" o "Cancelar
    *  expediente"). El backend la usa para marcar columnas de cancelacion. */
   etiqueta?: string
+  /** Adenda 2 §5.1: al resolver un condicionado, lo que el analista consultó. */
+  documentos_consultados?: string[]
 }
 
 /**
