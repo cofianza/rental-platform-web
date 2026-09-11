@@ -25,6 +25,9 @@ export interface IPerfilArrendador {
   direccion?: string | null
   telefono?: string | null
   domicilio_ciudad: string | null
+  /** Municipio DANE para la factura cuando el arrendador paga el estudio (Adenda 2 §7). */
+  municipio_codigo?: string | null
+  municipio_nombre?: string | null
   ciudad: string | null
   matricula_arrendador: string | null
   matricula_expedida_por: string | null
@@ -48,6 +51,8 @@ export interface IUpdatePerfilArrendadorInput {
   representante_legal?: string | null
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null
+  municipio_codigo?: string | null
+  municipio_nombre?: string | null
   matricula_arrendador?: string | null
   matricula_expedida_por?: string | null
   matricula_fecha?: string | null

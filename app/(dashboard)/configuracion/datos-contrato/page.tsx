@@ -21,6 +21,7 @@ import {
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
 const ROL_LABELS: Record<string, string> = {
   inmobiliaria: 'Inmobiliaria',
@@ -61,6 +62,8 @@ export default function DatosContratoPage() {
           representante_legal: data.representante_legal,
           domicilio_direccion: data.domicilio_direccion,
           domicilio_ciudad: data.domicilio_ciudad,
+          municipio_codigo: data.municipio_codigo ?? null,
+          municipio_nombre: data.municipio_nombre ?? null,
           matricula_arrendador: data.matricula_arrendador,
           matricula_expedida_por: data.matricula_expedida_por,
           matricula_fecha: data.matricula_fecha,
@@ -334,6 +337,19 @@ export default function DatosContratoPage() {
             placeholder="Ej. Medellín, Antioquia"
             required
           />
+        </div>
+
+        {/* Adenda 2 §7: cuando pagas un estudio con Mercado Pago, la factura
+            electrónica sale a tu nombre y la DIAN exige el código del municipio. */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Municipio para facturación</label>
+          <MunicipioCombobox
+            value={form.municipio_codigo ? { codigo: form.municipio_codigo, nombre: form.municipio_nombre ?? '' } : null}
+            onChange={(m) => setForm((prev) => ({ ...prev, municipio_codigo: m?.codigo ?? null, municipio_nombre: m?.nombre ?? null }))}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Con él, la factura de los estudios que pagas con Mercado Pago sale sola a tu nombre.
+          </p>
         </div>
 
         {isInmobiliaria && (

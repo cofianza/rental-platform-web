@@ -222,6 +222,7 @@ class FacturacionService {
     ya_emitida: boolean
     factura_id?: string
     factura_numero?: string | null
+    /** null cuando ya_emitida. */
     datos_actuales: {
       nombre_completo: string
       tipo_documento: string
@@ -231,7 +232,9 @@ class FacturacionService {
       direccion: string
       municipio_codigo: string
       municipio_nombre: string
-    }
+    } | null
+    /** Adenda 2 §7, opción B: pagó la inmobiliaria o el propietario; la factura va a su nombre. */
+    a_nombre_de_quien_pago?: boolean
     faltantes: string[]
     monto: number
     concepto: string
@@ -250,7 +253,8 @@ class FacturacionService {
           direccion: string
           municipio_codigo: string
           municipio_nombre: string
-        }
+        } | null
+        a_nombre_de_quien_pago?: boolean
         faltantes: string[]
         monto: number
         concepto: string

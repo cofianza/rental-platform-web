@@ -774,6 +774,12 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         toast.message('La factura ya estaba emitida.')
         return
       }
+      // Adenda 2 §7, opción B: el estudio lo pagó la inmobiliaria (o el
+      // propietario). La factura va a su nombre y no la emite el solicitante.
+      if (preview.a_nombre_de_quien_pago || !preview.datos_actuales) {
+        toast.message('Este estudio lo pagó quien te arrienda: la factura sale a su nombre.')
+        return
+      }
       if (preview.faltantes.length > 0) {
         toast.error(
           'Completa tus datos fiscales en Facturación → Datos Fiscales antes de emitir la factura.',
