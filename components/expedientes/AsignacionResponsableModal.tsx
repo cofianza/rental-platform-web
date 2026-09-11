@@ -27,7 +27,6 @@ export interface AsignacionResponsableModalProps {
 export function AsignacionResponsableModal({
   isOpen,
   onClose,
-  expedienteId,
   analistaActual,
   onAsignar,
   isLoading = false,

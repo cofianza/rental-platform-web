@@ -11,8 +11,6 @@ import type {
   IPresignedUrlResponse,
   IConfirmarSubidaRequest,
   IListDocumentosQuery,
-  IPendientesRevisionResponse,
-  IRevisionHistorial,
   IDocumentoUrlResponse,
   IReemplazarDocumentoRequest,
   IReemplazarPresignedResponse,
@@ -109,15 +107,6 @@ class DocumentoService {
       documentos: response.data || [],
       pagination: response.pagination || { total: 0, page: 1, limit: 20, totalPages: 0 },
     }
-  }
-
-  /**
-   * Obtiene detalle de un documento por ID
-   */
-  async getDocumentoById(id: string): Promise<IDocumento> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(`/documentos/${id}`)) as any
-    return response.data
   }
 
   /**
@@ -250,26 +239,6 @@ class DocumentoService {
   }
 
   /**
-   * Obtiene documentos pendientes de revision de un expediente
-   */
-  async getPendientesRevision(expedienteId: string): Promise<IPendientesRevisionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(
-      `/expedientes/${expedienteId}/documentos/pendientes-revision`
-    )) as any
-    return response.data
-  }
-
-  /**
-   * Obtiene historial de revisiones de un documento
-   */
-  async getHistorialRevision(id: string): Promise<IRevisionHistorial[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(`/documentos/${id}/historial-revision`)) as any
-    return response.data || []
-  }
-
-  /**
    * Obtiene URL segura de visualizacion (15 min, con cache)
    */
   async getViewUrl(documentoId: string): Promise<IDocumentoUrlResponse> {
@@ -326,16 +295,6 @@ class DocumentoService {
       return `El archivo excede el tamano maximo de ${tipoDocumento.tamano_maximo_mb}MB`
     }
 
-    return null
-  }
-
-  /**
-   * Obtiene la URL publica de un documento (si existe)
-   */
-  getDocumentUrl(documento: IDocumento): string | null {
-    if (documento.archivo_url) {
-      return documento.archivo_url
-    }
     return null
   }
 

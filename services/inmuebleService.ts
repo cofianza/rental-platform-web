@@ -278,29 +278,6 @@ class InmuebleService {
   }
 
   /**
-   * Elimina una foto de Supabase Storage
-   */
-  async deleteFotoFachada(url: string): Promise<void> {
-    // Extraer el path del archivo desde la URL
-    const bucketUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/`
-    const filePath = url.replace(bucketUrl, '')
-
-    if (!filePath) {
-      console.warn('No se pudo extraer el path del archivo')
-      return
-    }
-
-    const { error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([filePath])
-
-    if (error) {
-      console.error('Error deleting file:', error)
-      // No lanzar error, solo loguear
-    }
-  }
-
-  /**
    * Obtiene los expedientes asociados a un inmueble
    * Usa GET /expedientes?inmueble_id=... del módulo de expedientes
    */

@@ -161,10 +161,6 @@ export interface ICertificadoPresignedUrlResponse {
   storage_key: string
 }
 
-export interface ICertificadoViewUrlResponse {
-  signed_url: string
-}
-
 // ============================================
 // Global listing
 // ============================================

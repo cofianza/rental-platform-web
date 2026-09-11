@@ -132,13 +132,6 @@ class CreditosEstudiosService {
     return { movimientos: res.data, pagination: res.pagination }
   }
 
-  async getMisCompras(): Promise<ICompraCredito[]> {
-    const res = (await apiClient.get('/creditos-estudios/me/compras')) as unknown as {
-      data: ICompraCredito[]
-    }
-    return res.data
-  }
-
   async comprarPaquete(paqueteId: string): Promise<IComprarPaqueteResponse> {
     const res = (await apiClient.post('/creditos-estudios/me/comprar', {
       paquete_id: paqueteId,

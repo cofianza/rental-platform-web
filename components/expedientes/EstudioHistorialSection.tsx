@@ -5,12 +5,10 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/Badge'
-import { IconLoader, IconShield } from '@/components/icons'
+import { IconLoader } from '@/components/icons'
 import { cn } from '@/lib/utils'
-import { estudioService } from '@/services/estudioService'
-import type { IEstudioHistorial, IEstudioHistorialItem } from '@/types/estudio'
+import type { IEstudioHistorial } from '@/types/estudio'
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', {

@@ -17,7 +17,6 @@ import type {
   ISendLinkResponse,
   IRegistrarResultadoInput,
   ICertificadoPresignedUrlResponse,
-  ICertificadoViewUrlResponse,
   IDocumentoSoporte,
   IEstudioHistorial,
   ISoportePresignedUrlInput,
@@ -213,16 +212,6 @@ export const estudioService = {
       xhr.onerror = () => reject(new Error('Upload failed'))
       xhr.send(file)
     })
-  },
-
-  /**
-   * Obtiene URL firmada para ver/descargar certificado
-   */
-  async getCertificadoViewUrl(estudioId: string): Promise<ICertificadoViewUrlResponse> {
-    const res = await apiClient.get<ICertificadoViewUrlResponse>(
-      `/estudios/${estudioId}/certificado/url`,
-    )
-    return res.data
   },
 
   /**

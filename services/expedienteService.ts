@@ -20,7 +20,6 @@ import type {
   ITimelineEvento,
   ITimelinePagination,
   IHistorialTransicion,
-  IAsignacionHistorial,
 } from '@/types/expediente'
 
 // ============================================
@@ -142,15 +141,6 @@ class ExpedienteService {
   }
 
   /**
-   * Obtiene un expediente por ID
-   */
-  async getExpedienteById(id: string): Promise<IExpediente> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(`/expedientes/${id}`)) as any
-    return mapExpediente<IExpediente>(response.data)
-  }
-
-  /**
    * Obtiene lista de analistas para dropdown de filtro
    * (usuarios con rol operador_analista o administrador).
    *
@@ -265,18 +255,6 @@ class ExpedienteService {
     )) as any
 
     return mapExpediente<IExpedienteDetalle>(response.data)
-  }
-
-  /**
-   * Obtiene el historial de asignaciones de un expediente
-   */
-  async getHistorialAsignaciones(expedienteId: string): Promise<IAsignacionHistorial[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(
-      `/expedientes/${expedienteId}/assignments`
-    )) as any
-
-    return response.data?.historial || []
   }
 
   // ============================================
