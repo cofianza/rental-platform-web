@@ -34,6 +34,8 @@ export interface IFirmantesPreview {
   aplica: boolean
   firmantes: IFirmantePreview[]
   puede_enviar: boolean
+  /** Adenda 2 §9: antes del sobre, el arrendatario confirma su identidad por correo. */
+  biometria?: boolean
 }
 
 // Firmante multi-parte de un contrato (arrendatario/arrendador/cofianza).
@@ -47,6 +49,48 @@ export interface IContratoFirmante {
   estado: EstadoSolicitudFirma
   firmado_en: string | null
   created_at: string
+}
+
+// Adenda 2 §9 — verificación de identidad antes de la firma
+
+export interface IConsentimientoFirma {
+  version: string
+  parrafos: string[]
+  opciones: { autoriza: string; analista: string }
+}
+
+export interface IVerificacionIdentidadPublica {
+  nombre: string
+  inmueble: string
+  completada: boolean
+  consentimiento: IConsentimientoFirma
+}
+
+/** El gestor solo ve 'pendiente' | 'completada'; Cofianza ve el resultado del cotejo. */
+export type EstadoVerificacionIdentidad =
+  | 'pendiente'
+  | 'completada'
+  | 'verificada'
+  | 'no_coincide'
+  | 'no_verificada'
+  | 'omitida'
+
+export interface IVerificacionIdentidad {
+  id: string
+  rol: 'arrendatario' | 'cotitular'
+  nombre: string
+  email: string
+  estado: EstadoVerificacionIdentidad
+  token_expiracion?: string
+  // Solo para roles de Cofianza:
+  opcion?: 'autoriza' | 'analista' | null
+  similitud?: number | null
+  umbral?: number | null
+  motivo?: string | null
+  requiere_analista?: boolean
+  revision?: 'confirmada' | 'suplantacion' | null
+  revision_nota?: string | null
+  revisado_en?: string | null
 }
 
 export interface ISolicitudFirma {

@@ -116,6 +116,10 @@ export const ACTION_LABELS: Record<string, string> = {
   firma_completada: 'Firma completada',
   firma_evidencia_consulted: 'Evidencia de firma consultada',
   firma_acuse_downloaded: 'Acuse de firma descargado',
+  firma_identidad_consentimiento: 'Consentimiento biométrico en la firma',
+  firma_identidad_biometria: 'Cotejo biométrico en la firma',
+  firma_identidad_revisada: 'Identidad revisada por un analista',
+  revision_manual_decidida: 'Revisión manual decidida',
 
   // Pagos
   pago_created: 'Pago creado',
@@ -313,6 +317,9 @@ export const ACTION_GROUPS: Array<{
       'firma_auco_signed',
       'firma_completada',
       'firma_solicitud_cancelled',
+      'firma_identidad_consentimiento',
+      'firma_identidad_biometria',
+      'firma_identidad_revisada',
       'plantilla_created',
       'plantilla_updated',
     ].map(toOption),

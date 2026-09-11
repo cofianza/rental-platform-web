@@ -704,6 +704,7 @@ export default function ContratoDetallePage() {
         isOpen={!!firmaPreview}
         firmantes={firmaPreview?.firmantes ?? []}
         puedeEnviar={firmaPreview?.puede_enviar ?? false}
+        biometria={firmaPreview?.biometria}
         submitting={confirmandoFirma}
         onConfirm={handleConfirmarFirma}
         onClose={() => {

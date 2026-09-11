@@ -97,7 +97,8 @@ interface RanuraProps {
   disabled: boolean
 }
 
-function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disabled }: RanuraProps) {
+/** Una foto (cédula o selfie) reescalada. También la usa /verificar-identidad (Adenda 2 §9). */
+export function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disabled }: RanuraProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')

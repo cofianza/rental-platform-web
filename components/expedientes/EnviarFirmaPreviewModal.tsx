@@ -31,6 +31,8 @@ interface Props {
   isOpen: boolean
   firmantes: IFirmantePreview[]
   puedeEnviar: boolean
+  /** Adenda 2 §9: primero va el correo de verificación de identidad al arrendatario. */
+  biometria?: boolean
   submitting: boolean
   onConfirm: () => void
   onClose: () => void
@@ -40,7 +42,7 @@ interface Props {
   onFirmanteUpdated?: () => void | Promise<void>
 }
 
-export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, submitting, onConfirm, onClose, onFirmanteUpdated }: Props) {
+export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biometria, submitting, onConfirm, onClose, onFirmanteUpdated }: Props) {
   const [editingRol, setEditingRol] = useState<RolFirmante | null>(null)
   const [editValue, setEditValue] = useState('')
   const [savingRol, setSavingRol] = useState<RolFirmante | null>(null)
@@ -101,6 +103,12 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, submit
           Cada parte recibe <strong>su propio</strong> código de firma por WhatsApp en el número indicado.
           Verifica a quién le llega cada uno antes de enviar.
         </p>
+        {biometria && (
+          <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            Antes de firmar, al arrendatario le llega un <strong>correo para confirmar su identidad</strong>. El
+            contrato sale a firma apenas lo haga.
+          </p>
+        )}
 
         {!puedeEnviar && (
           <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">

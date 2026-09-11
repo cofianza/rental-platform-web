@@ -507,6 +507,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
         isOpen={!!firmaPreview}
         firmantes={firmaPreview?.data.firmantes ?? []}
         puedeEnviar={firmaPreview?.data.puede_enviar ?? false}
+        biometria={firmaPreview?.data.biometria}
         submitting={confirmandoFirma}
         onConfirm={handleConfirmarFirma}
         onClose={() => !confirmandoFirma && setFirmaPreview(null)}

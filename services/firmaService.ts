@@ -15,6 +15,8 @@ import type {
   IContratoPdfResponse,
   IEvidenciaFirma,
   IAcuseDownloadResponse,
+  IVerificacionIdentidad,
+  IVerificacionIdentidadPublica,
 } from '@/types/firma'
 
 class FirmaService {
@@ -70,12 +72,56 @@ class FirmaService {
     return response.data.solicitudes
   }
 
-  // Firmantes multi-parte (arrendatario/arrendador/cofianza) del contrato.
-  async listarFirmantes(contratoId: string): Promise<IContratoFirmante[]> {
+  // Firmantes multi-parte (arrendatario/arrendador/cofianza) del contrato y la
+  // verificación de identidad previa a la firma (Adenda 2 §9).
+  async listarFirmantes(
+    contratoId: string,
+  ): Promise<{ firmantes: IContratoFirmante[]; verificaciones: IVerificacionIdentidad[] }> {
     const response = (await apiClient.get(
       `/contratos/${contratoId}/firma/firmantes`
-    )) as unknown as { success: boolean; data: { firmantes: IContratoFirmante[] } }
-    return response.data.firmantes
+    )) as unknown as {
+      success: boolean
+      data: { firmantes: IContratoFirmante[]; verificaciones?: IVerificacionIdentidad[] }
+    }
+    return { firmantes: response.data.firmantes, verificaciones: response.data.verificaciones ?? [] }
+  }
+
+  /** Adenda 2 §9: el analista registra cómo verificó la identidad ('suplantacion' cancela el contrato). */
+  async revisarIdentidad(
+    contratoId: string,
+    verificacionId: string,
+    input: { resultado: 'confirmada' | 'suplantacion'; nota: string },
+  ): Promise<void> {
+    await apiClient.post(`/contratos/${contratoId}/firma/firmantes/identidad/${verificacionId}/revisar`, input)
+  }
+
+  // ── Página pública /verificar-identidad/[token] (Adenda 2 §9) ──
+
+  async getVerificacionIdentidad(token: string): Promise<IVerificacionIdentidadPublica> {
+    const res = await apiClient.get<IVerificacionIdentidadPublica>(`/public/verificacion-identidad/${token}`)
+    return res.data
+  }
+
+  async consentimientoIdentidad(token: string, opcion: 'autoriza' | 'analista'): Promise<{ completada: boolean }> {
+    const res = await apiClient.post<{ completada: boolean }>(`/public/verificacion-identidad/${token}/consentimiento`, { opcion })
+    return res.data
+  }
+
+  /** Nunca bloquea: un cotejo que no coincide responde 200 con `completada: false` y un motivo. */
+  async biometriaIdentidad(
+    token: string,
+    input: { documentImage: string; photo: string },
+  ): Promise<{ completada: boolean; motivo: string | null }> {
+    const res = await apiClient.post<{ completada: boolean; motivo: string | null }>(
+      `/public/verificacion-identidad/${token}/biometria`,
+      input,
+    )
+    return res.data
+  }
+
+  async continuarIdentidad(token: string): Promise<{ completada: boolean }> {
+    const res = await apiClient.post<{ completada: boolean }>(`/public/verificacion-identidad/${token}/continuar`, {})
+    return res.data
   }
 
   async validarToken(token: string): Promise<ISolicitudFirmaPublic> {

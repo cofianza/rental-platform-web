@@ -14,7 +14,8 @@ import { toast } from 'sonner'
 import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail, IconAlertTriangle } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
-import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma } from '@/types/firma'
+import { VerificacionIdentidadFirma } from './VerificacionIdentidadFirma'
+import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma, IVerificacionIdentidad } from '@/types/firma'
 
 const ROL_META: Record<RolFirmante, { label: string; icon: typeof IconUser }> = {
   arrendatario: { label: 'Arrendatario', icon: IconUser },
@@ -53,6 +54,8 @@ export function FirmantesContratoSection({
   onFirmantesLoaded?: (total: number) => void
 }) {
   const [firmantes, setFirmantes] = useState<IContratoFirmante[]>([])
+  // Adenda 2 §9: verificación de identidad del arrendatario antes del sobre.
+  const [verificaciones, setVerificaciones] = useState<IVerificacionIdentidad[]>([])
   // Solicitud-sobre activa del contrato: la usamos para mandar el recordatorio.
   // Auco re-notifica a las partes pendientes (no crea documento → SIN costo).
   const [solicitud, setSolicitud] = useState<ISolicitudFirma | null>(null)
@@ -70,18 +73,21 @@ export function FirmantesContratoSection({
     if (silencioso) setRefreshing(true)
     else setIsLoading(true)
     try {
-      const [fs, sols] = await Promise.all([
+      const [{ firmantes: fs, verificaciones: vs }, sols] = await Promise.all([
         firmaService.listarFirmantes(contratoId),
         firmaService.listarPorContrato(contratoId).catch(() => [] as ISolicitudFirma[]),
       ])
       setFirmantes(fs)
-      onFirmantesLoadedRef.current?.(fs.length)
+      setVerificaciones(vs)
+      // Con verificación en curso tampoco va la sección legacy de un firmante.
+      onFirmantesLoadedRef.current?.(fs.length + vs.length)
       // Sobre aún en proceso (no firmado/expirado/cancelado) → recordable.
       setSolicitud(sols.find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado)) ?? null)
     } catch {
       // Silencioso: si el contrato no es multi-parte, no hay panel que mostrar.
       if (!silencioso) {
         setFirmantes([])
+        setVerificaciones([])
         onFirmantesLoadedRef.current?.(0)
       }
     } finally {
@@ -98,18 +104,21 @@ export function FirmantesContratoSection({
   const total = firmantes.length
   const todasFirmaron = total > 0 && firmados === total
   const pendientes = total > 0 && !todasFirmaron
+  const identidadPendiente = verificaciones.some((v) => v.estado === 'pendiente')
 
-  // Auto-refresco mientras haya firmas pendientes: cuando llega el webhook de
-  // Auco, la BD cambia y el panel se actualiza solo sin recargar la página.
-  const pendientesRef = useRef(pendientes)
-  pendientesRef.current = pendientes
+  // Auto-refresco mientras haya firmas (o la verificación de identidad)
+  // pendientes: cuando llega el webhook de Auco o el arrendatario confirma su
+  // identidad, la BD cambia y el panel se actualiza solo.
+  const enCurso = pendientes || identidadPendiente
+  const enCursoRef = useRef(enCurso)
+  enCursoRef.current = enCurso
   useEffect(() => {
-    if (!pendientes) return
+    if (!enCurso) return
     const id = setInterval(() => {
-      if (pendientesRef.current) cargar(true)
+      if (enCursoRef.current) cargar(true)
     }, POLL_MS)
     return () => clearInterval(id)
-  }, [pendientes, cargar])
+  }, [enCurso, cargar])
 
   // Cuando todas firman, avisamos al padre (una vez) para que refresque el
   // estado del contrato.
@@ -138,8 +147,21 @@ export function FirmantesContratoSection({
   }
   const recordatoriosAgotados = !!solicitud && solicitud.envios_realizados >= solicitud.max_envios
 
-  // Sin firmantes registrados → flujo de un solo firmante: no mostramos nada.
-  if (!isLoading && total === 0) return null
+  const identidad = verificaciones.length > 0 && (
+    <VerificacionIdentidadFirma
+      contratoId={contratoId}
+      verificaciones={verificaciones}
+      hayFirmantes={total > 0}
+      canManage={canManage}
+      onChange={() => cargar(true)}
+    />
+  )
+
+  // Sin firmantes registrados → flujo de un solo firmante: no mostramos nada,
+  // salvo la verificación de identidad que va antes del sobre (Adenda 2 §9).
+  if (!isLoading && total === 0) {
+    return identidad ? <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">{identidad}</div> : null
+  }
 
   const pct = total > 0 ? Math.round((firmados / total) * 100) : 0
 
@@ -192,6 +214,8 @@ export function FirmantesContratoSection({
           </button>
         </div>
       </div>
+
+      {identidad}
 
       {/* Barra de progreso */}
       {!isLoading && total > 0 && (
