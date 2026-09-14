@@ -19,6 +19,7 @@ import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 
 interface CoarrendatarioPropietarioCardProps {
@@ -53,6 +54,9 @@ export function CoarrendatarioPropietarioCard({
   const [estudioFull, setEstudioFull] = useState<IEstudio | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  // Gerencia y el miembro 'solo_lectura' entran aquí con rol 'inmobiliaria':
+  // ven la card (es lectura) pero no las acciones, que el API les niega.
+  const puedeEditar = usePuedeEditar()
 
   const coaLoadedRef = useRef(false)
   // Detecta la transición a estudio completado UNA vez, para avisar al padre.
@@ -115,7 +119,7 @@ export function CoarrendatarioPropietarioCard({
   // que lleva el expediente. Solo mientras está condicionado; en estados
   // posteriores sin co-arrendatario, no hay nada que mostrar.
   if (!coa) {
-    if (expedienteEstado !== 'condicionado') return null
+    if (expedienteEstado !== 'condicionado' || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm
         expedienteId={expedienteId}
@@ -174,7 +178,7 @@ export function CoarrendatarioPropietarioCard({
         {/* Invitación pendiente: permitir corregir el contacto y reenviar —
             un email mal escrito no debe dejar el expediente sin salida. El key
             remonta el form cuando el contacto guardado cambia tras reenviar. */}
-        {coa.estado === 'pendiente_aceptacion' && (
+        {coa.estado === 'pendiente_aceptacion' && puedeEditar && (
           <CoarrendatarioReenviarInvitacion
             key={`${coa.email}|${coa.telefono ?? ''}`}
             expedienteId={expedienteId}

@@ -22,6 +22,7 @@ import {
   esCondicionadoSinInfo,
 } from './ReintentarEstudioForm'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 
@@ -342,11 +343,16 @@ function EstudioPanel({
   onReasignado,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
+  // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
+  // como rol 'inmobiliaria' y hasta aquí veía Reintentar y Reasignar, dos
+  // mutaciones que el API le niega. Gerencia no llega a esGestor.
+  const puedeEditar = usePuedeEditar()
   const esGestor =
-    userRol === 'inmobiliaria' ||
+    (userRol === 'inmobiliaria' ||
     userRol === 'propietario' ||
     userRol === 'administrador' ||
-    userRol === 'operador_analista'
+    userRol === 'operador_analista') &&
+    puedeEditar
   // Incluye el condicionado-sin-información: ahí el form no reintenta sino que
   // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
   const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio)
