@@ -13,6 +13,7 @@ import { ApiClientError } from '@/lib/api'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento } from '@/types/documento'
 import { ImageViewer } from './ImageViewer'
+import { Modal } from './Modal'
 
 const PdfViewer = dynamic(
   () => import('./PdfViewer').then((m) => ({ default: m.PdfViewer })),
@@ -114,26 +115,6 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
     return () => clearTimeout(timer)
   }, [viewUrl, documento, isOpen])
 
-  // Lock body scroll when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = ''
-      }
-    }
-  }, [isOpen])
-
-  // Escape to close
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [isOpen, onClose])
-
   const handleDownload = useCallback(async () => {
     if (!documento || isDownloading) return
     setIsDownloading(true)
@@ -162,25 +143,19 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
     if (documento) fetchViewUrl(documento)
   }, [documento, fetchViewUrl])
 
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onClose()
-    },
-    [onClose]
-  )
-
   if (!isOpen || !documento) return null
 
   const isImage = documento.tipo_mime?.startsWith('image/') || false
   const isPdf = documento.tipo_mime === 'application/pdf'
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={documento.nombre_original ?? 'Visor de documento'}
-      className="fixed inset-0 z-50 bg-black/90 flex flex-col"
-      onClick={handleBackdropClick}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      bare
+      encima
+      ariaLabel={documento.nombre_original ?? 'Visor de documento'}
+      className="h-full max-h-none bg-black/90 shadow-none flex flex-col"
     >
       {/* Header toolbar */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/40">
@@ -204,6 +179,7 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
             <span className="hidden sm:inline">Descargar</span>
           </button>
           <button
+            data-modal-close
             onClick={onClose}
             className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             aria-label="Cerrar"
@@ -214,7 +190,7 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
       </div>
 
       {/* Content area */}
-      <div className="flex-1 min-h-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 min-h-0">
         {isLoading && (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <IconLoader size={40} className="text-white/70 animate-spin" />
@@ -262,6 +238,6 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
           </>
         )}
       </div>
-    </div>
+    </Modal>
   )
 }

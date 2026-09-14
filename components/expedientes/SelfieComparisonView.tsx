@@ -23,6 +23,7 @@ import {
   IconCamera,
   IconCheck,
 } from '@/components/icons'
+import { Modal } from '@/components/ui/Modal'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento } from '@/types/documento'
 
@@ -232,7 +233,14 @@ export function SelfieComparisonView({
   const canTakeAction = selfieDoc?.estado === 'pendiente' && onApprove && onReject
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      bare
+      encima
+      ariaLabel="Comparación de identidad"
+      className="h-full max-h-none bg-black/90 shadow-none flex flex-col"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-gray-900 border-b border-gray-800">
         <div>
@@ -381,6 +389,6 @@ export function SelfieComparisonView({
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

@@ -7,6 +7,7 @@
 
 import { useEffect, useCallback, useState } from 'react'
 import Image from 'next/image'
+import { Modal } from './Modal'
 import { IconX, IconChevronLeft, IconChevronRight, IconPlus, IconMinus } from '@/components/icons'
 import { useTouchGestures } from '@/hooks/useTouchGestures'
 
@@ -93,9 +94,6 @@ export function Lightbox({
       if (!isOpen) return
 
       switch (e.key) {
-        case 'Escape':
-          onClose()
-          break
         case 'ArrowLeft':
           if (hasPrevious) onPrevious()
           break
@@ -111,25 +109,13 @@ export function Lightbox({
           break
       }
     },
-    [isOpen, onClose, onPrevious, onNext, hasPrevious, hasNext, handleZoomIn, handleZoomOut]
+    [isOpen, onPrevious, onNext, hasPrevious, hasNext, handleZoomIn, handleZoomOut]
   )
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
-
-  // Bloquear scroll del body cuando está abierto
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
 
   // Drag handlers para pan cuando hay zoom
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -167,11 +153,16 @@ export function Lightbox({
   const isZoomed = zoom > 1
 
   return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      bare
+      encima
+      ariaLabel="Visor de imágenes"
+      className="h-full max-h-none bg-transparent shadow-none"
+    >
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Visor de imágenes"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+      className="absolute inset-0 flex items-center justify-center bg-black/90"
       onClick={isZoomed ? undefined : onClose}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -288,5 +279,6 @@ export function Lightbox({
         </div>
       )}
     </div>
+    </Modal>
   )
 }
