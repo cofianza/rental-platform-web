@@ -111,18 +111,18 @@ export function TransicionModal({
       <div className="space-y-6">
         {/* Estado actual */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <p className="block text-sm font-medium text-gray-700 mb-2">
             Estado actual
-          </label>
+          </p>
           <Badge estado={estadoActual} />
         </div>
 
         {/* Selector de estado destino */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <p id="transicion-modal-nuevo-estado" className="block text-sm font-medium text-gray-700 mb-3">
             Nuevo estado
-          </label>
-          <div className="grid grid-cols-2 gap-2">
+          </p>
+          <div role="group" aria-labelledby="transicion-modal-nuevo-estado" className="grid grid-cols-2 gap-2">
             {transiciones.map((transicion) => {
               const config = ESTADOS_EXPEDIENTE[transicion.estado_destino]
               const isSelected = labelSeleccionado === transicion.etiqueta
@@ -170,10 +170,10 @@ export function TransicionModal({
 
         {/* Campo de comentario */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">
             Comentario / Motivo <span className="text-red-500">*</span>
           </label>
-          <textarea
+          <textarea id="transicion-modal-comentario-motivo"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
             placeholder="Describe el motivo del cambio de estado..."

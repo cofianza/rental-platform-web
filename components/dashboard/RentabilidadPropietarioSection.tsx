@@ -260,8 +260,8 @@ function CampoInput({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</label>
-      <input
+      <label htmlFor="rentabilidad-propietario-section-campo" className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</label>
+      <input id="rentabilidad-propietario-section-campo"
         type="text"
         inputMode="numeric"
         value={value}
@@ -287,8 +287,8 @@ function CalcInput({
 }) {
   return (
     <div className="flex-1">
-      <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-primary-700">{label}</label>
-      <input
+      <label htmlFor="rentabilidad-propietario-section-campo-2" className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-primary-700">{label}</label>
+      <input id="rentabilidad-propietario-section-campo-2"
         type="text"
         inputMode="numeric"
         value={value}

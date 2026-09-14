@@ -285,10 +285,10 @@ export default function GestionarVisitaPage() {
         </Card>
       ) : accion === 'cancelar' ? (
         <Card>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="token-motivo-opcional" className="block text-sm font-medium text-gray-700 mb-2">
             Motivo (opcional)
           </label>
-          <textarea
+          <textarea id="token-motivo-opcional"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             rows={3}

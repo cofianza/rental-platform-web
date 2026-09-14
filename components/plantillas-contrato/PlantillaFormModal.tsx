@@ -86,10 +86,10 @@ export function PlantillaFormModal({
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
         {/* Nombre */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="plantilla-form-modal-nombre" className="block text-sm font-medium text-gray-700 mb-1">
             Nombre <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="plantilla-form-modal-nombre"
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -102,10 +102,10 @@ export function PlantillaFormModal({
 
         {/* Descripcion */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="plantilla-form-modal-descripcion" className="block text-sm font-medium text-gray-700 mb-1">
             Descripcion
           </label>
-          <textarea
+          <textarea id="plantilla-form-modal-descripcion"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             maxLength={1000}
@@ -117,9 +117,9 @@ export function PlantillaFormModal({
 
         {/* Contenido */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <p className="block text-sm font-medium text-gray-700 mb-1">
             Contenido <span className="text-red-500">*</span>
-          </label>
+          </p>
           <RichTextEditor
             content={contenido}
             onChange={setContenido}
@@ -133,9 +133,9 @@ export function PlantillaFormModal({
         {/* Variables detectadas */}
         {detectedVariables.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <p className="block text-sm font-medium text-gray-700 mb-1">
               Variables detectadas ({detectedVariables.length})
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               {detectedVariables.map((v) => (
                 <span

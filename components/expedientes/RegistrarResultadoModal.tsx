@@ -220,10 +220,10 @@ export function RegistrarResultadoModal({
 
           {/* Resultado selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <p id="registrar-resultado-modal-resultado" className="block text-sm font-medium text-gray-700 mb-2">
               Resultado <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-3 gap-3">
+            </p>
+            <div role="group" aria-labelledby="registrar-resultado-modal-resultado" className="grid grid-cols-3 gap-3">
               {RESULTADOS.map((r) => (
                 <button
                   key={r.value}
@@ -243,10 +243,10 @@ export function RegistrarResultadoModal({
 
           {/* Score */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="registrar-resultado-modal-score-opcional-0-999" className="block text-sm font-medium text-gray-700 mb-1">
               Score <span className="text-gray-400">(opcional, 0-999)</span>
             </label>
-            <input
+            <input id="registrar-resultado-modal-score-opcional-0-999"
               type="number"
               min={0}
               max={999}
@@ -259,11 +259,11 @@ export function RegistrarResultadoModal({
 
           {/* Observaciones */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="registrar-resultado-modal-observaciones-min-10-caracteres" className="block text-sm font-medium text-gray-700 mb-1">
               Observaciones <span className="text-red-500">*</span>
               <span className="text-gray-400 font-normal"> (min. 10 caracteres)</span>
             </label>
-            <textarea
+            <textarea id="registrar-resultado-modal-observaciones-min-10-caracteres"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               rows={3}
@@ -277,10 +277,10 @@ export function RegistrarResultadoModal({
           {/* Motivo rechazo (conditional) */}
           {resultado === 'rechazado' && (
             <div>
-              <label className="block text-sm font-medium text-red-700 mb-1">
+              <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-red-700 mb-1">
                 Motivo de rechazo <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <textarea id="registrar-resultado-modal-motivo-de-rechazo"
                 value={motivoRechazo}
                 onChange={(e) => setMotivoRechazo(e.target.value)}
                 rows={3}
@@ -294,10 +294,10 @@ export function RegistrarResultadoModal({
           {/* Condiciones (conditional) */}
           {resultado === 'condicionado' && (
             <div>
-              <label className="block text-sm font-medium text-yellow-700 mb-1">
+              <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-yellow-700 mb-1">
                 Condiciones <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <textarea id="registrar-resultado-modal-condiciones"
                 value={condiciones}
                 onChange={(e) => setCondiciones(e.target.value)}
                 rows={3}
@@ -310,7 +310,7 @@ export function RegistrarResultadoModal({
 
           {/* Certificado PDF upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="registrar-resultado-certificado" className="block text-sm font-medium text-gray-700 mb-1">
               Certificado PDF <span className="text-gray-400">(opcional, max 20MB)</span>
             </label>
             {!archivo ? (
@@ -353,6 +353,7 @@ export function RegistrarResultadoModal({
               </div>
             )}
             <input
+              id="registrar-resultado-certificado"
               ref={fileInputRef}
               type="file"
               accept=".pdf"

@@ -116,9 +116,9 @@ export function AsignacionResponsableModal({
           {/* Responsable actual */}
           {analistaActual && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <p className="block text-sm font-medium text-gray-700 mb-2">
                 Responsable actual
-              </label>
+              </p>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <Avatar name={nombreActual!} size="sm" />
                 <span className="text-sm font-medium text-gray-900">{nombreActual}</span>
@@ -128,9 +128,9 @@ export function AsignacionResponsableModal({
 
           {/* Lista de analistas */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <p className="block text-sm font-medium text-gray-700 mb-3">
               {analistaActual ? 'Nuevo responsable' : 'Seleccionar responsable'}
-            </label>
+            </p>
 
             {isLoadingAnalistas ? (
               <div className="flex items-center justify-center py-8">

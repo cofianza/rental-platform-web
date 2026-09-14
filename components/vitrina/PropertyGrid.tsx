@@ -183,8 +183,8 @@ export function PropertyGrid() {
       <div className="flex flex-wrap gap-3 items-end">
         {/* Ciudad */}
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Ciudad</label>
-          <select
+          <label htmlFor="property-grid-ciudad" className="block text-xs font-medium text-gray-500 mb-1">Ciudad</label>
+          <select id="property-grid-ciudad"
             value={ciudad}
             onChange={(e) => handleFilterChange(setCiudad)(e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -198,8 +198,8 @@ export function PropertyGrid() {
 
         {/* Tipo */}
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
-          <select
+          <label htmlFor="property-grid-tipo" className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+          <select id="property-grid-tipo"
             value={tipo}
             onChange={(e) => handleFilterChange(setTipo)(e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -213,8 +213,8 @@ export function PropertyGrid() {
 
         {/* Habitaciones */}
         <div className="min-w-[100px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Habitaciones</label>
-          <select
+          <label htmlFor="property-grid-habitaciones" className="block text-xs font-medium text-gray-500 mb-1">Habitaciones</label>
+          <select id="property-grid-habitaciones"
             value={habitaciones}
             onChange={(e) => handleFilterChange(setHabitaciones)(e.target.value)}
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -227,8 +227,8 @@ export function PropertyGrid() {
 
         {/* Precio min */}
         <div className="min-w-[120px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Precio min</label>
-          <input
+          <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio min</label>
+          <input id="property-grid-precio-min"
             type="number"
             value={precioMin}
             onChange={(e) => handleFilterChange(setPrecioMin)(e.target.value)}
@@ -239,8 +239,8 @@ export function PropertyGrid() {
 
         {/* Precio max */}
         <div className="min-w-[120px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Precio max</label>
-          <input
+          <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio max</label>
+          <input id="property-grid-precio-max"
             type="number"
             value={precioMax}
             onChange={(e) => handleFilterChange(setPrecioMax)(e.target.value)}

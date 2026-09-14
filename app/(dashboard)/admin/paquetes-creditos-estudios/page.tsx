@@ -289,10 +289,10 @@ export default function AdminPaquetesPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="paquetes-creditos-estudios-nombre" className="block text-sm font-medium text-gray-700 mb-1">
               Nombre <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="paquetes-creditos-estudios-nombre"
               type="text"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
@@ -302,8 +302,8 @@ export default function AdminPaquetesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <input
+            <label htmlFor="paquetes-creditos-estudios-descripcion" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <input id="paquetes-creditos-estudios-descripcion"
               type="text"
               value={form.descripcion}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
@@ -314,10 +314,10 @@ export default function AdminPaquetesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="paquetes-creditos-estudios-cantidad-de-estudios" className="block text-sm font-medium text-gray-700 mb-1">
                 Cantidad de estudios <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="paquetes-creditos-estudios-cantidad-de-estudios"
                 type="number"
                 min={1}
                 value={form.cantidad_estudios}
@@ -326,10 +326,10 @@ export default function AdminPaquetesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="paquetes-creditos-estudios-precio-cop" className="block text-sm font-medium text-gray-700 mb-1">
                 Precio (COP) <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="paquetes-creditos-estudios-precio-cop"
                 type="number"
                 min={1000}
                 step={1000}
@@ -341,10 +341,10 @@ export default function AdminPaquetesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="paquetes-creditos-estudios-vencimiento-dias" className="block text-sm font-medium text-gray-700 mb-1">
               Vencimiento (días)
             </label>
-            <input
+            <input id="paquetes-creditos-estudios-vencimiento-dias"
               type="number"
               min={1}
               value={form.vence_en_dias}
@@ -360,8 +360,8 @@ export default function AdminPaquetesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
-              <input
+              <label htmlFor="paquetes-creditos-estudios-orden" className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
+              <input id="paquetes-creditos-estudios-orden"
                 type="number"
                 min={0}
                 value={form.orden}

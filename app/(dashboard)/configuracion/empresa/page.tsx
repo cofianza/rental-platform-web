@@ -113,11 +113,12 @@ export default function EmpresaPage() {
                 />
               ) : (
                 <>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor={`empresa-${c.key}`} className="block text-sm font-medium text-gray-700 mb-1">
                     {c.label}
                     {c.required && <span className="text-coral-500"> *</span>}
                   </label>
                   <input
+                    id={`empresa-${c.key}`}
                     type={c.type ?? 'text'}
                     value={String(form[c.key] ?? '')}
                     onChange={(e) => setCampo(c.key, e.target.value)}

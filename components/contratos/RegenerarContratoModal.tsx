@@ -125,8 +125,8 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </p>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
-          <input
+          <label htmlFor="regenerar-contrato-modal-fecha-de-inicio" className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
+          <input id="regenerar-contrato-modal-fecha-de-inicio"
             type="date"
             value={fechaInicio}
             onChange={(e) => setFechaInicio(e.target.value)}
@@ -136,8 +136,8 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Duración (meses)</label>
-          <input
+          <label htmlFor="regenerar-contrato-modal-duracion-meses" className="block text-sm font-medium text-gray-700 mb-1">Duración (meses)</label>
+          <input id="regenerar-contrato-modal-duracion-meses"
             type="number"
             value={duracionMeses}
             onChange={(e) => setDuracionMeses(e.target.value)}
@@ -149,10 +149,10 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="regenerar-contrato-modal-valor-del-canon-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Valor del canon (opcional)
           </label>
-          <input
+          <input id="regenerar-contrato-modal-valor-del-canon-opcional"
             type="number"
             value={valorArriendo}
             onChange={(e) => setValorArriendo(e.target.value)}

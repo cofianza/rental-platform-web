@@ -156,10 +156,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
         {/* Concepto + Metodo */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-manual-modal-concepto" className="block text-sm font-medium text-gray-700 mb-1">
               Concepto <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="pago-manual-modal-concepto"
               value={concepto}
               onChange={(e) => setConcepto(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
@@ -173,10 +173,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-manual-modal-metodo-de-pago" className="block text-sm font-medium text-gray-700 mb-1">
               Metodo de pago <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="pago-manual-modal-metodo-de-pago"
               value={metodo}
               onChange={(e) => setMetodo(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
@@ -193,10 +193,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
         {/* Monto + Fecha */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-manual-modal-monto-cop" className="block text-sm font-medium text-gray-700 mb-1">
               Monto (COP) <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="pago-manual-modal-monto-cop"
               type="number"
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
@@ -208,10 +208,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="pago-manual-modal-fecha-de-pago" className="block text-sm font-medium text-gray-700 mb-1">
               Fecha de pago <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="pago-manual-modal-fecha-de-pago"
               type="date"
               value={fechaPago}
               onChange={(e) => setFechaPago(e.target.value)}
@@ -224,10 +224,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
         {/* Referencia bancaria */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-manual-modal-referencia-bancaria" className="block text-sm font-medium text-gray-700 mb-1">
             Referencia bancaria
           </label>
-          <input
+          <input id="pago-manual-modal-referencia-bancaria"
             type="text"
             value={referenciaBancaria}
             onChange={(e) => setReferenciaBancaria(e.target.value)}
@@ -240,10 +240,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
         {/* Descripcion */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-manual-modal-descripcion" className="block text-sm font-medium text-gray-700 mb-1">
             Descripcion
           </label>
-          <input
+          <input id="pago-manual-modal-descripcion"
             type="text"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
@@ -256,7 +256,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
         {/* Comprobante */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-manual-comprobante" className="block text-sm font-medium text-gray-700 mb-1">
             Comprobante de pago
           </label>
           {!file ? (
@@ -303,6 +303,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             </div>
           )}
           <input
+            id="pago-manual-comprobante"
             ref={fileInputRef}
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
@@ -313,10 +314,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
         {/* Notas */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="pago-manual-modal-notas" className="block text-sm font-medium text-gray-700 mb-1">
             Notas
           </label>
-          <textarea
+          <textarea id="pago-manual-modal-notas"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             placeholder="Notas adicionales sobre el pago..."

@@ -69,8 +69,8 @@ export function CoarrendatarioReenviarInvitacion({
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
-          <label className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
-          <input
+          <label htmlFor="coarrendatario-reenviar-invitacion-correo" className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
+          <input id="coarrendatario-reenviar-invitacion-correo"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

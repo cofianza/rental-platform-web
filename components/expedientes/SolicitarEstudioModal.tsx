@@ -92,10 +92,10 @@ export function SolicitarEstudioModal({
 
         {/* Tipo */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="solicitar-estudio-modal-tipo-de-estudio" className="block text-sm font-medium text-gray-700 mb-1">
             Tipo de estudio
           </label>
-          <select
+          <select id="solicitar-estudio-modal-tipo-de-estudio"
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TipoEstudio)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -108,10 +108,10 @@ export function SolicitarEstudioModal({
 
         {/* Proveedor */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="solicitar-estudio-modal-proveedor" className="block text-sm font-medium text-gray-700 mb-1">
             Proveedor
           </label>
-          <select
+          <select id="solicitar-estudio-modal-proveedor"
             value={proveedor}
             onChange={(e) => setProveedor(e.target.value as ProveedorEstudio)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -124,10 +124,10 @@ export function SolicitarEstudioModal({
 
         {/* Duracion */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="solicitar-estudio-modal-duracion-del-contrato-meses" className="block text-sm font-medium text-gray-700 mb-1">
             Duracion del contrato (meses)
           </label>
-          <input
+          <input id="solicitar-estudio-modal-duracion-del-contrato-meses"
             type="number"
             min={1}
             max={60}
@@ -139,10 +139,10 @@ export function SolicitarEstudioModal({
 
         {/* Quien paga */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="solicitar-estudio-modal-quien-paga-el-estudio" className="block text-sm font-medium text-gray-700 mb-1">
             Quien paga el estudio
           </label>
-          <select
+          <select id="solicitar-estudio-modal-quien-paga-el-estudio"
             value={pagoPor}
             onChange={(e) => setPagoPor(e.target.value as PagoPor)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -155,10 +155,10 @@ export function SolicitarEstudioModal({
 
         {/* Observaciones */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="solicitar-estudio-modal-observaciones-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Observaciones <span className="text-gray-400">(opcional)</span>
           </label>
-          <textarea
+          <textarea id="solicitar-estudio-modal-observaciones-opcional"
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
             rows={3}

@@ -215,8 +215,8 @@ export default function MiCuentaPage() {
             No se duplica aquí en los datos personales. */}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
+          <label htmlFor="cuenta-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input id="cuenta-email"
             type="email"
             value={perfil.email}
             disabled
@@ -247,10 +247,10 @@ export default function MiCuentaPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="cuenta-tipo" className="block text-sm font-medium text-gray-700 mb-1">
               Tipo{isInmobiliaria && <span className="text-coral-500"> *</span>}
             </label>
-            <select
+            <select id="cuenta-tipo"
               value={form.tipo_documento}
               onChange={(e) =>
                 onChange('tipo_documento', e.target.value as FormState['tipo_documento'])
@@ -315,11 +315,11 @@ interface FieldProps {
 function Field({ label, value, onChange, placeholder, help, required }: FieldProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor="cuenta-campo" className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {required && ' *'}
       </label>
-      <input
+      <input id="cuenta-campo"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -244,7 +244,7 @@ export default function ReportarMoraPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="moras-contrato" className="block text-sm font-medium text-gray-700 mb-1">
               Contrato <span className="text-coral-500">*</span>
             </label>
             {/* El filtro vive dentro del formulario de reporte: sin esto, un
@@ -257,6 +257,7 @@ export default function ReportarMoraPage() {
               />
             </div>
             <select
+              id="moras-contrato"
               value={contratoId}
               onChange={(e) => setContratoId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
@@ -282,10 +283,10 @@ export default function ReportarMoraPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="moras-fecha-de-vencimiento-del-canon" className="block text-sm font-medium text-gray-700 mb-1">
               Fecha de vencimiento del canon <span className="text-coral-500">*</span>
             </label>
-            <input
+            <input id="moras-fecha-de-vencimiento-del-canon"
               type="date"
               value={fechaVencimiento}
               onChange={(e) => setFechaVencimiento(e.target.value)}
@@ -299,8 +300,8 @@ export default function ReportarMoraPage() {
         {contratoId && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Inquilino</label>
-              <input
+              <label htmlFor="moras-inquilino" className="block text-sm font-medium text-gray-700 mb-1">Inquilino</label>
+              <input id="moras-inquilino"
                 type="text"
                 readOnly
                 value={contratoSeleccionado?.inquilino ?? '—'}
@@ -308,10 +309,10 @@ export default function ReportarMoraPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="moras-fecha-del-reporte-hoy" className="block text-sm font-medium text-gray-700 mb-1">
                 Fecha del reporte <span className="text-gray-400 font-normal">(hoy)</span>
               </label>
-              <input
+              <input id="moras-fecha-del-reporte-hoy"
                 type="text"
                 readOnly
                 value={new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -323,10 +324,10 @@ export default function ReportarMoraPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="moras-monto-en-mora" className="block text-sm font-medium text-gray-700 mb-1">
               Monto en mora <span className="text-coral-500">*</span>
             </label>
-            <input
+            <input id="moras-monto-en-mora"
               type="text"
               inputMode="numeric"
               value={monto}
@@ -340,10 +341,10 @@ export default function ReportarMoraPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="moras-descripcion-opcional" className="block text-sm font-medium text-gray-700 mb-1">
               Descripción <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
-            <input
+            <input id="moras-descripcion-opcional"
               type="text"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}

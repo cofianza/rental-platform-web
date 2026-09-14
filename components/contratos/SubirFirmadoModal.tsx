@@ -150,10 +150,10 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
 
         {/* Optional fields */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="subir-firmado-modal-referencia-otp-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Referencia OTP <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
-          <input
+          <input id="subir-firmado-modal-referencia-otp-opcional"
             type="text"
             value={referenciaOtp}
             onChange={(e) => setReferenciaOtp(e.target.value)}
@@ -163,10 +163,10 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="subir-firmado-modal-notas-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Notas <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
-          <textarea
+          <textarea id="subir-firmado-modal-notas-opcional"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             maxLength={1000}

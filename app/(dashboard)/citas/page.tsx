@@ -177,8 +177,8 @@ export default function CitasPage() {
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Inmueble</label>
-            <select
+            <label htmlFor="citas-inmueble" className="block text-xs font-medium text-gray-700 mb-1">Inmueble</label>
+            <select id="citas-inmueble"
               value={filters.inmueble_id || ''}
               onChange={(e) => setFilters({ inmueble_id: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -192,8 +192,8 @@ export default function CitasPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
-            <input
+            <label htmlFor="citas-desde" className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
+            <input id="citas-desde"
               type="date"
               value={filters.fecha_desde || ''}
               onChange={(e) => setFilters({ fecha_desde: e.target.value })}
@@ -201,8 +201,8 @@ export default function CitasPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
-            <input
+            <label htmlFor="citas-hasta" className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
+            <input id="citas-hasta"
               type="date"
               value={filters.fecha_hasta || ''}
               onChange={(e) => setFilters({ fecha_hasta: e.target.value })}

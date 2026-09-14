@@ -287,11 +287,11 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-gray-700">
+              <label htmlFor="contrato-solicitante-card-reenviar-a-otro-correo" className="block text-xs font-medium text-gray-700">
                 Reenviar a otro correo
               </label>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input
+                <input id="contrato-solicitante-card-reenviar-a-otro-correo"
                   type="email"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}

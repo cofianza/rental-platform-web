@@ -304,10 +304,10 @@ export function SelfieComparisonView({
         {/* Reject input */}
         {showRejectInput && (
           <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-            <label className="block text-sm text-gray-300 mb-2">
+            <label htmlFor="selfie-comparison-view-motivo-del-rechazo" className="block text-sm text-gray-300 mb-2">
               Motivo del rechazo:
             </label>
-            <textarea
+            <textarea id="selfie-comparison-view-motivo-del-rechazo"
               value={rejectMotivo}
               onChange={(e) => setRejectMotivo(e.target.value)}
               placeholder="Describe por que rechazas el selfie..."

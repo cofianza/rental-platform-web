@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useId } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -342,7 +342,6 @@ export default function DatosContratoPage() {
         {/* Adenda 2 §7: cuando pagas un estudio con Mercado Pago, la factura
             electrónica sale a tu nombre y la DIAN exige el código del municipio. */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Municipio para facturación</label>
           <MunicipioCombobox
             value={form.municipio_codigo ? { codigo: form.municipio_codigo, nombre: form.municipio_nombre ?? '' } : null}
             onChange={(m) => setForm((prev) => ({ ...prev, municipio_codigo: m?.codigo ?? null, municipio_nombre: m?.nombre ?? null }))}
@@ -399,10 +398,10 @@ export default function DatosContratoPage() {
             required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-contrato-tipo-de-cuenta" className="block text-sm font-medium text-gray-700 mb-1">
               Tipo de cuenta<span className="text-coral-500"> *</span>
             </label>
-            <select
+            <select id="datos-contrato-tipo-de-cuenta"
               value={form.cuenta_recaudo_tipo ?? ''}
               onChange={(e) =>
                 onChange('cuenta_recaudo_tipo', (e.target.value || null) as 'ahorros' | 'corriente' | null)
@@ -504,13 +503,17 @@ interface FieldProps {
 }
 
 function Field({ label, value, onChange, placeholder, help, type = 'text', required = false }: FieldProps) {
+  // useId y no un slug del label: este componente se renderiza muchas veces en
+  // la pantalla y dos inputs con el mismo id romperian la asociacion.
+  const id = useId()
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {required && <span className="text-coral-500"> *</span>}
       </label>
       <input
+        id={id}
         type={type}
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value || null)}

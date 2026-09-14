@@ -299,12 +299,12 @@ export function Step3Configuration({
 
       {/* Notas internas */}
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <label htmlFor="step3-configuration-opcional" className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <IconFileText size={16} className="text-gray-400" />
           {WIZARD_MESSAGES.NOTAS_LABEL}
           <span className="text-gray-400 font-normal">(opcional)</span>
         </label>
-        <textarea
+        <textarea id="step3-configuration-opcional"
           value={data.notas}
           onChange={handleNotasChange}
           placeholder={WIZARD_MESSAGES.NOTAS_PLACEHOLDER}
@@ -336,7 +336,7 @@ export function Step3Configuration({
       {/* Asignar responsable — solo roles internos (no inmobiliaria/propietario) */}
       {esInterno && (
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <label htmlFor="step3-analista" className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <IconUser size={16} className="text-gray-400" />
           {WIZARD_MESSAGES.ANALISTA_LABEL}
           <span className="text-gray-400 font-normal">(opcional)</span>
@@ -359,6 +359,7 @@ export function Step3Configuration({
           </div>
         ) : (
           <select
+            id="step3-analista"
             value={data.analista_id}
             onChange={handleAnalistaChange}
             className={cn(
@@ -389,7 +390,7 @@ export function Step3Configuration({
       {/* Responsable (miembro) — solo inmobiliaria (multi-tenant Fase 3.1) */}
       {esInmobiliaria && (
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <label htmlFor="step3-configuration-responsable-del-estudio-opcional" className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <IconUser size={16} className="text-gray-400" />
             Responsable del estudio
             <span className="text-gray-400 font-normal">(opcional)</span>
@@ -400,7 +401,7 @@ export function Step3Configuration({
               <span>Cargando equipo...</span>
             </div>
           ) : (
-            <select
+            <select id="step3-configuration-responsable-del-estudio-opcional"
               value={data.miembro_responsable_id}
               onChange={(e) => {
                 const id = e.target.value

@@ -265,9 +265,9 @@ export function Step1InmuebleSelection({
               comun (pocos inmuebles propios) elijan en un solo click. */}
           {usaDropdownPropios && (
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
+              <p className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
                 {verTodosMios ? 'Todos mis inmuebles' : 'Mis inmuebles disponibles'}
-              </label>
+              </p>
               {isLoadingMios ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <IconLoader size={16} className="animate-spin" /> Cargando tus inmuebles...

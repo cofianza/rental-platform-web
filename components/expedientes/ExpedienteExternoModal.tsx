@@ -83,12 +83,12 @@ export function ExpedienteExternoModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="expediente-externo-modal-email-del-cliente" className="block text-sm font-medium text-gray-700 mb-1">
             Email del cliente
           </label>
           <div className="relative">
             <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
+            <input id="expediente-externo-modal-email-del-cliente"
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
@@ -102,10 +102,10 @@ export function ExpedienteExternoModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="expediente-externo-modal-notas-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Notas (opcional)
           </label>
-          <textarea
+          <textarea id="expediente-externo-modal-notas-opcional"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}

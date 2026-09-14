@@ -374,10 +374,10 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="cita-card-notas-para-el-solicitante-opcional" className="block text-sm font-medium text-gray-700 mb-1">
               Notas para el solicitante (opcional)
             </label>
-            <textarea
+            <textarea id="cita-card-notas-para-el-solicitante-opcional"
               value={notasPropietario}
               onChange={(e) => setNotasPropietario(e.target.value)}
               rows={3}
@@ -423,10 +423,10 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
             Por favor indica el motivo de la cancelación. El solicitante recibirá esta información.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="cita-card-motivo" className="block text-sm font-medium text-gray-700 mb-1">
               Motivo <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <textarea id="cita-card-motivo"
               value={motivoCancelacion}
               onChange={(e) => setMotivoCancelacion(e.target.value)}
               rows={3}

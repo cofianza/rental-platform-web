@@ -220,8 +220,8 @@ export default function InvitacionMiembroPage() {
           <p className="text-sm text-gray-700 font-medium">Crea tu cuenta para unirte</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
-              <input
+              <label htmlFor="token-nombre" className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+              <input id="token-nombre"
                 type="text"
                 required
                 value={nombre}
@@ -230,8 +230,8 @@ export default function InvitacionMiembroPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Apellido</label>
-              <input
+              <label htmlFor="token-apellido" className="block text-xs font-medium text-gray-600 mb-1">Apellido</label>
+              <input id="token-apellido"
                 type="text"
                 required
                 value={apellido}
@@ -253,8 +253,8 @@ export default function InvitacionMiembroPage() {
             </p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Contraseña</label>
-            <input
+            <label htmlFor="token-contrasena" className="block text-xs font-medium text-gray-600 mb-1">Contraseña</label>
+            <input id="token-contrasena"
               type="password"
               required
               minLength={8}

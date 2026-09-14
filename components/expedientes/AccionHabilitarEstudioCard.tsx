@@ -211,10 +211,10 @@ export function AccionHabilitarEstudioCard({
               agendar una cita en el sistema. Podrás habilitar la evaluación enseguida.
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="accion-habilitar-estudio-card-motivo-nota-opcional" className="block text-sm font-medium text-gray-700 mb-1">
                 Motivo / nota (opcional)
               </label>
-              <textarea
+              <textarea id="accion-habilitar-estudio-card-motivo-nota-opcional"
                 value={motivoOmitir}
                 onChange={(e) => setMotivoOmitir(e.target.value)}
                 rows={3}
@@ -267,10 +267,10 @@ export function AccionHabilitarEstudioCard({
                 toma al habilitar: el estudio se crea con ese proveedor y
                 cambiarlo después obliga a reintentar (y a pagar otra consulta). */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              <p id="accion-habilitar-estudio-card-buro-de-credito-a-consultar" className="block text-xs font-medium text-gray-600 mb-1.5">
                 Buró de crédito a consultar
-              </label>
-              <div className="flex flex-wrap gap-2">
+              </p>
+              <div role="group" aria-labelledby="accion-habilitar-estudio-card-buro-de-credito-a-consultar" className="flex flex-wrap gap-2">
                 {BUROS.map((b) => (
                   <button
                     key={b.value}
@@ -326,10 +326,10 @@ export function AccionHabilitarEstudioCard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="accion-habilitar-estudio-card-motivo-opcional" className="block text-sm font-medium text-gray-700 mb-1">
               Motivo (opcional)
             </label>
-            <textarea
+            <textarea id="accion-habilitar-estudio-card-motivo-opcional"
               value={motivoRechazo}
               onChange={(e) => setMotivoRechazo(e.target.value)}
               rows={3}

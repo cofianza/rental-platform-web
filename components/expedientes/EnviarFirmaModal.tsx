@@ -72,10 +72,10 @@ export function EnviarFirmaModal({
           </p>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="enviar-firma-modal-nombre-completo-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
               Nombre completo del firmante <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="enviar-firma-modal-nombre-completo-del-firmante"
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -87,10 +87,10 @@ export function EnviarFirmaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="enviar-firma-modal-email-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
               Email del firmante <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="enviar-firma-modal-email-del-firmante"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -102,10 +102,10 @@ export function EnviarFirmaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="enviar-firma-modal-celular-whatsapp-opcional-recomendado" className="block text-sm font-medium text-gray-700 mb-1">
               Celular (WhatsApp) <span className="text-gray-400 font-normal">(opcional, recomendado)</span>
             </label>
-            <input
+            <input id="enviar-firma-modal-celular-whatsapp-opcional-recomendado"
               type="tel"
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}

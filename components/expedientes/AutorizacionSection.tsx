@@ -170,8 +170,8 @@ export function AutorizacionSection({
         <div className="space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
-              <input
+              <label htmlFor="autorizacion-section-correo" className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
+              <input id="autorizacion-section-correo"
                 type="email"
                 value={emailEdit}
                 onChange={(e) => setEmailEdit(e.target.value)}

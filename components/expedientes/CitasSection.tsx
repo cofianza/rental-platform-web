@@ -739,10 +739,10 @@ function CrearCitaModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="citas-section-campo" className="block text-sm font-medium text-gray-700 mb-1">
             {isOwnerOrAgency ? 'Nota para el solicitante (opcional)' : 'Notas (opcional)'}
           </label>
-          <textarea
+          <textarea id="citas-section-campo"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
@@ -829,8 +829,8 @@ function ConfirmarCitaModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
-          <textarea
+          <label htmlFor="citas-section-notas-opcional" className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <textarea id="citas-section-notas-opcional"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
@@ -982,8 +982,8 @@ function ReprogramarCitaModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
-          <textarea
+          <label htmlFor="citas-section-notas-opcional-2" className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <textarea id="citas-section-notas-opcional-2"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
@@ -1052,8 +1052,8 @@ function CancelarCitaModal({
         <p className="text-sm text-gray-500">Indica el motivo de la cancelación.</p>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
-          <textarea
+          <label htmlFor="citas-section-motivo" className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+          <textarea id="citas-section-motivo"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             rows={3}

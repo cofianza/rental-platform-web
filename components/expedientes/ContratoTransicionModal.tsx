@@ -107,9 +107,9 @@ export function ContratoTransicionModal({
 
         {/* Estado actual */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <p className="block text-sm font-medium text-gray-700 mb-2">
             Estado actual
-          </label>
+          </p>
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${configActual?.bgColor || 'bg-gray-100'} ${configActual?.textColor || 'text-gray-700'}`}>
             {configActual?.label || estadoActual}
           </span>
@@ -117,10 +117,10 @@ export function ContratoTransicionModal({
 
         {/* Selector de estado destino */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <p id="contrato-transicion-modal-nuevo-estado" className="block text-sm font-medium text-gray-700 mb-3">
             Nuevo estado
-          </label>
-          <div className="grid grid-cols-2 gap-2">
+          </p>
+          <div role="group" aria-labelledby="contrato-transicion-modal-nuevo-estado" className="grid grid-cols-2 gap-2">
             {transiciones.map((transicion) => {
               const config = ESTADOS_CONTRATO[transicion.estado as EstadoContratoKey]
               const isSelected = estadoSeleccionado === transicion.estado
@@ -180,10 +180,10 @@ export function ContratoTransicionModal({
 
         {/* Campo de comentario */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="contrato-transicion-modal-comentario" className="block text-sm font-medium text-gray-700 mb-2">
             Comentario <span className="text-red-500">*</span>
           </label>
-          <textarea
+          <textarea id="contrato-transicion-modal-comentario"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
             placeholder="Describe el motivo del cambio de estado..."
@@ -196,10 +196,10 @@ export function ContratoTransicionModal({
         {/* Campo de motivo (solo para cancelacion/finalizacion) */}
         {requiresMotivo && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="contrato-transicion-modal-motivo" className="block text-sm font-medium text-gray-700 mb-2">
               Motivo <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <textarea id="contrato-transicion-modal-motivo"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
               placeholder={

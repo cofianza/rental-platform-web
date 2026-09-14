@@ -118,11 +118,11 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
 
           {/* Nueva contraseña */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="reset-password-dialog-nueva-contrasena" className="block text-sm font-medium text-gray-700 mb-1">
               Nueva contraseña <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <input
+              <input id="reset-password-dialog-nueva-contrasena"
                 type={showPwd ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -155,10 +155,10 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
 
           {/* Confirmar */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="reset-password-dialog-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">
               Confirmar contraseña <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="reset-password-dialog-confirmar-contrasena"
               type={showPwd ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}

@@ -239,8 +239,8 @@ export default function VolumenExpedientesPage() {
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Desde</label>
-          <input
+          <label htmlFor="volumen-desde" className="text-xs font-medium text-gray-600">Desde</label>
+          <input id="volumen-desde"
             type="date"
             value={filters.dateFrom || ''}
             onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
@@ -248,8 +248,8 @@ export default function VolumenExpedientesPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Hasta</label>
-          <input
+          <label htmlFor="volumen-hasta" className="text-xs font-medium text-gray-600">Hasta</label>
+          <input id="volumen-hasta"
             type="date"
             value={filters.dateTo || ''}
             onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
@@ -257,8 +257,8 @@ export default function VolumenExpedientesPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Estado</label>
-          <select
+          <label htmlFor="volumen-estado" className="text-xs font-medium text-gray-600">Estado</label>
+          <select id="volumen-estado"
             value={filters.estado || ''}
             onChange={(e) => setFilters((f) => ({ ...f, estado: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"

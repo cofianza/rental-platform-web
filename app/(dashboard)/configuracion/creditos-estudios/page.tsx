@@ -514,10 +514,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
       {faltantes.includes('razon_social') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="creditos-estudios-campo" className="block text-sm font-medium text-gray-700 mb-1">
             {CAMPO_LABEL.razon_social} <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="creditos-estudios-campo"
             type="text"
             value={datos.razon_social || ''}
             onChange={(e) => set('razon_social', e.target.value)}
@@ -529,10 +529,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
       {faltantes.includes('nit') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="creditos-estudios-campo-2" className="block text-sm font-medium text-gray-700 mb-1">
             {CAMPO_LABEL.nit} <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="creditos-estudios-campo-2"
             type="text"
             value={datos.nit || ''}
             onChange={(e) => set('nit', e.target.value)}
@@ -544,10 +544,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
       {faltantes.includes('direccion') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="creditos-estudios-campo-3" className="block text-sm font-medium text-gray-700 mb-1">
             {CAMPO_LABEL.direccion} <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="creditos-estudios-campo-3"
             type="text"
             value={datos.direccion || ''}
             onChange={(e) => set('direccion', e.target.value)}
@@ -560,10 +560,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
       <div className="grid grid-cols-2 gap-3">
         {faltantes.includes('email') && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="creditos-estudios-campo-4" className="block text-sm font-medium text-gray-700 mb-1">
               {CAMPO_LABEL.email} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="creditos-estudios-campo-4"
               type="email"
               value={datos.email || ''}
               onChange={(e) => set('email', e.target.value)}
@@ -575,10 +575,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
         {faltantes.includes('telefono') && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="creditos-estudios-campo-5" className="block text-sm font-medium text-gray-700 mb-1">
               {CAMPO_LABEL.telefono} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="creditos-estudios-campo-5"
               type="tel"
               value={datos.telefono || ''}
               onChange={(e) => set('telefono', e.target.value)}
@@ -591,10 +591,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
       {faltantes.includes('municipio_codigo') && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="creditos-estudios-municipio" className="block text-sm font-medium text-gray-700 mb-1">
             Municipio <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="creditos-estudios-municipio"
             type="text"
             value={datos.municipio_codigo || ''}
             onChange={(e) => set('municipio_codigo', e.target.value)}

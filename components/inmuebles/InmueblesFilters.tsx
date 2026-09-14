@@ -154,8 +154,8 @@ export function InmueblesFilters({
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* Rango de arriendo mínimo */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Arriendo mínimo</label>
-            <input
+            <label htmlFor="inmuebles-filters-arriendo-minimo" className="block text-xs text-gray-500 mb-1">Arriendo mínimo</label>
+            <input id="inmuebles-filters-arriendo-minimo"
               type="number"
               placeholder="$ Mínimo"
               value={filters.rent_min}
@@ -169,8 +169,8 @@ export function InmueblesFilters({
 
           {/* Rango de arriendo máximo */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Arriendo máximo</label>
-            <input
+            <label htmlFor="inmuebles-filters-arriendo-maximo" className="block text-xs text-gray-500 mb-1">Arriendo máximo</label>
+            <input id="inmuebles-filters-arriendo-maximo"
               type="number"
               placeholder="$ Máximo"
               value={filters.rent_max}

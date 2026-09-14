@@ -135,10 +135,10 @@ export function GenerarContratoModal({
 
       <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
         {/* Tipo de generación — radio Cofianza vs Otrosí (Mario 12-may-2026) */}
-        <div className="space-y-2">
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+        <div className="space-y-2" role="radiogroup" aria-labelledby="generar-contrato-tipo">
+          <p id="generar-contrato-tipo" className="block text-xs font-bold uppercase tracking-wider text-gray-500">
             ¿Cómo generamos el contrato?
-          </label>
+          </p>
           <button
             type="button"
             onClick={() => setTipo('cofianza')}
@@ -197,10 +197,10 @@ export function GenerarContratoModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-contrato-modal-fecha-de-inicio-del-contrato" className="block text-sm font-medium text-gray-700 mb-1">
             Fecha de inicio del contrato
           </label>
-          <input
+          <input id="generar-contrato-modal-fecha-de-inicio-del-contrato"
             type="date"
             value={fechaInicio}
             onChange={(e) => setFechaInicio(e.target.value)}
@@ -210,10 +210,10 @@ export function GenerarContratoModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-contrato-modal-duracion-meses" className="block text-sm font-medium text-gray-700 mb-1">
             Duración (meses)
           </label>
-          <input
+          <input id="generar-contrato-modal-duracion-meses"
             type="number"
             value={duracionMeses}
             onChange={(e) => setDuracionMeses(e.target.value)}
@@ -235,8 +235,8 @@ export function GenerarContratoModal({
 
             {/* Modalidad */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad de fianza</label>
-              <select
+              <label htmlFor="generar-contrato-modal-modalidad-de-fianza" className="block text-sm font-medium text-gray-700 mb-1">Modalidad de fianza</label>
+              <select id="generar-contrato-modal-modalidad-de-fianza"
                 value={modalidad}
                 onChange={(e) => setModalidad(e.target.value as ModalidadFianza)}
                 disabled={generating}
@@ -317,10 +317,10 @@ export function GenerarContratoModal({
 
             {/* Reparto de servicios públicos */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <p id="generar-contrato-modal-servicios-publicos-quien-paga" className="block text-sm font-medium text-gray-700 mb-1">
                 Servicios públicos — ¿quién paga?
-              </label>
-              <div className="space-y-1.5">
+              </p>
+              <div role="group" aria-labelledby="generar-contrato-modal-servicios-publicos-quien-paga" className="space-y-1.5">
                 {SERVICIOS_CONTRATO.map((s) => (
                   <div key={s.key} className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-600">{s.label}</span>

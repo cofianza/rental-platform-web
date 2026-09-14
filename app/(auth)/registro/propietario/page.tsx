@@ -253,10 +253,10 @@ export default function RegisterPropietarioPage() {
         <FormSection num={1} title="Datos personales">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <label htmlFor="propietario-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="propietario-nombre"
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
@@ -268,10 +268,10 @@ export default function RegisterPropietarioPage() {
               {errors.nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+              <label htmlFor="propietario-apellido" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="propietario-apellido"
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
                   className={inputCls(!!errors.apellido)}
@@ -286,10 +286,10 @@ export default function RegisterPropietarioPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+              <label htmlFor="propietario-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <select
+                <select id="propietario-tipo-de-documento"
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
                   className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
@@ -304,10 +304,10 @@ export default function RegisterPropietarioPage() {
               {errors.tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.tipo_documento}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
+              <label htmlFor="propietario-numero-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="propietario-numero-de-documento"
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={inputCls(!!errors.numero_documento)}
@@ -328,10 +328,10 @@ export default function RegisterPropietarioPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de residencia</label>
+            <label htmlFor="propietario-direccion-de-residencia" className="block text-sm font-medium text-gray-700 mb-1">Dirección de residencia</label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="propietario-direccion-de-residencia"
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
                 className={inputCls(!!errors.direccion)}
@@ -347,10 +347,10 @@ export default function RegisterPropietarioPage() {
         {/* 2. Acceso a la plataforma */}
         <FormSection num={2} title="Acceso a la plataforma">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="propietario-email"
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
@@ -365,10 +365,10 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="propietario-contrasena"
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
@@ -386,10 +386,10 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+            <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="propietario-confirmar-contrasena"
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}

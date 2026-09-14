@@ -441,10 +441,10 @@ export function EstudioSolicitanteCard({
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 mb-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-solicitante-card-tipo-de-documento" className="block text-xs font-medium text-gray-700 mb-1">
               Tipo de documento
             </label>
-            <select
+            <select id="estudio-solicitante-card-tipo-de-documento"
               value={tipoDoc}
               onChange={(e) => setTipoDoc(e.target.value as TipoDoc)}
               disabled={submitting}
@@ -457,10 +457,10 @@ export function EstudioSolicitanteCard({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label htmlFor="estudio-solicitante-card-numero-de-documento" className="block text-xs font-medium text-gray-700 mb-1">
               Número de documento
             </label>
-            <input
+            <input id="estudio-solicitante-card-numero-de-documento"
               type="text"
               inputMode="numeric"
               value={numeroDoc}

@@ -557,8 +557,8 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
             corrige el correo antes de enviar.
           </p>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Correo destino</label>
-            <input
+            <label htmlFor="estudios-section-correo-destino" className="block text-xs font-medium text-gray-700 mb-1">Correo destino</label>
+            <input id="estudios-section-correo-destino"
               type="email"
               value={sendLinkEmail}
               onChange={(e) => setSendLinkEmail(e.target.value)}

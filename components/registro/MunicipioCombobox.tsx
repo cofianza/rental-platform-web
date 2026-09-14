@@ -8,7 +8,7 @@
 'use client'
 
 import { IconX } from '@/components/icons'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/lib/constants'
 
 export interface MunicipioOption {
@@ -34,6 +34,8 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
   const [loading, setLoading] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  // Generado: el combobox se usa en varias pantallas y un id fijo se repetiria.
+  const inputId = useId()
 
   // Cerrar dropdown al click fuera.
   useEffect(() => {
@@ -97,11 +99,12 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
 
   return (
     <div ref={containerRef} className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
         Municipio (para facturación)
       </label>
       <div className="relative">
         <input
+          id={inputId}
           type="text"
           value={query}
           onChange={(e) => {

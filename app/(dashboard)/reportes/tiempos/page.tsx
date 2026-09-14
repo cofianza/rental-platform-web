@@ -214,8 +214,8 @@ export default function TiemposPorEtapaPage() {
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Desde</label>
-          <input
+          <label htmlFor="tiempos-desde" className="text-xs font-medium text-gray-600">Desde</label>
+          <input id="tiempos-desde"
             type="date"
             value={filters.dateFrom}
             onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
@@ -223,8 +223,8 @@ export default function TiemposPorEtapaPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Hasta</label>
-          <input
+          <label htmlFor="tiempos-hasta" className="text-xs font-medium text-gray-600">Hasta</label>
+          <input id="tiempos-hasta"
             type="date"
             value={filters.dateTo}
             onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}

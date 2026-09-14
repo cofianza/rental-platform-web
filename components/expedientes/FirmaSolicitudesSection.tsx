@@ -269,10 +269,10 @@ export function FirmaSolicitudesSection({
           <div className="bg-gray-50 rounded-lg p-3 space-y-2">
             <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 mb-1">
+              <label htmlFor="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e" className="block text-[11px] font-medium text-gray-500 mb-1">
                 Correo destino (corrígelo si estaba mal escrito)
               </label>
-              <input
+              <input id="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e"
                 type="email"
                 value={reenviarEmail}
                 onChange={(e) => setReenviarEmail(e.target.value)}

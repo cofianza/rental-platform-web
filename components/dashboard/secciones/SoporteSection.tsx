@@ -333,8 +333,8 @@ export function SoporteSection() {
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nuevo ticket de soporte" size="md">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-            <select
+            <label htmlFor="soporte-section-tipo" className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <select id="soporte-section-tipo"
               value={form.tipo}
               onChange={(e) => setForm({ ...form, tipo: e.target.value })}
               className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
@@ -345,8 +345,8 @@ export function SoporteSection() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Asunto *</label>
-            <input
+            <label htmlFor="soporte-section-asunto" className="block text-sm font-medium text-gray-700 mb-1">Asunto *</label>
+            <input id="soporte-section-asunto"
               type="text"
               value={form.asunto}
               onChange={(e) => setForm({ ...form, asunto: e.target.value })}
@@ -356,8 +356,8 @@ export function SoporteSection() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea
+            <label htmlFor="soporte-section-descripcion" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea id="soporte-section-descripcion"
               value={form.descripcion}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
               rows={4}
@@ -367,8 +367,8 @@ export function SoporteSection() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
-            <select
+            <label htmlFor="soporte-section-prioridad" className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+            <select id="soporte-section-prioridad"
               value={form.prioridad}
               onChange={(e) => setForm({ ...form, prioridad: e.target.value as TicketPrioridad })}
               className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"

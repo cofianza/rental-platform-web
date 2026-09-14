@@ -341,10 +341,10 @@ export default function RegisterInmobiliariaPage() {
         {/* 1. Datos de la inmobiliaria */}
         <FormSection num={1} title="Datos de la inmobiliaria">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Razón social</label>
+            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Razón social</label>
             <div className="relative">
               <IconBuilding2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-razon-social"
                 type="text" value={formData.razon_social}
                 onChange={(e) => updateField('razon_social', e.target.value)}
                 className={inputCls(!!errors.razon_social)}
@@ -357,11 +357,11 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">NIT</label>
+            <label htmlFor="inmobiliaria-nit" className="block text-sm font-medium text-gray-700 mb-1">NIT</label>
             <div className="flex items-stretch gap-2">
               <div className="relative flex-1">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="inmobiliaria-nit"
                   type="text"
                   inputMode="numeric"
                   value={formData.nit_numero}
@@ -404,10 +404,10 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial</label>
+            <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial</label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-direccion-comercial"
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
                 className={inputCls(!!errors.direccion_comercial)}
@@ -420,10 +420,10 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+            <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-ciudad"
                 type="text" value={formData.ciudad}
                 onChange={(e) => updateField('ciudad', e.target.value)}
                 className={inputCls(!!errors.ciudad)}
@@ -440,10 +440,10 @@ export default function RegisterInmobiliariaPage() {
         <FormSection num={2} title="Datos del representante legal">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del representante</label>
+              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre del representante</label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="inmobiliaria-nombre-del-representante"
                   type="text" value={formData.nombre_representante_nombre}
                   onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_nombre)}
@@ -455,10 +455,10 @@ export default function RegisterInmobiliariaPage() {
               {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Apellido del representante</label>
+              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido del representante</label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+                <input id="inmobiliaria-apellido-del-representante"
                   type="text" value={formData.nombre_representante_apellido}
                   onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_apellido)}
@@ -472,12 +472,12 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="inmobiliaria-cargo-del-representante-opcional" className="block text-sm font-medium text-gray-700 mb-1">
               Cargo del representante <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
             <div className="relative">
               <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-cargo-del-representante-opcional"
                 type="text"
                 value={formData.cargo_representante}
                 onChange={(e) => updateField('cargo_representante', e.target.value)}
@@ -492,11 +492,11 @@ export default function RegisterInmobiliariaPage() {
           {/* ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo" className="block text-sm font-medium text-gray-700 mb-1">
                 ¿Qué usan hoy para respaldar sus arriendos?{' '}
                 <span className="text-gray-400 font-normal">(opcional)</span>
               </label>
-              <select
+              <select id="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo"
                 value={formData.afianzadora_tipo}
                 onChange={(e) => updateField('afianzadora_tipo', e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
@@ -509,10 +509,10 @@ export default function RegisterInmobiliariaPage() {
             </div>
             {formData.afianzadora_tipo !== '' && formData.afianzadora_tipo !== 'ninguna' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="inmobiliaria-cual-opcional" className="block text-sm font-medium text-gray-700 mb-1">
                   ¿Cuál? <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
-                <input
+                <input id="inmobiliaria-cual-opcional"
                   type="text"
                   value={formData.afianzadora_actual}
                   onChange={(e) => updateField('afianzadora_actual', e.target.value)}
@@ -532,10 +532,10 @@ export default function RegisterInmobiliariaPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email corporativo</label>
+            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Email corporativo</label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-email-corporativo"
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
@@ -553,10 +553,10 @@ export default function RegisterInmobiliariaPage() {
         {/* 3. Acceso a la plataforma */}
         <FormSection num={3} title="Acceso a la plataforma">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-contrasena"
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => updateField('password', e.target.value)}
@@ -574,10 +574,10 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+            <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
             <div className="relative">
               <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <input id="inmobiliaria-confirmar-contrasena"
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}

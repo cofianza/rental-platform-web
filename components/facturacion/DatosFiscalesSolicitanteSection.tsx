@@ -246,10 +246,10 @@ export function DatosFiscalesSolicitanteSection() {
 
         {/* Toggle Persona Natural / Jurídica */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <p id="datos-fiscales-solicitante-section-facturas-como-persona-natural-o-como-emp" className="block text-sm font-medium text-gray-700 mb-2">
             ¿Facturas como persona natural o como empresa?
-          </label>
-          <div className="flex gap-2 border border-gray-200 rounded-lg p-1 bg-gray-50">
+          </p>
+          <div role="group" aria-labelledby="datos-fiscales-solicitante-section-facturas-como-persona-natural-o-como-emp" className="flex gap-2 border border-gray-200 rounded-lg p-1 bg-gray-50">
             <button
               type="button"
               onClick={() => handleTipoPersonaChange('natural')}
@@ -284,8 +284,8 @@ export function DatosFiscalesSolicitanteSection() {
           {form.tipo_persona === 'natural' ? (
             // Persona natural: nombre completo viene del registro (readonly)
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-              <input
+              <label htmlFor="datos-fiscales-solicitante-section-nombre-completo" className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+              <input id="datos-fiscales-solicitante-section-nombre-completo"
                 type="text"
                 value={`${data?.nombre || ''} ${data?.apellido || ''}`.trim()}
                 disabled
@@ -298,10 +298,10 @@ export function DatosFiscalesSolicitanteSection() {
           ) : (
             // Persona jurídica: razón social editable
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="datos-fiscales-solicitante-section-razon-social" className="block text-sm font-medium text-gray-700 mb-1">
                 Razón social <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="datos-fiscales-solicitante-section-razon-social"
                 type="text"
                 value={form.razon_social}
                 onChange={(e) => setField('razon_social', e.target.value)}
@@ -316,10 +316,10 @@ export function DatosFiscalesSolicitanteSection() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-fiscales-solicitante-section-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">
               Tipo de documento <span className="text-red-500">*</span>
             </label>
-            <select
+            <select id="datos-fiscales-solicitante-section-tipo-de-documento"
               value={form.tipo_documento}
               onChange={(e) => setField('tipo_documento', e.target.value)}
               disabled={form.tipo_persona === 'juridica'}
@@ -340,10 +340,10 @@ export function DatosFiscalesSolicitanteSection() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-fiscales-solicitante-section-campo" className="block text-sm font-medium text-gray-700 mb-1">
               {form.tipo_persona === 'juridica' ? 'NIT' : 'Número de documento'} <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="datos-fiscales-solicitante-section-campo"
               type="text"
               value={form.numero_documento}
               onChange={(e) => setField('numero_documento', e.target.value.replace(/[^\w]/g, ''))}
@@ -356,10 +356,10 @@ export function DatosFiscalesSolicitanteSection() {
           {/* Dígito de verificación — solo persona jurídica */}
           {form.tipo_persona === 'juridica' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="datos-fiscales-solicitante-section-digito-de-verificacion" className="block text-sm font-medium text-gray-700 mb-1">
                 Dígito de verificación <span className="text-red-500">*</span>
               </label>
-              <input
+              <input id="datos-fiscales-solicitante-section-digito-de-verificacion"
                 type="text"
                 value={form.digito_verificacion}
                 onChange={(e) => setField('digito_verificacion', e.target.value.replace(/\D/g, '').slice(0, 1))}
@@ -375,10 +375,10 @@ export function DatosFiscalesSolicitanteSection() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-fiscales-solicitante-section-correo-electronico" className="block text-sm font-medium text-gray-700 mb-1">
               Correo electrónico <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="datos-fiscales-solicitante-section-correo-electronico"
               type="email"
               value={form.email}
               onChange={(e) => setField('email', e.target.value)}
@@ -388,10 +388,10 @@ export function DatosFiscalesSolicitanteSection() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-fiscales-solicitante-section-telefono" className="block text-sm font-medium text-gray-700 mb-1">
               Teléfono <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="datos-fiscales-solicitante-section-telefono"
               type="tel"
               value={form.telefono}
               onChange={(e) => setField('telefono', e.target.value)}
@@ -401,10 +401,10 @@ export function DatosFiscalesSolicitanteSection() {
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="datos-fiscales-solicitante-section-direccion" className="block text-sm font-medium text-gray-700 mb-1">
               Dirección <span className="text-red-500">*</span>
             </label>
-            <input
+            <input id="datos-fiscales-solicitante-section-direccion"
               type="text"
               value={form.direccion}
               onChange={(e) => setField('direccion', e.target.value)}
@@ -414,9 +414,6 @@ export function DatosFiscalesSolicitanteSection() {
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Municipio <span className="text-red-500">*</span>
-            </label>
             <MunicipioCombobox
               value={municipioValue}
               onChange={(v) => {

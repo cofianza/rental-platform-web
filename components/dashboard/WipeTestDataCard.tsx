@@ -108,10 +108,10 @@ export function WipeTestDataCard() {
               ven afectadas. Los archivos en Supabase Storage <strong>no</strong> se borran (limpiar manualmente
               desde el panel de Storage si es necesario).
             </p>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="wipe-test-data-card-para-confirmar-escribe" className="block text-sm font-medium text-gray-700 mb-1">
               Para confirmar, escribe <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-red-700">{CONFIRM_PHRASE}</code>
             </label>
-            <input
+            <input id="wipe-test-data-card-para-confirmar-escribe"
               type="text"
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}

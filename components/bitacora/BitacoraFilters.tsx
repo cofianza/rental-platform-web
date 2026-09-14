@@ -49,8 +49,8 @@ export function BitacoraFilters({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:flex-wrap">
         {/* Usuario */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Usuario</label>
-          <select
+          <label htmlFor="bitacora-filters-usuario" className="block text-xs font-medium text-gray-500 mb-1">Usuario</label>
+          <select id="bitacora-filters-usuario"
             value={filters.userId}
             onChange={(e) => onFilterChange({ userId: e.target.value })}
             className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -67,8 +67,8 @@ export function BitacoraFilters({
 
         {/* Accion */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Accion</label>
-          <select
+          <label htmlFor="bitacora-filters-accion" className="block text-xs font-medium text-gray-500 mb-1">Accion</label>
+          <select id="bitacora-filters-accion"
             value={filters.action}
             onChange={(e) => onFilterChange({ action: e.target.value })}
             className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -91,8 +91,8 @@ export function BitacoraFilters({
 
         {/* Entidad */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Entidad</label>
-          <select
+          <label htmlFor="bitacora-filters-entidad" className="block text-xs font-medium text-gray-500 mb-1">Entidad</label>
+          <select id="bitacora-filters-entidad"
             value={filters.entityType}
             onChange={(e) => onFilterChange({ entityType: e.target.value })}
             className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -108,8 +108,8 @@ export function BitacoraFilters({
 
         {/* Fecha desde */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-          <input
+          <label htmlFor="bitacora-filters-desde" className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+          <input id="bitacora-filters-desde"
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onFilterChange({ dateFrom: e.target.value })}
@@ -120,8 +120,8 @@ export function BitacoraFilters({
 
         {/* Fecha hasta */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-          <input
+          <label htmlFor="bitacora-filters-hasta" className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+          <input id="bitacora-filters-hasta"
             type="date"
             value={filters.dateTo}
             onChange={(e) => onFilterChange({ dateTo: e.target.value })}

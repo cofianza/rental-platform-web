@@ -304,6 +304,7 @@ export function TipoDocumentoForm({
           }`}
           role="switch"
           aria-checked={formData.es_obligatorio}
+          aria-labelledby="tipo-documento-es-obligatorio"
         >
           <span
             className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -311,15 +312,15 @@ export function TipoDocumentoForm({
             }`}
           />
         </button>
-        <label className="text-sm font-medium text-gray-700">Es obligatorio</label>
+        <span id="tipo-documento-es-obligatorio" className="text-sm font-medium text-gray-700">Es obligatorio</span>
       </div>
 
       {/* Formatos aceptados */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <p id="tipo-documento-form-formatos-aceptados" className="block text-sm font-medium text-gray-700 mb-2">
           Formatos aceptados *
-        </label>
-        <div className="flex items-center gap-2 mb-2">
+        </p>
+        <div role="group" aria-labelledby="tipo-documento-form-formatos-aceptados" className="flex items-center gap-2 mb-2">
           <button
             type="button"
             onClick={handleSelectAllFormatos}

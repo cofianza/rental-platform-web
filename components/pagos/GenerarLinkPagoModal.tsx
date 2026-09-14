@@ -142,10 +142,10 @@ export function GenerarLinkPagoModal({
 
         {/* Concepto */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-link-pago-modal-concepto" className="block text-sm font-medium text-gray-700 mb-1">
             Concepto <span className="text-red-500">*</span>
           </label>
-          <select
+          <select id="generar-link-pago-modal-concepto"
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
@@ -160,12 +160,12 @@ export function GenerarLinkPagoModal({
 
         {/* Monto */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-link-pago-modal-monto-cop" className="block text-sm font-medium text-gray-700 mb-1">
             Monto (COP) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-            <input
+            <input id="generar-link-pago-modal-monto-cop"
               type="number"
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
@@ -184,10 +184,10 @@ export function GenerarLinkPagoModal({
 
         {/* Descripcion */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-link-pago-modal-descripcion" className="block text-sm font-medium text-gray-700 mb-1">
             Descripcion <span className="text-red-500">*</span>
           </label>
-          <textarea
+          <textarea id="generar-link-pago-modal-descripcion"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             placeholder="Descripcion del pago que vera el cliente"
@@ -201,10 +201,10 @@ export function GenerarLinkPagoModal({
 
         {/* Nombre del pagador */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-link-pago-modal-nombre-del-pagador" className="block text-sm font-medium text-gray-700 mb-1">
             Nombre del pagador <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="generar-link-pago-modal-nombre-del-pagador"
             type="text"
             value={nombrePagador}
             onChange={(e) => setNombrePagador(e.target.value)}
@@ -217,10 +217,10 @@ export function GenerarLinkPagoModal({
 
         {/* Email del pagador */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="generar-link-pago-modal-email-del-pagador" className="block text-sm font-medium text-gray-700 mb-1">
             Email del pagador <span className="text-red-500">*</span>
           </label>
-          <input
+          <input id="generar-link-pago-modal-email-del-pagador"
             type="email"
             value={emailPagador}
             onChange={(e) => setEmailPagador(e.target.value)}

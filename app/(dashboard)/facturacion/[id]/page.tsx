@@ -447,10 +447,10 @@ export default function FacturaDetallePage() {
             Esta accion no se puede deshacer.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="id-motivo-de-anulacion" className="block text-sm font-medium text-gray-700 mb-1">
               Motivo de anulacion *
             </label>
-            <textarea
+            <textarea id="id-motivo-de-anulacion"
               value={anularMotivo}
               onChange={(e) => setAnularMotivo(e.target.value)}
               rows={3}

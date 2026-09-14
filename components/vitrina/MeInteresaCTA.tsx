@@ -329,10 +329,10 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="me-interesa-c-t-a-notas-para-el-propietario-opcional" className="block text-sm font-medium text-gray-700 mb-1">
               Notas para el propietario (opcional)
             </label>
-            <textarea
+            <textarea id="me-interesa-c-t-a-notas-para-el-propietario-opcional"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={3}
@@ -402,10 +402,10 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             </p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="me-interesa-c-t-a-nombre" className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre <span className="text-coral-500">*</span>
               </label>
-              <input
+              <input id="me-interesa-c-t-a-nombre"
                 type="text"
                 value={leadNombre}
                 onChange={(e) => setLeadNombre(e.target.value)}
@@ -423,10 +423,10 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="me-interesa-c-t-a-correo" className="block text-sm font-medium text-gray-700 mb-1">
                 Correo <span className="text-coral-500">*</span>
               </label>
-              <input
+              <input id="me-interesa-c-t-a-correo"
                 type="email"
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
@@ -436,10 +436,10 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="me-interesa-c-t-a-mensaje-opcional" className="block text-sm font-medium text-gray-700 mb-1">
                 Mensaje <span className="font-normal text-gray-400">(opcional)</span>
               </label>
-              <textarea
+              <textarea id="me-interesa-c-t-a-mensaje-opcional"
                 value={leadMensaje}
                 onChange={(e) => setLeadMensaje(e.target.value)}
                 rows={2}

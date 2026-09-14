@@ -1193,10 +1193,10 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
           <div className="space-y-5">
             {/* Propiedad horizontal */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <p id="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="block text-sm font-medium text-gray-700 mb-1">
                 ¿Está en un conjunto o edificio con administración?
-              </label>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
+              </p>
+              <div role="group" aria-labelledby="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="flex flex-wrap gap-x-4 gap-y-2">
                 {(['auto', 'si', 'no'] as const).map((opt) => (
                   <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
                     <input

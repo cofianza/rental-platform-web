@@ -196,10 +196,10 @@ export function ReintentarEstudioForm({
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-40">
-          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+          <label htmlFor="reintentar-estudio-form-buro-de-credito" className="block text-[11px] font-medium text-gray-500 mb-1">
             Buró de crédito
           </label>
-          <select
+          <select id="reintentar-estudio-form-buro-de-credito"
             value={proveedor}
             onChange={(e) => setProveedor(e.target.value as ProveedorReintento)}
             disabled={reintentando}
@@ -210,10 +210,10 @@ export function ReintentarEstudioForm({
           </select>
         </div>
         <div className="sm:w-44">
-          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+          <label htmlFor="reintentar-estudio-form-tipo-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
             Tipo de documento
           </label>
-          <select
+          <select id="reintentar-estudio-form-tipo-de-documento"
             value={tipoDoc}
             onChange={(e) => setTipoDoc(e.target.value as TipoDocEstudio)}
             disabled={reintentando}
@@ -226,10 +226,10 @@ export function ReintentarEstudioForm({
           </select>
         </div>
         <div className="flex-1 min-w-0">
-          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+          <label htmlFor="reintentar-estudio-form-numero-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
             Número de documento
           </label>
-          <input
+          <input id="reintentar-estudio-form-numero-de-documento"
             type="text"
             inputMode="numeric"
             value={numeroDoc}
@@ -244,10 +244,10 @@ export function ReintentarEstudioForm({
             apellido contra Registraduría (código 10 si no coincide). */}
         {requiereApellido && (
           <div className="sm:w-52">
-            <label className="block text-[11px] font-medium text-gray-500 mb-1">
+            <label htmlFor="reintentar-estudio-form-primer-apellido" className="block text-[11px] font-medium text-gray-500 mb-1">
               Primer apellido
             </label>
-            <input
+            <input id="reintentar-estudio-form-primer-apellido"
               type="text"
               value={primerApellido}
               onChange={(e) => setPrimerApellido(e.target.value)}

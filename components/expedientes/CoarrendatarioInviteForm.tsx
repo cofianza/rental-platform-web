@@ -149,8 +149,8 @@ export function CoarrendatarioInviteForm({
 
           <div className="grid grid-cols-5 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Tipo doc.</label>
-              <select
+              <label htmlFor="coarrendatario-invite-form-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo doc.</label>
+              <select id="coarrendatario-invite-form-tipo-doc"
                 value={tipoDoc}
                 onChange={(e) => setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -202,8 +202,8 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-      <input
+      <label htmlFor="coarrendatario-invite-form-campo" className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <input id="coarrendatario-invite-form-campo"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

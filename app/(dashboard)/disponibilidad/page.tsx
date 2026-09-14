@@ -406,10 +406,10 @@ export default function DisponibilidadPage() {
 
         {/* Selector de duración */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <p id="disponibilidad-duracion-de-cada-visita" className="block text-sm font-medium text-gray-700 mb-2">
             Duración de cada visita
-          </label>
-          <div className="flex flex-wrap gap-2">
+          </p>
+          <div role="group" aria-labelledby="disponibilidad-duracion-de-cada-visita" className="flex flex-wrap gap-2">
             {DURACIONES.map(({ value, label }) => (
               <button
                 key={value}
@@ -434,10 +434,10 @@ export default function DisponibilidadPage() {
 
         {/* Selector de anticipación mínima */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <p id="disponibilidad-anticipacion-minima-para-agendar" className="block text-sm font-medium text-gray-700 mb-2">
             Anticipación mínima para agendar
-          </label>
-          <div className="flex flex-wrap gap-2">
+          </p>
+          <div role="group" aria-labelledby="disponibilidad-anticipacion-minima-para-agendar" className="flex flex-wrap gap-2">
             {ANTELACIONES.map(({ value, label }) => (
               <button
                 key={value}
@@ -499,9 +499,9 @@ export default function DisponibilidadPage() {
         {/* Horarios por día */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <h3 className="block text-sm font-medium text-gray-700">
               Horarios por día de la semana
-            </label>
+            </h3>
             {/* P1b — acciones rápidas */}
             <div className="flex flex-wrap gap-2">
               <button
