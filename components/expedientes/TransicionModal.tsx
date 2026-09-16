@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Badge } from '@/components/ui/Badge'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
@@ -51,6 +52,7 @@ export function TransicionModal({
   const [documentos, setDocumentos] = useState<string[]>([])
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [error, setError] = useState<string | null>(null)
+  const [confirmando, setConfirmando] = useState(false)
   // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
   const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
 
@@ -88,6 +90,11 @@ export function TransicionModal({
     }
 
     setError(null)
+    if (esDestructiva && !confirmando) {
+      setConfirmando(true)
+      return
+    }
+    setConfirmando(false)
     await onConfirmar(
       estadoSeleccionado,
       comentario.trim(),
@@ -100,6 +107,17 @@ export function TransicionModal({
 
   // Asegurar que transicionesDisponibles sea siempre un array
   const transiciones = Array.isArray(transicionesDisponibles) ? transicionesDisponibles : []
+
+  // Transiciones sin vuelta atrás. Se marcan en rojo y piden confirmación
+  // aparte, con las consecuencias escritas.
+  const esDestructiva =
+    estadoSeleccionado === 'rechazado' || estadoSeleccionado === 'cerrado'
+  const CONSECUENCIAS: Record<string, string> = {
+    rechazado:
+      'Se libera la reserva del inmueble, se cancelan los contratos que aún no se hayan firmado y se le avisa por correo al co-arrendatario. Desde "rechazado" el estudio solo puede cerrarse: no hay vuelta atrás.',
+    cerrado:
+      'El estudio queda archivado y sale del flujo. No se puede reabrir.',
+  }
 
   return (
     <Modal
@@ -217,13 +235,26 @@ export function TransicionModal({
             type="button"
             onClick={handleConfirmar}
             disabled={isLoading || !estadoSeleccionado || !comentario.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+              esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+            }`}
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}
             Confirmar Cambio
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmando}
+        onClose={() => setConfirmando(false)}
+        onConfirm={handleConfirmar}
+        title={estadoSeleccionado === 'rechazado' ? '¿Rechazar el estudio?' : '¿Cerrar el estudio?'}
+        message={(estadoSeleccionado && CONSECUENCIAS[estadoSeleccionado]) || ""}
+        confirmLabel={estadoSeleccionado === 'rechazado' ? 'Sí, rechazar' : 'Sí, cerrar'}
+        variant="danger"
+        isLoading={isLoading}
+      />
     </Modal>
   )
 }

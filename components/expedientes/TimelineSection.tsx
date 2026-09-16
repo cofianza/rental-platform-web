@@ -348,6 +348,10 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     const anterior = detalle.estado_anterior as string | null
     const nuevo = detalle.estado_nuevo as string | null
     const comentario = detalle.comentario as string | null
+    const documentos = Array.isArray(detalle.documentos_consultados)
+      ? (detalle.documentos_consultados as string[])
+      : []
+    const puntaje = detalle.puntaje_revision_manual as number | undefined
 
     return (
       <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
@@ -360,6 +364,21 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
         )}
         {comentario && (
           <p className="text-xs text-gray-500 italic">&quot;{comentario}&quot;</p>
+        )}
+        {/* Adenda 2 §5.1: el analista registra fundamento, documentos
+            consultados y puntaje recalculado. El API los guardaba y ninguna
+            pantalla los mostraba — ni la bitácora, que está cerrada a
+            'administrador'. */}
+        {documentos.length > 0 && (
+          <p className="text-xs text-gray-500">
+            <span className="font-medium text-gray-700">Documentos consultados:</span>{' '}
+            {documentos.join(', ')}
+          </p>
+        )}
+        {typeof puntaje === 'number' && (
+          <p className="text-xs text-gray-500">
+            <span className="font-medium text-gray-700">Puntaje recalculado:</span> {puntaje}
+          </p>
         )}
       </div>
     )

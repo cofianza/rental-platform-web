@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useId } from 'react'
 import { dashboardService, type MiInmueble } from '@/services/dashboardService'
 import { money } from '@/components/dashboard/secciones/_shared'
 import { cn } from '@/lib/utils'
@@ -57,15 +57,31 @@ export function RentabilidadPropietarioSection() {
     let brutos = 0
     let gastosMes = 0
     let valorTot = 0
+    let sinValor = 0
     for (const i of inmuebles) {
       const x = g(i.id)
-      brutos += i.canon || 0
-      gastosMes += toNum(x.admin) + toNum(x.predial) + toNum(x.otros)
-      valorTot += toNum(x.valor)
+      // Solo cuenta como ingreso lo que de verdad esta arrendado: `garantiaActiva`
+      // es el mismo campo que dos lineas abajo usa el sello "Sin garantía", y es
+      // el que el dashboard usa para rotular "Canon contratado / mes". Antes se
+      // sumaba el canon de TODOS —que ademas es el precio de lista, no el del
+      // contrato—, asi que dos pantallas de la misma sesion diferian en un
+      // multiplo.
+      if (i.garantiaActiva) brutos += i.canon || 0
+      const valor = toNum(x.valor)
+      // El porcentaje solo se calcula sobre los inmuebles cuyo valor conoces.
+      // Antes `valorTot` sumaba solo lo tecleado y `brutos` sumaba todo: con 3
+      // inmuebles y 2 valores salia 13,5% donde la verdad es 9%, y bastaba UN
+      // valor escrito para pintarlo como titular.
+      if (valor > 0) {
+        valorTot += valor
+        gastosMes += toNum(x.admin) + toNum(x.predial) + toNum(x.otros)
+      } else {
+        sinValor++
+      }
     }
     const netoMes = brutos - gastosMes
-    const rent = valorTot > 0 ? (netoMes * 12 * 100) / valorTot : null
-    return { brutos, gastosMes, netoMes, valorTot, rent }
+    const rent = valorTot > 0 && sinValor === 0 ? (netoMes * 12 * 100) / valorTot : null
+    return { brutos, gastosMes, netoMes, valorTot, rent, sinValor }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inmuebles, gastos])
 
@@ -191,7 +207,13 @@ export function RentabilidadPropietarioSection() {
           <Stat
             label="Rentabilidad"
             value={cartera.rent != null ? pct(cartera.rent) : '—'}
-            sub="anual promedio"
+            sub={
+              cartera.rent != null
+                ? 'anual promedio'
+                : cartera.sinValor > 0
+                  ? `faltan ${cartera.sinValor} ${cartera.sinValor === 1 ? 'valor' : 'valores'}`
+                  : 'anual promedio'
+            }
             Icon={IconBarChart3}
             color="text-primary-600"
           />
@@ -258,10 +280,14 @@ function CampoInput({
   onChange: (v: string) => void
   placeholder?: string
 }) {
+  // useId por instancia: este componente se pinta una vez por inmueble y con un
+  // id fijo todos los campos compartian el mismo — pulsar una etiqueta mandaba
+  // el foco al primer inmueble de la lista.
+  const campoId = useId()
   return (
     <div>
-      <label htmlFor="rentabilidad-propietario-section-campo" className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</label>
-      <input id="rentabilidad-propietario-section-campo"
+      <label htmlFor={campoId} className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</label>
+      <input id={campoId}
         type="text"
         inputMode="numeric"
         value={value}
@@ -285,10 +311,11 @@ function CalcInput({
   onChange: (v: string) => void
   placeholder?: string
 }) {
+  const campoId = useId()
   return (
     <div className="flex-1">
-      <label htmlFor="rentabilidad-propietario-section-campo-2" className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-primary-700">{label}</label>
-      <input id="rentabilidad-propietario-section-campo-2"
+      <label htmlFor={campoId} className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-primary-700">{label}</label>
+      <input id={campoId}
         type="text"
         inputMode="numeric"
         value={value}
