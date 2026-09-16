@@ -460,13 +460,16 @@ function DocumentUploadCard({
           </div>
         ) : (
           /* Upload zone */
-          <div
+          <button
+            type="button"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={handleClick}
+            disabled={isUploading}
+            aria-label={`Subir ${tipoDocumento.nombre}`}
             className={`
-              border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+              w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
               ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}
               ${isUploading ? 'pointer-events-none opacity-70' : ''}
               ${error ? 'border-red-300 bg-red-50' : ''}
@@ -543,7 +546,7 @@ function DocumentUploadCard({
                 </p>
               </>
             )}
-          </div>
+          </button>
         )}
 
         {/* Hidden file input */}

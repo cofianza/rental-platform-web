@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useUIStore } from '@/stores/ui.store'
 import { NAV_ITEMS } from '@/lib/constants'
 import { ICON_MAP } from '@/components/icons'
@@ -48,9 +48,16 @@ export function Sidebar() {
     closeSidebar()
   }, [pathname, closeSidebar])
 
+  // El drawer cerrado en movil se ocultaba SOLO con -translate-x-full: sin
+  // `inert` seguia siendo tabulable, y como el <aside> es fixed el foco
+  // desaparecia de la pantalla. En un telefono son 15-23 enlaces invisibles
+  // antes de llegar al contenido.
+  const [esMovil, setEsMovil] = useState(false)
+
   // Detectar tamaño de pantalla y ajustar estado inicial
   useEffect(() => {
     const handleResize = () => {
+      setEsMovil(window.innerWidth < 768)
       if (window.innerWidth >= 1024) {
         // Desktop: expandido
         useUIStore.setState({ sidebarExpanded: true })
@@ -89,6 +96,8 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside
+        inert={esMovil && !sidebarOpen ? true : undefined}
+        aria-hidden={esMovil && !sidebarOpen ? true : undefined}
         className={cn(
           'fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 flex flex-col',
           'transition-all duration-300 ease-in-out',
@@ -173,6 +182,7 @@ export function Sidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      title={item.label}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
                         'group relative',

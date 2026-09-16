@@ -82,6 +82,14 @@ export function BitacoraTable({
             {logs.map((log) => (
               <tr
                 key={log.id}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.currentTarget.click()
+                  }
+                }}
                 className="hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => onViewDetail(log)}
               >
@@ -111,6 +119,14 @@ export function BitacoraTable({
         {logs.map((log) => (
           <div
             key={log.id}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.currentTarget.click()
+              }
+            }}
             className="p-4 space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => onViewDetail(log)}
           >

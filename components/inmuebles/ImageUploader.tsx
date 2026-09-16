@@ -137,7 +137,7 @@ export function ImageUploader({
 
           {/* Overlay con acciones */}
           {!disabled && (
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 rounded-lg">
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-4 rounded-lg pointer-events-none [&>*]:pointer-events-auto">
               <button
                 type="button"
                 onClick={handleClick}

@@ -136,7 +136,7 @@ function SortablePhoto({
 
       {/* Overlay con acciones */}
       {canEdit && !isDragging && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 z-20">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 z-20 pointer-events-none [&>*]:pointer-events-auto">
           {/* Set as fachada */}
           {!foto.es_fachada && (
             <button
