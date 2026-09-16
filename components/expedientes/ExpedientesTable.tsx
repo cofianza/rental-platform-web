@@ -126,6 +126,13 @@ function EstadoExpedienteFila({ expediente }: { expediente: IExpediente }) {
   const esBorrador = !expediente.cancelado_at && expediente.estado === 'borrador'
   const evaluacionViva = !!expediente.estudio_vigente && expediente.estudio_vigente.estado !== 'cancelado'
   if (esBorrador && evaluacionViva) return null
+  // ProcessStepBadge abandona el paso del flujo para cancelado, rechazado y
+  // condicionado, y devuelve la etiqueta del ESTADO. Sin este guard salian dos
+  // pastillas con la misma palabra —para 'rechazado', dos rojas identicas— y en
+  // movil tres. 'condicionado' esta ademas definido con cuatro colores en el repo.
+  if (expediente.cancelado_at || expediente.estado === 'rechazado' || expediente.estado === 'condicionado') {
+    return null
+  }
   return (
     <ExpedienteBadge
       estado={expediente.estado}

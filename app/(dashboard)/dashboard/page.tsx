@@ -189,7 +189,12 @@ export default function DashboardPage() {
   // Propietario: vista "Mis inmuebles" con sidebar (mockup 14) — tarjetas de
   // propiedad con inquilino/contrato/pago reales + solicitudes de visita.
   if (isPropietario) {
-    return <MisInmueblesPropietario />
+    return (
+      <div className="space-y-6">
+        <AccionesPendientesWidget />
+        <MisInmueblesPropietario />
+      </div>
+    )
   }
 
   // Vista simplificada para inmobiliaria (conserva el hero "Oficina Virtual")

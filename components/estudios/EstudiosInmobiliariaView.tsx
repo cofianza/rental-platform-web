@@ -61,6 +61,12 @@ function estadoBadge(e: IEstudioListItem): { kind: BadgeKind; label: string } {
       return { kind: 'rechazado', label: 'Fallido' }
     case 'cancelado':
       return { kind: 'esperando', label: 'Cancelado' }
+    case 'solicitado':
+      return { kind: 'esperando', label: 'Sin habilitar' }
+    case 'pago_pendiente':
+      return { kind: 'esperando', label: 'Falta el pago' }
+    case 'formulario_enviado':
+      return { kind: 'esperando', label: 'Esperando al prospecto' }
     default:
       return { kind: 'esperando', label: 'Esperando' }
   }
@@ -85,7 +91,7 @@ interface EstudiosViewProps {
 }
 
 export function EstudiosInmobiliariaView({
-  intro = 'Inicia estudios · Respuesta en segundos · Notificación inmediata a las partes',
+  intro = 'Inicia evaluaciones · Respuesta en segundos · Notificación inmediata a las partes',
   showSaldo = true,
   showPaquetes = true,
 }: EstudiosViewProps = {}) {
@@ -200,7 +206,7 @@ export function EstudiosInmobiliariaView({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-5">
           <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
-            Historial de estudios
+            Historial de evaluaciones
           </h3>
           <div className="flex flex-wrap items-center gap-2">
             {CHIPS.map((c) => (
@@ -224,7 +230,7 @@ export function EstudiosInmobiliariaView({
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
               <IconLoader size={20} className="animate-spin text-primary-600" />
-              Cargando estudios…
+              Cargando evaluaciones…
             </div>
           ) : estudios.length === 0 ? (
             <div className="py-12 text-center">

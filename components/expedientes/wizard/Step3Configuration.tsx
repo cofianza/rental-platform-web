@@ -23,6 +23,7 @@ import {
   IconBank,
   IconWhatsapp,
   IconCheck,
+  IconSearch,
 } from '@/components/icons'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { expedienteService } from '@/services/expedienteService'
@@ -295,6 +296,42 @@ export function Step3Configuration({
         {errors.forma_pago && (
           <p className="text-sm text-red-600">{errors.forma_pago}</p>
         )}
+      </fieldset>
+
+      {/* Buró a consultar. La card de habilitar sí lo preguntaba, pero no
+          aparece si el asistente ya habilitó — y cambiarlo después obliga a
+          reintentar y a pagar otra consulta. */}
+      <fieldset className="space-y-2">
+        <legend className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <IconSearch size={16} className="text-gray-400" />
+          Buró a consultar
+          <span className="font-normal text-gray-400">(opcional)</span>
+        </legend>
+        <p className="text-xs text-gray-500">
+          Si no eliges, Cofianza decide cuál consultar. Cambiarlo después obliga a repetir la
+          consulta, y se cobra de nuevo.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {([
+            { value: '', label: 'Que decida Cofianza' },
+            { value: 'transunion', label: 'TransUnion' },
+            { value: 'datacredito', label: 'DataCrédito' },
+          ] as const).map((b) => (
+            <button
+              key={b.value || 'auto'}
+              type="button"
+              aria-pressed={(data.proveedor ?? '') === b.value}
+              onClick={() => onUpdate({ proveedor: b.value })}
+              className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                (data.proveedor ?? '') === b.value
+                  ? 'border-primary-500 bg-primary-50 font-medium text-primary-700'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
       </fieldset>
 
       {/* Notas internas */}
