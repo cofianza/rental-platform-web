@@ -155,8 +155,7 @@ function ThumbnailImage({ doc, onClick }: { doc: IDocumento; onClick: () => void
 
 export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelProps) {
   const [documentos, setDocumentos] = useState<IDocumento[]>([])
-  const [totalDocumentos, setTotalDocumentos] = useState(0)
-  const [pendientes, setPendientes] = useState(0)
+
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filtroEstado, setFiltroEstado] = useState<FilterEstado>('todos')
@@ -187,8 +186,6 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
 
       const docs = result.documentos.filter((d) => d.estado !== 'reemplazado')
       setDocumentos(docs)
-      setTotalDocumentos(docs.length)
-      setPendientes(docs.filter((d) => d.estado === 'pendiente').length)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar documentos')
     } finally {
@@ -216,7 +213,6 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
       setDocumentos((prev) =>
         prev.map((d) => (d.id === target.id ? { ...d, ...updated } : d))
       )
-      setPendientes((prev) => Math.max(0, prev - 1))
       toast.success(`"${target.nombre_original}" aprobado`)
       onRevisionChange?.()
     } catch (err) {
@@ -259,6 +255,11 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
     filtroEstado === 'todos'
       ? documentos
       : documentos.filter((d) => d.estado === filtroEstado)
+
+  // Derivados de `documentos`, igual que filterCounts: la barra de progreso y
+  // los contadores de las pestañas no pueden discrepar si salen del mismo sitio.
+  const totalDocumentos = documentos.length
+  const pendientes = documentos.filter((d) => d.estado === 'pendiente').length
 
   const filterCounts = {
     todos: documentos.length,

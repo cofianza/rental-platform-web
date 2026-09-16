@@ -97,13 +97,22 @@ export default function InteresadosPage() {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<InteresadoEstado | 'todos'>('todos')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [fallo, setFallo] = useState(false)
 
+  // El aviso se iba con el toast y quedaba "Aún no tienes interesados", que es
+  // perfectamente creible: el usuario concluye que su vitrina no funciona.
+  // Ademas, al cambiar de chip de filtro, si fallaba quedaban los resultados
+  // del filtro anterior — por eso se limpia `items`.
   const load = useCallback(() => {
     setLoading(true)
     interesadosService
       .list(filtro === 'todos' ? {} : { estado: filtro })
-      .then(setItems)
-      .catch((e) => toast.error(e instanceof Error ? e.message : 'Error al cargar interesados'))
+      .then((data) => { setItems(data); setFallo(false) })
+      .catch((e) => {
+        setItems([])
+        setFallo(true)
+        toast.error(e instanceof Error ? e.message : 'Error al cargar interesados')
+      })
       .finally(() => setLoading(false))
   }, [filtro])
 
@@ -157,6 +166,20 @@ export default function InteresadosPage() {
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <IconLoader size={16} className="animate-spin" /> Cargando interesados…
+        </div>
+      ) : fallo ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-12 text-center">
+          <p className="font-semibold text-amber-900">No se pudo cargar la lista</p>
+          <p className="text-sm text-amber-800 mt-1">
+            Esto no significa que no tengas interesados.
+          </p>
+          <button
+            type="button"
+            onClick={load}
+            className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-12 text-center">

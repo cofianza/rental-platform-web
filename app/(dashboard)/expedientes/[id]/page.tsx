@@ -115,7 +115,7 @@ export default function ExpedienteDetallePage() {
 
   // Estado principal
   const [expediente, setExpediente] = useState<IExpedienteDetalle | null>(null)
-  const [transiciones, setTransiciones] = useState<ITransicionDisponible[]>([])
+  const [transiciones, setTransiciones] = useState<ITransicionDisponible[] | null>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -186,7 +186,9 @@ export default function ExpedienteDetallePage() {
         expedienteService.getExpedienteDetalle(id),
         expedienteService.getTransicionesDisponibles(id).catch(() => {
           console.warn('No se pudieron cargar las transiciones disponibles')
-          return []
+          // `null` = fallo. Con `[]` el boton "Cambiar estado" desaparecia y el
+          // estudio se veia identico a "no tengo permiso para moverlo".
+          return null
         }),
       ])
       setExpediente(expedienteData)
@@ -241,7 +243,7 @@ export default function ExpedienteDetallePage() {
         const nuevasTransiciones = await expedienteService.getTransicionesDisponibles(id)
         setTransiciones(nuevasTransiciones)
       } catch {
-        setTransiciones([])
+        setTransiciones(null)
       }
 
       toast.success('Estado actualizado correctamente')
@@ -415,9 +417,13 @@ export default function ExpedienteDetallePage() {
             con perfil incompleto tampoco hasta completar sus datos. */}
         {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
           <div className="flex gap-3 ml-12 lg:ml-0">
-            {transiciones.length > 0 && (
+            {transiciones === null ? (
+              <Button variante="secondary" onClick={() => fetchExpediente()}>
+                Reintentar acciones
+              </Button>
+            ) : transiciones.length > 0 ? (
               <Button onClick={() => setShowTransicionModal(true)}>Cambiar estado</Button>
-            )}
+            ) : null}
           </div>
         )}
       </div>
@@ -932,7 +938,7 @@ export default function ExpedienteDetallePage() {
         isOpen={showTransicionModal}
         onClose={() => setShowTransicionModal(false)}
         estadoActual={expediente.estado}
-        transicionesDisponibles={transiciones}
+        transicionesDisponibles={transiciones ?? []}
         onConfirmar={handleEjecutarTransicion}
         isLoading={isExecutingTransicion}
         expedienteId={id}

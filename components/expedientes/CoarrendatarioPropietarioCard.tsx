@@ -13,6 +13,8 @@
 
 'use client'
 
+import { toast } from 'sonner'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 import { estudioService } from '@/services/estudioService'
@@ -136,6 +138,9 @@ export function CoarrendatarioPropietarioCard({
       const full = await estudioService.getEstudioById(coa.estudio_id)
       setEstudioFull(full)
       setShowDetail(true)
+    } catch {
+      // Aqui no habia ni catch: el error subia y el boton quedaba girando.
+      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
     } finally {
       setLoadingDetail(false)
     }

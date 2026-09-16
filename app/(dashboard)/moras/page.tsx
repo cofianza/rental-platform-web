@@ -95,6 +95,10 @@ export default function ReportarMoraPage() {
   const [stats, setStats] = useState<IMorasStats | null>(null)
   const [moras, setMoras] = useState<IMoraTicket[]>([])
   const [contratos, setContratos] = useState<ContratoSelectItem[]>([])
+  // "No hay contratos vigentes para reportar" es una afirmacion categorica, y
+  // se pintaba tambien cuando la peticion fallaba — en el arranque de cobranza,
+  // con el boton ya deshabilitado, o sea el camino cortado antes de empezar.
+  const [falloContratos, setFalloContratos] = useState(false)
   const [totalContratos, setTotalContratos] = useState(0)
   const [filtroContrato, setFiltroContrato] = useState('')
   const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
@@ -169,8 +173,9 @@ export default function ReportarMoraPage() {
         })
         setContratos(items)
         setTotalContratos(res.meta.total)
+        setFalloContratos(false)
       })
-      .catch(() => setContratos([]))
+      .catch(() => { setContratos([]); setFalloContratos(true) })
   }, [])
 
   // El select traía 100 contratos sin forma de buscar: encontrar el correcto
@@ -275,7 +280,11 @@ export default function ReportarMoraPage() {
                 </option>
               ))}
             </select>
-            {contratos.length === 0 ? (
+            {falloContratos ? (
+              <p className="text-xs text-amber-600 mt-1">
+                No se pudo cargar la lista de contratos. Recarga la página para reintentar.
+              </p>
+            ) : contratos.length === 0 ? (
               <p className="text-xs text-amber-600 mt-1">
                 No hay contratos vigentes para reportar
               </p>

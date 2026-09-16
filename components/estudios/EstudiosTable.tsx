@@ -5,6 +5,8 @@
 
 'use client'
 
+import { toast } from 'sonner'
+
 import Link from 'next/link'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
@@ -130,7 +132,8 @@ export function EstudiosTable({
       const detail = await estudioService.getEstudioById(estudioId)
       setSelectedEstudio(detail)
     } catch {
-      // silent fail, user can try again
+      // La fila entera es clicable: sin aviso, el clic simplemente no hace nada.
+      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
     } finally {
       setLoadingDetail(false)
     }

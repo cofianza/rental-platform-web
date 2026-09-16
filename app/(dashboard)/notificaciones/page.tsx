@@ -13,7 +13,7 @@
 
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -122,8 +122,11 @@ export default function NotificacionesPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
+  // Sin esto, el fallo se iba con el toast y quedaba "Sin notificaciones" — que
+  // encima puede convivir con un subtitulo "N sin leer" del store global.
+  const [fallo, setFallo] = useState(false)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     setLoading(true)
     notificacionService
       .list({ limit: PAGE_SIZE })
@@ -131,10 +134,16 @@ export default function NotificacionesPage() {
         setItems(res.data)
         setTodas(res.data)
         setTotal(res.total)
+        setFallo(false)
       })
-      .catch((err) => toast.error(err instanceof Error ? err.message : 'Error al cargar notificaciones'))
+      .catch((err) => {
+        setFallo(true)
+        toast.error(err instanceof Error ? err.message : 'Error al cargar notificaciones')
+      })
       .finally(() => setLoading(false))
   }, [setItems])
+
+  useEffect(() => { cargar() }, [cargar])
 
   // Estado de lectura vigente de las 50 primeras (store: realtime + acciones).
   const leidasStore = useMemo(() => new Map(items.map((n) => [n.id, n.leida_at])), [items])
@@ -206,6 +215,19 @@ export default function NotificacionesPage() {
         {loading && todas.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <IconLoader size={24} className="animate-spin text-gray-400" />
+          </div>
+        ) : fallo && todas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <IconBell size={36} className="text-amber-300 mb-3" />
+            <p className="text-sm font-medium text-amber-900">No se pudieron cargar</p>
+            <p className="text-xs text-amber-800 mt-1">Esto no significa que no tengas avisos.</p>
+            <button
+              type="button"
+              onClick={cargar}
+              className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-50"
+            >
+              Reintentar
+            </button>
           </div>
         ) : todas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">

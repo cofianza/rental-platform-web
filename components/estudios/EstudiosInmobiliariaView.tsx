@@ -12,6 +12,8 @@
 
 'use client'
 
+import { toast } from 'sonner'
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useEstudiosList } from '@/hooks/useEstudiosList'
@@ -138,7 +140,7 @@ export function EstudiosInmobiliariaView({
     try {
       setDetalle(await estudioService.getEstudioById(id))
     } catch {
-      /* el usuario puede reintentar */
+      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
     } finally {
       setCargandoDetalle(false)
     }
