@@ -833,7 +833,7 @@ function SolicitanteDashboard() {
             // exp.cita_realizada (RPC) incluye la cita omitida (3.2) y los
             // expedientes por invitación; el map local cubre el refresco fino.
             const citaRealizada = !!exp.cita_realizada || citasByExpediente[exp.id]?.estado === 'realizada'
-            const isCancelled = exp.estado === 'cerrado' && !!exp.cancelado_at
+            const isCancelled = exp.estado === 'cerrado' && !!exp.estado_pre_cancelacion
             // Si fue cancelado, calculamos los pasos completados desde el
             // estado pre-cancelacion. Asi el solicitante ve hasta donde
             // llego el proceso antes de que el propietario lo cancelara.

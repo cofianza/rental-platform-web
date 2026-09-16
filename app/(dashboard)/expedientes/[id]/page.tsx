@@ -485,6 +485,29 @@ export default function ExpedienteDetallePage() {
                   </div>
                 </div>
               </div>
+            ) : expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado' ? (
+              // rechazado→cerrado no escribe `cancelado_at` (no es abandono),
+              // asi que sin esta rama caia en el "else" verde y saludaba con
+              // "¡Estudio finalizado! Todos los pasos se completaron
+              // exitosamente" a un candidato rechazado y sin contrato.
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                    <IconX size={28} className="text-gray-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">Estudio cerrado</h3>
+                    <p className="text-sm text-gray-700">
+                      El resultado fue rechazado y el caso quedo cerrado.
+                    </p>
+                    {expediente.motivo_rechazo && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        <span className="font-semibold">Motivo:</span> {expediente.motivo_rechazo}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             ) : expediente.estado === 'cerrado' && (
               <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
                 <div className="absolute -top-6 -right-6 w-24 h-24 bg-green-200/40 rounded-full blur-2xl pointer-events-none" />
