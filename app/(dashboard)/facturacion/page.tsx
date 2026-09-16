@@ -24,6 +24,17 @@ export default function FacturacionPage() {
   // las gestionan — propietario e inmobiliaria no necesitan verlas y ademas el
   // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
   const canSeeTarifasIva = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // Mismo criterio una linea arriba: 'Datos Fiscales' pega a
+  // /perfil-arrendador/me, cuyo router es roleGuard(admin, inmobiliaria,
+  // propietario). Para operador_analista y gerencia_consulta la pestaña —que
+  // ademas es la que abre por defecto— era un 403 permanente con el texto crudo
+  // del backend ("Roles permitidos: ...") y un "Reintentar" que nunca iba a
+  // funcionar. El solicitante tiene su propia version de la pestaña.
+  const canSeeDatosFiscales =
+    isSolicitante ||
+    user?.rol === 'administrador' ||
+    user?.rol === 'inmobiliaria' ||
+    user?.rol === 'propietario'
 
   // El solicitante ahora tiene tab 'Datos Fiscales' propio (vs admin que ve
   // los datos del emisor Cofianza). Sin esos datos completos, el backend
@@ -37,7 +48,7 @@ export default function FacturacionPage() {
         { id: 'facturas', label: 'Mis facturas' },
       ]
     : [
-        { id: 'datos-fiscales', label: 'Datos Fiscales' },
+        ...(canSeeDatosFiscales ? [{ id: 'datos-fiscales', label: 'Datos Fiscales' }] : []),
         { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
         // Tab agregado para la inmobiliaria (mockup 13_v2): comisión por contrato.
@@ -45,7 +56,9 @@ export default function FacturacionPage() {
       ]
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales.
-  const [activeTab, setActiveTab] = useState(isSolicitante ? 'pendientes' : 'datos-fiscales')
+  const [activeTab, setActiveTab] = useState(
+    isSolicitante || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales',
+  )
   // Bump cuando se emite una factura para forzar refresh del tab Mis facturas
   // si el usuario navega despues. FacturasSection no expone refetch directo.
   const [facturasReloadKey, setFacturasReloadKey] = useState(0)

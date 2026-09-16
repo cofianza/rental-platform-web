@@ -5,6 +5,7 @@
  */
 
 'use client'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -12,6 +13,7 @@ import { creditosEstudiosService, type ISaldoCreditos } from '@/services/credito
 import { IconReceipt, IconLoader, IconChevronRight, IconPlus } from '@/components/icons'
 
 export function SaldoCreditosCard() {
+  const puedeEditar = usePuedeEditar()
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -78,17 +80,23 @@ export function SaldoCreditosCard() {
       </div>
 
       <div className="mt-4 flex items-center gap-2 flex-wrap">
-        <Link
-          href="/configuracion/creditos-estudios"
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
-            sinSaldo
-              ? 'bg-amber-600 text-white hover:bg-amber-700'
-              : 'bg-primary-600 text-white hover:bg-primary-700'
-          }`}
-        >
-          <IconPlus size={14} />
-          {sinSaldo ? 'Comprar primer paquete' : 'Comprar más'}
-        </Link>
+        {puedeEditar ? (
+          <Link
+            href="/configuracion/creditos-estudios"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
+              sinSaldo
+                ? 'bg-amber-600 text-white hover:bg-amber-700'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
+          >
+            <IconPlus size={14} />
+            {sinSaldo ? 'Comprar primer paquete' : 'Comprar más'}
+          </Link>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Para comprar más estudios, pídeselo al titular de la cuenta.
+          </p>
+        )}
         {!sinSaldo && (
           <Link
             href="/configuracion/creditos-estudios"

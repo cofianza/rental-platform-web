@@ -25,6 +25,7 @@ import {
 import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, formatCurrency } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { VersionHistorialSection } from '@/components/expedientes/VersionHistorialSection'
 import { CompararVersionesModal } from '@/components/expedientes/CompararVersionesModal'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
@@ -105,11 +106,16 @@ export default function ContratoDetallePage() {
   const [confirmRenovar, setConfirmRenovar] = useState(false)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
 
+  const puedeEditar = usePuedeEditar()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Regenerar/editar (4.1e) tambien lo permite la API a inmobiliaria y
   // propietario (contratos:update) — no solo a los roles internos.
+  // `usePuedeEditar` porque el miembro 'solo_lectura' entra con rol
+  // 'inmobiliaria' y pasaba el chequeo por rol: veia "Editar y regenerar" y
+  // "Enviar a firma", y como previewFirmantes es un GET recorria el modal de
+  // firmantes entero antes de encontrarse el 403.
   const canRegenerate =
-    canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
+    puedeEditar && (canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario')
 
   // opts.silent = refresco EN SITIO (p. ej. cuando FirmantesContratoSection
   // avisa vía onAllSigned que ya firmaron todos). En modo silencioso NO tocamos

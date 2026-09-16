@@ -463,13 +463,15 @@ export function AutorizacionSection({
             </div>
           )}
 
-          <button
-            onClick={() => setShowRevocar(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
-          >
-            <IconAlertTriangle size={14} />
-            Revocar autorización
-          </button>
+          {!soloLectura && (
+            <button
+              onClick={() => setShowRevocar(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
+            >
+              <IconAlertTriangle size={14} />
+              Revocar autorización
+            </button>
+          )}
 
           {/* Revocar dialog */}
           {showRevocar && (

@@ -13,6 +13,7 @@
  */
 
 'use client'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -33,6 +34,7 @@ export function PendientesFacturarSection({
   onFacturaEmitida,
   onDatosFiscalesIncompletos,
 }: PendientesFacturarSectionProps) {
+  const puedeEditar = usePuedeEditar()
   const [items, setItems] = useState<IPagoPendienteFacturar[]>([])
   const [loading, setLoading] = useState(true)
   const [emitiendo, setEmitiendo] = useState<string | null>(null)
@@ -160,6 +162,7 @@ export function PendientesFacturarSection({
 
               <button
                 onClick={() => handleFacturar(pago)}
+                hidden={!puedeEditar}
                 disabled={isEmitiendo || emitiendo !== null}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
               >

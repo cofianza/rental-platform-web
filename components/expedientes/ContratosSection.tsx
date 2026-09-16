@@ -13,6 +13,7 @@ import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { formatDateTime } from '@/lib/constants'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
@@ -78,11 +79,17 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // Admin/operador/inmobiliaria pueden generar manualmente como fallback
   // (la inmobiliaria es el arrendador y necesita poder disparar la generacion
   // si el orchestrator fallo). Propietario individual solo puede regenerar.
+  const puedeEditar = usePuedeEditar()
+  // Mismo defecto que en contratos/[id]: el miembro 'solo_lectura' entra con
+  // rol 'inmobiliaria'. Esta es ademas la ruta por la que la inmobiliaria llega
+  // de verdad al contrato.
   const canCreate =
-    user?.rol === 'administrador' ||
-    user?.rol === 'operador_analista' ||
-    user?.rol === 'inmobiliaria'
-  const canRegenerate = canCreate || user?.rol === 'propietario'
+    puedeEditar && (
+      user?.rol === 'administrador' ||
+      user?.rol === 'operador_analista' ||
+      user?.rol === 'inmobiliaria'
+    )
+  const canRegenerate = canCreate || (puedeEditar && user?.rol === 'propietario')
   // Dueño del inmueble (propietario o inmobiliaria): su único paso siguiente en
   // un borrador es "Enviar a firma"; el resto de iconos solo le añaden ruido.
   const esDuenio = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
