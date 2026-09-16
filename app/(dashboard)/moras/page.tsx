@@ -100,9 +100,13 @@ export default function ReportarMoraPage() {
   const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
   const [loading, setLoading] = useState(true)
   const [detalleId, setDetalleId] = useState<string | null>(null)
-  const [reportando, setReportando] = useState(
-    typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('contrato_id'),
-  )
+  // `reportando` es la bandera de "enviando", nada mas. Arrancaba en true cuando
+  // la URL traia ?contrato_id=, asi que llegar desde la tarjeta del inmueble
+  // abria el formulario con el boton ya bloqueado en "Reportando…"; solo vuelve
+  // a false en el finally de handleReportar, que nunca corria porque el boton
+  // estaba disabled. Quien abre el <details> del deep link es deepLinkContrato,
+  // doce lineas mas abajo.
+  const [reportando, setReportando] = useState(false)
 
   // Form state
   // Llega desde la tarjeta del inmueble (?contrato_id=): evita volver a
