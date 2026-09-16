@@ -206,6 +206,18 @@ export default function AutorizarPage() {
   const [hashDocumento, setHashDocumento] = useState<string | null>(null)
   // §6.3: tras firmar, en la opción C todavía falta el pago. Lo dice el backend.
   const [pagoRequerido, setPagoRequerido] = useState(false)
+
+  // Al reabrir un enlace ya firmado no sabemos si le falta pagar: lo pregunta.
+  const sincronizarPago = useCallback(async (t: string) => {
+    try {
+      const p = await autorizacionPublicService.getPago(t)
+      setPago(p)
+      setPagoRequerido(p.estado !== 'no_aplica' && p.estado !== 'completado')
+    } catch {
+      // Sin respuesta dejamos la pantalla de exito tal cual: es el respaldo
+      // por correo/WhatsApp, no una pantalla de error.
+    }
+  }, [])
   // Tras firmar, el enlace de pago lo crea el orquestador fire-and-forget: la
   // pantalla lo espera aqui en vez de mandar al prospecto a buscar un correo.
   const [pago, setPago] = useState<IPagoProspecto | null>(null)
@@ -225,6 +237,7 @@ export default function AutorizarPage() {
         const code = (err as { code?: string })?.code
         if (code === 'AUTORIZACION_YA_FIRMADA') {
           setPageState('signed')
+          void sincronizarPago(token)
           return
         }
         setErrorMessage(
@@ -236,7 +249,7 @@ export default function AutorizarPage() {
         )
         setPageState('error')
       })
-  }, [token])
+  }, [token, sincronizarPago])
 
   // El paso 1 mide varios miles de px (texto legal íntegro + acordeones) y el
   // botón vive al fondo: sin este reset, al pasar al paso 2 el navegador clampa
@@ -394,6 +407,7 @@ export default function AutorizarPage() {
       // 'revocado': habría mostrado "firmado" sobre un enlace que ya no corre.
       if (code === 'AUTORIZACION_YA_FIRMADA') {
         setPageState('signed')
+        void sincronizarPago(token)
         return
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {

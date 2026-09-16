@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -26,6 +27,7 @@ export default function CoarrendatarioPublicPage() {
   const [view, setView] = useState<ICoarrendatarioPublicView | null>(null)
   const [phase, setPhase] = useState<Phase>('cargando')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [confirmandoRechazo, setConfirmandoRechazo] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (errorMsg) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -83,6 +85,7 @@ export default function CoarrendatarioPublicPage() {
 
   const handleRechazar = async () => {
     if (!token) return
+    setConfirmandoRechazo(false)
     setPhase('rechazando')
     try {
       await coarrendatarioService.rechazar(token)
@@ -248,7 +251,7 @@ export default function CoarrendatarioPublicPage() {
               {phase === 'aceptando' ? 'Procesando…' : 'Aceptar y autorizar estudio'}
             </button>
             <button
-              onClick={handleRechazar}
+              onClick={() => setConfirmandoRechazo(true)}
               disabled={procesando}
               className="px-5 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
@@ -256,6 +259,18 @@ export default function CoarrendatarioPublicPage() {
             </button>
           </div>
         </div>
+
+        <ConfirmDialog
+          isOpen={confirmandoRechazo}
+          onClose={() => setConfirmandoRechazo(false)}
+          onConfirm={handleRechazar}
+          title="¿Declinar la invitación?"
+          message="Si declinas, el estudio sigue sin ti y quien te invitó tendrá que volver a empezar contigo desde cero. No puedes deshacerlo desde aquí."
+          confirmLabel="Sí, declinar"
+          cancelLabel="Volver"
+          variant="danger"
+          isLoading={phase === 'rechazando'}
+        />
       </div>
   )
 }

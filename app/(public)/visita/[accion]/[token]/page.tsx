@@ -259,6 +259,23 @@ export default function GestionarVisitaPage() {
               <IconCheckCircle size={40} className="mx-auto text-primary-600 mb-2" />
               <p className="text-sm text-gray-700">Ya confirmaste tu asistencia. ¡Te esperamos puntual!</p>
             </div>
+          ) : visita.estado !== 'confirmada' ? (
+            // La web solo exigia `accionable`, que admite 'solicitada' y
+            // 'confirmada'; el endpoint exige 'confirmada' estricto. Como el
+            // boton de WhatsApp vive para siempre, si la visita volvio a
+            // 'solicitada' (reprogramada) el confirmar fallaba SIEMPRE.
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-700">
+                El propietario aún no ha confirmado la fecha de esta visita. En cuanto lo haga te
+                avisamos y podrás confirmar tu asistencia.
+              </p>
+              <Link
+                href={`/visita/reprogramar/${token}`}
+                className="mt-3 inline-block text-sm text-gray-500 hover:underline"
+              >
+                Necesito cambiar la fecha
+              </Link>
+            </div>
           ) : (
             <>
               <p className="text-sm text-gray-700">

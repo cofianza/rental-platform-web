@@ -55,9 +55,16 @@ export default function EstudioFormularioPage() {
           setNombre(data.solicitante_nombre || '')
           setEmail(data.solicitante?.email ?? '')
           setTelefono(data.solicitante?.telefono ?? '')
-          setNumDoc(data.solicitante?.numero_documento ?? '')
           const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
-          setTipoDoc(['CC', 'CE', 'TI', 'NIT'].includes(t) ? t : 'CC')
+          const consultable = ['CC', 'CE', 'TI', 'NIT'].includes(t)
+          // Si el tipo guardado no se puede consultar (pasaporte: los burós
+          // colombianos no lo tienen), NO se degrada a CC arrastrando el
+          // número. Eso dejaba un par (cc, número-de-pasaporte) que no es de
+          // nadie, y el gate 8.4 lo rechazaba con "El documento que se va a
+          // consultar no coincide con el de quien firmó" — que suena a
+          // suplantación — con el prospecto ya habiendo pagado.
+          setNumDoc(consultable ? (data.solicitante?.numero_documento ?? '') : '')
+          setTipoDoc(consultable ? t : '')
         }
         setPageState(data.ya_completado ? 'completed' : 'form')
       } catch (err) {
@@ -321,6 +328,9 @@ export default function EstudioFormularioPage() {
               onChange={(e) => setTipoDoc(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
+              {/* Vacio cuando el tipo guardado no se puede consultar: obliga a
+                  elegir en vez de asumir CC por el prospecto. */}
+              <option value="" disabled>Selecciona…</option>
               <option value="CC">Cédula de Ciudadanía</option>
               <option value="CE">Cédula de Extranjería</option>
               <option value="TI">Tarjeta de Identidad</option>
