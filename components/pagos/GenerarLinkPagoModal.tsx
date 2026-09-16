@@ -5,9 +5,10 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { pagoService } from '@/services/pagoService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 
 // ============================================
 // Types
@@ -46,6 +47,31 @@ export function GenerarLinkPagoModal({
   const [enviarEmail, setEnviarEmail] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // El precio del estudio NO lo decide quien llena este formulario: el API lo
+  // pisa con el de configuracion_sistema (pagos.service.ts, concepto
+  // 'estudio'), porque el gate de ejecucion solo comprueba que exista un pago
+  // completado y nunca su valor — un link de $1.000 pagaba una consulta al buro
+  // entera. Antes el campo se pedia igual y se descartaba en silencio: el
+  // gestor tecleaba lo negociado, veia "$40.000 COP" confirmado debajo, y al
+  // arrendatario le llegaba un link (y un correo) por otra cifra.
+  const [montoEstudio, setMontoEstudio] = useState<number | null>(null)
+
+  const esEstudio = concepto === 'estudio'
+
+  useEffect(() => {
+    if (!isOpen || !esEstudio || montoEstudio !== null) return
+    let cancelado = false
+    pagoEstudioService
+      .getEstado(expedienteId)
+      .then((e) => { if (!cancelado) setMontoEstudio(e.monto) })
+      .catch(() => { /* si no carga, el campo sigue editable y manda el API */ })
+    return () => { cancelado = true }
+  }, [isOpen, esEstudio, expedienteId, montoEstudio])
+
+  // Al elegir 'estudio' el monto deja de ser del usuario.
+  useEffect(() => {
+    if (esEstudio && montoEstudio !== null) setMonto(String(montoEstudio))
+  }, [esEstudio, montoEstudio])
 
   const resetForm = useCallback(() => {
     setConcepto('')
@@ -171,15 +197,21 @@ export function GenerarLinkPagoModal({
               onChange={(e) => setMonto(e.target.value)}
               placeholder="Ej: 150000"
               min="1"
-              className="w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              readOnly={esEstudio && montoEstudio !== null}
+              aria-describedby="generar-link-pago-modal-monto-ayuda"
+              className={`w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${
+                esEstudio && montoEstudio !== null ? 'bg-gray-50 text-gray-600' : ''
+              }`}
               disabled={isSubmitting}
             />
           </div>
-          {monto && (
-            <p className="mt-1 text-xs text-gray-500">
-              ${formatMontoDisplay(monto)} COP
-            </p>
-          )}
+          <p id="generar-link-pago-modal-monto-ayuda" className="mt-1 text-xs text-gray-500">
+            {esEstudio && montoEstudio !== null
+              ? `$${formatMontoDisplay(monto)} COP — precio del estudio, fijado por Cofianza.`
+              : monto
+                ? `$${formatMontoDisplay(monto)} COP`
+                : ''}
+          </p>
         </div>
 
         {/* Descripcion */}
