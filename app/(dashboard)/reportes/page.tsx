@@ -43,6 +43,11 @@ const REPORTES = [
     icon: IconDollarSign,
     color: 'bg-green-100 text-green-600',
     href: '/reportes/ingresos',
+    // El endpoint es roleGuard(administrador, gerencia_consulta): al analista
+    // la tarjeta lo llevaba a un 403. Y peor que el 403: con data null las
+    // tarjetas del reporte pintan "Total Ingresos $0" por el `?? 0`, o sea un
+    // numero falso y creible.
+    roles: ['administrador', 'gerencia_consulta'],
   },
   {
     id: 'tiempo-proceso',
@@ -100,7 +105,7 @@ export default function ReportesPage() {
 
       {/* Grid de reportes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {REPORTES.map((reporte) => {
+        {REPORTES.filter((r) => !r.roles || (rol && r.roles.includes(rol))).map((reporte) => {
           const Icon = reporte.icon
           return (
             <Link

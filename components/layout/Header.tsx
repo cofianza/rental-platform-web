@@ -89,8 +89,12 @@ export function Header() {
         {/* Divisor */}
         <div className="hidden sm:block w-px h-6 bg-gray-300" />
 
-        {/* Avatar + Nombre */}
-        <div className="flex items-center gap-3">
+        {/* Avatar + Nombre — enlace a Mi cuenta */}
+        <Link
+          href="/configuracion/cuenta"
+          title="Mi cuenta"
+          className="flex items-center gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-gray-100"
+        >
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-sm font-medium text-gray-900">
               {nombre}
@@ -100,7 +104,7 @@ export function Header() {
           <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {iniciales}
           </div>
-        </div>
+        </Link>
       </div>
     </header>
   )

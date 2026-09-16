@@ -9,7 +9,7 @@
 import { IconPlus } from '@/components/icons'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
 
@@ -28,13 +28,21 @@ export function OficinaVirtualHero() {
   const puedeEditar = usePuedeEditar()
   const [stats, setStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
+  // Tercer estado. El catch devolvia un objeto de ceros, asi que un fallo de red
+  // se leia como "no tienes nada": "0 Propiedades · 0 Inquilinos · $0 Recaudado"
+  // sobre una cartera llena. Y como este hero vive en el shell con useEffect([]),
+  // el cero se quedaba toda la sesion.
+  const [fallo, setFallo] = useState(false)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setLoading(true)
     dashboardService.getPortfolioStats()
-      .then(setStats)
-      .catch(() => setStats({ propiedades_activas: 0, inquilinos_cartera: 0, canon_mensual: 0 }))
+      .then((s) => { setStats(s); setFallo(false) })
+      .catch(() => { setStats(null); setFallo(true) })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { cargar() }, [cargar])
 
   const titulo = 'Tu Oficina Virtual'
   const subtitulo = 'Gestiona propiedades, inquilinos y recaudos con seguridad y control total.'
@@ -62,13 +70,26 @@ export function OficinaVirtualHero() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 md:gap-4 min-w-0">
-          <StatCard label="Propiedades activas" value={loading ? '…' : String(stats?.propiedades_activas ?? 0)} />
-          <StatCard label="Inquilinos en cartera" value={loading ? '…' : String(stats?.inquilinos_cartera ?? 0)} />
+          <StatCard label="Propiedades activas" value={loading ? '…' : stats ? String(stats.propiedades_activas) : '—'} />
+          <StatCard label="Inquilinos en cartera" value={loading ? '…' : stats ? String(stats.inquilinos_cartera) : '—'} />
           <StatCard
             label="Recaudado este mes"
-            value={loading ? '…' : formatCompactCOP(stats?.canon_mensual ?? 0)}
+            value={loading ? '…' : stats ? formatCompactCOP(stats.canon_mensual) : '—'}
           />
         </div>
+
+        {fallo && !loading && (
+          <p className="mt-3 text-sm text-white/90">
+            No se pudieron cargar tus cifras.{' '}
+            <button
+              type="button"
+              onClick={cargar}
+              className="underline underline-offset-2 hover:text-white"
+            >
+              Reintentar
+            </button>
+          </p>
+        )}
       </div>
     </section>
   )

@@ -197,6 +197,9 @@ interface IngresosFilters {
 export default function IngresosReportePage() {
   const [data, setData] = useState<IngresosData | null>(null)
   const [loading, setLoading] = useState(true)
+  // Tercer estado: sin esto "no cargo" y "no hay ingresos" se ven igual, y las
+  // tarjetas afirmaban $0 sobre datos que nunca llegaron.
+  const [falloCarga, setFalloCarga] = useState(false)
   const [filters, setFilters] = useState<IngresosFilters>({
     dateFrom: '',
     dateTo: '',
@@ -213,9 +216,12 @@ export default function IngresosReportePage() {
 
       const result = await reporteService.getIngresosReporte(cleanFilters)
       setData(result)
+      setFalloCarga(false)
     } catch (err) {
       console.error('Error cargando ingresos:', err)
       toast.error('Error al cargar el reporte de ingresos')
+      setData(null)
+      setFalloCarga(true)
     } finally {
       setLoading(false)
     }
@@ -270,6 +276,21 @@ export default function IngresosReportePage() {
         }
       />
 
+      {falloCarga && !loading && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="flex-1 text-sm text-amber-900">
+            No se pudo cargar el reporte. Las cifras de abajo no están disponibles — no son cero.
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchData(filters)}
+            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {loading ? (
@@ -285,7 +306,7 @@ export default function IngresosReportePage() {
                 Total Ingresos
               </p>
               <p className="text-2xl font-bold text-green-700">
-                {formatCurrency(data?.resumen.total_ingresos ?? 0)}
+                {data ? formatCurrency(data.resumen.total_ingresos) : '—'}
               </p>
             </div>
             <div className="bg-white rounded-lg border border-amber-200 p-6">
@@ -293,7 +314,7 @@ export default function IngresosReportePage() {
                 Total Pendiente
               </p>
               <p className="text-2xl font-bold text-amber-700">
-                {formatCurrency(data?.resumen.total_pendiente ?? 0)}
+                {data ? formatCurrency(data.resumen.total_pendiente) : '—'}
               </p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -301,7 +322,7 @@ export default function IngresosReportePage() {
                 Cantidad de Pagos
               </p>
               <p className="text-2xl font-bold text-gray-900">
-                {data?.resumen.cantidad_pagos ?? 0}
+                {data ? data.resumen.cantidad_pagos : '—'}
               </p>
             </div>
           </>

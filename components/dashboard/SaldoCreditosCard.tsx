@@ -16,17 +16,20 @@ export function SaldoCreditosCard() {
   const puedeEditar = usePuedeEditar()
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [loading, setLoading] = useState(true)
+  // `saldo === null` significaba a la vez "no cargo" y "cero": la tarjeta decia
+  // "0 estudios" y empujaba a "Comprar primer paquete" a quien ya tenia saldo.
+  const [fallo, setFallo] = useState(false)
 
   useEffect(() => {
     creditosEstudiosService
       .getMiSaldo()
-      .then(setSaldo)
-      .catch(() => setSaldo(null))
+      .then((s) => { setSaldo(s); setFallo(false) })
+      .catch(() => { setSaldo(null); setFallo(true) })
       .finally(() => setLoading(false))
   }, [])
 
   const saldoTotal = saldo?.saldo_total ?? 0
-  const sinSaldo = saldoTotal === 0
+  const sinSaldo = !fallo && saldoTotal === 0
 
   return (
     <div
@@ -58,7 +61,7 @@ export function SaldoCreditosCard() {
                   sinSaldo ? 'text-amber-700' : 'text-primary-700'
                 }`}
               >
-                {saldoTotal}
+                {fallo ? '—' : saldoTotal}
                 <span className="text-sm font-normal text-gray-500 ml-1">
                   {saldoTotal === 1 ? 'estudio' : 'estudios'}
                 </span>
