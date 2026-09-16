@@ -167,6 +167,10 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
     return { totalCobrado, totalPendiente, porEstado }
   }, [pagos])
 
+  // Los totales se calculan sobre el lote que hay en pantalla, asi que con un
+  // filtro puesto o mas de una pagina NO son el total del expediente.
+  const hayRecorte = !!filterEstado || !!filterConcepto || total > pagos.length
+
   // Actions
   const handleCopyLink = useCallback(async (pago: IPago) => {
     if (!pago.payment_link_url) return
@@ -372,7 +376,9 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
               <IconCheck size={20} className="text-green-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Cobrado</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Cobrado {hayRecorte ? 'en esta vista' : ''}
+              </p>
               <p className="text-xl font-bold text-gray-900">{formatCOP(summary.totalCobrado)}</p>
             </div>
           </div>
@@ -385,7 +391,9 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
               <IconClock size={20} className="text-amber-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Pendiente</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Pendiente {hayRecorte ? 'en esta vista' : ''}
+              </p>
               <p className="text-xl font-bold text-gray-900">{formatCOP(summary.totalPendiente)}</p>
             </div>
           </div>

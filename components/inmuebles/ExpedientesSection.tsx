@@ -56,7 +56,7 @@ export function ExpedientesSection({
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm text-gray-500">
-          {expedientes.length} expediente{expedientes.length !== 1 ? 's' : ''} encontrado{expedientes.length !== 1 ? 's' : ''}
+          {expedientes.length} estudio{expedientes.length !== 1 ? 's' : ''} encontrado{expedientes.length !== 1 ? 's' : ''}
         </span>
         {canCreate && (
           <Link

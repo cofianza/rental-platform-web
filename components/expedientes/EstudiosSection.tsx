@@ -308,10 +308,10 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <IconClipboardList size={48} className="mx-auto text-gray-300 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 mb-1">
-            No hay estudios de riesgo
+            Sin evaluación crediticia
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            No hay estudios de riesgo crediticio para este estudio.
+            Todavía no hay ninguna evaluación crediticia para este estudio.
           </p>
           {canManage && (
             <button

@@ -152,6 +152,17 @@ class CreditosEstudiosService {
    * Error con `details.faltantes` (lista de campos que el frontend
    * debe pedir en un modal y reenviar).
    */
+  /**
+   * Compras del perfil, incluidas las 'pendiente' con su enlace de pago vivo.
+   * El endpoint ya existia y la pantalla nunca lo llamaba: una compra pagada
+   * cuyo webhook aun no habia llegado quedaba invisible, y el riesgo real es
+   * que el usuario vuelva a comprar en esa ventana.
+   */
+  async getMisCompras(): Promise<ICompraCredito[]> {
+    const res = await apiClient.get<ICompraCredito[]>('/creditos-estudios/me/compras')
+    return res.data
+  }
+
   async facturarCompra(
     compraId: string,
     datosFiscales?: IDatosFiscalesFactura,

@@ -208,18 +208,23 @@ function TarifaOverrideModal({
     }
   }
 
-  // Los valores estándar de la Adenda van como placeholder: vacío = se mantiene.
+  // El placeholder es el valor ESTANDAR, y solo se muestra si ese campo no
+  // tiene ya una negociacion encima — si no, se estaria llamando "estándar" a
+  // la cifra negociada que el usuario acaba de borrar para reemplazarla. Por
+  // campo, no con el `negociada` global (que es un OR de los tres).
+  const estandar = (valorEfectivo: number, yaNegociado: boolean) =>
+    yaNegociado ? '' : String(valorEfectivo)
   const campos: Array<[string, string, string, (v: string) => void]> = [
-    ['Tarifa mensual (% del canon + IVA)', actual.tarifas.negociada ? '' : String(actual.tarifas.tarifa_mensual_pct), tarifa, setTarifa],
-    ['Prima de vinculación (% del canon)', String(actual.tarifas.prima_vinculacion_pct), prima, setPrima],
-    ['Cashback (% de tarifas pagadas)', String(actual.tarifas.cashback_pct), cashback, setCashback],
+    ['Tarifa mensual (% del canon + IVA)', estandar(actual.tarifas.tarifa_mensual_pct, o?.tarifa_mensual_pct != null), tarifa, setTarifa],
+    ['Prima de vinculación (% del canon)', estandar(actual.tarifas.prima_vinculacion_pct, o?.prima_vinculacion_pct != null), prima, setPrima],
+    ['Cashback (% de tarifas pagadas)', estandar(actual.tarifas.cashback_pct, o?.cashback_pct != null), cashback, setCashback],
   ]
 
   return (
     <Modal isOpen onClose={onClose} title="Condiciones especiales (Adenda §5)" size="sm">
       <div className="space-y-3">
         <p className="text-xs text-gray-600">
-          Sobrescribe la tabla estándar para este estudio. Deja vacío lo que no cambia. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.
+          Sobrescribe la tabla estándar para este estudio. Lo que dejes vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.
         </p>
         {campos.map(([label, placeholder, valor, setValor]) => (
           <label key={label} className="block text-xs font-medium text-gray-700">

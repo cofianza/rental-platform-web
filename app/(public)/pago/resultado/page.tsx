@@ -39,10 +39,10 @@ function PagoResultadoContent() {
   const [reconcileDone, setReconcileDone] = useState(false)
   const [resultado, setResultado] = useState<IPagoResultadoPublico | null>(null)
 
-  // Solo cuando NO fue exito: es ahi donde hace falta el link para reintentar
-  // y el numero del estudio en lugar de un uuid recortado.
+  // Tambien en exito: el monto y el concepto salen de aqui, y confirmar cuanto
+  // se pago es justo lo que el usuario quiere ver.
   useEffect(() => {
-    if (!pagoId || status === 'success') return
+    if (!pagoId) return
     let vivo = true
     getResultadoPagoPublico(pagoId)
       .then((r) => { if (vivo) setResultado(r) })
@@ -114,6 +114,16 @@ function PagoResultadoContent() {
     )
   }
 
+  // El concepto estaba quemado: para garantia, canon y deposito la pantalla
+  // decia "Estudio de arrendamiento" igual.
+  const CONCEPTO_LABEL: Record<string, string> = {
+    estudio: 'Estudio de arrendamiento',
+    garantia: 'Garantía de arrendamiento',
+    primer_canon: 'Primer canon de arrendamiento',
+    deposito: 'Depósito de garantía',
+    otro: 'Pago a Cofianza',
+  }
+
   const isSuccess = status === 'success'
   const isCancelled = status === 'cancelled'
   // PSE/efectivo: el pago quedó en proceso en la pasarela — NO es éxito todavía.
@@ -170,8 +180,18 @@ function PagoResultadoContent() {
         <div className="px-5 py-3 space-y-0">
           <div className="flex justify-between py-2.5 border-b border-gray-100">
             <span className="text-sm text-gray-500">Concepto</span>
-            <span className="text-sm font-medium text-gray-900">Estudio de arrendamiento</span>
+            <span className="text-sm font-medium text-gray-900">
+              {resultado?.concepto ? CONCEPTO_LABEL[resultado.concepto] ?? resultado.concepto : 'Estudio de arrendamiento'}
+            </span>
           </div>
+          {resultado?.monto_formateado && (
+            <div className="flex justify-between py-2.5 border-b border-gray-100">
+              <span className="text-sm text-gray-500">Monto</span>
+              <span className="text-sm font-semibold text-gray-900">
+                ${resultado.monto_formateado} COP
+              </span>
+            </div>
+          )}
           <div className="flex justify-between py-2.5 border-b border-gray-100">
             <span className="text-sm text-gray-500">Estado</span>
             <span

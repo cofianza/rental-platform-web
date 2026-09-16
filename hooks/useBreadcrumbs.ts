@@ -21,6 +21,9 @@ export interface Breadcrumb {
  * Mapeo de segmentos de ruta a etiquetas legibles
  */
 const ROUTE_LABELS: Record<string, string> = {
+  // Vocabulario del Flujo §13: 'expediente' se le muestra al usuario como
+  // 'estudio'. Sin esta clave caia al capitalizador y salia "Expedientes".
+  expedientes: 'Estudios',
   dashboard: 'Inicio',
   estudios: 'Evaluaciones crediticias',
   interesados: 'Interesados',

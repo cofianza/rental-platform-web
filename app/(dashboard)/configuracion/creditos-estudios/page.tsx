@@ -21,6 +21,7 @@ import {
   type ISaldoCreditos,
   type IMovimientoCredito,
   type IDatosFiscalesFactura,
+  type ICompraCredito,
 } from '@/services/creditosEstudiosService'
 import {
   IconLoader,
@@ -52,6 +53,7 @@ export default function CreditosEstudiosPage() {
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [paquetes, setPaquetes] = useState<IPaqueteCreditos[]>([])
   const [movimientos, setMovimientos] = useState<IMovimientoCredito[]>([])
+  const [comprasPendientes, setComprasPendientes] = useState<ICompraCredito[]>([])
   const [loading, setLoading] = useState(true)
   const [comprando, setComprando] = useState<string | null>(null)
 
@@ -65,14 +67,19 @@ export default function CreditosEstudiosPage() {
 
   const fetchAll = async () => {
     try {
-      const [s, p, m] = await Promise.all([
+      const [s, p, m, c] = await Promise.all([
         creditosEstudiosService.getMiSaldo(),
         creditosEstudiosService.listPaquetes(),
         creditosEstudiosService.getMisMovimientos({ limit: 20 }),
+        // El endpoint ya existia y esta pantalla nunca lo llamaba: una compra
+        // pagada cuyo webhook aun no habia llegado quedaba invisible, y el
+        // riesgo real es que el usuario vuelva a comprar en esa ventana.
+        creditosEstudiosService.getMisCompras().catch(() => [] as ICompraCredito[]),
       ])
       setSaldo(s)
       setPaquetes(p)
       setMovimientos(m.movimientos)
+      setComprasPendientes(c.filter((x) => x.estado === 'pendiente'))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error cargando créditos')
     } finally {
@@ -351,6 +358,36 @@ export default function CreditosEstudiosPage() {
 
       {/* Historial */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {comprasPendientes.length > 0 && (
+          <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">
+              {comprasPendientes.length === 1 ? 'Tienes una compra en proceso' : `Tienes ${comprasPendientes.length} compras en proceso`}
+            </p>
+            <p className="mt-1 text-xs text-amber-800">
+              Si ya pagaste, los créditos entran en unos minutos. No vuelvas a comprar.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {comprasPendientes.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
+                  <span>
+                    {c.cantidad_estudios} estudios · {formatCOP(c.precio_cop)}
+                  </span>
+                  {c.payment_link_url && (
+                    <a
+                      href={c.payment_link_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-md border border-amber-300 bg-white px-3 py-1.5 font-medium hover:bg-amber-100"
+                    >
+                      Retomar el pago
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Historial de movimientos</h2>
 
         {movimientos.length === 0 ? (
