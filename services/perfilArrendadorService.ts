@@ -8,6 +8,8 @@ import { apiClient } from '@/lib/api'
 import { API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 
+export type TipoDocumentoRepresentante = 'cc' | 'ce' | 'pasaporte'
+
 export interface IPerfilArrendador {
   id: string
   nombre: string
@@ -20,6 +22,10 @@ export interface IPerfilArrendador {
   afianzadora_tipo: 'afianzadora' | 'aseguradora' | 'ninguna' | null
   afianzadora_actual: string | null
   representante_legal: string | null
+  /** Documento del representante legal (ambos o ninguno). Lo exige el
+   *  asistente de contratos V3; el flujo anterior no lo pide. */
+  representante_legal_tipo_documento?: TipoDocumentoRepresentante | null
+  representante_legal_documento?: string | null
   domicilio_direccion: string | null
   /** Dirección y teléfono del perfil: la API los usa al facturar. */
   direccion?: string | null
@@ -49,6 +55,8 @@ export interface IUpdatePerfilArrendadorInput {
   afianzadora_tipo?: 'afianzadora' | 'aseguradora' | 'ninguna' | null
   afianzadora_actual?: string | null
   representante_legal?: string | null
+  representante_legal_tipo_documento?: TipoDocumentoRepresentante | null
+  representante_legal_documento?: string | null
   domicilio_direccion?: string | null
   domicilio_ciudad?: string | null
   municipio_codigo?: string | null

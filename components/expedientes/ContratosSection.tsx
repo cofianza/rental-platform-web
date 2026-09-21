@@ -3,6 +3,7 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight, IconMail } from '@/components/icons'
 import { GenerarContratoModal } from './GenerarContratoModal'
@@ -12,6 +13,7 @@ import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { contratoService } from '@/services/contratoService'
+import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { formatDateTime } from '@/lib/constants'
@@ -43,9 +45,12 @@ interface ContratosSectionProps {
    *  todas las partes), para que el padre re-consulte el EXPEDIENTE: su estado
    *  puede pasar a 'cerrado' y el stepper avanzar a "Listo" sin refresco manual. */
   onContratoActualizado?: () => void
+  /** Contratos V3: el contrato se crea y edita en el asistente
+   *  (/expedientes/:id/contrato), no con GenerarContratoModal. */
+  contratosV3?: boolean
 }
 
-export function ContratosSection({ expedienteId, expedienteEstado, onContratoActualizado }: ContratosSectionProps) {
+export function ContratosSection({ expedienteId, expedienteEstado, onContratoActualizado, contratosV3 }: ContratosSectionProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -98,6 +103,10 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // contrato", que transiciona a 'aprobado') o invitar a un co-arrendatario.
   // Mismo gate que el backend (generarContrato).
   const expedienteAprobado = expedienteEstado === 'aprobado'
+  // Contratos V3: las filas con destinacion son del asistente. Ahí viven (y se
+  // retoman); las acciones del flujo anterior no aplican y el API las rechaza.
+  const rutaAsistente = `/expedientes/${expedienteId}/contrato`
+  const hayV3Vivo = contratos.some((c) => c.destinacion && !TERMINAL_STATES.includes(c.estado))
 
   const fetchContratos = useCallback(async () => {
     setIsLoading(true)
@@ -260,7 +269,13 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
         <h3 className="text-lg font-semibold text-gray-900">
           Contratos ({contratos.length})
         </h3>
-        {canCreate && expedienteAprobado && (
+        {canCreate && expedienteAprobado && contratosV3 && !hayV3Vivo && (
+          <Link href={rutaAsistente} className={buttonClasses('primary', 'md')}>
+            <IconPlus size={16} />
+            Crear contrato
+          </Link>
+        )}
+        {canCreate && expedienteAprobado && !contratosV3 && (
           <button
             onClick={() => setGenerarOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
@@ -279,6 +294,10 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
             <p className="text-sm text-gray-400">
               El contrato se podrá generar cuando el estudio del arrendatario
               esté aprobado.
+            </p>
+          ) : canCreate && contratosV3 ? (
+            <p className="text-sm text-gray-400">
+              Pulsa «Crear contrato» para abrir el asistente.
             </p>
           ) : canCreate ? (
             <p className="text-sm text-gray-400">
@@ -318,15 +337,17 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
               <tbody className="divide-y divide-gray-200">
                 {contratos.map((c) => {
                   const estadoStyle = ESTADO_STYLES[c.estado] || ESTADO_STYLES.borrador
+                  // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
+                  const esV3 = !!c.destinacion
                   return (
                     <tr
                       key={c.id}
-                      onClick={() => router.push(`/contratos/${c.id}`)}
+                      onClick={() => router.push(esV3 ? rutaAsistente : `/contratos/${c.id}`)}
                       className="hover:bg-gray-50 cursor-pointer"
                     >
                       <td className="px-6 py-4">
                         <p className="text-sm font-medium text-gray-900">
-                          {c.nombre_archivo || 'contrato.pdf'}
+                          {esV3 ? `Contrato ${c.numero ?? ''}` : c.nombre_archivo || 'contrato.pdf'}
                         </p>
                         {c.fecha_inicio && (
                           <p className="text-xs text-gray-500">
@@ -352,7 +373,17 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-2">
-                          {canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+                          {esV3 && contratosV3 && canCreate && c.estado === 'borrador' && (
+                            <Link
+                              href={rutaAsistente}
+                              className={buttonClasses('primary', 'sm')}
+                              title="Continuar el contrato en el asistente"
+                            >
+                              <IconArrowRight size={14} />
+                              Continuar
+                            </Link>
+                          )}
+                          {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
                             <button
                               onClick={() => handleEnviarAFirma(c)}
                               disabled={enviandoFirmaId === c.id}
@@ -369,7 +400,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                           )}
                           {/* La fila entera ya navega al detalle: el ojo solo
                               se conserva para roles internos. */}
-                          {!esDuenio && (
+                          {!esV3 && !esDuenio && (
                             <button
                               onClick={() => router.push(`/contratos/${c.id}`)}
                               className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
@@ -392,7 +423,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               <IconDownload size={16} />
                             )}
                           </button>
-                          {canRegenerate && c.estado === 'borrador' && (
+                          {!esV3 && canRegenerate && c.estado === 'borrador' && (
                             <button
                               onClick={() => setRegenerarTarget(c)}
                               className="p-1.5 text-gray-400 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
@@ -402,7 +433,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               <IconRefresh size={16} />
                             </button>
                           )}
-                          {canRegenerate && c.estado === 'pendiente_firma' && (
+                          {!esV3 && canRegenerate && c.estado === 'pendiente_firma' && (
                             <button
                               onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmaContratoId === c.id ? null : c.id) }}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
@@ -416,7 +447,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               "Cancelar" al dueño: lo escondemos ahí y se lo
                               dejamos en pendiente_firma / vigente, donde sí sirve
                               para terminar o cancelar el contrato. */}
-                          {canRegenerate &&
+                          {!esV3 &&
+                            canRegenerate &&
                             !TERMINAL_STATES.includes(c.estado) &&
                             !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
                             <button

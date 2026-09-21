@@ -44,6 +44,11 @@ export interface IContrato {
   firmado_tamano_bytes: number | null
   firmado_subido_por: string | null
   firmado_subido_en: string | null
+  /** Contratos V3: NOT NULL = contrato del asistente (se edita allí, no con las
+   *  acciones del flujo anterior). null/ausente = contrato del flujo anterior. */
+  destinacion?: 'vivienda' | 'comercial' | null
+  /** Consecutivo CTO-… (lo asigna el trigger al crear la fila V3). */
+  numero?: string | null
   created_at: string
   updated_at: string
 }

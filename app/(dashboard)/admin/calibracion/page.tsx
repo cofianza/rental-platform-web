@@ -51,6 +51,10 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   UMBRAL_SCORE_REVISION: 'Tope de la banda de revisión por score',
   UMBRAL_SIMILITUD_BIOMETRICA: 'Similitud biométrica mínima en la firma (%)',
   TARIFA_IVA: 'Tarifa de IVA (%)',
+  // Contratos V3 §14: rigen solo para el contrato (el motor y la reasignación no cambian).
+  TOLERANCIA_CANON: 'Tolerancia del canon pactado sobre el evaluado (%)',
+  TOPE_CANON_INGRESO_RECALCULO: 'Relación canon/ingreso máxima al pactar un canon mayor (%)',
+  VIGENCIA_MESES_DEFECTO: 'Vigencia por defecto del contrato (meses)',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave

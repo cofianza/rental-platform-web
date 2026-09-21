@@ -18,6 +18,7 @@ import {
   perfilArrendadorService,
   type IPerfilArrendador,
   type IUpdatePerfilArrendadorInput,
+  type TipoDocumentoRepresentante,
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -60,6 +61,9 @@ export default function DatosContratoPage() {
           razon_social: data.razon_social,
           nit: data.nit,
           representante_legal: data.representante_legal,
+          // Siempre se envían los dos: el API exige ambos o ninguno.
+          representante_legal_tipo_documento: data.representante_legal_tipo_documento ?? null,
+          representante_legal_documento: data.representante_legal_documento ?? null,
           domicilio_direccion: data.domicilio_direccion,
           domicilio_ciudad: data.domicilio_ciudad,
           municipio_codigo: data.municipio_codigo ?? null,
@@ -120,6 +124,14 @@ export default function DatosContratoPage() {
       toast.error(
         `Faltan datos obligatorios para el contrato: ${faltantes.join(', ')}.`,
       )
+      return
+    }
+    // Documento del representante legal: opcional aquí (solo lo exige el
+    // asistente de contratos), pero tipo y número van juntos.
+    const tieneTipoRep = !!form.representante_legal_tipo_documento
+    const tieneDocRep = !!form.representante_legal_documento?.trim()
+    if (tieneTipoRep !== tieneDocRep) {
+      toast.error('Completa el tipo y el número de documento del representante legal, o deja ambos vacíos.')
       return
     }
     setSaving(true)
@@ -305,8 +317,8 @@ export default function DatosContratoPage() {
             label="NIT"
             value={form.nit}
             onChange={(v) => onChange('nit', v)}
-            placeholder="Ej. 901234567-8"
-            help="NIT de la inmobiliaria (con dígito de verificación). Aparece en el contrato."
+            placeholder="Ej. 900123456-8"
+            help="Con dígito de verificación, ej. 900123456-8"
             required
           />
         )}
@@ -320,6 +332,38 @@ export default function DatosContratoPage() {
             help="Quien firma el contrato a nombre de la inmobiliaria."
             required
           />
+        )}
+
+        {perfil.rol === 'inmobiliaria' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="datos-contrato-rep-tipo-doc" className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de documento del representante legal
+              </label>
+              <select id="datos-contrato-rep-tipo-doc"
+                value={form.representante_legal_tipo_documento ?? ''}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    representante_legal_tipo_documento: (e.target.value || null) as TipoDocumentoRepresentante | null,
+                  }))
+                }
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="">Seleccionar…</option>
+                <option value="cc">C.C.</option>
+                <option value="ce">C.E.</option>
+                <option value="pasaporte">Pasaporte</option>
+              </select>
+            </div>
+            <Field
+              label="Número de documento del representante legal"
+              value={form.representante_legal_documento}
+              onChange={(v) => onChange('representante_legal_documento', v)}
+              placeholder="Ej. 1020304050"
+              help="Requerido para crear contratos con el asistente."
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

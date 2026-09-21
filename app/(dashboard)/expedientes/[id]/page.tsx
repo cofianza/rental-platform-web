@@ -581,6 +581,7 @@ export default function ExpedienteDetallePage() {
                     expedienteId={id}
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
+                    contratosV3={expediente.contratos_v3}
                     onGenerated={fetchExpediente}
                   />
                 )}
@@ -907,7 +908,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Contratos */}
         {activeTab === 'contratos' && (
           <div className="p-6">
-            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} onContratoActualizado={handleContratoActualizado} />
+            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} contratosV3={expediente.contratos_v3} onContratoActualizado={handleContratoActualizado} />
           </div>
         )}
 

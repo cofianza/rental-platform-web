@@ -15,10 +15,12 @@ interface WizardStepIndicatorProps {
   currentStep: number
   /** Permite volver a un paso ya completado haciendo click en su círculo. */
   onStepClick?: (step: number) => void
+  /** Etiquetas de los pasos; por defecto las del asistente de estudios. */
+  steps?: readonly string[]
 }
 
-export function WizardStepIndicator({ currentStep, onStepClick }: WizardStepIndicatorProps) {
-  const total = WIZARD_STEPS.length
+export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_STEPS }: WizardStepIndicatorProps) {
+  const total = steps.length
   const pct = Math.round((currentStep / total) * 100)
 
   return (
@@ -27,7 +29,7 @@ export function WizardStepIndicator({ currentStep, onStepClick }: WizardStepIndi
       <div className="sm:hidden">
         <div className="flex items-baseline justify-between">
           <h3 className="font-display text-base font-bold text-gray-900">
-            {WIZARD_STEPS[currentStep - 1]}
+            {steps[currentStep - 1]}
           </h3>
           <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">
             Paso {currentStep} de {total}
@@ -43,7 +45,7 @@ export function WizardStepIndicator({ currentStep, onStepClick }: WizardStepIndi
 
       {/* Desktop: indicador visual completo (conectores fluidos con flex-1) */}
       <div className="hidden sm:flex">
-        {WIZARD_STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const stepNumber = index + 1
           const isCompleted = stepNumber < currentStep
           const isCurrent = stepNumber === currentStep

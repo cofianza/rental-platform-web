@@ -114,6 +114,10 @@ export interface IExpediente {
   /** Estudio vigente (el más reciente) del expediente, embebido por el RPC para
    *  pintar su badge en la fila. null si el expediente aún no tiene estudios. */
   estudio_vigente?: IEstudioVigente | null
+  /** Solo en el detalle: el contrato se crea con el asistente V3 (flag
+   *  CONTRATOS_V3_ENABLED del API + inmueble de una inmobiliaria). Ausente o
+   *  false = flujo anterior (GenerarContratoModal). */
+  contratos_v3?: boolean
   created_at: string
   updated_at: string
 }

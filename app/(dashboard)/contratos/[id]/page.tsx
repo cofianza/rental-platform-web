@@ -126,6 +126,7 @@ export default function ContratoDetallePage() {
   // devuelve una URL firmada NUEVA cada vez, lo que recargaría el visor en vano.
   const fetchContrato = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent ?? false
+    let redirigiendo = false
     if (!silent) {
       setIsLoading(true)
       setError(null)
@@ -133,6 +134,14 @@ export default function ContratoDetallePage() {
     }
     try {
       const data = await contratoService.getContratoById(id)
+      // Contratos V3: se ven y se editan en el asistente del estudio. Las acciones
+      // de esta pantalla son del flujo anterior (el API las rechaza para V3).
+      // Sin apagar el skeleton, para no pintar esta vista mientras redirige.
+      if (data.destinacion) {
+        redirigiendo = true
+        router.replace(`/expedientes/${data.expediente_id}/contrato`)
+        return
+      }
       setContrato(data)
 
       if (!silent) {
@@ -200,9 +209,9 @@ export default function ContratoDetallePage() {
         }
       }
     } finally {
-      if (!silent) setIsLoading(false)
+      if (!silent && !redirigiendo) setIsLoading(false)
     }
-  }, [id])
+  }, [id, router])
 
   // Refresco tras completar todas las firmas: EN SITIO (no full-page skeleton),
   // para no desmontar/re-montar FirmantesContratoSection y evitar el bucle.
