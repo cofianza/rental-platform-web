@@ -43,12 +43,14 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   VIGENCIA_CRC_DIAS: 'Vigencia del CRC (días)',
   DIAS_EXPIRACION_ESTUDIO: 'Expiración del estudio (días)',
   UMBRAL_COARRENDATARIO: 'Puntaje mínimo del coarrendatario',
-  CANON_MAX_TRANSITORIO: 'Canon máximo sin coafianzamiento',
+  CANON_MAX_TRANSITORIO: 'Canon máximo sin coafianzamiento — vivienda (COP)',
+  TOPE_CANON_COMERCIAL: 'Canon máximo sin coafianzamiento — comercial (COP, sin IVA)',
   UMBRAL_APROBACION_AUTOMATICA: 'Umbral de aprobación automática',
   UMBRAL_ZONA_GRIS: 'Inicio de la zona gris',
   UMBRAL_SCORE_RECHAZO: 'Score mínimo de la central',
   UMBRAL_SCORE_REVISION: 'Tope de la banda de revisión por score',
   UMBRAL_SIMILITUD_BIOMETRICA: 'Similitud biométrica mínima en la firma (%)',
+  TARIFA_IVA: 'Tarifa de IVA (%)',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave

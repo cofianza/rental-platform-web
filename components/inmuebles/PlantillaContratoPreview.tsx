@@ -23,10 +23,12 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
   const [html, setHtml] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
 
   const fetchHtml = async () => {
     setLoading(true)
     setError(null)
+    setErrorCode(null)
     try {
       const token = useAuthStore.getState().accessToken
       const res = await fetch(`${API_BASE_URL}/inmuebles/${inmuebleId}/contrato-preview`, {
@@ -38,6 +40,7 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
         try {
           const json = await res.json()
           message = json?.message || message
+          setErrorCode(json?.errorCode ?? null)
         } catch {
           // ignore — respuesta no JSON
         }
@@ -86,10 +89,13 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
           <IconAlertTriangle size={20} className="text-red-500 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-medium text-red-900">{error}</p>
-            <p className="text-xs text-red-700 mt-1">
-              Verifica que tu perfil tenga los datos para contrato completos en
-              Configuración → Datos para contrato.
-            </p>
+            {/* El destino no habilitado no se arregla desde el perfil */}
+            {errorCode !== 'DESTINACION_NO_HABILITADA' && (
+              <p className="text-xs text-red-700 mt-1">
+                Verifica que tu perfil tenga los datos para contrato completos en
+                Configuración → Datos para contrato.
+              </p>
+            )}
           </div>
         </div>
       ) : (
