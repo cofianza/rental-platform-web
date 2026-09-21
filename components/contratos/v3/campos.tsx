@@ -148,7 +148,8 @@ export function OpcionTarjeta({
   return (
     <label
       className={cn(
-        'flex items-start gap-3 rounded-xl border p-4 transition',
+        // El radio es sr-only: el foco de teclado se pinta en la tarjeta.
+        'flex items-start gap-3 rounded-xl border p-4 transition has-focus-visible:ring-2 has-focus-visible:ring-primary-500 has-focus-visible:ring-offset-2',
         checked
           ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-500'
           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50',
