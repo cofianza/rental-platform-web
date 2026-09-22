@@ -187,8 +187,8 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
       <div>
         <p className="text-sm font-medium text-gray-700">Servicios públicos</p>
         <p className="mt-1 text-sm text-gray-600">
-          A cargo del arrendatario, según la cláusula OCTAVA de la plantilla. La elección por servicio estará disponible más
-          adelante.
+          A cargo del arrendatario, según la cláusula de SERVICIOS PÚBLICOS del contrato. La elección por servicio estará
+          disponible más adelante.
         </p>
       </div>
     </div>

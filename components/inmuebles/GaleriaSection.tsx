@@ -424,7 +424,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
 
     setIsDeleting(true)
     try {
-      await inmuebleService.deleteFoto(inmuebleId, deletingFoto.id, deletingFoto.url)
+      await inmuebleService.deleteFoto(inmuebleId, deletingFoto.id)
       setFotos((prev) => prev.filter((f) => f.id !== deletingFoto.id))
       setDeletingFoto(null)
       toast.success('Foto eliminada')

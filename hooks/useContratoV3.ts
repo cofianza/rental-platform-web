@@ -71,7 +71,7 @@ export function useContratoV3(expedienteId: string) {
   const [error, setError] = useState<string | null>(null)
   const [accion, setAccion] = useState<AccionContratoV3>(null)
   const [errorPaso, setErrorPaso] = useState<(ErrorPaso & { expedienteId: string }) | null>(null)
-  // Último 422 FIRMANTES_INVALIDOS al enviar: qué dato de qué firmante no acepta Auco.
+  // Último 422 FIRMANTES_INVALIDOS al generar o enviar: qué dato de qué firmante no acepta Auco.
   const [errorEnvio, setErrorEnvio] = useState<{ expedienteId: string; fallas: FallaFirmante[] } | null>(null)
   // Expedientes ya pintados: si un refresco posterior falla, se avisa con toast
   // en vez de cambiar el asistente por la tarjeta de error (y perder lo escrito).
@@ -150,10 +150,19 @@ export function useContratoV3(expedienteId: string) {
     },
     [mutar, expedienteId],
   )
-  const generar = useCallback(
-    () => mutar('generar', () => contratoV3Service.generar(expedienteId)),
-    [mutar, expedienteId],
-  )
+  const generar = useCallback(() => {
+    setErrorEnvio(null)
+    return mutar('generar', async () => {
+      try {
+        return await contratoV3Service.generar(expedienteId)
+      } catch (err) {
+        if (err instanceof ApiClientError && err.code === 'FIRMANTES_INVALIDOS') {
+          setErrorEnvio({ expedienteId, fallas: fallasDe(err) })
+        }
+        throw err
+      }
+    })
+  }, [mutar, expedienteId])
   /** Solo administrador: `huella` = la del paso 4 guardado (guardados[4].huella). */
   const autorizarExceso = useCallback(
     (huella: string) => mutar('autorizar', () => contratoV3Service.autorizarExceso(expedienteId, huella)),

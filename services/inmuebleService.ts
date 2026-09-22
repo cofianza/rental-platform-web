@@ -4,7 +4,6 @@
  */
 
 import { apiClient } from '@/lib/api'
-import { supabase } from '@/lib/supabase'
 import { API_BASE_URL } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
@@ -30,8 +29,6 @@ import type {
   ICambiosResponse,
   ICambiosResumenResponse,
 } from '@/types/cambio-inmueble'
-
-const BUCKET_NAME = 'inmuebles'
 
 /**
  * Construye query string desde filtros
@@ -455,24 +452,9 @@ class InmuebleService {
   }
 
   /**
-   * Elimina una foto del storage y del backend
+   * Elimina una foto: la API valida el acceso y borra el registro y el archivo
    */
-  async deleteFoto(inmuebleId: string, fotoId: string, fotoUrl: string): Promise<void> {
-    // Eliminar del storage
-    const bucketUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/`
-    const filePath = fotoUrl.replace(bucketUrl, '')
-
-    if (filePath) {
-      const { error: storageError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .remove([filePath])
-
-      if (storageError) {
-        console.error('Error deleting from storage:', storageError)
-      }
-    }
-
-    // Eliminar del backend
+  async deleteFoto(inmuebleId: string, fotoId: string): Promise<void> {
     await apiClient.delete(`/inmuebles/${inmuebleId}/fotos/${fotoId}`)
   }
 

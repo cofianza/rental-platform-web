@@ -253,7 +253,7 @@ export function VistaPreviaContrato({
 
       {v3.fallasEnvio.length > 0 && (
         <Aviso tono="error">
-          <p className="font-medium">Auco no acepta estos datos de firma. Corrígelos y vuelve a enviar:</p>
+          <p className="font-medium">Auco no acepta estos datos de firma. Corrígelos y vuelve a intentarlo:</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             {v3.fallasEnvio.map((f, i) => (
               <li key={i}>

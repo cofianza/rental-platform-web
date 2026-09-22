@@ -380,8 +380,9 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               Continuar
                             </Link>
                           )}
-                          {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta de entrega). */}
-                          {esV3 && contratosV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
+                          {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta
+                              de entrega), también con el flag apagado: el API sigue mostrando los contratos ya enviados. */}
+                          {esV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
                             <Link
                               href={rutaAsistente}
                               className={buttonClasses('secondary', 'sm')}

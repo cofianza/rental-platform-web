@@ -416,9 +416,13 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     ? 'Tu acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
       ? `Tienes cambios sin guardar en el paso ${pendientesSinGuardar.join(', ')}.`
-      : bloqueos.length > 0 || faltantes.length > 0 || !todosGuardados
-        ? `Resuelve los pendientes antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
-        : null
+      : // El paso 5 llega prellenado: sin tocar nada parece listo, pero falta guardarlo
+        // (su faltante no se pinta mientras se llena).
+        !guardados[5]
+        ? `Guarda el paso 5 (Notificaciones) antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
+        : bloqueos.length > 0 || faltantes.length > 0 || !todosGuardados
+          ? `Resuelve los pendientes antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
+          : null
 
   // Los bloqueos con paso se pintan arriba de su paso; los demás (y los de
   // otros pasos, con "Ir al paso N") arriba del indicador.
