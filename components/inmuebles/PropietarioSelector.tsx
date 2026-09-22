@@ -1,14 +1,14 @@
 /**
  * Selector de Propietario - HP-174
- * Componente para buscar y seleccionar propietarios
- * Usa Supabase directamente para evitar problemas con el RPC de usuarios
+ * Componente para buscar y seleccionar propietarios (vía la API: la tabla
+ * perfiles ya no se lee desde el navegador)
  */
 
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { IconSearch, IconLoader, IconX, IconUser } from '@/components/icons'
-import { supabase } from '@/lib/supabase'
+import { userService } from '@/services/userService'
 import { cn } from '@/lib/utils'
 
 // Tipo simplificado para el selector (no necesita todos los campos de IUserProfile)
@@ -52,7 +52,6 @@ export function PropietarioSelector({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Buscar usuarios cuando cambia el término de búsqueda
-  // Usa Supabase directamente para evitar el bug del RPC list_users_with_email
   const searchUsers = useCallback(async (term: string) => {
     if (term.length < 2) {
       setUsers([])
@@ -61,32 +60,9 @@ export function PropietarioSelector({
 
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, apellido, telefono, rol, estado')
-        .eq('estado', 'activo')
-        .or(`nombre.ilike.%${term}%,apellido.ilike.%${term}%`)
-        .order('nombre', { ascending: true })
-        .limit(10)
-
-      if (error) {
-        console.error('Error searching users:', error)
-        setUsers([])
-        return
-      }
-
-      // Mapear a IUserProfile (sin email ya que no está en perfiles)
-      const mappedUsers = (data || []).map((user) => ({
-        id: user.id as string,
-        nombre: user.nombre as string,
-        apellido: user.apellido as string,
-        email: '', // Email no disponible desde perfiles directamente
-        telefono: user.telefono as string | null,
-        rol: user.rol as string,
-        estado: user.estado as string,
-      }))
-
-      setUsers(mappedUsers)
+      const data = await userService.buscarPerfiles(term)
+      // El selector no muestra el correo (no está en perfiles)
+      setUsers(data.map((user) => ({ ...user, email: '' })))
     } catch (err) {
       console.error('Error searching users:', err)
       setUsers([])

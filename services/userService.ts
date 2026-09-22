@@ -47,6 +47,19 @@ function buildQueryString(filters: Partial<IUserFilters>): string {
 
 class UserService {
   /**
+   * Selector de propietario (formulario de inmueble, admin y operador):
+   * hasta 10 perfiles activos por nombre, apellido o razón social.
+   */
+  async buscarPerfiles(
+    search: string,
+  ): Promise<Array<{ id: string; nombre: string; apellido: string; telefono: string | null; rol: string; estado: string }>> {
+    const response = (await apiClient.get(`/users/buscar?search=${encodeURIComponent(search)}`)) as unknown as {
+      data: Array<{ id: string; nombre: string; apellido: string; telefono: string | null; rol: string; estado: string }>
+    }
+    return response.data
+  }
+
+  /**
    * Obtiene lista paginada de usuarios con filtros
    */
   async getUsers(filters: Partial<IUserFilters> = {}): Promise<IUsersResponse> {
