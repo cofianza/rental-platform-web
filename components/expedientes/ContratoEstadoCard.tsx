@@ -9,6 +9,7 @@
 
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { IconAlertTriangle, IconCheck, IconCalendar } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
@@ -38,6 +39,8 @@ const PRIORIDAD: Record<string, number> = {
 
 export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEstadoCardProps) {
   const [contrato, setContrato] = useState<IContrato | null>(null)
+  // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
+  const [actaPendiente, setActaPendiente] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const fetchContrato = useCallback(async () => {
@@ -48,7 +51,14 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
         if (p !== 0) return p
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       })
-      setContrato(ordered[0] ?? null)
+      const elegido = ordered[0] ?? null
+      setContrato(elegido)
+      if (elegido?.destinacion && (elegido.estado === 'vigente' || elegido.estado === 'finalizado')) {
+        const archivos = await contratoService.listarArchivos(elegido.id).catch(() => null)
+        setActaPendiente(!!archivos && !archivos.some((a) => a.tipo_archivo === 'acta_entrega'))
+      } else {
+        setActaPendiente(false)
+      }
     } catch {
       setContrato(null)
     } finally {
@@ -129,6 +139,17 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
               </p>
             )}
           </div>
+          {actaPendiente && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
+              <IconAlertTriangle size={14} className="mt-px shrink-0 text-amber-600" />
+              <span>
+                Falta el acta de entrega e inventario: sin ella no se puede cerrar el estudio.{' '}
+                <Link href={`/expedientes/${expedienteId}/contrato`} className="underline hover:text-amber-900">
+                  Cargarla
+                </Link>
+              </span>
+            </p>
+          )}
         </div>
       </div>
 

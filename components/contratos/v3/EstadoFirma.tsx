@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { IconAlertTriangle, IconLoader, IconRefresh, IconRotateCw, IconUpload } from '@/components/icons'
-import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
@@ -122,7 +122,8 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
     ...(e.acta?.archivos ?? []).map((a, i) => ({
       clave: `acta-${a.id}`,
-      etiqueta: i === 0 ? 'Acta de entrega' : `Acta anterior (${formatDate(a.subidoEn)})`,
+      etiqueta: i === 0 ? 'Acta de entrega' : `Acta anterior (${formatDateTime(a.subidoEn)})`,
+      imagen: /\.(jpe?g|png|webp)$/i.test(a.nombre),
       cargar: () => v3.archivoUrl(e.id, a.id),
     })),
   ]
@@ -195,7 +196,9 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
           <div className="min-w-0 space-y-1">
             <p className="font-semibold text-amber-900">Falta el acta de entrega e inventario</p>
             <p className="text-sm text-amber-800">
-              Cárgala firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.
+              {editable
+                ? 'Cárgala firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.'
+                : 'La inmobiliaria debe cargarla firmada. Sin ella no se puede cerrar el estudio.'}
             </p>
           </div>
         </div>
@@ -236,9 +239,8 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         )}
         {terminado && (
           <Aviso>
-            {e.fechaTerminacion
-              ? `Contrato terminado el ${formatDateTime(e.fechaTerminacion)}. La fianza ya no opera.`
-              : 'Contrato terminado. La fianza ya no opera.'}
+            {e.fechaTerminacion ? `Contrato terminado el ${formatDateTime(e.fechaTerminacion)}. ` : 'Contrato terminado. '}
+            {e.fechaActivacion ? `La fianza operó desde el ${formatDateTime(e.fechaActivacion)}; ya no opera.` : 'La fianza ya no opera.'}
           </Aviso>
         )}
 
@@ -311,7 +313,9 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
             <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
             <p className="mt-1 text-sm text-gray-500">
               {e.acta.pendiente
-                ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
+                ? editable
+                  ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
+                  : 'Todavía no se ha cargado.'
                 : `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`}
             </p>
           </div>
@@ -385,12 +389,13 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         isOpen={pedirMotivoTerminar}
         onClose={() => setPedirMotivoTerminar(false)}
         onConfirm={async (texto) => {
-          const ok = await v3.terminar(e.id, texto)
+          // Si falla, el diálogo sigue abierto con el motivo escrito.
+          if (!(await v3.terminar(e.id, texto))) return false
           setPedirMotivoTerminar(false)
-          if (ok) toast.success(`Contrato ${e.numero} terminado`)
+          toast.success(`Contrato ${e.numero} terminado`)
         }}
         title="¿Terminar el contrato?"
-        descripcion="La fianza deja de operar y el inmueble queda disponible. El estudio se cierra aparte, con el acta de entrega."
+        descripcion="No se puede deshacer. La fianza deja de operar y el inmueble queda disponible (fuera de la vitrina). El estudio se cierra aparte, con el acta de entrega."
         label="Motivo de la terminación"
         confirmLabel="Terminar contrato"
         variant="danger"
@@ -400,9 +405,9 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         isOpen={pedirMotivo}
         onClose={() => setPedirMotivo(false)}
         onConfirm={async (texto) => {
-          const ok = await v3.cancelar(e.id, texto, e.estado)
+          if (!(await v3.cancelar(e.id, texto, e.estado))) return false
           setPedirMotivo(false)
-          if (ok) toast.success(`Contrato ${e.numero} cancelado`)
+          toast.success(`Contrato ${e.numero} cancelado`)
         }}
         title="¿Cancelar el contrato?"
         descripcion={

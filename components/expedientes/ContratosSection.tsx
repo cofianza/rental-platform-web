@@ -95,7 +95,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // Contratos V3: las filas con destinacion son del asistente. Ahí viven (y se
   // retoman); las acciones del flujo anterior no aplican y el API las rechaza.
   const rutaAsistente = `/expedientes/${expedienteId}/contrato`
-  const hayV3Vivo = contratos.some((c) => c.destinacion && !TERMINAL_STATES.includes(c.estado))
+  // Un V3 terminado también cuenta: ese estudio ya tuvo su contrato (se cierra con el acta).
+  const hayV3Vivo = contratos.some((c) => c.destinacion && c.estado !== 'cancelado')
   // Mismo roleGuard que el GET del asistente: ahí se sigue la firma de un V3 (también en solo lectura).
   const veAsistente =
     user?.rol === 'administrador' ||
@@ -379,8 +380,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                               Continuar
                             </Link>
                           )}
-                          {/* En firma, firma incompleta o fianza activa: se sigue (y se reenvía o cancela) en el asistente. */}
-                          {esV3 && contratosV3 && veAsistente && c.estado !== 'borrador' && !TERMINAL_STATES.includes(c.estado) && (
+                          {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta de entrega). */}
+                          {esV3 && contratosV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
                             <Link
                               href={rutaAsistente}
                               className={buttonClasses('secondary', 'sm')}

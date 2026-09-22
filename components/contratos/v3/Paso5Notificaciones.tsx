@@ -370,6 +370,8 @@ export function VistaPreviaContrato({
 export interface DocVisor {
   clave: string
   etiqueta: string
+  /** Una imagen (p. ej. la foto del acta firmada): se muestra tal cual, no con el visor de PDF. */
+  imagen?: boolean
   /** Pide la URL (firmada, de vida corta) del PDF al abrirlo. */
   cargar: () => Promise<string>
 }
@@ -424,9 +426,16 @@ export function VisorDocumentos({ docs, visor }: { docs: DocVisor[]; visor: Retu
       </div>
       {abierto && doc &&
         (abierto.url ? (
-          <div className="h-[85vh] min-h-150 overflow-hidden rounded-lg border border-gray-200">
-            <PdfViewer url={abierto.url} />
-          </div>
+          doc.imagen ? (
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada de vida corta de Storage, sin dimensiones conocidas */}
+              <img src={abierto.url} alt={doc.etiqueta} className="mx-auto max-h-[85vh] object-contain" />
+            </div>
+          ) : (
+            <div className="h-[85vh] min-h-150 overflow-hidden rounded-lg border border-gray-200">
+              <PdfViewer url={abierto.url} />
+            </div>
+          )
         ) : abierto.error ? (
           <div className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-6 text-center">
             <IconAlertTriangle size={24} className="text-red-500" />

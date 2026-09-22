@@ -48,8 +48,8 @@ export function MotivoDialog({
 
   const confirmar = async () => {
     if (!valido || isLoading) return
-    await onConfirm(motivo.trim())
-    setMotivo('')
+    // `false` = la acción falló: el motivo escrito se conserva para reintentar.
+    if ((await onConfirm(motivo.trim())) !== false) setMotivo('')
   }
 
   return (

@@ -2,9 +2,9 @@
  * Servicio de Contratos
  */
 
-import { apiClient } from '@/lib/api'
+import { ApiClientError, apiClient, handleApiError } from '@/lib/api'
 import { coalesceRequest } from '@/lib/requestCoalesce'
-import { API_BASE_URL } from '@/lib/constants'
+import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IFirmantesPreview } from '@/types/firma'
 import type {
@@ -323,17 +323,19 @@ class ContratoService {
     formData.append('tipo_archivo', tipoArchivo)
 
     const token = useAuthStore.getState().accessToken
-    const response = await fetch(`${API_BASE_URL}/contratos/${id}/archivos`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    })
-
-    const json = await response.json()
-    if (!response.ok) {
-      throw new Error(json.message || 'Error al subir el archivo')
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}/contratos/${id}/archivos`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+        credentials: 'include',
+      })
+    } catch {
+      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
     }
-    return json.data
+    if (!response.ok) await handleApiError(response)
+    return ((await response.json()) as { data: IContratoArchivo }).data
   }
 
   async listarArchivos(id: string): Promise<IContratoArchivo[]> {
