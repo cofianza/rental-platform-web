@@ -30,7 +30,7 @@ import { Aviso, inputClass } from '@/components/contratos/v3/campos'
 import { EditorClausula } from '@/components/contratos/v3/EditorClausula'
 import { useAuth } from '@/hooks/useAuth'
 import { useClausulasAdmin } from '@/hooks/useClausulasAdmin'
-import { ESTADOS_CONTRATO, formatDate, type EstadoContratoKey } from '@/lib/constants'
+import { etiquetaContrato, formatDate } from '@/lib/constants'
 import type { EstadoRegistro } from '@/services/clausulasService'
 import type { ClausulaRegistro } from '@/types/contratoV3'
 
@@ -434,7 +434,8 @@ function Detalle({
                       )}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-gray-700">
-                      {ESTADOS_CONTRATO[u.contratoEstado as EstadoContratoKey]?.label ?? u.contratoEstado}
+                      {/* Las cláusulas adicionales solo existen en contratos V3. */}
+                      {etiquetaContrato(u.contratoEstado, true)}
                     </td>
                     <td className="px-3 py-2 tabular-nums text-gray-700">{u.version}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-gray-700">{u.numero}</td>

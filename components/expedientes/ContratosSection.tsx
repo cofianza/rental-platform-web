@@ -16,20 +16,9 @@ import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { formatDateTime } from '@/lib/constants'
+import { ESTADOS_CONTRATO, etiquetaContrato, formatDateTime } from '@/lib/constants'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
-
-const ESTADO_STYLES: Record<string, { label: string; bg: string; text: string }> = {
-  borrador: { label: 'Borrador', bg: 'bg-gray-100', text: 'text-gray-700' },
-  en_revision: { label: 'En Revision', bg: 'bg-amber-100', text: 'text-amber-700' },
-  aprobado: { label: 'Aprobado', bg: 'bg-green-100', text: 'text-green-700' },
-  pendiente_firma: { label: 'Enviado a Firma', bg: 'bg-purple-100', text: 'text-purple-700' },
-  firmado: { label: 'Firmado', bg: 'bg-teal-100', text: 'text-teal-700' },
-  vigente: { label: 'Vigente', bg: 'bg-blue-100', text: 'text-blue-700' },
-  finalizado: { label: 'Finalizado', bg: 'bg-slate-100', text: 'text-slate-700' },
-  cancelado: { label: 'Cancelado', bg: 'bg-red-100', text: 'text-red-700' },
-}
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
@@ -107,6 +96,12 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
   // retoman); las acciones del flujo anterior no aplican y el API las rechaza.
   const rutaAsistente = `/expedientes/${expedienteId}/contrato`
   const hayV3Vivo = contratos.some((c) => c.destinacion && !TERMINAL_STATES.includes(c.estado))
+  // Mismo roleGuard que el GET del asistente: ahí se sigue la firma de un V3 (también en solo lectura).
+  const veAsistente =
+    user?.rol === 'administrador' ||
+    user?.rol === 'operador_analista' ||
+    user?.rol === 'gerencia_consulta' ||
+    user?.rol === 'inmobiliaria'
 
   const fetchContratos = useCallback(async () => {
     setIsLoading(true)
@@ -127,11 +122,12 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
 
   // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
   // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
-  // vez: si el usuario lo cierra, no lo reabrimos en cada refetch.
+  // vez: si el usuario lo cierra, no lo reabrimos en cada refetch. Un V3 no: su
+  // firma se sigue en el asistente (el panel es del flujo anterior).
   const autoOpenedFirmaRef = useRef(false)
   useEffect(() => {
     if (autoOpenedFirmaRef.current) return
-    const enFirma = contratos.find((c) => c.estado === 'pendiente_firma')
+    const enFirma = contratos.find((c) => c.estado === 'pendiente_firma' && !c.destinacion)
     if (enFirma) {
       setFirmaContratoId(enFirma.id)
       autoOpenedFirmaRef.current = true
@@ -336,7 +332,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {contratos.map((c) => {
-                  const estadoStyle = ESTADO_STYLES[c.estado] || ESTADO_STYLES.borrador
+                  const estadoStyle = ESTADOS_CONTRATO[c.estado] ?? ESTADOS_CONTRATO.borrador
                   // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
                   const esV3 = !!c.destinacion
                   return (
@@ -361,8 +357,8 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoStyle.bg} ${estadoStyle.text}`}>
-                          {estadoStyle.label}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoStyle.bgColor} ${estadoStyle.textColor}`}>
+                          {etiquetaContrato(c.estado, esV3)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
@@ -381,6 +377,17 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
                             >
                               <IconArrowRight size={14} />
                               Continuar
+                            </Link>
+                          )}
+                          {/* En firma, firma incompleta o fianza activa: se sigue (y se reenvía o cancela) en el asistente. */}
+                          {esV3 && contratosV3 && veAsistente && c.estado !== 'borrador' && !TERMINAL_STATES.includes(c.estado) && (
+                            <Link
+                              href={rutaAsistente}
+                              className={buttonClasses('secondary', 'sm')}
+                              title="Ver el estado de la firma en el asistente"
+                            >
+                              <IconArrowRight size={14} />
+                              Abrir
                             </Link>
                           )}
                           {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (

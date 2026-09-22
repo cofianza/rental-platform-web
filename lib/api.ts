@@ -89,9 +89,10 @@ class ApiClientError extends Error {
 }
 
 /**
- * Maneja errores HTTP y retorna un error estructurado
+ * Maneja errores HTTP y retorna un error estructurado.
+ * Exportada para las subidas multipart (fetch directo con FormData).
  */
-async function handleApiError(response: Response): Promise<never> {
+export async function handleApiError(response: Response): Promise<never> {
   let errorData: ApiError | null = null
 
   try {

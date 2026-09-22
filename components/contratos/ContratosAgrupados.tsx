@@ -1,7 +1,8 @@
 /**
  * Vista agrupada de contratos para el tab Contratos de la Oficina Virtual
  * (mockup 13_v2): 3 secciones por etapa — Pendientes de generar (borrador),
- * En proceso de firma (pendiente_firma) y Contratos activos (firmado/vigente).
+ * En proceso de firma (pendiente_firma y, en V3, firma_incompleta) y Contratos
+ * activos (firmado/vigente).
  * Reutiliza la lista existente (contratoService.getAllContratos) — sin lógica
  * nueva de datos, solo se agrupa por estado.
  */
@@ -11,9 +12,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconLoader, IconArrowRight, IconAlertTriangle } from '@/components/icons'
-import { ESTADOS_CONTRATO, formatCurrency, formatDateTime, type EstadoContratoKey } from '@/lib/constants'
+import { ESTADOS_CONTRATO, etiquetaContrato, formatCurrency, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
-import type { IContratoListItem, EstadoContrato } from '@/types/contrato'
+import type { IContratoListItem } from '@/types/contrato'
 
 const arrendatario = (c: IContratoListItem): string => {
   const s = c.expedientes?.solicitantes
@@ -37,13 +38,13 @@ function Propiedad({ c }: { c: IContratoListItem }) {
   )
 }
 
-function EstadoChip({ estado }: { estado: EstadoContrato }) {
-  const cfg = ESTADOS_CONTRATO[estado as EstadoContratoKey]
+function EstadoChip({ c }: { c: IContratoListItem }) {
+  const cfg = ESTADOS_CONTRATO[c.estado]
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg?.bgColor || 'bg-gray-100'} ${cfg?.textColor || 'text-gray-700'}`}
     >
-      {cfg?.label || estado}
+      {etiquetaContrato(c.estado, !!c.destinacion)}
     </span>
   )
 }
@@ -152,7 +153,8 @@ export function ContratosAgrupados() {
   }
 
   const pendientes = contratos.filter((c) => c.estado === 'borrador')
-  const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma')
+  // V3 en firma incompleta: la fianza no opera y el gestor debe reenviar o cancelar.
+  const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma' || c.estado === 'firma_incompleta')
   const activos = contratos.filter((c) => c.estado === 'firmado' || c.estado === 'vigente')
   const fecha = (iso: string | null) => (iso ? formatDateTime(iso) : '—')
 
@@ -175,13 +177,13 @@ export function ContratosAgrupados() {
               {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
             </td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fecha(c.fecha_generacion ?? c.created_at)}</td>
-            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip estado={c.estado} /></td>
+            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
             <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Continuar" /></td>
           </tr>
         ))}
       </Panel>
 
-      {/* En proceso de firma (pendiente_firma) */}
+      {/* En proceso de firma (pendiente_firma / firma_incompleta) */}
       <Panel
         title="En proceso de firma"
         dot="bg-blue-500"
@@ -194,7 +196,7 @@ export function ContratosAgrupados() {
           <tr key={c.id} className="hover:bg-gray-50">
             <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{arrendatario(c)}</td>
             <td className="px-4 py-3"><Propiedad c={c} /></td>
-            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip estado={c.estado} /></td>
+            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fecha(c.fecha_generacion ?? c.created_at)}</td>
             <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Ver" /></td>
           </tr>
@@ -218,7 +220,7 @@ export function ContratosAgrupados() {
               {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
             </td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{c.fecha_inicio || '—'}</td>
-            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip estado={c.estado} /></td>
+            <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
             <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Ver" /></td>
           </tr>
         ))}

@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ApiClientError } from '@/lib/api'
-import { contratoV3Service } from '@/services/contratoV3Service'
+import { contratoService } from '@/services/contratoService'
+import { contratoV3Service, fallasDe, type EnviarBody, type FallaFirmante } from '@/services/contratoV3Service'
+import { estudioService } from '@/services/estudioService'
 import { hallazgosDe } from '@/services/clausulasService'
 import type {
   Contacto,
@@ -27,7 +29,23 @@ import type {
   Paso5,
 } from '@/types/contratoV3'
 
-export type AccionContratoV3 = null | 'iniciar' | 'guardar' | 'generar' | 'autorizar'
+export type AccionContratoV3 =
+  | null
+  | 'iniciar'
+  | 'guardar'
+  | 'generar'
+  | 'autorizar'
+  // Entrega 5: Ruta B y firma
+  | 'propio'
+  | 'enviar'
+  | 'reenviar'
+  | 'reintentar'
+  | 'actualizar'
+  | 'cancelar'
+
+// Con Auco de por medio, un 5xx puede dejar el contrato en otro estado (FIRMA_ENVIADA_SIN_REGISTRO
+// sí salió; un reenvío fallido deja un proceso fallido a la vista): tras estos errores se recarga.
+const RECARGA_TRAS_5XX: AccionContratoV3[] = ['enviar', 'reenviar', 'reintentar', 'actualizar', 'cancelar']
 
 /**
  * Último 422 al guardar un paso. En el paso 4 trae los hallazgos de las reglas con
@@ -49,6 +67,8 @@ export function useContratoV3(expedienteId: string) {
   const [error, setError] = useState<string | null>(null)
   const [accion, setAccion] = useState<AccionContratoV3>(null)
   const [errorPaso, setErrorPaso] = useState<(ErrorPaso & { expedienteId: string }) | null>(null)
+  // Último 422 FIRMANTES_INVALIDOS al enviar: qué dato de qué firmante no acepta Auco.
+  const [errorEnvio, setErrorEnvio] = useState<{ expedienteId: string; fallas: FallaFirmante[] } | null>(null)
   // Expedientes ya pintados: si un refresco posterior falla, se avisa con toast
   // en vez de cambiar el asistente por la tarjeta de error (y perder lo escrito).
   const pintados = useRef(new Set<string>())
@@ -90,7 +110,10 @@ export function useContratoV3(expedienteId: string) {
         // pintar los bloqueos y faltantes vigentes. 404 (borrador cancelado en
         // otra sesión, asistente apagado): se recarga para salir del asistente
         // muerto a la vista de iniciar o al aviso de no disponible.
-        if (err instanceof ApiClientError && [404, 409, 422].includes(err.statusCode)) {
+        if (
+          err instanceof ApiClientError &&
+          ([404, 409, 422].includes(err.statusCode) || (err.statusCode >= 500 && RECARGA_TRAS_5XX.includes(tipo)))
+        ) {
           void recargar()
         }
         return false
@@ -109,6 +132,7 @@ export function useContratoV3(expedienteId: string) {
   const guardarPaso = useCallback(
     (body: GuardarPasoBody) => {
       setErrorPaso(null)
+      setErrorEnvio(null)
       return mutar('guardar', async () => {
         try {
           return await contratoV3Service.guardarPaso(expedienteId, body)
@@ -133,6 +157,64 @@ export function useContratoV3(expedienteId: string) {
   )
   const limpiarErrorPaso = useCallback(() => setErrorPaso(null), [])
 
+  // ── Entrega 5: Ruta B y firma ──
+
+  const subirPropio = useCallback(
+    (archivo: File) => mutar('propio', () => contratoV3Service.subirPropio(expedienteId, archivo)),
+    [mutar, expedienteId],
+  )
+  /** URL firmada (1 h) del contrato de la inmobiliaria (Ruta B). */
+  const propioUrl = useCallback(() => contratoV3Service.propioUrl(expedienteId), [expedienteId])
+  /** URL firmada del CRC: el del último estudio individual completado, el mismo que elige el API. */
+  const crcUrl = useCallback(async () => {
+    const { data } = await estudioService.getEstudiosForExpediente(expedienteId, 1, 50)
+    const estudio = data
+      .filter((e) => e.tipo === 'individual' && e.estado === 'completado')
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    if (!estudio) throw new Error('Este estudio no tiene un CRC emitido.')
+    return (await estudioService.descargarCertificado(estudio.id)).url
+  }, [expedienteId])
+  const enviar = useCallback(
+    (body: EnviarBody) => {
+      setErrorEnvio(null)
+      return mutar('enviar', async () => {
+        try {
+          return await contratoV3Service.enviar(expedienteId, body)
+        } catch (err) {
+          if (err instanceof ApiClientError && err.code === 'FIRMANTES_INVALIDOS') {
+            setErrorEnvio({ expedienteId, fallas: fallasDe(err) })
+          }
+          throw err
+        }
+      })
+    },
+    [mutar, expedienteId],
+  )
+  const reenviar = useCallback(
+    () => mutar('reenviar', () => contratoV3Service.reenviar(expedienteId)),
+    [mutar, expedienteId],
+  )
+  const reintentar = useCallback(
+    () => mutar('reintentar', () => contratoV3Service.reintentar(expedienteId)),
+    [mutar, expedienteId],
+  )
+  const actualizarFirma = useCallback(
+    () => mutar('actualizar', () => contratoV3Service.actualizarFirma(expedienteId)),
+    [mutar, expedienteId],
+  )
+  /**
+   * Cancelar el borrador o el contrato en firma (EN FIRMA / FIRMA INCOMPLETA). Va por la
+   * transición de siempre; para un V3 en firma el API anula antes el proceso en Auco.
+   */
+  const cancelar = useCallback(
+    (contratoId: string, motivo: string) =>
+      mutar('cancelar', async () => {
+        await contratoService.transicionar(contratoId, { nuevo_estado: 'cancelado', comentario: motivo, motivo })
+        return contratoV3Service.obtener(expedienteId)
+      }),
+    [mutar, expedienteId],
+  )
+
   return {
     estado,
     isLoading: estado === null && error === null,
@@ -146,6 +228,15 @@ export function useContratoV3(expedienteId: string) {
     // Solo el del expediente actual (la página no se desmonta al cambiar de estudio).
     errorPaso: errorPaso?.expedienteId === expedienteId ? errorPaso : null,
     limpiarErrorPaso,
+    subirPropio,
+    propioUrl,
+    crcUrl,
+    enviar,
+    reenviar,
+    reintentar,
+    actualizarFirma,
+    cancelar,
+    fallasEnvio: errorEnvio?.expedienteId === expedienteId ? errorEnvio.fallas : [],
   }
 }
 
@@ -235,7 +326,7 @@ function limpiar(errores: Record<string, string | null>): ErroresPaso {
 
 export function validarPaso1(d: Borrador<Paso1>): ErroresPaso {
   return limpiar({
-    ruta: d.ruta === 'A' ? null : 'La Ruta B todavía no está disponible',
+    ruta: d.ruta === 'A' || d.ruta === 'B' ? null : 'Elige la ruta del contrato',
     modalidad: d.modalidad === 'trasladada' || d.modalidad === 'tradicional' ? null : 'Elige la modalidad de la fianza',
     canonCop: entero(d.canonCop, 1, 100_000_000),
   })

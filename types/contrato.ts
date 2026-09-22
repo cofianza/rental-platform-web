@@ -7,6 +7,7 @@ export type EstadoContrato =
   | 'en_revision'
   | 'aprobado'
   | 'pendiente_firma'
+  | 'firma_incompleta' // solo V3 (Entrega 5): el proceso de firma venció o alguien lo rechazó
   | 'firmado'
   | 'vigente'
   | 'finalizado'

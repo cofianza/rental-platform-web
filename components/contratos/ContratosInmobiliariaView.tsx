@@ -18,7 +18,14 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
-import { ESTADOS_CONTRATO, formatCurrency, formatDate, formatDateTime, type EstadoContratoKey } from '@/lib/constants'
+import {
+  ESTADOS_CONTRATO,
+  etiquetaContrato,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  type EstadoContratoKey,
+} from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { ContratosFilters } from './ContratosFilters'
@@ -51,13 +58,15 @@ function Propiedad({ c }: { c: IContratoListItem }) {
 const fecha = (iso: string | null) => (iso ? formatDateTime(iso) : '—')
 
 // ── Badges tipo pill con bdot (override visual: pendiente_firma en azul para
-// igualar el mockup; el label sigue saliendo de ESTADOS_CONTRATO) ───────────
+// igualar el mockup; el label sale de etiquetaContrato) ─────────────────────
 
-type BadgeKind = 'pendiente' | 'firma' | 'activo' | 'finalizado' | 'cancelado'
+type BadgeKind = 'pendiente' | 'firma' | 'incompleta' | 'activo' | 'finalizado' | 'cancelado'
 
 const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
   pendiente: { wrap: 'bg-coral-50 text-coral-600', dot: 'bg-coral-500' },
   firma: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
+  // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
+  incompleta: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-600' },
   activo: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
   finalizado: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
   cancelado: { wrap: 'bg-red-50 text-red-500', dot: 'bg-red-500' },
@@ -69,6 +78,8 @@ function badgeKind(estado: EstadoContrato): BadgeKind {
       return 'pendiente'
     case 'pendiente_firma':
       return 'firma'
+    case 'firma_incompleta':
+      return 'incompleta'
     case 'firmado':
     case 'vigente':
       return 'activo'
@@ -79,9 +90,9 @@ function badgeKind(estado: EstadoContrato): BadgeKind {
   }
 }
 
-function EstadoBadge({ estado }: { estado: EstadoContrato }) {
-  const bs = BADGE_STYLE[badgeKind(estado)]
-  const label = ESTADOS_CONTRATO[estado as EstadoContratoKey]?.label ?? estado
+function EstadoBadge({ c }: { c: IContratoListItem }) {
+  const bs = BADGE_STYLE[badgeKind(c.estado)]
+  const label = etiquetaContrato(c.estado, !!c.destinacion)
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
       <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
@@ -94,7 +105,8 @@ function EstadoBadge({ estado }: { estado: EstadoContrato }) {
 
 /** Grupos de estado por panel. El backend acepta `estado` separado por comas. */
 const ESTADOS_PENDIENTES = 'borrador,en_revision,aprobado'
-const ESTADOS_EN_FIRMA = 'pendiente_firma'
+// firma_incompleta (V3) va con "en firma": es trabajo pendiente del gestor (reenviar o cancelar).
+const ESTADOS_EN_FIRMA = 'pendiente_firma,firma_incompleta'
 const ESTADOS_ACTIVOS = 'firmado,vigente'
 
 /** Lo que devuelve cada consulta de grupo (filas + su paginación). */
@@ -257,7 +269,7 @@ export function ContratosInmobiliariaView() {
         />
         <StatCard
           label="En proceso de firma"
-          value={stats?.en_proceso_firma ?? 0}
+          value={(stats?.en_proceso_firma ?? 0) + (stats?.por_estado.firma_incompleta ?? 0)}
           color="text-blue-600"
           sub="Esperando firmas"
         />
@@ -357,7 +369,7 @@ export function ContratosInmobiliariaView() {
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
                   </td>
                   <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
-                  <td className="px-6 py-3"><EstadoBadge estado={c.estado} /></td>
+                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-right">
                     <Link
                       href={`/contratos/${c.id}`}
@@ -375,7 +387,7 @@ export function ContratosInmobiliariaView() {
         <ResumenTope meta={pendientes.meta} />
       </Panel>
 
-      {/* En proceso de firma (pendiente_firma) */}
+      {/* En proceso de firma (pendiente_firma y, en V3, firma_incompleta) */}
       <Panel title="En proceso de firma" dot="bg-blue-600" subtitle="Esperando firmas">
         {enFirma.data.length === 0 ? (
           <EmptyRow texto="Ningún contrato en proceso de firma." />
@@ -395,7 +407,7 @@ export function ContratosInmobiliariaView() {
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
                   <td className="px-6 py-3 font-medium text-gray-900">{arrendatario(c)}</td>
                   <td className="px-6 py-3"><Propiedad c={c} /></td>
-                  <td className="px-6 py-3"><EstadoBadge estado={c.estado} /></td>
+                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
                   <td className="px-6 py-3 text-right">
                     <VerLink id={c.id} />
@@ -433,7 +445,7 @@ export function ContratosInmobiliariaView() {
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
                   </td>
                   <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
-                  <td className="px-6 py-3"><EstadoBadge estado={c.estado} /></td>
+                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-right">
                     <VerLink id={c.id} />
                   </td>

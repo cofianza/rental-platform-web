@@ -5,6 +5,7 @@
 
 'use client'
 
+import type { ReactNode } from 'react'
 import { Modal } from './Modal'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +14,8 @@ export interface ConfirmDialogProps {
   onClose: () => void
   onConfirm: () => void | Promise<unknown>
   title: string
-  message: string
+  /** Texto o contenido (p. ej. una lista); va en un bloque, no en un párrafo. */
+  message: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   variant?: 'default' | 'danger'
@@ -50,7 +52,7 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">{message}</p>
+        <div className="text-sm text-gray-600">{message}</div>
 
         <div className="flex justify-end gap-3 pt-2">
           <button

@@ -208,18 +208,24 @@ export function Paso1Confirmacion({ value, onChange, errores, resumen, expedient
           checked={value.ruta === 'A'}
           onSelect={() => onChange({ ...value, ruta: 'A' })}
           titulo="Ruta A — contrato de Cofianza"
+          descripcion="Cofianza genera el contrato de arrendamiento completo."
           icono={IconFileText}
         />
         <OpcionTarjeta
           name="ruta"
-          checked={false}
-          disabled
-          onSelect={() => undefined}
+          checked={value.ruta === 'B'}
+          onSelect={() => onChange({ ...value, ruta: 'B' })}
           titulo="Ruta B — contrato propio de la inmobiliaria"
-          insignia="Próximamente"
+          descripcion="Cargas tu contrato en PDF y se firma sin modificaciones, seguido del Anexo de condiciones de la fianza."
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
+        {value.ruta === 'B' && (
+          <Aviso>
+            En la Ruta B no hay cláusulas adicionales. En el paso 5 cargas el contrato en PDF (máximo 6 MB y 60
+            páginas, sin contraseña ni campos editables) y generas el Anexo.
+          </Aviso>
+        )}
       </fieldset>
 
       <fieldset className="space-y-2.5">
@@ -244,7 +250,8 @@ export function Paso1Confirmacion({ value, onChange, errores, resumen, expedient
         />
         {errores.modalidad && <p className="text-xs text-red-600">{errores.modalidad}</p>}
         {value.modalidad && <Aviso>La cuota de administración no está cubierta por la fianza.</Aviso>}
-        {value.modalidad === 'tradicional' && (
+        {/* El Anexo de la Ruta B cubre las dos modalidades: el pendiente es solo del contrato A. */}
+        {value.modalidad === 'tradicional' && value.ruta !== 'B' && (
           <Aviso tono="aviso">
             El texto de la modalidad Tradicional está pendiente de Gerencia: la vista previa saldrá marcada y el contrato aún
             no se podrá enviar a firma.

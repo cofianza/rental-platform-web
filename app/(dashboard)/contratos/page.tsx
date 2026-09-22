@@ -68,7 +68,12 @@ function ContratosContent() {
           En proceso de firma (azul) / Activos (verde). */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPIMini label="Pendientes de generar" value={stats?.pendientes_generar ?? 0} color="bg-coral-500" />
-        <KPIMini label="En proceso de firma" value={stats?.en_proceso_firma ?? 0} color="bg-blue-500" />
+        {/* Firma incompleta (V3) cuenta aquí: el API aún no le da contador propio (E6). */}
+        <KPIMini
+          label="En proceso de firma"
+          value={(stats?.en_proceso_firma ?? 0) + (stats?.por_estado.firma_incompleta ?? 0)}
+          color="bg-blue-500"
+        />
         <KPIMini label="Activos" value={stats?.activos ?? 0} color="bg-primary-600" />
       </div>
 

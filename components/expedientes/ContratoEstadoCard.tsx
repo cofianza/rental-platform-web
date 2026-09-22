@@ -10,10 +10,9 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconCheck, IconCalendar } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconCalendar } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
-import { ESTADOS_CONTRATO } from '@/lib/constants'
-import { formatDate } from '@/lib/constants'
+import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
 import type { IContrato } from '@/types/contrato'
 
 interface ContratoEstadoCardProps {
@@ -29,6 +28,7 @@ const PRIORIDAD: Record<string, number> = {
   vigente: 5,
   firmado: 4,
   pendiente_firma: 3,
+  firma_incompleta: 3,
   aprobado: 2,
   en_revision: 1,
   borrador: 1,
@@ -61,22 +61,29 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
   if (loading) return null
   if (!contrato) return null
 
-  const estadoConfig = ESTADOS_CONTRATO[contrato.estado]
+  // Respaldo: un estado que esta web todavía no conoce no tumba el detalle del estudio.
+  const estadoConfig = ESTADOS_CONTRATO[contrato.estado] ?? ESTADOS_CONTRATO.borrador
   const isFinal = contrato.estado === 'vigente' || contrato.estado === 'firmado'
   const isInactivo = contrato.estado === 'cancelado' || contrato.estado === 'finalizado'
+  // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
+  const isIncompleta = contrato.estado === 'firma_incompleta'
 
   // Tono de la card por bloque de progreso del contrato.
   const cardTone = isFinal
     ? 'bg-green-50 border-green-200'
     : isInactivo
       ? 'bg-gray-50 border-gray-200'
-      : 'bg-purple-50 border-purple-200'
+      : isIncompleta
+        ? 'bg-red-50 border-red-200'
+        : 'bg-purple-50 border-purple-200'
 
   const iconTone = isFinal
     ? 'bg-green-100 text-green-600'
     : isInactivo
       ? 'bg-gray-100 text-gray-500'
-      : 'bg-purple-100 text-purple-600'
+      : isIncompleta
+        ? 'bg-red-100 text-red-600'
+        : 'bg-purple-100 text-purple-600'
 
   return (
     <div className={`border rounded-lg p-4 ${cardTone}`}>
@@ -87,14 +94,14 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
 
       <div className="flex items-start gap-3">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconTone}`}>
-          <IconCheck size={16} />
+          {isIncompleta ? <IconAlertTriangle size={16} /> : <IconCheck size={16} />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoConfig.bgColor} ${estadoConfig.textColor} ${estadoConfig.borderColor}`}
             >
-              {estadoConfig.label}
+              {etiquetaContrato(contrato.estado, !!contrato.destinacion)}
             </span>
             <span className="text-xs text-gray-500 font-mono">v{contrato.version}</span>
           </div>

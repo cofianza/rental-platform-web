@@ -405,6 +405,7 @@ export type EstadoContratoKey =
   | 'en_revision'
   | 'aprobado'
   | 'pendiente_firma'
+  | 'firma_incompleta'
   | 'firmado'
   | 'vigente'
   | 'finalizado'
@@ -439,6 +440,13 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     textColor: 'text-purple-700',
     borderColor: 'border-purple-300',
   },
+  firma_incompleta: {
+    label: 'Firma incompleta',
+    color: 'red',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+  },
   firmado: {
     label: 'Firmado',
     color: 'teal',
@@ -467,6 +475,20 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     textColor: 'text-red-700',
     borderColor: 'border-red-300',
   },
+}
+
+/** Contratos V3 (destinacion no nula): los estados se nombran por la fianza (§11 del módulo). */
+const ETIQUETA_V3: Partial<Record<EstadoContratoKey, string>> = {
+  pendiente_firma: 'En firma',
+  firma_incompleta: 'Firma incompleta',
+  vigente: 'Fianza activa',
+  finalizado: 'Terminado',
+}
+
+/** Etiqueta del estado de un contrato; `v3` = el contrato tiene destinacion (asistente V3). */
+export function etiquetaContrato(estado: string, v3: boolean): string {
+  const k = estado as EstadoContratoKey
+  return (v3 ? ETIQUETA_V3[k] : undefined) ?? ESTADOS_CONTRATO[k]?.label ?? estado
 }
 
 // ============================================

@@ -6,7 +6,7 @@
 
 export type NumeroPaso = 1 | 2 | 3 | 4 | 5;
 export interface Contacto { direccion: string; municipio: string; email: string; telefono: string }
-export interface Paso1 { ruta: 'A'; modalidad: 'trasladada' | 'tradicional'; canonCop: number }
+export interface Paso1 { ruta: 'A' | 'B'; modalidad: 'trasladada' | 'tradicional'; canonCop: number }
 export interface Paso2 {
   usos: { carro: string | null; moto: string | null; util: string | null }; // null = NO; texto = número/identificación
   amoblado: boolean; ocupantes: number;
@@ -18,7 +18,7 @@ export interface Paso5 { ciudadFirma: string; contactos: { arrendador: Contacto;
 export interface Pasos { 1: Paso1; 2: Paso2; 3: Paso3; 4: Paso4; 5: Paso5 }
 export type GuardarPasoBody =
   | { paso: 1; datos: Paso1 } | { paso: 2; datos: Paso2 } | { paso: 3; datos: Paso3 }
-  | { paso: 4; datos: Paso4Entrada } | { paso: 5; datos: Paso5 };
+  | { paso: 4; datos: Paso4Entrada } | { paso: 5; datos: Paso5 };  // paso 4: la entrada; se guarda Paso4
 
 export interface Bloqueo {
   codigo: string; mensaje: string;
@@ -48,11 +48,56 @@ export interface EstadoAsistente {
     guardados: Partial<Pasos>;
     prefill: { 1: Partial<Paso1>; 2: Partial<Paso2>; 3: Partial<Paso3>; 5: Partial<Paso5> };
     faltantes: { paso: NumeroPaso; mensaje: string }[];
-    documento: null | { generadoEn: string; avisos: string[]; desactualizado: boolean };
-    adicionales: { maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
+    documento: null | { generacion: number; generadoEn: string; avisos: string[]; pendientes: string[]; desactualizado: boolean };
+    /** Ruta B: el contrato propio de la inmobiliaria, tal como se cargó (sin modificar, §4.4). */
+    propio: PdfPropio | null;
+    adicionales: {
+      maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
       aviso: { version: string; texto: string }; prevalencia: string;
-      excesoAutorizado: { huella: string; cantidad: number; en: string } | null };
+      excesoAutorizado: { huella: string; cantidad: number; en: string } | null;
+    };
   };
+  /** El contrato ya salió de borrador (Entrega 5): EN FIRMA, FIRMA INCOMPLETA o FIANZA ACTIVA. */
+  enviado: EnvioV3 | null;
+}
+
+export interface PdfPropio { nombre: string; paginas: number; bytes: number; sha256: string; subidoEn: string }
+
+// ── Firma (Entrega 5) ──
+export type EstadoSobreV3 = 'creando' | 'en_firma' | 'completo' | 'incompleto' | 'cancelado' | 'fallido';
+export type EstadoFirmanteV3 = 'pendiente' | 'notificado' | 'firmado' | 'rechazado' | 'bloqueado';
+
+/** Un contrato V3 que ya salió de borrador: EN FIRMA, FIRMA INCOMPLETA o FIANZA ACTIVA. */
+export interface EnvioV3 {
+  id: string;
+  numero: string;
+  ruta: 'A' | 'B';
+  estado: 'pendiente_firma' | 'firma_incompleta' | 'vigente';
+  /** contratos.fecha_firma: la última firma según Auco (UTC). */
+  fechaActivacion: string | null;
+  sobre: null | {
+    intento: number;
+    estado: EstadoSobreV3;
+    enviadoEn: string;
+    expiraEn: string;
+    motivo: string | null;
+    motivoDetalle: string | null;
+    firmantes: {
+      rol: 'arrendatario' | 'coarrendatario' | 'arrendador';
+      nombre: string;
+      orden: number;
+      estado: EstadoFirmanteV3;
+      firmadoEn: string | null;
+    }[];
+  };
+  /** Aviso de firma incompleta (§11.7.4) ya entregado, con su texto exacto. */
+  aviso: null | { texto: string; entregadoEn: string };
+  /** Verificaciones de identidad que faltan antes de crear el sobre (0 sin biometría). */
+  identidadPendientes: number;
+  /** FIRMA INCOMPLETA + estudio vigente (§11.7.5). */
+  reenvio: { puede: boolean; motivo: string | null };
+  /** EN FIRMA sin sobre vivo ni identidad pendiente: el envío falló y se puede reintentar. */
+  reintento: boolean;
 }
 
 // ── Cláusulas adicionales (Entrega 4) ──
@@ -98,8 +143,3 @@ export type Paso4Entrada = { omitir: true } | {
   clausulas: { clausulaId: string; valores?: Record<string, string> }[];
   aceptoResponsabilidad: true; avisoVersion: string;
 };
-// GuardarPasoBody: el caso 4 pasa a { paso: 4; datos: Paso4Entrada }. Pasos[4] = Paso4 (forma guardada).
-// EstadoAsistente.contrato += adicionales:
-//   { maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
-//     aviso: { version: string; texto: string }; prevalencia: string;
-//     excesoAutorizado: { huella: string; cantidad: number; en: string } | null };

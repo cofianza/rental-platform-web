@@ -72,7 +72,8 @@ export function ExpedienteProgressBar({
       .then(({ data }) => {
         if (cancelled) return
         const firmado = data.some((c) => ['firmado', 'vigente', 'finalizado'].includes(c.estado))
-        const enFirma = data.some((c) => c.estado === 'pendiente_firma')
+        // firma_incompleta (V3) sigue en la etapa de firma: falta reenviarla.
+        const enFirma = data.some((c) => c.estado === 'pendiente_firma' || c.estado === 'firma_incompleta')
         // 6 = Listo, 5 = Firma (índices de PROCESS_STEPS).
         setContratoStep(firmado ? 6 : enFirma ? 5 : null)
       })

@@ -6,7 +6,7 @@
  * pestana. Misma familia que ConfirmDialog.
  */
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Modal } from './Modal'
 
 export interface MotivoDialogProps {
@@ -14,6 +14,8 @@ export interface MotivoDialogProps {
   onClose: () => void
   onConfirm: (motivo: string) => void | Promise<unknown>
   title: string
+  /** Qué pasa al confirmar; va antes del campo del motivo. */
+  descripcion?: ReactNode
   label?: string
   placeholder?: string
   confirmLabel?: string
@@ -32,6 +34,7 @@ export function MotivoDialog({
   onClose,
   onConfirm,
   title,
+  descripcion,
   label = 'Motivo',
   placeholder,
   confirmLabel = 'Confirmar',
@@ -52,6 +55,7 @@ export function MotivoDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="space-y-3">
+        {descripcion && <div className="text-sm text-gray-600">{descripcion}</div>}
         <label className="block text-xs font-medium text-gray-700">
           {label}
           <textarea

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { etiquetaContrato } from '@/lib/constants'
 import { dashboardService, type PerfilDetalle } from '@/services/dashboardService'
 import {
   money,
@@ -32,6 +33,7 @@ const ESTADO_CONTRATO_TONE: Record<string, ChipTone> = {
   cancelado: 'red',
   borrador: 'gray',
   pendiente_firma: 'yellow',
+  firma_incompleta: 'red',
   en_revision: 'yellow',
 }
 
@@ -211,7 +213,7 @@ export function PerfilDetalleModal({
                       <Chip tone={esZonaRiesgo(c.mes) ? 'risk' : 'gray'}>M{c.mes}</Chip>
                     </Td>
                     <Td>
-                      <Chip tone={ESTADO_CONTRATO_TONE[c.estado] ?? 'gray'}>{c.estado}</Chip>
+                      <Chip tone={ESTADO_CONTRATO_TONE[c.estado] ?? 'gray'}>{etiquetaContrato(c.estado, false)}</Chip>
                     </Td>
                     <Td>
                       {c.pago === 'mora' ? <Chip tone="red">Mora</Chip> : <Chip tone="green">Al día</Chip>}

@@ -4,6 +4,7 @@
  * Estados visibles:
  *   - borrador / en_revision / aprobado → "Preparando tu contrato..." (no accionable)
  *   - pendiente_firma → CTA revisar PDF + aviso "te enviamos el link de firma por WhatsApp"
+ *   - firma_incompleta (V3) → la firma venció o alguien la rechazó; la inmobiliaria la reenvía
  *   - firmado (por ambas partes, pendiente activación) → "Contrato firmado, esperando activación"
  *   - vigente → "¡Contrato activo!" con botón descargar firmado
  *   - cancelado / finalizado → banner informativo
@@ -53,7 +54,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
       // Tomamos el contrato activo más reciente (ignoramos cancelados/finalizados
       // salvo que sea el único). Prioridad: vigente > firmado > pendiente_firma > resto.
       const prioridad: Record<string, number> = {
-        vigente: 5, firmado: 4, pendiente_firma: 3, aprobado: 2,
+        vigente: 5, firmado: 4, pendiente_firma: 3, firma_incompleta: 3, aprobado: 2,
         en_revision: 1, borrador: 1, cancelado: 0, finalizado: 0,
       }
       const ordered = [...res.data].sort((a, b) => {
@@ -83,8 +84,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
 
   // Cuando el contrato pasa a pendiente_firma, cargamos el id de la solicitud
   // de firma activa para poder ofrecer "reenviar correo a otro destinatario".
+  // Un V3 no tiene solicitudes (su firma va por Auco, en orden): no aplica.
   useEffect(() => {
-    if (contrato?.estado !== 'pendiente_firma') {
+    if (contrato?.estado !== 'pendiente_firma' || contrato.destinacion) {
       setSolicitudId(null)
       return
     }
@@ -259,71 +261,87 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-primary-100">
-          {!showResendForm ? (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              {/* "Auco" es el proveedor de firma: el arrendatario no sabe
-                  quién es y leerlo aquí solo genera desconfianza. */}
-              <p className="text-xs text-gray-500">
-                ¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => handleResend(false)}
-                  disabled={resending || !solicitudId}
-                  className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {resending ? 'Reenviando…' : 'Reenviar WhatsApp / correo'}
-                </button>
-                <span className="text-xs text-gray-300">·</span>
-                <button
-                  onClick={() => setShowResendForm(true)}
-                  disabled={resending || !solicitudId}
-                  className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+        {/* Reenviar la solicitud es del flujo anterior: un V3 no tiene solicitudes (Auco avisa en orden). */}
+        {!contrato.destinacion && (
+          <div className="mt-4 pt-4 border-t border-primary-100">
+            {!showResendForm ? (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                {/* "Auco" es el proveedor de firma: el arrendatario no sabe
+                    quién es y leerlo aquí solo genera desconfianza. */}
+                <p className="text-xs text-gray-500">
+                  ¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => handleResend(false)}
+                    disabled={resending || !solicitudId}
+                    className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {resending ? 'Reenviando…' : 'Reenviar WhatsApp / correo'}
+                  </button>
+                  <span className="text-xs text-gray-300">·</span>
+                  <button
+                    onClick={() => setShowResendForm(true)}
+                    disabled={resending || !solicitudId}
+                    className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Reenviar a otro correo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label htmlFor="contrato-solicitante-card-reenviar-a-otro-correo" className="block text-xs font-medium text-gray-700">
                   Reenviar a otro correo
-                </button>
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input id="contrato-solicitante-card-reenviar-a-otro-correo"
+                    type="email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    placeholder="otro@correo.com"
+                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    disabled={resending}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => handleResend(true)}
+                    disabled={resending || !resendEmail.trim()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  >
+                    {resending ? 'Enviando…' : 'Enviar'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowResendForm(false)
+                      setResendEmail('')
+                    }}
+                    disabled={resending}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Te enviaremos un nuevo enlace de firma a esta dirección.
+                </p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label htmlFor="contrato-solicitante-card-reenviar-a-otro-correo" className="block text-xs font-medium text-gray-700">
-                Reenviar a otro correo
-              </label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input id="contrato-solicitante-card-reenviar-a-otro-correo"
-                  type="email"
-                  value={resendEmail}
-                  onChange={(e) => setResendEmail(e.target.value)}
-                  placeholder="otro@correo.com"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                  disabled={resending}
-                  autoFocus
-                />
-                <button
-                  onClick={() => handleResend(true)}
-                  disabled={resending || !resendEmail.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
-                >
-                  {resending ? 'Enviando…' : 'Enviar'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowResendForm(false)
-                    setResendEmail('')
-                  }}
-                  disabled={resending}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-              <p className="text-xs text-gray-500">
-                Te enviaremos un nuevo enlace de firma a esta dirección.
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // firma_incompleta (V3): el proceso de firma venció o una parte lo rechazó.
+  if (contrato.estado === 'firma_incompleta') {
+    return (
+      <div className="border border-amber-200 bg-amber-50 rounded-lg p-5">
+        <p className="text-sm font-semibold text-amber-900 mb-1">La firma del contrato quedó incompleta</p>
+        <p className="text-sm text-amber-800">
+          El proceso de firma terminó sin la firma de todas las partes (venció el plazo o alguien la rechazó). La
+          inmobiliaria puede enviarlo de nuevo a firma: si lo hace, te llegará otra vez el mensaje por WhatsApp.
+        </p>
       </div>
     )
   }

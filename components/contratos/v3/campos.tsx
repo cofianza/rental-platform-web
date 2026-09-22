@@ -10,7 +10,7 @@
 
 import { useId, type ComponentType, type InputHTMLAttributes, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { IconAlertTriangle, IconCheck, IconInfo, type IconProps } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconInfo, IconShieldCheck, type IconProps } from '@/components/icons'
 
 /** Etiquetas de los documentos (enum tipo_documento de la BD, con 'ti'). */
 const TIPO_DOCUMENTO: Record<string, string> = {
@@ -233,9 +233,10 @@ const TONOS = {
   info: { caja: 'border-blue-200 bg-blue-50 text-blue-800', icono: 'text-blue-600', Icono: IconInfo },
   aviso: { caja: 'border-amber-200 bg-amber-50 text-amber-800', icono: 'text-amber-600', Icono: IconAlertTriangle },
   error: { caja: 'border-red-200 bg-red-50 text-red-800', icono: 'text-red-600', Icono: IconAlertTriangle },
+  exito: { caja: 'border-green-200 bg-green-50 text-green-800', icono: 'text-green-600', Icono: IconShieldCheck },
 } as const
 
-/** Nota en caja de color: info (no bloquea), aviso o error. */
+/** Nota en caja de color: info (no bloquea), aviso, error o éxito. */
 export function Aviso({ tono = 'info', children }: { tono?: keyof typeof TONOS; children: ReactNode }) {
   const t = TONOS[tono]
   return (

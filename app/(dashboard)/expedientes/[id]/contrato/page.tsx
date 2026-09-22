@@ -6,6 +6,8 @@
  * equipo. Antes de iniciar se muestra una vista sin efectos con los bloqueos;
  * "Iniciar contrato" asigna el número y reserva el inmueble (D2). Los bloqueos
  * y faltantes los decide el API; la página solo los pinta junto a su paso.
+ * Entrega 5: enviado a firma, el contrato ya no se edita y la página muestra
+ * su estado (EN FIRMA, FIRMA INCOMPLETA o FIANZA ACTIVA) con EstadoFirma.
  */
 
 'use client'
@@ -30,7 +32,8 @@ import { Paso2Inmueble } from '@/components/contratos/v3/Paso2Inmueble'
 import { Paso3Condiciones } from '@/components/contratos/v3/Paso3Condiciones'
 import { Paso4Clausulas } from '@/components/contratos/v3/Paso4Clausulas'
 import { Paso5Notificaciones, VistaPreviaContrato } from '@/components/contratos/v3/Paso5Notificaciones'
-import { Aviso } from '@/components/contratos/v3/campos'
+import { EstadoFirma } from '@/components/contratos/v3/EstadoFirma'
+import { Aviso, EncabezadoPaso } from '@/components/contratos/v3/campos'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import {
@@ -45,7 +48,6 @@ import {
   type ErroresPaso,
   type FormPaso4,
 } from '@/hooks/useContratoV3'
-import { contratoService } from '@/services/contratoService'
 import type { UserRole } from '@/types/auth'
 import type {
   EstadoAsistente,
@@ -152,7 +154,9 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
       {volver}
-      {estado.contrato ? (
+      {estado.enviado ? (
+        <EstadoFirma key={estado.enviado.id} enviado={estado.enviado} editable={editable} banner={banner} v3={v3} />
+      ) : estado.contrato ? (
         // key: si el borrador cambia (cancelado y reiniciado en otra sesión),
         // los formularios se vuelven a armar desde el servidor.
         <Asistente key={estado.contrato.id} contrato={estado.contrato} {...comun} />
@@ -234,12 +238,14 @@ const form4De = (g: Contrato['guardados'][4]): FormPaso4 => ({
 function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner, v3 }: VistaProps & { contrato: Contrato }) {
   const { guardados, prefill, faltantes, adicionales } = contrato
   const { bloqueos, avisos, resumen } = estado
-  const { accion, guardarPaso, generar, recargar, limpiarErrorPaso } = v3
+  const { accion, guardarPaso, limpiarErrorPaso } = v3
   const ocupado = accion !== null
   const rol = useAuthStore((s) => s.user?.rol)
 
-  // Se retoma en el primer paso sin guardar.
-  const [paso, setPaso] = useState<NumeroPaso>(() => NUMEROS.find((n) => !guardados[n]) ?? 5)
+  // Se retoma en el primer paso sin guardar (en la Ruta B el 4 no se guarda: no aplica).
+  const [paso, setPaso] = useState<NumeroPaso>(
+    () => NUMEROS.find((n) => !guardados[n] && !(n === 4 && guardados[1]?.ruta === 'B')) ?? 5,
+  )
   const [forms, setForms] = useState<Formularios>(() => ({
     1: guardados[1] ?? { ruta: 'A', ...prefill[1] },
     2: guardados[2] ?? { ...prefill[2] },
@@ -251,7 +257,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   // Pasos con cambios sin guardar: activan el aviso del navegador al salir.
   const [sucios, setSucios] = useState<NumeroPaso[]>([])
   const [confirmarCancelar, setConfirmarCancelar] = useState(false)
-  const [cancelando, setCancelando] = useState(false)
+  const [confirmarEnvio, setConfirmarEnvio] = useState(false)
   // Si el aviso de responsabilidad cambia (409 AVISO_CAMBIADO y recarga), hay que leerlo y aceptarlo de nuevo.
   const [avisoLeido, setAvisoLeido] = useState(adicionales.aviso.version)
   if (avisoLeido !== adicionales.aviso.version) {
@@ -294,6 +300,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   }
 
   const conCoarrendatario = !!resumen?.coarrendatario
+  // Ruta guardada (el API decide con ella): en B no hay paso 4 (§4.8) y el paso 5 carga el PDF propio.
+  const rutaB = guardados[1]?.ruta === 'B'
 
   // Paso 4 (Entrega 4): solo la inmobiliaria arma la lista y acepta el aviso; los
   // roles internos solo omiten el paso o ven lo guardado (el API es la puerta).
@@ -307,13 +315,15 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   // Lo guardado sigue valiendo: sin cambios y, si hay cláusulas, con el aviso vigente aceptado.
   const vigente4 = !!g4 && sinCambios4 && (!guardado4 || guardado4.aceptacion.avisoVersion === adicionales.aviso.version)
   const primario4: { etiqueta: string; guarda: boolean } =
-    !incorpora && guardado4
-      ? { etiqueta: 'Siguiente', guarda: false }
-      : vigente4
-        ? { etiqueta: 'Continuar', guarda: false }
-        : forms[4].elegidas.length === 0
-          ? { etiqueta: 'Omitir y continuar', guarda: true }
-          : { etiqueta: 'Guardar y continuar', guarda: true }
+    rutaB
+      ? { etiqueta: 'Continuar', guarda: false }
+      : !incorpora && guardado4
+        ? { etiqueta: 'Siguiente', guarda: false }
+        : vigente4
+          ? { etiqueta: 'Continuar', guarda: false }
+          : forms[4].elegidas.length === 0
+            ? { etiqueta: 'Omitir y continuar', guarda: true }
+            : { etiqueta: 'Guardar y continuar', guarda: true }
 
   // Cuerpo del PUT del paso actual + validación inmediata (el API es la puerta).
   const armar = (): { body: GuardarPasoBody; errs: ErroresPaso } => {
@@ -369,32 +379,45 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   }
 
   const cancelarBorrador = async () => {
-    setCancelando(true)
-    try {
-      await contratoService.transicionar(contrato.id, {
-        nuevo_estado: 'cancelado',
-        comentario: 'Borrador cancelado desde el asistente',
-        // La transición a cancelado exige motivo (precondición MOTIVO_REQUERIDO del API).
-        motivo: 'Borrador cancelado desde el asistente',
-      })
-      setSucios([])
-      toast.success(`Borrador ${contrato.numero} cancelado`)
-      await recargar()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo cancelar el borrador.')
-    } finally {
-      setCancelando(false)
-    }
+    // La transición a cancelado exige motivo (precondición MOTIVO_REQUERIDO del API).
+    if (!(await v3.cancelar(contrato.id, 'Borrador cancelado desde el asistente'))) return
+    setSucios([])
+    toast.success(`Borrador ${contrato.numero} cancelado`)
   }
 
-  const todosGuardados = NUMEROS.every((n) => guardados[n])
-  const pendientesSinGuardar = [...sucios].sort()
+  const enviarAFirma = async () => {
+    if (!contrato.documento) return
+    const ok = await v3.enviar({
+      generacion: contrato.documento.generacion,
+      propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
+    })
+    if (ok) toast.success(`Contrato ${contrato.numero} enviado a firma`)
+  }
+
+  // Orden de firma = orden de las partes: arrendatario, coarrendatario y el representante
+  // legal por la inmobiliaria. Los celulares son los del paso 5 guardado (a donde va el WhatsApp).
+  const c5 = guardados[5]?.contactos
+  const ordenFirma = [
+    { nombre: resumen?.arrendatario.nombre ?? 'Arrendatario', celular: c5?.arrendatario.telefono },
+    ...(resumen?.coarrendatario
+      ? [{ nombre: resumen.coarrendatario.nombre, celular: c5?.coarrendatario?.telefono }]
+      : []),
+    {
+      nombre: `${resumen?.arrendador.representanteLegal ?? 'Representante legal'} por ${resumen?.arrendador.razonSocial ?? 'la inmobiliaria'}`,
+      celular: c5?.arrendador.telefono,
+    },
+  ]
+  const crc = resumen?.fianza?.crc
+
+  // Ruta B: el paso 4 no aplica (ni cuenta como pendiente ni como cambio sin guardar).
+  const todosGuardados = NUMEROS.every((n) => (rutaB && n === 4) || guardados[n])
+  const pendientesSinGuardar = sucios.filter((n) => !(rutaB && n === 4)).sort()
   const motivoNoGenerar = !editable
     ? 'Tu acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
       ? `Tienes cambios sin guardar en el paso ${pendientesSinGuardar.join(', ')}.`
       : bloqueos.length > 0 || faltantes.length > 0 || !todosGuardados
-        ? 'Resuelve los pendientes antes de generar la vista previa.'
+        ? `Resuelve los pendientes antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
         : null
 
   // Los bloqueos con paso se pintan arriba de su paso; los demás (y los de
@@ -421,7 +444,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         subtitle={resumen ? `Estudio ${resumen.expedienteNumero}` : undefined}
         actions={
           editable && (
-            <Button variante="secondary" onClick={() => setConfirmarCancelar(true)} disabled={ocupado || cancelando}>
+            <Button variante="secondary" onClick={() => setConfirmarCancelar(true)} disabled={ocupado}>
               Cancelar borrador
             </Button>
           )
@@ -472,7 +495,16 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             canonCop={forms[1].canonCop}
           />
         )}
-        {paso === 4 && (
+        {paso === 4 && rutaB && (
+          <div className="space-y-6">
+            <EncabezadoPaso titulo="Cláusulas adicionales" />
+            <Aviso>
+              En la Ruta B no hay cláusulas adicionales: se firma el contrato de la inmobiliaria tal como lo cargues,
+              seguido del Anexo de condiciones de Cofianza.
+            </Aviso>
+          </div>
+        )}
+        {paso === 4 && !rutaB && (
           <Paso4Clausulas
             value={forms[4]}
             onChange={poner(4)}
@@ -520,16 +552,46 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
 
       {paso === 5 && (
         <VistaPreviaContrato
-          contratoId={contrato.id}
-          documento={contrato.documento}
+          contrato={contrato}
+          rutaB={rutaB}
+          editable={editable}
+          v3={v3}
           // Los del paso 5 ya se ven arriba del formulario.
           pendientes={faltantes.filter((f) => f.paso !== 5)}
           onIrPaso={irA}
           motivoNoGenerar={motivoNoGenerar}
-          generando={accion === 'generar'}
-          onGenerar={generar}
+          onEnviar={() => setConfirmarEnvio(true)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={confirmarEnvio}
+        onClose={() => setConfirmarEnvio(false)}
+        onConfirm={enviarAFirma}
+        title="¿Enviar el contrato a firma?"
+        message={
+          <div className="space-y-3">
+            <p>Se enviará por Auco (WhatsApp) para firmar en este orden, una parte a la vez:</p>
+            <ol className="list-decimal space-y-1 pl-5">
+              {ordenFirma.map((f, i) => (
+                <li key={i}>
+                  <span className="font-medium text-gray-900">{f.nombre}</span>
+                  {f.celular && ` (${f.celular})`}
+                </li>
+              ))}
+            </ol>
+            <p>
+              {crc ? `Se adjunta el CRC N° ${crc.codigo}.` : 'Se adjunta el CRC.'}
+              {rutaB && ' El PDF de la inmobiliaria va sin modificaciones, seguido del Anexo de condiciones.'}
+            </p>
+            <p className="font-medium text-gray-900">
+              Después de enviarlo, el contrato no se puede editar. Cada envío consume un crédito de firma.
+            </p>
+          </div>
+        }
+        confirmLabel="Enviar a firma"
+        isLoading={accion === 'enviar'}
+      />
 
       <ConfirmDialog
         isOpen={confirmarCancelar}
@@ -540,7 +602,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         confirmLabel="Cancelar borrador"
         cancelLabel="Volver"
         variant="danger"
-        isLoading={cancelando}
+        isLoading={accion === 'cancelar'}
       />
     </>
   )

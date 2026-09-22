@@ -3,23 +3,12 @@
 import { Modal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
 import { IconX, IconHistory, IconLoader, IconAlertTriangle } from '@/components/icons'
-import { formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { VersionHistorialSection } from './VersionHistorialSection'
 import { CompararVersionesModal } from './CompararVersionesModal'
 import { ContratoHistorialModal } from './ContratoHistorialModal'
 import type { IContrato } from '@/types/contrato'
-
-const ESTADO_LABELS: Record<string, string> = {
-  borrador: 'Borrador',
-  en_revision: 'En Revision',
-  aprobado: 'Aprobado',
-  pendiente_firma: 'Enviado a Firma',
-  firmado: 'Firmado',
-  vigente: 'Vigente',
-  finalizado: 'Finalizado',
-  cancelado: 'Cancelado',
-}
 
 interface ContratoDetalleModalProps {
   contrato: IContrato | null
@@ -121,7 +110,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
             <div>
               <dt className="text-gray-500">Estado</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
-                {ESTADO_LABELS[contrato.estado] || contrato.estado}
+                {etiquetaContrato(contrato.estado, !!contrato.destinacion)}
               </dd>
             </div>
             <div>
