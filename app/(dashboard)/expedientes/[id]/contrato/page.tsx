@@ -28,8 +28,9 @@ import { AvisosContrato, BloqueosContrato } from '@/components/contratos/v3/Bloq
 import { Paso1Confirmacion, ResumenContrato } from '@/components/contratos/v3/Paso1Confirmacion'
 import { Paso2Inmueble } from '@/components/contratos/v3/Paso2Inmueble'
 import { Paso3Condiciones } from '@/components/contratos/v3/Paso3Condiciones'
+import { Paso4Clausulas } from '@/components/contratos/v3/Paso4Clausulas'
 import { Paso5Notificaciones, VistaPreviaContrato } from '@/components/contratos/v3/Paso5Notificaciones'
-import { Aviso, EncabezadoPaso } from '@/components/contratos/v3/campos'
+import { Aviso } from '@/components/contratos/v3/campos'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import {
@@ -37,9 +38,12 @@ import {
   validarPaso1,
   validarPaso2,
   validarPaso3,
+  validarPaso4,
   validarPaso5,
+  entradaPaso4,
   type Borrador,
   type ErroresPaso,
+  type FormPaso4,
 } from '@/hooks/useContratoV3'
 import { contratoService } from '@/services/contratoService'
 import type { UserRole } from '@/types/auth'
@@ -219,13 +223,20 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, banner, v3 }: V
   )
 }
 
-type Formularios = { 1: Borrador<Paso1>; 2: Borrador<Paso2>; 3: Borrador<Paso3>; 5: Borrador<Paso5> }
+type Formularios = { 1: Borrador<Paso1>; 2: Borrador<Paso2>; 3: Borrador<Paso3>; 4: FormPaso4; 5: Borrador<Paso5> }
+
+/** Formulario del paso 4 armado desde lo guardado en el servidor. */
+const form4De = (g: Contrato['guardados'][4]): FormPaso4 => ({
+  elegidas: g && 'clausulas' in g ? g.clausulas.map((c) => ({ clausulaId: c.clausulaId, valores: c.valores ?? {} })) : [],
+  acepto: false,
+})
 
 function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner, v3 }: VistaProps & { contrato: Contrato }) {
-  const { guardados, prefill, faltantes } = contrato
+  const { guardados, prefill, faltantes, adicionales } = contrato
   const { bloqueos, avisos, resumen } = estado
-  const { accion, guardarPaso, generar, recargar } = v3
+  const { accion, guardarPaso, generar, recargar, limpiarErrorPaso } = v3
   const ocupado = accion !== null
+  const rol = useAuthStore((s) => s.user?.rol)
 
   // Se retoma en el primer paso sin guardar.
   const [paso, setPaso] = useState<NumeroPaso>(() => NUMEROS.find((n) => !guardados[n]) ?? 5)
@@ -233,6 +244,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     1: guardados[1] ?? { ruta: 'A', ...prefill[1] },
     2: guardados[2] ?? { ...prefill[2] },
     3: guardados[3] ?? { ...prefill[3] },
+    4: form4De(guardados[4]),
     5: guardados[5] ?? { ...prefill[5] },
   }))
   const [errores, setErrores] = useState<ErroresPaso>({})
@@ -240,6 +252,21 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const [sucios, setSucios] = useState<NumeroPaso[]>([])
   const [confirmarCancelar, setConfirmarCancelar] = useState(false)
   const [cancelando, setCancelando] = useState(false)
+  // Si el aviso de responsabilidad cambia (409 AVISO_CAMBIADO y recarga), hay que leerlo y aceptarlo de nuevo.
+  const [avisoLeido, setAvisoLeido] = useState(adicionales.aviso.version)
+  if (avisoLeido !== adicionales.aviso.version) {
+    setAvisoLeido(adicionales.aviso.version)
+    setForms((f) => ({ ...f, 4: { ...f[4], acepto: false } }))
+  }
+  // Sin cambios propios en el paso 4, la lista en pantalla es la guardada: si una recarga (409,
+  // otro paso guardado, otra sesión) trae otra, se rearma desde el servidor. Así el administrador
+  // autoriza la huella de la lista que ve, y nadie sigue viendo una lista que ya no está.
+  const huella4 = guardados[4] ? ('clausulas' in guardados[4] ? guardados[4].huella : 'omitido') : null
+  const [huellaVista, setHuellaVista] = useState(huella4)
+  if (huellaVista !== huella4 && !sucios.includes(4)) {
+    setHuellaVista(huella4)
+    setForms((f) => ({ ...f, 4: form4De(guardados[4]) }))
+  }
 
   useEffect(() => {
     if (sucios.length === 0) return
@@ -256,6 +283,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     (v: Formularios[N]) => {
       setForms((f) => ({ ...f, [n]: v }))
       setSucios((s) => (s.includes(n) ? s : [...s, n]))
+      // Los hallazgos del último 422 apuntan a filas por índice: cualquier cambio los invalida.
+      if (n === 4) limpiarErrorPaso()
     }
 
   const irA = (n: NumeroPaso) => {
@@ -265,6 +294,26 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   }
 
   const conCoarrendatario = !!resumen?.coarrendatario
+
+  // Paso 4 (Entrega 4): solo la inmobiliaria arma la lista y acepta el aviso; los
+  // roles internos solo omiten el paso o ven lo guardado (el API es la puerta).
+  const incorpora = editable && rol === 'inmobiliaria'
+  const g4 = guardados[4]
+  const guardado4 = g4 && 'clausulas' in g4 ? g4 : null
+  // REVISION_AUTOMATICA_PENDIENTE (la IA se encendió después de guardar) pide "vuelve a guardar el
+  // paso 4": para la inmobiliaria cuenta como cambio, así ve la casilla y "Guardar y continuar".
+  const sinCambios4 =
+    !sucios.includes(4) && !(incorpora && bloqueos.some((b) => b.codigo === 'REVISION_AUTOMATICA_PENDIENTE'))
+  // Lo guardado sigue valiendo: sin cambios y, si hay cláusulas, con el aviso vigente aceptado.
+  const vigente4 = !!g4 && sinCambios4 && (!guardado4 || guardado4.aceptacion.avisoVersion === adicionales.aviso.version)
+  const primario4: { etiqueta: string; guarda: boolean } =
+    !incorpora && guardado4
+      ? { etiqueta: 'Siguiente', guarda: false }
+      : vigente4
+        ? { etiqueta: 'Continuar', guarda: false }
+        : forms[4].elegidas.length === 0
+          ? { etiqueta: 'Omitir y continuar', guarda: true }
+          : { etiqueta: 'Guardar y continuar', guarda: true }
 
   // Cuerpo del PUT del paso actual + validación inmediata (el API es la puerta).
   const armar = (): { body: GuardarPasoBody; errs: ErroresPaso } => {
@@ -281,8 +330,15 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         const d = { ...forms[3], administracion: ph ? (forms[3].administracion ?? null) : null }
         return { body: { paso: 3, datos: d as Paso3 }, errs: validarPaso3(d, { propiedadHorizontal: ph }) }
       }
-      case 4:
-        return { body: { paso: 4, datos: { omitir: true } }, errs: {} }
+      case 4: {
+        const f = forms[4]
+        // Las claves de `valores` son los [[campo]] de cada cláusula (se crean al agregarla).
+        const campos = Object.fromEntries(f.elegidas.map((e) => [e.clausulaId, Object.keys(e.valores)]))
+        return {
+          body: { paso: 4, datos: entradaPaso4(f, adicionales.aviso.version) },
+          errs: validarPaso4(f, { campos, conCoarrendatario }),
+        }
+      }
       case 5: {
         const c = forms[5].contactos ?? {}
         const d = {
@@ -295,8 +351,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   }
 
   const guardarYContinuar = async () => {
-    // Solo lectura: se navega sin guardar.
-    if (!editable) {
+    // Solo lectura, o paso 4 sin nada que guardar: se navega sin guardar.
+    if (!editable || (paso === 4 && !primario4.guarda)) {
       if (paso < 5) irA((paso + 1) as NumeroPaso)
       return
     }
@@ -352,7 +408,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const etiquetaPrimario = !editable
     ? 'Siguiente'
     : paso === 4
-      ? 'Omitir y continuar'
+      ? primario4.etiqueta
       : paso === 5
         ? 'Guardar'
         : 'Guardar y continuar'
@@ -417,10 +473,23 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
           />
         )}
         {paso === 4 && (
-          <div className="space-y-4">
-            <EncabezadoPaso titulo="Cláusulas adicionales" />
-            <p className="text-sm text-gray-600">Este contrato no lleva cláusulas adicionales.</p>
-          </div>
+          <Paso4Clausulas
+            value={forms[4]}
+            onChange={poner(4)}
+            errores={errores}
+            errorPaso={v3.errorPaso}
+            adicionales={adicionales}
+            guardado={guardado4}
+            sinCambios={sinCambios4}
+            incorpora={incorpora}
+            esAdmin={editable && rol === 'administrador'}
+            excedeLimite={bloqueos.some((b) => b.codigo === 'ADICIONALES_EXCEDEN_LIMITE')}
+            autorizando={accion === 'autorizar'}
+            onAutorizar={v3.autorizarExceso}
+            contratoNumero={contrato.numero}
+            expedienteNumero={resumen?.expedienteNumero ?? null}
+            expedienteId={expedienteId}
+          />
         )}
         {paso === 5 && (
           <Paso5Notificaciones
@@ -437,7 +506,12 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
           Anterior
         </Button>
         {(editable || paso < 5) && (
-          <Button variante="primary" onClick={guardarYContinuar} disabled={ocupado}>
+          <Button
+            variante="primary"
+            onClick={guardarYContinuar}
+            // "Guardar y continuar" del paso 4 exige aceptar el aviso de responsabilidad.
+            disabled={ocupado || (editable && paso === 4 && primario4.etiqueta === 'Guardar y continuar' && !forms[4].acepto)}
+          >
             {accion === 'guardar' && <IconLoader size={16} className="animate-spin" />}
             {accion === 'guardar' ? 'Guardando…' : etiquetaPrimario}
           </Button>

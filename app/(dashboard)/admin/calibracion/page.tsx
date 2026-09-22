@@ -55,6 +55,8 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   TOLERANCIA_CANON: 'Tolerancia del canon pactado sobre el evaluado (%)',
   TOPE_CANON_INGRESO_RECALCULO: 'Relación canon/ingreso máxima al pactar un canon mayor (%)',
   VIGENCIA_MESES_DEFECTO: 'Vigencia por defecto del contrato (meses)',
+  // Contratos V3 Entrega 4: tope del paso 4 del asistente (máximo absoluto 25).
+  MAX_CLAUSULAS_ADICIONALES: 'Máximo de cláusulas adicionales por contrato',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave

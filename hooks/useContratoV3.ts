@@ -13,17 +13,34 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ApiClientError } from '@/lib/api'
 import { contratoV3Service } from '@/services/contratoV3Service'
+import { hallazgosDe } from '@/services/clausulasService'
 import type {
   Contacto,
   EstadoAsistente,
   GuardarPasoBody,
+  Hallazgo,
+  NumeroPaso,
   Paso1,
   Paso2,
   Paso3,
+  Paso4Entrada,
   Paso5,
 } from '@/types/contratoV3'
 
-export type AccionContratoV3 = null | 'iniciar' | 'guardar' | 'generar'
+export type AccionContratoV3 = null | 'iniciar' | 'guardar' | 'generar' | 'autorizar'
+
+/**
+ * Último 422 al guardar un paso. En el paso 4 trae los hallazgos de las reglas con
+ * `indice` (fila de la lista) o, si una cláusula ya no está disponible, `indice` suelto.
+ */
+export interface ErrorPaso {
+  paso: NumeroPaso
+  codigo: string
+  mensaje: string
+  hallazgos: Hallazgo[]
+  avisos: Hallazgo[]
+  indice: number | null
+}
 
 export function useContratoV3(expedienteId: string) {
   // Por expediente: la página no se desmonta al pasar de un estudio a otro, y una
@@ -31,6 +48,7 @@ export function useContratoV3(expedienteId: string) {
   const [cargas, setCargas] = useState<Record<string, EstadoAsistente>>({})
   const [error, setError] = useState<string | null>(null)
   const [accion, setAccion] = useState<AccionContratoV3>(null)
+  const [errorPaso, setErrorPaso] = useState<(ErrorPaso & { expedienteId: string }) | null>(null)
   // Expedientes ya pintados: si un refresco posterior falla, se avisa con toast
   // en vez de cambiar el asistente por la tarjeta de error (y perder lo escrito).
   const pintados = useRef(new Set<string>())
@@ -89,13 +107,31 @@ export function useContratoV3(expedienteId: string) {
     [mutar, expedienteId],
   )
   const guardarPaso = useCallback(
-    (body: GuardarPasoBody) => mutar('guardar', () => contratoV3Service.guardarPaso(expedienteId, body)),
+    (body: GuardarPasoBody) => {
+      setErrorPaso(null)
+      return mutar('guardar', async () => {
+        try {
+          return await contratoV3Service.guardarPaso(expedienteId, body)
+        } catch (err) {
+          if (err instanceof ApiClientError && err.statusCode === 422) {
+            setErrorPaso({ expedienteId, paso: body.paso, codigo: err.code ?? '', mensaje: err.message, ...hallazgosDe(err) })
+          }
+          throw err
+        }
+      })
+    },
     [mutar, expedienteId],
   )
   const generar = useCallback(
     () => mutar('generar', () => contratoV3Service.generar(expedienteId)),
     [mutar, expedienteId],
   )
+  /** Solo administrador: `huella` = la del paso 4 guardado (guardados[4].huella). */
+  const autorizarExceso = useCallback(
+    (huella: string) => mutar('autorizar', () => contratoV3Service.autorizarExceso(expedienteId, huella)),
+    [mutar, expedienteId],
+  )
+  const limpiarErrorPaso = useCallback(() => setErrorPaso(null), [])
 
   return {
     estado,
@@ -106,6 +142,10 @@ export function useContratoV3(expedienteId: string) {
     iniciar,
     guardarPaso,
     generar,
+    autorizarExceso,
+    // Solo el del expediente actual (la página no se desmonta al cambiar de estudio).
+    errorPaso: errorPaso?.expedienteId === expedienteId ? errorPaso : null,
+    limpiarErrorPaso,
   }
 }
 
@@ -143,11 +183,11 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10)
 }
 
-function texto(v: string | null | undefined, max: number): string | null {
+function texto(v: string | null | undefined, max: number, conCoarrendatario = false): string | null {
   const t = (v ?? '').trim()
   if (!t) return MSG_OBLIGATORIO
   if (t.length > max) return `Máximo ${max} caracteres`
-  if (/\p{Cc}/u.test(t) || MARCADOR.test(t) || /coarrendatari/i.test(t)) return MSG_NO_IMPRIMIBLE
+  if (/\p{Cc}/u.test(t) || MARCADOR.test(t) || (!conCoarrendatario && /coarrendatari/i.test(t))) return MSG_NO_IMPRIMIBLE
   return null
 }
 
@@ -247,4 +287,59 @@ export function validarPaso5(d: Borrador<Paso5>, ctx: { conCoarrendatario?: bool
     contacto(d.contactos?.coarrendatario, 'contactos.coarrendatario', errores)
   }
   return errores
+}
+
+// ============================================
+// Paso 4: cláusulas adicionales (Entrega 4)
+// ============================================
+
+/** Estado de formulario del paso 4 (la página lo inicia desde guardados[4]). */
+export interface FormPaso4 {
+  elegidas: { clausulaId: string; valores: Record<string, string> }[]
+  acepto: boolean
+}
+
+/** Tope técnico del API: la numeración llega a QUINCUAGÉSIMA OCTAVA. El máximo sin revisión es adicionales.maximo. */
+const MAX_ADICIONALES = 25
+
+/**
+ * Espejo de la validación del API para "Guardar y continuar". Lista vacía = válido
+ * (se omite el paso). `campos[clausulaId]` = los [[campo]] de esa cláusula en el
+ * catálogo; si no está, no se validan sus datos (el API lo hace).
+ * Claves: 'elegidas', 'elegidas.{i}.{campo}', 'acepto'.
+ */
+export function validarPaso4(
+  d: FormPaso4,
+  ctx: { campos: Record<string, string[]>; conCoarrendatario?: boolean },
+): ErroresPaso {
+  if (d.elegidas.length === 0) return {}
+  const ids = d.elegidas.map((e) => e.clausulaId)
+  const errores = limpiar({
+    elegidas:
+      ids.length > MAX_ADICIONALES
+        ? `Máximo ${MAX_ADICIONALES} cláusulas adicionales por contrato`
+        : new Set(ids).size !== ids.length
+          ? 'Hay una cláusula repetida en la lista'
+          : null,
+    acepto: d.acepto ? null : 'Acepta el aviso de responsabilidad para continuar',
+  })
+  d.elegidas.forEach((e, i) => {
+    for (const campo of ctx.campos[e.clausulaId] ?? []) {
+      const msg = texto(e.valores[campo], 200, ctx.conCoarrendatario)
+      if (msg) errores[`elegidas.${i}.${campo}`] = msg
+    }
+  })
+  return errores
+}
+
+/** Cuerpo del PUT del paso 4. Una cláusula sin [[campo]] (las propias) no lleva `valores`. */
+export function entradaPaso4(d: FormPaso4, avisoVersion: string): Paso4Entrada {
+  if (d.elegidas.length === 0) return { omitir: true }
+  return {
+    clausulas: d.elegidas.map(({ clausulaId, valores }) =>
+      Object.keys(valores).length ? { clausulaId, valores } : { clausulaId },
+    ),
+    aceptoResponsabilidad: true,
+    avisoVersion,
+  }
 }

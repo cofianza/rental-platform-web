@@ -29,4 +29,12 @@ export const contratoV3Service = {
     const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/generar`)
     return res.data
   },
+  /**
+   * Solo administrador: autoriza el conjunto EXACTO de cláusulas adicionales que
+   * supera el máximo (`huella` del paso 4 guardado). Cambiar la lista la anula.
+   */
+  async autorizarExceso(expedienteId: string, huella: string): Promise<EstadoAsistente> {
+    const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/clausulas/autorizar-exceso`, { huella })
+    return res.data
+  },
 }
