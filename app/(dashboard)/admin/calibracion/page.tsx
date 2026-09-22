@@ -57,6 +57,8 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   VIGENCIA_MESES_DEFECTO: 'Vigencia por defecto del contrato (meses)',
   // Contratos V3 Entrega 4: tope del paso 4 del asistente (máximo absoluto 25).
   MAX_CLAUSULAS_ADICIONALES: 'Máximo de cláusulas adicionales por contrato',
+  // Contratos V3 Entrega 5: al vencer, el contrato pasa a «firma incompleta».
+  DIAS_EXPIRACION_FIRMA: 'Días para firmar en Auco antes de «firma incompleta»',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
