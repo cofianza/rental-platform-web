@@ -5,6 +5,8 @@
 
 'use client'
 
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
@@ -22,6 +24,15 @@ export function DashboardShell({ children }: Props) {
   const isInitialized = useAuthStore((state) => state.isInitialized)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const rol = useAuthStore((state) => state.user?.rol)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Sin sesión válida (cookie vencida, otro dominio o una ruta que el proxy no
+  // protege, como /contratos): al login, volviendo aquí. Antes el loader de
+  // abajo quedaba girando para siempre.
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) router.replace(`/login?redirect=${encodeURIComponent(pathname)}`)
+  }, [isInitialized, isAuthenticated, pathname, router])
 
   // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
   // vez al entrar al dashboard y limpia al hacer logout (cuando isAuthenticated
