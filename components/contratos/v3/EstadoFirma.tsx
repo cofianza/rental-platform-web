@@ -53,6 +53,8 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
       return 'Venció el plazo para firmar.'
     case 'REJECTED':
       return s.motivoDetalle ? `Rechazó: ${s.motivoDetalle}` : 'Una de las partes rechazó la firma.'
+    case 'CANCELADO':
+      return 'El proceso de firma se anuló.'
     case 'AUCO_UPLOAD':
     case 'HUERFANO':
       return `El proceso de firma no se creó en Auco${s.motivoDetalle ? `: ${s.motivoDetalle}` : '.'}`
@@ -72,6 +74,7 @@ interface Props {
 export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   const [confirmarReenvio, setConfirmarReenvio] = useState(false)
   const [pedirMotivo, setPedirMotivo] = useState(false)
+  const [confirmarReintento, setConfirmarReintento] = useState(false)
   const visor = useVisor()
   const reenvioId = useId()
   const { accion } = v3
@@ -86,7 +89,7 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   const firmantes = creado ? [...s.firmantes].sort((a, b) => a.orden - b.orden) : []
   // Auco notifica en orden: el turno es del primero que no ha firmado.
   const turno = s?.estado === 'en_firma' ? firmantes.find((f) => f.estado !== 'firmado') : undefined
-  const bloqueados = firmantes.filter((f) => f.estado === 'bloqueado')
+  const bloqueados = s?.estado === 'en_firma' ? firmantes.filter((f) => f.estado === 'bloqueado') : []
   const nota = !enFirma || e.reintento ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
   const motivo = motivoDe(s)
 
@@ -94,7 +97,13 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
     {
       clave: 'contrato',
       etiqueta: activa ? 'Documento firmado' : 'Documento enviado a firma',
-      cargar: async () => (await contratoService.descargarContrato(e.id, { inline: true })).url,
+      cargar: async () => {
+        const r = await contratoService.descargarContrato(e.id, { inline: true })
+        // Con la fianza activa, "Documento firmado" nunca muestra el PDF sin firmas.
+        if (activa && r.firmado === false)
+          throw new Error('La versión firmada todavía se está archivando desde Auco. Intenta de nuevo en unos minutos.')
+        return r.url
+      },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
@@ -197,7 +206,7 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
             <p>{motivo ?? 'El proceso de firma no se creó en Auco.'}</p>
             {editable && (
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <Button variante="primary" tamano="sm" onClick={reintentar} disabled={ocupado}>
+                <Button variante="primary" tamano="sm" onClick={() => setConfirmarReintento(true)} disabled={ocupado}>
                   {accion === 'reintentar' ? <IconLoader size={14} className="animate-spin" /> : <IconRotateCw size={14} />}
                   Reintentar envío
                 </Button>
@@ -226,7 +235,7 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
           </div>
         )}
 
-        {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} />}
+        {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
       </section>
 
       <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
@@ -252,11 +261,20 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
       />
+      <ConfirmDialog
+        isOpen={confirmarReintento}
+        onClose={() => setConfirmarReintento(false)}
+        onConfirm={reintentar}
+        title="¿Reintentar el envío a firma?"
+        message="Se crea el proceso de firma en Auco con el documento enviado y se notifica a todas las partes. Consume un crédito de firma."
+        confirmLabel="Reintentar envío"
+        isLoading={accion === 'reintentar'}
+      />
       <MotivoDialog
         isOpen={pedirMotivo}
         onClose={() => setPedirMotivo(false)}
         onConfirm={async (texto) => {
-          const ok = await v3.cancelar(e.id, texto)
+          const ok = await v3.cancelar(e.id, texto, e.estado)
           setPedirMotivo(false)
           if (ok) toast.success(`Contrato ${e.numero} cancelado`)
         }}
@@ -275,7 +293,10 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   )
 }
 
-function ListaFirmantes({ firmantes }: { firmantes: Firmante[] }) {
+/** Con el proceso cerrado (vencido, rechazado, anulado) nadie tiene "su turno": quien no firmó, no firmó. */
+const NO_FIRMO = { texto: 'No firmó', tono: 'bg-gray-100 text-gray-600' }
+
+function ListaFirmantes({ firmantes, cerrado }: { firmantes: Firmante[]; cerrado: boolean }) {
   return (
     <ol aria-label="Firmantes en orden de firma" className="divide-y divide-gray-100 rounded-xl border border-gray-200">
       {firmantes.map((f) => (
@@ -293,9 +314,10 @@ function ListaFirmantes({ firmantes }: { firmantes: Firmante[] }) {
               {f.firmadoEn && ` · firmó el ${formatDateTime(f.firmadoEn)}`}
             </p>
           </div>
-          <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', CHIP[f.estado].tono)}>
-            {CHIP[f.estado].texto}
-          </span>
+          {(() => {
+            const chip = cerrado && f.estado !== 'firmado' && f.estado !== 'rechazado' ? NO_FIRMO : CHIP[f.estado]
+            return <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', chip.tono)}>{chip.texto}</span>
+          })()}
         </li>
       ))}
     </ol>

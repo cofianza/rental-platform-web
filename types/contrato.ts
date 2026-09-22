@@ -102,6 +102,8 @@ export interface IContratoDownloadResponse {
    *  'manual' = subido a mano · 'auco' = archivado de Auco (firmas estampadas)
    *  'combinado' = original + acuses generados · 'original' = sin firmas. */
   fuente?: 'manual' | 'auco' | 'combinado' | 'original'
+  /** Solo en descargar: true si se sirvió la versión firmada (false = el original). */
+  firmado?: boolean
 }
 
 export interface IContratosResponse {
@@ -208,6 +210,8 @@ export interface IContratoTransitionInput {
   nuevo_estado: EstadoContrato
   comentario: string
   motivo?: string
+  /** El estado que el usuario veía: si cambió mientras tanto, el API responde 409. */
+  estado_esperado?: EstadoContrato
 }
 
 // ============================================================

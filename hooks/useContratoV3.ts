@@ -16,6 +16,7 @@ import { contratoService } from '@/services/contratoService'
 import { contratoV3Service, fallasDe, type EnviarBody, type FallaFirmante } from '@/services/contratoV3Service'
 import { estudioService } from '@/services/estudioService'
 import { hallazgosDe } from '@/services/clausulasService'
+import type { EstadoContrato } from '@/types/contrato'
 import type {
   Contacto,
   EstadoAsistente,
@@ -165,8 +166,13 @@ export function useContratoV3(expedienteId: string) {
   )
   /** URL firmada (1 h) del contrato de la inmobiliaria (Ruta B). */
   const propioUrl = useCallback(() => contratoV3Service.propioUrl(expedienteId), [expedienteId])
-  /** URL firmada del CRC: el del último estudio individual completado, el mismo que elige el API. */
+  /**
+   * URL firmada del CRC: fuera de borrador, el que se envió a firma (congelado en el API);
+   * en borrador, el del último estudio individual completado, el mismo que elegirá el API.
+   */
   const crcUrl = useCallback(async () => {
+    const enviado = await contratoV3Service.crcEnviadoUrl(expedienteId)
+    if (enviado) return enviado
     const { data } = await estudioService.getEstudiosForExpediente(expedienteId, 1, 50)
     const estudio = data
       .filter((e) => e.tipo === 'individual' && e.estado === 'completado')
@@ -205,11 +211,17 @@ export function useContratoV3(expedienteId: string) {
   /**
    * Cancelar el borrador o el contrato en firma (EN FIRMA / FIRMA INCOMPLETA). Va por la
    * transición de siempre; para un V3 en firma el API anula antes el proceso en Auco.
+   * `visto` = el estado en pantalla: si otro miembro lo cambió (p. ej. lo envió a firma), 409 y recarga.
    */
   const cancelar = useCallback(
-    (contratoId: string, motivo: string) =>
+    (contratoId: string, motivo: string, visto: EstadoContrato) =>
       mutar('cancelar', async () => {
-        await contratoService.transicionar(contratoId, { nuevo_estado: 'cancelado', comentario: motivo, motivo })
+        await contratoService.transicionar(contratoId, {
+          nuevo_estado: 'cancelado',
+          comentario: motivo,
+          motivo,
+          estado_esperado: visto,
+        })
         return contratoV3Service.obtener(expedienteId)
       }),
     [mutar, expedienteId],

@@ -83,9 +83,14 @@ export const contratoV3Service = {
     if (!res.ok) await handleApiError(res)
     return ((await res.json()) as ApiResponse<EstadoAsistente>).data
   },
-  /** URL firmada (1 h) del contrato propio, en cualquier estado del contrato. */
+  /** URL firmada (10 min) del contrato propio, en cualquier estado del contrato. */
   async propioUrl(expedienteId: string): Promise<string> {
     const res = await apiClient.get<{ url: string }>(`${ruta(expedienteId)}/propio`)
+    return res.data.url
+  },
+  /** URL firmada (10 min) del CRC que se envió a firma; null en borrador (vale el del estudio vigente). */
+  async crcEnviadoUrl(expedienteId: string): Promise<string | null> {
+    const res = await apiClient.get<{ url: string | null }>(`${ruta(expedienteId)}/crc`)
     return res.data.url
   },
   /** Saca el contrato de borrador y crea el proceso de firma en Auco. */

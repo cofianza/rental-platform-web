@@ -380,7 +380,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
 
   const cancelarBorrador = async () => {
     // La transición a cancelado exige motivo (precondición MOTIVO_REQUERIDO del API).
-    if (!(await v3.cancelar(contrato.id, 'Borrador cancelado desde el asistente'))) return
+    if (!(await v3.cancelar(contrato.id, 'Borrador cancelado desde el asistente', 'borrador'))) return
     setSucios([])
     toast.success(`Borrador ${contrato.numero} cancelado`)
   }
