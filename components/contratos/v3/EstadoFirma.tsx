@@ -1,20 +1,21 @@
 /**
- * Contrato V3 fuera de borrador (Entrega 5): EN FIRMA, FIRMA INCOMPLETA o
- * FIANZA ACTIVA. Todo sale de `estado.enviado`; la verdad la tiene Auco y el
- * API la reconcilia (webhook, barrido y "Actualizar estado"). Aquí ya no se
- * edita nada: solo se sigue la firma, se reenvía, se reintenta o se cancela.
+ * Contrato V3 fuera de borrador (Entregas 5 y 6): EN FIRMA, FIRMA INCOMPLETA,
+ * FIANZA ACTIVA o TERMINADO. Todo sale de `estado.enviado`; la verdad la tiene
+ * Auco y el API la reconcilia (webhook, barrido y "Actualizar estado"). Aquí ya
+ * no se edita nada: se sigue la firma, se reenvía, se reintenta, se cancela, se
+ * termina y se carga el acta de entrega e inventario (§12).
  * ponytail: sin sondeo (se refresca al cargar y con el botón); sondeo cada 30 s si en QA se siente lento.
  */
 
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
-import { IconAlertTriangle, IconLoader, IconRefresh, IconRotateCw } from '@/components/icons'
-import { etiquetaContrato, formatDateTime } from '@/lib/constants'
+import { IconAlertTriangle, IconLoader, IconRefresh, IconRotateCw, IconUpload } from '@/components/icons'
+import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
@@ -28,7 +29,15 @@ const INSIGNIA: Record<EnvioV3['estado'], string> = {
   pendiente_firma: 'border-purple-300 bg-purple-100 text-purple-700',
   firma_incompleta: 'border-red-300 bg-red-100 text-red-700',
   vigente: 'border-green-300 bg-green-100 text-green-700',
+  finalizado: 'border-gray-300 bg-gray-100 text-gray-700',
 }
+
+/** Lo que acepta el API para archivos del contrato (middleware uploadDoc). */
+const TIPOS_ACTA = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+const MAX_BYTES_ACTA = 20 * 1024 * 1024
+
+/** 'AAAA-MM-DD' → '15/01/2027' sin pasar por Date (no corre el día por zona horaria). */
+const dia = (iso: string) => iso.split('-').reverse().join('/')
 
 const CHIP: Record<EstadoFirmanteV3, { texto: string; tono: string }> = {
   pendiente: { texto: 'En espera', tono: 'bg-gray-100 text-gray-600' },
@@ -75,6 +84,8 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   const [confirmarReenvio, setConfirmarReenvio] = useState(false)
   const [pedirMotivo, setPedirMotivo] = useState(false)
   const [confirmarReintento, setConfirmarReintento] = useState(false)
+  const [pedirMotivoTerminar, setPedirMotivoTerminar] = useState(false)
+  const actaRef = useRef<HTMLInputElement>(null)
   const visor = useVisor()
   const reenvioId = useId()
   const { accion } = v3
@@ -83,6 +94,8 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   const enFirma = e.estado === 'pendiente_firma'
   const incompleta = e.estado === 'firma_incompleta'
   const activa = e.estado === 'vigente'
+  const terminado = e.estado === 'finalizado'
+  const firmado = activa || terminado
   const s = e.sobre
   // Un proceso que no se creó en Auco (fallido) no tiene firmantes ni plazo que mostrar.
   const creado = !!s && s.estado !== 'fallido'
@@ -96,18 +109,36 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
   const docs: DocVisor[] = [
     {
       clave: 'contrato',
-      etiqueta: activa ? 'Documento firmado' : 'Documento enviado a firma',
+      etiqueta: firmado ? 'Documento firmado' : 'Documento enviado a firma',
       cargar: async () => {
         const r = await contratoService.descargarContrato(e.id, { inline: true })
-        // Con la fianza activa, "Documento firmado" nunca muestra el PDF sin firmas.
-        if (activa && r.firmado === false)
+        // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
+        if (firmado && r.firmado === false)
           throw new Error('La versión firmada todavía se está archivando desde Auco. Intenta de nuevo en unos minutos.')
         return r.url
       },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
+    ...(e.acta?.archivos ?? []).map((a, i) => ({
+      clave: `acta-${a.id}`,
+      etiqueta: i === 0 ? 'Acta de entrega' : `Acta anterior (${formatDate(a.subidoEn)})`,
+      cargar: () => v3.archivoUrl(e.id, a.id),
+    })),
   ]
+
+  const subirActa = async (archivo: File | undefined) => {
+    if (!archivo) return
+    if (!TIPOS_ACTA.includes(archivo.type)) {
+      toast.error('El acta debe ser un PDF o una imagen (JPG, PNG o WebP).')
+      return
+    }
+    if (archivo.size > MAX_BYTES_ACTA) {
+      toast.error('El archivo pesa más de 20 MB.')
+      return
+    }
+    if (await v3.subirActa(e.id, archivo)) toast.success('Acta de entrega cargada')
+  }
 
   const actualizar = async () => {
     if (await v3.actualizarFirma()) toast.success('Estado actualizado con Auco')
@@ -130,7 +161,15 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
             {e.ruta === 'B' ? 'Ruta B: contrato de la inmobiliaria con el Anexo de condiciones' : 'Ruta A: contrato de Cofianza'}
           </p>
         </div>
-        {editable && !activa && (
+        {editable && activa && (
+          <div className="flex flex-wrap gap-2">
+            <Button variante="secondary" onClick={() => setPedirMotivoTerminar(true)} disabled={ocupado}>
+              {accion === 'terminar' && <IconLoader size={16} className="animate-spin" />}
+              Terminar contrato
+            </Button>
+          </div>
+        )}
+        {editable && !firmado && (
           <div className="flex flex-wrap gap-2">
             {enFirma && creado && (
               <Button variante="secondary" onClick={actualizar} disabled={ocupado}>
@@ -148,6 +187,19 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         )}
       </div>
       {banner}
+
+      {e.acta?.pendiente && (
+        // §12.1: alerta visible hasta que se cargue el acta; sin ella no se cierra el estudio (§12.2).
+        <div role="alert" className="flex items-start gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+          <IconAlertTriangle size={22} className="mt-0.5 shrink-0 text-amber-600" />
+          <div className="min-w-0 space-y-1">
+            <p className="font-semibold text-amber-900">Falta el acta de entrega e inventario</p>
+            <p className="text-sm text-amber-800">
+              Cárgala firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.
+            </p>
+          </div>
+        </div>
+      )}
 
       {incompleta && (
         // Aviso §11.7.4: no se puede cerrar mientras la firma siga incompleta.
@@ -174,8 +226,23 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
               : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
         )}
+        {activa && e.vigencia && (
+          <p className="text-sm text-gray-700">
+            Término inicial del {dia(e.vigencia.inicio)} al {dia(e.vigencia.vencimientoInicial)}.{' '}
+            {e.vigencia.prorrogas > 0
+              ? `Prorrogado automáticamente ${e.vigencia.prorrogas === 1 ? 'una vez' : `${e.vigencia.prorrogas} veces`}: el período actual vence el ${dia(e.vigencia.venceEl)}.`
+              : 'Si ninguna de las partes da aviso, al vencer se prorroga automáticamente por el mismo término.'}
+          </p>
+        )}
+        {terminado && (
+          <Aviso>
+            {e.fechaTerminacion
+              ? `Contrato terminado el ${formatDateTime(e.fechaTerminacion)}. La fianza ya no opera.`
+              : 'Contrato terminado. La fianza ya no opera.'}
+          </Aviso>
+        )}
 
-        {s && creado && !activa && (
+        {s && creado && !firmado && (
           <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
             <Dato
               label="Enviado a firma"
@@ -238,6 +305,50 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
       </section>
 
+      {e.acta && (
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+          <div>
+            <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {e.acta.pendiente
+                ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
+                : `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`}
+            </p>
+          </div>
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+            <Dato label="Inmueble" valor={[e.acta.datos.inmueble.direccion, e.acta.datos.inmueble.municipio].filter(Boolean).join(', ') || '—'} />
+            <Dato label="Entrega material" valor={e.acta.datos.fechaEntrega ? dia(e.acta.datos.fechaEntrega) : '—'} />
+            <Dato label="Amoblado" valor={e.acta.datos.amoblado == null ? '—' : e.acta.datos.amoblado ? 'Sí' : 'No'} />
+            <Dato
+              label="Partes"
+              valor={e.acta.datos.partes.map((p) => `${ROL_FIRMANTE[p.rol] ?? p.rol}: ${p.nombre}`).join(' · ') || '—'}
+            />
+          </dl>
+          {editable && (
+            <div>
+              <Button variante={e.acta.pendiente ? 'primary' : 'secondary'} onClick={() => actaRef.current?.click()} disabled={ocupado}>
+                {accion === 'acta' ? <IconLoader size={16} className="animate-spin" /> : <IconUpload size={16} />}
+                {e.acta.pendiente ? 'Cargar el acta firmada' : 'Cargar otra versión'}
+              </Button>
+              <p className="mt-1 text-xs text-gray-500">PDF o imagen, máximo 20 MB.</p>
+              {/* sr-only y no `hidden`: Safari de iOS no abre el selector de un input con display:none. */}
+              <input
+                ref={actaRef}
+                type="file"
+                accept={TIPOS_ACTA.join(',')}
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden
+                onChange={(ev) => {
+                  void subirActa(ev.target.files?.[0])
+                  ev.target.value = ''
+                }}
+              />
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
         <div>
           <h2 className="font-display text-lg font-bold text-gray-900">Documentos</h2>
@@ -269,6 +380,21 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         message="Se crea el proceso de firma en Auco con el documento enviado y se notifica a todas las partes. Consume un crédito de firma."
         confirmLabel="Reintentar envío"
         isLoading={accion === 'reintentar'}
+      />
+      <MotivoDialog
+        isOpen={pedirMotivoTerminar}
+        onClose={() => setPedirMotivoTerminar(false)}
+        onConfirm={async (texto) => {
+          const ok = await v3.terminar(e.id, texto)
+          setPedirMotivoTerminar(false)
+          if (ok) toast.success(`Contrato ${e.numero} terminado`)
+        }}
+        title="¿Terminar el contrato?"
+        descripcion="La fianza deja de operar y el inmueble queda disponible. El estudio se cierra aparte, con el acta de entrega."
+        label="Motivo de la terminación"
+        confirmLabel="Terminar contrato"
+        variant="danger"
+        isLoading={accion === 'terminar'}
       />
       <MotivoDialog
         isOpen={pedirMotivo}

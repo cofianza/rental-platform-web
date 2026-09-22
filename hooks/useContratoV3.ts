@@ -43,10 +43,13 @@ export type AccionContratoV3 =
   | 'reintentar'
   | 'actualizar'
   | 'cancelar'
+  // Entrega 6: posfirma
+  | 'terminar'
+  | 'acta'
 
 // Con Auco de por medio, un 5xx puede dejar el contrato en otro estado (FIRMA_ENVIADA_SIN_REGISTRO
 // sí salió; un reenvío fallido deja un proceso fallido a la vista): tras estos errores se recarga.
-const RECARGA_TRAS_5XX: AccionContratoV3[] = ['enviar', 'reenviar', 'reintentar', 'actualizar', 'cancelar']
+const RECARGA_TRAS_5XX: AccionContratoV3[] = ['enviar', 'reenviar', 'reintentar', 'actualizar', 'cancelar', 'terminar']
 
 /**
  * Último 422 al guardar un paso. En el paso 4 trae los hallazgos de las reglas con
@@ -226,6 +229,34 @@ export function useContratoV3(expedienteId: string) {
       }),
     [mutar, expedienteId],
   )
+  /** TERMINADO (§11.6): solo desde FIANZA ACTIVA. Libera el inmueble; el estudio se cierra con el acta. */
+  const terminar = useCallback(
+    (contratoId: string, motivo: string) =>
+      mutar('terminar', async () => {
+        await contratoService.transicionar(contratoId, {
+          nuevo_estado: 'finalizado',
+          comentario: motivo,
+          motivo,
+          estado_esperado: 'vigente',
+        })
+        return contratoV3Service.obtener(expedienteId)
+      }),
+    [mutar, expedienteId],
+  )
+  /** §12.3: el acta de entrega e inventario firmada (PDF o imagen). */
+  const subirActa = useCallback(
+    (contratoId: string, archivo: File) =>
+      mutar('acta', async () => {
+        await contratoService.subirArchivo(contratoId, archivo, 'acta_entrega')
+        return contratoV3Service.obtener(expedienteId)
+      }),
+    [mutar, expedienteId],
+  )
+  /** URL firmada de un archivo del contrato (el acta). */
+  const archivoUrl = useCallback(
+    async (contratoId: string, archivoId: string) => (await contratoService.descargarArchivo(contratoId, archivoId)).url,
+    [],
+  )
 
   return {
     estado,
@@ -248,6 +279,9 @@ export function useContratoV3(expedienteId: string) {
     reintentar,
     actualizarFirma,
     cancelar,
+    terminar,
+    subirActa,
+    archivoUrl,
     fallasEnvio: errorEnvio?.expedienteId === expedienteId ? errorEnvio.fallas : [],
   }
 }
