@@ -70,7 +70,6 @@ export * from './ContratoHistorialModal'
 // HP-341: Firma electronica
 export * from './EnviarFirmaModal'
 export * from './FirmaSolicitudesSection'
-export * from './EvidenciaFirmaModal'
 
 // Citas previas (visitas)
 export * from './CitasSection'

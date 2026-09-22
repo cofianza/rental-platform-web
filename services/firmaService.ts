@@ -7,14 +7,6 @@ import type {
   ISolicitudFirma,
   IContratoFirmante,
   ICrearSolicitudFirmaInput,
-  ISolicitudFirmaPublic,
-  IOtpSolicitarResponse,
-  IOtpVerificarResponse,
-  ICompletarFirmaInput,
-  ICompletarFirmaResponse,
-  IContratoPdfResponse,
-  IEvidenciaFirma,
-  IAcuseDownloadResponse,
   IVerificacionIdentidad,
   IVerificacionIdentidadPublica,
 } from '@/types/firma'
@@ -122,59 +114,6 @@ class FirmaService {
   async continuarIdentidad(token: string): Promise<{ completada: boolean }> {
     const res = await apiClient.post<{ completada: boolean }>(`/public/verificacion-identidad/${token}/continuar`, {})
     return res.data
-  }
-
-  async validarToken(token: string): Promise<ISolicitudFirmaPublic> {
-    const response = (await apiClient.get(
-      `/public/firma/${token}`
-    )) as unknown as { success: boolean; data: ISolicitudFirmaPublic }
-    return response.data
-  }
-
-  async solicitarOtp(token: string): Promise<IOtpSolicitarResponse> {
-    const response = (await apiClient.post(
-      `/public/firma/${token}/otp/solicitar`
-    )) as unknown as { success: boolean; data: IOtpSolicitarResponse }
-    return response.data
-  }
-
-  async verificarOtp(token: string, codigo: string): Promise<IOtpVerificarResponse> {
-    const response = (await apiClient.post(
-      `/public/firma/${token}/otp/verificar`,
-      { codigo }
-    )) as unknown as { success: boolean; data: IOtpVerificarResponse }
-    return response.data
-  }
-
-  async completarFirma(token: string, input: ICompletarFirmaInput): Promise<ICompletarFirmaResponse> {
-    const response = (await apiClient.post(
-      `/public/firma/${token}/completar`,
-      input
-    )) as unknown as { success: boolean; data: ICompletarFirmaResponse }
-    return response.data
-  }
-
-  // HP-342: Get contract PDF signed URL for viewer
-  async getContratoPdf(token: string): Promise<IContratoPdfResponse> {
-    const response = (await apiClient.get(
-      `/public/firma/${token}/pdf`
-    )) as unknown as { success: boolean; data: IContratoPdfResponse }
-    return response.data
-  }
-
-  // HP-344: Evidencia de firma
-  async getEvidencia(solicitudId: string): Promise<IEvidenciaFirma> {
-    const response = (await apiClient.get(
-      `/firma/solicitudes/${solicitudId}/evidencia`
-    )) as unknown as { success: boolean; data: IEvidenciaFirma }
-    return response.data
-  }
-
-  async downloadAcuse(solicitudId: string): Promise<IAcuseDownloadResponse> {
-    const response = (await apiClient.get(
-      `/firma/solicitudes/${solicitudId}/evidencia/pdf`
-    )) as unknown as { success: boolean; data: IAcuseDownloadResponse }
-    return response.data
   }
 }
 

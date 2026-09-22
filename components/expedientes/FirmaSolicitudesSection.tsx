@@ -3,9 +3,8 @@
 import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle, IconShieldCheck } from '@/components/icons'
+import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle } from '@/components/icons'
 import { EnviarFirmaModal } from './EnviarFirmaModal'
-import { EvidenciaFirmaModal } from './EvidenciaFirmaModal'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { ISolicitudFirma, EstadoSolicitudFirma } from '@/types/firma'
@@ -46,7 +45,6 @@ export function FirmaSolicitudesSection({
   // Email destino del reenvío — prellenado con el del firmante y corregible
   // en el modal (antes era solo lectura y un email mal escrito no tenía arreglo).
   const [reenviarEmail, setReenviarEmail] = useState('')
-  const [evidenciaTarget, setEvidenciaTarget] = useState<ISolicitudFirma | null>(null)
 
   const fetchSolicitudes = useCallback(async () => {
     setIsLoading(true)
@@ -183,16 +181,6 @@ export function FirmaSolicitudesSection({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {s.estado === 'firmado' && (
-                    <button
-                      onClick={() => setEvidenciaTarget(s)}
-                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 rounded-md hover:bg-green-100"
-                      title="Ver evidencia de firma"
-                    >
-                      <IconShieldCheck size={12} />
-                      Evidencia
-                    </button>
-                  )}
                   {isActive && canManage && (
                     <>
                       <button
@@ -240,16 +228,6 @@ export function FirmaSolicitudesSection({
         defaultEmail={defaultEmail}
         defaultTelefono={defaultTelefono}
       />
-
-      {/* Evidence modal for firmado solicitudes */}
-      {evidenciaTarget && (
-        <EvidenciaFirmaModal
-          isOpen={!!evidenciaTarget}
-          onClose={() => setEvidenciaTarget(null)}
-          solicitudId={evidenciaTarget.id}
-          nombreFirmante={evidenciaTarget.nombre_firmante}
-        />
-      )}
 
       {/* Confirmation modal for reenviar */}
       {reenviarTarget && (
