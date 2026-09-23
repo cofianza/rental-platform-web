@@ -505,6 +505,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                       proveedorActual={estudio.proveedor}
                       persona={persona}
                       esTitular={persona?.etiqueta !== 'Co-arrendatario'}
+                      expedienteId={expedienteId}
                       esReconsulta={esCondicionadoSinInfo(estudio)}
                       esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
                       onRetried={fetchEstudios}

@@ -31,11 +31,11 @@ export const autorizacionService = {
     return res.data
   },
 
-  /** Envía/reenvía el enlace. `contacto` corrige email/teléfono del
-   *  solicitante si estaban mal escritos (se persiste server-side). */
+  /** Envía/reenvía el enlace. `contacto` corrige email/teléfono (o el
+   *  documento) del solicitante si estaban mal escritos (se persiste server-side). */
   async enviarEnlace(
     expedienteId: string,
-    contacto?: { email?: string; telefono?: string },
+    contacto?: { email?: string; telefono?: string; tipo_documento?: string; numero_documento?: string },
   ): Promise<IEnviarEnlaceResponse> {
     const res = await apiClient.post<IEnviarEnlaceResponse>(
       `/expedientes/${expedienteId}/autorizacion-riesgo/enviar-enlace`,

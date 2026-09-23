@@ -195,6 +195,7 @@ export function AprobarCondicionadoCard({
                           proveedorActual={estudioTitular!.proveedor}
                           persona={persona}
                           esTitular
+                          expedienteId={expedienteId}
                           esReconsulta
                           onRetried={onReconsultado}
                         />

@@ -17,8 +17,10 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { IconLoader, IconRefresh } from '@/components/icons'
+import { IconLoader, IconMail, IconRefresh } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
+import { autorizacionService } from '@/services/autorizacionService'
+import { ApiClientError } from '@/lib/api'
 
 // Tipos soportados por TransUnion Colombia (mismo set que el backend acepta
 // en ejecutarEstudioBodySchema). Pasaporte se excluye a propósito: falla con
@@ -113,6 +115,11 @@ interface ReintentarEstudioFormProps {
   /** true = titular (el documento corregido se sincroniza en el solicitante). */
   esTitular?: boolean
   /**
+   * Para pedir una autorización nueva cuando la firmada es de otro documento
+   * (cédula mal digitada y corregida aquí). Solo titular.
+   */
+  expedienteId?: string
+  /**
    * true cuando el estudio no falló sino que quedó condicionado sin
    * información del buró. El backend solo deja re-ejecutarlo si se CAMBIA de
    * proveedor, así que el form arranca con el otro buró y lo exige.
@@ -129,6 +136,7 @@ export function ReintentarEstudioForm({
   proveedorActual,
   persona,
   esTitular = true,
+  expedienteId,
   esReconsulta = false,
   esPrimeraEjecucion = false,
   onRetried,
@@ -153,6 +161,10 @@ export function ReintentarEstudioForm({
     return proponerPrimerApellido(persona?.nombre)
   })
   const [reintentando, setReintentando] = useState(false)
+  // La persona firmó con otro documento: consultar el corregido exige que
+  // vuelva a autorizar (Ley 1266), así que se ofrece enviarle el enlace.
+  const [firmoOtroDocumento, setFirmoOtroDocumento] = useState(false)
+  const [enviandoAutorizacion, setEnviandoAutorizacion] = useState(false)
 
   // Solo DataCrédito valida el apellido (contra Registraduría, y únicamente
   // cuando el documento es CC). Con TransUnion el campo sobra y solo distrae.
@@ -193,6 +205,11 @@ export function ReintentarEstudioForm({
       )
       onRetried?.()
     } catch (err) {
+      const motivo =
+        err instanceof ApiClientError && err.code === 'AUTORIZACION_PREVIA_REQUERIDA'
+          ? (err.details as unknown as { motivo?: string } | undefined)?.motivo
+          : undefined
+      if (motivo === 'documento_distinto' && esTitular && expedienteId) setFirmoOtroDocumento(true)
       toast.error(
         err instanceof Error
           ? err.message
@@ -204,6 +221,24 @@ export function ReintentarEstudioForm({
       onRetried?.()
     } finally {
       setReintentando(false)
+    }
+  }
+
+  const handleEnviarAutorizacion = async () => {
+    if (!expedienteId) return
+    setEnviandoAutorizacion(true)
+    try {
+      await autorizacionService.enviarEnlace(expedienteId, {
+        tipo_documento: tipoDoc,
+        numero_documento: numeroDoc.trim(),
+      })
+      toast.success('Enviamos la nueva autorización. Cuando la persona la firme, reintenta la consulta.')
+      setFirmoOtroDocumento(false)
+      onRetried?.()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar la autorización.')
+    } finally {
+      setEnviandoAutorizacion(false)
     }
   }
 
@@ -316,9 +351,27 @@ export function ReintentarEstudioForm({
           ? ' El estudio quedará registrado con el buró seleccionado.'
           : ''}
         {esTitular
-          ? ` Al ${esPrimeraEjecucion ? 'ejecutar' : 'reintentar'}, el documento se actualiza también en los datos del solicitante.`
+          ? ' Si la consulta se ejecuta, el documento corregido también queda en los datos del solicitante.'
           : ''}
       </p>
+      {firmoOtroDocumento && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <p className="text-xs text-amber-900">
+            La persona autorizó la consulta con otro documento. Para consultar este, tiene que volver a
+            autorizar: le enviamos un enlace nuevo y el documento se corrige en sus datos. La autorización
+            anterior queda como registro.
+          </p>
+          <button
+            type="button"
+            onClick={handleEnviarAutorizacion}
+            disabled={enviandoAutorizacion || numeroDoc.trim().length < 5}
+            className="mt-2 inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-amber-900 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {enviandoAutorizacion ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
+            {enviandoAutorizacion ? 'Enviando…' : 'Enviar nueva autorización con este documento'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -305,6 +305,7 @@ export function EstudioEstadoCard({
           estudio={estudioTitular}
           etiqueta="Titular"
           persona={titularSolicitante}
+          expedienteId={expedienteId}
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
@@ -352,6 +353,8 @@ interface EstudioPanelProps {
   ocultarReconsulta?: boolean
   /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
   inmuebleActualId?: string | null
+  /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
+  expedienteId?: string
   onReasignado?: () => void
 }
 
@@ -365,6 +368,7 @@ function EstudioPanel({
   ocultarReconsulta,
   inmuebleActualId,
   onReasignado,
+  expedienteId,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
@@ -537,6 +541,7 @@ function EstudioPanel({
               proveedorActual={estudio.proveedor}
               persona={persona}
               esTitular={etiqueta === 'Titular'}
+              expedienteId={expedienteId}
               esReconsulta={esReconsulta}
               esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
               onRetried={onRetried}
