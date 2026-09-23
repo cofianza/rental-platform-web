@@ -700,7 +700,8 @@ function PagoTableRow({
                 </>
               )}
 
-              {pago.estado === 'pendiente' && canManage && (
+              {/* 'fallido' también: MP deja pagar el mismo checkout, y un pago manual del concepto lo exige cerrado */}
+              {(pago.estado === 'pendiente' || pago.estado === 'fallido') && canManage && (
                 <button
                   onClick={() => onCancelar(pago.id)}
                   className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -841,7 +842,7 @@ function PagoCard({
               </>
             )}
 
-            {pago.estado === 'pendiente' && canManage && (
+            {(pago.estado === 'pendiente' || pago.estado === 'fallido') && canManage && (
               <button
                 onClick={() => onCancelar(pago.id)}
                 className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
