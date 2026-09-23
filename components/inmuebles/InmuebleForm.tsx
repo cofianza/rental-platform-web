@@ -29,6 +29,7 @@ import type {
   TipoInmueble,
   UsoInmueble,
 } from '@/types/inmueble'
+import { FOTO_LIMITS } from '@/types/inmueble'
 // No importamos IUserProfile ya que solo usamos el ID del propietario
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
@@ -485,6 +486,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         // Upload fotos adicionales si hay
         if (fotosAdicionales.length > 0 && newInmueble?.id) {
           let uploaded = 0
+          let fallidas = 0
           for (const foto of fotosAdicionales) {
             try {
               await inmuebleService.uploadFoto(newInmueble.id, foto.file, {
@@ -492,11 +494,17 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               })
               uploaded++
             } catch {
-              // Continuar con las demas fotos si una falla
+              // Continuar con las demás fotos si una falla; se avisa al final
+              fallidas++
             }
           }
           if (uploaded > 0) {
             toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
+          }
+          if (fallidas > 0) {
+            toast.warning(
+              `No se ${fallidas > 1 ? 'subieron' : 'subió'} ${fallidas} foto${fallidas > 1 ? 's' : ''}; agrégala${fallidas > 1 ? 's' : ''} desde la pestaña Galería del inmueble`,
+            )
           }
         }
 
@@ -543,25 +551,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           matricula_inmobiliaria: formData.matricula_inmobiliaria.trim() || null,
         }
 
+        // En edición las fotos se gestionan en GaleriaSection, no aquí.
         await inmuebleService.updateInmueble(inmueble.id, updateData)
-
-        // Upload fotos adicionales si hay (en modo edicion)
-        if (fotosAdicionales.length > 0) {
-          let uploaded = 0
-          for (const foto of fotosAdicionales) {
-            try {
-              await inmuebleService.uploadFoto(inmueble.id, foto.file, {
-                orden: uploaded + 1,
-              })
-              uploaded++
-            } catch {
-              // Continuar con las demas
-            }
-          }
-          if (uploaded > 0) {
-            toast.success(`${uploaded} foto${uploaded > 1 ? 's' : ''} adicional${uploaded > 1 ? 'es' : ''} subida${uploaded > 1 ? 's' : ''}`)
-          }
-        }
 
         toast.success(INMUEBLE_MESSAGES.UPDATE_SUCCESS)
       }
@@ -714,7 +705,14 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                       className="hidden"
                       disabled={isSubmitting}
                       onChange={(e) => {
-                        const files = Array.from(e.target.files || [])
+                        // Se descartan aquí las que uploadFoto rechazaría, para
+                        // que no queden en la vista previa y se pierdan al guardar.
+                        const allowedTypes: readonly string[] = FOTO_LIMITS.ALLOWED_TYPES
+                        const files = Array.from(e.target.files || []).filter((file) => {
+                          const ok = allowedTypes.includes(file.type) && file.size <= FOTO_LIMITS.MAX_FILE_SIZE
+                          if (!ok) toast.error(`${file.name}: supera 5 MB o no es JPG, PNG o WebP`)
+                          return ok
+                        })
                         const remaining = 10 - fotosAdicionales.length
                         const toAdd = files.slice(0, remaining)
                         const newFotos = toAdd.map((file) => ({
