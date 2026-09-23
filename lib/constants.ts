@@ -252,13 +252,13 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Administración',
   },
   {
-    // Contratos V3 Entrega 4: biblioteca de Cofianza + registro de las cláusulas
+    // Contratos V3 Entrega 4: modelos sugeridos por Cofianza + registro de las cláusulas
     // de las inmobiliarias. Solo administrador: 'configuracion' también lo leen
     // otros roles, pero esta vista es de Cofianza.
     label: 'Cláusulas adicionales',
     href: '/admin/clausulas-adicionales',
     icon: 'FileCheck',
-    description: 'Biblioteca y registro de cláusulas adicionales',
+    description: 'Modelos sugeridos y registro de cláusulas adicionales',
     resource: 'configuracion',
     requiredRoles: ['administrador'],
     group: 'Administración',

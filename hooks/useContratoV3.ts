@@ -23,6 +23,7 @@ import type {
   GuardarPasoBody,
   Hallazgo,
   NumeroPaso,
+  OrigenClausula,
   Paso1,
   Paso2,
   Paso3,
@@ -458,9 +459,13 @@ export function validarPaso5(d: Borrador<Paso5>, ctx: { conCoarrendatario?: bool
 
 /** Estado de formulario del paso 4 (la página lo inicia desde guardados[4]). */
 export interface FormPaso4 {
-  elegidas: { clausulaId: string; valores: Record<string, string> }[]
+  /** `origen` = categoría (Adenda 1 contratos, resp. 13): 'biblioteca' = modelo de Cofianza sin cambios. */
+  elegidas: { clausulaId: string; valores: Record<string, string>; origen?: OrigenClausula }[]
   acepto: boolean
 }
+
+/** Resp. 13: la aceptación es solo para las cláusulas propias (sin categoría conocida, se pide). */
+export const requiereAceptacion = (d: FormPaso4) => d.elegidas.some((e) => e.origen !== 'biblioteca')
 
 /** Tope técnico del API: la numeración llega a QUINCUAGÉSIMA OCTAVA. El máximo sin revisión es adicionales.maximo. */
 const MAX_ADICIONALES = 25
@@ -484,7 +489,7 @@ export function validarPaso4(
         : new Set(ids).size !== ids.length
           ? 'Hay una cláusula repetida en la lista'
           : null,
-    acepto: d.acepto ? null : 'Acepta el aviso de responsabilidad para continuar',
+    acepto: d.acepto || !requiereAceptacion(d) ? null : 'Acepta el aviso de responsabilidad de tus cláusulas propias para continuar',
   })
   d.elegidas.forEach((e, i) => {
     for (const campo of ctx.campos[e.clausulaId] ?? []) {
@@ -495,14 +500,17 @@ export function validarPaso4(
   return errores
 }
 
-/** Cuerpo del PUT del paso 4. Una cláusula sin [[campo]] (las propias) no lleva `valores`. */
+/**
+ * Cuerpo del PUT del paso 4. Una cláusula sin [[campo]] (las propias) no lleva `valores`.
+ * La aceptación va solo si se marcó: con solo modelos sin cambios el API no la pide.
+ */
 export function entradaPaso4(d: FormPaso4, avisoVersion: string): Paso4Entrada {
   if (d.elegidas.length === 0) return { omitir: true }
   return {
     clausulas: d.elegidas.map(({ clausulaId, valores }) =>
       Object.keys(valores).length ? { clausulaId, valores } : { clausulaId },
     ),
-    aceptoResponsabilidad: true,
+    ...(d.acepto ? { aceptoResponsabilidad: true as const } : {}),
     avisoVersion,
   }
 }

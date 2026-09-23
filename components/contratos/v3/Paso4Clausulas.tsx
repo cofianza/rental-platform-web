@@ -1,11 +1,15 @@
 /**
  * Paso 4 del asistente de contratos V3: cláusulas adicionales (Entrega 4).
  *
- * Solo la inmobiliaria del contrato arma la lista (biblioteca de Cofianza y
- * cláusulas propias) y acepta el aviso de responsabilidad; los roles internos
- * la ven en solo lectura. La lista vive en la página (forms[4]); aquí se pinta
- * con los ordinales reales que calcula el API. Las reglas, el máximo y la
- * autorización del exceso los decide el API; aquí solo se muestran.
+ * Solo la inmobiliaria del contrato arma la lista (modelos sugeridos por
+ * Cofianza y cláusulas propias) y acepta el aviso de responsabilidad; los roles
+ * internos la ven en solo lectura. La lista vive en la página (forms[4]); aquí
+ * se pinta con los ordinales reales que calcula el API. Las reglas, el máximo y
+ * la autorización del exceso los decide el API; aquí solo se muestran.
+ *
+ * Adenda 1 del módulo de contratos, respuesta 13: un modelo sin cambios es texto
+ * de Cofianza y queda fuera de la indemnidad; la aceptación se pide solo si hay
+ * cláusulas propias.
  */
 
 'use client'
@@ -24,7 +28,7 @@ import {
 } from '@/components/icons'
 import { formatDate, formatDateTime } from '@/lib/constants'
 import { useClausulasAdicionales } from '@/hooks/useClausulasAdicionales'
-import type { ErrorPaso, ErroresPaso, FormPaso4 } from '@/hooks/useContratoV3'
+import { requiereAceptacion, type ErrorPaso, type ErroresPaso, type FormPaso4 } from '@/hooks/useContratoV3'
 import { soporteService } from '@/services/soporteService'
 import type { ClausulaCatalogo, EstadoAsistente, Paso4 } from '@/types/contratoV3'
 import { Aviso, Campo, EncabezadoPaso } from './campos'
@@ -81,7 +85,10 @@ export function Paso4Clausulas(p: Props) {
   const guardadas = new Map((guardado?.clausulas ?? []).map((c) => [c.clausulaId, c]))
   // La aceptación guardada vale mientras la lista no cambie y el aviso sea el mismo.
   const aceptacion =
-    sinCambios && guardado?.aceptacion.avisoVersion === adicionales.aviso.version ? guardado.aceptacion : null
+    sinCambios && guardado?.aceptacion?.avisoVersion === adicionales.aviso.version ? guardado.aceptacion : null
+  // Resp. 13: los modelos sin cambios llevan su propio aviso; la casilla es solo para las propias.
+  const hayModelos = elegidas.some((e) => e.origen === 'biblioteca')
+  const pideAceptacion = requiereAceptacion(value)
 
   // Las claves de `valores` siguen los [[campo]] de la versión vigente del catálogo: el API
   // guarda siempre esa versión, y una versión nueva puede traer otros datos (si no, 422 CLAUSULA_CAMPOS
@@ -89,7 +96,9 @@ export function Paso4Clausulas(p: Props) {
   const remapear = (lista: FormPaso4['elegidas']) =>
     lista.map((e) => {
       const c = porId.get(e.clausulaId)
-      return c ? { ...e, valores: Object.fromEntries(c.campos.map((k) => [k, e.valores[k] ?? ''])) } : e
+      return c
+        ? { ...e, origen: c.origen, valores: Object.fromEntries(c.campos.map((k) => [k, e.valores[k] ?? ''])) }
+        : e
     })
   // Cualquier cambio en la lista (o en sus datos) exige aceptar de nuevo el aviso.
   const cambiar = (lista: FormPaso4['elegidas']) => onChange({ elegidas: remapear(lista), acepto: false })
@@ -101,7 +110,10 @@ export function Paso4Clausulas(p: Props) {
       return
     }
     // Las claves de `valores` son los [[campo]]: así el paso sabe qué datos exigir.
-    cambiar([...elegidas, { clausulaId: c.id, valores: Object.fromEntries(c.campos.map((k) => [k, ''])) }])
+    cambiar([
+      ...elegidas,
+      { clausulaId: c.id, origen: c.origen, valores: Object.fromEntries(c.campos.map((k) => [k, ''])) },
+    ])
   }
   // Lo último que se pintó: "Deshacer" repone la cláusula en la lista de ESE momento, no en la de cuando se quitó.
   const actual = useRef(value)
@@ -182,7 +194,7 @@ export function Paso4Clausulas(p: Props) {
         {n === 0 ? (
           <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
             {incorpora
-              ? 'Este contrato no lleva cláusulas adicionales. Agrégalas desde la biblioteca o desde tus cláusulas, o continúa sin ellas.'
+              ? 'Este contrato no lleva cláusulas adicionales. Agrégalas desde los modelos sugeridos por Cofianza o desde tus cláusulas, o continúa sin ellas.'
               : 'Este contrato no lleva cláusulas adicionales. Solo la inmobiliaria del contrato puede incorporarlas.'}
           </p>
         ) : (
@@ -211,7 +223,7 @@ export function Paso4Clausulas(p: Props) {
                         {origen && (
                           <Badge
                             estado={origen}
-                            label={origen === 'biblioteca' ? 'Biblioteca' : 'Propia'}
+                            label={origen === 'biblioteca' ? 'Modelo de Cofianza' : 'Propia'}
                             className={origen === 'biblioteca' ? 'border-primary-200 bg-primary-50 text-primary-700' : ''}
                           />
                         )}
@@ -325,28 +337,33 @@ export function Paso4Clausulas(p: Props) {
               <IconShield size={18} className="text-primary-600" />
               <h3 className="text-sm font-semibold text-gray-900">Aviso de responsabilidad</h3>
             </div>
-            <p className="text-sm text-gray-700">{adicionales.aviso.texto}</p>
-            {aceptacion ? (
-              <Aceptado a={aceptacion} />
-            ) : (
-              <div>
-                <label className="flex cursor-pointer items-start gap-2.5 text-sm font-medium text-gray-900">
-                  <input
-                    type="checkbox"
-                    aria-invalid={!!errores.acepto}
-                    checked={value.acepto}
-                    onChange={(ev) => onChange({ elegidas: remapear(elegidas), acepto: ev.target.checked })}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
-                  />
-                  Acepto, en nombre de la inmobiliaria, este aviso de responsabilidad sobre las cláusulas adicionales
-                  de este contrato.
-                </label>
-                {errores.acepto && <p className="mt-1 text-xs text-red-600">{errores.acepto}</p>}
-              </div>
+            {hayModelos && <p className="text-sm text-gray-700">{adicionales.aviso.modelos}</p>}
+            {pideAceptacion && (
+              <>
+                <p className="text-sm text-gray-700">{adicionales.aviso.texto}</p>
+                {aceptacion ? (
+                  <Aceptado a={aceptacion} />
+                ) : (
+                  <div>
+                    <label className="flex cursor-pointer items-start gap-2.5 text-sm font-medium text-gray-900">
+                      <input
+                        type="checkbox"
+                        aria-invalid={!!errores.acepto}
+                        checked={value.acepto}
+                        onChange={(ev) => onChange({ elegidas: remapear(elegidas), acepto: ev.target.checked })}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
+                      />
+                      Acepto, en nombre de la inmobiliaria, este aviso de responsabilidad sobre las cláusulas propias
+                      de este contrato.
+                    </label>
+                    {errores.acepto && <p className="mt-1 text-xs text-red-600">{errores.acepto}</p>}
+                  </div>
+                )}
+              </>
             )}
           </section>
         ) : (
-          guardado && <Aceptado a={guardado.aceptacion} />
+          guardado?.aceptacion && <Aceptado a={guardado.aceptacion} />
         ))}
 
       <ConfirmDialog
@@ -364,7 +381,7 @@ export function Paso4Clausulas(p: Props) {
   )
 }
 
-function Aceptado({ a }: { a: Paso4ConClausulas['aceptacion'] }) {
+function Aceptado({ a }: { a: NonNullable<Paso4ConClausulas['aceptacion']> }) {
   return (
     <p className="flex items-start gap-1.5 text-xs text-gray-600">
       <IconCheckCircle size={14} className="mt-px shrink-0 text-primary-600" />

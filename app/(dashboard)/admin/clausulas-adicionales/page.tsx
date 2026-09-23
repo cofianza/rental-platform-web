@@ -1,9 +1,10 @@
 /**
  * Cláusulas adicionales — administrador (Contratos V3, Entrega 4, diseño §7).
  *
- * - Biblioteca: modelos sugeridos por Cofianza (inmobiliaria_id NULL). Crear y
- *   editar con EditorClausula en modo biblioteca (admite [[campo]]); inhabilitar
- *   con motivo o reactivar.
+ * - Modelos sugeridos por Cofianza (la «biblioteca» del API, inmobiliaria_id
+ *   NULL; así se llaman desde la Adenda 1 del módulo de contratos, respuesta 13).
+ *   Crear y editar con EditorClausula en modo biblioteca (admite [[campo]]);
+ *   inhabilitar con motivo o reactivar.
  * - Registro: cláusulas propias de las inmobiliarias. Solo lectura del texto y
  *   de sus usos; Cofianza puede inhabilitarlas hacia adelante (los borradores
  *   que la usan quedan bloqueados en el paso 4; los firmados no cambian).
@@ -67,11 +68,11 @@ function Contenido() {
     <div className="space-y-2">
       <PageHeader
         title="Cláusulas adicionales"
-        subtitle="Biblioteca de Cofianza y registro de las cláusulas de las inmobiliarias."
+        subtitle="Modelos sugeridos por Cofianza y registro de las cláusulas de las inmobiliarias."
       />
       <Tabs
         tabs={[
-          { id: 'biblioteca', label: 'Biblioteca' },
+          { id: 'biblioteca', label: 'Modelos sugeridos' },
           { id: 'registro', label: 'Registro' },
         ]}
         activeTab={pestana}
@@ -101,13 +102,13 @@ function Biblioteca() {
       <div className="flex justify-end">
         <Button onClick={() => setEditor({ clausula: null })}>
           <IconPlus size={16} />
-          Nueva cláusula
+          Nuevo modelo
         </Button>
       </div>
       <Tabla
         datos={datos}
         biblioteca
-        vacio="La biblioteca está vacía. Agrega la primera cláusula sugerida."
+        vacio="Aún no hay modelos sugeridos. Agrega el primero."
         onEditar={(c) => setEditor({ clausula: c })}
       />
       <EditorClausula

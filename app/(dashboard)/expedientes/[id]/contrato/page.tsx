@@ -238,9 +238,15 @@ type Formularios = { 1: Borrador<Paso1>; 2: Borrador<Paso2>; 3: Borrador<Paso3>;
 
 /** Formulario del paso 4 armado desde lo guardado en el servidor (o la lista del contrato cancelado). */
 const form4De = (g: Contrato['guardados'][4] | Contrato['prefill'][4]): FormPaso4 => ({
-  elegidas: g && 'clausulas' in g ? g.clausulas.map((c) => ({ clausulaId: c.clausulaId, valores: c.valores ?? {} })) : [],
+  elegidas:
+    g && 'clausulas' in g
+      ? g.clausulas.map((c) => ({ clausulaId: c.clausulaId, valores: c.valores ?? {}, origen: c.origen }))
+      : [],
   acepto: false,
 })
+
+/** Bloqueos del paso 4 que se resuelven volviendo a guardarlo. */
+const REGUARDAR_PASO4 = ['REVISION_AUTOMATICA_PENDIENTE', 'CLAUSULA_MODELO_ALTERADO', 'ACEPTACION_PENDIENTE']
 
 /** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
 const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
@@ -338,12 +344,14 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const incorpora = editable && rol === 'inmobiliaria'
   const g4 = guardados[4]
   const guardado4 = g4 && 'clausulas' in g4 ? g4 : null
-  // REVISION_AUTOMATICA_PENDIENTE (la IA se encendió después de guardar) pide "vuelve a guardar el
-  // paso 4": para la inmobiliaria cuenta como cambio, así ve la casilla y "Guardar y continuar".
+  // Estos bloqueos piden "vuelve a guardar el paso 4" (la IA se encendió después, un modelo ya no
+  // coincide o la aceptación no cubre las propias): para la inmobiliaria cuentan como cambio, así ve
+  // la casilla y "Guardar y continuar".
   const sinCambios4 =
-    !sucios.includes(4) && !(incorpora && bloqueos.some((b) => b.codigo === 'REVISION_AUTOMATICA_PENDIENTE'))
-  // Lo guardado sigue valiendo: sin cambios y, si hay cláusulas, con el aviso vigente aceptado.
-  const vigente4 = !!g4 && sinCambios4 && (!guardado4 || guardado4.aceptacion.avisoVersion === adicionales.aviso.version)
+    !sucios.includes(4) && !(incorpora && bloqueos.some((b) => REGUARDAR_PASO4.includes(b.codigo)))
+  // Lo guardado sigue valiendo: sin cambios y, si hubo aceptación (solo con propias), del aviso vigente.
+  const vigente4 =
+    !!g4 && sinCambios4 && (!guardado4?.aceptacion || guardado4.aceptacion.avisoVersion === adicionales.aviso.version)
   const primario4: { etiqueta: string; guarda: boolean } =
     rutaB
       ? { etiqueta: 'Continuar', guarda: false }

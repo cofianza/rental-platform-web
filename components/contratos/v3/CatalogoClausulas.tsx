@@ -1,6 +1,7 @@
 /**
  * Catálogo de cláusulas adicionales del paso 4 (Contratos V3, Entrega 4), solo
- * para la inmobiliaria: biblioteca de Cofianza y sus cláusulas propias.
+ * para la inmobiliaria: modelos sugeridos por Cofianza (la «biblioteca» del API)
+ * y sus cláusulas propias.
  * "Agregar" las pasa a la lista del contrato (la maneja el paso 4); redactar,
  * editar y eliminar las propias pasa por el API (useClausulasAdicionales).
  */
@@ -112,7 +113,7 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
     <div>
       <Tabs
         tabs={[
-          { id: 'biblioteca', label: 'Biblioteca de Cofianza', count: catalogo.biblioteca.length },
+          { id: 'biblioteca', label: 'Modelos sugeridos por Cofianza', count: catalogo.biblioteca.length },
           { id: 'propias', label: 'Mis cláusulas', count: catalogo.propias.length },
         ]}
         activeTab={pestana}
@@ -121,14 +122,17 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
 
       {/* Los dos paneles quedan montados para que cada búsqueda conserve lo escrito. */}
       <div role="tabpanel" id="panel-biblioteca" aria-labelledby="tab-biblioteca" hidden={pestana !== 'biblioteca'} className="space-y-3 pt-4">
+        {/* Adenda 1 del módulo de contratos, respuesta 13: sin cambios son texto de Cofianza. */}
         <p className="text-sm text-gray-500">
-          Modelos sugeridos por Cofianza. Al incorporarlos quedan bajo responsabilidad de la inmobiliaria.
+          Si los incorporas sin cambios, son texto de Cofianza y no quedan cubiertos por la indemnidad de la
+          inmobiliaria. Si necesitas cambiar uno, redacta tu versión en «Mis cláusulas»: será una cláusula propia,
+          de tu responsabilidad.
         </p>
         <SearchInput
           placeholder="Buscar por título o texto"
           onSearch={(v) => setQ((p) => (p.biblioteca === v ? p : { ...p, biblioteca: v }))}
         />
-        {lista(catalogo.biblioteca, q.biblioteca, 'Cofianza aún no ha publicado cláusulas en la biblioteca.')}
+        {lista(catalogo.biblioteca, q.biblioteca, 'Cofianza aún no ha publicado modelos sugeridos.')}
       </div>
 
       <div role="tabpanel" id="panel-propias" aria-labelledby="tab-propias" hidden={pestana !== 'propias'} className="space-y-3 pt-4">
