@@ -152,12 +152,13 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
           <label htmlFor="regenerar-contrato-modal-valor-del-canon-opcional" className="block text-sm font-medium text-gray-700 mb-1">
             Valor del canon (opcional)
           </label>
+          {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
           <input id="regenerar-contrato-modal-valor-del-canon-opcional"
-            type="number"
-            value={valorArriendo}
-            onChange={(e) => setValorArriendo(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            value={valorArriendo ? Number(valorArriendo).toLocaleString('es-CO') : ''}
+            onChange={(e) => setValorArriendo(e.target.value.replace(/\D/g, '').slice(0, 12))}
             placeholder="Sin cambios se conserva el canon actual"
-            min={0}
             disabled={submitting}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
           />

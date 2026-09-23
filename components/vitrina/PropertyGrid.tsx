@@ -59,8 +59,8 @@ export function PropertyGrid() {
   const [ciudad, setCiudad] = useState(searchParams.get('ciudad') || '')
   const [tipo, setTipo] = useState(searchParams.get('tipo') || '')
   const [habitaciones, setHabitaciones] = useState(searchParams.get('habitaciones') || '')
-  const [precioMin, setPrecioMin] = useState(searchParams.get('precio_min') || '')
-  const [precioMax, setPrecioMax] = useState(searchParams.get('precio_max') || '')
+  const [precioMin, setPrecioMin] = useState((searchParams.get('precio_min') || '').replace(/\D/g, ''))
+  const [precioMax, setPrecioMax] = useState((searchParams.get('precio_max') || '').replace(/\D/g, ''))
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1)
 
   // Data state
@@ -236,10 +236,12 @@ export function PropertyGrid() {
         {/* Precio min */}
         <div className="min-w-[120px]">
           <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio min</label>
+          {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
           <input id="property-grid-precio-min"
-            type="number"
-            value={precioMin}
-            onChange={(e) => handleFilterChange(setPrecioMin)(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
+            onChange={(e) => handleFilterChange(setPrecioMin)(e.target.value.replace(/\D/g, '').slice(0, 12))}
             placeholder="$0"
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
@@ -249,9 +251,10 @@ export function PropertyGrid() {
         <div className="min-w-[120px]">
           <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio max</label>
           <input id="property-grid-precio-max"
-            type="number"
-            value={precioMax}
-            onChange={(e) => handleFilterChange(setPrecioMax)(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
+            onChange={(e) => handleFilterChange(setPrecioMax)(e.target.value.replace(/\D/g, '').slice(0, 12))}
             placeholder="Sin limite"
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />

@@ -196,12 +196,13 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             <label htmlFor="pago-manual-modal-monto-cop" className="block text-sm font-medium text-gray-700 mb-1">
               Monto (COP) <span className="text-red-500">*</span>
             </label>
+            {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
             <input id="pago-manual-modal-monto-cop"
-              type="number"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="Ej: 150000"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              value={monto ? Number(monto).toLocaleString('es-CO') : ''}
+              onChange={(e) => setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))}
+              placeholder="Ej: 150.000"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               disabled={isSubmitting}
             />

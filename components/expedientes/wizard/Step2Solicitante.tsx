@@ -945,17 +945,16 @@ function SolicitanteForm({
             <label htmlFor="solicitante-formData-ingresos_mensuales" className="block text-sm font-medium text-gray-700 mb-1">
               {WIZARD_MESSAGES.LABEL_INGRESOS}
             </label>
+            {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
             <input id="solicitante-formData-ingresos_mensuales"
-              type="number"
-              value={formData.ingresos_mensuales || ''}
-              onChange={(e) =>
-                onUpdateField(
-                  'ingresos_mensuales',
-                  e.target.value ? Number(e.target.value) : undefined
-                )
-              }
+              type="text"
+              inputMode="numeric"
+              value={formData.ingresos_mensuales ? formData.ingresos_mensuales.toLocaleString('es-CO') : ''}
+              onChange={(e) => {
+                const digitos = e.target.value.replace(/\D/g, '').slice(0, 12)
+                onUpdateField('ingresos_mensuales', digitos ? Number(digitos) : undefined)
+              }}
               placeholder={WIZARD_MESSAGES.PLACEHOLDER_INGRESOS}
-              min="0"
               className={inputClasses(false)}
             />
           </div>

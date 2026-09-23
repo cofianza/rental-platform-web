@@ -191,12 +191,13 @@ export function GenerarLinkPagoModal({
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+            {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
             <input id="generar-link-pago-modal-monto-cop"
-              type="number"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="Ej: 150000"
-              min="1"
+              type="text"
+              inputMode="numeric"
+              value={formatMontoDisplay(monto)}
+              onChange={(e) => setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))}
+              placeholder="Ej: 150.000"
               readOnly={esEstudio && montoEstudio !== null}
               aria-describedby="generar-link-pago-modal-monto-ayuda"
               className={`w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${
