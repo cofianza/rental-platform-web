@@ -197,7 +197,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
       await fetchEstudios()
       return true
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al solicitar estudio'
+      const msg = err instanceof Error ? err.message : 'No se pudo solicitar la evaluación.'
       toast.error(msg)
       return false
     } finally {
@@ -214,7 +214,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
       setCancelTarget(null)
       await fetchEstudios()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al cancelar estudio'
+      const msg = err instanceof Error ? err.message : 'No se pudo cancelar la evaluación.'
       toast.error(msg)
     } finally {
       setActionLoading(false)
@@ -292,13 +292,13 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">
-          Estudios de Riesgo Crediticio
+          Evaluaciones crediticias
         </h3>
         {canManage && (
           <button
             onClick={() => setShowSolicitar(true)}
             disabled={hasActiveEstudio || actionLoading}
-            title={hasActiveEstudio ? 'Ya existe un estudio activo' : undefined}
+            title={hasActiveEstudio ? 'Ya hay una evaluación activa' : undefined}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IconPlus size={16} />
@@ -475,7 +475,8 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                         <button
                           onClick={() => setCancelTarget(estudio)}
                           disabled={actionLoading}
-                          title="Cancelar estudio"
+                          title="Cancelar evaluación"
+                          aria-label="Cancelar evaluación"
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
                         >
                           <IconX size={18} />
@@ -547,9 +548,9 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
         isOpen={!!cancelTarget}
         onClose={() => setCancelTarget(null)}
         onConfirm={handleCancel}
-        title="Cancelar estudio"
-        message="Esta seguro que desea cancelar este estudio? Esta accion no se puede deshacer."
-        confirmLabel="Cancelar estudio"
+        title="Cancelar evaluación"
+        message="¿Seguro que quieres cancelar esta evaluación? No se puede deshacer."
+        confirmLabel="Cancelar evaluación"
         variant="danger"
         isLoading={actionLoading}
       />

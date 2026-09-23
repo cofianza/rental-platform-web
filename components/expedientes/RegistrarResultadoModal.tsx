@@ -187,7 +187,7 @@ export function RegistrarResultadoModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} title="Registrar Resultado del Estudio" size="lg">
+      <Modal isOpen={isOpen} onClose={handleClose} title="Registrar resultado de la evaluación" size="lg">
         <div className="space-y-5">
           <dl className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm space-y-1">
             <DatoResumen label="Persona evaluada" value={datos.nombre_completo} />
@@ -397,7 +397,7 @@ export function RegistrarResultadoModal({
         onClose={() => setShowConfirm(false)}
         onConfirm={handleSubmit}
         title="Confirmar resultado"
-        message={`Esta a punto de registrar el estudio como "${resultado}". Esta accion es irreversible y el estudio pasara a estado completado.`}
+        message={`Vas a registrar la evaluación como "${resultado}". No se puede deshacer y la evaluación quedará completada.`}
         confirmLabel="Confirmar resultado"
         variant="default"
         isLoading={isSubmitting}

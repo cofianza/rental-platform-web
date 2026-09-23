@@ -208,7 +208,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle del Estudio" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de la evaluación" size="lg">
       <div className="space-y-4">
         {/* Estado y resultado */}
         {isBuroCompleted ? (

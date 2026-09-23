@@ -82,7 +82,7 @@ export function SolicitarEstudioModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Solicitar Estudio de Riesgo" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Solicitar evaluación crediticia" size="md">
       <div className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -93,7 +93,7 @@ export function SolicitarEstudioModal({
         {/* Tipo */}
         <div>
           <label htmlFor="solicitar-estudio-modal-tipo-de-estudio" className="block text-sm font-medium text-gray-700 mb-1">
-            Tipo de estudio
+            Tipo de evaluación
           </label>
           <select id="solicitar-estudio-modal-tipo-de-estudio"
             value={tipo}
@@ -140,7 +140,7 @@ export function SolicitarEstudioModal({
         {/* Quien paga */}
         <div>
           <label htmlFor="solicitar-estudio-modal-quien-paga-el-estudio" className="block text-sm font-medium text-gray-700 mb-1">
-            Quien paga el estudio
+            ¿Quién paga la evaluación?
           </label>
           <select id="solicitar-estudio-modal-quien-paga-el-estudio"
             value={pagoPor}
@@ -163,7 +163,7 @@ export function SolicitarEstudioModal({
             onChange={(e) => setObservaciones(e.target.value)}
             rows={3}
             maxLength={2000}
-            placeholder="Notas adicionales sobre el estudio..."
+            placeholder="Notas sobre la evaluación…"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
           />
         </div>
@@ -188,7 +188,7 @@ export function SolicitarEstudioModal({
                 Solicitando...
               </>
             ) : (
-              'Solicitar estudio'
+              'Solicitar evaluación'
             )}
           </button>
         </div>
