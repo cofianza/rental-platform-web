@@ -124,9 +124,9 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
       <div role="tabpanel" id="panel-biblioteca" aria-labelledby="tab-biblioteca" hidden={pestana !== 'biblioteca'} className="space-y-3 pt-4">
         {/* Adenda 1 del módulo de contratos, respuesta 13: sin cambios son texto de Cofianza. */}
         <p className="text-sm text-gray-500">
-          Si los incorporas sin cambios, son texto de Cofianza y no quedan cubiertos por la indemnidad de la
-          inmobiliaria. Si necesitas cambiar uno, redacta tu versión en «Mis cláusulas»: será una cláusula propia,
-          de tu responsabilidad.
+          Si los incorporas sin cambios, su texto es de Cofianza y no queda cubierto por la indemnidad de la
+          inmobiliaria; los datos que completes en ellos sí son de tu responsabilidad. Si necesitas cambiar uno,
+          redacta tu versión en «Mis cláusulas»: será una cláusula propia, de tu responsabilidad.
         </p>
         <SearchInput
           placeholder="Buscar por título o texto"

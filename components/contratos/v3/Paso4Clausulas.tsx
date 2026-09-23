@@ -9,7 +9,8 @@
  *
  * Adenda 1 del módulo de contratos, respuesta 13: un modelo sin cambios es texto
  * de Cofianza y queda fuera de la indemnidad; la aceptación se pide solo si hay
- * cláusulas propias.
+ * cláusulas propias o datos completados en los modelos (esos datos son de la
+ * inmobiliaria).
  */
 
 'use client'
@@ -86,7 +87,7 @@ export function Paso4Clausulas(p: Props) {
   // La aceptación guardada vale mientras la lista no cambie y el aviso sea el mismo.
   const aceptacion =
     sinCambios && guardado?.aceptacion?.avisoVersion === adicionales.aviso.version ? guardado.aceptacion : null
-  // Resp. 13: los modelos sin cambios llevan su propio aviso; la casilla es solo para las propias.
+  // Resp. 13: los modelos llevan su propio aviso; la casilla, si hay propias o datos en los modelos.
   const hayModelos = elegidas.some((e) => e.origen === 'biblioteca')
   const pideAceptacion = requiereAceptacion(value)
 
@@ -354,7 +355,7 @@ export function Paso4Clausulas(p: Props) {
                         className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
                       />
                       Acepto, en nombre de la inmobiliaria, este aviso de responsabilidad sobre las cláusulas propias
-                      de este contrato.
+                      y los datos completados en los modelos de este contrato.
                     </label>
                     {errores.acepto && <p className="mt-1 text-xs text-red-600">{errores.acepto}</p>}
                   </div>

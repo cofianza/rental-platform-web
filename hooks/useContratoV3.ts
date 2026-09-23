@@ -477,8 +477,12 @@ export interface FormPaso4 {
   acepto: boolean
 }
 
-/** Resp. 13: la aceptación es solo para las cláusulas propias (sin categoría conocida, se pide). */
-export const requiereAceptacion = (d: FormPaso4) => d.elegidas.some((e) => e.origen !== 'biblioteca')
+/**
+ * Resp. 13: la aceptación cubre las cláusulas propias y los datos que la inmobiliaria completa en
+ * los modelos (sin categoría conocida, se pide). Un modelo sin datos es solo texto de Cofianza.
+ */
+export const requiereAceptacion = (d: FormPaso4) =>
+  d.elegidas.some((e) => e.origen !== 'biblioteca' || Object.keys(e.valores).length > 0)
 
 /** Tope técnico del API: la numeración llega a QUINCUAGÉSIMA OCTAVA. El máximo sin revisión es adicionales.maximo. */
 const MAX_ADICIONALES = 25
@@ -502,7 +506,10 @@ export function validarPaso4(
         : new Set(ids).size !== ids.length
           ? 'Hay una cláusula repetida en la lista'
           : null,
-    acepto: d.acepto || !requiereAceptacion(d) ? null : 'Acepta el aviso de responsabilidad de tus cláusulas propias para continuar',
+    acepto:
+      d.acepto || !requiereAceptacion(d)
+        ? null
+        : 'Acepta el aviso de responsabilidad de tus cláusulas propias y de los datos que completaste para continuar',
   })
   d.elegidas.forEach((e, i) => {
     for (const campo of ctx.campos[e.clausulaId] ?? []) {
@@ -515,7 +522,7 @@ export function validarPaso4(
 
 /**
  * Cuerpo del PUT del paso 4. Una cláusula sin [[campo]] (las propias) no lleva `valores`.
- * La aceptación va solo si se marcó: con solo modelos sin cambios el API no la pide.
+ * La aceptación va solo si se marcó: con solo modelos sin datos el API no la pide.
  */
 export function entradaPaso4(d: FormPaso4, avisoVersion: string): Paso4Entrada {
   if (d.elegidas.length === 0) return { omitir: true }

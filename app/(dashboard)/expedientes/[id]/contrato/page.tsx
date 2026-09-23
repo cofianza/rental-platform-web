@@ -245,8 +245,8 @@ const form4De = (g: Contrato['guardados'][4] | Contrato['prefill'][4]): FormPaso
   acepto: false,
 })
 
-/** Bloqueos del paso 4 que se resuelven volviendo a guardarlo. */
-const REGUARDAR_PASO4 = ['REVISION_AUTOMATICA_PENDIENTE', 'CLAUSULA_MODELO_ALTERADO', 'ACEPTACION_PENDIENTE']
+/** Bloqueos del paso 4 que se resuelven volviendo a guardarlo (y aceptando el aviso vigente). */
+const REGUARDAR_PASO4 = ['CLAUSULA_MODELO_ALTERADO', 'ACEPTACION_PENDIENTE']
 
 /** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
 const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
@@ -344,9 +344,9 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const incorpora = editable && rol === 'inmobiliaria'
   const g4 = guardados[4]
   const guardado4 = g4 && 'clausulas' in g4 ? g4 : null
-  // Estos bloqueos piden "vuelve a guardar el paso 4" (la IA se encendió después, un modelo ya no
-  // coincide o la aceptación no cubre las propias): para la inmobiliaria cuentan como cambio, así ve
-  // la casilla y "Guardar y continuar".
+  // Estos bloqueos piden "vuelve a guardar el paso 4" (un modelo ya no coincide, o la aceptación no
+  // cubre las propias y los datos de los modelos o es de un aviso anterior): para la inmobiliaria
+  // cuentan como cambio, así ve la casilla y "Guardar y continuar".
   const sinCambios4 =
     !sucios.includes(4) && !(incorpora && bloqueos.some((b) => REGUARDAR_PASO4.includes(b.codigo)))
   // Lo guardado sigue valiendo: sin cambios y, si hubo aceptación (solo con propias), del aviso vigente.
