@@ -2,11 +2,9 @@
  * /disponibilidad — configuración de horarios del propietario/inmobiliaria.
  * Roles permitidos: propietario | inmobiliaria | administrador.
  *
- * TODO(UX): los días desactivados pierden sus horas configuradas porque el
- * backend los borra (DELETE atómico del PUT). Si el propietario reactiva un
- * día, aparece con defaults 09:00-17:00 en vez de sus últimas horas. Si esto
- * genera fricción en uso real, migrar a enviar los 7 días con flag `activo`
- * y filtrar solo por `activo=true` en el RPC.
+ * Se mandan los 7 días con su `activo` (el RPC solo usa los activos): así un
+ * día apagado conserva sus horas y, con todos apagados, siguen existiendo
+ * filas y no vuelve el horario por defecto L-V 9-17.
  *
  * NOTA (P2 múltiples rangos por día): el modelo actual solo admite UN rango
  * por día — la tabla `disponibilidad_propietario` tiene UNIQUE(propietario_id,
@@ -340,12 +338,17 @@ export default function DisponibilidadPage() {
 
     setIsSaving(true)
     try {
-      const horariosActivos = horarios.filter((h) => h.activo)
+      // Los 7 días, también los apagados: sin filas, el API vuelve a ofrecer
+      // L-V 9-17. A un día apagado con horas inválidas (el API exige fin >
+      // inicio en todas las filas) se le dejan las de por defecto.
+      const horariosPayload = horarios.map((h) =>
+        h.activo || h.hora_fin > h.hora_inicio ? h : { ...h, hora_inicio: '09:00', hora_fin: '17:00' },
+      )
       await disponibilidadService.updateMiDisponibilidad({
         slot_duracion_minutos: duracion,
         antelacion_minima_horas: antelacion,
         max_citas_por_dia: maxCitas,
-        horarios: horariosActivos,
+        horarios: horariosPayload,
         fechas_bloqueadas: bloqueadas,
       })
       toast.success('Horarios actualizados.')
@@ -691,7 +694,8 @@ export default function DisponibilidadPage() {
           <strong>Cómo funciona:</strong> Los arrendatarios solo podrán agendar visitas en los
           horarios que marques como disponibles, con una anticipación mínima de{' '}
           <strong>{antelacionLabel(antelacion)}</strong>. Si no configuras nada, se aplican
-          horarios por defecto Lunes a Viernes de 9:00 a 17:00.
+          horarios por defecto Lunes a Viernes de 9:00 a 17:00. Si desactivas todos los días,
+          no recibirás solicitudes de visita.
         </p>
       </div>
 
