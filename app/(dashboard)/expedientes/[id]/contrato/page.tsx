@@ -481,6 +481,9 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   ].sort()
   const listaPasos = (ns: number[]) =>
     ns.length === 1 ? `el paso ${ns[0]}` : `los pasos ${ns.slice(0, -1).join(', ')} y ${ns[ns.length - 1]}`
+  // Adenda 1 contratos §2.4: el canon sobre el tope no impide intentar generar: el API
+  // bloquea igual y es ese intento el que envía el caso a la Gerencia General.
+  const bloqueosQueFrenan = bloqueos.filter((b) => b.codigo !== 'CANON_EXCEDE_TOPE')
   const motivoNoGenerar = !editable
     ? 'Tu acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
@@ -489,8 +492,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         // (su faltante no se pinta mientras se llena).
         !guardados[5]
         ? `Guarda el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
-        : bloqueos.length > 0
-          ? `Resuelve ${bloqueos.length === 1 ? 'el bloqueo marcado' : `los ${bloqueos.length} bloqueos marcados`} en rojo antes de generar ${documentoTexto}.`
+        : bloqueosQueFrenan.length > 0
+          ? `Resuelve ${bloqueosQueFrenan.length === 1 ? 'el bloqueo marcado' : `los ${bloqueosQueFrenan.length} bloqueos marcados`} en rojo antes de generar ${documentoTexto}.`
           : pasosIncompletos.length > 0
             ? `Completa ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
             : null
@@ -504,6 +507,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const faltantesDelPaso = guardados[paso] ? faltantes.filter((f) => f.paso === paso) : []
 
   const soloNuevaEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
+  // dd/mm/aaaa; un API anterior (despliegue a medias) no trae la fecha.
+  const reservadoHasta = contrato.reservadoHasta?.split('-').reverse().join('/')
 
   const etiquetaPrimario = !editable
     ? 'Siguiente'
@@ -530,11 +535,12 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
       {banner}
       {/* Adenda 1 contratos, respuesta 15: la reserva vence a los días hábiles del parámetro.
           Condicional: un API anterior (despliegue a medias) no trae la fecha. */}
-      {contrato.reservadoHasta && (
+      {reservadoHasta && (
         <Aviso>
-          El inmueble está reservado hasta el {contrato.reservadoHasta.split('-').reverse().join('/')}. Si el contrato no
-          se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenaste se conserva para
-          cuando lo vuelvas a iniciar.
+          El inmueble está reservado hasta el {reservadoHasta}
+          {contrato.reservaDiasHabiles ? ` (${contrato.reservaDiasHabiles} días hábiles desde que se inició el contrato)` : ''}.
+          Si el contrato no se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenaste
+          se conserva para cuando lo vuelvas a iniciar.
         </Aviso>
       )}
 
@@ -547,9 +553,11 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
       />
       {editable && soloNuevaEvaluacion && (
         <Aviso tono="aviso">
-          Mientras se hace la nueva evaluación, este borrador mantiene el inmueble reservado. Si va a tardar o no se hará,
-          cancela el borrador para liberarlo; cuando la evaluación esté lista, lo creas de nuevo con los datos que ya
-          llenaste.
+          Mientras se hace la nueva evaluación, este borrador mantiene el inmueble reservado, pero la reserva vence sola
+          {contrato.reservaDiasHabiles ? ` a los ${contrato.reservaDiasHabiles} días hábiles` : ''}
+          {reservadoHasta ? ` (el ${reservadoHasta})` : ''}: si para entonces no se envía a firma, el borrador se cancela y
+          el inmueble se libera. Si la evaluación va a tardar o no se hará, cancela el borrador ya para liberarlo; cuando
+          esté lista, lo creas de nuevo con los datos que ya llenaste.
         </Aviso>
       )}
       <AvisosContrato avisos={avisos} />
