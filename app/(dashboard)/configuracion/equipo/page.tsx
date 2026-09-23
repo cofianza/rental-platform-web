@@ -45,12 +45,6 @@ const ROL_LABEL: Record<RolMiembro, string> = {
   solo_lectura: 'Sólo lectura',
 }
 
-// Oculto por ahora: el titular no remueve a otros miembros desde la UI.
-// Poner en true para reactivarlo.
-const PERMITIR_QUITAR_MIEMBRO = false
-// Oculto por ahora: el "Salir" (auto-baja del miembro). Poner en true para reactivarlo.
-const PERMITIR_SALIR = false
-
 function RolBadge({ rol }: { rol: RolMiembro }) {
   if (rol === 'owner') {
     return (
@@ -190,7 +184,11 @@ export default function EquipoPage() {
       title: esInvit ? 'Cancelar invitación' : 'Quitar miembro',
       message: esInvit
         ? `¿Cancelar la invitación enviada a ${m.email}?`
-        : `¿Quitar a ${m.nombre || m.email} del equipo? Perderá el acceso a la cartera de la inmobiliaria.`,
+        : `¿Quitar a ${m.nombre || m.email} del equipo? Dejará de ver la cartera de la inmobiliaria de inmediato.${
+            m.estudios_activos
+              ? ` Sus ${m.estudios_activos} ${m.estudios_activos === 1 ? 'estudio activo queda' : 'estudios activos quedan'} sin responsable, a cargo del equipo.`
+              : ''
+          } Lo que registró sigue en la cartera.`,
       confirmLabel: esInvit ? 'Cancelar invitación' : 'Quitar',
       variant: 'danger',
       onConfirm: () => doRevocar(m),
@@ -455,12 +453,14 @@ export default function EquipoPage() {
                       </div>
                     )}
 
-                    {/* Quitar a otro miembro activo (owner) — oculto por ahora */}
-                    {PERMITIR_QUITAR_MIEMBRO && data.soy_owner && m.estado === 'activo' && !m.es_yo && (
+                    {/* Quitar a otro miembro activo (owner): quien deja la inmobiliaria no sigue viendo la cartera.
+                        El API no deja quitar al último titular. */}
+                    {data.soy_owner && m.estado === 'activo' && !m.es_yo && (
                       <button
                         onClick={() => handleRevocar(m)}
                         disabled={busyId === m.id}
-                        title="Quitar miembro"
+                        title="Quitar del equipo"
+                        aria-label={`Quitar a ${m.nombre || m.email} del equipo`}
                         className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
                       >
                         <IconTrash size={16} />
@@ -471,7 +471,7 @@ export default function EquipoPage() {
                         titular no puede renunciar a su propia inmobiliaria;
                         primero debe dejar de ser titular / transferir la
                         titularidad a otro miembro. */}
-                    {PERMITIR_SALIR && m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
+                    {m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
                       <button
                         onClick={handleSalir}
                         disabled={leaving}
