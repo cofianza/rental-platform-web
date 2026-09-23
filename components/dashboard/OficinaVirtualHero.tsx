@@ -72,8 +72,10 @@ export function OficinaVirtualHero() {
         <div className="grid grid-cols-3 gap-3 md:gap-4 min-w-0">
           <StatCard label="Propiedades activas" value={loading ? '…' : stats ? String(stats.propiedades_activas) : '—'} />
           <StatCard label="Inquilinos en cartera" value={loading ? '…' : stats ? String(stats.inquilinos_cartera) : '—'} />
+          {/* Suma de cánones de contratos firmados/vigentes, no plata recaudada
+              (no mira pagos ni moras): mismo nombre que en el panel del propietario. */}
           <StatCard
-            label="Recaudado este mes"
+            label="Canon contratado / mes"
             value={loading ? '…' : stats ? formatCompactCOP(stats.canon_mensual) : '—'}
           />
         </div>
