@@ -19,6 +19,9 @@ interface NotificationState {
   items: INotificacion[]
   unreadCount: number
   isLoading: boolean
+  /** created_at más reciente que había al limpiar la campana: el polling no
+   *  vuelve a mostrar las leídas de hasta ese momento. */
+  limpiadoEn: string | null
 
   // Setters
   setItems: (items: INotificacion[]) => void
@@ -41,11 +44,18 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   items: [],
   unreadCount: 0,
   isLoading: false,
+  limpiadoEn: null,
 
   setItems: (items) =>
-    set({
-      items: items.slice(0, MAX_KEEP),
-      unreadCount: items.filter((n) => !n.leida_at).length,
+    set((state) => {
+      const { limpiadoEn } = state
+      const visibles = limpiadoEn
+        ? items.filter((n) => !(n.leida_at && n.created_at <= limpiadoEn))
+        : items
+      return {
+        items: visibles.slice(0, MAX_KEEP),
+        unreadCount: visibles.filter((n) => !n.leida_at).length,
+      }
     }),
 
   setUnreadCount: (unreadCount) => set({ unreadCount }),
@@ -64,6 +74,9 @@ export const useNotificationStore = create<NotificationState>((set) => ({
           unreadCount: next.filter((n) => !n.leida_at).length,
         }
       }
+      // Ya leída y fuera de la lista: es el eco del UPDATE de «Marcar todas»
+      // tras limpiar la campana, no una nueva (esas llegan sin leida_at).
+      if (item.leida_at) return state
       // INSERT — nueva notificacion.
       const next = [item, ...state.items].slice(0, MAX_KEEP)
       return {
@@ -87,7 +100,12 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       unreadCount: 0,
     })),
 
-  clearAll: () => set({ items: [], unreadCount: 0 }),
+  clearAll: () =>
+    set((state) => ({
+      items: [],
+      unreadCount: 0,
+      limpiadoEn: state.items.reduce((m, n) => (n.created_at > m ? n.created_at : m), state.limpiadoEn ?? ''),
+    })),
 
-  reset: () => set({ items: [], unreadCount: 0, isLoading: false }),
+  reset: () => set({ items: [], unreadCount: 0, isLoading: false, limpiadoEn: null }),
 }))
