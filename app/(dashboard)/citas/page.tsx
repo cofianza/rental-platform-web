@@ -30,9 +30,9 @@ const COLUMNA_LABELS: Record<ColumnaKey, { label: string; color: string; bgColor
   solicitada: { label: 'Solicitada', color: 'text-blue-700', bgColor: 'bg-blue-50' },
   confirmada: { label: 'Confirmada', color: 'text-amber-700', bgColor: 'bg-amber-50' },
   realizada: { label: 'Realizada', color: 'text-green-700', bgColor: 'bg-green-50' },
-  sin_estudio: { label: 'Sin estudio', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  sin_estudio: { label: 'Sin evaluación', color: 'text-gray-700', bgColor: 'bg-gray-100' },
   cancelada: { label: 'Cancelada', color: 'text-red-700', bgColor: 'bg-red-50' },
-  no_asistio: { label: 'No asistio', color: 'text-gray-700', bgColor: 'bg-gray-50' },
+  no_asistio: { label: 'No asistió', color: 'text-gray-700', bgColor: 'bg-gray-50' },
 }
 const ALLOWED_ROLES = ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'] as const
 
