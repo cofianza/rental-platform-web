@@ -432,7 +432,17 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
   const vigentes = num(principals?.currentCredits)
   const negativos = num(principals?.currentNegativeCredits)
   const alDia = vigentes !== null && negativos !== null ? Math.max(vigentes - negativos, 0) : null
-  const valorMora = num(balances?.totalValueBalanceOverdue)
+  // Igual que el motor: el máximo de las cuatro señales, porque hay entidades
+  // que dejan totalValueBalanceOverdue en 0 y reportan el vencido en D30/D60/D90.
+  const moras = [
+    balances?.totalValueBalanceOverdue,
+    balances?.debtBalanceD30,
+    balances?.debtBalanceD60,
+    balances?.debtBalanceD90,
+  ]
+    .map((v) => num(v))
+    .filter((v): v is number => v !== null)
+  const valorMora = moras.length > 0 ? Math.max(...moras) : null
   const cuotaMensual = num(balances?.valueMonthlyPayment)
   const creditoMasAlto = num(balances?.HightestDebtBalance ?? balances?.hightestDebtBalance)
   const negativos12Meses = num(principals?.negativeHistoricalLast12Months)
