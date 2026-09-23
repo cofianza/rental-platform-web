@@ -1085,11 +1085,16 @@ export default function AutorizarPage() {
                         <b.Icon size={17} />
                       </span>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-900">{b.titulo}</p>
+                        <p id={`ben-${b.key}-t`} className="text-sm font-bold text-gray-900">{b.titulo}</p>
                       </div>
-                      <Toggle on={on} onClick={() => setConsents((c) => ({ ...c, [b.key]: !c[b.key] }))} />
+                      <Toggle
+                        on={on}
+                        onClick={() => setConsents((c) => ({ ...c, [b.key]: !c[b.key] }))}
+                        labelledBy={`ben-${b.key}-t`}
+                        describedBy={`ben-${b.key}-d`}
+                      />
                     </div>
-                    <p className="mt-2 text-xs leading-relaxed text-gray-500">{b.desc}</p>
+                    <p id={`ben-${b.key}-d`} className="mt-2 text-xs leading-relaxed text-gray-500">{b.desc}</p>
                     <span className="mt-2 inline-block rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-500">
                       Opcional
                     </span>
@@ -1098,7 +1103,7 @@ export default function AutorizarPage() {
               })}
             </div>
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-gray-600">
               No marcar estas opciones no condiciona, limita ni restringe el acceso a los servicios de Cofianza.
             </p>
 
@@ -1269,12 +1274,26 @@ export default function AutorizarPage() {
   )
 }
 
-function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
+// Con nombre accesible: sin él, el lector de pantalla anunciaba tres veces
+// "interruptor, desactivado" sin decir qué se autorizaba (Ley 1581).
+function Toggle({
+  on,
+  onClick,
+  labelledBy,
+  describedBy,
+}: {
+  on: boolean
+  onClick: () => void
+  labelledBy?: string
+  describedBy?: string
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
       onClick={onClick}
       className={cn(
         'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
