@@ -237,6 +237,12 @@ export default function ContratoDetallePage() {
     fetchContrato()
   }, [fetchContrato])
 
+  // Pestaña con el número del contrato (varios contratos abiertos a la vez).
+  const numeroContrato = contrato?.numero
+  useEffect(() => {
+    if (numeroContrato) document.title = `Contrato ${numeroContrato} — Cofianza`
+  }, [numeroContrato])
+
   async function handleDownload() {
     setDownloadLoading(true)
     try {

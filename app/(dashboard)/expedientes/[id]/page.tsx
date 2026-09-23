@@ -237,6 +237,12 @@ export default function ExpedienteDetallePage() {
     fetchExpediente()
   }, [fetchExpediente])
 
+  // Pestaña con el número del estudio (varios estudios abiertos a la vez).
+  const numeroExpediente = expediente?.numero_expediente
+  useEffect(() => {
+    if (numeroExpediente) document.title = `Estudio ${numeroExpediente} — Cofianza`
+  }, [numeroExpediente])
+
   // Al firmar TODAS las partes, el expediente pasa a 'cerrado' en backend, pero
   // ese cierre es DIFERIDO (auto-heal disparado al listar contratos, que
   // onAllSigned ya hizo). Esperamos ~2.5s y re-consultamos el expediente UNA vez

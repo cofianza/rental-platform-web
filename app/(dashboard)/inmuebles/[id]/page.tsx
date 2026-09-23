@@ -172,13 +172,11 @@ export default function InmuebleDetailPage() {
     }
   }, [activeTab, fetchExpedientes])
 
-  // Título dinámico de la página
+  // Título dinámico de la página. Sin limpieza al salir: el título de la
+  // siguiente ruta lo pone su metadata (reponer «Cofianza» la pisaba).
   useEffect(() => {
     if (inmueble) {
       document.title = `${inmueble.codigo} | Cofianza`
-    }
-    return () => {
-      document.title = 'Cofianza'
     }
   }, [inmueble])
 
