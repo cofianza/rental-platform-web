@@ -23,6 +23,7 @@ import {
   IconEye,
   IconFileText,
 } from '@/components/icons'
+import { abrirEnPestana } from '@/lib/utils'
 
 // ============================================
 // Types
@@ -112,8 +113,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
   // Handle download
   const handleDownload = async (factura: IFactura, tipo: 'pdf' | 'xml') => {
     try {
-      const result = await facturacionService.getDownloadUrl(factura.id, tipo)
-      window.open(result.url, '_blank')
+      await abrirEnPestana(async () => (await facturacionService.getDownloadUrl(factura.id, tipo)).url)
     } catch {
       toast.error(`Error al descargar ${tipo.toUpperCase()}`)
     }

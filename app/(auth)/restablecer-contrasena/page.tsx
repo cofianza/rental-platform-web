@@ -1,9 +1,10 @@
 'use client'
 
-import { Suspense, useState, useEffect, FormEvent } from 'react'
+import { Suspense, useState, useEffect, useCallback, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX } from '@/components/icons'
+import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX, IconRefresh, IconAlertTriangle } from '@/components/icons'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -42,30 +43,42 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  // No se pudo VERIFICAR el enlace (sin conexión, 5xx, 429): puede estar bien,
+  // así que se ofrece reintentar en vez de "enlace inválido, pide otro".
+  const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null)
 
   const requirements = getPasswordRequirements(password)
   const allRequirementsMet = requirements.every((r) => r.met)
 
   // Validar token al montar
-  useEffect(() => {
+  const validar = useCallback(() => {
     if (!token) {
       setIsValidating(false)
       setIsTokenValid(false)
       return
     }
 
+    setIsValidating(true)
+    setErrorVerificacion(null)
     authService
       .validateResetToken(token)
       .then(() => {
         setIsTokenValid(true)
       })
-      .catch(() => {
+      .catch((err) => {
         setIsTokenValid(false)
+        if (esErrorTransitorio(err)) {
+          setErrorVerificacion(mensajeParaProspecto(err, 'No pudimos verificar el enlace.'))
+        }
       })
       .finally(() => {
         setIsValidating(false)
       })
   }, [token])
+
+  useEffect(() => {
+    validar()
+  }, [validar])
 
   // Redirigir a login tras éxito
   useEffect(() => {
@@ -109,8 +122,12 @@ function ResetPasswordForm() {
     try {
       await authService.resetPassword(token, password)
       setIsSuccess(true)
-    } catch {
-      setServerError('Ocurrió un error al restablecer la contraseña. El enlace puede haber expirado.')
+    } catch (err) {
+      setServerError(
+        esErrorTransitorio(err)
+          ? mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtalo de nuevo.')
+          : 'Ocurrió un error al restablecer la contraseña. El enlace puede haber expirado.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -123,6 +140,33 @@ function ResetPasswordForm() {
         <div className="flex flex-col items-center justify-center py-12">
           <IconLoader size={32} className="animate-spin text-primary-600 mb-4" />
           <p className="text-gray-500 text-sm">Verificando enlace...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No se pudo verificar: reintentar, no "pide otro enlace".
+  if (!isTokenValid && errorVerificacion) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <IconAlertTriangle size={32} className="text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No pudimos verificar el enlace</h2>
+          <p className="text-gray-500 mb-8">{errorVerificacion}</p>
+          <button
+            type="button"
+            onClick={validar}
+            className={cn(
+              'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
+              'bg-primary-600 hover:bg-primary-700 text-white',
+              'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              'transition-colors'
+            )}
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
         </div>
       </div>
     )
@@ -243,7 +287,7 @@ function ResetPasswordForm() {
               autoComplete="new-password"
               autoFocus
               className={cn(
-                'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm',
+                'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.password
@@ -311,7 +355,7 @@ function ResetPasswordForm() {
               disabled={isLoading}
               autoComplete="new-password"
               className={cn(
-                'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm',
+                'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.confirmPassword

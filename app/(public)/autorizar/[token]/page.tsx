@@ -34,7 +34,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { IAutorizacionPublicData, IPagoProspecto, IPerfilProspectoInput } from '@/types/autorizacion'
-import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import {
   IconShieldCheck,
@@ -55,11 +55,12 @@ import {
   IconUserCheck,
   IconUserX,
   IconBuilding2,
-  IconUser, IconArrowLeft } from '@/components/icons'
+  IconUser, IconArrowLeft, IconRefresh } from '@/components/icons'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
 type PageState = 'loading' | 'form' | 'signed' | 'error' | 'reportado'
+type Paso = 1 | 2 | 3 | 'bio' | 4
 type ConsentKey = 'analitica' | 'comercial' | 'historial_referencia'
 type SituacionLaboral = 'empleado' | 'independiente' | 'pensionado' | 'otro'
 
@@ -166,11 +167,14 @@ export default function AutorizarPage() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [data, setData] = useState<IAutorizacionPublicData | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  // Un corte de datos no es un enlace muerto: con error transitorio la
+  // pantalla ofrece "Reintentar" en vez de "pide otro enlace".
+  const [reintentable, setReintentable] = useState(false)
 
   // 'bio' no es un número para no renumerar los cuatro pasos existentes: el
   // cotejo es condicional y, apagado el interruptor, el flujo es idéntico al
   // de siempre.
-  const [paso, setPaso] = useState<1 | 2 | 3 | 'bio' | 4>(1)
+  const [paso, setPaso] = useState<Paso>(1)
   // §8.1: gatea el resto del paso 1. Es un acto de UI (no premarcado) y viaja
   // al backend como `identidad_confirmada: true`.
   const [identidadOk, setIdentidadOk] = useState(false)
@@ -221,8 +225,12 @@ export default function AutorizarPage() {
   // Tras firmar, el enlace de pago lo crea el orquestador fire-and-forget: la
   // pantalla lo espera aqui en vez de mandar al prospecto a buscar un correo.
   const [pago, setPago] = useState<IPagoProspecto | null>(null)
+  // Se agotó la espera y el enlace sigue "preparando": deja de prometerlo ya.
+  const [esperaAgotada, setEsperaAgotada] = useState(false)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setPageState('loading')
+    setReintentable(false)
     autorizacionPublicService
       .getData(token)
       .then((result) => {
@@ -240,16 +248,48 @@ export default function AutorizarPage() {
           void sincronizarPago(token)
           return
         }
+        const transitorio = esErrorTransitorio(err)
+        setReintentable(transitorio)
         setErrorMessage(
-          code === 'AUTORIZACION_EXPIRADA' ||
-            code === 'AUTORIZACION_ESTADO_INVALIDO' ||
-            code === 'AUTORIZACION_NOT_FOUND'
-            ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.'
-            : 'No pudimos abrir tu estudio en este momento. Vuelve a intentarlo en un rato.',
+          transitorio
+            ? mensajeParaProspecto(err, 'No pudimos abrir tu autorización en este momento.')
+            : code === 'AUTORIZACION_EXPIRADA' ||
+                code === 'AUTORIZACION_ESTADO_INVALIDO' ||
+                code === 'AUTORIZACION_NOT_FOUND'
+              ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.'
+              : 'No pudimos abrir tu autorización. Pídele un enlace nuevo a quien te lo envió.',
         )
         setPageState('error')
       })
   }, [token, sincronizarPago])
+
+  useEffect(() => {
+    cargar()
+  }, [cargar])
+
+  // "Atrás" del celular: cada paso es una entrada del historial. Sin esto el
+  // gesto de volver sacaba al prospecto de la página y perdía lo que llevaba.
+  // Pasar del paso 1 exige identidad confirmada y casilla marcada también por
+  // aquí: tras recargar (estado en blanco) el historial conserva las entradas
+  // de los pasos 2-4, y "Adelante" no puede saltarse la aceptación.
+  const irAPaso = useCallback((p: Paso) => {
+    window.history.pushState({ paso: p }, '')
+    setPaso(p)
+  }, [])
+  const volverPaso = useCallback(() => window.history.back(), [])
+  useEffect(() => {
+    // La entrada actual siempre es el paso 1 (una recarga conserva el estado
+    // del historial de la entrada en la que estaba).
+    window.history.replaceState({ ...window.history.state, paso: 1 }, '')
+  }, [])
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const p = ((e.state as { paso?: Paso } | null)?.paso ?? 1) as Paso
+      setPaso(p !== 1 && !(identidadOk && acepta) ? 1 : p)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [identidadOk, acepta])
 
   // El paso 1 mide varios miles de px (texto legal íntegro + acordeones) y el
   // botón vive al fondo: sin este reset, al pasar al paso 2 el navegador clampa
@@ -262,19 +302,19 @@ export default function AutorizarPage() {
   // De Beneficios (o de Identidad) a Confirmar (paso 4). Adenda 1 §7: ya no
   // hay OTP en esta etapa; el paso 4 solo confirma lo aceptado en el paso 1.
   const irAFirma = useCallback(() => {
-    setPaso(4)
+    irAPaso(4)
     setErrorMessage('')
-  }, [])
+  }, [irAPaso])
 
   // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
   // antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     if (data?.biometria?.requerida && data.biometria.estado !== 'verificada') {
-      setPaso('bio')
+      irAPaso('bio')
       return
     }
     irAFirma()
-  }, [data?.biometria?.requerida, data?.biometria?.estado, irAFirma])
+  }, [data?.biometria?.requerida, data?.biometria?.estado, irAFirma, irAPaso])
 
   // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
   // índice traduce el paso 'bio' a su posición para poder compararlo.
@@ -301,7 +341,7 @@ export default function AutorizarPage() {
       return
     }
     setCoaEmailError(false)
-    setPaso(3)
+    irAPaso(3)
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
     const perfil: IPerfilProspectoInput = {
       identidad_confirmada: true,
@@ -434,16 +474,21 @@ export default function AutorizarPage() {
         const p = await autorizacionPublicService.getPago(token)
         if (!vivo) return
         setPago(p)
-        if (p.payment_link_url || p.estado === 'completado' || p.estado === 'no_aplica') return true
+        // Todo menos 'preparando' es definitivo para esta pantalla.
+        if (p.payment_link_url || p.estado !== 'preparando') return true
       } catch {
         // silencioso: la pantalla ya muestra el respaldo por correo/WhatsApp
       }
       return false
     }
+    // 3 minutos: el API pasa a 'sin_enlace' a los 2 de la firma.
     const id = setInterval(async () => {
       intentos += 1
       const listo = await consultar()
-      if (listo || intentos >= 12) clearInterval(id)
+      if (listo || intentos >= 45) {
+        clearInterval(id)
+        if (!listo && vivo) setEsperaAgotada(true)
+      }
     }, 4000)
     void consultar()
     return () => {
@@ -465,11 +510,27 @@ export default function AutorizarPage() {
     return (
       <Card>
         <div className="px-6 py-10 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-            <IconAlertTriangle size={24} className="text-red-600" />
+          <div
+            className={cn(
+              'mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full',
+              reintentable ? 'bg-amber-100' : 'bg-red-100',
+            )}
+          >
+            <IconAlertTriangle size={24} className={reintentable ? 'text-amber-600' : 'text-red-600'} />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">Este enlace no está disponible</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            {reintentable ? 'No pudimos cargar la página' : 'Este enlace no está disponible'}
+          </h2>
           <p className="mt-1 text-sm text-gray-500">{errorMessage}</p>
+          {reintentable && (
+            <button
+              type="button"
+              onClick={cargar}
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700"
+            >
+              <IconRefresh size={16} /> Reintentar
+            </button>
+          )}
         </div>
       </Card>
     )
@@ -505,9 +566,6 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">¡Autorización firmada!</h2>
           <p className="mt-1 text-sm text-gray-500">
             Tu autorización quedó registrada con firma electrónica (Ley 527/1999).
-            {pagoRequerido
-              ? ' Te acabamos de enviar por correo y WhatsApp el enlace para pagar el estudio: tu evaluación se ejecuta apenas se confirme el pago.'
-              : ' Ya puedes continuar con tu solicitud de fianza.'}
           </p>
           {/* El SHA-256 completo a la vista se leía como un error de la
               página. Sigue disponible (es su soporte legal), pero plegado. */}
@@ -519,10 +577,17 @@ export default function AutorizarPage() {
               </p>
             </details>
           )}
+          {/* Cada estado del cobro dice qué sigue. Antes, si el enlace no se
+              generaba (sin correo, tope de canon, pasarela caída) o el pago
+              estaba en proceso por PSE, la pantalla decía "estamos preparando
+              tu enlace" para siempre. */}
           {pagoRequerido ? (
             <div className="mt-5">
               {pago?.payment_link_url ? (
                 <>
+                  <p className="mb-3 text-sm text-gray-600">
+                    Falta un paso: pagar el estudio. Tu evaluación arranca apenas se confirme el pago.
+                  </p>
                   <a
                     href={pago.payment_link_url}
                     className="inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-base font-semibold text-white hover:bg-primary-700 sm:w-auto"
@@ -535,17 +600,35 @@ export default function AutorizarPage() {
                 </>
               ) : pago?.estado === 'completado' ? (
                 <p className="text-sm font-medium text-primary-700">
-                  Tu pago ya está registrado. Estamos ejecutando la evaluación.
+                  Tu pago ya está registrado y tu evaluación está en marcha. No tienes que hacer nada más.
+                </p>
+              ) : pago?.estado === 'procesando' ? (
+                <p className="text-sm text-gray-600">
+                  Tu pago está en proceso. Apenas el banco lo confirme arrancamos tu evaluación:{' '}
+                  <strong>no necesitas pagar de nuevo.</strong>
+                </p>
+              ) : pago?.estado === 'sin_enlace' ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-900">
+                  El enlace para pagar el estudio no se generó automáticamente. Pídeselo a quien te envió este
+                  enlace: cuando lo genere te llegará por correo y WhatsApp. No tienes que volver a autorizar.
+                </p>
+              ) : esperaAgotada ? (
+                <p className="text-sm text-gray-600">
+                  Tu enlace de pago está tardando más de lo normal. Te llegará por correo y WhatsApp; también
+                  puedes recargar esta página en unos minutos.
                 </p>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="inline-flex items-center gap-2 text-sm text-gray-500">
+                  <IconLoader size={16} className="shrink-0 animate-spin" />
                   Estamos preparando tu enlace de pago{pago?.monto_formateado ? ` de ${pago.monto_formateado}` : ''}…
-                  también te llegará por correo y WhatsApp.
                 </p>
               )}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
+            <p className="mt-4 text-sm text-gray-500">
+              No tienes que hacer nada más aquí: seguimos con tu estudio y quien te envió este enlace te contará
+              cómo avanza. Puedes cerrar esta página.
+            </p>
           )}
         </div>
       </Card>
@@ -746,7 +829,7 @@ export default function AutorizarPage() {
 
             <button
               type="button"
-              onClick={() => setPaso(2)}
+              onClick={() => irAPaso(2)}
               disabled={!acepta}
               className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -963,7 +1046,7 @@ export default function AutorizarPage() {
             </button>
             <button
               type="button"
-              onClick={() => setPaso(1)}
+              onClick={volverPaso}
               className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
@@ -1028,7 +1111,7 @@ export default function AutorizarPage() {
             </button>
             <button
               type="button"
-              onClick={() => setPaso(2)}
+              onClick={volverPaso}
               className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
@@ -1044,7 +1127,7 @@ export default function AutorizarPage() {
             token={token}
             estadoPrevio={data?.biometria?.estado ?? null}
             onContinuar={irAFirma}
-            onVolver={() => setPaso(3)}
+            onVolver={volverPaso}
           />
         )}
 
@@ -1106,7 +1189,7 @@ export default function AutorizarPage() {
 
             <button
               type="button"
-              onClick={() => setPaso(data?.biometria?.requerida ? 'bio' : 3)}
+              onClick={volverPaso}
               className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
@@ -1176,7 +1259,7 @@ export default function AutorizarPage() {
             type="button"
             onClick={() => setReporteAbierto(false)}
             disabled={reportando}
-            className="mx-auto block text-xs font-semibold text-gray-400 hover:text-gray-600"
+            className="mx-auto flex min-h-11 items-center px-4 text-sm font-semibold text-gray-500 hover:text-gray-700"
           >
             Cancelar
           </button>

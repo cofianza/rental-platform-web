@@ -20,6 +20,7 @@ import { ReEvaluacionSection } from './ReEvaluacionSection'
 import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
+import { abrirEnPestana } from '@/lib/utils'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -185,8 +186,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const handleDescargarCertificado = async () => {
     setLoadingCert(true)
     try {
-      const res = await estudioService.descargarCertificado(estudio.id)
-      window.open(res.url, '_blank')
+      await abrirEnPestana(async () => (await estudioService.descargarCertificado(estudio.id)).url)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al descargar certificado'
       toast.error(msg)

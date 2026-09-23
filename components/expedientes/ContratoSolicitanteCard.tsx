@@ -21,6 +21,7 @@ import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import type { IContrato } from '@/types/contrato'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { abrirEnPestana } from '@/lib/utils'
 
 // Fechas date-only (YYYY-MM-DD): construir al mediodia UTC para que toLocaleDateString
 // con cualquier zona horaria America no reste un dia. Sin esto, "2026-06-02" sale
@@ -140,12 +141,13 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     if (!contrato) return
     setDownloading(true)
     try {
-      const res = firmado
-        ? await contratoService.descargarContratoFirmado(contrato.id)
-        : await contratoService.descargarContrato(contrato.id)
-      if (res?.url) {
-        window.open(res.url, '_blank', 'noopener,noreferrer')
-      } else {
+      const abierto = await abrirEnPestana(async () => {
+        const res = firmado
+          ? await contratoService.descargarContratoFirmado(contrato.id)
+          : await contratoService.descargarContrato(contrato.id)
+        return res?.url
+      })
+      if (!abierto) {
         toast.error('No pudimos generar el link de descarga. Intenta de nuevo.')
       }
     } catch (err) {
@@ -278,15 +280,15 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                   <button
                     onClick={() => handleResend(false)}
                     disabled={resending || !solicitudId}
-                    className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {resending ? 'Reenviando…' : 'Reenviar WhatsApp / correo'}
                   </button>
-                  <span className="text-xs text-gray-300">·</span>
+                  <span className="self-center text-xs text-gray-300">·</span>
                   <button
                     onClick={() => setShowResendForm(true)}
                     disabled={resending || !solicitudId}
-                    className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Reenviar a otro correo
                   </button>

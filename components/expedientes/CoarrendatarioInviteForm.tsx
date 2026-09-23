@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconUsers, IconArrowRight } from '@/components/icons'
@@ -23,11 +23,11 @@ import {
   type IInvitarCoarrendatarioInput,
 } from '@/services/coarrendatarioService'
 
+// Sin tarjeta de identidad (el servicio es solo para mayores de edad) ni
+// pasaporte (los burós colombianos no lo consultan: la evaluación fallaría).
 const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
-  { value: 'ti', label: 'Tarjeta de Identidad' },
-  { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'nit', label: 'NIT' },
 ]
 
@@ -161,7 +161,7 @@ export function CoarrendatarioInviteForm({
               </select>
             </div>
             <div className="col-span-3">
-              <FormField label="Número de documento" value={numDoc} onChange={setNumDoc} />
+              <FormField label="Número de documento" value={numDoc} onChange={setNumDoc} inputMode="numeric" />
             </div>
           </div>
 
@@ -196,15 +196,20 @@ export function CoarrendatarioInviteForm({
 }
 
 function FormField({
-  label, value, onChange, type = 'text',
+  label, value, onChange, type = 'text', inputMode,
 }: {
   label: string; value: string; onChange: (v: string) => void; type?: string
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
 }) {
+  // Un id por campo: todos compartían el mismo y tocar cualquier etiqueta
+  // enfocaba el primer campo.
+  const id = useId()
   return (
     <div>
-      <label htmlFor="coarrendatario-invite-form-campo" className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-      <input id="coarrendatario-invite-form-campo"
+      <label htmlFor={id} className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <input id={id}
         type={type}
+        inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"

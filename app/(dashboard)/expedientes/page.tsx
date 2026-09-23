@@ -6,6 +6,7 @@
 'use client'
 
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { ExpedientesListado, ExpedientesSkeleton } from '@/components/expedientes'
 import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedientesFusion'
@@ -15,6 +16,9 @@ function ExpedientesPageContent() {
   // La inmobiliaria ve la vista fusionada (expedientes + estudio embebido),
   // igual que en /estudios. El resto de roles ve el listado estándar.
   if (rol === 'inmobiliaria') return <EstudiosExpedientesFusion />
+  // La bandeja operativa no es para el arrendatario: sus solicitudes están en
+  // el inicio (llegaba aquí por el botón atrás, las migas o un enlace viejo).
+  if (rol === 'solicitante') redirect('/dashboard')
   return <ExpedientesListado />
 }
 

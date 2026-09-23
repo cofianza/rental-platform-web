@@ -119,7 +119,7 @@ export interface IEstudioPublicForm {
     telefono: string | null
     tipo_documento: string | null
     numero_documento: string | null
-  }
+  } | null
   ya_completado: boolean
   datos_formulario: Record<string, unknown> | null
 }

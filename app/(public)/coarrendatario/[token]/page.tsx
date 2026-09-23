@@ -12,11 +12,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { IconCheck, IconRefresh } from '@/components/icons'
 import {
   coarrendatarioService,
   type ICoarrendatarioPublicView,
 } from '@/services/coarrendatarioService'
-import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'error'
 
@@ -27,6 +28,8 @@ export default function CoarrendatarioPublicPage() {
   const [view, setView] = useState<ICoarrendatarioPublicView | null>(null)
   const [phase, setPhase] = useState<Phase>('cargando')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  // Sin conexión / 5xx / 429: el enlace está bien, lo que falló fue el camino.
+  const [reintentable, setReintentable] = useState(false)
   const [confirmandoRechazo, setConfirmandoRechazo] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -42,13 +45,17 @@ export default function CoarrendatarioPublicPage() {
 
   const fetchView = useCallback(async () => {
     if (!token) return
+    setPhase('cargando')
     try {
       const data = await coarrendatarioService.getPublicByToken(token)
       setView(data)
       // Si ya respondió antes, saltamos a la pantalla correspondiente.
-      if (data.estado === 'aceptado' || data.estado === 'estudio_completado') {
+      if (data.estado === 'aceptado') {
         setPhase('aceptado')
-        setResultMsg('Ya habías aceptado esta invitación. Estamos procesando tu estudio.')
+        setResultMsg('Ya habías aceptado esta invitación. Estamos procesando tu evaluación.')
+      } else if (data.estado === 'estudio_completado') {
+        setPhase('aceptado')
+        setResultMsg('Ya habías aceptado esta invitación y tu evaluación terminó.')
       } else if (data.estado === 'rechazado_invitacion') {
         setPhase('rechazado')
       } else {
@@ -59,6 +66,7 @@ export default function CoarrendatarioPublicPage() {
       // requests' del limitador por IP (CGNAT de las operadoras) o un 5xx en
       // crudo lo dejaban sin saber si fue culpa suya ni que hacer.
       setErrorMsg(mensajeParaProspecto(err, 'No se pudo cargar la invitación.'))
+      setReintentable(esErrorTransitorio(err))
       setPhase('error')
     }
   }, [token])
@@ -111,6 +119,15 @@ export default function CoarrendatarioPublicPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
         <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir tu invitación</h1>
         <p className="text-sm text-gray-600">{errorMsg}</p>
+        {reintentable && (
+          <button
+            type="button"
+            onClick={fetchView}
+            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
+        )}
         <p className="text-xs text-gray-400 mt-4">
           Si crees que es un error, escribe a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
         </p>
@@ -134,16 +151,16 @@ export default function CoarrendatarioPublicPage() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 text-center">
         <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="h-7 w-7 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+          <IconCheck size={28} className="text-green-700" />
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
         <p className="text-sm text-gray-700">
           {resultMsg || 'Aceptación registrada. Estamos procesando tu estudio.'}
         </p>
         <p className="text-xs text-gray-400 mt-4">
-          Te enviaremos a {view?.email} el resultado del estudio cuando esté listo.
+          {view?.estado === 'estudio_completado'
+            ? `Te enviamos el resultado a ${view.email}.`
+            : `Te enviaremos a ${view?.email} el resultado de tu evaluación cuando esté listo.`}
         </p>
       </div>
     )

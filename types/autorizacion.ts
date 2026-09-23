@@ -182,7 +182,9 @@ export interface IReportarIdentidadInput {
 
 /** Estado del cobro del estudio para la pantalla del prospecto ya firmada. */
 export interface IPagoProspecto {
-  estado: 'preparando' | 'pendiente' | 'procesando' | 'completado' | 'no_aplica'
+  /** 'sin_enlace': a los 2 min de la firma el cobro no se generó solo (sin
+   *  correo, tope de canon, pasarela caída); lo resuelve el gestor. */
+  estado: 'preparando' | 'sin_enlace' | 'pendiente' | 'procesando' | 'completado' | 'no_aplica'
   monto_formateado: string | null
   payment_link_url: string | null
 }

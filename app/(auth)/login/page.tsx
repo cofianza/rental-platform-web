@@ -9,7 +9,7 @@ import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconEye, IconEyeOff, IconGoogle, IconLoader } from '@/components/icons'
+import { IconArrowRight, IconEye, IconEyeOff, IconGoogle, IconLoader } from '@/components/icons'
 import { cn, isValidEmail } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
@@ -35,6 +35,17 @@ function LoginForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
+  // Llegó desde la invitación a su estudio (guardó el token al tocar "Iniciar
+  // sesión"): si no tiene cuenta, la que necesita es la de arrendatario, y
+  // /registro solo ofrece Propietario e Inmobiliaria.
+  const [vieneDeInvitacion, setVieneDeInvitacion] = useState(false)
+  useEffect(() => {
+    try {
+      setVieneDeInvitacion(!!sessionStorage.getItem('invitacion_token'))
+    } catch {
+      // sin sessionStorage (modo privado estricto): enlace de siempre
+    }
+  }, [])
 
   const handleResendVerification = async () => {
     if (!email || isResending) return
@@ -148,6 +159,7 @@ function LoginForm() {
     if (intent === 'interest' && propertyId) {
       return `/registro/solicitante?intent=${encodeURIComponent(intent)}&property_id=${encodeURIComponent(propertyId)}`
     }
+    if (vieneDeInvitacion) return AUTH_ROUTES.REGISTER_SOLICITANTE
     return AUTH_ROUTES.REGISTER
   })()
 
@@ -219,7 +231,7 @@ function LoginForm() {
             disabled={isLoading}
             autoComplete="email"
             className={cn(
-              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
+              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
               'placeholder:text-slate-400',
               'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
               'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -247,7 +259,7 @@ function LoginForm() {
               disabled={isLoading}
               autoComplete="current-password"
               className={cn(
-                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-[15px] text-slate-900 bg-white transition-all',
+                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
                 'placeholder:text-slate-400',
                 'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -298,10 +310,7 @@ function LoginForm() {
           ) : (
             <>
               Iniciar sesión
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
+              <IconArrowRight size={16} />
             </>
           )}
         </button>

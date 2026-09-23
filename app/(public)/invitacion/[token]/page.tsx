@@ -6,11 +6,11 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconHome, IconX, IconCheck } from '@/components/icons'
+import { IconLoader, IconHome, IconX, IconCheck, IconRefresh } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
 import { formatCurrency } from '@/lib/constants'
@@ -19,9 +19,19 @@ import {
   canjearInvitacion,
   type InvitacionInfo,
 } from '@/services/invitacionService'
-import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 
 type Status = 'loading' | 'error' | 'ready'
+
+// Cómo se nombra la cuenta abierta: el rol interno ("operador_analista") no le
+// dice nada a quien llegó por un correo.
+const CUENTA_ABIERTA: Record<string, string> = {
+  propietario: 'un propietario',
+  inmobiliaria: 'una inmobiliaria',
+  administrador: 'un usuario del equipo de Cofianza',
+  operador_analista: 'un usuario del equipo de Cofianza',
+  gerencia_consulta: 'un usuario del equipo de Cofianza',
+}
 
 export default function InvitacionPage() {
   const params = useParams()
@@ -38,8 +48,9 @@ export default function InvitacionPage() {
   const [errorCode, setErrorCode] = useState<string>('')
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [canjeando, setCanjeando] = useState(false)
+  const [reintentable, setReintentable] = useState(false)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     if (!token) {
       setStatus('error')
       setErrorCode('TOKEN_MISSING')
@@ -47,6 +58,7 @@ export default function InvitacionPage() {
       return
     }
 
+    setStatus('loading')
     getInvitacionInfo(token)
       .then((data) => {
         setInfo(data)
@@ -56,11 +68,16 @@ export default function InvitacionPage() {
         setStatus('error')
         const errObj = err as { code?: string; message?: string }
         setErrorCode(errObj.code || 'UNKNOWN_ERROR')
+        setReintentable(esErrorTransitorio(err))
         // Quien llega por el correo del propietario no tiene cuenta ni a quien
         // preguntarle: 'Too many requests' aqui es un callejon sin salida.
         setErrorMsg(mensajeParaProspecto(err, 'No se pudo cargar la invitación.'))
       })
   }, [token])
+
+  useEffect(() => {
+    cargar()
+  }, [cargar])
 
   const saveTokenAndGo = (dest: string) => {
     sessionStorage.setItem('invitacion_token', token)
@@ -97,13 +114,33 @@ export default function InvitacionPage() {
     )
   }
 
+  // Reabrir el correo después de aceptar es lo normal: no es un error, es
+  // "tu estudio ya está en tu cuenta".
+  if (status === 'error' && errorCode === 'INVITACION_YA_CANJEADA') {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
+          <IconCheck size={32} className="text-primary-600" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Esta invitación ya se usó</h1>
+        <p className="text-sm text-gray-600 mb-6">
+          Si fuiste tú, tu estudio ya está en tu cuenta: ingresa para ver cómo va.
+        </p>
+        <Link
+          href={isAuthenticated ? '/dashboard' : '/login'}
+          className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+        >
+          {isAuthenticated ? 'Ir a mi cuenta' : 'Ingresar'}
+        </Link>
+      </div>
+    )
+  }
+
   if (status === 'error') {
     const titulo =
-      errorCode === 'INVITACION_YA_CANJEADA'
-        ? 'Esta invitación ya fue canjeada'
-        : errorCode === 'INVITACION_NOT_FOUND'
-          ? 'Invitación no encontrada'
-          : 'No se pudo cargar la invitación'
+      errorCode === 'INVITACION_NOT_FOUND'
+        ? 'Invitación no encontrada'
+        : 'No se pudo cargar la invitación'
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
@@ -112,13 +149,24 @@ export default function InvitacionPage() {
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">{titulo}</h1>
         <p className="text-sm text-gray-600 mb-6">{errorMsg}</p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-        >
-          <IconHome size={16} />
-          Volver al inicio
-        </Link>
+        {reintentable ? (
+          <button
+            type="button"
+            onClick={cargar}
+            className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          >
+            <IconRefresh size={16} />
+            Reintentar
+          </button>
+        ) : (
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          >
+            <IconHome size={16} />
+            Volver al inicio
+          </Link>
+        )}
       </div>
     )
   }
@@ -190,9 +238,9 @@ export default function InvitacionPage() {
       {isAuthenticated && wrongRole && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Estás autenticado como <strong>{user?.rol}</strong>. Esta invitación solo puede
-            canjearse desde una cuenta de solicitante. Cierra sesión e ingresa con una cuenta
-            adecuada.
+            Tienes abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
+            invitación se acepta con una cuenta de arrendatario: cierra sesión e ingresa (o crea tu
+            cuenta) con el correo al que llegó la invitación.
           </p>
           <button
             onClick={handleLogout}

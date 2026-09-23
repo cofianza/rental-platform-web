@@ -6,6 +6,7 @@ import { IconMail, IconLoader, IconArrowLeft, IconCheck } from '@/components/ico
 import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 interface FormErrors {
   email?: string
@@ -44,8 +45,9 @@ export default function ForgotPasswordPage() {
     try {
       await authService.forgotPassword(email)
       setIsSubmitted(true)
-    } catch {
-      setServerError('Ocurrió un error. Por favor, intenta de nuevo más tarde.')
+    } catch (err) {
+      // 429 (3 por hora por correo): el API ya lo redacta; sin conexión, igual.
+      setServerError(mensajeParaProspecto(err, 'Ocurrió un error. Por favor, intenta de nuevo más tarde.'))
     } finally {
       setIsLoading(false)
     }
@@ -129,7 +131,7 @@ export default function ForgotPasswordPage() {
               autoComplete="email"
               autoFocus
               className={cn(
-                'block w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm',
+                'block w-full pl-10 pr-4 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
                 'transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 errors.email

@@ -7,13 +7,20 @@
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AUTH_ROUTES } from '@/lib/constants'
-import { IconHome, IconBuilding2, IconArrowRight } from '@/components/icons'
+import { IconHome, IconBuilding2, IconArrowRight, IconUser } from '@/components/icons'
 
 // Solo inmobiliarias y propietarios se registran en la Oficina Virtual. El
 // arrendatario NO se auto-registra desde aquí (la cuenta de solicitante se crea
-// por el flujo de la vitrina "Me interesa"/agendar o por invitación).
+// por el flujo de la vitrina "Me interesa"/agendar o por invitación)...
+const OPCION_ARRENDATARIO = {
+  href: AUTH_ROUTES.REGISTER_SOLICITANTE,
+  Icon: IconUser,
+  titulo: 'Soy Arrendatario',
+  desc: 'Me invitaron a hacer el estudio para arrendar un inmueble.',
+}
 const OPCIONES = [
   {
     href: AUTH_ROUTES.REGISTER_PROPIETARIO,
@@ -30,6 +37,18 @@ const OPCIONES = [
 ]
 
 export default function RegisterTypeSelectorPage() {
+  // ...salvo que traiga una invitación a su estudio (el token quedó guardado al
+  // pasar por /invitacion): sin esta opción quedaba sin forma de crear cuenta.
+  const [conInvitacion, setConInvitacion] = useState(false)
+  useEffect(() => {
+    try {
+      setConInvitacion(!!sessionStorage.getItem('invitacion_token'))
+    } catch {
+      // sin sessionStorage: las dos opciones de siempre
+    }
+  }, [])
+  const opciones = conInvitacion ? [OPCION_ARRENDATARIO, ...OPCIONES] : OPCIONES
+
   return (
     <div className="w-full">
       <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
@@ -62,7 +81,7 @@ export default function RegisterTypeSelectorPage() {
       <p className="text-[13px] font-semibold text-slate-900 mb-3">Soy:</p>
 
       <div className="flex flex-col gap-2.5 mb-6">
-        {OPCIONES.map((op) => (
+        {opciones.map((op) => (
           <Link
             key={op.href}
             href={op.href}

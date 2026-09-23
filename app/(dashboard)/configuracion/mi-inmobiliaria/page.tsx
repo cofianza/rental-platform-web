@@ -34,6 +34,7 @@ import {
 } from '@/services/documentosLegalesService'
 import { perfilArrendadorService, type IPerfilArrendador } from '@/services/perfilArrendadorService'
 import { authService } from '@/services/authService'
+import { abrirEnPestana } from '@/lib/utils'
 
 interface TipoConfig {
   tipo: TipoDocumentoLegal
@@ -452,8 +453,7 @@ function DocumentoCard({
 
   const handleDownload = async () => {
     try {
-      const { url } = await documentosLegalesService.getDownloadUrl(config.tipo)
-      window.open(url, '_blank')
+      await abrirEnPestana(async () => (await documentosLegalesService.getDownloadUrl(config.tipo)).url)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al descargar')
     }

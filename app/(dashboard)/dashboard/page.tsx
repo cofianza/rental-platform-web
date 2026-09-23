@@ -11,7 +11,7 @@ import Link from 'next/link'
 import { PageHeader, KPICard, Badge } from '@/components/ui'
 import {
   IconFolderOpen, IconCheck, IconClock, IconDollarSign,
-  IconChevronRight, IconRefresh, IconCalendar,
+  IconChevronRight, IconRefresh, IconCalendar, IconReceipt, IconX,
 } from '@/components/icons'
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
@@ -498,7 +498,9 @@ function SolicitanteDashboard() {
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
-    expedienteService.getExpedientes({ page: 1, limit: 5, sortBy: 'created_at', sortOrder: 'desc' })
+    // 20 y no 5: esta lista ES "mis solicitudes" del arrendatario (el listado
+    // /expedientes es la bandeja operativa del equipo y no es para él).
+    expedienteService.getExpedientes({ page: 1, limit: 20, sortBy: 'created_at', sortOrder: 'desc' })
       .then(async (res) => {
         setExpedientes(res.data)
         const citasMap: Record<string, CitaActivaInfo | null> = {}
@@ -838,14 +840,17 @@ function SolicitanteDashboard() {
             // exp.cita_realizada (RPC) incluye la cita omitida (3.2) y los
             // expedientes por invitación; el map local cubre el refresco fino.
             const citaRealizada = !!exp.cita_realizada || citasByExpediente[exp.id]?.estado === 'realizada'
-            const isCancelled = exp.estado === 'cerrado' && !!exp.estado_pre_cancelacion
+            // Cerrado DESPUÉS de "no aprobable" no es una cancelación: sin esto el
+            // prospecto leía "Cancelado" (y veía el stepper) en vez del cierre §10.
+            const cerradoNoAprobable = exp.estado === 'cerrado' && exp.estado_pre_cancelacion === 'rechazado'
+            const isCancelled = exp.estado === 'cerrado' && !!exp.estado_pre_cancelacion && !cerradoNoAprobable
             // Si fue cancelado, calculamos los pasos completados desde el
             // estado pre-cancelacion. Asi el solicitante ve hasta donde
             // llego el proceso antes de que el propietario lo cancelara.
             const currentStep = isCancelled && exp.estado_pre_cancelacion
               ? getProcessStep(exp.estado_pre_cancelacion, citaRealizada)
               : getProcessStep(exp.estado, citaRealizada)
-            const isRejected = exp.estado === 'rechazado'
+            const isRejected = exp.estado === 'rechazado' || cerradoNoAprobable
             const isConditioned = exp.estado === 'condicionado'
 
             return (
@@ -864,7 +869,10 @@ function SolicitanteDashboard() {
                           Cancelado
                         </span>
                       ) : (
-                        <Badge estado={exp.estado} />
+                        <Badge
+                          estado={cerradoNoAprobable ? 'rechazado' : exp.estado}
+                          label={exp.estado === 'borrador' ? 'En preparación' : undefined}
+                        />
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
@@ -919,14 +927,12 @@ function SolicitanteDashboard() {
                               {isComplete ? (
                                 <IconCheck size={14} />
                               ) : isFailed ? (
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <IconX size={12} />
                               ) : (
                                 idx + 1
                               )}
                             </div>
-                            <span className={`text-[9px] mt-1 text-center leading-tight ${
+                            <span className={`text-xs mt-1 text-center leading-tight ${
                               isCurrent && !isFailed ? 'text-primary-700 font-semibold'
                                 : isFailed ? 'text-red-600 font-medium'
                                 : 'text-gray-400'
@@ -955,18 +961,18 @@ function SolicitanteDashboard() {
 
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Link href="/expedientes" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">
-          <IconClock size={20} className="text-primary-600" />
+        <Link href="/facturacion" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">
+          <IconReceipt size={20} className="text-primary-600" />
           <div>
-            <p className="text-sm font-medium text-gray-900">Mis solicitudes</p>
-            <p className="text-xs text-gray-500">Ver todas mis solicitudes</p>
+            <p className="text-sm font-medium text-gray-900">Mis pagos y facturas</p>
+            <p className="text-xs text-gray-500">El pago de tu evaluación y tus facturas</p>
           </div>
         </Link>
         <Link href="/vitrina" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">
           <IconFolderOpen size={20} className="text-primary-600" />
           <div>
             <p className="text-sm font-medium text-gray-900">Explorar vitrina</p>
-            <p className="text-xs text-gray-500">Buscar mas inmuebles</p>
+            <p className="text-xs text-gray-500">Buscar más inmuebles</p>
           </div>
         </Link>
       </div>

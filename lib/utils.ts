@@ -54,3 +54,31 @@ export function capitalize(text: string): string {
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+/**
+ * Abre en otra pestaña una URL que se obtiene con un await (enlaces firmados de
+ * descarga). Safari de iPhone bloquea el window.open que no ocurre dentro del
+ * toque, y tras un await ya no lo es: la pestaña se abre al tocar y recibe la
+ * URL cuando llega. Si el navegador no dejó abrirla, se navega en esta misma.
+ * Devuelve false si no hubo URL; propaga el error (con la pestaña ya cerrada).
+ */
+export async function abrirEnPestana(obtenerUrl: () => Promise<string | null | undefined>): Promise<boolean> {
+  const pestana = window.open('', '_blank')
+  try {
+    const url = await obtenerUrl()
+    if (!url) {
+      pestana?.close()
+      return false
+    }
+    if (pestana) {
+      pestana.opener = null
+      pestana.location.href = url
+    } else {
+      window.location.href = url
+    }
+    return true
+  } catch (err) {
+    pestana?.close()
+    throw err
+  }
+}

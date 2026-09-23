@@ -9,7 +9,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconLoader, IconCheckCircle, IconFileText } from '@/components/icons'
+import { IconLoader, IconCheckCircle, IconFileText, IconRefresh } from '@/components/icons'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import {
   cargarDocumentosService,
   type ContextoCargaDocumentos,
@@ -26,6 +27,9 @@ const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
   { value: 'otros_soportes', label: 'Otros soportes' },
 ]
 const PROPOSITO_LABEL = Object.fromEntries(PROPOSITOS.map((p) => [p.value, p.label]))
+// Al arrendatario no se le ofrecen codeudor ni póliza: Cofianza es justamente
+// lo que reemplaza a ambos. Siguen en el mapa de arriba para nombrar lo ya subido.
+const OPCIONES_PROPOSITO = PROPOSITOS.filter((p) => p.value !== 'codeudor' && p.value !== 'poliza')
 
 const MIME_OK = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_BYTES = 10 * 1024 * 1024
@@ -35,6 +39,7 @@ export default function CargarDocumentosPage() {
   const [ctx, setCtx] = useState<ContextoCargaDocumentos | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reintentable, setReintentable] = useState(false)
   const [proposito, setProposito] = useState<PropositoSoporte>('certificacion_laboral')
   const [file, setFile] = useState<File | null>(null)
   const [subiendo, setSubiendo] = useState(false)
@@ -44,11 +49,19 @@ export default function CargarDocumentosPage() {
       setCtx(await cargarDocumentosService.getContexto(token))
       setError(null)
     } catch (err: unknown) {
-      setError((err as { message?: string }).message || 'Enlace no válido o expirado.')
+      // Sin conexión no es "enlace no válido": se ofrece reintentar.
+      setReintentable(esErrorTransitorio(err))
+      setError(mensajeParaProspecto(err, 'Enlace no válido o expirado.'))
     } finally {
       setLoading(false)
     }
   }, [token])
+
+  const reintentar = () => {
+    setLoading(true)
+    setError(null)
+    cargar()
+  }
 
   useEffect(() => {
     cargar()
@@ -90,7 +103,7 @@ export default function CargarDocumentosPage() {
       form.reset()
       await cargar()
     } catch (err: unknown) {
-      toast.error((err as { message?: string }).message || 'No se pudo cargar el documento')
+      toast.error(mensajeParaProspecto(err, 'No se pudo cargar el documento'))
     } finally {
       setSubiendo(false)
     }
@@ -108,8 +121,19 @@ export default function CargarDocumentosPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <h1 className="text-lg font-semibold text-gray-900 mb-2">Enlace no disponible</h1>
+          <h1 className="text-lg font-semibold text-gray-900 mb-2">
+            {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
+          </h1>
           <p className="text-sm text-gray-600">{error || 'El enlace no es válido o expiró. Pide uno nuevo a la inmobiliaria.'}</p>
+          {reintentable && (
+            <button
+              type="button"
+              onClick={reintentar}
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              <IconRefresh size={16} /> Reintentar
+            </button>
+          )}
         </div>
       </div>
     )
@@ -126,6 +150,21 @@ export default function CargarDocumentosPage() {
           </p>
         </div>
 
+        {ctx.puede_subir && (
+          <div className="rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-900">
+            <p className="font-semibold">¿Qué subir?</p>
+            <p className="mt-1 text-primary-800">
+              Lo que respalde tus ingresos: certificación laboral si eres empleado; extractos bancarios o
+              declaración de renta si eres independiente. Si te pidieron algo puntual, súbelo como
+              «Otros soportes». Sube un archivo a la vez.
+            </p>
+            <p className="mt-2 text-primary-800">
+              Cada documento le llega a quien gestiona tu arriendo. Cuando termines no tienes que hacer nada
+              más: te contactarán si falta algo.
+            </p>
+          </div>
+        )}
+
         {ctx.puede_subir ? (
           <form onSubmit={handleSubir} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             <div>
@@ -136,9 +175,9 @@ export default function CargarDocumentosPage() {
                 id="cargar-proposito"
                 value={proposito}
                 onChange={(e) => setProposito(e.target.value as PropositoSoporte)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                className="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               >
-                {PROPOSITOS.map((p) => (
+                {OPCIONES_PROPOSITO.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>

@@ -5,10 +5,13 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { estudioPublicService } from '@/services/estudioService'
 import type { IEstudioPublicForm, ISubmitFormularioInput } from '@/types/estudio'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { IconRefresh } from '@/components/icons'
 
 // ============================================
 // Types
@@ -41,48 +44,60 @@ export default function EstudioFormularioPage() {
   const [direccion, setDireccion] = useState('')
   const [acepta, setAcepta] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [reintentable, setReintentable] = useState(false)
+  // El error va junto al botón y se trae a la vista: arriba del formulario
+  // quedaba fuera de pantalla en el celular y el botón "no hacía nada".
+  const formErrorRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (formError) formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [formError])
 
   // Load form info
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await estudioPublicService.getFormulario(token)
-        setFormInfo(data)
-        // El enlace nace del expediente, donde la inmobiliaria ya registro
-        // estos datos: llegaba en blanco y el solicitante tenia que volver a
-        // teclear su propio nombre, cedula, correo y telefono.
-        if (!data.ya_completado) {
-          setNombre(data.solicitante_nombre || '')
-          setEmail(data.solicitante?.email ?? '')
-          setTelefono(data.solicitante?.telefono ?? '')
-          const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
-          const consultable = ['CC', 'CE', 'TI', 'NIT'].includes(t)
-          // Si el tipo guardado no se puede consultar (pasaporte: los burós
-          // colombianos no lo tienen), NO se degrada a CC arrastrando el
-          // número. Eso dejaba un par (cc, número-de-pasaporte) que no es de
-          // nadie, y el gate 8.4 lo rechazaba con "El documento que se va a
-          // consultar no coincide con el de quien firmó" — que suena a
-          // suplantación — con el prospecto ya habiendo pagado.
-          setNumDoc(consultable ? (data.solicitante?.numero_documento ?? '') : '')
-          setTipoDoc(consultable ? t : '')
-        }
-        setPageState(data.ya_completado ? 'completed' : 'form')
-      } catch (err) {
-        const e = err as { statusCode?: number; code?: string; message?: string }
-        const msg =
-          e.statusCode === 404 || e.code === 'NOT_FOUND'
-            ? 'Este enlace no existe o ya fue usado. Pide que te lo reenvíen.'
-            : e.statusCode === 410 || /expir|vencid/i.test(e.code ?? '') || /expir|vencid/i.test(e.message ?? '')
-              ? 'Este enlace venció. Pide que te envíen uno nuevo.'
-              : e.statusCode === 0
-                ? 'Sin conexión. Revisa tu internet y vuelve a intentar.'
-                : 'No pudimos abrir tu estudio en este momento. Vuelve a intentarlo en un rato.'
-        setErrorMessage(msg)
-        setPageState('error')
+  const load = useCallback(async () => {
+    setPageState('loading')
+    setReintentable(false)
+    try {
+      const data = await estudioPublicService.getFormulario(token)
+      setFormInfo(data)
+      // El enlace nace del expediente, donde la inmobiliaria ya registro
+      // estos datos: llegaba en blanco y el solicitante tenia que volver a
+      // teclear su propio nombre, cedula, correo y telefono.
+      if (!data.ya_completado) {
+        setNombre(data.solicitante_nombre || '')
+        setEmail(data.solicitante?.email ?? '')
+        setTelefono(data.solicitante?.telefono ?? '')
+        const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
+        // Sin TI: el servicio es solo para mayores de edad.
+        const consultable = ['CC', 'CE', 'NIT'].includes(t)
+        // Si el tipo guardado no se puede consultar (pasaporte: los burós
+        // colombianos no lo tienen), NO se degrada a CC arrastrando el
+        // número. Eso dejaba un par (cc, número-de-pasaporte) que no es de
+        // nadie, y el gate 8.4 lo rechazaba con "El documento que se va a
+        // consultar no coincide con el de quien firmó" — que suena a
+        // suplantación — con el prospecto ya habiendo pagado.
+        setNumDoc(consultable ? (data.solicitante?.numero_documento ?? '') : '')
+        setTipoDoc(consultable ? t : '')
       }
+      setPageState(data.ya_completado ? 'completed' : 'form')
+    } catch (err) {
+      const e = err as { statusCode?: number; code?: string; message?: string }
+      const transitorio = esErrorTransitorio(err)
+      const msg = transitorio
+        ? mensajeParaProspecto(err, 'No pudimos abrir tu estudio en este momento.')
+        : e.statusCode === 404 || e.code === 'NOT_FOUND'
+          ? 'Este enlace no existe o ya fue usado. Pide que te lo reenvíen.'
+          : e.statusCode === 410 || /expir|vencid/i.test(e.code ?? '') || /expir|vencid/i.test(e.message ?? '')
+            ? 'Este enlace venció. Pide que te envíen uno nuevo.'
+            : 'No pudimos abrir tu estudio. Pide que te reenvíen el enlace.'
+      setReintentable(transitorio)
+      setErrorMessage(msg)
+      setPageState('error')
     }
-    load()
   }, [token])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +122,7 @@ export default function EstudioFormularioPage() {
         numero_documento: numDoc.trim(),
         email: email.trim(),
         telefono: telefono.trim(),
-        ingresos_mensuales: ingresos ? Number(ingresos) : undefined,
+        ingresos_mensuales: ingresos ? Number(ingresos.replace(/\D/g, '')) || undefined : undefined,
         ocupacion: ocupacion.trim() || undefined,
         empresa: empresa.trim() || undefined,
         direccion_residencia: direccion.trim() || undefined,
@@ -116,8 +131,7 @@ export default function EstudioFormularioPage() {
       await estudioPublicService.submitFormulario(token, data)
       setPageState('submitted')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al enviar el formulario'
-      setFormError(msg)
+      setFormError(mensajeParaProspecto(err, 'No pudimos enviar el formulario. Inténtalo de nuevo.'))
     } finally {
       setSubmitting(false)
     }
@@ -146,11 +160,23 @@ export default function EstudioFormularioPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Enlace no disponible</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
+        </h2>
         <p className="text-gray-500">{errorMessage}</p>
-        <p className="text-sm text-gray-400 mt-4">
-          Si necesitas un nuevo enlace, contacta a tu agente inmobiliario.
-        </p>
+        {reintentable ? (
+          <button
+            type="button"
+            onClick={load}
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
+        ) : (
+          <p className="text-sm text-gray-400 mt-4">
+            Si necesitas un nuevo enlace, contacta a tu agente inmobiliario.
+          </p>
+        )}
       </div>
     )
   }
@@ -165,7 +191,8 @@ export default function EstudioFormularioPage() {
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
         <p className="text-gray-500">
-          Gracias. Tu evaluación crediticia está en proceso.
+          Gracias, recibimos tus datos. Tu evaluación arranca cuando firmes la autorización de consulta,
+          que te llega en otro enlace por correo o WhatsApp. Si ya la firmaste, no tienes que hacer nada más.
         </p>
         <p className="text-sm text-gray-400 mt-4">
           Puedes cerrar esta ventana.
@@ -204,7 +231,11 @@ export default function EstudioFormularioPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Formulario completado</h3>
-              <p className="text-sm text-gray-500">Tu información fue enviada exitosamente. A continuación un resumen de los datos registrados.</p>
+              <p className="text-sm text-gray-500">
+                {Object.keys(datos).length > 0
+                  ? 'Tu información fue enviada exitosamente. A continuación un resumen de los datos registrados.'
+                  : 'Ya recibimos tu información.'}
+              </p>
             </div>
           </div>
 
@@ -262,7 +293,8 @@ export default function EstudioFormularioPage() {
           </div>
 
           <p className="text-xs text-gray-400 pt-2">
-            Tu evaluación crediticia está en proceso. Te avisaremos por WhatsApp y correo con el resultado; puedes cerrar esta ventana.
+            No tienes que volver a enviarlo. Si todavía no firmaste la autorización de consulta, búscala en tu
+            correo o WhatsApp: sin ella no podemos evaluar tu solicitud. Puedes cerrar esta ventana.
           </p>
         </div>
       </div>
@@ -296,12 +328,6 @@ export default function EstudioFormularioPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
         <h3 className="text-lg font-semibold text-gray-900">Confirma tus datos</h3>
 
-        {formError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {formError}
-          </div>
-        )}
-
         {/* Nombre */}
         <div>
           <label htmlFor="estudio-nombre" className="block text-sm font-medium text-gray-700 mb-1">
@@ -333,7 +359,6 @@ export default function EstudioFormularioPage() {
               <option value="" disabled>Selecciona…</option>
               <option value="CC">Cédula de Ciudadanía</option>
               <option value="CE">Cédula de Extranjería</option>
-              <option value="TI">Tarjeta de Identidad</option>
               <option value="NIT">NIT</option>
             </select>
             <p className="text-xs text-amber-700 mt-1">
@@ -394,11 +419,15 @@ export default function EstudioFormularioPage() {
             <label htmlFor="estudio-ingresos" className="block text-sm font-medium text-gray-700 mb-1">
               Ingresos mensuales <span className="text-gray-400">(opcional)</span>
             </label>
+            {/* Texto con separador de miles, no type="number": "2.500.000"
+                tecleado en un celular es-CO quedaba en blanco. */}
             <input id="estudio-ingresos"
-              type="number"
+              type="text"
               value={ingresos}
-              onChange={(e) => setIngresos(e.target.value)}
-              min={0}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
+                setIngresos(digits ? Number(digits).toLocaleString('es-CO') : '')
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="$ 0"
               inputMode="numeric"
@@ -466,7 +495,11 @@ export default function EstudioFormularioPage() {
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label htmlFor="acepta_terminos" className="text-sm text-gray-600">
-            Acepto los términos y condiciones del servicio.
+            Acepto los{' '}
+            <Link href="/terminos" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
+              términos y condiciones
+            </Link>{' '}
+            del servicio.
           </label>
         </div>
         <p className="text-xs text-gray-500 -mt-1">
@@ -474,6 +507,12 @@ export default function EstudioFormularioPage() {
           firma aparte, en el enlace de autorización que te enviamos: allí verás el texto completo
           antes de aceptarlo.
         </p>
+
+        {formError && (
+          <div ref={formErrorRef} role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {formError}
+          </div>
+        )}
 
         {/* Submit */}
         <div className="pt-2">

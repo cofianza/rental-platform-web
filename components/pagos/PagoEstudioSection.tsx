@@ -1,6 +1,6 @@
 'use client'
 
-import { IconClock } from '@/components/icons'
+import { IconClock, IconRefresh } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -12,6 +12,7 @@ import { creditosEstudiosService, type ISaldoCreditos } from '@/services/credito
 import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
 interface PagoEstudioSectionProps {
   expedienteId: string
@@ -38,6 +39,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [confirmLiberar, setConfirmLiberar] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // No se pudo LEER el estado (la primera vez): sin esto la tarjeta desaparecía
+  // y el prospecto no veía ni "Pagar" ni un error.
+  const [errorCarga, setErrorCarga] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
   const puedeUsarCreditos = userRole === 'inmobiliaria'
@@ -52,8 +56,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     try {
       const data = await pagoEstudioService.getEstado(expedienteId)
       setEstado(data)
+      setErrorCarga(false)
     } catch {
-      setError('Error al consultar estado del pago')
+      // Con un estado ya cargado se sigue mostrando el último.
+      setErrorCarga(true)
     } finally {
       setIsLoading(false)
     }
@@ -183,7 +189,24 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     )
   }
 
-  if (!estado) return null
+  if (!estado) {
+    if (!errorCarga) return null
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos consultar el estado del pago del estudio.</p>
+        <button
+          type="button"
+          onClick={() => {
+            setIsLoading(true)
+            void fetchEstado()
+          }}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
 
   // ── Vista solicitante ─────────────────────────────────────────────────
   // El solicitante no puede "pagar por el gestor" ni "enviar link". Solo paga si hay
@@ -1081,7 +1104,7 @@ const PAGO_FACTURA_LABEL: Record<string, string> = {
   direccion: 'Dirección',
   email: 'Email',
   telefono: 'Teléfono',
-  municipio_codigo: 'Código DANE del municipio',
+  municipio_codigo: 'Municipio',
 }
 
 interface PagoFacturaDatosFormProps {
@@ -1097,6 +1120,9 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
   const set = (key: keyof IDatosFiscalesPagoFactura, value: string) => {
     onChange({ ...datos, [key]: value })
   }
+  const accessToken = useAuthStore((s) => s.accessToken)
+  // Solo se guarda el código DANE; el nombre es para que el campo lo muestre.
+  const [municipioNombre, setMunicipioNombre] = useState('')
 
   return (
     <div className="space-y-4">
@@ -1167,23 +1193,17 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
         )}
       </div>
 
+      {/* El buscador de municipios en vez de pedir el "código DANE": el
+          arrendatario escribe "Medellín" y el código lo pone el catálogo. */}
       {faltantes.includes('municipio_codigo') && (
-        <div>
-          <label htmlFor="pago-datos-municipio_codigo" className="block text-sm font-medium text-gray-700 mb-1">
-            Municipio <span className="text-red-500">*</span>
-          </label>
-          <input id="pago-datos-municipio_codigo"
-            type="text"
-            value={datos.municipio_codigo || ''}
-            onChange={(e) => set('municipio_codigo', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder="11001 (Bogotá)"
-            maxLength={5}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Código DANE de 5 dígitos. Bogotá = 11001, Medellín = 05001, Cali = 76001.
-          </p>
-        </div>
+        <MunicipioCombobox
+          value={datos.municipio_codigo ? { codigo: datos.municipio_codigo, nombre: municipioNombre } : null}
+          onChange={(v) => {
+            set('municipio_codigo', v?.codigo ?? '')
+            setMunicipioNombre(v?.nombre ?? '')
+          }}
+          authToken={accessToken ?? undefined}
+        />
       )}
 
       <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">

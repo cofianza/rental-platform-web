@@ -18,6 +18,7 @@ import {
   IconMail,
   IconRefresh,
 } from '@/components/icons'
+import { abrirEnPestana } from '@/lib/utils'
 
 // ============================================
 // Types
@@ -299,8 +300,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
               <button
                 onClick={async () => {
                   try {
-                    const result = await pagoService.getComprobanteUrl(pago.id)
-                    window.open(result.url, '_blank')
+                    await abrirEnPestana(async () => (await pagoService.getComprobanteUrl(pago.id)).url)
                   } catch {
                     // Handle error silently
                   }

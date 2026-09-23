@@ -41,3 +41,15 @@ export function mensajeParaProspecto(err: unknown, fallback: string): string {
 
   return fallback
 }
+
+/**
+ * ¿Vale la pena ofrecer "Reintentar"? Sí cuando el enlace o el dato no tienen
+ * nada de malo y lo que falló fue el camino: sin conexión, el limitador por IP
+ * o un 5xx. Con un 4xx de negocio (vencido, ya usado) reintentar no cambia nada.
+ */
+export function esErrorTransitorio(err: unknown): boolean {
+  if (err instanceof ApiClientError) {
+    return err.statusCode === 0 || err.statusCode === 429 || err.statusCode >= 500
+  }
+  return err instanceof TypeError
+}

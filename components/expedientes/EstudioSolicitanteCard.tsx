@@ -26,6 +26,7 @@ import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { abrirEnPestana } from '@/lib/utils'
 
 interface EstudioSolicitanteCardProps {
   expedienteId: string
@@ -106,7 +107,8 @@ export function EstudioSolicitanteCard({
       //   1. datos_formulario del estudio (lo ultimo que el solicitante escribio).
       //   2. solicitante.tipo_documento + numero_documento (lo del registro).
       // Si el tipo no esta en el set soportado por TransUnion CO, lo ignoramos
-      // y forzamos al solicitante a elegir uno valido (cc/ce/ti/nit).
+      // y forzamos al solicitante a elegir uno valido (cc/ce/nit; la TI ya no
+      // se ofrece: el servicio es solo para mayores de edad).
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
       const tipoFromDatos = datos.tipo_documento?.toLowerCase()
       const tipoFromPrefill = prefillTipoDocumento?.toLowerCase()
@@ -114,7 +116,7 @@ export function EstudioSolicitanteCard({
       const numeroFromPrefill = prefillNumeroDocumento?.trim() || ''
 
       const isTipoValido = (t: string | undefined): t is TipoDoc =>
-        t === 'cc' || t === 'nit' || t === 'ce' || t === 'ti'
+        t === 'cc' || t === 'nit' || t === 'ce'
 
       if (isTipoValido(tipoFromDatos)) {
         setTipoDoc(tipoFromDatos)
@@ -286,8 +288,7 @@ export function EstudioSolicitanteCard({
     if (!estudio) return
     setDescargandoCert(true)
     try {
-      const res = await estudioService.descargarCertificado(estudio.id)
-      window.open(res.url, '_blank', 'noopener')
+      await abrirEnPestana(async () => (await estudioService.descargarCertificado(estudio.id)).url)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No pudimos descargar el certificado. Intenta de nuevo.')
     } finally {
@@ -455,7 +456,7 @@ export function EstudioSolicitanteCard({
             >
               <option value="cc">Cédula de ciudadanía (CC)</option>
               <option value="ce">Cédula de extranjería (CE)</option>
-              <option value="ti">Tarjeta de identidad (TI)</option>
+              {/* Sin TI: el servicio es solo para mayores de edad. */}
               <option value="nit">NIT</option>
             </select>
           </div>
@@ -543,10 +544,10 @@ export function EstudioSolicitanteCard({
           type="button"
           onClick={handleDescargarCertificado}
           disabled={descargandoCert}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           <IconDownload size={14} />
-          {descargandoCert ? 'Preparando certificado…' : 'Descargar certificado (CRC)'}
+          {descargandoCert ? 'Preparando certificado…' : 'Descargar certificado del resultado'}
         </button>
       ) : null
 

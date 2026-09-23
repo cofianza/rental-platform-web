@@ -146,6 +146,7 @@ export type AuthErrorCode =
   | 'NETWORK_ERROR'
   | 'SERVER_ERROR'
   | 'SESSION_EXPIRED'
+  | 'RATE_LIMIT_EXCEEDED'
 
 /**
  * Error de autenticación

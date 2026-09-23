@@ -17,11 +17,11 @@ import { getPublicPropertyById, type PublicProperty } from '@/services/publicPro
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
 
+// Sin tarjeta de identidad (solo mayores de edad) ni pasaporte: los burós
+// colombianos no lo consultan, y con el teclado numérico ni se podía escribir.
 const TIPO_DOC_OPTIONS = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
-  { value: 'ti', label: 'Tarjeta de Identidad' },
-  { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'nit', label: 'NIT' },
 ]
 

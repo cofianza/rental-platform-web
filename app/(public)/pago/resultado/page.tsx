@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { apiClient } from '@/lib/api'
 import { getResultadoPagoPublico, type IPagoResultadoPublico } from '@/services/pagoEstudioService'
+import { IconCheck, IconClock, IconX } from '@/components/icons'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -31,6 +32,7 @@ function PagoResultadoContent() {
   const pagoId = searchParams.get('pago')
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const isAuthInitialized = useAuthStore((s) => s.isInitialized)
+  const rol = useAuthStore((s) => s.user?.rol)
 
   const [loading, setLoading] = useState(true)
   const [secondsLeft, setSecondsLeft] = useState(AUTO_CLOSE_SECONDS)
@@ -135,6 +137,18 @@ function PagoResultadoContent() {
   // botón era una invitación a un cobro doble.
   const enProceso = isPending || resultado?.estado === 'procesando'
   const retryHref = !isSuccess && !enProceso ? resultado?.payment_link_url ?? null : null
+  // La pantalla sirve para cualquier concepto: "consultamos centrales" solo
+  // aplica al estudio (sin pagoId en la URL se asume estudio, como siempre).
+  const esEstudio = !resultado?.concepto || resultado.concepto === 'estudio'
+  const conceptoLabel = resultado?.concepto ? CONCEPTO_LABEL[resultado.concepto] ?? 'Pago a Cofianza' : 'Estudio de arrendamiento'
+  // Quien paga el estudio sin ser el arrendatario (el gestor) puede pagarlo
+  // antes de que el arrendatario firme la autorización.
+  const esArrendatario = !isAuthenticated || rol === 'solicitante'
+  const textoExito = !esEstudio
+    ? `Tu pago (${conceptoLabel.toLowerCase()}) quedó registrado.`
+    : esArrendatario
+      ? 'Tu pago del estudio quedó registrado y tu evaluación ya está en marcha.'
+      : 'El pago del estudio quedó registrado. La evaluación arranca en cuanto el arrendatario firme la autorización de consulta; si ya la firmó, ya está en marcha.'
 
   return (
     <div className="max-w-md mx-auto py-8">
@@ -146,17 +160,11 @@ function PagoResultadoContent() {
           }`}
         >
           {isSuccess ? (
-            <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <IconCheck size={40} className="text-green-600" />
           ) : isPending ? (
-            <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconClock size={40} className="text-amber-600" />
           ) : (
-            <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <IconX size={40} className="text-red-600" />
           )}
         </div>
 
@@ -166,12 +174,12 @@ function PagoResultadoContent() {
 
         <p className="text-sm text-gray-600 max-w-sm mx-auto">
           {isSuccess
-            ? 'Tu pago del estudio de arrendamiento ha sido procesado correctamente. Con tu autorizacion ya firmada, estamos ejecutando la consulta: te avisaremos el resultado.'
+            ? textoExito
             : isPending
               ? 'Tu pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Te avisaremos cuando se confirme — no necesitas volver a pagar.'
               : isCancelled
-                ? `Has cancelado el proceso de pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Puedes volver a intentarlo usando el link que recibiste por correo.'}`
-                : `Hubo un problema al procesar tu pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Por favor intenta nuevamente usando el link que recibiste por correo.'}`}
+                ? `Has cancelado el proceso de pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Puedes volver a intentarlo usando el enlace que recibiste por correo.'}`
+                : `Hubo un problema al procesar tu pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Por favor intenta nuevamente usando el enlace que recibiste por correo.'}`}
         </p>
       </div>
 
@@ -183,15 +191,14 @@ function PagoResultadoContent() {
         <div className="px-5 py-3 space-y-0">
           <div className="flex justify-between py-2.5 border-b border-gray-100">
             <span className="text-sm text-gray-500">Concepto</span>
-            <span className="text-sm font-medium text-gray-900">
-              {resultado?.concepto ? CONCEPTO_LABEL[resultado.concepto] ?? resultado.concepto : 'Estudio de arrendamiento'}
-            </span>
+            <span className="text-sm font-medium text-gray-900">{conceptoLabel}</span>
           </div>
           {resultado?.monto_formateado && (
             <div className="flex justify-between py-2.5 border-b border-gray-100">
               <span className="text-sm text-gray-500">Monto</span>
+              {/* monto_formateado ya trae el signo: antes salía "$$150.000 COP". */}
               <span className="text-sm font-semibold text-gray-900">
-                ${resultado.monto_formateado} COP
+                {resultado.monto_formateado} COP
               </span>
             </div>
           )}
@@ -225,19 +232,22 @@ function PagoResultadoContent() {
         </div>
       </div>
 
-      {/* Help text */}
+      {/* Help text. Sin sesión, el "¿Qué sigue?" de abajo ya lo dice (antes
+          este recuadro y aquel se contradecían sobre quién avisa el resultado). */}
       {isSuccess ? (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800">
-            {isAuthenticated
-              ? 'Ya puedes regresar a tu panel para ver el avance de la evaluación crediticia.'
-              : 'No necesitas hacer nada mas: tu estudio ya esta corriendo. La inmobiliaria te contactara con el resultado.'}
-          </p>
-        </div>
+        isAuthenticated && (
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-800">
+              {esEstudio
+                ? 'Ya puedes regresar a tu panel para ver el avance de la evaluación.'
+                : 'Ya puedes regresar a tu panel.'}
+            </p>
+          </div>
+        )
       ) : (
         <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-800">
-            Si tienes dudas o necesitas ayuda, comunicate con la inmobiliaria que te envio el link de pago.
+            Si tienes dudas o necesitas ayuda, comunícate con quien te envió el enlace de pago.
           </p>
         </div>
       )}
@@ -270,11 +280,15 @@ function PagoResultadoContent() {
           ) : (
             <div className="w-full rounded-lg border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
               <p className="mb-1 font-semibold text-gray-900">¿Qué sigue?</p>
-              <ol className="list-decimal space-y-1 pl-4">
-                <li>Cofianza consulta las centrales de riesgo (tarda menos de un minuto).</li>
-                <li>Te avisamos por WhatsApp y correo con el resultado.</li>
-                <li>Si tienes dudas, escríbele a la inmobiliaria que te envió el enlace.</li>
-              </ol>
+              {esEstudio ? (
+                <ol className="list-decimal space-y-1 pl-4">
+                  <li>Cofianza consulta las centrales de riesgo (suele tardar unos minutos).</li>
+                  <li>Te avisamos por correo y WhatsApp con el resultado.</li>
+                  <li>Si tienes dudas, escríbele a quien te envió el enlace.</li>
+                </ol>
+              ) : (
+                <p>No tienes que hacer nada más. Si tienes dudas sobre este pago, escríbele a quien te envió el enlace.</p>
+              )}
               <Link href="/" className="mt-3 inline-block font-medium text-primary-700 hover:underline">
                 Ir a cofianza.co
               </Link>

@@ -400,6 +400,16 @@ class AuthService {
           message: AUTH_MESSAGES.INACTIVE_ACCOUNT,
         }
       }
+      // Sin conexión y limitador: antes caían en "Error en el servidor".
+      if (error.statusCode === 0) {
+        return { code: 'NETWORK_ERROR', message: AUTH_MESSAGES.NETWORK_ERROR }
+      }
+      if (error.statusCode === 429) {
+        return {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Demasiados intentos de ingreso. Espera un minuto e inténtalo de nuevo.',
+        }
+      }
     }
 
     // Error de red

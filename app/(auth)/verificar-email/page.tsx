@@ -3,11 +3,14 @@
 import { useState, useEffect, Suspense, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { IconCheck, IconX, IconLoader, IconMail } from '@/components/icons'
+import { IconCheck, IconX, IconLoader, IconMail, IconRefresh, IconAlertTriangle } from '@/components/icons'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
 
-type VerifyState = 'verifying' | 'success' | 'error'
+// 'sin_verificar': no se pudo LLEGAR a verificar (sin conexión, 5xx, 429). El
+// enlace puede estar bien: se ofrece reintentar, no pedir uno nuevo.
+type VerifyState = 'verifying' | 'success' | 'error' | 'sin_verificar'
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
@@ -25,10 +28,16 @@ function VerifyEmailContent() {
       return
     }
 
+    setState('verifying')
     try {
       await authService.verifyEmail(token)
       setState('success')
-    } catch {
+    } catch (err) {
+      if (esErrorTransitorio(err)) {
+        setState('sin_verificar')
+        setErrorMessage(mensajeParaProspecto(err, 'No pudimos verificar tu correo en este momento.'))
+        return
+      }
       setState('error')
       setErrorMessage('El enlace de verificación es inválido o ha expirado.')
     }
@@ -46,8 +55,8 @@ function VerifyEmailContent() {
     try {
       await authService.resendVerification(resendEmail)
       setResendMessage('Si el email está registrado, recibirás un nuevo enlace de verificación.')
-    } catch {
-      setResendMessage('No se pudo enviar el correo. Intenta de nuevo más tarde.')
+    } catch (err) {
+      setResendMessage(mensajeParaProspecto(err, 'No se pudo enviar el correo. Intenta de nuevo más tarde.'))
     } finally {
       setResending(false)
     }
@@ -159,6 +168,25 @@ function VerifyEmailContent() {
         </div>
       )}
 
+      {state === 'sin_verificar' && (
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+              <IconAlertTriangle size={32} className="text-amber-600" />
+            </div>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">No pudimos verificar tu correo</h1>
+          <p className="text-sm text-gray-600">{errorMessage}</p>
+          <button
+            type="button"
+            onClick={verify}
+            className="inline-flex w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-bold rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
+        </div>
+      )}
+
       {state === 'error' && (
         <div className="space-y-4">
           <div className="flex justify-center">
@@ -178,7 +206,7 @@ function VerifyEmailContent() {
                   type="email"
                   value={resendEmail}
                   onChange={(e) => { setResendEmail(e.target.value); setResendMessage(null) }}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-base focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   placeholder="tu@email.com"
                 />
               </div>

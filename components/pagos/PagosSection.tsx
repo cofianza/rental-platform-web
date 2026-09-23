@@ -25,6 +25,7 @@ import {
   IconCheck,
   IconX,
 } from '@/components/icons'
+import { abrirEnPestana } from '@/lib/utils'
 
 // ============================================
 // Types
@@ -249,8 +250,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
   const handleDescargarComprobante = useCallback(async (pagoId: string) => {
     setActionLoading(pagoId)
     try {
-      const result = await pagoService.getComprobanteUrl(pagoId)
-      window.open(result.url, '_blank')
+      await abrirEnPestana(async () => (await pagoService.getComprobanteUrl(pagoId)).url)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al descargar')
     } finally {

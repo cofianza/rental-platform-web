@@ -91,6 +91,13 @@ export function useBreadcrumbs(): Breadcrumb[] {
       // /admin no tiene página propia: llevaba a un 404.
       if (NO_NAVEGABLES.has(segment)) return
 
+      // El arrendatario no tiene la bandeja /expedientes (es del equipo): su
+      // lista de solicitudes es el inicio.
+      if (rol === 'solicitante' && accumulatedPath === '/expedientes') {
+        crumbs.push({ label: 'Mis solicitudes', href: '/dashboard', isLast: index === segments.length - 1 })
+        return
+      }
+
       // Determinar la etiqueta (el menú tiene prioridad)
       let label = navLabels[accumulatedPath] ?? ROUTE_LABELS[segment]
 
@@ -116,7 +123,7 @@ export function useBreadcrumbs(): Breadcrumb[] {
     })
 
     return crumbs
-  }, [pathname, navLabels])
+  }, [pathname, navLabels, rol])
 
   return breadcrumbs
 }

@@ -126,7 +126,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
           {/* Description */}
           {property.descripcion && (
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Descripcion</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Descripción</h2>
               <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
                 {property.descripcion}
               </p>
@@ -135,13 +135,13 @@ export function PropertyDetailClient({ property, similares }: Props) {
 
           {/* Map (approximate location) */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Ubicacion aproximada</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Ubicación aproximada</h2>
             <p className="text-xs text-gray-400 mb-3">
-              Se muestra la zona general del inmueble. La direccion exacta se comparte al avanzar en el proceso.
+              Se muestra la zona general del inmueble. La dirección exacta se comparte al avanzar en el proceso.
             </p>
             <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100">
               <iframe
-                title="Ubicacion aproximada del inmueble"
+                title="Ubicación aproximada del inmueble"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -179,7 +179,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
               </p>
               {property.administracion > 0 && (
                 <p className="text-sm text-gray-500 mb-4">
-                  Administracion: {formatCurrency(property.administracion)}
+                  Administración: {formatCurrency(property.administracion)}
                 </p>
               )}
 
@@ -197,11 +197,11 @@ export function PropertyDetailClient({ property, similares }: Props) {
               {/* Specs grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {property.area_m2 && (
-                  <SpecItem icon={IconRuler} label="Area" value={`${property.area_m2} m²`} />
+                  <SpecItem icon={IconRuler} label="Área" value={`${property.area_m2} m²`} />
                 )}
                 <SpecItem icon={IconBed} label="Habitaciones" value={String(property.habitaciones)} />
-                <SpecItem icon={IconBath} label="Banos" value={String(property.banos)} />
-                <SpecItem icon={IconCar} label="Parqueadero" value={property.parqueadero ? 'Si' : 'No'} />
+                <SpecItem icon={IconBath} label="Baños" value={String(property.banos)} />
+                <SpecItem icon={IconCar} label="Parqueadero" value={property.parqueadero ? 'Sí' : 'No'} />
               </div>
 
               {/* Published date */}

@@ -152,6 +152,17 @@ body {
   outline-offset: 2px;
 }
 
+/* Safari de iPhone amplía la página al enfocar un campo con letra de menos de
+   16 px, y el zoom no se deshace solo (los modales fixed quedan cortados). En
+   pantallas táctiles los campos text-xs/text-sm suben a 16 px. Va SIN capa a
+   propósito: así le gana a las utilidades de Tailwind (que viven en
+   @layer utilities) sin tocar los campos que ya son más grandes. */
+@media (pointer: coarse) {
+  :is(input, select, textarea):is(.text-xs, .text-sm) {
+    font-size: 16px;
+  }
+}
+
 /* 2.3 Movimiento: respeta la preferencia del SO de reducir animaciones
    (transiciones de hover, spinners, reveals del dashboard, etc.). */
 @media (prefers-reduced-motion: reduce) {

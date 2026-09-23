@@ -73,6 +73,9 @@ export default function ExpedienteDetallePage() {
   const router = useRouter()
   const id = params.id as string
   const user = useAuthStore((s) => s.user)
+  // El arrendatario vuelve a SU lista (el dashboard); /expedientes es la
+  // bandeja operativa del equipo.
+  const rutaListado = user?.rol === 'solicitante' ? '/dashboard' : '/expedientes'
   // Miembro del equipo (no titular) con perfil personal incompleto: no puede
   // administrar el expediente hasta completar sus datos (banner + acciones
   // deshabilitadas; el backend además bloquea las mutaciones).
@@ -311,10 +314,10 @@ export default function ExpedienteDetallePage() {
           El estudio que buscas no existe o fue eliminado.
         </p>
         <button
-          onClick={() => router.push('/expedientes')}
+          onClick={() => router.push(rutaListado)}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
         >
-          Volver al listado
+          {user?.rol === 'solicitante' ? 'Ver mis solicitudes' : 'Volver al listado'}
         </button>
       </div>
     )
@@ -351,7 +354,8 @@ export default function ExpedienteDetallePage() {
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <button
-            onClick={() => router.push('/expedientes')}
+            onClick={() => router.push(rutaListado)}
+            aria-label={user?.rol === 'solicitante' ? 'Volver a mis solicitudes' : 'Volver al listado'}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
           >
             <IconArrowLeft size={20} className="text-gray-600" />
@@ -373,7 +377,16 @@ export default function ExpedienteDetallePage() {
                   Cancelado
                 </span>
               ) : (
-                <Badge estado={expediente.estado} />
+                // Cerrado tras "no aprobable" no es "Finalizado" (eso lee a
+                // éxito); y "Borrador" es jerga interna para el arrendatario.
+                <Badge
+                  estado={
+                    expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
+                      ? 'rechazado'
+                      : expediente.estado
+                  }
+                  label={user?.rol === 'solicitante' && expediente.estado === 'borrador' ? 'En preparación' : undefined}
+                />
               )}
             </div>
 
@@ -490,7 +503,14 @@ export default function ExpedienteDetallePage() {
 
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
-            {expediente.estado === 'rechazado' ? (
+            {expediente.estado === 'rechazado' ||
+            (user?.rol === 'solicitante' &&
+              expediente.estado === 'cerrado' &&
+              expediente.estado_pre_cancelacion === 'rechazado') ? (
+              // Al prospecto, el cierre posterior a "no aprobable" se le sigue
+              // diciendo "No aprobable por ahora" (§10/§13): la rama "Estudio
+              // cerrado" de abajo le decía "rechazado" y le mostraba el motivo
+              // interno del motor.
               <ExpedienteRechazadoBanner
                 motivo={expediente.motivo_rechazo}
                 esProspecto={user?.rol === 'solicitante'}
@@ -527,7 +547,7 @@ export default function ExpedienteDetallePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-gray-900 mb-0.5">Estudio cerrado</h3>
                     <p className="text-sm text-gray-700">
-                      El resultado fue rechazado y el caso quedo cerrado.
+                      El estudio no fue aprobable y el caso quedó cerrado.
                     </p>
                     {expediente.motivo_rechazo && (
                       <p className="text-sm text-gray-600 mt-2">

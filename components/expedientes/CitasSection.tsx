@@ -538,7 +538,7 @@ function CitaCard({
                 onClick={onNoAsistio}
                 className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               >
-                No asistio
+                No asistió
               </button>
             )}
             {(cita.estado === 'solicitada' || cita.estado === 'confirmada') && onCancelar && (
@@ -557,11 +557,12 @@ function CitaCard({
             banner de aceptar/rechazar). Reprogramar manda la cita a 'solicitada'
             esperando que el propietario re-confirme. */}
         {isSolicitante && !canManage && !isLoading && cita.estado === 'confirmada' && !reprogramacionPendiente && (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {/* 44 px de alto: el arrendatario lo toca desde el celular. */}
             {onReprogramar && (
               <button
                 onClick={onReprogramar}
-                className="px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
+                className="inline-flex min-h-11 items-center px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
               >
                 Reprogramar
               </button>
@@ -569,7 +570,7 @@ function CitaCard({
             {onCancelar && (
               <button
                 onClick={onCancelar}
-                className="px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                className="inline-flex min-h-11 items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
               >
                 Cancelar
               </button>
