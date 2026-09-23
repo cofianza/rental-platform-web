@@ -372,7 +372,10 @@ export function ResumenSection() {
           tone="green"
           label="Ingresos fianzas"
           value={money(kpis.ingresosFianzas)}
-          sub={config.ivaGarantiaPorcentaje > 0 ? `+ ${money(kpis.ivaRecaudado)} IVA` : 'tarifa exenta de IVA'}
+          sub={
+            (config.ivaGarantiaPorcentaje > 0 ? `+ ${money(kpis.ivaRecaudado)} IVA` : 'tarifa exenta de IVA') +
+            (kpis.contratosSinTarifa ? ` · ${kpis.contratosSinTarifa} sin dato` : '')
+          }
           onClick={goIngresos}
         />
         <Kpi

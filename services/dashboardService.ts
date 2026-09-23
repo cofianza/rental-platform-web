@@ -44,6 +44,8 @@ export interface AdminOverviewKpis {
   zonaRiesgoExposicion: number
   ingresosFianzas: number
   ivaRecaudado: number
+  /** Contratos activos que no entran en ingresosFianzas: sin estudio completado o sin dato. */
+  contratosSinTarifa?: number
   exposicionMaxima: number
   vitrinaPublicados: number
   vitrinaProspectos: number
@@ -224,6 +226,16 @@ export interface IngresoContratoRow {
   total: number
 }
 
+/** Contrato activo que no entra en el mes, con el porqué. */
+export interface IngresoExcluidoRow {
+  contratoId: string
+  inquilino: string
+  inmueble: string
+  canon: number
+  fechaInicio: string | null
+  motivo: 'inicia_despues' | 'sin_estudio' | 'sin_dato'
+}
+
 export interface IngresosData {
   valorAfianzamientoMensual: number
   ivaGarantiaPorcentaje: number
@@ -231,6 +243,7 @@ export interface IngresosData {
   totalIva: number
   totalBruto: number
   porContrato: IngresoContratoRow[]
+  excluidos?: IngresoExcluidoRow[]
 }
 
 // ── Detalle de aliado (inmobiliaria/propietario) ────────────
