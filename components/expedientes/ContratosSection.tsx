@@ -493,9 +493,11 @@ export function ContratosSection({
         <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
           {/* Progreso multi-parte (solo si el contrato tiene firmantes). El
               recordatorio a las partes pendientes vive aquí. */}
+          {/* canRegenerate y no canCreate: reenviar/cancelar la firma también
+              lo permite la API al propietario (roleGuard de /firma). */}
           <FirmantesContratoSection
             contratoId={firmaContratoId}
-            canManage={canCreate}
+            canManage={canRegenerate}
             onAllSigned={() => { fetchContratos(); onContratoActualizado?.() }}
             onFirmantesLoaded={(total) => setTieneMultiparte(total > 0)}
           />
@@ -506,7 +508,7 @@ export function ContratosSection({
             <FirmaSolicitudesSection
               contratoId={firmaContratoId}
               estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
-              canManage={canCreate}
+              canManage={canRegenerate}
             />
           )}
         </div>

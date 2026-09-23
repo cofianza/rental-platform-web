@@ -642,8 +642,10 @@ export default function ContratoDetallePage() {
           </div>
 
           {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de
-              firma. Se auto-oculta si el contrato no usa firma multi-parte. */}
-          <FirmantesContratoSection contratoId={id} canManage={canManage} onAllSigned={handleAllSigned} />
+              firma. Se auto-oculta si el contrato no usa firma multi-parte.
+              El recordatorio lo permite la API también al dueño (inmobiliaria
+              o propietario), no solo a los roles internos. */}
+          <FirmantesContratoSection contratoId={id} canManage={canRegenerate} onAllSigned={handleAllSigned} />
 
           {/* Accesos: expediente + historial de estados, agrupados en una sola
               tarjeta de lista en vez de dos tarjetas sueltas. */}
