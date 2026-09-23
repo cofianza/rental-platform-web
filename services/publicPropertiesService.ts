@@ -62,7 +62,9 @@ interface PaginationMeta {
 async function publicFetch<T>(path: string): Promise<{ data: T; meta?: PaginationMeta }> {
   const res = await fetch(`${API_BASE_URL}${path}`, { cache: 'no-store' })
   if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`)
+    // El status viaja en el error: el detalle distingue «ya no existe» (404)
+    // de una falla pasajera (429/5xx), que no debe verse como «no existe».
+    throw Object.assign(new Error(`Error ${res.status}: ${res.statusText}`), { status: res.status })
   }
   const json = await res.json()
   return { data: json.data, meta: json.meta }

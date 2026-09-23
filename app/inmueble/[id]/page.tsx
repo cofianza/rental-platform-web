@@ -58,8 +58,12 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   let property: PublicProperty
   try {
     property = await getPublicPropertyById(id)
-  } catch {
-    notFound()
+  } catch (err) {
+    // Retirado, arrendado o id inválido → «ya no está disponible» (not-found.tsx).
+    // Cualquier otra falla va a error.tsx, con reintento.
+    const status = (err as { status?: number }).status
+    if (status === 404 || status === 400) notFound()
+    throw err
   }
 
   // Fetch similar properties (same tipo or ciudad, exclude current)
@@ -85,7 +89,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-primary-600">Inicio</Link>
           <span>/</span>
-          <Link href="/" className="hover:text-primary-600">Propiedades</Link>
+          <Link href="/vitrina" className="hover:text-primary-600">Propiedades</Link>
           <span>/</span>
           <span className="text-gray-900 font-medium">
             {TIPO_LABELS[property.tipo] || property.tipo} en {property.ciudad}
