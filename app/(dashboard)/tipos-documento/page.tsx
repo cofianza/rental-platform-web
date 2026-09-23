@@ -89,7 +89,7 @@ function SortableRow({ tipo, onEdit, onToggle }: SortableRowProps) {
       </td>
       {/* Orden */}
       <td className="px-3 py-3 text-sm text-gray-500 w-16 text-center">{tipo.orden}</td>
-      {/* Codigo */}
+      {/* Código */}
       <td className="px-3 py-3 text-sm font-mono text-gray-700">{tipo.codigo}</td>
       {/* Nombre */}
       <td className="px-3 py-3 text-sm font-medium text-gray-900">{tipo.nombre}</td>
@@ -103,7 +103,7 @@ function SortableRow({ tipo, onEdit, onToggle }: SortableRowProps) {
               : 'bg-gray-100 text-gray-600',
           )}
         >
-          {tipo.es_obligatorio ? 'Si' : 'No'}
+          {tipo.es_obligatorio ? 'Sí' : 'No'}
         </span>
       </td>
       {/* Formatos */}
@@ -251,12 +251,16 @@ function TiposDocumentoContent() {
     const newIndex = tipos.findIndex((t) => t.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(tipos, oldIndex, newIndex)
+    // Las filas visibles se reparten los `orden` que ya tenían: con filtro,
+    // búsqueda o página 2 no chocan con las ocultas. Un empate se desempata.
+    const ordenes = tipos.map((t) => t.orden).sort((a, b) => a - b)
+    for (let i = 1; i < ordenes.length; i++) ordenes[i] = Math.max(ordenes[i], ordenes[i - 1] + 1)
+    const reordered = arrayMove(tipos, oldIndex, newIndex).map((t, i) => ({ ...t, orden: ordenes[i] }))
     setTipos(reordered)
 
     setIsReordering(true)
     try {
-      const items = reordered.map((t, i) => ({ id: t.id, orden: i }))
+      const items = reordered.map((t) => ({ id: t.id, orden: t.orden }))
       await tipoDocumentoAdminService.reordenar(items)
       toast.success('Orden actualizado')
     } catch {
@@ -368,7 +372,7 @@ function TiposDocumentoContent() {
                       Orden
                     </th>
                     <th className="px-3 py-2.5 text-xs font-medium text-gray-500 uppercase text-left">
-                      Codigo
+                      Código
                     </th>
                     <th className="px-3 py-2.5 text-xs font-medium text-gray-500 uppercase text-left">
                       Nombre
@@ -380,7 +384,7 @@ function TiposDocumentoContent() {
                       Formatos
                     </th>
                     <th className="px-3 py-2.5 text-xs font-medium text-gray-500 uppercase text-center w-20">
-                      Max
+                      Máx.
                     </th>
                     <th className="px-3 py-2.5 text-xs font-medium text-gray-500 uppercase text-left w-24">
                       Estado
@@ -455,8 +459,8 @@ function TiposDocumentoContent() {
         }
         message={
           toggleDialog.tipo?.activo
-            ? `¿Desactivar "${toggleDialog.tipo?.nombre}"? No aparecera como opcion al subir documentos.`
-            : `¿Activar "${toggleDialog.tipo?.nombre}"? Estara disponible al subir documentos.`
+            ? `¿Desactivar "${toggleDialog.tipo?.nombre}"? No aparecerá como opción al subir documentos.`
+            : `¿Activar "${toggleDialog.tipo?.nombre}"? Estará disponible al subir documentos.`
         }
         confirmLabel={toggleDialog.tipo?.activo ? 'Desactivar' : 'Activar'}
         variant={toggleDialog.tipo?.activo ? 'danger' : 'default'}
