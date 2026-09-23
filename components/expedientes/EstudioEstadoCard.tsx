@@ -52,6 +52,12 @@ interface EstudioEstadoCardProps {
   inmuebleActualId?: string | null
   /** Se llama tras reasignar, para que el expediente se recargue. */
   onReasignado?: () => void
+  /**
+   * La consulta al otro buró del titular condicionado se ofrece en la guía
+   * "Estudio condicionado: qué sigue" (AprobarCondicionadoCard): aquí se omite
+   * para no tener el mismo formulario dos veces en la pantalla.
+   */
+  reconsultaEnGuia?: boolean
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -230,6 +236,7 @@ export function EstudioEstadoCard({
   solicitante,
   inmuebleActualId,
   onReasignado,
+  reconsultaEnGuia,
 }: EstudioEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -291,6 +298,7 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
+          ocultarReconsulta={reconsultaEnGuia}
           inmuebleActualId={inmuebleActualId}
           onReasignado={() => {
             fetchEstudios()
@@ -330,6 +338,8 @@ interface EstudioPanelProps {
   onVerEstudios?: () => void
   userRol?: string
   onRetried?: () => void
+  /** La consulta al otro buró la ofrece la guía del condicionado (solo el titular). */
+  ocultarReconsulta?: boolean
   /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
   inmuebleActualId?: string | null
   onReasignado?: () => void
@@ -342,6 +352,7 @@ function EstudioPanel({
   onVerEstudios,
   userRol,
   onRetried,
+  ocultarReconsulta,
   inmuebleActualId,
   onReasignado,
 }: EstudioPanelProps) {
@@ -358,8 +369,8 @@ function EstudioPanel({
     puedeEditar
   // Incluye el condicionado-sin-información: ahí el form no reintenta sino que
   // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
-  const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio)
   const esReconsulta = esCondicionadoSinInfo(estudio)
+  const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio) && !(ocultarReconsulta && esReconsulta)
   // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
   // otra propiedad sin volver a cobrar. El caso natural es el candidato que
   // perdio el inmueble porque otro fue aprobado primero (§4.2 ya se lo avisa

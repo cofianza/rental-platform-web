@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
 import type { Tab } from '@/components/ui/Tabs'
+import type { IEstudio } from '@/types/estudio'
 import {
   IconArrowLeft,
   IconEdit,
@@ -157,7 +158,9 @@ export default function ExpedienteDetallePage() {
 
   // Condicionado SIN score = el buró no tenía datos de la persona, no "riesgo
   // medio". El banner y la tarjeta de decisión cambian el texto con esto.
-  const [sinInfoBuro, setSinInfoBuro] = useState(false)
+  // El estudio del titular se guarda entero: la guía del condicionado ofrece
+  // con él la consulta al otro buró.
+  const [titularCondicionado, setTitularCondicionado] = useState<IEstudio | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
   useEffect(() => {
@@ -169,12 +172,13 @@ export default function ExpedienteDetallePage() {
         const titular = data
           .filter((e) => e.estado !== 'cancelado' && e.tipo !== 'con_coarrendatario')
           .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-        if (!cancel) setSinInfoBuro(!!titular && esCondicionadoSinInfo(titular))
+        if (!cancel) setTitularCondicionado(titular ?? null)
       })
-      .catch(() => { if (!cancel) setSinInfoBuro(false) })
+      .catch(() => { if (!cancel) setTitularCondicionado(null) })
     return () => { cancel = true }
   }, [id, estadoExpediente, actualizadoEn])
-  const condicionadoSinInfo = estadoExpediente === 'condicionado' && sinInfoBuro
+  const condicionadoSinInfo =
+    estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -342,6 +346,8 @@ export default function ExpedienteDetallePage() {
       </div>
     )
   }
+
+  const esCondicionado = expediente.estado === 'condicionado'
 
   const nombreAnalista = expediente.analista
     ? `${expediente.analista.nombre} ${expediente.analista.apellido}`.trim()
@@ -635,6 +641,31 @@ export default function ExpedienteDetallePage() {
                   />
                 )}
 
+                {/* Condicionado: la guía de "qué sigue" y el co-arrendatario van
+                    ARRIBA de la evaluación — es lo que hay que resolver ahora. */}
+                {esCondicionado && (
+                  <>
+                    {puedeEditar && (
+                      <AprobarCondicionadoCard
+                        expedienteId={id}
+                        expedienteEstado={expediente.estado}
+                        userRol={user?.rol}
+                        sinInfoBuro={condicionadoSinInfo}
+                        estudioTitular={titularCondicionado}
+                        persona={expediente.solicitante}
+                        onAprobado={fetchExpediente}
+                        onReconsultado={fetchExpediente}
+                      />
+                    )}
+                    <CoarrendatarioPropietarioCard
+                      expedienteId={id}
+                      expedienteEstado={expediente.estado}
+                      userRol={user?.rol}
+                      onEstudioCompletado={fetchExpediente}
+                    />
+                  </>
+                )}
+
                 {/* Estado del estudio: es el centro del expediente.
                     Se auto-oculta si aún no hay estudio (entonces manda la
                     acción de habilitar). Si la consulta a TransUnion falló,
@@ -651,6 +682,7 @@ export default function ExpedienteDetallePage() {
                   // primero que queda desactualizado).
                   inmuebleActualId={expediente.inmueble?.id}
                   onReasignado={fetchExpediente}
+                  reconsultaEnGuia={esCondicionado && puedeEditar}
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}
@@ -699,21 +731,13 @@ export default function ExpedienteDetallePage() {
                     solicitanteTelefono={expediente.solicitante?.telefono}
                   />
                 )}
-                {puedeEditar && (
-                  <AprobarCondicionadoCard
-                    expedienteId={id}
-                    expedienteEstado={expediente.estado}
-                    userRol={user?.rol}
-                    sinInfoBuro={condicionadoSinInfo}
-                    onAprobado={fetchExpediente}
-                  />
-                )}
-
                 {/* ── Estado / informativo (debajo de las acciones) ── */}
                 <ContratoEstadoCard
                   expedienteId={id}
                   onVerContratos={() => setActiveTab('contratos')}
                 />
+                {/* Fuera del condicionado queda como rastro de quién acompañó (arriba ya se pintó). */}
+                {!esCondicionado && (
                 <CoarrendatarioPropietarioCard
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
@@ -724,6 +748,7 @@ export default function ExpedienteDetallePage() {
                   // "Aprobar expediente" sobre un estado que ya no existe.
                   onEstudioCompletado={fetchExpediente}
                 />
+                )}
               </>
             )}
 

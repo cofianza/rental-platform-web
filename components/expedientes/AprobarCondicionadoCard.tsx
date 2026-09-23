@@ -1,24 +1,31 @@
 /**
- * AprobarCondicionadoCard — visible para propietario/inmobiliaria/admin/operador
- * cuando el expediente está en 'condicionado'.
+ * AprobarCondicionadoCard — la guía de "qué sigue" de un estudio condicionado,
+ * al tope del resumen para propietario/inmobiliaria/admin/operador.
  *
  * Adenda 2 §5: la revisión manual la resuelve SOLO un analista de Cofianza
- * (admin/operador), que es quien ve "Aprobar estudio". El dueño ve el estado y
- * puede aportar: pedir soportes al solicitante o sumar un co-arrendatario.
- * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí) y el
- * contrato se genera luego desde la pestaña Contratos con el formulario
- * completo (modalidad de fianza + servicios públicos / quién paga).
+ * (admin/operador), que es quien ve "Aprobar estudio". Mientras tanto el dueño
+ * puede reforzar el caso: pedir soportes al solicitante, consultar el otro buró
+ * (solo si el primero no tenía información) o sumar un co-arrendatario (su
+ * tarjeta va justo debajo). Cada salida dice qué pasa después:
+ *  - otro buró con información → el estudio se vuelve a decidir con ese resultado
+ *    (el orquestador mueve el expediente);
+ *  - co-arrendatario → su resultado pasa a la revisión del analista, salvo una
+ *    regla dura suya, que no lo deja aprobar (ponderacion.ts del API).
+ * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí): el
+ * contrato se crea después desde el estudio.
  */
 
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { expedienteService } from '@/services/expedienteService'
+import type { IEstudio } from '@/types/estudio'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
+import { ReintentarEstudioForm } from './ReintentarEstudioForm'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -26,7 +33,13 @@ interface AprobarCondicionadoCardProps {
   userRol?: string
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
+  /** Estudio del titular: con él se ofrece consultar el otro buró aquí mismo. */
+  estudioTitular?: IEstudio | null
+  /** Documento del titular, para prellenar la consulta al otro buró. */
+  persona?: { nombre?: string | null; apellido?: string | null; tipo_documento?: string | null; numero_documento?: string | null } | null
   onAprobado?: () => void
+  /** Tras disparar la consulta al otro buró. */
+  onReconsultado?: () => void
 }
 
 export function AprobarCondicionadoCard({
@@ -34,12 +47,16 @@ export function AprobarCondicionadoCard({
   expedienteEstado,
   userRol,
   sinInfoBuro,
+  estudioTitular,
+  persona,
   onAprobado,
+  onReconsultado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
   const aprobando = useRef(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
+  const [otroBuroAbierto, setOtroBuroAbierto] = useState(false)
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
@@ -69,8 +86,7 @@ export function AprobarCondicionadoCard({
     aprobando.current = true
     setLoading(true)
     try {
-      // Sin datos de contrato: solo aprueba. El contrato se genera después en
-      // la pestaña Contratos con el formulario completo.
+      // Sin datos de contrato: solo aprueba. El contrato se crea después desde el estudio.
       const res = await expedienteService.aprobarCondicionado(expedienteId, {
         fundamento: fundamento.trim(),
         documentos_consultados: documentos,
@@ -79,7 +95,7 @@ export function AprobarCondicionadoCard({
       setConfirmAprobarOpen(false)
       const p = res.puntaje_revision_manual
       toast.success(
-        `Estudio aprobado.${p?.puntaje_normalizado != null ? ` Puntaje recalculado: ${p.puntaje_normalizado} (sobre ${p.denominador} puntos).` : ''} Genera el contrato en la pestaña Contratos (ahí defines la modalidad de fianza y quién paga los servicios).`,
+        `Estudio aprobado.${p?.puntaje_normalizado != null ? ` Puntaje recalculado: ${p.puntaje_normalizado} (sobre ${p.denominador} puntos).` : ''} Ya se puede crear el contrato desde el estudio.`,
       )
       onAprobado?.()
     } catch (err) {
@@ -90,6 +106,9 @@ export function AprobarCondicionadoCard({
       setLoading(false)
     }
   }
+
+  // Solo si el primer buró no tenía información (el API solo deja cambiar de buró en ese caso).
+  const ofreceOtroBuro = !!sinInfoBuro && !!estudioTitular
 
   return (
     <>
@@ -106,70 +125,108 @@ export function AprobarCondicionadoCard({
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-            {esCofianza ? 'Estudio condicionado — decisión pendiente' : 'Estudio condicionado — en revisión por Cofianza'}
-          </h3>
-          {!esCofianza ? (
-            <p className="text-sm text-gray-700 mb-3">
-              {sinInfoBuro
-                ? 'El buró no tiene información crediticia de esta persona (no es un rechazo). '
-                : 'Riesgo medio. '}
-              Un analista de Cofianza revisa el caso y decide. Mientras tanto puedes{' '}
-              {sinInfoBuro && <><strong>consultar el otro buró</strong>, </>}
-              <strong>pedir soportes</strong> al solicitante o <strong>sumar un co-arrendatario</strong> (abajo).
-            </p>
-          ) : sinInfoBuro ? (
-            <p className="text-sm text-gray-700 mb-3">
-              El buró no tiene información crediticia de esta persona: no es un rechazo, pero tampoco hay score
-              para medir el riesgo. Puedes <strong>consultar el otro buró</strong>, <strong>pedir soportes</strong> al
-              solicitante, <strong>sumar un co-arrendatario</strong> (abajo) o <strong>aprobar</strong> con lo que
-              tienes (generas el contrato en la pestaña <strong>Contratos</strong>).
-            </p>
-          ) : (
-            <p className="text-sm text-gray-700 mb-3">
-              Condicionado = riesgo medio: Cofianza puede respaldar el arriendo, pero conviene reforzar el perfil.
-              Tienes tres salidas: <strong>aprobar</strong> (pasa a Aprobado y generas el contrato en la pestaña
-              <strong> Contratos</strong>), <strong>pedir soportes</strong> al solicitante, o{' '}
-              <strong>sumar un co-arrendatario</strong> (abajo).
-            </p>
-          )}
+          <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado: qué sigue</h3>
+          <p className="text-sm text-gray-700">
+            {sinInfoBuro
+              ? 'El buró no tiene información crediticia de esta persona. No es un rechazo: falta información para medir el riesgo.'
+              : 'El buró sí evaluó a esta persona y el riesgo salió medio. No es un rechazo.'}
+          </p>
 
-          <div className="flex flex-wrap gap-2">
-            {esCofianza && (
-              <button
-                onClick={() => setConfirmAprobarOpen(true)}
-                disabled={loading || enviandoEnlace}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
-              >
-                {loading ? 'Aprobando…' : 'Aprobar estudio'}
-                {!loading && (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                )}
-              </button>
-            )}
-            <button
-              onClick={handleEnviarEnlace}
-              disabled={loading || enviandoEnlace}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          <ol className="mt-4 space-y-4">
+            <Paso n={1} titulo={esCofianza ? 'Decides tú, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
+              {esCofianza ? (
+                <>
+                  <p>
+                    Revisa el caso, los soportes y el co-arrendatario si lo hay. Si lo apruebas, el estudio pasa a
+                    Aprobado y se puede crear el contrato. Para no aprobarlo, usa «Cambiar estado», arriba.
+                  </p>
+                  <button
+                    onClick={() => setConfirmAprobarOpen(true)}
+                    disabled={loading || enviandoEnlace}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    {loading ? 'Aprobando…' : 'Aprobar estudio'}
+                  </button>
+                </>
+              ) : (
+                <p>
+                  Revisa el caso y lo aprueba o no. No tienes que hacer nada para que avance: te avisamos por
+                  notificación y correo cuando decida.
+                </p>
+              )}
+            </Paso>
+
+            <Paso
+              n={2}
+              titulo={esCofianza ? 'La inmobiliaria o el propietario pueden reforzar el caso' : 'Mientras tanto, puedes reforzar el caso (opcional)'}
             >
-              {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante para cargar documentos'}
-            </button>
-          </div>
+              <ul className="space-y-3">
+                <Opcion titulo="Pedir soportes al solicitante">
+                  <p>
+                    Le llega un enlace para cargar documentos (certificado laboral, extractos, etc.). Aparecen aquí y
+                    el analista los tiene en cuenta.
+                  </p>
+                  <button
+                    onClick={handleEnviarEnlace}
+                    disabled={loading || enviandoEnlace}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante'}
+                  </button>
+                  {/* Lo que el solicitante subió por el enlace: aquí el gestor revisa y
+                      descarga; quien carga es el solicitante (permitirSubir=false). */}
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Documentos de soporte del solicitante</p>
+                    <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
+                  </div>
+                </Opcion>
 
-          {/* Documentos que el solicitante subió por el enlace. Sin esto, el
-              gestor podía enviar el enlace pero no ver el resultado: los
-              soportes solo se listaban dentro de la sección de re-evaluación
-              del modal de detalle, que está gateada a admin/operador.
-              `permitirSubir=false`: aquí el gestor revisa y descarga, quien
-              carga es el solicitante desde su enlace público. */}
-          <div className="mt-4 border-t border-amber-200 pt-3">
-            <p className="text-xs font-semibold text-gray-700 mb-2">
-              Documentos de soporte del solicitante
-            </p>
-            <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
-          </div>
+                {ofreceOtroBuro && (
+                  <Opcion titulo="Consultar el otro buró">
+                    <p>
+                      Si el otro buró sí tiene información, el estudio se vuelve a decidir con ese resultado (puede
+                      quedar aprobado o no aprobable). Es una consulta nueva y se factura.
+                    </p>
+                    {otroBuroAbierto ? (
+                      <div className="mt-2">
+                        <ReintentarEstudioForm
+                          key={`${estudioTitular!.id}:${estudioTitular!.proveedor}`}
+                          estudioId={estudioTitular!.id}
+                          proveedorActual={estudioTitular!.proveedor}
+                          persona={persona}
+                          esTitular
+                          esReconsulta
+                          onRetried={onReconsultado}
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setOtroBuroAbierto(true)}
+                        className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Consultar el otro buró
+                      </button>
+                    )}
+                  </Opcion>
+                )}
+
+                <Opcion titulo="Sumar un co-arrendatario (en el recuadro de abajo)">
+                  <p>
+                    Es la persona con quien vivirá el solicitante: se le hace su propio estudio y el analista decide con
+                    los dos resultados. Si el co-arrendatario tiene un impedimento que no admite excepciones (por
+                    ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
+                  </p>
+                </Opcion>
+              </ul>
+            </Paso>
+
+            <Paso n={3} titulo="Cuando se decida">
+              <p>
+                <strong>Aprobado:</strong> se crea el contrato desde este estudio.{' '}
+                <strong>No aprobable:</strong> no se puede hacer contrato con este solicitante para este inmueble.
+              </p>
+            </Paso>
+          </ol>
         </div>
       </div>
     </div>
@@ -182,7 +239,7 @@ export function AprobarCondicionadoCard({
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          El estudio pasará a Aprobado y podrás generar el contrato desde la pestaña Contratos. Tu decisión queda
+          El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Tu decisión queda
           registrada con tu usuario, la fecha, el fundamento y los documentos que consultaste.
         </p>
         <div>
@@ -222,5 +279,31 @@ export function AprobarCondicionadoCard({
       </div>
     </Modal>
     </>
+  )
+}
+
+function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        aria-hidden
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-900"
+      >
+        {n}
+      </span>
+      <div className="min-w-0 flex-1 text-sm text-gray-700">
+        <p className="font-semibold text-gray-900 mb-1">{titulo}</p>
+        {children}
+      </div>
+    </li>
+  )
+}
+
+function Opcion({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <li className="rounded-lg border border-amber-200 bg-white/70 p-3">
+      <p className="font-medium text-gray-900 mb-0.5">{titulo}</p>
+      <div className="text-sm text-gray-700">{children}</div>
+    </li>
   )
 }

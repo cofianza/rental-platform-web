@@ -117,9 +117,8 @@ export function ExpedienteProgressBar({
         <p className="text-sm font-semibold text-amber-700">Estudio condicionado</p>
         <p className="text-xs text-amber-600 mt-0.5">
           {/* Adenda 2 §5: decide solo un analista de Cofianza. */}
-          {sinInfoBuro
-            ? 'El buró no tiene información crediticia de esta persona (no es un rechazo). Decide un analista de Cofianza; mientras tanto se puede consultar el otro buró, aportar soportes o sumar un co-arrendatario.'
-            : 'Riesgo medio. Decide un analista de Cofianza; mientras tanto se pueden aportar soportes o sumar un co-arrendatario.'}
+          {sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
+          Lo decide un analista de Cofianza. En «Resumen» ves qué sigue y qué se puede hacer mientras tanto.
         </p>
       </div>
     )
