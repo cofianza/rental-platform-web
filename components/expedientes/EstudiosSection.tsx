@@ -455,25 +455,31 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                           Registrar resultado
                         </button>
                       )}
-                      <button
-                        onClick={() => {
-                          setSendLinkEmail(solicitante?.email ?? '')
-                          setSendLinkTarget(estudio)
-                        }}
-                        disabled={actionLoading}
-                        title="Enviar enlace al solicitante"
-                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
-                      >
-                        <IconMail size={18} />
-                      </button>
-                      <button
-                        onClick={() => setCancelTarget(estudio)}
-                        disabled={actionLoading}
-                        title="Cancelar estudio"
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
-                      >
-                        <IconX size={18} />
-                      </button>
+                      {/* Esperando el pago o consultando el buró, el enlace sacaría a la
+                          evaluación de su estado; y en consulta tampoco se cancela. */}
+                      {estudio.estado !== 'pago_pendiente' && estudio.estado !== 'en_proceso' && (
+                        <button
+                          onClick={() => {
+                            setSendLinkEmail(solicitante?.email ?? '')
+                            setSendLinkTarget(estudio)
+                          }}
+                          disabled={actionLoading}
+                          title="Enviar enlace al solicitante"
+                          className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
+                        >
+                          <IconMail size={18} />
+                        </button>
+                      )}
+                      {estudio.estado !== 'en_proceso' && (
+                        <button
+                          onClick={() => setCancelTarget(estudio)}
+                          disabled={actionLoading}
+                          title="Cancelar estudio"
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                        >
+                          <IconX size={18} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
