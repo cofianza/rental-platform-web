@@ -37,16 +37,22 @@ const EMPTY: Gastos = { admin: '', predial: '', otros: '', valor: '' }
 export function RentabilidadPropietarioSection() {
   const [inmuebles, setInmuebles] = useState<MiInmueble[]>([])
   const [loading, setLoading] = useState(true)
+  // Si falla la carga no se puede decir «Aún no tienes inmuebles registrados».
+  const [fallo, setFallo] = useState(false)
+  const [intento, setIntento] = useState(0)
   const [gastos, setGastos] = useState<Record<string, Gastos>>({})
   const [calc, setCalc] = useState({ valor: '', canon: '' })
 
   useEffect(() => {
     dashboardService
       .getMisInmuebles()
-      .then((d) => setInmuebles(d.inmuebles))
-      .catch(() => {})
+      .then((d) => {
+        setInmuebles(d.inmuebles)
+        setFallo(false)
+      })
+      .catch(() => setFallo(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [intento])
 
   const g = (id: string) => gastos[id] ?? EMPTY
   const setG = (id: string, key: keyof Gastos, v: string) =>
@@ -114,7 +120,22 @@ export function RentabilidadPropietarioSection() {
 
       {/* Rentabilidad por inmueble */}
       <Panel title="Rentabilidad por inmueble" dot="bg-primary-600">
-        {inmuebles.length === 0 ? (
+        {fallo ? (
+          <div className="px-6 py-8 text-center">
+            <p className="text-sm font-semibold text-amber-900">No se pudieron cargar tus inmuebles</p>
+            <p className="mt-1 text-sm text-amber-800">Esto no significa que no tengas inmuebles registrados.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true)
+                setIntento((n) => n + 1)
+              }}
+              className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : inmuebles.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-gray-400">
             Aún no tienes inmuebles registrados.
           </p>
@@ -192,7 +213,8 @@ export function RentabilidadPropietarioSection() {
         )}
       </Panel>
 
-      {/* Resumen total de cartera */}
+      {/* Resumen total de cartera (sin datos no se pinta un $0 que no es cierto) */}
+      {!fallo && (
       <Panel title="Resumen de tu cartera" dot="bg-primary-600">
         <div className="grid grid-cols-2 gap-4 p-5 lg:grid-cols-4">
           <Stat label="Ingresos brutos" value={money(cartera.brutos)} sub="mensual" Icon={IconDollarSign} color="text-blue-600" />
@@ -219,6 +241,7 @@ export function RentabilidadPropietarioSection() {
           />
         </div>
       </Panel>
+      )}
 
       {/* Calculadora rápida */}
       <div className="rounded-xl border border-primary-500 bg-primary-50 p-5">

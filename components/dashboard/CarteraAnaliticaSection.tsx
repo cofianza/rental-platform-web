@@ -24,6 +24,7 @@ export function CarteraAnaliticaSection() {
   const rol = useAuthStore((s) => s.user?.rol)
   const [data, setData] = useState<MiCarteraAnalitica | null>(null)
   const [loading, setLoading] = useState(true)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     if (rol !== 'inmobiliaria') {
@@ -43,7 +44,7 @@ export function CarteraAnaliticaSection() {
     return () => {
       cancel = true
     }
-  }, [rol])
+  }, [rol, intento])
 
   if (rol !== 'inmobiliaria') return null
 
@@ -56,7 +57,26 @@ export function CarteraAnaliticaSection() {
     )
   }
 
-  if (!data) return null
+  // Sin datos tras cargar = la petición falló. Antes la página quedaba en
+  // blanco debajo del título, como si no hubiera nada que mostrar.
+  if (!data) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
+        <p className="font-semibold text-amber-900">No se pudo cargar la analítica</p>
+        <p className="mt-1 text-sm text-amber-800">Esto no significa que tu cartera esté vacía.</p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            setIntento((n) => n + 1)
+          }}
+          className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
+  }
   const s = data.salud
   const e = data.estudios
   const d = e.decisiones30d

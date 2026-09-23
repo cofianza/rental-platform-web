@@ -120,6 +120,9 @@ export default function ReportarMoraPage() {
   const [filtroContrato, setFiltroContrato] = useState('')
   const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
   const [loading, setLoading] = useState(true)
+  // Si la carga falla no se puede decir «Aún no hay moras» ni pintar KPI en 0:
+  // el operador creía que la cola estaba vacía y ese día no escalaba nada.
+  const [falloCarga, setFalloCarga] = useState(false)
   const [detalleId, setDetalleId] = useState<string | null>(null)
   // `reportando` es la bandera de "enviando", nada mas. Arrancaba en true cuando
   // la URL traia ?contrato_id=, asi que llegar desde la tarjeta del inmueble
@@ -156,6 +159,7 @@ export default function ReportarMoraPage() {
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
+    setFalloCarga(false)
     try {
       const [statsRes, morasRes] = await Promise.all([
         morasService.stats(),
@@ -163,8 +167,10 @@ export default function ReportarMoraPage() {
       ])
       setStats(statsRes)
       setMoras(morasRes.data)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al cargar moras')
+    } catch {
+      setFalloCarga(true)
+      setMoras([])
+      setStats(null)
     } finally {
       setLoading(false)
     }
@@ -439,6 +445,18 @@ export default function ReportarMoraPage() {
         <div className="p-8 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
           <IconLoader size={16} className="animate-spin" /> Cargando moras…
         </div>
+      ) : falloCarga ? (
+        <div className="p-8 text-center bg-amber-50">
+          <p className="font-semibold text-amber-900 text-sm">No se pudieron cargar las moras</p>
+          <p className="text-sm text-amber-800 mt-1">Esto no significa que no haya moras en gestión.</p>
+          <button
+            type="button"
+            onClick={cargarDatos}
+            className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        </div>
       ) : moras.length === 0 ? (
         <div className="p-8 text-center text-gray-500 text-sm">
           {filtro === 'todas'
@@ -574,12 +592,13 @@ export default function ReportarMoraPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? 0} sub="Este mes" />
-        <KpiCard label="Resueltas" value={stats?.resueltas ?? 0} color="primary" sub="Pagadas" />
-        <KpiCard label="En gestión" value={stats?.en_gestion ?? 0} color="coral" sub="Activas" />
+        {/* Sin datos, «—» y no 0: un 0 afirma que no hay moras. */}
+        <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? '—'} sub="Este mes" />
+        <KpiCard label="Resueltas" value={stats?.resueltas ?? '—'} color="primary" sub="Pagadas" />
+        <KpiCard label="En gestión" value={stats?.en_gestion ?? '—'} color="coral" sub="Activas" />
         <KpiCard
           label="Monto en mora"
-          value={formatCompactCOP(stats?.monto_total ?? 0)}
+          value={stats ? formatCompactCOP(stats.monto_total) : '—'}
           color="red"
           sub="Total adeudado"
         />

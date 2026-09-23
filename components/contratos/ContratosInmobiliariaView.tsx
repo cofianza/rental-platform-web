@@ -294,13 +294,14 @@ export function ContratosInmobiliariaView() {
         />
         <StatCard
           label="En proceso de firma"
-          value={(stats?.en_proceso_firma ?? 0) + (stats?.por_estado.firma_incompleta ?? 0)}
+          // Sin stats (fallo o cargando), «—»: un 0 contradecía los paneles de abajo.
+          value={stats ? stats.en_proceso_firma + (stats.por_estado.firma_incompleta ?? 0) : '—'}
           color="text-blue-600"
           sub="Esperando firmas o por reenviar"
         />
         <StatCard
           label="Activos"
-          value={stats?.activos ?? 0}
+          value={stats?.activos ?? '—'}
           color="text-primary-600"
           sub="Contratos vigentes"
         />
@@ -545,7 +546,7 @@ function StatCard({
   color = 'text-gray-900',
 }: {
   label: string
-  value: number
+  value: number | string
   sub: string
   color?: string
 }) {
