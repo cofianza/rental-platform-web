@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -354,13 +354,15 @@ interface FieldProps {
 }
 
 function Field({ label, value, onChange, placeholder, help, required }: FieldProps) {
+  // Un id por instancia: con uno fijo, Apellido y Número apuntaban a Nombre.
+  const id = useId()
   return (
     <div>
-      <label htmlFor="cuenta-campo" className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
         {label}
         {required && ' *'}
       </label>
-      <input id="cuenta-campo"
+      <input id={id}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
