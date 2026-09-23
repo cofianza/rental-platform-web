@@ -21,6 +21,7 @@ import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
+import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -56,6 +57,30 @@ const TIPO_LABELS: Record<string, string> = {
 const PAGO_LABELS: Record<string, string> = {
   inmobiliaria: 'Inmobiliaria',
   arrendatario: 'Arrendatario',
+}
+
+// Etiquetas de las claves que escribe el API en `datos_formulario`.
+const CAMPOS_FORMULARIO: Record<string, string> = {
+  nombre_completo: 'Nombre completo',
+  apellido: 'Primer apellido',
+  tipo_documento: 'Tipo de documento',
+  numero_documento: 'Número de documento',
+  email: 'Correo',
+  telefono: 'Teléfono',
+  ocupacion: 'Ocupación',
+  empresa: 'Empresa',
+  direccion_residencia: 'Dirección de residencia',
+  ingresos_mensuales: 'Ingresos mensuales',
+}
+
+function valorFormulario(key: string, value: unknown): string {
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No'
+  if (key === 'tipo_documento') {
+    const tipo = String(value).toUpperCase()
+    return TIPOS_DOCUMENTO[tipo as keyof typeof TIPOS_DOCUMENTO] ?? tipo
+  }
+  if (key === 'ingresos_mensuales' && !Number.isNaN(Number(value))) return formatCurrency(Number(value))
+  return String(value)
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -254,7 +279,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               <DetailRow label="Tipo" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
               <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />
               {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
-                <DetailRow label="Duracion contrato" value={`${estudio.duracion_contrato_meses} meses`} />
+                <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
               )}
               <DetailRow label="Pago por" value={PAGO_LABELS[estudio.pago_por] || estudio.pago_por} />
               {estudio.referencia_proveedor && (
@@ -413,13 +438,15 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  {Object.entries(estudio.datos_formulario).map(([key, value]) => (
-                    <DetailRow
-                      key={key}
-                      label={key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                      value={String(value)}
-                    />
-                  ))}
+                  {Object.entries(estudio.datos_formulario)
+                    .filter(([key, value]) => key !== 'acepta_terminos' && value != null && value !== '')
+                    .map(([key, value]) => (
+                      <DetailRow
+                        key={key}
+                        label={CAMPOS_FORMULARIO[key] ?? key.replace(/_/g, ' ')}
+                        value={valorFormulario(key, value)}
+                      />
+                    ))}
                 </div>
               </div>
             )}
