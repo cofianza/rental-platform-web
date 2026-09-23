@@ -266,6 +266,9 @@ export function ExpedientesTable({
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
+                  // Solo la fila: Enter sobre un botón o enlace interno
+                  // («Tomar», «Abrir estudio») hace lo suyo, no abre la fila.
+                  if (e.target !== e.currentTarget) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     e.currentTarget.click()
@@ -395,6 +398,17 @@ export function ExpedientesTable({
           <div
             key={expediente.id}
             onClick={() => handleRowClick(expediente.id)}
+            // La vista angosta (y el zoom de 150 %) usa estas tarjetas: sin foco
+            // ni teclado, la lista no se abría sin mouse.
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.currentTarget.click()
+              }
+            }}
             className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
           >
             {/* Header: código y estado */}

@@ -345,6 +345,9 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                 onKeyDown={
                   cardClickable
                     ? (e) => {
+                        // Enter sobre «Registrar resultado», «Enviar enlace» o
+                        // «Cancelar» es de ese botón, no abre el detalle.
+                        if (e.target !== e.currentTarget) return
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
                           setShowDetail(estudio)

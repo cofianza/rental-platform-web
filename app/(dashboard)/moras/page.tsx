@@ -419,7 +419,7 @@ export default function ReportarMoraPage() {
             Seguimiento de moras
           </h3>
           <p className="mt-0.5 text-xs text-gray-500">
-            Haz clic en una fila para ver el detalle y el chat del inquilino.
+            Haz clic en una fila o en el ticket para ver el detalle y el chat del inquilino.
             {esInterno && ' Ordenadas de más antigua a más reciente.'}
           </p>
         </div>
@@ -514,7 +514,17 @@ export default function ReportarMoraPage() {
                   className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                 >
                   <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">
-                    {m.ticket_numero}
+                    {/* Con teclado la fila no recibe foco: el ticket abre el detalle. */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDetalleId(m.id)
+                      }}
+                      className="font-mono hover:underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+                    >
+                      {m.ticket_numero}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-gray-900">{m.inquilino_nombre}</td>
                   <td className="px-4 py-3 text-gray-600 truncate max-w-[200px]">
