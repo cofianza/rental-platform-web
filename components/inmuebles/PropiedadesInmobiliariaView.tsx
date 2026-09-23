@@ -130,9 +130,9 @@ export function PropiedadesInmobiliariaView() {
 
   // Contadores de TODA la cartera (antes contaban solo la página visible y el
   // chip activo). Cada uno es el total del listado con su filtro, limit 1.
-  // Publicado real = flag + disponible; pausada = disponible fuera de vitrina.
+  // Publicado real = flag + disponible; pausada = disponible fuera de vitrina
+  // (visible_vitrina es NOT NULL, así que pausadas = disponibles − en vitrina).
   const [conteos, setConteos] = useState<{ total: number; enVitrina: number; disponibles: number; pausadas: number } | null>(null)
-  const [recargaConteos, setRecargaConteos] = useState(0)
   useEffect(() => {
     let vivo = true
     const total = (f: Partial<IInmuebleFilters>) =>
@@ -141,14 +141,13 @@ export function PropiedadesInmobiliariaView() {
       total({}),
       total({ visible_vitrina: true, estado: 'disponible' }),
       total({ estado: 'disponible' }),
-      total({ visible_vitrina: false, estado: 'disponible' }),
     ])
-      .then(([t, v, d, p]) => vivo && setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: p }))
+      .then(([t, v, d]) => vivo && setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: d - v }))
       .catch(() => vivo && setConteos(null))
     return () => {
       vivo = false
     }
-  }, [recargaConteos])
+  }, [])
   const cifra = (n: number | undefined) => (n === undefined ? '…' : n)
 
   // Detección endurecida: los chips vitrina/pausadas setean flag + estado
@@ -178,7 +177,12 @@ export function PropiedadesInmobiliariaView() {
     try {
       await inmuebleService.toggleVisibleVitrina(inmueble.id, value)
       toast.success(value ? 'Inmueble publicado en la vitrina' : 'Inmueble retirado de la vitrina')
-      setRecargaConteos((n) => n + 1)
+      // Pausar/Publicar solo mueve una unidad entre «en vitrina» y «pausadas»
+      // (y solo si está disponible): se ajusta local, sin volver a contar.
+      if (inmueble.estado === 'disponible' && inmueble.visible_vitrina !== value) {
+        const delta = value ? 1 : -1
+        setConteos((c) => c && { ...c, enVitrina: c.enVitrina + delta, pausadas: c.pausadas - delta })
+      }
     } catch {
       updateInmuebleInList({ ...inmueble, visible_vitrina: !value })
       toast.error('Error al actualizar la visibilidad en vitrina')
