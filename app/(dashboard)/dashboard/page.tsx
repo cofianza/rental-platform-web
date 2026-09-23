@@ -20,7 +20,7 @@ import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
-import type { DashboardSummary, ExpedientePorEstado, DashboardFilters } from '@/services/dashboardService'
+import type { DashboardSummary, ExpedientePorEstado } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
@@ -90,7 +90,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({})
   const [activePreset, setActivePreset] = useState(2) // "Mes" by default
-  const [filters, setFilters] = useState<DashboardFilters>(() => DATE_PRESETS[2].getValue())
   // El analista no sabía qué de esta lista era suyo ni qué estaba huérfano:
   // veía los 10 estudios más viejos de toda la plataforma y tenía que irse a
   // /expedientes a activar "Mis estudios" para responder esa pregunta.
@@ -102,6 +101,10 @@ export default function DashboardPage() {
   const fetchAll = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true)
     const errors: Record<string, string> = {}
+    // El rango se calcula en cada carga: si se fijaba al abrir la página,
+    // "Actualizar" y el auto-refresco pedían siempre hasta esa hora y los
+    // estudios nuevos no entraban.
+    const filters = DATE_PRESETS[activePreset].getValue()
 
     // Fetch all 3 sections in parallel, errors are isolated per section
     const [summaryResult, estadoResult, pendientesResult] = await Promise.allSettled([
@@ -147,7 +150,7 @@ export default function DashboardPage() {
 
     setSectionErrors(errors)
     setLoading(false)
-  }, [filters, alcance, userId])
+  }, [activePreset, alcance, userId])
 
   useEffect(() => {
     if (!needsOperativo) return
@@ -169,7 +172,6 @@ export default function DashboardPage() {
 
   const handlePresetClick = (index: number) => {
     setActivePreset(index)
-    setFilters(DATE_PRESETS[index].getValue())
   }
 
   // ── Render ──────────────────────────────────────────────
