@@ -12,11 +12,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { dashboardService } from '@/services/dashboardService'
 import { ApiClientError } from '@/lib/api'
 import { formatCurrency } from '@/lib/constants'
-import { IconLoader, IconCheck, IconBank } from '@/components/icons'
+import { IconLoader, IconCheck, IconBank, IconAlertTriangle } from '@/components/icons'
 
 export default function TesoreriaPage() {
   const router = useRouter()
@@ -27,6 +28,10 @@ export default function TesoreriaPage() {
   const [reservaMinima, setReservaMinima] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // Si la carga falla no se pinta el formulario: guardar los campos vacíos
+  // escribía capital 0 y reserva 0 encima de la configuración real.
+  const [loadError, setLoadError] = useState(false)
+  const [intento, setIntento] = useState(0)
 
   // Solo admin. Si otro rol entra por URL, lo devolvemos al hub.
   useEffect(() => {
@@ -43,9 +48,18 @@ export default function TesoreriaPage() {
         setCapitalDisponible(String(t.capitalDisponible))
         setReservaMinima(String(t.reservaMinima))
       })
-      .catch(() => toast.error('No pudimos cargar la configuración de tesorería.'))
+      .catch(() => {
+        setLoadError(true)
+        toast.error('No pudimos cargar la configuración de tesorería.')
+      })
       .finally(() => setLoading(false))
-  }, [isAdmin])
+  }, [isAdmin, intento])
+
+  const reintentar = () => {
+    setLoadError(false)
+    setLoading(true)
+    setIntento((n) => n + 1)
+  }
 
   const capNum = Number(capitalDisponible) || 0
   const resNum = Number(reservaMinima) || 0
@@ -86,6 +100,15 @@ export default function TesoreriaPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <IconLoader size={28} className="animate-spin text-primary-600" />
+        </div>
+      ) : loadError ? (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <EmptyState
+            icon={IconAlertTriangle}
+            title="No pudimos cargar la configuración de tesorería."
+            description="Para no guardar valores en cero, el formulario se muestra cuando la carga funcione."
+            action={{ label: 'Reintentar', onClick: reintentar }}
+          />
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
