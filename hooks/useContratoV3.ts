@@ -47,6 +47,9 @@ export type AccionContratoV3 =
   // Entrega 6: posfirma
   | 'terminar'
   | 'acta'
+  // Adenda 1 del módulo de contratos
+  | 'prorrogar'
+  | 'aceptarAviso'
 
 // Con Auco de por medio, un 5xx puede dejar el contrato en otro estado (FIRMA_ENVIADA_SIN_REGISTRO
 // sí salió; un reenvío fallido deja un proceso fallido a la vista): tras estos errores se recarga.
@@ -237,6 +240,14 @@ export function useContratoV3(expedienteId: string) {
     () => mutar('actualizar', () => contratoV3Service.actualizarFirma(expedienteId)),
     [mutar, expedienteId],
   )
+  const prorrogarPlazo = useCallback(
+    () => mutar('prorrogar', () => contratoV3Service.prorrogarPlazo(expedienteId)),
+    [mutar, expedienteId],
+  )
+  const aceptarAviso = useCallback(
+    () => mutar('aceptarAviso', () => contratoV3Service.aceptarAviso(expedienteId)),
+    [mutar, expedienteId],
+  )
   /**
    * Cancelar el borrador o el contrato en firma (EN FIRMA / FIRMA INCOMPLETA). Va por la
    * transición de siempre; para un V3 en firma el API anula antes el proceso en Auco.
@@ -304,6 +315,8 @@ export function useContratoV3(expedienteId: string) {
     reenviar,
     reintentar,
     actualizarFirma,
+    prorrogarPlazo,
+    aceptarAviso,
     cancelar,
     terminar,
     subirActa,

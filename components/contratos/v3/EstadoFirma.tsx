@@ -15,10 +15,20 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
-import { IconAlertTriangle, IconArrowRight, IconLoader, IconRefresh, IconRotateCw, IconUpload } from '@/components/icons'
+import {
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCheck,
+  IconClock,
+  IconLoader,
+  IconRefresh,
+  IconRotateCw,
+  IconUpload,
+} from '@/components/icons'
 import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
 import type { EnvioV3, EstadoFirmanteV3, EstadoSobreV3 } from '@/types/contratoV3'
 import { Aviso, Dato } from './campos'
@@ -87,11 +97,13 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const [pedirMotivo, setPedirMotivo] = useState(false)
   const [confirmarReintento, setConfirmarReintento] = useState(false)
   const [pedirMotivoTerminar, setPedirMotivoTerminar] = useState(false)
+  const [confirmarProrroga, setConfirmarProrroga] = useState(false)
   const actaRef = useRef<HTMLInputElement>(null)
   const visor = useVisor()
   const reenvioId = useId()
   const { accion } = v3
   const ocupado = accion !== null
+  const rol = useAuthStore((st) => st.user?.rol)
 
   const enFirma = e.estado === 'pendiente_firma'
   const incompleta = e.estado === 'firma_incompleta'
@@ -107,6 +119,14 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const bloqueados = s?.estado === 'en_firma' ? firmantes.filter((f) => f.estado === 'bloqueado') : []
   const nota = !enFirma || e.reintento ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
   const motivo = motivoDe(s)
+  // Adenda 1 (respuesta 11): el aviso lo acepta la inmobiliaria y, hasta entonces, ella no reenvía ni cancela (el API igual).
+  const acuse = e.aviso?.aceptado ?? null
+  const bloqueoAcuse =
+    incompleta && rol === 'inmobiliaria' && !acuse
+      ? e.aviso
+        ? 'Primero lee y acepta el aviso de firma incompleta.'
+        : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrás aceptarlo aquí.'
+      : null
 
   const docs: DocVisor[] = [
     {
@@ -149,6 +169,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const reintentar = async () => {
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
   }
+  const aceptarAviso = async () => {
+    if (await v3.aceptarAviso()) toast.success('Aviso aceptado')
+  }
 
   return (
     <>
@@ -182,7 +205,12 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             )}
             {/* Con todas las firmas ya no se cancela (§11.5): el API respondería FIRMA_COMPLETA. */}
             {s?.estado !== 'completo' && (
-              <Button variante="secondary" onClick={() => setPedirMotivo(true)} disabled={ocupado}>
+              <Button
+                variante="secondary"
+                onClick={() => setPedirMotivo(true)}
+                disabled={ocupado || !!bloqueoAcuse}
+                title={bloqueoAcuse ?? undefined}
+              >
                 Cancelar contrato
               </Button>
             )}
@@ -217,6 +245,25 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 'La firma quedó incompleta. Mientras no firmen todas las partes, la fianza no opera y Cofianza no responde por este inmueble.'}
             </p>
             {e.aviso && <p className="text-xs text-red-700">Aviso entregado el {formatDateTime(e.aviso.entregadoEn)}.</p>}
+            {acuse ? (
+              <p className="flex items-center gap-1.5 text-sm font-medium text-red-900">
+                <IconCheck size={16} className="shrink-0" />
+                Aviso aceptado por {acuse.nombre} el {formatDateTime(acuse.en)}.
+              </p>
+            ) : e.aviso && rol === 'inmobiliaria' && editable ? (
+              <div className="space-y-1.5">
+                <Button variante="primary" tamano="sm" onClick={aceptarAviso} disabled={ocupado}>
+                  {accion === 'aceptarAviso' ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
+                  Acepto el aviso
+                </Button>
+                <p className="text-xs text-red-700">
+                  Queda registrado con tu nombre, la fecha y la hora. Hasta que lo aceptes no puedes reenviar ni cancelar el
+                  contrato.
+                </p>
+              </div>
+            ) : (
+              e.aviso && <p className="text-xs text-red-700">Pendiente de que la inmobiliaria acepte el aviso.</p>
+            )}
           </div>
         </div>
       )}
@@ -257,6 +304,28 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </dl>
         )}
 
+        {enFirma && e.prorroga && (
+          // Adenda 1 (respuesta 10): una sola prórroga por proceso, nunca más allá de la vigencia del CRC.
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {e.prorroga.usadaEn ? (
+              <p className="text-sm text-gray-600">
+                Plazo prorrogado el {formatDateTime(e.prorroga.usadaEn)}: era la única prórroga de este proceso de firma.
+              </p>
+            ) : e.prorroga.puede ? (
+              editable && (
+                <Button variante="secondary" tamano="sm" onClick={() => setConfirmarProrroga(true)} disabled={ocupado}>
+                  {accion === 'prorrogar' ? <IconLoader size={14} className="animate-spin" /> : <IconClock size={14} />}
+                  Prorrogar plazo
+                </Button>
+              )
+            ) : (
+              e.prorroga.motivo && (
+                <p className="text-sm text-gray-600">{e.prorroga.motivo}</p>
+              )
+            )}
+          </div>
+        )}
+
         {incompleta && motivo && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
         {nota && <Aviso>{nota}</Aviso>}
         {enFirma && e.identidadPendientes > 0 && (
@@ -292,15 +361,15 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             <Button
               variante="accent"
               onClick={() => setConfirmarReenvio(true)}
-              disabled={ocupado || !e.reenvio.puede}
-              aria-describedby={e.reenvio.motivo ? reenvioId : undefined}
+              disabled={ocupado || !e.reenvio.puede || !!bloqueoAcuse}
+              aria-describedby={e.reenvio.motivo || bloqueoAcuse ? reenvioId : undefined}
             >
               {accion === 'reenviar' ? <IconLoader size={16} className="animate-spin" /> : <IconRotateCw size={16} />}
               Reenviar a firma
             </Button>
-            {e.reenvio.motivo && (
+            {(e.reenvio.motivo || bloqueoAcuse) && (
               <p id={reenvioId} className="text-sm text-gray-600">
-                {e.reenvio.motivo}
+                {e.reenvio.motivo ?? bloqueoAcuse}
               </p>
             )}
           </div>
@@ -380,7 +449,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           <h2 className="font-display text-lg font-bold text-gray-900">Documentos</h2>
           <p className="mt-1 text-sm text-gray-500">
             {e.ruta === 'B'
-              ? 'Lo que se firma es un solo PDF: el contrato de la inmobiliaria, el Anexo de condiciones y el CRC.'
+              ? 'Lo que se firma es un solo PDF: el contrato de la inmobiliaria sin modificaciones, una página divisoria, el Anexo de condiciones y el CRC.'
               : 'Lo que se firma es un solo PDF: el contrato y el CRC.'}
           </p>
         </div>
@@ -397,6 +466,21 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         message="Se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma."
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
+      />
+      <ConfirmDialog
+        isOpen={confirmarProrroga && !!s && !!e.prorroga?.hasta}
+        onClose={() => setConfirmarProrroga(false)}
+        onConfirm={async () => {
+          if (await v3.prorrogarPlazo()) toast.success('Plazo para firmar prorrogado')
+        }}
+        title="¿Prorrogar el plazo para firmar?"
+        message={
+          s && e.prorroga?.hasta
+            ? `El plazo pasa del ${formatDateTime(s.expiraEn)} al ${formatDateTime(e.prorroga.hasta)}. Es la única prórroga de este proceso de firma y nunca va más allá de la vigencia del certificado de riesgo.`
+            : ''
+        }
+        confirmLabel="Prorrogar plazo"
+        isLoading={accion === 'prorrogar'}
       />
       <ConfirmDialog
         isOpen={confirmarReintento}

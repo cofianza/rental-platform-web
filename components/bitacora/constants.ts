@@ -119,6 +119,8 @@ export const ACTION_LABELS: Record<string, string> = {
   firma_identidad_consentimiento: 'Consentimiento biométrico en la firma',
   firma_identidad_biometria: 'Cotejo biométrico en la firma',
   firma_identidad_revisada: 'Identidad revisada por un analista',
+  firma_plazo_prorrogado: 'Plazo de firma prorrogado',
+  firma_aviso_aceptado: 'Aviso de firma incompleta aceptado',
   revision_manual_decidida: 'Revisión manual decidida',
 
   // Pagos
@@ -328,6 +330,8 @@ export const ACTION_GROUPS: Array<{
       'firma_identidad_consentimiento',
       'firma_identidad_biometria',
       'firma_identidad_revisada',
+      'firma_plazo_prorrogado',
+      'firma_aviso_aceptado',
       'plantilla_created',
       'plantilla_updated',
     ].map(toOption),

@@ -113,4 +113,14 @@ export const contratoV3Service = {
     const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/actualizar`)
     return res.data
   },
+  /** EN FIRMA: la única prórroga del plazo para firmar (Adenda 1, respuesta 10). */
+  async prorrogarPlazo(expedienteId: string): Promise<EstadoAsistente> {
+    const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/prorrogar`)
+    return res.data
+  },
+  /** FIRMA INCOMPLETA: la inmobiliaria acepta el aviso; queda quién y cuándo (Adenda 1, respuesta 11). */
+  async aceptarAviso(expedienteId: string): Promise<EstadoAsistente> {
+    const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/aceptar-aviso`)
+    return res.data
+  },
 }
