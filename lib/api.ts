@@ -142,6 +142,10 @@ export async function handleApiError(response: Response): Promise<never> {
 // CLIENTE HTTP
 // ============================================
 
+// Endpoints cuyo 401 no se arregla renovando el token (y el refresh o el
+// logout, que corren dentro de la renovación, se quedarían esperándose).
+const SIN_REINTENTO_401 = ['/auth/login', '/auth/refresh', '/auth/logout']
+
 export class ApiClient {
   private baseUrl: string
 
@@ -149,139 +153,45 @@ export class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  /**
-   * Realiza una petición GET
-   */
-  async get<T = unknown>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<ApiResponse<T>> {
+  async get<T = unknown>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.send<T>(endpoint, { method: 'GET', ...options })
+  }
+
+  async post<T = unknown>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.send<T>(endpoint, { method: 'POST', body: body ? JSON.stringify(body) : undefined, ...options })
+  }
+
+  async put<T = unknown>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.send<T>(endpoint, { method: 'PUT', body: body ? JSON.stringify(body) : undefined, ...options })
+  }
+
+  async patch<T = unknown>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.send<T>(endpoint, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined, ...options })
+  }
+
+  async delete<T = unknown>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.send<T>(endpoint, { method: 'DELETE', ...options })
+  }
+
+  private async send<T>(endpoint: string, init: RequestInit, retried = false): Promise<ApiResponse<T>> {
+    const sentToken = getAuthToken()
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: 'GET',
-        headers: buildHeaders(options?.headers),
+        headers: buildHeaders(init.headers),
         credentials: 'include', // Incluir cookies JWT
-        ...options,
+        ...init,
       })
 
-      if (!response.ok) {
-        await handleApiError(response)
+      // Token vencido: tras suspender el equipo o con la pestaña en segundo
+      // plano, el refresh programado llega tarde. Se renueva una vez (si otra
+      // petición ya lo hizo, basta con repetir) y se repite la petición.
+      if (response.status === 401 && sentToken && !retried && !SIN_REINTENTO_401.includes(endpoint)) {
+        const actual = getAuthToken()
+        // Importación diferida: authService importa este módulo.
+        const { authService } = require('@/services/authService')
+        const token = actual && actual !== sentToken ? actual : await authService.refreshToken()
+        if (token) return this.send<T>(endpoint, init, true)
       }
-
-      return await response.json()
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        throw error
-      }
-      // Error de red
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-  }
-
-  /**
-   * Realiza una petición POST
-   */
-  async post<T = unknown>(
-    endpoint: string,
-    body?: unknown,
-    options?: RequestInit
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: 'POST',
-        headers: buildHeaders(options?.headers),
-        credentials: 'include',
-        body: body ? JSON.stringify(body) : undefined,
-        ...options,
-      })
-
-      if (!response.ok) {
-        await handleApiError(response)
-      }
-
-      return await response.json()
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        throw error
-      }
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-  }
-
-  /**
-   * Realiza una petición PUT
-   */
-  async put<T = unknown>(
-    endpoint: string,
-    body?: unknown,
-    options?: RequestInit
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: 'PUT',
-        headers: buildHeaders(options?.headers),
-        credentials: 'include',
-        body: body ? JSON.stringify(body) : undefined,
-        ...options,
-      })
-
-      if (!response.ok) {
-        await handleApiError(response)
-      }
-
-      return await response.json()
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        throw error
-      }
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-  }
-
-  /**
-   * Realiza una petición PATCH
-   */
-  async patch<T = unknown>(
-    endpoint: string,
-    body?: unknown,
-    options?: RequestInit
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: 'PATCH',
-        headers: buildHeaders(options?.headers),
-        credentials: 'include',
-        body: body ? JSON.stringify(body) : undefined,
-        ...options,
-      })
-
-      if (!response.ok) {
-        await handleApiError(response)
-      }
-
-      return await response.json()
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        throw error
-      }
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-  }
-
-  /**
-   * Realiza una petición DELETE
-   */
-  async delete<T = unknown>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: 'DELETE',
-        headers: buildHeaders(options?.headers),
-        credentials: 'include',
-        ...options,
-      })
 
       if (!response.ok) {
         await handleApiError(response)
@@ -297,6 +207,7 @@ export class ApiClient {
       if (error instanceof ApiClientError) {
         throw error
       }
+      // Error de red
       throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
     }
   }

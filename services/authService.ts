@@ -197,11 +197,15 @@ class AuthService {
       }
 
       return access_token
-    } catch {
-      // Refresh falló
-      localStorage.removeItem(REFRESH_TOKEN_KEY)
-      if (logoutOnFail) {
-        await this.logout()
+    } catch (error) {
+      // Solo un refresh token rechazado (400/401) cierra la sesión. Sin red, un
+      // 5xx durante un deploy o un 429 lo conservan: el siguiente 401 reintenta.
+      const invalido = error instanceof ApiClientError && (error.statusCode === 400 || error.statusCode === 401)
+      if (invalido) {
+        localStorage.removeItem(REFRESH_TOKEN_KEY)
+        if (logoutOnFail) {
+          await this.logout()
+        }
       }
       return null
     }
