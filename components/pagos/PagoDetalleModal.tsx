@@ -37,7 +37,7 @@ type PageState = 'loading' | 'ready' | 'error'
 // ============================================
 
 const CONCEPTOS_LABELS: Record<string, string> = {
-  estudio: 'Estudio de riesgo crediticio',
+  estudio: 'Evaluación crediticia',
   garantia: 'Garantia de arrendamiento',
   primer_canon: 'Primer canon de arrendamiento',
   deposito: 'Deposito de garantia',

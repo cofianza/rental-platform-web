@@ -726,6 +726,10 @@ function EnviarLinkModal({
 function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) {
   const linkPago = estado.pago?.payment_link_url || null
   const pagoId = estado.pago?.id || null
+  // Solo "recibimos tu pago" (y su factura) si pagó él: en la opción B el pago
+  // lo hace el gestor con su correo y el estado igual es 'completado'.
+  const miEmail = useAuthStore((s) => s.user?.email)?.toLowerCase()
+  const pagoPropio = estado.estado === 'completado' && !!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail
   // Si el backend ya adjunto la factura al pago (attachFacturas), la usamos.
   const facturaExistente = (estado.pago as unknown as { factura?: { id: string; numero?: string | null; estado: string } | null } | null)?.factura || null
 
@@ -874,16 +878,20 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             </svg>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-green-800">
-                {estado.estado === 'asumido_inmobiliaria' ? 'Costo cubierto por la inmobiliaria' : '¡Pago confirmado!'}
+                {pagoPropio
+                  ? '¡Pago confirmado!'
+                  : estado.estado === 'asumido_inmobiliaria'
+                    ? 'Costo cubierto por la inmobiliaria'
+                    : 'Costo de la evaluación cubierto'}
               </p>
               <p className="text-xs text-green-600">
-                {estado.monto_formateado} COP — Recibimos tu pago correctamente.
+                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos tu pago correctamente.' : 'El costo de la evaluación ya está cubierto.'}
               </p>
             </div>
           </div>
 
           {/* Acciones de facturacion — solo si fue un pago propio (no asumido) y hay pagoId */}
-          {estado.estado === 'completado' && pagoId && (
+          {pagoPropio && pagoId && (
             <div className="mt-3 pt-3 border-t border-green-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-xs text-green-700">
                 {facturaIdEmitida || facturaExistente
