@@ -24,7 +24,7 @@ export function PlantillaFormModal({
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [contenido, setContenido] = useState('')
-  const [activa, setActiva] = useState(true)
+  const [activa, setActiva] = useState(false)
 
   const isEditing = !!plantilla
   // V1/V4 viven en contenido_html con estilos de impresión, tablas, logo y las
@@ -44,7 +44,8 @@ export function PlantillaFormModal({
       setNombre('')
       setDescripcion('')
       setContenido('')
-      setActiva(true)
+      // Nueva = inactiva: la activa más reciente pasa a ser la de todos los contratos.
+      setActiva(false)
     }
   }, [plantilla, isOpen])
 
@@ -165,17 +166,23 @@ export function PlantillaFormModal({
         )}
 
         {/* Activa */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="activa"
-            checked={activa}
-            onChange={(e) => setActiva(e.target.checked)}
-            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <label htmlFor="activa" className="text-sm text-gray-700">
-            Plantilla activa
-          </label>
+        <div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="activa"
+              checked={activa}
+              onChange={(e) => setActiva(e.target.checked)}
+              aria-describedby="activa-ayuda"
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label htmlFor="activa" className="text-sm text-gray-700">
+              Plantilla activa
+            </label>
+          </div>
+          <p id="activa-ayuda" className="text-xs text-gray-500 mt-1 ml-6">
+            La plantilla activa más reciente es la que se usa en todos los contratos nuevos.
+          </p>
         </div>
 
         {/* Actions */}
