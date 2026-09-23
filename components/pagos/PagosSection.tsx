@@ -498,7 +498,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
                 Fecha
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Metodo
+                Método
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Referencia
@@ -799,7 +799,7 @@ function PagoCard({
           </p>
         </div>
         <div>
-          <p className="text-gray-500">Metodo</p>
+          <p className="text-gray-500">Método</p>
           <p className="text-gray-900">{METODOS_LABELS[pago.metodo] || pago.metodo}</p>
         </div>
         <div>
