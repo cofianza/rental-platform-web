@@ -149,7 +149,7 @@ export function PendientesFacturarSection({
                       {pago.expediente_numero || '—'}
                     </span>
                   )}
-                  {pago.factura_estado === 'fallida' && (
+                  {pago.factura_error && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
                       <IconAlertTriangle size={11} />
                       Intento previo fallido
