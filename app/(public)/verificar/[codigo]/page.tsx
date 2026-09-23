@@ -111,10 +111,10 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Certificado No Encontrado</h1>
         <p className="text-sm text-gray-600 mb-4">
-          El codigo <span className="font-mono font-medium">{codigo}</span> no corresponde a ningun certificado emitido.
+          El código <span className="font-mono font-medium">{codigo}</span> no corresponde a ningún certificado emitido.
         </p>
         <p className="text-xs text-gray-400">
-          Si cree que esto es un error, contacte a {data.empresa}.
+          Si crees que esto es un error, contacta a {data.empresa}.
         </p>
       </div>
     )
@@ -143,12 +143,12 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           )}
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-1">
-          {isVigente ? 'Certificado Valido' : 'Certificado Vencido'}
+          {isVigente ? 'Certificado Válido' : 'Certificado Vencido'}
         </h1>
         <p className="text-sm text-gray-500">
           {isVigente
-            ? 'Este certificado es autentico y se encuentra vigente.'
-            : 'Este certificado es autentico pero ha expirado.'}
+            ? 'Este certificado es auténtico y se encuentra vigente.'
+            : 'Este certificado es auténtico pero ha expirado.'}
         </p>
       </div>
 
