@@ -47,10 +47,11 @@ const resultadoTone = (resultado: string | null): ChipTone => {
   }
 }
 
+// Score del buró en escala 0-999: mismos cortes que ScoreGauge.
 const scoreTone = (score: number): ChipTone =>
-  score >= 75 ? 'green' : score >= 55 ? 'yellow' : 'red'
+  score >= 600 ? 'green' : score >= 450 ? 'yellow' : 'red'
 
-// Carga del arriendo sobre los ingresos del inquilino (canon/ingresos × 100).
+// Carga del arriendo sobre los ingresos declarados del inquilino (canon/ingresos × 100).
 const cargaPct = (canon: number, ingresos: number | null) =>
   ingresos && ingresos > 0 ? Math.round((canon / ingresos) * 100) : null
 const cargaTone = (pct: number): ChipTone => (pct > 40 ? 'red' : pct > 30 ? 'yellow' : 'green')
@@ -352,8 +353,8 @@ export function InquilinosSection() {
                         <Campo label="Empresa">{r.empresa ?? '—'}</Campo>
                         <Campo label="Tipo de persona">{r.tipoPersona ? capitalizar(r.tipoPersona) : '—'}</Campo>
                         <Campo label="Actividad económica">{r.actividadEconomica ?? '—'}</Campo>
-                        <Campo label="Ingresos mensuales">{r.ingresos != null ? money(r.ingresos) : '—'}</Campo>
-                        <Campo label="Carga canon/ingresos">
+                        <Campo label="Ingresos declarados">{r.ingresos != null ? money(r.ingresos) : '—'}</Campo>
+                        <Campo label="Carga sobre ingreso declarado">
                           {carga != null ? <Chip tone={cargaTone(carga)}>{carga}%</Chip> : '—'}
                         </Campo>
                         <Campo label="Vence">{fechaCorta(r.fechaFin)}</Campo>
