@@ -98,6 +98,12 @@ export default function InteresadosPage() {
   const [filtro, setFiltro] = useState<InteresadoEstado | 'todos'>('todos')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [fallo, setFallo] = useState(false)
+  // El API entrega de a 100 (los más recientes primero): «Ver más» pide la
+  // siguiente página para que los leads viejos no desaparezcan sin aviso.
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [cargandoMas, setCargandoMas] = useState(false)
+  const queryFiltro = filtro === 'todos' ? {} : { estado: filtro }
 
   // El aviso se iba con el toast y quedaba "Aún no tienes interesados", que es
   // perfectamente creible: el usuario concluye que su vitrina no funciona.
@@ -105,9 +111,10 @@ export default function InteresadosPage() {
   // del filtro anterior — por eso se limpia `items`.
   const load = useCallback(() => {
     setLoading(true)
+    setPage(1)
     interesadosService
       .list(filtro === 'todos' ? {} : { estado: filtro })
-      .then((data) => { setItems(data); setFallo(false) })
+      .then(({ data, total }) => { setItems(data); setTotal(total); setFallo(false) })
       .catch((e) => {
         setItems([])
         setFallo(true)
@@ -120,11 +127,29 @@ export default function InteresadosPage() {
     load()
   }, [load])
 
+  const verMas = async () => {
+    setCargandoMas(true)
+    try {
+      const res = await interesadosService.list({ ...queryFiltro, page: page + 1 })
+      // Sin duplicados si entró un lead nuevo y corrió la paginación.
+      // ponytail: si con filtro se sacaron leads de la lista, la página
+      // siguiente salta esos puestos; recargar los trae. Paginar por cursor si molesta.
+      setItems((prev) => [...prev, ...res.data.filter((d) => !prev.some((p) => p.id === d.id))])
+      setTotal(res.total)
+      setPage((p) => p + 1)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudieron cargar más interesados')
+    } finally {
+      setCargandoMas(false)
+    }
+  }
+
   const cambiarEstado = async (id: string, estado: InteresadoEstado) => {
     setUpdatingId(id)
     try {
       await interesadosService.updateEstado(id, estado)
       toast.success('Estado actualizado')
+      if (filtro !== 'todos' && estado !== filtro) setTotal((t) => Math.max(0, t - 1))
       setItems((prev) =>
         prev
           .map((it) => (it.id === id ? { ...it, estado } : it))
@@ -305,6 +330,22 @@ export default function InteresadosPage() {
               )}
             </div>
           ))}
+          {items.length < total && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <p className="text-xs text-gray-500">
+                Mostrando {items.length} de {total}
+              </p>
+              <button
+                type="button"
+                onClick={verMas}
+                disabled={cargandoMas}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {cargandoMas && <IconLoader size={14} className="animate-spin" />}
+                Ver más
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

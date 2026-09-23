@@ -29,15 +29,20 @@ export interface InteresadosQuery {
 }
 
 export const interesadosService = {
-  /** Lista los interesados de los inmuebles del usuario (scopeado en el backend). */
-  async list(query: InteresadosQuery = {}): Promise<Interesado[]> {
+  /**
+   * Lista los interesados de los inmuebles del usuario (scopeado en el backend).
+   * El API topa en 100 por página; `total` (de `pagination`) dice cuántos hay en total.
+   */
+  async list(query: InteresadosQuery = {}): Promise<{ data: Interesado[]; total: number }> {
     const params = new URLSearchParams()
     if (query.estado) params.set('estado', query.estado)
     if (query.inmueble_id) params.set('inmueble_id', query.inmueble_id)
     params.set('limit', String(query.limit ?? 100))
     if (query.page) params.set('page', String(query.page))
     const res = await apiClient.get<Interesado[]>(`/interesados?${params.toString()}`)
-    return res.data ?? []
+    const data = res.data ?? []
+    const total = (res as { pagination?: { total?: number } }).pagination?.total ?? data.length
+    return { data, total }
   },
 
   /** Cambia el estado de un interesado (nuevo/contactado/descartado). */
