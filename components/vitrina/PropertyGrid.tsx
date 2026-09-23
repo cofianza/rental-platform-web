@@ -101,21 +101,26 @@ export function PropertyGrid() {
 
   // ── Fetch properties ────────────────────────
 
+  // Solo cuenta la última búsqueda: una respuesta vieja que tardó más no pisa la vigente.
+  const peticionRef = useRef(0)
   const fetchProperties = useCallback(async () => {
+    const n = ++peticionRef.current
     setLoading(true)
     setError(false)
     try {
       const result = await getPublicProperties(buildQuery())
+      if (n !== peticionRef.current) return
       setProperties(result.data)
       setTotal(result.meta.total)
       setTotalPages(result.meta.totalPages)
     } catch {
+      if (n !== peticionRef.current) return
       setError(true)
       setProperties([])
       setTotal(0)
       setTotalPages(0)
     } finally {
-      setLoading(false)
+      if (n === peticionRef.current) setLoading(false)
     }
   }, [buildQuery])
 

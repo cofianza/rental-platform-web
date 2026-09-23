@@ -53,18 +53,23 @@ export function useContratos() {
     router.replace(`/contratos${qs ? `?${qs}` : ''}`, { scroll: false })
   }, [router])
 
-  // Fetch data
+  // Fetch data. Solo cuenta la última petición: una respuesta vieja (filtro
+  // anterior que tardó más) no pisa la vigente.
+  const peticionRef = useRef(0)
   const fetchContratos = useCallback(async (f: IContratoListFilters) => {
+    const n = ++peticionRef.current
     setIsLoading(true)
     setError(null)
     try {
       const result = await contratoService.getAllContratos(f)
+      if (n !== peticionRef.current) return
       setContratos(result.data)
       setMeta(result.meta)
     } catch {
+      if (n !== peticionRef.current) return
       setError('Error al cargar los contratos')
     } finally {
-      setIsLoading(false)
+      if (n === peticionRef.current) setIsLoading(false)
     }
   }, [])
 

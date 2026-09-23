@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
@@ -173,7 +173,11 @@ export function ContratosInmobiliariaView() {
 
   const { estado: estadoFiltro, fecha_desde, fecha_hasta, search: searchAplicado } = filters
 
+  // Solo cuenta la última carga: estado, fechas y página disparan cargar() sin
+  // debounce, y una respuesta vieja que tardó más no puede pisar la vigente.
+  const peticionRef = useRef(0)
   const cargar = useCallback(async () => {
+    const n = ++peticionRef.current
     setLoading(true)
     setError(null)
     const comunes = { search: searchAplicado, fecha_desde, fecha_hasta, sortBy: 'created_at', sortDir: 'desc' as const }
@@ -187,14 +191,18 @@ export function ContratosInmobiliariaView() {
         pedir(estadosDelGrupo(ESTADOS_EN_FIRMA, estadoFiltro), { limit: 50, page: 1 }),
         pedir(estadosDelGrupo(ESTADOS_ACTIVOS, estadoFiltro), { limit: 20, page: pageActivos }),
       ])
+      if (n !== peticionRef.current) return
       setPendientes(p)
       setEnFirma(f)
       setActivos(a)
     } catch (e) {
+      if (n !== peticionRef.current) return
       setError(e instanceof Error ? e.message : 'Error al cargar contratos')
     } finally {
-      setLoading(false)
-      setPrimeraCarga(false)
+      if (n === peticionRef.current) {
+        setLoading(false)
+        setPrimeraCarga(false)
+      }
     }
   }, [searchAplicado, estadoFiltro, fecha_desde, fecha_hasta, pageActivos])
 

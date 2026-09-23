@@ -116,21 +116,26 @@ export function useEstudiosList() {
     [pathname, router]
   )
 
-  // Fetch estudios
+  // Fetch estudios. Solo cuenta la última petición: una respuesta vieja
+  // (búsqueda o filtro anterior que tardó más) no pisa la vigente.
+  const peticionRef = useRef(0)
   const fetchEstudios = useCallback(async () => {
+    const n = ++peticionRef.current
     setLoading(true)
     setError(null)
 
     try {
       const response = await estudioService.listAll(filters)
+      if (n !== peticionRef.current) return
       setEstudios(response.data)
       setMeta(response.pagination)
     } catch (err) {
+      if (n !== peticionRef.current) return
       const message = err instanceof Error ? err.message : 'Error al cargar los estudios'
       setError(message)
       toast.error(message)
     } finally {
-      setLoading(false)
+      if (n === peticionRef.current) setLoading(false)
     }
   }, [filters, setLoading, setError, setEstudios, setMeta])
 

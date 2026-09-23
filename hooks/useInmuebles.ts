@@ -151,19 +151,25 @@ export function useInmuebles() {
   /**
    * Carga inmuebles desde la API
    */
+  // Número de la última petición: una respuesta vieja (filtro anterior que
+  // tardó más) se descarta en vez de pisar la vigente.
+  const peticionRef = useRef(0)
   const fetchInmuebles = useCallback(async () => {
+    const n = ++peticionRef.current
     setLoading(true)
     setError(null)
 
     try {
       const response = await inmuebleService.getInmuebles(filters)
+      if (n !== peticionRef.current) return
       setInmuebles(response.data)
       setMeta(response.meta)
     } catch (err) {
+      if (n !== peticionRef.current) return
       const message = err instanceof Error ? err.message : INMUEBLE_MESSAGES.FETCH_ERROR
       setError(message)
     } finally {
-      setLoading(false)
+      if (n === peticionRef.current) setLoading(false)
     }
   }, [filters, setLoading, setError, setInmuebles, setMeta])
 
