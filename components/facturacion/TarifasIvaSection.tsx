@@ -17,6 +17,8 @@ const CONCEPTO_LABELS: Record<string, string> = {
 interface Tarifa {
   concepto: string
   tasa: number
+  /** La prima de vinculación: sale de TARIFA_IVA (Calibración), aquí solo se muestra. */
+  derivada?: boolean
 }
 
 export function TarifasIvaSection() {
@@ -51,7 +53,9 @@ export function TarifasIvaSection() {
     }
     setSaving(true)
     try {
-      const updated = await facturacionService.updateTarifasIva(tarifas)
+      const updated = await facturacionService.updateTarifasIva(
+        tarifas.filter((t) => !t.derivada).map(({ concepto, tasa }) => ({ concepto, tasa })),
+      )
       setTarifas(updated)
       setEdited(false)
       toast.success('Tarifas actualizadas')
@@ -76,8 +80,8 @@ export function TarifasIvaSection() {
         <h3 className="text-base font-semibold text-gray-900">Tarifas de IVA por concepto</h3>
         <p className="text-sm text-gray-500 mt-1">
           Tasa aplicada al emitir facturas electrónicas; si es mayor que 0, el monto cobrado lleva
-          el IVA incluido. <strong>0 = exento</strong>. La garantía (prima de vinculación) va gravada
-          y no puede quedar en 0 (Adenda 1 de contratos).
+          el IVA incluido. <strong>0 = exento</strong>. La prima de vinculación va gravada con la
+          tasa de IVA de Calibración, la misma con la que se cobra (Adenda 1 de contratos).
         </p>
       </div>
 
@@ -95,13 +99,15 @@ export function TarifasIvaSection() {
                 min={0}
                 max={100}
                 value={t.tasa}
-                disabled={!isAdmin || saving}
+                disabled={!isAdmin || saving || t.derivada}
                 onChange={(e) => handleChange(t.concepto, e.target.value)}
                 className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm text-right focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-500"
               />
               <span className="text-sm text-gray-500 w-4">%</span>
-              {t.tasa === 0 && (
-                <span className="text-xs text-emerald-600 font-medium">Exento</span>
+              {t.derivada ? (
+                <span className="text-xs text-gray-500">de Calibración</span>
+              ) : (
+                t.tasa === 0 && <span className="text-xs text-emerald-600 font-medium">Exento</span>
               )}
             </div>
           </div>
