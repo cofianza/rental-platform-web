@@ -219,12 +219,7 @@ export function Paso1Confirmacion({
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
-        {value.ruta === 'B' && (
-          <Aviso>
-            En la Ruta B no hay cláusulas adicionales. En el paso 5 cargas el contrato en PDF (máximo 6 MB y 60
-            páginas, sin contraseña ni campos editables) y generas el Anexo. {RUTA_B_SIN_FIRMA}
-          </Aviso>
-        )}
+        {value.ruta === 'B' && <Aviso tono="aviso">{RUTA_B_SIN_FIRMA}</Aviso>}
       </fieldset>
 
       <fieldset className="space-y-2.5">
