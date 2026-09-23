@@ -23,6 +23,9 @@ export interface ContratoTransicionModalProps {
   /** Moras activas del contrato: si >0 se advierte al terminar/cancelar (la
    *  mora NO se cancela al terminar — el cobro sigue). */
   morasActivas?: number
+  /** Transición que el usuario ya eligió con el botón que abrió el modal
+   *  (se puede cambiar dentro). Se lee al montar. */
+  estadoInicial?: EstadoContrato
 }
 
 const ESTADOS_CON_MOTIVO: EstadoContrato[] = ['cancelado', 'finalizado']
@@ -35,8 +38,9 @@ export function ContratoTransicionModal({
   onConfirmar,
   isLoading = false,
   morasActivas = 0,
+  estadoInicial,
 }: ContratoTransicionModalProps) {
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoContrato | null>(null)
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoContrato | null>(estadoInicial ?? null)
   const [comentario, setComentario] = useState('')
   const [motivo, setMotivo] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -64,7 +68,7 @@ export function ContratoTransicionModal({
     }
 
     if (requiresMotivo && !motivo.trim()) {
-      setError('El motivo es obligatorio para esta transicion')
+      setError('El motivo es obligatorio para esta transición')
       return
     }
 

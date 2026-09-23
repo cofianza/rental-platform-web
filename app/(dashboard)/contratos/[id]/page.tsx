@@ -93,6 +93,7 @@ export default function ContratoDetallePage() {
   // reemplaza la regeneracion "ciega" de un click.
   const [regenerarOpen, setRegenerarOpen] = useState(false)
   const [transicionOpen, setTransicionOpen] = useState(false)
+  const [transicionInicial, setTransicionInicial] = useState<EstadoContrato | null>(null)
   const [transicionLoading, setTransicionLoading] = useState(false)
   const [historialOpen, setHistorialOpen] = useState(false)
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
@@ -264,7 +265,8 @@ export default function ContratoDetallePage() {
   // Abrir el modal de transición: refetch de transiciones + moras activas para
   // que la advertencia de moras del modal no muestre un conteo desactualizado
   // (p. ej. si se saldó/reportó una mora tras cargar la página).
-  async function handleAbrirTransicion() {
+  async function handleAbrirTransicion(estado: EstadoContrato) {
+    setTransicionInicial(estado)
     try {
       const t = await contratoService.getTransicionesDisponibles(id)
       setTransiciones(t.transiciones_disponibles ?? [])
@@ -499,7 +501,7 @@ export default function ContratoDetallePage() {
           {canManage && transiciones.length > 0 && transiciones.map((t) => (
             <button
               key={t.estado}
-              onClick={handleAbrirTransicion}
+              onClick={() => handleAbrirTransicion(t.estado)}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
               <IconArrowRight size={16} />
@@ -726,6 +728,7 @@ export default function ContratoDetallePage() {
           onConfirmar={handleConfirmarTransicion}
           isLoading={transicionLoading}
           morasActivas={morasActivas}
+          estadoInicial={transicionInicial ?? undefined}
         />
       )}
 
