@@ -95,10 +95,12 @@ export interface IPresignedUrlResponse {
  */
 export interface IPrimaSugerida {
   canon: 'contrato' | 'estudio'
-  prima_vinculacion_pct: number
+  prima_vinculacion_pct: number | null
   prima_vinculacion_cop: number | null
   iva_pct: number
   prima_vinculacion_con_iva_cop: number | null
+  /** Por qué no hay monto sugerido (p. ej. no se pudo confirmar el coarrendatario). */
+  sin_sugerencia?: string | null
 }
 
 export interface IComprobanteUrlResponse {

@@ -43,6 +43,8 @@ export function GenerarLinkPagoModal({
 }: GenerarLinkPagoModalProps) {
   const [concepto, setConcepto] = useState<string>('')
   const [monto, setMonto] = useState('')
+  // Si lo escribió el gestor, una sugerencia no lo pisa.
+  const [montoEditado, setMontoEditado] = useState(false)
   const [descripcion, setDescripcion] = useState('')
   const [emailPagador, setEmailPagador] = useState('')
   const [nombrePagador, setNombrePagador] = useState('')
@@ -80,12 +82,13 @@ export function GenerarLinkPagoModal({
   const primaSugerida = usePrimaSugerida(expedienteId, isOpen && esGarantia)
   useEffect(() => {
     const total = primaSugerida?.prima_vinculacion_con_iva_cop
-    if (esGarantia && total != null) setMonto((m) => m || String(total))
-  }, [esGarantia, primaSugerida])
+    if (esGarantia && total != null && !montoEditado) setMonto(String(total))
+  }, [esGarantia, primaSugerida, montoEditado])
 
   const resetForm = useCallback(() => {
     setConcepto('')
     setMonto('')
+    setMontoEditado(false)
     setDescripcion('')
     setEmailPagador('')
     setNombrePagador('')
@@ -183,7 +186,11 @@ export function GenerarLinkPagoModal({
           </label>
           <select id="generar-link-pago-modal-concepto"
             value={concepto}
-            onChange={(e) => setConcepto(e.target.value)}
+            onChange={(e) => {
+              setConcepto(e.target.value)
+              // Un monto que no escribió el gestor (el del estudio, la prima) no pasa a otro concepto.
+              if (!montoEditado) setMonto('')
+            }}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}
           >
@@ -206,7 +213,10 @@ export function GenerarLinkPagoModal({
               type="text"
               inputMode="numeric"
               value={formatMontoDisplay(monto)}
-              onChange={(e) => setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))}
+              onChange={(e) => {
+                setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))
+                setMontoEditado(true)
+              }}
               placeholder="Ej: 150.000"
               readOnly={esEstudio && montoEstudio !== null}
               aria-describedby="generar-link-pago-modal-monto-ayuda"
@@ -223,7 +233,9 @@ export function GenerarLinkPagoModal({
                 ? `$${formatMontoDisplay(monto)} COP`
                 : ''}
           </p>
-          {esGarantia && <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} />}
+          {esGarantia && (
+            <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} onUsar={(total) => setMonto(String(total))} />
+          )}
         </div>
 
         {/* Descripcion */}

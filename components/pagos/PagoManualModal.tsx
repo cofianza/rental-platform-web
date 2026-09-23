@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { IconFileText, IconLoader, IconUpload, IconX } from '@/components/icons'
 import { pagoService } from '@/services/pagoService'
@@ -53,13 +53,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // La garantía (prima de vinculación) se sugiere con IVA; el monto sigue siendo editable.
+  // Aquí se registra plata ya recibida: la prima sugerida (con IVA) no se
+  // precarga, se ofrece con «Usar este valor».
   const esGarantia = concepto === 'garantia'
   const primaSugerida = usePrimaSugerida(expedienteId, isOpen && esGarantia)
-  useEffect(() => {
-    const total = primaSugerida?.prima_vinculacion_con_iva_cop
-    if (esGarantia && total != null) setMonto((m) => m || String(total))
-  }, [esGarantia, primaSugerida])
 
   const resetForm = useCallback(() => {
     setConcepto('')
@@ -233,7 +230,9 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             />
           </div>
         </div>
-        {esGarantia && <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} />}
+        {esGarantia && (
+          <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} onUsar={(total) => setMonto(String(total))} />
+        )}
 
         {/* Referencia bancaria */}
         <div>
