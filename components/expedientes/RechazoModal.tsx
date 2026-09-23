@@ -58,7 +58,7 @@ export function RechazoModal({
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
           Rechazar <span className="font-medium text-gray-900">{documentoNombre}</span>.
-          Indica el motivo del rechazo para que el solicitante pueda corregirlo.
+          Indica el motivo del rechazo. Le avisaremos a quien gestiona el estudio para que suba uno nuevo.
         </p>
 
         {/* Sugerencias rapidas */}
