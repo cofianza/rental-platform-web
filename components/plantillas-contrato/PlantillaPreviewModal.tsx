@@ -29,7 +29,7 @@ export function PlantillaPreviewModal({
             Vista Previa: {nombre}
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Compilado con datos de ejemplo
+            Con datos de ejemplo; los campos sin ejemplo salen entre corchetes, p. ej. [inmueble.direccion]
           </p>
         </div>
         <button type="button" data-modal-close aria-label="Cerrar"
@@ -60,10 +60,13 @@ export function PlantillaPreviewModal({
       )}
 
       {/* HTML preview */}
+      {/* En iframe: el <style> de la plantilla (body, h2, table…) no se sale al panel. */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: html }}
+        <iframe
+          srcDoc={html}
+          sandbox=""
+          title="Vista previa de la plantilla"
+          className="w-full h-[70vh] border-0 bg-white"
         />
       </div>
 
