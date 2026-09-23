@@ -11,18 +11,18 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconLoader } from '@/components/icons'
-import {
-  InmueblesFilters,
-  InmueblesTable,
-  InmueblesSkeleton,
-  SolicitudesVisitaWidget,
-  PropiedadesInmobiliariaView,
-} from '@/components/inmuebles'
+// Imports directos, no del barrel: '@/components/inmuebles' arrastra el
+// formulario y la galería (dnd-kit) a la lista.
+import { InmueblesFilters } from '@/components/inmuebles/InmueblesFilters'
+import { InmueblesTable } from '@/components/inmuebles/InmueblesTable'
+import { InmueblesSkeleton } from '@/components/inmuebles/InmueblesSkeleton'
+import { SolicitudesVisitaWidget } from '@/components/inmuebles/SolicitudesVisitaWidget'
+import { PropiedadesInmobiliariaView } from '@/components/inmuebles/PropiedadesInmobiliariaView'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
-import { PerfilIncompletoBanner } from '@/components/inmuebles'
+import { PerfilIncompletoBanner } from '@/components/inmuebles/PerfilIncompletoBanner'
 import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesPropietario'
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'

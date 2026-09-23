@@ -8,7 +8,10 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
-import { ExpedientesListado, ExpedientesSkeleton } from '@/components/expedientes'
+// Imports directos, no del barrel: '@/components/expedientes' arrastra todo el
+// código del detalle (modales, firma, pagos) a la lista.
+import { ExpedientesListado } from '@/components/expedientes/ExpedientesListado'
+import { ExpedientesSkeleton } from '@/components/expedientes/ExpedientesSkeleton'
 import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedientesFusion'
 
 function ExpedientesPageContent() {
