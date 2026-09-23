@@ -64,6 +64,8 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   MAX_CLAUSULAS_ADICIONALES: 'Máximo de cláusulas adicionales por contrato',
   // Contratos V3 Entrega 5: al vencer, el contrato pasa a «firma incompleta».
   DIAS_EXPIRACION_FIRMA: 'Días para firmar en Auco antes de «firma incompleta»',
+  // Adenda 1 contratos, respuesta 15: sin envío a firma, el borrador se cancela y el inmueble se libera.
+  DIAS_RESERVA_INMUEBLE: 'Días hábiles de reserva del inmueble mientras se elabora el contrato',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
