@@ -11,45 +11,27 @@
 
 import Link from 'next/link'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
+import { IconArrowLeft, IconCheckCircle, IconClock, IconDollarSign, IconHome } from '@/components/icons'
 
 // Beneficios del panel izquierdo — alineados al mockup htmls/02_*.
 const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = [
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round">
-        <path d="M9 11l3 3L22 4" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-      </svg>
-    ),
+    icon: <IconCheckCircle size={16} />,
     title: 'Fiador solidario en cada contrato',
     desc: 'Un codeudor profesional que siempre cumple. Sin excusas, sin demoras.',
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
+    icon: <IconClock size={16} />,
     title: 'Evaluación crediticia en segundos',
     desc: 'Tu candidato paga el estudio, nosotros lo evaluamos al instante.',
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
+    icon: <IconDollarSign size={16} />,
     title: 'Pago garantizado desde día 20',
     desc: 'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
-    ),
+    icon: <IconHome size={16} />,
     title: 'Vitrina + prospectos gratis',
     desc: 'Publica tus inmuebles disponibles y recibe interesados sin costo.',
   },
@@ -78,10 +60,7 @@ export default function AuthLayout({
 
         {/* Logo */}
         <Link href="/" className="relative z-10 flex items-center gap-2.5 hover:opacity-90 transition-opacity">
-          <svg viewBox="0 0 96 112" fill="none" width="24" height="28" aria-hidden="true">
-            <rect x="0" y="88" width="96" height="24" rx="12" fill="#047857" />
-            <path d="M48 4 L88 78 Q90 88 80 88 L16 88 Q6 88 8 78 Z" fill="#10B981" />
-          </svg>
+          <CofianzaLogo />
           <span className="text-[22px] font-black tracking-tight">
             <span className="text-primary-400">co</span>fianza
           </span>
@@ -132,9 +111,7 @@ export default function AuthLayout({
         {/* Mobile: link a la landing + logo */}
         <div className="lg:hidden mb-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-primary-700 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
+            <IconArrowLeft size={16} />
             <span className="text-sm font-medium">Volver</span>
           </Link>
           <CofianzaLogo size={28} withText textClassName="text-lg" />
