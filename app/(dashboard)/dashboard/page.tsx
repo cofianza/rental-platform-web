@@ -497,6 +497,9 @@ function SolicitanteDashboard() {
   const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
   const [pagoByExpediente, setPagoByExpediente] = useState<Record<string, PagoEstudioInfo | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
+  // Los banners esperan citas y pagos; sin esto saldría un falso "Agendar
+  // visita" mientras llegan las citas.
+  const [loadingBanners, setLoadingBanners] = useState(true)
   const [expError, setExpError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -506,33 +509,25 @@ function SolicitanteDashboard() {
     expedienteService.getExpedientes({ page: 1, limit: 20, sortBy: 'created_at', sortOrder: 'desc' })
       .then(async (res) => {
         setExpedientes(res.data)
+        // La lista se pinta ya: antes esperaba citas y luego pagos en serie
+        // (tres oleadas detrás de un solo esqueleto).
+        setLoadingExp(false)
         const citasMap: Record<string, CitaActivaInfo | null> = {}
-        await Promise.all(
-          res.data.map(async (exp) => {
+        const pagoMap: Record<string, PagoEstudioInfo | null> = {}
+        await Promise.all([
+          ...res.data.map(async (exp) => {
             try {
               const citas = await citaService.getCitasByExpediente(exp.id)
               citasMap[exp.id] = resolverCitaActiva(citas)
             } catch {
               citasMap[exp.id] = null
             }
-          })
-        )
-        setCitasByExpediente(citasMap)
-
-        // Para expedientes con cita realizada + estudio habilitado, consultar
-        // estado del pago — así podemos mostrar CTA "Pagar ahora" si aplica.
-        const pagoMap: Record<string, PagoEstudioInfo | null> = {}
-        await Promise.all(
-          res.data.map(async (exp) => {
-            const cita = citasMap[exp.id]
-            // La cita puede estar OMITIDA (3.2) o no requerirse (invitación):
-            // no hay fila de cita, pero exp.cita_realizada (RPC) ya viene
-            // resuelto — intentamos igual cargar el estado del pago.
-            // OR (no ternario): si la cita quedo OMITIDA (3.2) con una fila
-            // de cita 'solicitada' aun viva, exp.cita_realizada manda igual.
-            const citaOk =
-              (cita?.estado === 'realizada' && !!cita.estudioHabilitado) || !!exp.cita_realizada
-            if (!citaOk) {
+          }),
+          // Estado del pago (CTA "Pagar ahora") solo con el paso de cita
+          // resuelto. exp.cita_realizada (RPC) ya cubre la cita realizada, la
+          // OMITIDA (3.2) y la invitación, así que no espera a las citas.
+          ...res.data.map(async (exp) => {
+            if (!exp.cita_realizada) {
               pagoMap[exp.id] = null
               return
             }
@@ -546,11 +541,15 @@ function SolicitanteDashboard() {
               pagoMap[exp.id] = null
             }
           }),
-        )
+        ])
+        setCitasByExpediente(citasMap)
         setPagoByExpediente(pagoMap)
       })
       .catch(() => setExpError(true))
-      .finally(() => setLoadingExp(false))
+      .finally(() => {
+        setLoadingExp(false)
+        setLoadingBanners(false)
+      })
   }, [reloadKey])
 
   // Clasificar expedientes según el estado de su cita activa, para apilar banners.
@@ -612,7 +611,7 @@ function SolicitanteDashboard() {
           Ámbar: ya se definió el pago pero el arrendatario aún no autoriza (§6.3).
           Primario/gradient: ya autorizó y el pago está pendiente → CTA "Pagar estudio".
           Si el pago está completado o asumido, no mostramos banner; el stepper de la card toma el relevo. */}
-      {!loadingExp && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length + expedientesEsperandoAutorizacion.length + expedientesPagoPendiente.length) > 0 && (
+      {!loadingBanners && (expedientesSinCita.length + expedientesCitaSolicitada.length + expedientesCitaConfirmada.length + expedientesEsperandoHabilitacion.length + expedientesEsperandoAutorizacion.length + expedientesPagoPendiente.length) > 0 && (
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
@@ -820,6 +819,7 @@ function SolicitanteDashboard() {
             type="button"
             onClick={() => {
               setLoadingExp(true)
+              setLoadingBanners(true)
               setExpError(false)
               setReloadKey((k) => k + 1)
             }}
