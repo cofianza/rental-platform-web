@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { IconFileText, IconLoader, IconUpload, IconX } from '@/components/icons'
 import { pagoService } from '@/services/pagoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 
@@ -266,9 +267,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-colors"
             >
-              <svg className="mx-auto h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 16v-8m0 0l-3 3m3-3l3 3M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1" />
-              </svg>
+              <IconUpload size={40} className="mx-auto text-gray-400" />
               <p className="mt-2 text-sm text-gray-600">
                 Haz clic para seleccionar archivo
               </p>
@@ -283,9 +282,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
                 <img src={filePreview} alt="Preview" className="h-12 w-12 object-cover rounded" />
               ) : (
                 <div className="h-12 w-12 flex items-center justify-center bg-red-100 rounded">
-                  <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
+                  <IconFileText size={24} className="text-red-500" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -298,9 +295,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                 disabled={isSubmitting}
               >
-                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <IconX size={16} className="text-gray-500" />
               </button>
             </div>
           )}
@@ -346,10 +341,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             disabled={isSubmitting}
           >
             {isSubmitting && (
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-              </svg>
+              <IconLoader size={16} className="animate-spin" />
             )}
             {isSubmitting ? 'Registrando...' : 'Registrar Pago'}
           </button>

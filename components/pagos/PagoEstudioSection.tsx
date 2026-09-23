@@ -1,6 +1,17 @@
 'use client'
 
-import { IconClock, IconRefresh } from '@/components/icons'
+import {
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCheckCircle,
+  IconClock,
+  IconCreditCard,
+  IconDollarSign,
+  IconLoader,
+  IconMail,
+  IconRefresh,
+  IconShieldCheck,
+} from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -229,9 +240,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         <div className="border-2 border-amber-300 bg-amber-50/30 rounded-lg p-6">
           <div className="flex items-start gap-3 mb-4">
             <span className="shrink-0 mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
-              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
+              <IconAlertTriangle size={20} className="text-amber-600" />
             </span>
             <div>
               <h3 className="text-base font-bold text-gray-900">
@@ -267,9 +276,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     disabled={isSubmitting}
                     className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-emerald-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50 text-center"
                   >
-                    <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+                    <IconShieldCheck size={32} className="text-emerald-600" />
                     <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
                     <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoCreditos?.saldo_total} estudios</span>
                     <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
@@ -280,9 +287,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     href="/configuracion/creditos-estudios"
                     className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-amber-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors text-center"
                   >
-                    <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <IconDollarSign size={32} className="text-amber-600" />
                     <span className="text-sm font-semibold text-gray-900">Comprar paquete</span>
                     <span className="text-xs text-amber-700">Sin créditos disponibles</span>
                     <span className="text-[11px] text-gray-500 leading-snug">Compra créditos con descuento por volumen.</span>
@@ -294,9 +299,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 disabled={isSubmitting}
                 className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
               >
-                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+                <IconCreditCard size={32} className="text-primary-600" />
                 <span className="text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
                 <span className="text-xs text-gray-500">Tarjeta o PSE</span>
                 <span className="text-[11px] text-gray-500 leading-snug">El estudio sigue cuando se confirma el pago.</span>
@@ -306,9 +309,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 disabled={isSubmitting}
                 className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
               >
-                <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <IconMail size={32} className="text-primary-600" />
                 <span className="text-sm font-semibold text-gray-900">Enviar link al arrendatario</span>
                 <span className="text-xs text-gray-500">Él paga con tarjeta o PSE</span>
                 <span className="text-[11px] text-gray-500 leading-snug">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
@@ -370,9 +371,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {/* Asumido por inmobiliaria */}
       {estado.estado === 'asumido_inmobiliaria' && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <IconCheckCircle size={20} className="text-green-600 shrink-0" />
           <div>
             <p className="text-sm font-medium text-green-800">Cubierto por inmobiliaria</p>
             <p className="text-xs text-green-600">
@@ -385,9 +384,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {/* Completado (via pasarela) */}
       {estado.estado === 'completado' && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <IconCheckCircle size={20} className="text-green-600 shrink-0" />
           <div>
             <p className="text-sm font-medium text-green-800">Pago confirmado</p>
             <p className="text-xs text-green-600">{estado.monto_formateado} COP — la evaluación crediticia ya puede ejecutarse</p>
@@ -417,9 +414,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {estado.estado === 'pendiente' && !(!!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail) && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
-            <svg className="h-5 w-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconClock size={20} className="text-amber-600 shrink-0" />
             <div>
               <p className="text-sm font-medium text-amber-800">
                 {estado.autorizado ? 'Ya autorizó — esperando su pago' : 'Esperando pago del arrendatario'}
@@ -486,10 +481,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {estado.estado === 'procesando' && (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <svg className="h-5 w-5 text-blue-600 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-            </svg>
+            <IconLoader size={20} className="text-blue-600 shrink-0 animate-spin" />
             <div>
               <p className="text-sm font-medium text-blue-800">Pago en proceso</p>
               <p className="text-xs text-blue-600">
@@ -509,9 +501,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {estado.estado === 'fallido' && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
-            <svg className="h-5 w-5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconAlertTriangle size={20} className="text-red-600 shrink-0" />
             <div>
               <p className="text-sm font-medium text-red-800">Pago fallido</p>
               <p className="text-xs text-red-600">{estado.monto_formateado} COP</p>
@@ -706,10 +696,7 @@ function EnviarLinkModal({
             disabled={isSubmitting}
           >
             {isSubmitting && (
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-              </svg>
+              <IconLoader size={16} className="animate-spin" />
             )}
             {isSubmitting ? 'Enviando...' : 'Enviar al arrendatario'}
           </button>
@@ -873,9 +860,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <>
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-3">
-            <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconCheckCircle size={20} className="text-green-600 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-green-800">
                 {pagoPropio
@@ -904,9 +889,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-800 bg-white border border-green-300 rounded-md hover:bg-green-50 transition"
                 >
                   Ver factura
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
+                  <IconArrowRight size={14} />
                 </Link>
               ) : (
                 <button
@@ -915,10 +898,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition"
                 >
                   {facturando && (
-                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-                    </svg>
+                    <IconLoader size={14} className="animate-spin" />
                   )}
                   Facturar
                 </button>
@@ -974,10 +954,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start gap-3">
-          <svg className="h-5 w-5 text-blue-700 shrink-0 animate-spin mt-0.5" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-          </svg>
+          <IconLoader size={20} className="text-blue-700 shrink-0 animate-spin mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Tu pago está en proceso</p>
             <p className="text-sm text-blue-800">
@@ -996,9 +973,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-            <svg className="h-6 w-6 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
+            <IconCreditCard size={24} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu evaluación crediticia</h3>
@@ -1016,9 +991,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
               className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
             >
               Pagar ahora
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              <IconArrowRight size={16} />
             </a>
           </div>
         </div>
@@ -1226,10 +1199,7 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
           className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && (
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-            </svg>
+            <IconLoader size={16} className="animate-spin" />
           )}
           Emitir factura
         </button>
@@ -1331,10 +1301,7 @@ function ConfirmFacturaModal({
           className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && (
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-            </svg>
+            <IconLoader size={16} className="animate-spin" />
           )}
           Confirmar y emitir
         </button>
