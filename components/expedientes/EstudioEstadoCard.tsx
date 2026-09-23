@@ -20,6 +20,7 @@ import {
   ReintentarEstudioForm,
   puedeRelanzarEstudio,
   esCondicionadoSinInfo,
+  esPendienteDeEjecutar,
 } from './ReintentarEstudioForm'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -174,11 +175,10 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
   if (estudio.estado === 'formulario_enviado') {
     return 'Esperando que el solicitante termine de llenar el formulario.'
   }
-  if (estudio.estado === 'formulario_completado') {
-    return `Formulario listo. El solicitante puede ejecutar la consulta a ${buro} desde su panel.`
-  }
-  if (estudio.estado === 'documentos_cargados') {
-    return 'Documentos cargados. Listo para ejecutar la consulta.'
+  // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
+  // dice): el gestor la ejecuta desde el formulario de abajo.
+  if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
+    return `Listo para consultar a ${buro}. Si la consulta no arrancó sola, ejecútala desde aquí.`
   }
   return ''
 }
@@ -532,6 +532,7 @@ function EstudioPanel({
               persona={persona}
               esTitular={etiqueta === 'Titular'}
               esReconsulta={esReconsulta}
+              esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
               onRetried={onRetried}
             />
           )}

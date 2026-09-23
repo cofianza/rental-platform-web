@@ -1,5 +1,6 @@
 /**
- * ReintentarEstudioForm — reintento de un estudio 'fallido' con el documento
+ * ReintentarEstudioForm — reintento de un estudio 'fallido' (o ejecución a mano
+ * del que no arrancó solo tras la firma o el pago) con el documento
  * verificable/corregible en el lugar (la causa típica del fallo es una cédula
  * mal escrita o un tipo de documento no soportado) y con el BURÓ elegible:
  * si TransUnion falla, el gestor puede relanzar por DataCrédito o viceversa.
@@ -60,6 +61,16 @@ export function esCondicionadoSinInfo(estudio: {
 }
 
 /**
+ * Autorizado y listo pero nunca ejecutado: el arranque automático tras la
+ * firma o el pago falló antes del lock (503 de pago, gate 8.4, documento) y el
+ * timeline manda a ejecutarlo a mano. Mismos estados que la API acepta en
+ * /ejecutar (ESTADOS_PERMITIDOS_EJECUCION), sin contar 'fallido'.
+ */
+export function esPendienteDeEjecutar(estudio: { estado: string }): boolean {
+  return estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados'
+}
+
+/**
  * ¿Se puede relanzar este estudio contra un buró? Compartido por la card del
  * resumen y el tab Estudios para que no se desincronicen.
  */
@@ -68,7 +79,7 @@ export function puedeRelanzarEstudio(estudio: {
   resultado?: string | null
   score?: number | null
 }): boolean {
-  return estudio.estado === 'fallido' || esCondicionadoSinInfo(estudio)
+  return estudio.estado === 'fallido' || esPendienteDeEjecutar(estudio) || esCondicionadoSinInfo(estudio)
 }
 
 /**
@@ -107,6 +118,8 @@ interface ReintentarEstudioFormProps {
    * proveedor, así que el form arranca con el otro buró y lo exige.
    */
   esReconsulta?: boolean
+  /** true cuando el estudio nunca se ejecutó (ver esPendienteDeEjecutar): el copy dice "ejecutar", no "reintentar". */
+  esPrimeraEjecucion?: boolean
   /** Refresca la lista/card padre tras disparar el reintento. */
   onRetried?: () => void
 }
@@ -117,6 +130,7 @@ export function ReintentarEstudioForm({
   persona,
   esTitular = true,
   esReconsulta = false,
+  esPrimeraEjecucion = false,
   onRetried,
 }: ReintentarEstudioFormProps) {
   // Init lazy: no se pisa con los re-render del polling del padre.
@@ -174,10 +188,16 @@ export function ReintentarEstudioForm({
         // ('Pérez García' → 'Pérez') que el gestor nunca vio ni tocó.
         ...(requiereApellido && apellido ? { primer_apellido: apellido } : {}),
       })
-      toast.success(`Reintentando la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`)
+      toast.success(
+        `${esPrimeraEjecucion ? 'Ejecutando' : 'Reintentando'} la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`,
+      )
       onRetried?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo reintentar la consulta.')
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : `No se pudo ${esPrimeraEjecucion ? 'ejecutar' : 'reintentar'} la consulta.`,
+      )
       // Refrescar también al fallar: el backend pudo haber tomado el lock y
       // persistido el cambio de buró antes de romperse, así que sin esto la
       // card seguiría mostrando el proveedor viejo y el estado anterior.
@@ -192,7 +212,9 @@ export function ReintentarEstudioForm({
       <p className="text-xs font-semibold text-gray-700 mb-2">
         {esReconsulta
           ? `${PROVEEDOR_REINTENTO_LABELS[normalizeProveedorReintento(proveedorActual)]} no tiene información de esta persona. Puedes consultar el otro buró.`
-          : 'Verifica el documento y el buró antes de reintentar'}
+          : esPrimeraEjecucion
+            ? 'Verifica el documento y el buró antes de ejecutar la consulta'
+            : 'Verifica el documento y el buró antes de reintentar'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-40">
@@ -268,10 +290,14 @@ export function ReintentarEstudioForm({
           {reintentando
             ? esReconsulta
               ? 'Consultando…'
-              : 'Reintentando…'
+              : esPrimeraEjecucion
+                ? 'Ejecutando…'
+                : 'Reintentando…'
             : esReconsulta
               ? 'Consultar este buró'
-              : 'Reintentar consulta'}
+              : esPrimeraEjecucion
+                ? 'Ejecutar consulta'
+                : 'Reintentar consulta'}
         </button>
       </div>
       <p className="text-[11px] text-gray-500 mt-2">
@@ -290,7 +316,7 @@ export function ReintentarEstudioForm({
           ? ' El estudio quedará registrado con el buró seleccionado.'
           : ''}
         {esTitular
-          ? ' Al reintentar, el documento se actualiza también en los datos del solicitante.'
+          ? ` Al ${esPrimeraEjecucion ? 'ejecutar' : 'reintentar'}, el documento se actualiza también en los datos del solicitante.`
           : ''}
       </p>
     </div>

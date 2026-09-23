@@ -20,6 +20,7 @@ import {
   ReintentarEstudioForm,
   puedeRelanzarEstudio,
   esCondicionadoSinInfo,
+  esPendienteDeEjecutar,
 } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -484,7 +485,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                   )}
                 </div>
 
-                {/* Estudio fallido: reintento con el documento corregible aquí
+                {/* Estudio fallido (o que no arrancó solo): reintento con el documento corregible aquí
                     mismo (antes este tab no ofrecía NINGUNA salida — el form
                     solo existía en la card del resumen). Gestores + dueños:
                     el backend autoriza a ambos en /ejecutar. stopPropagation
@@ -504,6 +505,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                       persona={persona}
                       esTitular={persona?.etiqueta !== 'Co-arrendatario'}
                       esReconsulta={esCondicionadoSinInfo(estudio)}
+                      esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
                       onRetried={fetchEstudios}
                     />
                   </div>
