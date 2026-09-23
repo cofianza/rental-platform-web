@@ -88,11 +88,18 @@ export function AutorizacionSection({
   // §6.3: con el orden invertido, la firma del arrendatario es lo que dispara
   // el cobro y la ejecución del estudio. Sin polling el gestor no se enteraba
   // de la firma hasta refrescar a mano. Mismo intervalo que PagoEstudioSection.
+  // Con el enlace vencido ya no hay firma que esperar (el backend la marca
+  // 'expirado' solo cuando alguien abre el link), y con la pestaña oculta no
+  // se pregunta.
+  const tokenExpiracion = autorizacion?.token_expiracion
   useEffect(() => {
     if (autorizacion?.estado !== 'pendiente') return
-    const id = setInterval(() => { void fetchStatus() }, 12000)
+    if (tokenExpiracion && new Date(tokenExpiracion).getTime() < Date.now()) return
+    const id = setInterval(() => {
+      if (!document.hidden) void fetchStatus()
+    }, 12000)
     return () => clearInterval(id)
-  }, [autorizacion?.estado, fetchStatus])
+  }, [autorizacion?.estado, tokenExpiracion, fetchStatus])
 
   const handleEnviarEnlace = async () => {
     // Overrides de contacto (solo si el gestor está corrigiendo y difieren).

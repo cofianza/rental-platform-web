@@ -167,7 +167,9 @@ export function EstudioSolicitanteCard({
   // resultado sin que el usuario tenga que recargar.
   useEffect(() => {
     if (estudio?.estado !== 'en_proceso') return
-    const id = setInterval(fetchEstudio, 5000)
+    const id = setInterval(() => {
+      if (!document.hidden) fetchEstudio() // pestaña oculta: no se pregunta
+    }, 5000)
     return () => clearInterval(id)
   }, [estudio?.estado, fetchEstudio])
 
@@ -187,6 +189,7 @@ export function EstudioSolicitanteCard({
   useEffect(() => {
     if (!autorizacionPendiente || estudio?.estado === 'fallido') return
     const id = setInterval(() => {
+      if (document.hidden) return // pestaña oculta: no se pregunta
       fetchAutorizacion()
       fetchEstudio()
     }, 8000)

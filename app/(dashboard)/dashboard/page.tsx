@@ -158,6 +158,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!needsOperativo) return
     refreshTimer.current = setInterval(() => {
+      if (document.hidden) return // pestaña oculta: no se refresca
       fetchAll(false) // silent refresh without loading skeleton
     }, AUTO_REFRESH_MS)
     return () => {

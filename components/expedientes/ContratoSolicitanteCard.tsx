@@ -85,7 +85,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     if (!contrato) return
     const esperando = ['borrador', 'en_revision', 'aprobado', 'firmado'].includes(contrato.estado)
     if (!esperando) return
-    const id = setInterval(fetchContrato, 10000)
+    const id = setInterval(() => {
+      if (!document.hidden) fetchContrato() // pestaña oculta: no se pregunta
+    }, 10000)
     return () => clearInterval(id)
   }, [contrato, fetchContrato])
 

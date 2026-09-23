@@ -104,6 +104,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     if (!enEspera) return
 
     const id = setInterval(async () => {
+      if (document.hidden) return // pestaña oculta: no se pregunta
       const fresco = await pagoEstudioService.getEstado(expedienteId).catch(() => null)
       if (!fresco) return
       setEstado(fresco)
