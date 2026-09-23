@@ -91,15 +91,18 @@ export function CoarrendatarioPropietarioCard({
 
   useEffect(() => { fetchCoa() }, [fetchCoa, version])
 
-  // Polling sutil mientras la invitación está pendiente o el estudio en proceso,
-  // para que el propietario vea el avance sin recargar.
+  // Polling sutil mientras la invitación está pendiente o la evaluación en
+  // proceso, para que el propietario vea el avance sin recargar. Una invitación
+  // vencida ya no cambia sola (reenviarla llama a fetchCoa). La evaluación
+  // 'fallido' sí se sigue mirando: el reintento se hace en otra tarjeta.
+  // Con la pestaña oculta no se consulta.
   useEffect(() => {
     if (!coa) return
     const enEspera =
-      coa.estado === 'pendiente_aceptacion' ||
+      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa)) ||
       (coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado')
     if (!enEspera) return
-    const id = setInterval(fetchCoa, 8000)
+    const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 8000)
     return () => clearInterval(id)
   }, [coa, fetchCoa])
 
@@ -235,18 +238,27 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function EstadoBlock({ coa }: { coa: ICoarrendatario }) {
+  const fallida = coa.estudio?.estado === 'fallido'
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
-    pendiente_aceptacion: {
-      color: 'bg-blue-50 border-blue-200 text-blue-900',
-      label: 'Esperando respuesta',
-      mensaje: 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
-    },
+    pendiente_aceptacion: invitacionVencida(coa)
+      ? {
+          color: 'bg-amber-50 border-amber-200 text-amber-900',
+          label: 'Invitación vencida',
+          mensaje: `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíala para que le llegue uno nuevo.`,
+        }
+      : {
+          color: 'bg-blue-50 border-blue-200 text-blue-900',
+          label: 'Esperando respuesta',
+          mensaje: 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
+        },
     aceptado: {
-      color: 'bg-blue-50 border-blue-200 text-blue-900',
+      color: fallida ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
-      mensaje: coa.estudio?.estado === 'en_proceso'
-        ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
-        : 'Procesando su evaluación crediticia.',
+      mensaje: fallida
+        ? 'Su evaluación falló por un problema técnico (no es un rechazo). Reinténtala en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
+        : coa.estudio?.estado === 'en_proceso'
+          ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
+          : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {
       color: 'bg-red-50 border-red-200 text-red-900',
@@ -311,6 +323,11 @@ function ResultadoEstudioBlock({
       </div>
     </div>
   )
+}
+
+/** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
+function invitacionVencida(coa: ICoarrendatario): boolean {
+  return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }
 
 function formatFecha(iso: string): string {

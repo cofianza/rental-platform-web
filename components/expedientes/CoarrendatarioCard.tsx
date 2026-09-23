@@ -77,12 +77,15 @@ export function CoarrendatarioCard({
   }, [coa, loading, expedienteEstado, userRol, expedienteId])
 
   // Polling sutil mientras está pendiente_aceptacion o aceptado (sin resultado)
-  // para que el solicitante vea el cambio sin recargar.
+  // para que el solicitante vea el cambio sin recargar. Una invitación vencida
+  // ya no cambia sola (reenviarla llama a fetchCoa) y con la pestaña oculta no
+  // se consulta.
   useEffect(() => {
     if (!coa) return
-    const enEspera = coa.estado === 'pendiente_aceptacion' || coa.estado === 'aceptado'
+    const enEspera =
+      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa)) || coa.estado === 'aceptado'
     if (!enEspera) return
-    const id = setInterval(fetchCoa, 6000)
+    const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 6000)
     return () => clearInterval(id)
   }, [coa, fetchCoa])
 
@@ -121,7 +124,7 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge estado={coa.estado} />
+      <EstadoBadge coa={coa} />
 
       {/* Invitación pendiente: el solicitante puede corregir el contacto y
           reenviar — un email mal escrito no debe dejarlo esperando para
@@ -140,13 +143,24 @@ export function CoarrendatarioCard({
 
 // ── Subcomponentes ─────────────────────────────────────────────────
 
-function EstadoBadge({ estado }: { estado: ICoarrendatario['estado'] }) {
+/** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
+function invitacionVencida(coa: ICoarrendatario): boolean {
+  return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
+}
+
+function EstadoBadge({ coa }: { coa: ICoarrendatario }) {
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
-    pendiente_aceptacion: {
-      color: 'bg-blue-50 border-blue-200 text-blue-900',
-      label: 'Esperando respuesta',
-      mensaje: 'Le enviamos la invitación por correo. Te avisaremos cuando responda.',
-    },
+    pendiente_aceptacion: invitacionVencida(coa)
+      ? {
+          color: 'bg-amber-50 border-amber-200 text-amber-900',
+          label: 'Invitación vencida',
+          mensaje: `Venció el ${new Date(coa.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })} sin respuesta y el enlace ya no sirve. Reenvíala abajo para que le llegue uno nuevo.`,
+        }
+      : {
+          color: 'bg-blue-50 border-blue-200 text-blue-900',
+          label: 'Esperando respuesta',
+          mensaje: 'Le enviamos la invitación por correo. Te avisaremos cuando responda.',
+        },
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
@@ -164,7 +178,7 @@ function EstadoBadge({ estado }: { estado: ICoarrendatario['estado'] }) {
       mensaje: 'La evaluación de tu co-arrendatario terminó. Un analista de Cofianza decide tu caso con los resultados de los dos; te avisamos por notificación y correo.',
     },
   }
-  const c = cfg[estado]
+  const c = cfg[coa.estado]
   return (
     <div className={`border rounded-md p-3 ${c.color}`}>
       <p className="text-sm font-medium">{c.label}</p>

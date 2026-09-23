@@ -32,6 +32,8 @@ export interface ICoarrendatario {
   telefono: string | null
   estado: CoarrendatarioEstado
   estudio_id: string | null
+  /** Vence el enlace de la invitación; reenviarla lo renueva. */
+  token_expiracion: string
   aceptado_at: string | null
   rechazado_at: string | null
   created_at: string
