@@ -75,7 +75,8 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         toast.error('Este firmante no se puede editar desde aquí')
         return
       }
-      toast.success('Teléfono actualizado')
+      // El API regenera el borrador al enviar (contratos.service, enviarContratoAFirma).
+      toast.success('Teléfono actualizado. Al enviar, el contrato se actualiza con este número.')
       setEditingRol(null)
       await onFirmanteUpdated?.()
     } catch (err) {
