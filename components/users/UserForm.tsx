@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
+import { useAuthStore } from '@/stores/auth.store'
 import { ROLE_OPTIONS } from './constants'
 import type { IUserProfile, IUserFormData, UserRole, UserModalMode } from '@/types/user'
 
@@ -52,6 +53,8 @@ export function UserForm({
     rol: lockedRol ?? ('' as IUserFormData['rol']),
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  // Nadie se cambia su propio rol (el API también lo rechaza).
+  const esPropio = useAuthStore((s) => mode === 'edit' && !!user && s.user?.id === user.id)
 
   // Cargar datos del usuario al editar
   useEffect(() => {
@@ -125,8 +128,12 @@ export function UserForm({
 
   const title = mode === 'create' ? (titleCreate ?? 'Nuevo Usuario') : 'Editar Usuario'
 
-  // Filtrar opciones de rol (excluir opción vacía "Todos los roles")
-  const roleOptionsFiltered = ROLE_OPTIONS.filter((opt) => opt.value)
+  // Filtrar opciones de rol (excluir opción vacía "Todos los roles"). El panel
+  // no crea arrendatarios ni convierte a nadie en uno: 'Solicitante' solo se
+  // muestra para que el select refleje el rol real de quien ya lo es.
+  const roleOptionsFiltered = ROLE_OPTIONS.filter(
+    (opt) => opt.value && (opt.value !== 'solicitante' || (mode === 'edit' && user?.rol === 'solicitante')),
+  )
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
@@ -224,7 +231,7 @@ export function UserForm({
               id="rol"
               value={formData.rol}
               onChange={(e) => handleChange('rol', e.target.value as UserRole)}
-              disabled={isLoading}
+              disabled={isLoading || esPropio}
               className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 ${
                 errors.rol ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -237,6 +244,7 @@ export function UserForm({
               ))}
             </select>
             {errors.rol && <p className="mt-1 text-xs text-red-600">{errors.rol}</p>}
+            {esPropio && <p className="mt-1 text-xs text-gray-500">No puedes cambiar tu propio rol</p>}
           </div>
         )}
 

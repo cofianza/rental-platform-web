@@ -111,7 +111,9 @@ function UsuariosContent() {
     if (modalMode === 'create') {
       return createUser(data)
     } else if (modalMode === 'edit' && selectedUser) {
-      return updateUser(selectedUser.id, data)
+      // El rol viaja solo si cambió: corregir el nombre de un arrendatario no
+      // debe chocar con que el API no asigna 'solicitante'.
+      return updateUser(selectedUser.id, data.rol === selectedUser.rol ? { ...data, rol: undefined } : data)
     }
     return false
   }

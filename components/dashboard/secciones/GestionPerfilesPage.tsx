@@ -171,7 +171,8 @@ export function GestionPerfilesPage({ rol }: Props) {
         await userService.createUser({ ...data, rol })
         toast.success(`${esInmobiliaria ? 'Inmobiliaria' : 'Propietario'} creada correctamente.`)
       } else if (editUser) {
-        await userService.updateUser(editUser.id, data)
+        // Rol fijo en esta página: no se reenvía.
+        await userService.updateUser(editUser.id, { ...data, rol: undefined })
         toast.success('Cambios guardados.')
       }
       reload()

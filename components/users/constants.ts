@@ -76,6 +76,7 @@ export const ROLE_OPTIONS: { value: UserRole | ''; label: string }[] = [
   { value: 'gerencia_consulta', label: 'Gerencia/Consulta' },
   { value: 'propietario', label: 'Propietario' },
   { value: 'inmobiliaria', label: 'Inmobiliaria' },
+  { value: 'solicitante', label: 'Solicitante' },
 ]
 
 /**
