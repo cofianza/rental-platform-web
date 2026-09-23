@@ -88,6 +88,8 @@ export interface IExpediente {
   requiere_accion?: boolean
   /** De quién depende ahora mismo el estudio. */
   depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
+  /** Solo si se pidió con_contrato_vivo: ya tiene un contrato no cancelado. */
+  tiene_contrato_vivo?: boolean
   /** Flag del workflow paso 3: el propietario habilito el estudio crediticio. */
   estudio_habilitado?: boolean
   /** Flag del workflow paso 3: el propietario decidio NO proceder. Mutuamente
@@ -140,6 +142,8 @@ export interface IExpedienteFilters {
   miembro_responsable_id?: string
   /** Solo los que no tienen analista (el «Sin asignar» del dashboard). */
   sin_analista?: boolean
+  /** Que cada fila traiga tiene_contrato_vivo (acciones pendientes del inicio). */
+  con_contrato_vivo?: boolean
   sortBy: 'created_at' | 'numero' | 'estado' | 'updated_at'
   sortOrder: 'asc' | 'desc'
 }

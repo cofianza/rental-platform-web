@@ -13,8 +13,8 @@
  * duración + fecha desde AccionContratoPendienteCard. Antes de este hook,
  * ese paso no se exponía en el dashboard y el propietario quedaba "ciego".
  *
- * Categoría 4 se resuelve en UNA consulta (GET /contratos?expediente_ids=…)
- * en vez de 1 por expediente candidato.
+ * Categoría 4 viene en la misma respuesta de expedientes (con_contrato_vivo);
+ * si el API no trae el campo, se resuelve con GET /contratos?expediente_ids=….
  *
  * TODO: si el dataset supera 50 en producción, paginar por categoría.
  */
@@ -66,6 +66,7 @@ export function useAccionesPendientes() {
           limit: 20,
           sortBy: 'created_at',
           sortOrder: 'desc',
+          con_contrato_vivo: true,
         }),
       ])
 
@@ -93,11 +94,15 @@ export function useAccionesPendientes() {
       }
 
       // ── Categoria contratos por generar ──────────────────
-      // Una sola consulta con los ids candidatos; entran los que NO tienen
-      // contrato activo. Limitamos a 5 visibles (igual que las otras).
+      // Entran los que NO tienen contrato activo. Limitamos a 5 visibles
+      // (igual que las otras).
       let porGenerarContrato: IExpediente[] = []
-      if (expedientesRes.status === 'fulfilled' && expedientesRes.value.data.length > 0) {
-        const candidatos = expedientesRes.value.data
+      const candidatos = expedientesRes.status === 'fulfilled' ? expedientesRes.value.data : []
+      if (candidatos.length > 0 && candidatos[0].tiene_contrato_vivo !== undefined) {
+        // El API ya lo marcó en la misma respuesta: sin segunda petición.
+        porGenerarContrato = candidatos.filter((e) => !e.tiene_contrato_vivo).slice(0, 5)
+      } else if (candidatos.length > 0) {
+        // API sin el campo: una sola consulta con los ids candidatos.
         try {
           const { data: contratos } = await contratoService.getAllContratos({
             expediente_ids: candidatos.map((e) => e.id).join(','),
