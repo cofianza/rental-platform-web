@@ -24,7 +24,7 @@ function VerifyEmailContent() {
   const verify = useCallback(async () => {
     if (!token) {
       setState('error')
-      setErrorMessage('Token de verificacion no proporcionado.')
+      setErrorMessage('El enlace de verificación está incompleto. Ábrelo de nuevo desde el correo.')
       return
     }
 
