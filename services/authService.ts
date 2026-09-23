@@ -34,6 +34,18 @@ function clearSessionCookie(): void {
   document.cookie = `${SESSION_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
 }
 
+function perfilAUsuario(profile: IMeResponse): IUser {
+  return {
+    id: profile.id,
+    email: profile.email,
+    nombre_completo: profile.nombre_completo,
+    rol: profile.rol,
+    rol_miembro: profile.rol_miembro ?? null,
+    perfil_completo: profile.perfil_completo,
+    activo: profile.activo,
+  }
+}
+
 class AuthService {
   private refreshTimerId: ReturnType<typeof setTimeout> | null = null
   private refreshPromise: Promise<string | null> | null = null
@@ -50,7 +62,8 @@ class AuthService {
       const response = await apiClient.post<ILoginResponse>('/auth/login', credentials)
       const { user, session } = response.data
 
-      this.adoptarSesion({ id: user.id, email: user.email, rol: user.rol }, session)
+      // Sin permisos: useAuth recarga la página y checkSession los trae con el refresh.
+      this.adoptarSesion({ id: user.id, email: user.email, rol: user.rol }, session, false)
 
       return response.data
     } catch (error) {
@@ -71,6 +84,7 @@ class AuthService {
   adoptarSesion(
     user: IUser,
     session: { access_token: string; refresh_token: string; expires_at: number },
+    cargarPermisos = true,
   ): void {
     useAuthStore.getState().login(user, session.access_token)
     localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token)
@@ -78,7 +92,7 @@ class AuthService {
     // expires_at es Unix timestamp
     this.scheduleTokenRefreshFromTimestamp(session.expires_at)
     // Permisos en background (no bloquear el redirect)
-    this.fetchPermissions()
+    if (cargarPermisos) this.fetchPermissions()
   }
 
   /**
@@ -111,8 +125,8 @@ class AuthService {
   }
 
   /**
-   * Verifica la sesión actual (al cargar la app)
-   * Primero refresca el token, luego obtiene el perfil
+   * Verifica la sesión actual (al cargar la app): el refresh trae el token,
+   * el perfil y los permisos en una sola ida al API.
    */
   async checkSession(): Promise<IUser | null> {
     const store = useAuthStore.getState()
@@ -128,26 +142,17 @@ class AuthService {
         return null
       }
 
-      // Perfil y permisos a la vez: los permisos solo necesitan el token (antes
-      // iban uno tras otro, ~1 s más en cada carga). fetchPermissions nunca lanza;
-      // se espera también si /auth/me falla, para que el logout del catch quede
-      // después y limpie lo que traiga.
-      const permisos = this.fetchPermissions()
-      const response = await apiClient.get<IMeResponse>('/auth/me').finally(() => permisos)
-      const profile = response.data
-
-      // Convertir perfil a IUser
-      const user: IUser = {
-        id: profile.id,
-        email: profile.email,
-        nombre_completo: profile.nombre_completo,
-        rol: profile.rol,
-        rol_miembro: profile.rol_miembro ?? null,
-        perfil_completo: profile.perfil_completo,
-        activo: profile.activo,
+      // El refresh ya deja perfil y permisos en el store. Si no los trajo (no
+      // pudo leer el perfil), se piden aparte y a la vez. fetchPermissions nunca
+      // lanza; se espera también si /auth/me falla, para que el logout del catch
+      // quede después y limpie lo que traiga.
+      let user = useAuthStore.getState().user
+      if (!user) {
+        const permisos = this.fetchPermissions()
+        const response = await apiClient.get<IMeResponse>('/auth/me').finally(() => permisos)
+        user = perfilAUsuario(response.data)
+        store.setUser(user)
       }
-
-      store.setUser(user)
 
       // Renovar cookie de sesión
       setSessionCookie()
@@ -189,6 +194,12 @@ class AuthService {
       const { access_token, refresh_token: new_refresh_token, expires_at } = response.data
 
       useAuthStore.getState().setAccessToken(access_token)
+      // Solo al abrir la app (sin usuario aún): a mitad de sesión no se cambia
+      // el objeto user, que varias pantallas usan como dependencia.
+      if (response.data.user && !useAuthStore.getState().user) {
+        useAuthStore.getState().setUser(perfilAUsuario(response.data.user))
+        useAuthStore.getState().setPermissions(response.data.permissions ?? null)
+      }
       this.scheduleTokenRefreshFromTimestamp(expires_at)
       setSessionCookie()
 

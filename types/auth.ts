@@ -4,6 +4,8 @@
  * Alineadas con el backend (HP-94)
  */
 
+import type { PermissionMap } from './permissions'
+
 /**
  * Roles del sistema (alineados con enum rol_usuario en BD)
  * - administrador: Acceso total
@@ -134,6 +136,9 @@ export interface IRefreshResponse {
   access_token: string
   refresh_token: string
   expires_at: number
+  /** Perfil y permisos: si vienen, checkSession no pide /auth/me ni /auth/permissions. */
+  user?: IMeResponse
+  permissions?: PermissionMap | null
 }
 
 /**
