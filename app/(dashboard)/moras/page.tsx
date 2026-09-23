@@ -31,6 +31,7 @@ import {
   type IMoraDetalle,
   type IMorasStats,
   type MoraEstado,
+  type WhatsappEstado,
 } from '@/services/morasService'
 import { formatCurrency } from '@/lib/constants'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
@@ -75,6 +76,22 @@ const FASE_CONFIG: Record<MoraEstado, { label: string; chip: string; chipText: s
     chipText: 'text-gray-600',
     bdot: 'bg-gray-400',
   },
+}
+
+// El toast decía «se notificó al inquilino vía WhatsApp» aunque no tuviera
+// teléfono o Meta rechazara el envío: se dice lo que pasó de verdad.
+const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado'>, string> = {
+  sin_telefono: 'no se pudo avisar al inquilino por WhatsApp porque no tiene teléfono registrado. Avísale por otro medio.',
+  fallido: 'el WhatsApp al inquilino falló. Avísale por otro medio.',
+  mock: 'el WhatsApp está en modo de prueba y no se envió al inquilino.',
+}
+
+function avisarResultado(accion: string, estado: WhatsappEstado | undefined) {
+  if (!estado || estado === 'aceptado') {
+    toast.success(`${accion}. Se envió el WhatsApp al inquilino.`)
+  } else {
+    toast.warning(`${accion}, pero ${FALLO_WHATSAPP[estado]}`)
+  }
 }
 
 const FILTROS: Array<{ key: 'todas' | MoraEstado; label: string }> = [
@@ -214,13 +231,13 @@ export default function ReportarMoraPage() {
     }
     setReportando(true)
     try {
-      await morasService.reportar({
+      const creada = await morasService.reportar({
         contrato_id: contratoId,
         fecha_vencimiento_canon: fechaVencimiento,
         monto_mora: montoNum,
         descripcion: descripcion.trim() || undefined,
       })
-      toast.success('Mora reportada — se notificó al inquilino vía WhatsApp')
+      avisarResultado(esInterno ? 'Mora registrada' : 'Mora reportada a Cofianza', creada.whatsapp_estado)
       setContratoId('')
       setMonto('')
       setDescripcion('')
@@ -681,8 +698,8 @@ function MoraDetalleModal({
   async function handleEscalar() {
     setActing(true)
     try {
-      await morasService.escalar(moraId)
-      toast.success('Mora escalada y WhatsApp enviado')
+      const escalada = await morasService.escalar(moraId)
+      avisarResultado('Mora escalada', escalada.whatsapp_estado)
       await recargar()
       onChange()
     } catch (err) {

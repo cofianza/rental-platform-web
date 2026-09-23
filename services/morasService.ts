@@ -53,6 +53,13 @@ export interface IMoraDetalle extends IMoraTicket {
   mensajes: IMoraMensaje[]
 }
 
+/** Qué pasó con el WhatsApp al inquilino al reportar o escalar. */
+export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono'
+
+export interface IMoraConAviso extends IMoraDetalle {
+  whatsapp_estado: WhatsappEstado
+}
+
 export interface IMorasStats {
   reportadas_mes: number
   resueltas: number
@@ -114,13 +121,13 @@ class MorasService {
     return res.data
   }
 
-  async reportar(input: IReportarMoraInput): Promise<IMoraDetalle> {
-    const res = await apiClient.post<IMoraDetalle>(this.base, input)
+  async reportar(input: IReportarMoraInput): Promise<IMoraConAviso> {
+    const res = await apiClient.post<IMoraConAviso>(this.base, input)
     return res.data
   }
 
-  async escalar(id: string, notas?: string): Promise<IMoraDetalle> {
-    const res = await apiClient.patch<IMoraDetalle>(`${this.base}/${id}/escalar`, { notas })
+  async escalar(id: string, notas?: string): Promise<IMoraConAviso> {
+    const res = await apiClient.patch<IMoraConAviso>(`${this.base}/${id}/escalar`, { notas })
     return res.data
   }
 
