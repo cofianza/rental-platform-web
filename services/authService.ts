@@ -95,9 +95,10 @@ class AuthService {
       // Continuar con logout local aunque falle el servidor
     }
 
-    // Cerrar sesión de Supabase (si hay)
+    // Cerrar sesión de Supabase (si hay). Solo la de este dispositivo: sin
+    // alcance, supabase-js usa 'global' y cerraba también las otras.
     try {
-      await supabase.auth.signOut()
+      await supabase.auth.signOut({ scope: 'local' })
     } catch {
       // Ignorar errores de Supabase
     }
