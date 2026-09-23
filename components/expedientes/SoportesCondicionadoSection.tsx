@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { expedienteSoportesService, type SoporteListItem, type PresignedUrlInput } from '@/services/expedienteSoportesService'
 import type { PropositoSoporte } from '@/types/estudio'
+import { IconFileText, IconPlus } from '@/components/icons'
 
 const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
   certificacion_laboral: 'Certificación laboral',
@@ -161,9 +162,7 @@ export function SoportesCondicionadoSection({
         <ul className="space-y-2">
           {soportes.map((doc) => (
             <li key={doc.id} className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg">
-              <svg className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <IconFileText size={20} className="text-gray-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{doc.nombre_original}</p>
                 <p className="text-xs text-gray-500">
@@ -191,9 +190,7 @@ export function SoportesCondicionadoSection({
           onClick={() => setShowUploadForm(true)}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          <IconPlus size={16} />
           Subir documento
         </button>
       )}
