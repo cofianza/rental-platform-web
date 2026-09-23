@@ -143,13 +143,16 @@ export default function ReportarMoraPage() {
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')
+  // Hoy en Colombia (YYYY-MM-DD): un canon que aún no vence no está en mora.
+  const [hoy] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }))
 
-  // Default: día 5 del mes actual (vencimiento típico).
+  // Default: el último día 5 que ya pasó (vencimiento típico). Antes era el 5
+  // del mes en curso también los días 1 a 4, o sea una fecha futura.
   useEffect(() => {
-    const ahora = new Date()
-    const def = new Date(ahora.getFullYear(), ahora.getMonth(), 5)
-    setFechaVencimiento(def.toISOString().split('T')[0])
-  }, [])
+    const [y, m, d] = hoy.split('-').map(Number)
+    const [yy, mm] = d >= 5 ? [y, m] : m === 1 ? [y - 1, 12] : [y, m - 1]
+    setFechaVencimiento(`${yy}-${String(mm).padStart(2, '0')}-05`)
+  }, [hoy])
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -318,6 +321,7 @@ export default function ReportarMoraPage() {
             </label>
             <input id="moras-fecha-de-vencimiento-del-canon"
               type="date"
+              max={hoy}
               value={fechaVencimiento}
               onChange={(e) => setFechaVencimiento(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
@@ -790,10 +794,13 @@ function MoraDetalleModal({
                 <Field label="Monto" value={formatCurrency(mora.monto_mora)} />
                 <Field
                   label="Vencimiento canon"
+                  // Fecha sin hora (medianoche UTC): sin timeZone, en Colombia
+                  // se veía un día antes que en el WhatsApp.
                   value={new Date(mora.fecha_vencimiento_canon).toLocaleDateString('es-CO', {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric',
+                    timeZone: 'UTC',
                   })}
                 />
                 <Field
