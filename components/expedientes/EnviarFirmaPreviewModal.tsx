@@ -172,6 +172,14 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                   )}
                 </div>
 
+                {/* Sin «Editar» (el API solo se lo da al titular de ese perfil):
+                    decir quién lo corrige en vez de dejar la marca sin salida. */}
+                {f.rol_firmante === 'arrendador' && !editable && problema && (
+                  <p className="mt-1.5 text-xs text-gray-600">
+                    Lo corrige el titular de la inmobiliaria o el propietario en «Datos para contrato».
+                  </p>
+                )}
+
                 {editable && editando && (
                   <div className="mt-2">
                     <div className="flex items-center gap-2">
