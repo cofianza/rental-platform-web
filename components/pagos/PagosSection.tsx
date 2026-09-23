@@ -44,10 +44,10 @@ type PageState = 'loading' | 'ready' | 'error'
 // ============================================
 
 const CONCEPTOS_LABELS: Record<string, string> = {
-  estudio: 'Estudio',
-  garantia: 'Garantia',
+  estudio: 'Evaluación',
+  garantia: 'Garantía',
   primer_canon: 'Primer canon',
-  deposito: 'Deposito',
+  deposito: 'Depósito',
   otro: 'Otro',
 }
 

@@ -23,9 +23,9 @@ interface GenerarLinkPagoModalProps {
 
 const CONCEPTOS = [
   { value: 'estudio', label: 'Evaluación crediticia' },
-  { value: 'garantia', label: 'Garantia de arrendamiento' },
+  { value: 'garantia', label: 'Garantía de arrendamiento' },
   { value: 'primer_canon', label: 'Primer canon de arrendamiento' },
-  { value: 'deposito', label: 'Deposito de garantia' },
+  { value: 'deposito', label: 'Depósito de garantía' },
   { value: 'otro', label: 'Otro' },
 ]
 
