@@ -124,9 +124,10 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const nota = !enFirma || e.reintento ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
   const motivo = motivoDe(s)
   // Adenda 1 (respuesta 11): el aviso lo acepta la inmobiliaria y, hasta entonces, ella no reenvía ni cancela (el API igual).
+  // Sin el acuse disponible (falta la migración) el API no lo exige: aquí tampoco.
   const acuse = e.aviso?.aceptado ?? null
   const bloqueoAcuse =
-    incompleta && rol === 'inmobiliaria' && !acuse
+    incompleta && rol === 'inmobiliaria' && e.acuseDisponible && !acuse
       ? e.aviso
         ? 'Primero lee y acepta el aviso de firma incompleta.'
         : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrás aceptarlo aquí.'
@@ -263,7 +264,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 <IconCheck size={16} className="shrink-0" />
                 Aviso aceptado por {acuse.nombre} el {formatDateTime(acuse.en)}.
               </p>
-            ) : e.aviso && rol === 'inmobiliaria' && editable ? (
+            ) : !e.aviso || !e.acuseDisponible ? null : rol === 'inmobiliaria' && editable ? (
               <div className="space-y-1.5">
                 <Button variante="primary" tamano="sm" onClick={aceptarAviso} disabled={ocupado}>
                   {accion === 'aceptarAviso' ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
@@ -275,7 +276,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 </p>
               </div>
             ) : (
-              e.aviso && <p className="text-xs text-red-700">Pendiente de que la inmobiliaria acepte el aviso.</p>
+              <p className="text-xs text-red-700">Pendiente de que la inmobiliaria acepte el aviso.</p>
             )}
           </div>
         </div>
