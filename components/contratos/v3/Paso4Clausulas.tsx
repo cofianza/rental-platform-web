@@ -148,7 +148,7 @@ export function Paso4Clausulas(p: Props) {
         prioridad: 'media',
       })
       setSolicitada(true)
-      toast.success('Solicitud enviada a Cofianza. Te responderemos por Soporte.')
+      toast.success('Solicitud enviada a Cofianza. Te avisaremos en tus notificaciones cuando la revisemos.')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No pudimos enviar la solicitud.')
     } finally {
