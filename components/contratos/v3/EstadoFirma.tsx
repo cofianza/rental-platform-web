@@ -71,6 +71,8 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
   switch (s.motivo) {
     case 'EXPIRED':
       return 'Venció el plazo para firmar.'
+    case 'FUERA_PLAZO':
+      return `Las firmas se completaron después del plazo para firmar${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}: no cuentan.`
     case 'REJECTED':
       return s.motivoDetalle ? `Rechazó: ${s.motivoDetalle}` : 'Una de las partes rechazó la firma.'
     case 'CANCELADO':
@@ -265,16 +267,11 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 Aviso aceptado por {acuse.nombre} el {formatDateTime(acuse.en)}.
               </p>
             ) : !e.aviso || !e.acuseDisponible ? null : rol === 'inmobiliaria' && editable ? (
-              <div className="space-y-1.5">
-                <Button variante="primary" tamano="sm" onClick={aceptarAviso} disabled={ocupado}>
-                  {accion === 'aceptarAviso' ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
-                  Acepto el aviso
-                </Button>
-                <p className="text-xs text-red-700">
-                  Queda registrado con tu nombre, la fecha y la hora. Hasta que lo aceptes no puedes reenviar ni cancelar el
-                  contrato.
-                </p>
-              </div>
+              // El texto del aviso ya dice que hay que aceptarlo para reenviar o cancelar (e5-11.7.4-v3).
+              <Button variante="primary" tamano="sm" onClick={aceptarAviso} disabled={ocupado}>
+                {accion === 'aceptarAviso' ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
+                Acepto el aviso
+              </Button>
             ) : (
               <p className="text-xs text-red-700">Pendiente de que la inmobiliaria acepte el aviso.</p>
             )}
