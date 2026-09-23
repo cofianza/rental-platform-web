@@ -47,6 +47,7 @@ export const ACTION_LABELS: Record<string, string> = {
   // Estudios (expedientes)
   expediente_created: 'Estudio creado',
   expediente_updated: 'Estudio editado',
+  expediente_cerrado_sin_acta: 'Estudio cerrado sin acta de entrega',
 
   // Comentarios y asignaciones
   comment_created: 'Comentario agregado',
@@ -271,6 +272,7 @@ export const ACTION_GROUPS: Array<{
     options: [
       'expediente_created',
       'expediente_updated',
+      'expediente_cerrado_sin_acta',
       'assignment_created',
       'comment_created',
       'solicitante_created',

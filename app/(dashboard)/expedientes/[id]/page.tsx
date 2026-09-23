@@ -7,6 +7,8 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
+import { ApiClientError } from '@/lib/api'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ExpedienteRefrescoContext } from '@/components/expedientes/ExpedienteRefresco'
@@ -192,6 +194,9 @@ export default function ExpedienteDetallePage() {
   const [showAsignacionModal, setShowAsignacionModal] = useState(false)
   const [isExecutingTransicion, setIsExecutingTransicion] = useState(false)
   const [isAsignando, setIsAsignando] = useState(false)
+  // Adenda 1 contratos (respuesta 21): el administrador puede cerrar sin acta, con motivo.
+  const [pedirCierreSinActa, setPedirCierreSinActa] = useState(false)
+  const [cerrandoSinActa, setCerrandoSinActa] = useState(false)
 
   // Cargar expediente
   const fetchExpediente = useCallback(async () => {
@@ -283,11 +288,37 @@ export default function ExpedienteDetallePage() {
 
       toast.success('Estado actualizado correctamente')
     } catch (err) {
+      // Sin acta de entrega no se cierra; Cofianza no la carga por la inmobiliaria,
+      // pero un administrador puede cerrar sin ella (se cierra este modal y se pide el motivo).
+      if (err instanceof ApiClientError && err.code === 'ACTA_ENTREGA_REQUERIDA' && user?.rol === 'administrador') {
+        setPedirCierreSinActa(true)
+        return
+      }
       const message = err instanceof Error ? err.message : 'Error al cambiar el estado'
       toast.error(message)
       throw err
     } finally {
       setIsExecutingTransicion(false)
+    }
+  }
+
+  const handleCerrarSinActa = async (motivo: string) => {
+    setCerrandoSinActa(true)
+    try {
+      setExpediente(await expedienteService.cerrarSinActa(id, motivo))
+      try {
+        setTransiciones(await expedienteService.getTransicionesDisponibles(id))
+      } catch {
+        setTransiciones(null)
+      }
+      setPedirCierreSinActa(false)
+      toast.success('Estudio cerrado sin acta de entrega')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo cerrar el estudio')
+      // `false`: el diálogo sigue abierto con el motivo escrito.
+      return false
+    } finally {
+      setCerrandoSinActa(false)
     }
   }
 
@@ -1051,6 +1082,19 @@ export default function ExpedienteDetallePage() {
         onConfirmar={handleEjecutarTransicion}
         isLoading={isExecutingTransicion}
         expedienteId={id}
+      />
+
+      <MotivoDialog
+        isOpen={pedirCierreSinActa}
+        onClose={() => setPedirCierreSinActa(false)}
+        onConfirm={handleCerrarSinActa}
+        title="¿Cerrar el estudio sin acta de entrega?"
+        descripcion="El contrato no tiene el acta de entrega e inventario, y Cofianza no la carga en nombre de la inmobiliaria. Puedes cerrar el estudio sin ella: el motivo queda registrado con tu usuario y la fecha, y el riesgo de no tener acta es de la inmobiliaria. No se puede deshacer."
+        label="Motivo del cierre sin acta"
+        minLength={10}
+        confirmLabel="Cerrar sin acta"
+        variant="danger"
+        isLoading={cerrandoSinActa}
       />
 
       {/* Modal de asignación de responsable */}

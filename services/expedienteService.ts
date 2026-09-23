@@ -248,6 +248,16 @@ class ExpedienteService {
   }
 
   /**
+   * Adenda 1 contratos (respuesta 21): un administrador cierra el estudio sin acta de
+   * entrega, con motivo (mínimo 10 caracteres). El API responde 403 a otros roles.
+   */
+  async cerrarSinActa(id: string, motivo: string): Promise<IExpedienteDetalle> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (await apiClient.post(`/expedientes/${id}/cerrar-sin-acta`, { motivo })) as any
+    return mapExpediente<IExpedienteDetalle>(response.data)
+  }
+
+  /**
    * Asigna o reasigna el responsable del expediente (HP-285)
    */
   async asignarResponsable(

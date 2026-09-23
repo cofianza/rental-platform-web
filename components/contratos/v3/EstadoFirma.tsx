@@ -103,7 +103,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const reenvioId = useId()
   const { accion } = v3
   const ocupado = accion !== null
+  // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria; Cofianza no la carga en su nombre.
   const rol = useAuthStore((st) => st.user?.rol)
+  const cargaActa = editable && rol === 'inmobiliaria'
 
   const enFirma = e.estado === 'pendiente_firma'
   const incompleta = e.estado === 'firma_incompleta'
@@ -226,9 +228,11 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           <div className="min-w-0 space-y-1">
             <p className="font-semibold text-amber-900">Falta el acta de entrega e inventario</p>
             <p className="text-sm text-amber-800">
-              {editable
+              {cargaActa
                 ? 'Cárgala firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.'
                 : 'La inmobiliaria debe cargarla firmada. Sin ella no se puede cerrar el estudio.'}
+              {editable && rol === 'administrador' &&
+                ' Si no la va a cargar, puedes cerrar el estudio sin acta, con motivo, desde su página («Cambiar estado»).'}
             </p>
           </div>
         </div>
@@ -390,7 +394,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
             <p className="mt-1 text-sm text-gray-500">
               {e.acta.pendiente
-                ? editable
+                ? cargaActa
                   ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
                   : 'Todavía no se ha cargado.'
                 : `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`}
@@ -419,7 +423,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
               valor={e.acta.datos.partes.map((p) => `${ROL_FIRMANTE[p.rol] ?? p.rol}: ${p.nombre}`).join(' · ') || '—'}
             />
           </dl>
-          {editable && (
+          {cargaActa && (
             <div>
               <Button variante={e.acta.pendiente ? 'primary' : 'secondary'} onClick={() => actaRef.current?.click()} disabled={ocupado}>
                 {accion === 'acta' ? <IconLoader size={16} className="animate-spin" /> : <IconUpload size={16} />}
