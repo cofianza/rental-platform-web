@@ -275,6 +275,14 @@ export interface IExpedienteSolicitanteDetalle {
 export interface IExpedienteDetalle extends Omit<IExpediente, 'inmueble' | 'solicitante'> {
   inmueble: IExpedienteInmuebleDetalle | null
   solicitante: IExpedienteSolicitanteDetalle | null
+  /** Adenda 1 contratos, respuesta 21: un administrador lo cerró sin acta de entrega (quién, cuándo y por qué). */
+  cierre_sin_acta?: ICierreSinActa | null
+}
+
+export interface ICierreSinActa {
+  en: string
+  porNombre: string | null
+  motivo: string
 }
 
 /**

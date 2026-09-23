@@ -24,6 +24,8 @@ export interface MotivoDialogProps {
   isLoading?: boolean
   /** Largo minimo del motivo para habilitar el boton (default 5). */
   minLength?: number
+  /** Texto con que abre (p. ej. lo que ya se escribió en otro diálogo). Se toma al montar. */
+  valorInicial?: string
 }
 
 const INPUT_CLASS =
@@ -42,8 +44,9 @@ export function MotivoDialog({
   variant = 'default',
   isLoading = false,
   minLength = 5,
+  valorInicial = '',
 }: MotivoDialogProps) {
-  const [motivo, setMotivo] = useState('')
+  const [motivo, setMotivo] = useState(valorInicial)
   const valido = motivo.trim().length >= minLength
 
   const confirmar = async () => {

@@ -14,7 +14,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
+import { useAuthStore } from '@/stores/auth.store'
 import type { IContrato } from '@/types/contrato'
+import type { ICierreSinActa } from '@/types/expediente'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface ContratoEstadoCardProps {
@@ -22,6 +24,8 @@ interface ContratoEstadoCardProps {
   /** Callback para llevar al usuario a la pestaña Contratos. Si no se pasa,
    *  no se renderiza el CTA — la card queda informativa. */
   onVerContratos?: () => void
+  /** Adenda 1 contratos (respuesta 21): un administrador cerró el estudio sin acta. */
+  cierreSinActa?: ICierreSinActa | null
 }
 
 // Prioridad para escoger el contrato representativo si hay varios.
@@ -38,9 +42,10 @@ const PRIORIDAD: Record<string, number> = {
   finalizado: 0,
 }
 
-export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEstadoCardProps) {
+export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa }: ContratoEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
+  const rol = useAuthStore((st) => st.user?.rol)
   const [contrato, setContrato] = useState<IContrato | null>(null)
   // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
   const [actaPendiente, setActaPendiente] = useState(false)
@@ -149,16 +154,33 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
               </p>
             )}
           </div>
-          {actaPendiente && (
-            <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
-              <IconAlertTriangle size={14} className="mt-px shrink-0 text-amber-600" />
-              <span>
-                Falta el acta de entrega e inventario: sin ella no se puede cerrar el estudio.{' '}
-                <Link href={`/expedientes/${expedienteId}/contrato`} className="underline hover:text-amber-900">
-                  Cargarla
-                </Link>
-              </span>
+          {cierreSinActa ? (
+            <p className="mt-2 text-xs text-gray-700">
+              Estudio cerrado sin acta de entrega por {cierreSinActa.porNombre ?? 'un administrador de Cofianza'} el{' '}
+              {formatDate(cierreSinActa.en)}. Motivo: {cierreSinActa.motivo}
             </p>
+          ) : (
+            actaPendiente && (
+              <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
+                <IconAlertTriangle size={14} className="mt-px shrink-0 text-amber-600" />
+                {/* Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria, nunca Cofianza. */}
+                {rol === 'inmobiliaria' ? (
+                  <span>
+                    Falta el acta de entrega e inventario: sin ella no se puede cerrar el estudio.{' '}
+                    <Link href={`/expedientes/${expedienteId}/contrato`} className="underline hover:text-amber-900">
+                      Cargarla
+                    </Link>
+                  </span>
+                ) : (
+                  <span>
+                    Falta el acta de entrega e inventario: la carga la inmobiliaria.
+                    {rol === 'administrador'
+                      ? ' Si no la va a cargar, puedes cerrar el estudio sin acta desde «Cambiar estado».'
+                      : ' Sin ella no se puede cerrar el estudio.'}
+                  </span>
+                )}
+              </p>
+            )
           )}
         </div>
       </div>

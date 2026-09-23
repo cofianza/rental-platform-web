@@ -25,7 +25,7 @@ import {
   IconRotateCw,
   IconUpload,
 } from '@/components/icons'
-import { etiquetaContrato, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -104,8 +104,10 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const { accion } = v3
   const ocupado = accion !== null
   // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria; Cofianza no la carga en su nombre.
+  // Si un administrador cerró el estudio sin acta, ya no se pide.
   const rol = useAuthStore((st) => st.user?.rol)
-  const cargaActa = editable && rol === 'inmobiliaria'
+  const sinActa = e.acta?.cierreSinActa ?? null
+  const cargaActa = editable && rol === 'inmobiliaria' && !sinActa
 
   const enFirma = e.estado === 'pendiente_firma'
   const incompleta = e.estado === 'firma_incompleta'
@@ -236,6 +238,13 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             </p>
           </div>
         </div>
+      )}
+
+      {sinActa && (
+        <Aviso tono="aviso">
+          Estudio cerrado sin acta de entrega por {sinActa.porNombre ?? 'un administrador de Cofianza'} el{' '}
+          {formatDate(sinActa.en)}. Motivo: {sinActa.motivo}
+        </Aviso>
       )}
 
       {incompleta && (
@@ -393,14 +402,16 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           <div>
             <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
             <p className="mt-1 text-sm text-gray-500">
-              {e.acta.pendiente
-                ? cargaActa
-                  ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
-                  : 'Todavía no se ha cargado.'
-                : `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`}
+              {e.acta.archivos.length > 0
+                ? `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`
+                : sinActa
+                  ? 'No se cargó: el estudio se cerró sin acta de entrega.'
+                  : cargaActa
+                    ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
+                    : 'Todavía no se ha cargado.'}
             </p>
           </div>
-          {!e.acta.pendiente && editable && (
+          {!e.acta.pendiente && !sinActa && editable && (
             // §12.2: con el acta cargada ya se puede cerrar el estudio; es lo que sigue.
             <Aviso tono="exito">
               <p>

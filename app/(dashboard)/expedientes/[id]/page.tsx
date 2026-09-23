@@ -195,7 +195,9 @@ export default function ExpedienteDetallePage() {
   const [isExecutingTransicion, setIsExecutingTransicion] = useState(false)
   const [isAsignando, setIsAsignando] = useState(false)
   // Adenda 1 contratos (respuesta 21): el administrador puede cerrar sin acta, con motivo.
+  // `motivoCierre` es lo que ya escribió al intentar cerrar: el diálogo abre con él.
   const [pedirCierreSinActa, setPedirCierreSinActa] = useState(false)
+  const [motivoCierre, setMotivoCierre] = useState('')
   const [cerrandoSinActa, setCerrandoSinActa] = useState(false)
 
   // Cargar expediente
@@ -291,6 +293,7 @@ export default function ExpedienteDetallePage() {
       // Sin acta de entrega no se cierra; Cofianza no la carga por la inmobiliaria,
       // pero un administrador puede cerrar sin ella (se cierra este modal y se pide el motivo).
       if (err instanceof ApiClientError && err.code === 'ACTA_ENTREGA_REQUERIDA' && user?.rol === 'administrador') {
+        setMotivoCierre(comentario)
         setPedirCierreSinActa(true)
         return
       }
@@ -619,6 +622,26 @@ export default function ExpedienteDetallePage() {
                   </div>
                 </div>
               </div>
+            ) : expediente.estado === 'cerrado' && expediente.cierre_sin_acta ? (
+              // Adenda 1 contratos (respuesta 21): no terminó «con todos los pasos»: un
+              // administrador lo cerró sin el acta de entrega e inventario, con motivo.
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-white border border-amber-200 flex items-center justify-center shrink-0">
+                    <IconAlertTriangle size={28} className="text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">Estudio cerrado sin acta de entrega</h3>
+                    <p className="text-sm text-gray-700">
+                      Lo cerró {expediente.cierre_sin_acta.porNombre ?? 'un administrador de Cofianza'} el{' '}
+                      {formatDate(expediente.cierre_sin_acta.en)} sin el acta de entrega e inventario del contrato.
+                    </p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      <span className="font-semibold">Motivo:</span> {expediente.cierre_sin_acta.motivo}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : expediente.estado === 'cerrado' && (
               <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
                 <div className="absolute -top-6 -right-6 w-24 h-24 bg-green-200/40 rounded-full blur-2xl pointer-events-none" />
@@ -793,6 +816,7 @@ export default function ExpedienteDetallePage() {
                 <ContratoEstadoCard
                   expedienteId={id}
                   onVerContratos={() => setActiveTab('contratos')}
+                  cierreSinActa={expediente.cierre_sin_acta ?? null}
                 />
                 {/* Fuera del condicionado queda como rastro de quién acompañó (arriba ya se pintó). */}
                 {!esCondicionado && (
@@ -1085,6 +1109,9 @@ export default function ExpedienteDetallePage() {
       />
 
       <MotivoDialog
+        // Se vuelve a montar con cada motivo: abre con el que el administrador ya escribió.
+        key={motivoCierre}
+        valorInicial={motivoCierre}
         isOpen={pedirCierreSinActa}
         onClose={() => setPedirCierreSinActa(false)}
         onConfirm={handleCerrarSinActa}
