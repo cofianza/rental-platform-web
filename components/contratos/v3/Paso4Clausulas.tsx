@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Badge, Button, ConfirmDialog } from '@/components/ui'
 import {
@@ -103,7 +103,28 @@ export function Paso4Clausulas(p: Props) {
     // Las claves de `valores` son los [[campo]]: así el paso sabe qué datos exigir.
     cambiar([...elegidas, { clausulaId: c.id, valores: Object.fromEntries(c.campos.map((k) => [k, ''])) }])
   }
-  const quitar = (id: string) => cambiar(elegidas.filter((e) => e.clausulaId !== id))
+  // Lo último que se pintó: "Deshacer" repone la cláusula en la lista de ESE momento, no en la de cuando se quitó.
+  const actual = useRef(value)
+  useEffect(() => {
+    actual.current = value
+  })
+  const quitar = (id: string) => {
+    const i = elegidas.findIndex((e) => e.clausulaId === id)
+    if (i < 0) return
+    const quitada = elegidas[i]
+    cambiar(elegidas.filter((e) => e.clausulaId !== id))
+    // Quitar borra lo escrito en sus datos: se puede deshacer unos segundos.
+    toast('Cláusula quitada del contrato.', {
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          const lista = actual.current.elegidas
+          if (lista.some((e) => e.clausulaId === id)) return
+          cambiar([...lista.slice(0, i), quitada, ...lista.slice(i)])
+        },
+      },
+    })
+  }
   const mover = (i: number, d: -1 | 1) => {
     const l = [...elegidas]
     ;[l[i], l[i + d]] = [l[i + d], l[i]]
@@ -176,7 +197,7 @@ export function Paso4Clausulas(p: Props) {
               const deFila = err?.hallazgos.filter((h) => filaDe(h) === i) ?? []
               return (
                 <li key={e.clausulaId} className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h4 className="break-words text-sm font-semibold text-gray-900">
@@ -202,7 +223,7 @@ export function Paso4Clausulas(p: Props) {
                       <TextoClausula texto={s?.texto ?? (c ? llenar(c.texto, e.valores) : (g?.texto ?? ''))} />
                     </div>
                     {incorpora && (
-                      <div className="flex shrink-0 gap-0.5">
+                      <div className="flex shrink-0 gap-1 self-end sm:self-auto">
                         <BotonFila etiqueta="Subir" disabled={i === 0} onClick={() => mover(i, -1)}>
                           <IconChevronUp size={16} />
                         </BotonFila>
@@ -312,6 +333,7 @@ export function Paso4Clausulas(p: Props) {
                 <label className="flex cursor-pointer items-start gap-2.5 text-sm font-medium text-gray-900">
                   <input
                     type="checkbox"
+                    aria-invalid={!!errores.acepto}
                     checked={value.acepto}
                     onChange={(ev) => onChange({ elegidas: remapear(elegidas), acepto: ev.target.checked })}
                     className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
@@ -363,7 +385,7 @@ function BotonFila({
       type="button"
       aria-label={etiqueta}
       title={etiqueta}
-      className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+      className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
       {...props}
     >
       {children}

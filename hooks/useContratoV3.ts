@@ -73,6 +73,8 @@ export function useContratoV3(expedienteId: string) {
   const [errorPaso, setErrorPaso] = useState<(ErrorPaso & { expedienteId: string }) | null>(null)
   // Último 422 FIRMANTES_INVALIDOS al generar o enviar: qué dato de qué firmante no acepta Auco.
   const [errorEnvio, setErrorEnvio] = useState<{ expedienteId: string; fallas: FallaFirmante[] } | null>(null)
+  // Último rechazo del PDF propio (Ruta B): se queda a la vista, no solo en un toast de 4 s.
+  const [errorPropio, setErrorPropio] = useState<{ expedienteId: string; mensaje: string } | null>(null)
   // Expedientes ya pintados: si un refresco posterior falla, se avisa con toast
   // en vez de cambiar el asistente por la tarjeta de error (y perder lo escrito).
   const pintados = useRef(new Set<string>())
@@ -128,18 +130,21 @@ export function useContratoV3(expedienteId: string) {
     [aplicar, recargar],
   )
 
-  /** true si el servidor aceptó; "Guardar y continuar" solo avanza con true. */
+  /** true si el servidor aceptó. */
   const iniciar = useCallback(
     () => mutar('iniciar', () => contratoV3Service.iniciar(expedienteId)),
     [mutar, expedienteId],
   )
+  /** El estado nuevo si el servidor aceptó (la página decide con él si avanza), o null. */
   const guardarPaso = useCallback(
-    (body: GuardarPasoBody) => {
+    async (body: GuardarPasoBody): Promise<EstadoAsistente | null> => {
       setErrorPaso(null)
       setErrorEnvio(null)
-      return mutar('guardar', async () => {
+      let nuevo: EstadoAsistente | null = null
+      const ok = await mutar('guardar', async () => {
         try {
-          return await contratoV3Service.guardarPaso(expedienteId, body)
+          nuevo = await contratoV3Service.guardarPaso(expedienteId, body)
+          return nuevo
         } catch (err) {
           if (err instanceof ApiClientError && err.statusCode === 422) {
             setErrorPaso({ expedienteId, paso: body.paso, codigo: err.code ?? '', mensaje: err.message, ...hallazgosDe(err) })
@@ -147,6 +152,7 @@ export function useContratoV3(expedienteId: string) {
           throw err
         }
       })
+      return ok ? nuevo : null
     },
     [mutar, expedienteId],
   )
@@ -173,7 +179,17 @@ export function useContratoV3(expedienteId: string) {
   // ── Entrega 5: Ruta B y firma ──
 
   const subirPropio = useCallback(
-    (archivo: File) => mutar('propio', () => contratoV3Service.subirPropio(expedienteId, archivo)),
+    (archivo: File) => {
+      setErrorPropio(null)
+      return mutar('propio', async () => {
+        try {
+          return await contratoV3Service.subirPropio(expedienteId, archivo)
+        } catch (err) {
+          setErrorPropio({ expedienteId, mensaje: err instanceof Error ? err.message : 'No pudimos cargar el PDF.' })
+          throw err
+        }
+      })
+    },
     [mutar, expedienteId],
   )
   /** URL firmada (1 h) del contrato de la inmobiliaria (Ruta B). */
@@ -292,6 +308,7 @@ export function useContratoV3(expedienteId: string) {
     subirActa,
     archivoUrl,
     fallasEnvio: errorEnvio?.expedienteId === expedienteId ? errorEnvio.fallas : [],
+    errorPropio: errorPropio?.expedienteId === expedienteId ? errorPropio.mensaje : null,
   }
 }
 

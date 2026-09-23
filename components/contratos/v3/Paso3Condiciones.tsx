@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { hoyBogota, sumarDias, type Borrador, type ErroresPaso } from '@/hooks/useContratoV3'
 import type { Administracion, Paso3 } from '@/types/contratoV3'
-import { Campo, EncabezadoPaso, SiNo, inputClass, numeroDe } from './campos'
+import { Campo, CampoPesos, EncabezadoPaso, SiNo, inputClass, numeroDe } from './campos'
 
 /**
  * Copia de sumarMeses del motor (formato.ts, art. 67 C.C.): mismo día del mes
@@ -146,6 +146,7 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Cuota de administración a cargo de<span className="text-coral-500"> *</span>
               <select
+                aria-invalid={!!errores['administracion.aCargoDe']}
                 value={adm.aCargoDe ?? ''}
                 onChange={(e) => ponerAdm({ aCargoDe: e.target.value as Administracion['aCargoDe'] })}
                 className={`mt-1 ${inputClass(errores['administracion.aCargoDe'])}`}
@@ -162,17 +163,12 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
             )}
           </div>
           <div className="sm:max-w-xs">
-            <Campo
+            <CampoPesos
               label="Valor a la fecha de suscripción (COP)"
               requerido
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1}
-              value={adm.valorCop ?? ''}
-              onChange={(e) => ponerAdm({ valorCop: numeroDe(e.target.value) })}
+              value={adm.valorCop}
+              onChange={(valorCop) => ponerAdm({ valorCop })}
               error={errores['administracion.valorCop']}
-              help={adm.valorCop !== undefined && !Number.isNaN(adm.valorCop) ? formatCurrency(adm.valorCop) : undefined}
             />
           </div>
           <SiNo

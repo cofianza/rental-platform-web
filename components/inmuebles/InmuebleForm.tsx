@@ -152,6 +152,8 @@ const DEPARTAMENTOS = [
 interface InmuebleFormProps {
   mode: 'create' | 'edit'
   inmueble?: IInmueble | null
+  /** Ruta interna a la que se vuelve al guardar o cancelar (p. ej. el asistente de contratos). */
+  returnTo?: string
 }
 
 interface FormData {
@@ -274,7 +276,7 @@ function Avanzado({ plegar, children }: { plegar: boolean; children: ReactNode }
   )
 }
 
-export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
+export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
   const isPropietarioUser = authUser?.rol === 'propietario'
@@ -557,7 +559,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         toast.success(INMUEBLE_MESSAGES.UPDATE_SUCCESS)
       }
 
-      router.push(rutaListado)
+      router.push(returnTo ?? rutaListado)
     } catch (err: unknown) {
       console.error('Error saving inmueble:', err)
       // Caso especifico: codigo duplicado para el mismo propietario. Asi el
@@ -1260,7 +1262,7 @@ export function InmuebleForm({ mode, inmueble }: InmuebleFormProps) {
         {/* Botones */}
         <div className="flex justify-end gap-4">
           <Link
-            href={rutaListado}
+            href={returnTo ?? rutaListado}
             className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
           >
             Cancelar

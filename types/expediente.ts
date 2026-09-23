@@ -234,6 +234,9 @@ export interface IExpedienteInmuebleDetalle {
   banos?: number | null
   parqueaderos?: number | null
   foto_fachada_url?: string | null
+  estado?: string
+  /** El estudio cuyo contrato reservó el inmueble (con estado 'ocupado'); null si nadie. */
+  reservado_por_expediente_id?: string | null
 }
 
 /**

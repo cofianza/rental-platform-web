@@ -37,9 +37,17 @@ interface ContratosSectionProps {
   /** Contratos V3: el contrato se crea y edita en el asistente
    *  (/expedientes/:id/contrato), no con GenerarContratoModal. */
   contratosV3?: boolean
+  /** El contrato de otro estudio reservó el inmueble: no se ofrece "Crear contrato". */
+  inmuebleReservadoPorOtro?: boolean
 }
 
-export function ContratosSection({ expedienteId, expedienteEstado, onContratoActualizado, contratosV3 }: ContratosSectionProps) {
+export function ContratosSection({
+  expedienteId,
+  expedienteEstado,
+  onContratoActualizado,
+  contratosV3,
+  inmuebleReservadoPorOtro,
+}: ContratosSectionProps) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -266,7 +274,7 @@ export function ContratosSection({ expedienteId, expedienteEstado, onContratoAct
         <h3 className="text-lg font-semibold text-gray-900">
           Contratos ({contratos.length})
         </h3>
-        {canCreate && expedienteAprobado && contratosV3 && !hayV3Vivo && (
+        {canCreate && expedienteAprobado && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
           <Link href={rutaAsistente} className={buttonClasses('primary', 'md')}>
             <IconPlus size={16} />
             Crear contrato

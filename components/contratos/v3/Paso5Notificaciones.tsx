@@ -166,6 +166,9 @@ export function VistaPreviaContrato({
   const visor = useVisor()
   const archivoRef = useRef<HTMLInputElement>(null)
   const [arrastrando, setArrastrando] = useState(false)
+  // Rechazo del PDF aquí mismo (tipo o peso); el del API llega en v3.errorPropio. Los dos quedan a la vista.
+  const [errorArchivo, setErrorArchivo] = useState<string | null>(null)
+  const errorPdf = errorArchivo ?? v3.errorPropio
   const motivoId = useId()
   const ocupado = v3.accion !== null
 
@@ -185,12 +188,15 @@ export function VistaPreviaContrato({
 
   const subir = async (archivo: File | undefined) => {
     if (!archivo) return
+    setErrorArchivo(null)
     if (archivo.type !== 'application/pdf') {
-      toast.error('El archivo no es un PDF.')
+      setErrorArchivo(`«${archivo.name}» no es un PDF.`)
       return
     }
     if (archivo.size > MAX_BYTES_PROPIO) {
-      toast.error('El PDF pesa más de 6 MB. Redúcelo (por ejemplo, imprimiéndolo de nuevo a PDF) y súbelo otra vez.')
+      setErrorArchivo(
+        `«${archivo.name}» pesa ${megas(archivo.size)}: el máximo es 6 MB. Redúcelo (por ejemplo, imprimiéndolo de nuevo a PDF) y súbelo otra vez.`,
+      )
       return
     }
     if (!(await v3.subirPropio(archivo))) return
@@ -206,7 +212,7 @@ export function VistaPreviaContrato({
         ? 'Genera el Anexo y revísalo antes de enviar a firma.'
         : 'Genera la vista previa y revísala antes de enviar a firma.'
       : documento.desactualizado
-        ? 'Cambiaste datos después de generar el documento: vuelve a generarlo antes de enviar.'
+        ? `Hay datos nuevos desde que se generó ${rutaB ? 'el Anexo' : 'la vista previa'}: vuelve a generarlo antes de enviar.`
         : documento.pendientes.length > 0
           ? 'El documento tiene textos pendientes de aprobación de Cofianza: todavía no se puede enviar a firma.'
           : rutaB && !propio
@@ -214,7 +220,7 @@ export function VistaPreviaContrato({
             : null)
 
   return (
-    <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+    <section id="vista-previa" className="scroll-mt-20 space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-bold text-gray-900">
@@ -246,7 +252,8 @@ export function VistaPreviaContrato({
       </div>
 
       {motivoNoEnviar && (
-        <p id={motivoId} className="text-xs text-gray-500">
+        <p id={motivoId} className="flex items-start gap-1.5 text-sm text-amber-800">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
           {motivoNoEnviar}
         </p>
       )}
@@ -267,14 +274,18 @@ export function VistaPreviaContrato({
       <BloqueosContrato bloqueos={[]} faltantes={pendientes} onIrPaso={onIrPaso} />
 
       {documento?.desactualizado && (
+        // No siempre es un cambio del usuario: también el estudio, el CRC o los Datos para contrato.
         <Aviso tono="aviso">
           {rutaB
-            ? 'Cambiaste datos después de generar el Anexo. Vuelve a generarlo.'
-            : 'Cambiaste datos después de generar la vista previa. Vuelve a generarla.'}
+            ? 'Hay datos nuevos desde que se generó el Anexo (de los pasos, del estudio o de los Datos para contrato). Vuelve a generarlo.'
+            : 'Hay datos nuevos desde que se generó la vista previa (de los pasos, del estudio o de los Datos para contrato). Vuelve a generarla.'}
         </Aviso>
       )}
 
-      {documento && <AvisosContrato avisos={documento.avisos} />}
+      {/* Con textos pendientes el documento no se puede enviar: en ámbar, no en azul. */}
+      {documento && (
+        <AvisosContrato avisos={documento.avisos} tono={documento.pendientes.length > 0 ? 'aviso' : 'info'} />
+      )}
 
       {rutaB && (
         <div className="space-y-3 rounded-xl border border-gray-200 p-4">
@@ -338,6 +349,12 @@ export function VistaPreviaContrato({
             </button>
           ) : (
             <p className="text-sm text-gray-500">Todavía no se ha cargado el contrato de la inmobiliaria.</p>
+          )}
+          {errorPdf && (
+            <Aviso tono="error">
+              <p className="font-medium">No se cargó el PDF.</p>
+              <p>{errorPdf}</p>
+            </Aviso>
           )}
           {editable && (
             // sr-only y no `hidden`: Safari de iOS no abre el selector de un input con display:none.

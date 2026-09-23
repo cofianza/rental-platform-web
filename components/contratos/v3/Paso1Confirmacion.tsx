@@ -22,7 +22,7 @@ import {
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { Borrador, ErroresPaso } from '@/hooks/useContratoV3'
 import type { EstadoAsistente, Paso1 } from '@/types/contratoV3'
-import { Aviso, Campo, Dato, EncabezadoPaso, OpcionTarjeta, Tarjeta, documento, numeroDe, porcentaje } from './campos'
+import { Aviso, CampoPesos, Dato, EncabezadoPaso, OpcionTarjeta, Tarjeta, documento, porcentaje } from './campos'
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
 
@@ -103,7 +103,8 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, canon }: Res
         titulo="Inmueble"
         icono={IconHome}
         pie={
-          <Link href={`/inmuebles/${inmueble.id}/editar`} className={enlace}>
+          // returnTo: al guardar el inmueble se vuelve al contrato.
+          <Link href={`/inmuebles/${inmueble.id}/editar?returnTo=${returnTo}`} className={enlace}>
             Editar en el inmueble <IconArrowRight size={12} />
           </Link>
         }
@@ -158,36 +159,35 @@ interface Paso1Props {
   esTitular: boolean
   /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
   modalidadConvenio?: Paso1['modalidad']
+  /** El texto de la modalidad Tradicional (Ruta A) todavía no está aprobado (lo dice el API). */
+  tradicionalPendiente: boolean
 }
 
-export function Paso1Confirmacion({ value, onChange, errores, resumen, expedienteId, esTitular, modalidadConvenio }: Paso1Props) {
+export function Paso1Confirmacion({
+  value,
+  onChange,
+  errores,
+  resumen,
+  expedienteId,
+  esTitular,
+  modalidadConvenio,
+  tradicionalPendiente,
+}: Paso1Props) {
   const evaluadoCop = resumen?.canon.evaluadoCop ?? null
   const maximo = resumen?.canon.maximoSinNuevaEvaluacionCop ?? null
 
   const canon = (
     <div className="sm:col-span-2">
-      <Campo
+      <CampoPesos
         label="Canon mensual (COP)"
         requerido
-        type="number"
-        inputMode="numeric"
-        min={1}
-        step={1}
-        value={value.canonCop ?? ''}
-        onChange={(e) => onChange({ ...value, canonCop: numeroDe(e.target.value) })}
+        value={value.canonCop}
+        onChange={(canonCop) => onChange({ ...value, canonCop })}
         error={errores.canonCop}
         help={
-          <>
-            {value.canonCop !== undefined && !Number.isNaN(value.canonCop) && (
-              <span className="block font-medium text-gray-700">{formatCurrency(value.canonCop)}</span>
-            )}
-            {evaluadoCop !== null && maximo !== null && (
-              <span className="block">
-                Canon evaluado: {formatCurrency(evaluadoCop)}. Hasta {formatCurrency(maximo)} sin nueva evaluación, sujeto a
-                la relación canon/ingreso.
-              </span>
-            )}
-          </>
+          evaluadoCop !== null && maximo !== null
+            ? `Canon evaluado: ${formatCurrency(evaluadoCop)}. Hasta ${formatCurrency(maximo)} sin nueva evaluación, sujeto a la relación canon/ingreso.`
+            : undefined
         }
       />
     </div>
@@ -238,6 +238,7 @@ export function Paso1Confirmacion({ value, onChange, errores, resumen, expedient
           name="modalidad"
           checked={value.modalidad === 'trasladada'}
           onSelect={() => onChange({ ...value, modalidad: 'trasladada' })}
+          invalido={!!errores.modalidad && !value.modalidad}
           titulo="Trasladada"
           descripcion="El arrendatario paga la prima y la tarifa mensual de la fianza."
           icono={IconUser}
@@ -260,10 +261,10 @@ export function Paso1Confirmacion({ value, onChange, errores, resumen, expedient
         )}
         {value.modalidad && <Aviso>La cuota de administración no está cubierta por la fianza.</Aviso>}
         {/* El Anexo de la Ruta B cubre las dos modalidades: el pendiente es solo del contrato A. */}
-        {value.modalidad === 'tradicional' && value.ruta !== 'B' && (
+        {tradicionalPendiente && value.modalidad === 'tradicional' && value.ruta !== 'B' && (
           <Aviso tono="aviso">
-            El texto de la modalidad Tradicional está pendiente de Gerencia: la vista previa saldrá marcada y el contrato aún
-            no se podrá enviar a firma.
+            El texto de la modalidad Tradicional está pendiente de aprobación de Cofianza: la vista previa saldrá marcada y
+            el contrato aún no se podrá enviar a firma.
           </Aviso>
         )}
       </fieldset>

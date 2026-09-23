@@ -23,9 +23,11 @@ interface Props {
   value: Borrador<Paso2>
   onChange: (v: Borrador<Paso2>) => void
   errores: ErroresPaso
+  /** El texto de administración sin propiedad horizontal todavía no está aprobado (lo dice el API). */
+  sinPhPendiente: boolean
 }
 
-export function Paso2Inmueble({ value, onChange, errores }: Props) {
+export function Paso2Inmueble({ value, onChange, errores, sinPhPendiente }: Props) {
   const usos = value.usos ?? {}
   const ponerUso = (clave: keyof Usos, v: string | null) => onChange({ ...value, usos: { ...usos, [clave]: v } })
 
@@ -108,10 +110,10 @@ export function Paso2Inmueble({ value, onChange, errores }: Props) {
             error={errores.nombreCopropiedad}
           />
         )}
-        {value.propiedadHorizontal === false && (
+        {sinPhPendiente && value.propiedadHorizontal === false && (
           <Aviso tono="aviso">
-            Sin propiedad horizontal, el texto de la cláusula de administración está pendiente de Gerencia: la vista previa
-            saldrá marcada.
+            Sin propiedad horizontal, el texto de la cláusula de administración está pendiente de aprobación de Cofianza:
+            la vista previa saldrá marcada y el contrato aún no se podrá enviar a firma.
           </Aviso>
         )}
       </div>

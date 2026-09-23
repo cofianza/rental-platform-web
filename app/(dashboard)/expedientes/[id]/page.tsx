@@ -346,6 +346,11 @@ export default function ExpedienteDetallePage() {
   const nombreAnalista = expediente.analista
     ? `${expediente.analista.nombre} ${expediente.analista.apellido}`.trim()
     : null
+  // El contrato de OTRO estudio reservó el inmueble: aquí no se ofrece "Crear contrato".
+  const reservadoPorOtro =
+    expediente.inmueble?.estado === 'ocupado' &&
+    !!expediente.inmueble.reservado_por_expediente_id &&
+    expediente.inmueble.reservado_por_expediente_id !== id
 
   return (
     <ExpedienteRefrescoContext.Provider value={cargas}>
@@ -625,6 +630,7 @@ export default function ExpedienteDetallePage() {
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
                     contratosV3={expediente.contratos_v3}
+                    inmuebleReservadoPorOtro={reservadoPorOtro}
                     onGenerated={fetchExpediente}
                   />
                 )}
@@ -951,7 +957,13 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Contratos */}
         {activeTab === 'contratos' && (
           <div className="p-6">
-            <ContratosSection expedienteId={id} expedienteEstado={expediente.estado} contratosV3={expediente.contratos_v3} onContratoActualizado={handleContratoActualizado} />
+            <ContratosSection
+              expedienteId={id}
+              expedienteEstado={expediente.estado}
+              contratosV3={expediente.contratos_v3}
+              inmuebleReservadoPorOtro={reservadoPorOtro}
+              onContratoActualizado={handleContratoActualizado}
+            />
           </div>
         )}
 

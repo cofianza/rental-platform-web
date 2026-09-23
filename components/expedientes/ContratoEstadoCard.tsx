@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { IconAlertTriangle, IconCheck, IconCalendar } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
 import type { IContrato } from '@/types/contrato'
@@ -81,6 +81,8 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
   const isInactivo = contrato.estado === 'cancelado' || contrato.estado === 'finalizado'
   // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
   const isIncompleta = contrato.estado === 'firma_incompleta'
+  // V3 (asistente): se identifica por su número y se abre en el asistente; versión y archivo son del flujo anterior.
+  const esV3 = !!contrato.destinacion
 
   // Tono de la card por bloque de progreso del contrato.
   const cardTone = isFinal
@@ -117,11 +119,15 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
             >
               {etiquetaContrato(contrato.estado, !!contrato.destinacion)}
             </span>
-            <span className="text-xs text-gray-500 font-mono">v{contrato.version}</span>
+            {esV3 ? (
+              contrato.numero && <span className="text-xs text-gray-500 font-mono">N° {contrato.numero}</span>
+            ) : (
+              <span className="text-xs text-gray-500 font-mono">v{contrato.version}</span>
+            )}
           </div>
 
           <div className="space-y-0.5 text-sm">
-            {contrato.nombre_archivo && (
+            {!esV3 && contrato.nombre_archivo && (
               <p className="text-gray-700 truncate" title={contrato.nombre_archivo}>
                 {contrato.nombre_archivo}
               </p>
@@ -157,16 +163,27 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
         </div>
       </div>
 
-      {onVerContratos && (
+      {esV3 ? (
         <div className="mt-3 pt-3 border-t border-gray-200/60">
-          <button
-            type="button"
-            onClick={onVerContratos}
-            className="text-xs font-medium text-primary-700 hover:text-primary-800"
+          <Link
+            href={`/expedientes/${expedienteId}/contrato`}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800"
           >
-            Ver detalle del contrato →
-          </button>
+            {contrato.estado === 'borrador' ? 'Continuar el contrato' : 'Ver el contrato'} <IconArrowRight size={12} />
+          </Link>
         </div>
+      ) : (
+        onVerContratos && (
+          <div className="mt-3 pt-3 border-t border-gray-200/60">
+            <button
+              type="button"
+              onClick={onVerContratos}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800"
+            >
+              Ver detalle del contrato <IconArrowRight size={12} />
+            </button>
+          </div>
+        )
       )}
     </div>
   )

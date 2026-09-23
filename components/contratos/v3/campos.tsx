@@ -30,6 +30,11 @@ export const porcentaje = (n: number) => n.toLocaleString('es-CO', { maximumFrac
 /** Valor de un <input type="number">: vacío = sin responder. */
 export const numeroDe = (v: string): number | undefined => (v.trim() === '' ? undefined : Number(v))
 
+/** Primer campo con error del formulario: se enfoca (y el navegador lo trae a la vista). */
+export function enfocarPrimerError() {
+  requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
+}
+
 export const inputClass = (error?: string) =>
   cn(
     'w-full rounded-lg border px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500',
@@ -46,11 +51,23 @@ function Etiqueta({ htmlFor, children, requerido }: { htmlFor?: string; children
   )
 }
 
-function Ayuda({ error, help }: { error?: string; help?: ReactNode }) {
+/** ids de la ayuda y del error de un campo, para su aria-describedby. */
+const describe = (id: string, error?: string, help?: ReactNode) =>
+  [help && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(' ') || undefined
+
+function Ayuda({ id, error, help }: { id: string; error?: string; help?: ReactNode }) {
   return (
     <>
-      {help && <p className="mt-1 text-xs text-gray-500">{help}</p>}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {help && (
+        <p id={`${id}-ayuda`} className="mt-1 text-xs text-gray-500">
+          {help}
+        </p>
+      )}
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </>
   )
 }
@@ -70,9 +87,42 @@ export function Campo({ label, error, help, requerido, ...input }: CampoProps) {
       <Etiqueta htmlFor={id} requerido={requerido}>
         {label}
       </Etiqueta>
-      <input id={id} aria-invalid={!!error} className={inputClass(error)} {...input} />
-      <Ayuda error={error} help={help} />
+      <input
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={describe(id, error, help)}
+        className={inputClass(error)}
+        {...input}
+      />
+      <Ayuda id={id} error={error} help={help} />
     </div>
+  )
+}
+
+/**
+ * Pesos con separador de miles ("2.500.000"). Un <input type="number"> no acepta
+ * los puntos y "2.500.000" quedaba vacío ("Campo obligatorio").
+ */
+export function CampoPesos({
+  value,
+  onChange,
+  ...props
+}: Omit<CampoProps, 'value' | 'onChange' | 'type' | 'inputMode'> & {
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+}) {
+  return (
+    <Campo
+      {...props}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      value={value === undefined || Number.isNaN(value) ? '' : value.toLocaleString('es-CO')}
+      onChange={(e) => {
+        const digitos = e.target.value.replace(/\D/g, '').slice(0, 12)
+        onChange(digitos ? Number(digitos) : undefined)
+      }}
+    />
   )
 }
 
@@ -91,6 +141,7 @@ export function SiNo({
   help?: ReactNode
 }) {
   const name = useId()
+  const invalido = !!error && value === undefined
   return (
     <fieldset>
       <legend className="mb-1 block text-sm font-medium text-gray-700">
@@ -114,13 +165,15 @@ export function SiNo({
               name={name}
               checked={value === v}
               onChange={() => onChange(v)}
+              aria-invalid={invalido}
+              aria-describedby={describe(name, error, help)}
               className="accent-primary-600"
             />
             {v ? 'Sí' : 'No'}
           </label>
         ))}
       </div>
-      <Ayuda error={error} help={help} />
+      <Ayuda id={name} error={error} help={help} />
     </fieldset>
   )
 }
@@ -135,9 +188,12 @@ export function OpcionTarjeta({
   descripcion,
   insignia,
   icono: Icono,
+  invalido,
 }: {
   name: string
   checked: boolean
+  /** La pregunta está sin responder y con error (se enfoca al validar). */
+  invalido?: boolean
   disabled?: boolean
   onSelect: () => void
   titulo: string
@@ -156,7 +212,15 @@ export function OpcionTarjeta({
         disabled ? 'cursor-not-allowed opacity-60 hover:border-gray-200 hover:bg-transparent' : 'cursor-pointer',
       )}
     >
-      <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onSelect} className="sr-only" />
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        disabled={disabled}
+        onChange={onSelect}
+        aria-invalid={invalido}
+        className="sr-only"
+      />
       <span
         className={cn(
           'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',

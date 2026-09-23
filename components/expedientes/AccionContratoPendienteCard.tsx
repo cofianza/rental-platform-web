@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
-import { IconArrowRight, IconFileText, IconLoader } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconFileText, IconLoader } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -33,6 +33,8 @@ interface AccionContratoPendienteCardProps {
   userRol?: string
   /** El contrato se crea con el asistente V3 (viene del detalle del expediente). */
   contratosV3?: boolean
+  /** El contrato de otro estudio reservó el inmueble: no hay contrato que crear aquí por ahora. */
+  inmuebleReservadoPorOtro?: boolean
   onGenerated?: () => void
 }
 
@@ -41,6 +43,7 @@ export function AccionContratoPendienteCard({
   expedienteEstado,
   userRol,
   contratosV3,
+  inmuebleReservadoPorOtro,
   onGenerated,
 }: AccionContratoPendienteCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -78,6 +81,23 @@ export function AccionContratoPendienteCard({
   // El borrador V3 no oculta el card: es la puerta para retomarlo.
   const borradorV3 = contratosV3 && activo?.destinacion && activo.estado === 'borrador' ? activo : null
   if (activo && !(puedeCrearV3 && borradorV3)) return null
+
+  if (puedeCrearV3 && inmuebleReservadoPorOtro && !borradorV3) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+        <div className="flex items-start gap-3">
+          <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <p className="mb-0.5 text-sm font-semibold text-amber-900">El inmueble está reservado para otro estudio</p>
+            <p className="text-sm text-amber-800">
+              Otro estudio ya inició el contrato de este inmueble. Si ese contrato se cancela, el inmueble vuelve a quedar
+              disponible y podrás crear el de este estudio.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (puedeCrearV3) {
     return (

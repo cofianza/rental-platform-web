@@ -38,6 +38,16 @@ function Propiedad({ c }: { c: IContratoListItem }) {
   )
 }
 
+/** Enlace al contrato con su número: en el celular la acción de la última columna queda fuera de la pantalla. */
+function Arrendatario({ c }: { c: IContratoListItem }) {
+  return (
+    <Link href={rutaContrato(c)} className="font-semibold text-primary-700 hover:underline">
+      {arrendatario(c)}
+      {c.numero && <span className="block font-mono text-xs font-normal text-gray-500">N° {c.numero}</span>}
+    </Link>
+  )
+}
+
 function EstadoChip({ c }: { c: IContratoListItem }) {
   const cfg = ESTADOS_CONTRATO[c.estado]
   return (
@@ -113,6 +123,8 @@ function Panel({
 
 export function ContratosAgrupados() {
   const [contratos, setContratos] = useState<IContratoListItem[]>([])
+  // Total real: la vista trae los 100 más recientes y lo dice si hay más.
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -121,7 +133,10 @@ export function ContratosAgrupados() {
     contratoService
       .getAllContratos({ limit: 100, page: 1, sortBy: 'created_at', sortDir: 'desc' })
       .then((r) => {
-        if (!cancel) setContratos(r.data)
+        if (!cancel) {
+          setContratos(r.data)
+          setTotal(r.meta.total)
+        }
       })
       .catch((e) => {
         if (!cancel) setError(e instanceof Error ? e.message : 'Error al cargar contratos')
@@ -160,6 +175,11 @@ export function ContratosAgrupados() {
 
   return (
     <div className="space-y-5">
+      {total > contratos.length && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
+          Se muestran los {contratos.length} contratos más recientes de {total}. Los demás se consultan desde su estudio.
+        </p>
+      )}
       {/* Pendientes de generar (borrador) */}
       <Panel
         title="Pendientes de generar contrato"
@@ -171,7 +191,7 @@ export function ContratosAgrupados() {
       >
         {pendientes.map((c) => (
           <tr key={c.id} className="hover:bg-gray-50">
-            <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{arrendatario(c)}</td>
+            <td className="px-4 py-3 whitespace-nowrap"><Arrendatario c={c} /></td>
             <td className="px-4 py-3"><Propiedad c={c} /></td>
             <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
               {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
@@ -187,14 +207,14 @@ export function ContratosAgrupados() {
       <Panel
         title="En proceso de firma"
         dot="bg-blue-500"
-        subtitle="Esperando firmas"
+        subtitle="Esperando firmas o por reenviar (firma incompleta)"
         count={enFirma.length}
         head={['Arrendatario', 'Propiedad', 'Estado', 'Generado', '']}
         vacio="Ningún contrato en proceso de firma."
       >
         {enFirma.map((c) => (
           <tr key={c.id} className="hover:bg-gray-50">
-            <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{arrendatario(c)}</td>
+            <td className="px-4 py-3 whitespace-nowrap"><Arrendatario c={c} /></td>
             <td className="px-4 py-3"><Propiedad c={c} /></td>
             <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fecha(c.fecha_generacion ?? c.created_at)}</td>
@@ -214,7 +234,7 @@ export function ContratosAgrupados() {
       >
         {activos.map((c) => (
           <tr key={c.id} className="hover:bg-gray-50">
-            <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{arrendatario(c)}</td>
+            <td className="px-4 py-3 whitespace-nowrap"><Arrendatario c={c} /></td>
             <td className="px-4 py-3"><Propiedad c={c} /></td>
             <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
               {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}

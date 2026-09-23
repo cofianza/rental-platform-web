@@ -3,6 +3,10 @@
  * Indicador visual de pasos del wizard. Alineado al re-skin de la Oficina
  * Virtual (labels uppercase bold, primary emerald). Los pasos ya completados
  * son clicables para volver a editarlos.
+ *
+ * Con `completados` (asistente de contratos V3, donde cada paso se guarda en el
+ * servidor) "hecho" es lo guardado, no la posición: se puede saltar a cualquier
+ * paso guardado y al primero sin guardar, también desde el celular.
  */
 
 'use client'
@@ -17,11 +21,23 @@ interface WizardStepIndicatorProps {
   onStepClick?: (step: number) => void
   /** Etiquetas de los pasos; por defecto las del asistente de estudios. */
   steps?: readonly string[]
+  /** Pasos guardados; sin él, hecho = anterior al actual. */
+  completados?: readonly number[]
 }
 
-export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_STEPS }: WizardStepIndicatorProps) {
+export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_STEPS, completados }: WizardStepIndicatorProps) {
   const total = steps.length
   const pct = Math.round((currentStep / total) * 100)
+  const primeroSinGuardar = completados ? steps.findIndex((_, i) => !completados.includes(i + 1)) + 1 : 0
+
+  const estado = (stepNumber: number) => {
+    const isCurrent = stepNumber === currentStep
+    const isCompleted = !isCurrent && (completados ? completados.includes(stepNumber) : stepNumber < currentStep)
+    const alcanzable = completados
+      ? isCompleted || stepNumber < currentStep || stepNumber === primeroSinGuardar
+      : isCompleted
+    return { isCurrent, isCompleted, isPending: !isCurrent && !isCompleted, clickable: !isCurrent && alcanzable && !!onStepClick }
+  }
 
   return (
     <div className="w-full">
@@ -41,17 +57,42 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
             style={{ width: `${pct}%` }}
           />
         </div>
+        {/* Con pasos guardados también se navega desde el celular (antes solo había la barra). */}
+        {completados && onStepClick && (
+          <div className="mt-3 flex justify-between" role="group" aria-label="Ir a un paso">
+            {steps.map((step, index) => {
+              const stepNumber = index + 1
+              const { isCurrent, isCompleted, clickable } = estado(stepNumber)
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={clickable ? () => onStepClick(stepNumber) : undefined}
+                  disabled={!clickable}
+                  aria-label={`Paso ${stepNumber}: ${step}${isCompleted ? ' (guardado)' : ''}`}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={cn(
+                    'flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors',
+                    isCurrent && 'border-primary-600 bg-white text-primary-600 ring-4 ring-primary-100',
+                    isCompleted && 'border-primary-600 bg-primary-600 text-white',
+                    !isCurrent && !isCompleted && 'border-gray-300 bg-white text-gray-400',
+                    !clickable && !isCurrent && 'opacity-60',
+                  )}
+                >
+                  {isCompleted ? <IconCheck size={18} /> : stepNumber}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Desktop: indicador visual completo (conectores fluidos con flex-1) */}
       <div className="hidden sm:flex">
         {steps.map((step, index) => {
           const stepNumber = index + 1
-          const isCompleted = stepNumber < currentStep
-          const isCurrent = stepNumber === currentStep
-          const isPending = stepNumber > currentStep
+          const { isCurrent, isCompleted, isPending, clickable } = estado(stepNumber)
           const isLast = index === total - 1
-          const clickable = isCompleted && !!onStepClick
 
           return (
             <div key={step} className="relative flex flex-1 flex-col items-center">
@@ -60,16 +101,18 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
                 <div
                   className={cn(
                     'absolute top-5 left-1/2 h-0.5 w-full -translate-y-1/2 transition-colors',
-                    stepNumber < currentStep ? 'bg-primary-600' : 'bg-gray-200'
+                    isCompleted ? 'bg-primary-600' : 'bg-gray-200'
                   )}
                 />
               )}
               {/* Círculo del paso */}
               <button
                 type="button"
-                onClick={clickable ? () => onStepClick(stepNumber) : undefined}
+                onClick={clickable ? () => onStepClick?.(stepNumber) : undefined}
                 disabled={!clickable}
-                title={clickable ? `Volver a ${step}` : undefined}
+                title={clickable ? `Ir a ${step}` : undefined}
+                aria-label={`Paso ${stepNumber}: ${step}${isCompleted ? ' (completado)' : ''}`}
+                aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
                   'relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white transition-all',
                   isCompleted && 'border-primary-600 bg-primary-600',

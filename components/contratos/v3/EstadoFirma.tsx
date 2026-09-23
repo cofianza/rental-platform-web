@@ -10,11 +10,12 @@
 'use client'
 
 import { useId, useRef, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
-import { IconAlertTriangle, IconLoader, IconRefresh, IconRotateCw, IconUpload } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconLoader, IconRefresh, IconRotateCw, IconUpload } from '@/components/icons'
 import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
@@ -74,13 +75,14 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
 
 interface Props {
   enviado: EnvioV3
+  expedienteId: string
   /** false para Gerencia, el miembro de solo lectura o el perfil incompleto: sin acciones. */
   editable: boolean
   banner: ReactNode
   v3: ReturnType<typeof useContratoV3>
 }
 
-export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
+export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: Props) {
   const [confirmarReenvio, setConfirmarReenvio] = useState(false)
   const [pedirMotivo, setPedirMotivo] = useState(false)
   const [confirmarReintento, setConfirmarReintento] = useState(false)
@@ -305,6 +307,12 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
         )}
 
         {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
+        {editable && (enFirma || incompleta) && firmantes.length > 0 && (
+          <p className="text-xs text-gray-500">
+            ¿Un celular o un correo está mal? Cancela el contrato y créalo de nuevo desde el estudio: el asistente trae lo que
+            ya llenaste, corriges el dato y lo vuelves a enviar.
+          </p>
+        )}
       </section>
 
       {e.acta && (
@@ -319,6 +327,20 @@ export function EstadoFirma({ enviado: e, editable, banner, v3 }: Props) {
                 : `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`}
             </p>
           </div>
+          {!e.acta.pendiente && editable && (
+            // §12.2: con el acta cargada ya se puede cerrar el estudio; es lo que sigue.
+            <Aviso tono="exito">
+              <p>
+                Siguiente paso: cierra el estudio desde su página, con «Cambiar estado».
+              </p>
+              <Link
+                href={`/expedientes/${expedienteId}`}
+                className="mt-1 inline-flex items-center gap-1 font-semibold underline hover:no-underline"
+              >
+                Ir al estudio <IconArrowRight size={14} />
+              </Link>
+            </Aviso>
+          )}
           <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
             <Dato label="Inmueble" valor={[e.acta.datos.inmueble.direccion, e.acta.datos.inmueble.municipio].filter(Boolean).join(', ') || '—'} />
             <Dato label="Entrega material" valor={e.acta.datos.fechaEntrega ? dia(e.acta.datos.fechaEntrega) : '—'} />
@@ -444,6 +466,12 @@ function ListaFirmantes({ firmantes, cerrado }: { firmantes: Firmante[]; cerrado
               {ROL_FIRMANTE[f.rol] ?? f.rol}
               {f.firmadoEn && ` · firmó el ${formatDateTime(f.firmadoEn)}`}
             </p>
+            {/* A donde Auco manda el enlace: si la firma no llega, lo primero es revisar estos datos. */}
+            {f.estado !== 'firmado' && (f.telefono || f.email) && (
+              <p className="break-all text-xs text-gray-500">
+                {[f.telefono && `WhatsApp ${f.telefono}`, f.email].filter(Boolean).join(' · ')}
+              </p>
+            )}
           </div>
           {(() => {
             const chip = cerrado && f.estado !== 'firmado' && f.estado !== 'rechazado' ? NO_FIRMO : CHIP[f.estado]

@@ -33,7 +33,7 @@ import { Paso3Condiciones } from '@/components/contratos/v3/Paso3Condiciones'
 import { Paso4Clausulas } from '@/components/contratos/v3/Paso4Clausulas'
 import { Paso5Notificaciones, VistaPreviaContrato } from '@/components/contratos/v3/Paso5Notificaciones'
 import { EstadoFirma } from '@/components/contratos/v3/EstadoFirma'
-import { Aviso, EncabezadoPaso } from '@/components/contratos/v3/campos'
+import { Aviso, EncabezadoPaso, enfocarPrimerError } from '@/components/contratos/v3/campos'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import {
@@ -155,7 +155,14 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
       {volver}
       {estado.enviado ? (
-        <EstadoFirma key={estado.enviado.id} enviado={estado.enviado} editable={editable} banner={banner} v3={v3} />
+        <EstadoFirma
+          key={estado.enviado.id}
+          enviado={estado.enviado}
+          expedienteId={expedienteId}
+          editable={editable}
+          banner={banner}
+          v3={v3}
+        />
       ) : estado.contrato ? (
         // key: si el borrador cambia (cancelado y reiniciado en otra sesión),
         // los formularios se vuelven a armar desde el servidor.
@@ -229,11 +236,14 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, banner, v3 }: V
 
 type Formularios = { 1: Borrador<Paso1>; 2: Borrador<Paso2>; 3: Borrador<Paso3>; 4: FormPaso4; 5: Borrador<Paso5> }
 
-/** Formulario del paso 4 armado desde lo guardado en el servidor. */
-const form4De = (g: Contrato['guardados'][4]): FormPaso4 => ({
+/** Formulario del paso 4 armado desde lo guardado en el servidor (o la lista del contrato cancelado). */
+const form4De = (g: Contrato['guardados'][4] | Contrato['prefill'][4]): FormPaso4 => ({
   elegidas: g && 'clausulas' in g ? g.clausulas.map((c) => ({ clausulaId: c.clausulaId, valores: c.valores ?? {} })) : [],
   acepto: false,
 })
+
+/** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
+const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
 
 function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner, v3 }: VistaProps & { contrato: Contrato }) {
   const { guardados, prefill, faltantes, adicionales } = contrato
@@ -250,7 +260,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     1: guardados[1] ?? { ruta: 'A', ...prefill[1] },
     2: guardados[2] ?? { ...prefill[2] },
     3: guardados[3] ?? { ...prefill[3] },
-    4: form4De(guardados[4]),
+    4: form4De(guardados[4] ?? prefill[4]),
     5: guardados[5] ?? { ...prefill[5] },
   }))
   const [errores, setErrores] = useState<ErroresPaso>({})
@@ -390,12 +400,34 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     setErrores(errs)
     if (Object.keys(errs).length > 0) {
       toast.error('Revisa los campos marcados.')
+      enfocarPrimerError()
       return
     }
-    if (!(await guardarPaso(body))) return
-    setSucios((s) => s.filter((n) => n !== body.paso))
-    if (body.paso < 5) irA((body.paso + 1) as NumeroPaso)
-    else toast.success('Datos guardados')
+    const nuevo = await guardarPaso(body)
+    if (!nuevo) return
+    const pendientesOtros = sucios.filter((n) => n !== body.paso)
+    setSucios(pendientesOtros)
+    // Guardado, pero bloqueado en este mismo paso (p. ej. el canon): se queda aquí, con el bloqueo a la vista.
+    if (nuevo.bloqueos.some((b) => b.paso === body.paso)) {
+      toast.warning('Se guardó, pero este paso tiene un bloqueo: resuélvelo antes de seguir.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    if (body.paso < 5) {
+      irA((body.paso + 1) as NumeroPaso)
+      return
+    }
+    // Paso 5 con todo listo: se genera el documento de una vez (un clic menos antes de enviar).
+    const c = nuevo.contrato
+    const listo = !!c && nuevo.bloqueos.length === 0 && c.faltantes.length === 0 && pendientesOtros.length === 0
+    if (!listo) {
+      toast.success('Datos guardados')
+      return
+    }
+    if (await v3.generar()) {
+      toast.success(rutaB ? 'Datos guardados y Anexo generado: revísalo abajo.' : 'Datos guardados y vista previa generada: revísala abajo.')
+      document.getElementById('vista-previa')?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   const cancelarBorrador = async () => {
@@ -430,19 +462,30 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   const crc = resumen?.fianza?.crc
 
   // Ruta B: el paso 4 no aplica (ni cuenta como pendiente ni como cambio sin guardar).
-  const todosGuardados = NUMEROS.every((n) => (rutaB && n === 4) || guardados[n])
   const pendientesSinGuardar = sucios.filter((n) => !(rutaB && n === 4)).sort()
+  const documentoTexto = rutaB ? 'el Anexo' : 'la vista previa'
+  // Pasos con algo por hacer (sin guardar o con faltantes), para decir cuáles y no "los pendientes".
+  const pasosIncompletos = [
+    ...new Set([
+      ...NUMEROS.filter((n) => !(rutaB && n === 4) && !guardados[n]),
+      ...faltantes.map((f) => f.paso),
+    ]),
+  ].sort()
+  const listaPasos = (ns: number[]) =>
+    ns.length === 1 ? `el paso ${ns[0]}` : `los pasos ${ns.slice(0, -1).join(', ')} y ${ns[ns.length - 1]}`
   const motivoNoGenerar = !editable
     ? 'Tu acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
-      ? `Tienes cambios sin guardar en el paso ${pendientesSinGuardar.join(', ')}.`
+      ? `Tienes cambios sin guardar en ${listaPasos(pendientesSinGuardar)}.`
       : // El paso 5 llega prellenado: sin tocar nada parece listo, pero falta guardarlo
         // (su faltante no se pinta mientras se llena).
         !guardados[5]
-        ? `Guarda el paso 5 (Notificaciones) antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
-        : bloqueos.length > 0 || faltantes.length > 0 || !todosGuardados
-          ? `Resuelve los pendientes antes de generar ${rutaB ? 'el Anexo' : 'la vista previa'}.`
-          : null
+        ? `Guarda el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
+        : bloqueos.length > 0
+          ? `Resuelve ${bloqueos.length === 1 ? 'el bloqueo marcado' : `los ${bloqueos.length} bloqueos marcados`} en rojo antes de generar ${documentoTexto}.`
+          : pasosIncompletos.length > 0
+            ? `Completa ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
+            : null
 
   // Los bloqueos con paso se pintan arriba de su paso; los demás (y los de
   // otros pasos, con "Ir al paso N") arriba del indicador.
@@ -451,6 +494,8 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
   // "Falta guardar este paso" sobra mientras se llena: solo se muestran los
   // faltantes de un paso ya guardado.
   const faltantesDelPaso = guardados[paso] ? faltantes.filter((f) => f.paso === paso) : []
+
+  const soloNuevaEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
 
   const etiquetaPrimario = !editable
     ? 'Siguiente'
@@ -483,9 +528,23 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         esTitular={esTitular}
         onIrPaso={irA}
       />
+      {editable && soloNuevaEvaluacion && (
+        <Aviso tono="aviso">
+          Mientras se hace la nueva evaluación, este borrador mantiene el inmueble reservado. Si va a tardar o no se hará,
+          cancela el borrador para liberarlo; cuando la evaluación esté lista, lo creas de nuevo con los datos que ya
+          llenaste.
+        </Aviso>
+      )}
       <AvisosContrato avisos={avisos} />
+      {/* Textos sin aprobar previstos con lo guardado; con el documento ya generado los muestra la vista previa. */}
+      {!(paso === 5 && contrato.documento) && <AvisosContrato avisos={contrato.textosPendientes} tono="aviso" />}
 
-      <WizardStepIndicator steps={PASOS} currentStep={paso} onStepClick={(n) => irA(n as NumeroPaso)} />
+      <WizardStepIndicator
+        steps={PASOS}
+        currentStep={paso}
+        completados={NUMEROS.filter((n) => guardados[n] || (rutaB && n === 4))}
+        onStepClick={(n) => irA(n as NumeroPaso)}
+      />
 
       <BloqueosContrato
         bloqueos={bloqueosDelPaso}
@@ -507,10 +566,18 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             resumen={resumen}
             expedienteId={expedienteId}
             esTitular={esTitular}
-            modalidadConvenio={prefill[1].modalidad}
+            modalidadConvenio={contrato.modalidadConvenio ?? undefined}
+            tradicionalPendiente={contrato.textosSinAprobar.tradicional}
           />
         )}
-        {paso === 2 && <Paso2Inmueble value={forms[2]} onChange={poner(2)} errores={errores} />}
+        {paso === 2 && (
+          <Paso2Inmueble
+            value={forms[2]}
+            onChange={poner(2)}
+            errores={errores}
+            sinPhPendiente={contrato.textosSinAprobar.sinPropiedadHorizontal}
+          />
+        )}
         {paso === 3 && (
           <Paso3Condiciones
             value={forms[3]}

@@ -58,6 +58,19 @@ function Propiedad({ c }: { c: IContratoListItem }) {
 
 const fecha = (iso: string | null) => (iso ? formatDateTime(iso) : '—')
 
+/**
+ * Primera columna = enlace al contrato, con su número: en el celular la tabla se
+ * desplaza y la acción de la última columna queda fuera de la pantalla.
+ */
+function Arrendatario({ c }: { c: IContratoListItem }) {
+  return (
+    <Link href={rutaContrato(c)} className="font-medium text-primary-700 hover:underline">
+      {arrendatario(c)}
+      {c.numero && <span className="block font-mono text-xs font-normal text-gray-500">N° {c.numero}</span>}
+    </Link>
+  )
+}
+
 // ── Badges tipo pill con bdot (override visual: pendiente_firma en azul para
 // igualar el mockup; el label sale de etiquetaContrato) ─────────────────────
 
@@ -283,7 +296,7 @@ export function ContratosInmobiliariaView() {
           label="En proceso de firma"
           value={(stats?.en_proceso_firma ?? 0) + (stats?.por_estado.firma_incompleta ?? 0)}
           color="text-blue-600"
-          sub="Esperando firmas"
+          sub="Esperando firmas o por reenviar"
         />
         <StatCard
           label="Activos"
@@ -322,7 +335,11 @@ export function ContratosInmobiliariaView() {
             <tbody>
               {sinContratoVisibles.map((e) => (
                 <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3 font-medium text-gray-900">{e.solicitante?.nombre ?? '—'}</td>
+                  <td className="px-6 py-3">
+                    <Link href={`/expedientes/${e.id}`} className="font-medium text-primary-700 hover:underline">
+                      {e.solicitante?.nombre ?? '—'}
+                    </Link>
+                  </td>
                   <td className="px-6 py-3">
                     {e.inmueble ? (
                       <div>
@@ -377,7 +394,7 @@ export function ContratosInmobiliariaView() {
             <tbody>
               {pendientes.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3 font-medium text-gray-900">{arrendatario(c)}</td>
+                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
                   <td className="px-6 py-3"><Propiedad c={c} /></td>
                   <td className="px-6 py-3 font-bold text-gray-900">
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
@@ -389,7 +406,8 @@ export function ContratosInmobiliariaView() {
                       href={rutaContrato(c)}
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-600 transition-colors hover:bg-coral-50"
                     >
-                      Revisar y enviar a firma
+                      {/* Un borrador V3 puede estar en el paso 1: "enviar a firma" sería prometer de más. */}
+                      {c.destinacion ? 'Continuar contrato' : 'Revisar y enviar a firma'}
                       <IconChevronRight size={14} />
                     </Link>
                   </td>
@@ -402,7 +420,7 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* En proceso de firma (pendiente_firma y, en V3, firma_incompleta) */}
-      <Panel title="En proceso de firma" dot="bg-blue-600" subtitle="Esperando firmas">
+      <Panel title="En proceso de firma" dot="bg-blue-600" subtitle="Esperando firmas o por reenviar (firma incompleta)">
         {enFirma.data.length === 0 ? (
           <EmptyRow texto="Ningún contrato en proceso de firma." />
         ) : (
@@ -419,7 +437,7 @@ export function ContratosInmobiliariaView() {
             <tbody>
               {enFirma.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3 font-medium text-gray-900">{arrendatario(c)}</td>
+                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
                   <td className="px-6 py-3"><Propiedad c={c} /></td>
                   <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
@@ -453,7 +471,7 @@ export function ContratosInmobiliariaView() {
             <tbody>
               {activos.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3 font-medium text-gray-900">{arrendatario(c)}</td>
+                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
                   <td className="px-6 py-3"><Propiedad c={c} /></td>
                   <td className="px-6 py-3 font-bold text-gray-900">
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}

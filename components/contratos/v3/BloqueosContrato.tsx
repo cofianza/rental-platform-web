@@ -26,11 +26,21 @@ interface Props {
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
 
+/** Bloqueos cuya salida es una evaluación nueva (o, los del canon, pactar uno menor en el paso 1). */
+export const PIDEN_NUEVA_EVALUACION = [
+  'ESTUDIO_VENCIDO',
+  'CANON_SIN_EVALUADO',
+  'CANON_EXCEDE_TOPE',
+  'CANON_FUERA_DE_TOLERANCIA',
+  'CANON_INGRESO_EXCEDE',
+]
+
 export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmuebleId, esTitular, onIrPaso }: Props) {
   if (bloqueos.length === 0 && faltantes.length === 0) return null
 
   const accion = (b: Bloqueo) => {
     if (!expedienteId) return null
+    const volverAqui = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
     switch (b.accion) {
       case 'datos_contrato': {
         if (!esTitular) {
@@ -38,9 +48,8 @@ export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmue
             <p className="text-xs text-red-700">Pídele al titular de la inmobiliaria que complete los Datos para contrato.</p>
           )
         }
-        const returnTo = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
         return (
-          <Link href={`/configuracion/datos-contrato?returnTo=${returnTo}`} className={enlace}>
+          <Link href={`/configuracion/datos-contrato?returnTo=${volverAqui}`} className={enlace}>
             Completar Datos para contrato <IconArrowRight size={12} />
           </Link>
         )
@@ -48,12 +57,13 @@ export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmue
       case 'estudio':
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>
-            Ir al estudio <IconArrowRight size={12} />
+            {PIDEN_NUEVA_EVALUACION.includes(b.codigo) ? 'Habilitar una nueva evaluación en el estudio' : 'Ir al estudio'}{' '}
+            <IconArrowRight size={12} />
           </Link>
         )
       case 'inmueble':
         return inmuebleId ? (
-          <Link href={`/inmuebles/${inmuebleId}/editar`} className={enlace}>
+          <Link href={`/inmuebles/${inmuebleId}/editar?returnTo=${volverAqui}`} className={enlace}>
             Editar el inmueble <IconArrowRight size={12} />
           </Link>
         ) : null
@@ -106,14 +116,22 @@ export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmue
   )
 }
 
-/** Avisos que no bloquean (canon del registro, textos pendientes de Gerencia…). */
-export function AvisosContrato({ avisos }: { avisos: string[] }) {
+const TONO_AVISO = {
+  // No bloquea (p. ej. el canon del registro antes de pactar el del contrato).
+  info: { caja: 'border-blue-200 bg-blue-50 text-blue-800', Icono: IconInfo, icono: 'text-blue-600' },
+  // Bloquea el envío a firma (textos pendientes de aprobación).
+  aviso: { caja: 'border-amber-200 bg-amber-50 text-amber-900', Icono: IconAlertTriangle, icono: 'text-amber-600' },
+}
+
+/** Avisos en lista: en azul los que no bloquean; en ámbar los que impiden enviar a firma. */
+export function AvisosContrato({ avisos, tono = 'info' }: { avisos: string[]; tono?: keyof typeof TONO_AVISO }) {
   if (avisos.length === 0) return null
+  const t = TONO_AVISO[tono]
   return (
     <ul className="space-y-2">
       {avisos.map((a) => (
-        <li key={a} className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          <IconInfo size={18} className="mt-0.5 shrink-0 text-blue-600" />
+        <li key={a} className={`flex items-start gap-2.5 rounded-lg border p-3 text-sm ${t.caja}`}>
+          <t.Icono size={18} className={`mt-0.5 shrink-0 ${t.icono}`} />
           <span>{a}</span>
         </li>
       ))}

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { InmuebleForm } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
@@ -18,6 +18,9 @@ export default function EditarInmueblePage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  // Desde el asistente de contratos: al guardar (o cancelar) se vuelve allá. Solo rutas internas.
+  const returnToParam = useSearchParams()?.get('returnTo')
+  const returnTo = returnToParam?.startsWith('/') && !returnToParam.startsWith('//') ? returnToParam : undefined
 
   const [inmueble, setInmueble] = useState<IInmueble | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -73,5 +76,5 @@ export default function EditarInmueblePage() {
     )
   }
 
-  return <InmuebleForm mode="edit" inmueble={inmueble} />
+  return <InmuebleForm mode="edit" inmueble={inmueble} returnTo={returnTo} />
 }
