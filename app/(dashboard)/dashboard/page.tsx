@@ -117,10 +117,11 @@ export default function DashboardPage() {
         // pendiente hacía que el dashboard y la bandeja no cuadraran.
         estado: ['borrador', 'en_revision', 'informacion_incompleta', 'condicionado'],
         analista_id: alcance === 'mios' ? (userId ?? '') : '',
+        // "Sin asignar" lo filtra el API: antes se pedían 30 y se filtraba aquí,
+        // y con los 30 más viejos ya asignados la tarjeta decía que no había.
+        sin_analista: alcance === 'sin_asignar',
         page: 1,
-        // "Sin asignar" se filtra en cliente (la API no expone ese filtro), así
-        // que pedimos más filas para no quedarnos cortos tras descartar.
-        limit: alcance === 'sin_asignar' ? 30 : 10,
+        limit: 10,
         sortBy: 'created_at',
         sortOrder: 'asc',
       }),
@@ -139,11 +140,7 @@ export default function DashboardPage() {
     }
 
     if (pendientesResult.status === 'fulfilled') {
-      const rows =
-        alcance === 'sin_asignar'
-          ? pendientesResult.value.data.filter((e) => !e.analista_id).slice(0, 10)
-          : pendientesResult.value.data
-      setPendientes(rows)
+      setPendientes(pendientesResult.value.data)
     } else {
       errors.pendientes = 'Error al cargar pendientes'
     }

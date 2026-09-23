@@ -138,6 +138,8 @@ export interface IExpedienteFilters {
   limit: number
   /** Miembro del equipo de la inmobiliaria (distinto del analista interno). */
   miembro_responsable_id?: string
+  /** Solo los que no tienen analista (el «Sin asignar» del dashboard). */
+  sin_analista?: boolean
   sortBy: 'created_at' | 'numero' | 'estado' | 'updated_at'
   sortOrder: 'asc' | 'desc'
 }
