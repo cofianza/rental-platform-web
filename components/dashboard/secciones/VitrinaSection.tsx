@@ -55,11 +55,9 @@ export function VitrinaSection() {
   const publicados: VitrinaPublicadoRow[] = useMemo(() => data?.publicados ?? [], [data])
   const prospectos: VitrinaProspectoRow[] = data?.prospectos ?? []
 
-  const totalVisitas = useMemo(
-    () => publicados.reduce((acc: number, p: VitrinaPublicadoRow) => acc + (p.visitas ?? 0), 0),
-    [publicados],
-  )
-  const totalContactos = useMemo(
+  // Las visitas por inmueble son históricas; el KPI del mes viene contado aparte
+  // (sumarlas mostraba el histórico como "Visitas mes").
+  const totalInteresados = useMemo(
     () => publicados.reduce((acc: number, p: VitrinaPublicadoRow) => acc + (p.contactos ?? 0), 0),
     [publicados],
   )
@@ -91,8 +89,8 @@ export function VitrinaSection() {
 
       <KpiRow>
         <Kpi label="Publicados" value={publicados.length} tone="green" Icon={IconImages} />
-        <Kpi label="Visitas mes" value={totalVisitas} tone="blue" Icon={IconEye} />
-        <Kpi label="Contactos" value={totalContactos} tone="orange" Icon={IconPhone} />
+        <Kpi label="Visitas mes" value={data?.visitasMes ?? 0} tone="blue" Icon={IconEye} />
+        <Kpi label="Interesados" value={totalInteresados} tone="orange" Icon={IconPhone} />
         <Kpi label="Prospectos" value={prospectos.length} Icon={IconInbox} />
       </KpiRow>
 
@@ -120,8 +118,8 @@ export function VitrinaSection() {
               'Municipio',
               'Publicado',
               'Estado',
-              'Visitas',
-              'Contactos',
+              'Visitas (total)',
+              'Interesados',
             ]}
           >
             {publicadosFiltrados.map((p: VitrinaPublicadoRow) => (

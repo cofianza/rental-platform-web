@@ -192,8 +192,8 @@ export interface VitrinaPublicadoRow {
   municipio: string | null
   publicado: string
   estado: string
-  visitas: number
-  contactos: number
+  visitas: number // vistas desde que se publicó (histórico)
+  contactos: number // interesados "Me interesa" sin cuenta
 }
 
 export interface VitrinaProspectoRow {
@@ -210,6 +210,8 @@ export interface VitrinaProspectoRow {
 export interface VitrinaData {
   publicados: VitrinaPublicadoRow[]
   prospectos: VitrinaProspectoRow[]
+  /** Vistas del mes en curso (hora Colombia): el mismo número del Resumen. */
+  visitasMes: number
 }
 
 export interface IngresoContratoRow {
