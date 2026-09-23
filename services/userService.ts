@@ -150,9 +150,9 @@ class UserService {
    */
   async deleteUser(
     id: string,
-    options: { force?: boolean } = {},
+    options: { force?: boolean; soloHuerfano?: boolean } = {},
   ): Promise<{ deleted: true; user_id: string; email: string | null }> {
-    const qs = options.force ? '?force=true' : ''
+    const qs = options.soloHuerfano ? '?solo_huerfano=true' : options.force ? '?force=true' : ''
     const response = (await apiClient.delete(`/users/${id}${qs}`)) as unknown as {
       data: { deleted: true; user_id: string; email: string | null }
     }

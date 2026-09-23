@@ -74,10 +74,9 @@ export default function HuerfanosPage() {
   const doDelete = async (orphan: IOrphanAuthUser) => {
     setDeleting(orphan.id)
     try {
-      // Sin force — los huérfanos no tienen relaciones en perfiles, así que
-      // el pre-flight backend pasa siempre. Si el RDBMS rechaza por otra FK
-      // rara, el endpoint devuelve el detalle.
-      await userService.deleteUser(orphan.id, { force: true })
+      // Sin force y solo si de verdad es huérfano: si la cuenta tiene perfil
+      // (lista vieja o equivocada) el API responde 409 y no borra nada.
+      await userService.deleteUser(orphan.id, { soloHuerfano: true })
       toast.success(`Eliminado ${orphan.email || orphan.id}`)
       // Quito de la lista local (UX rápido) y refetch para reconciliar.
       setOrphans((prev) => (prev ? prev.filter((o) => o.id !== orphan.id) : prev))
