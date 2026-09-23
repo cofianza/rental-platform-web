@@ -428,6 +428,8 @@ export default function ReportarMoraPage() {
         {FILTROS.map((f) => (
           <button
             key={f.key}
+            type="button"
+            aria-pressed={filtro === f.key}
             onClick={() => setFiltro(f.key)}
             className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors ${
               filtro === f.key

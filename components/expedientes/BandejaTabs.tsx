@@ -145,6 +145,8 @@ export function BandejaTabs({
         {/* Toggle Mis Expedientes (analista de Cofianza) */}
         {!vistaGestor && (
           <button
+            type="button"
+            aria-pressed={misExpedientes}
             onClick={onToggleMisExpedientes}
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',

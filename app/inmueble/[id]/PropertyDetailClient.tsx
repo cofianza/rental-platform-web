@@ -71,9 +71,19 @@ export function PropertyDetailClient({ property, similares }: Props) {
           {/* Gallery */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Main image */}
+            {/* Con fotos es el botón que abre el visor: también con teclado. */}
             <div
               className="aspect-[16/9] bg-gray-100 relative cursor-pointer overflow-hidden"
               onClick={() => lightboxImages.length > 0 && handleImageClick(selectedPhoto)}
+              role={lightboxImages.length > 0 ? 'button' : undefined}
+              tabIndex={lightboxImages.length > 0 ? 0 : undefined}
+              aria-label={lightboxImages.length > 0 ? 'Ampliar foto' : undefined}
+              onKeyDown={(e) => {
+                if (lightboxImages.length > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  handleImageClick(selectedPhoto)
+                }
+              }}
             >
               {mainImage ? (
                 <Image

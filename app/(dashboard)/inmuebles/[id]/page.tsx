@@ -861,6 +861,10 @@ export default function InmuebleDetailPage() {
                   </span>
                 </div>
                 <button
+                  type="button"
+                  role="switch"
+                  aria-checked={publicado}
+                  aria-label="Visible en vitrina"
                   onClick={handleToggleVitrina}
                   disabled={toggleBloqueado}
                   className={cn(

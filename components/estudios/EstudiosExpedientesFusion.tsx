@@ -171,6 +171,8 @@ export function EstudiosExpedientesFusion() {
         {CHIPS.map((c) => (
           <button
             key={c.id}
+            type="button"
+            aria-pressed={activeChip === c.id}
             onClick={() => setFilters({ estudio_filtro: c.id, page: 1 })}
             className={cn(
               'rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',

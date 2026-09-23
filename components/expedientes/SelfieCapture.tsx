@@ -79,8 +79,8 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
               2
             </div>
             <div>
-              <p className="text-white font-medium">Busca buena iluminacion</p>
-              <p className="text-gray-400 text-sm">Asegurate de estar en un lugar bien iluminado</p>
+              <p className="text-white font-medium">Busca buena iluminación</p>
+              <p className="text-gray-400 text-sm">Asegúrate de estar en un lugar bien iluminado</p>
             </div>
           </div>
 
@@ -160,20 +160,20 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
     } catch (err) {
       console.error('Error accessing camera:', err)
 
-      let errorMessage = 'Error al acceder a la camara'
+      let errorMessage = 'Error al acceder a la cámara'
       if (err instanceof DOMException) {
         switch (err.name) {
           case 'NotAllowedError':
-            errorMessage = 'Permiso de camara denegado. Por favor, permite el acceso a la camara en la configuracion del navegador.'
+            errorMessage = 'Permiso de cámara denegado. Permite el acceso a la cámara en la configuración del navegador.'
             break
           case 'NotFoundError':
-            errorMessage = 'No se encontro una camara disponible en este dispositivo.'
+            errorMessage = 'No se encontró una cámara disponible en este dispositivo.'
             break
           case 'NotReadableError':
-            errorMessage = 'La camara esta siendo usada por otra aplicacion.'
+            errorMessage = 'La cámara está siendo usada por otra aplicación.'
             break
           case 'OverconstrainedError':
-            errorMessage = 'No se pudo acceder a la camara con la configuracion solicitada.'
+            errorMessage = 'No se pudo acceder a la cámara con la configuración solicitada.'
             break
         }
       }
@@ -206,6 +206,15 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
       }
     }
   }, [stopCamera, capturedImageUrl])
+
+  // Escape cierra, igual que la X (salvo mientras sube la foto).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isUploading) onCancel()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel, isUploading])
 
   // CR: Handler para continuar desde instrucciones
   const handleContinueFromInstructions = useCallback(() => {
@@ -285,11 +294,13 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
   // ============================================
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div role="dialog" aria-modal="true" aria-label="Captura de selfie" className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
         <h2 className="text-white font-medium">Captura de Selfie</h2>
         <button
+          type="button"
+          aria-label="Cerrar"
           onClick={onCancel}
           disabled={isUploading}
           className="p-2 text-white hover:bg-gray-800 rounded-full transition-colors disabled:opacity-50"
@@ -312,7 +323,7 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
           {state === 'initializing' && (
             <div className="text-center text-white">
               <IconLoader size={48} className="mx-auto animate-spin mb-4" />
-              <p>Iniciando camara...</p>
+              <p>Iniciando cámara…</p>
             </div>
           )}
 
@@ -442,6 +453,8 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
           {state === 'ready' && (
             <div className="flex justify-center">
               <button
+                type="button"
+                aria-label="Tomar foto"
                 onClick={capturePhoto}
                 className="w-20 h-20 rounded-full bg-white flex items-center justify-center hover:bg-gray-100 transition-colors shadow-lg"
               >
