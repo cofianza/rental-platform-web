@@ -8,7 +8,7 @@ import { IconLoader, IconCheck } from '@/components/icons'
 
 const CONCEPTO_LABELS: Record<string, string> = {
   estudio: 'Evaluación crediticia',
-  garantia: 'Garantía (prima de vinculación)',
+  garantia: 'Prima de vinculación de la fianza',
   primer_canon: 'Primer canon',
   deposito: 'Depósito',
   otro: 'Otros conceptos',

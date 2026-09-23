@@ -210,6 +210,7 @@ function inferConceptoLabel(concepto: string): string {
     estudio: 'Evaluación crediticia',
     estudio_credito: 'Evaluación crediticia',
     afianzamiento: 'Afianzamiento',
+    garantia: 'Prima de vinculación de la fianza',
     creditos_estudios: 'Paquete de créditos de estudios',
     canon: 'Canon de arrendamiento',
     administracion: 'Cuota de administración',

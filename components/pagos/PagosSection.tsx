@@ -50,7 +50,7 @@ type PageState = 'loading' | 'ready' | 'error'
 
 const CONCEPTOS_LABELS: Record<string, string> = {
   estudio: 'Evaluación',
-  garantia: 'Garantía',
+  garantia: 'Prima de vinculación',
   primer_canon: 'Primer canon',
   deposito: 'Depósito',
   otro: 'Otro',

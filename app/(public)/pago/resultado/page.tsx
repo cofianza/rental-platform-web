@@ -120,7 +120,7 @@ function PagoResultadoContent() {
   // decia "Estudio de arrendamiento" igual.
   const CONCEPTO_LABEL: Record<string, string> = {
     estudio: 'Estudio de arrendamiento',
-    garantia: 'Garantía de arrendamiento',
+    garantia: 'Prima de vinculación de la fianza',
     primer_canon: 'Primer canon de arrendamiento',
     deposito: 'Depósito de garantía',
     otro: 'Pago a Cofianza',
