@@ -18,6 +18,7 @@ import { IconLoader, IconCalendar, IconPhone, IconShieldCheck, IconMail, IconId,
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
@@ -39,6 +40,8 @@ type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio'
 
 export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
   const userRol = useAuthStore((s) => s.user?.rol)
+  // Gerencia y el miembro «Sólo lectura» ven la cita sin acciones (el API se las niega).
+  const puedeEditar = usePuedeEditar()
   const [action, setAction] = useState<ActionState>('idle')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -225,7 +228,10 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
 
       {/* Acciones por estado */}
       <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-        {cita.estado === 'solicitada' && (
+        {!puedeEditar && (cita.estado === 'solicitada' || cita.estado === 'confirmada') && (
+          <span className="text-xs text-gray-400 italic">Solo consulta</span>
+        )}
+        {puedeEditar && cita.estado === 'solicitada' && (
           <>
             <button
               onClick={() => {
@@ -254,7 +260,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           </>
         )}
 
-        {cita.estado === 'confirmada' && (
+        {puedeEditar && cita.estado === 'confirmada' && (
           <>
             <button
               onClick={() => setAction('realizar')}
@@ -266,7 +272,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               onClick={() => setAction('no_asistio')}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
             >
-              No asistio
+              No asistió
             </button>
             <button
               onClick={() => setAction('cancelar')}
@@ -294,7 +300,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               >
                 Estudio no habilitado
               </span>
-            ) : expediente ? (
+            ) : expediente && puedeEditar ? (
               <button
                 onClick={() => setAction('habilitar_estudio')}
                 className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center justify-center gap-1"

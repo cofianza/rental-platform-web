@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import {
   calibracionService,
@@ -80,24 +81,41 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
   const [valor, setValor] = useState(String(p.valor))
   const [motivo, setMotivo] = useState('')
   const [guardando, setGuardando] = useState(false)
+  // El error queda junto al campo (antes solo en un toast) y el cambio se
+  // confirma: un parámetro del modelo afecta desde ya a todos los estudios.
+  const [error, setError] = useState<string | null>(null)
+  const [confirmar, setConfirmar] = useState(false)
 
   const cambiado = Number(valor) !== p.valor
 
-  async function guardar() {
+  function pedirConfirmacion() {
     const n = Number(valor)
-    if (!Number.isFinite(n)) {
-      toast.error('El valor debe ser numérico')
+    if (valor.trim() === '' || !Number.isFinite(n)) {
+      setError('Escribe un número.')
       return
     }
+    if (n < p.min || n > p.max) {
+      setError(`Debe estar entre ${fmt(p.min, p.entero)} y ${fmt(p.max, p.entero)}.`)
+      return
+    }
+    if (p.entero && !Number.isInteger(n)) {
+      setError('Debe ser un número entero.')
+      return
+    }
+    setError(null)
+    setConfirmar(true)
+  }
+
+  async function guardar() {
     setGuardando(true)
     try {
-      await calibracionService.actualizar(p.clave, n, motivo.trim() || undefined)
+      await calibracionService.actualizar(p.clave, Number(valor), motivo.trim() || undefined)
       toast.success(`${nombreDe(p.clave)} actualizado`)
       setEditando(false)
       setMotivo('')
       onGuardado()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar')
+      setError(err instanceof Error ? err.message : 'No se pudo guardar')
     } finally {
       setGuardando(false)
     }
@@ -124,27 +142,41 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
 
         {editando ? (
           <div className="flex w-full flex-col gap-2 sm:w-72">
-            <input
-              type="number"
-              step={p.entero ? 1 : 0.01}
-              min={p.min}
-              max={p.max}
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-right font-mono text-sm"
-            />
-            <input
-              type="text"
-              placeholder="Motivo (opcional, queda en el historial)"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              maxLength={500}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            />
+            <label className="text-xs font-medium text-gray-700">
+              Nuevo valor
+              <input
+                type="number"
+                step={p.entero ? 1 : 0.01}
+                min={p.min}
+                max={p.max}
+                value={valor}
+                onChange={(e) => {
+                  setValor(e.target.value)
+                  setError(null)
+                }}
+                aria-invalid={!!error}
+                className={`mt-1 w-full rounded-lg border px-3 py-2 text-right font-mono text-sm ${error ? 'border-red-400' : 'border-gray-300'}`}
+              />
+            </label>
+            <label className="text-xs font-medium text-gray-700">
+              Motivo (opcional, queda en el historial)
+              <input
+                type="text"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                maxLength={500}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            {error && (
+              <p role="alert" className="text-xs text-red-600">
+                {error}
+              </p>
+            )}
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={guardar}
+                onClick={pedirConfirmacion}
                 disabled={guardando || !cambiado}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary-600 px-3 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50"
               >
@@ -156,6 +188,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
                 onClick={() => {
                   setEditando(false)
                   setValor(String(p.valor))
+                  setError(null)
                 }}
                 className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
@@ -176,6 +209,15 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={confirmar}
+        onClose={() => setConfirmar(false)}
+        onConfirm={guardar}
+        title={`Cambiar ${nombreDe(p.clave)}`}
+        message={`Pasa de ${fmt(p.valor, p.entero)} a ${fmt(Number(valor), p.entero)}. Aplica desde ya a los estudios y contratos que se procesen de aquí en adelante.`}
+        confirmLabel="Guardar cambio"
+        isLoading={guardando}
+      />
     </div>
   )
 }
@@ -188,6 +230,8 @@ export default function AdminCalibracionPage() {
   const [cascada, setCascada] = useState<ICascadaCentrales | null>(null)
   const [revision, setRevision] = useState<IRevisionManual | null>(null)
   const [loading, setLoading] = useState(true)
+  // Un fallo de carga no es «sin cambios registrados»: se dice y se reintenta.
+  const [errorCarga, setErrorCarga] = useState(false)
 
   const cargar = async () => {
     try {
@@ -201,8 +245,9 @@ export default function AdminCalibracionPage() {
       setHistorial(h)
       setCascada(c)
       setRevision(r)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error cargando la calibración')
+      setErrorCarga(false)
+    } catch {
+      setErrorCarga(true)
     } finally {
       setLoading(false)
     }
@@ -235,6 +280,20 @@ export default function AdminCalibracionPage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <IconLoader size={28} className="animate-spin text-primary-600" />
+        </div>
+      ) : errorCarga ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <p className="mb-3 text-sm text-red-700">No se pudo cargar la calibración.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              void cargar()
+            }}
+            className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            Reintentar
+          </button>
         </div>
       ) : (
         <>

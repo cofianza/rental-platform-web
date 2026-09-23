@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { Button, Modal } from '@/components/ui'
 import type { ResultadoGuardado } from '@/hooks/useClausulasAdicionales'
 import type { ClausulaEntrada } from '@/services/clausulasService'
@@ -89,18 +89,39 @@ interface EditorProps {
 
 export function EditorClausula({ isOpen, onClose, ...resto }: EditorProps) {
   const [guardando, setGuardando] = useState(false)
+  // Escape, la X o Cancelar con texto sin guardar piden confirmación (antes
+  // se perdían hasta 4.000 caracteres con una tecla).
+  const [sucio, setSucio] = useState(false)
+  const [pidiendoSalir, setPidiendoSalir] = useState(false)
+  const salir = () => {
+    setSucio(false)
+    setPidiendoSalir(false)
+    onClose()
+  }
+  const cerrar = () => {
+    if (guardando) return
+    if (sucio) setPidiendoSalir(true)
+    else salir()
+  }
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => {
-        if (!guardando) onClose()
-      }}
+      onClose={cerrar}
       title={resto.clausula ? 'Editar cláusula' : 'Nueva cláusula'}
       size="lg"
       closeOnBackdrop={false}
     >
       {/* Modal no pinta nada cerrado: el formulario arranca limpio en cada apertura. */}
-      <Formulario {...resto} onClose={onClose} guardando={guardando} setGuardando={setGuardando} />
+      <Formulario
+        {...resto}
+        onClose={salir}
+        onCancelar={cerrar}
+        onSucio={setSucio}
+        pidiendoSalir={pidiendoSalir}
+        onSeguir={() => setPidiendoSalir(false)}
+        guardando={guardando}
+        setGuardando={setGuardando}
+      />
     </Modal>
   )
 }
@@ -111,11 +132,24 @@ function Formulario({
   onGuardar,
   onGuardada,
   onClose,
+  onCancelar,
+  onSucio,
+  pidiendoSalir,
+  onSeguir,
   guardando,
   setGuardando,
-}: Omit<EditorProps, 'isOpen'> & { guardando: boolean; setGuardando: (v: boolean) => void }) {
+}: Omit<EditorProps, 'isOpen'> & {
+  guardando: boolean
+  setGuardando: (v: boolean) => void
+  onCancelar: () => void
+  onSucio: (v: boolean) => void
+  pidiendoSalir: boolean
+  onSeguir: () => void
+}) {
   const [titulo, setTitulo] = useState(clausula?.titulo ?? '')
   const [texto, setTexto] = useState(clausula?.texto ?? '')
+  const sucio = titulo !== (clausula?.titulo ?? '') || texto !== (clausula?.texto ?? '')
+  useEffect(() => onSucio(sucio), [sucio, onSucio])
   const [intentado, setIntentado] = useState(false)
   const [fallo, setFallo] = useState<Fallo | null>(null)
   const idTexto = useId()
@@ -201,8 +235,24 @@ function Formulario({
       )}
       {fallo && <ListaHallazgos hallazgos={fallo.hallazgos} avisos={fallo.avisos} />}
 
+      {pidiendoSalir && (
+        <Aviso tono="aviso">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>Tienes cambios sin guardar. ¿Los descartas?</span>
+            <div className="flex gap-2">
+              <Button variante="secondary" tamano="sm" onClick={onSeguir}>
+                Seguir editando
+              </Button>
+              <Button variante="secondary" tamano="sm" onClick={onClose}>
+                Descartar
+              </Button>
+            </div>
+          </div>
+        </Aviso>
+      )}
+
       <div className="flex justify-end gap-3 pt-2">
-        <Button variante="secondary" onClick={onClose} disabled={guardando}>
+        <Button variante="secondary" onClick={onCancelar} disabled={guardando}>
           Cancelar
         </Button>
         <Button type="submit" disabled={guardando}>

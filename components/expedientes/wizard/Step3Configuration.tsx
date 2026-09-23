@@ -141,7 +141,7 @@ export function Step3Configuration({
     setIsLoadingMiembros(true)
     listMiembros()
       .then((r) => {
-        if (!cancel) setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id))
+        if (!cancel) setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id && m.rol_miembro !== 'solo_lectura'))
       })
       .catch(() => {
         if (!cancel) setMiembros([])

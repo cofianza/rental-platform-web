@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
-import { IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
+import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -143,8 +143,16 @@ export function ExpedientesListado() {
       </div>
 
       {/* Tabla / Skeleton / Empty */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60' : ''}`}
+        aria-busy={isLoading}
+      >
         {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+        {isLoading && expedientes.length > 0 && (
+          <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+            <IconLoader size={12} className="animate-spin" /> Actualizando…
+          </span>
+        )}
         {isLoading && expedientes.length === 0 ? (
           <ExpedientesSkeleton count={filters.limit} />
         ) : (
@@ -161,11 +169,13 @@ export function ExpedientesListado() {
                 ? async (id) => {
                     setTomandoId(id)
                     try {
-                      await expedienteService.asignarResponsable(id, user!.id)
+                      await expedienteService.asignarResponsable(id, user!.id, true)
                       toast.success('Estudio asignado a ti')
                       await fetchExpedientes()
                     } catch (e) {
                       toast.error(e instanceof Error ? e.message : 'No se pudo asignar')
+                      // Si otro ya lo tomó, la lista estaba vieja: se refresca.
+                      if ((e as { code?: string }).code === 'EXPEDIENTE_YA_ASIGNADO') void fetchExpedientes()
                     } finally {
                       setTomandoId(null)
                     }

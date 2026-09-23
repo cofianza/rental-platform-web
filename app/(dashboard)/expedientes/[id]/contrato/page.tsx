@@ -284,6 +284,26 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [sucios.length])
 
+  // Navegar DENTRO de la app (menú, migas, «Editar en el inmueble») no dispara
+  // beforeunload: con cambios sin guardar se pregunta antes de salir.
+  const router = useRouter()
+  const [salirA, setSalirA] = useState<string | null>(null)
+  useEffect(() => {
+    if (sucios.length === 0) return
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return
+      const url = new URL(a.href, window.location.href)
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
+      e.preventDefault()
+      e.stopPropagation()
+      setSalirA(url.pathname + url.search + url.hash)
+    }
+    document.addEventListener('click', onClick, true)
+    return () => document.removeEventListener('click', onClick, true)
+  }, [sucios.length])
+
   const poner =
     <N extends keyof Formularios>(n: N) =>
     (v: Formularios[N]) => {
@@ -608,6 +628,21 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         cancelLabel="Volver"
         variant="danger"
         isLoading={accion === 'cancelar'}
+      />
+
+      <ConfirmDialog
+        isOpen={salirA !== null}
+        onClose={() => setSalirA(null)}
+        onConfirm={() => {
+          const destino = salirA
+          setSucios([])
+          if (destino) router.push(destino)
+        }}
+        title="¿Salir sin guardar?"
+        message="Tienes cambios sin guardar en el contrato. Si sales ahora se pierden."
+        confirmLabel="Salir sin guardar"
+        cancelLabel="Seguir aquí"
+        variant="danger"
       />
     </>
   )

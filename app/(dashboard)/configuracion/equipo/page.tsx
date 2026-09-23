@@ -80,6 +80,8 @@ export default function EquipoPage() {
   const router = useRouter()
   const [data, setData] = useState<MiembrosResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  // Un fallo de carga no es «no tienes organización»: se dice y se reintenta.
+  const [errorCarga, setErrorCarga] = useState(false)
   const [email, setEmail] = useState('')
   const [rolInvitar, setRolInvitar] = useState<'miembro' | 'solo_lectura'>('miembro')
   const [inviting, setInviting] = useState(false)
@@ -99,9 +101,9 @@ export default function EquipoPage() {
     try {
       const res = await listMiembros()
       setData(res)
-    } catch (err: unknown) {
-      const e = err as { message?: string }
-      toast.error(e.message || 'No se pudo cargar el equipo')
+      setErrorCarga(false)
+    } catch {
+      setErrorCarga(true)
     } finally {
       setLoading(false)
     }
@@ -129,7 +131,18 @@ export default function EquipoPage() {
     }
   }
 
-  const handleToggleVenTodo = async (value: boolean) => {
+  // Cambia lo que ve todo el equipo: se confirma antes.
+  const handleToggleVenTodo = (value: boolean) => {
+    setConfirm({
+      title: value ? 'Mostrar toda la cartera a los miembros' : 'Cada miembro ve solo lo suyo',
+      message: value
+        ? 'Todos los miembros verán todos los inmuebles, estudios y moras de la inmobiliaria.'
+        : 'Cada miembro verá solo lo que creó o lo que le asignes. Los titulares siguen viendo todo.',
+      confirmLabel: 'Cambiar',
+      onConfirm: () => doToggleVenTodo(value),
+    })
+  }
+  const doToggleVenTodo = async (value: boolean) => {
     setSavingVenTodo(true)
     try {
       await setMiembrosVenTodo(value)
@@ -196,18 +209,25 @@ export default function EquipoPage() {
       setBusyId(null)
     }
   }
+  // Todo cambio de rol se confirma: con el teclado (flechas) el select
+  // cambiaba el rol al instante, incluso el propio.
   const handleCambiarRol = (m: Miembro, nuevoRol: RolMiembro) => {
     if (nuevoRol === m.rol_miembro) return
-    if (nuevoRol === 'owner') {
-      setConfirm({
-        title: 'Promover a titular',
-        message: `¿Promover a ${m.nombre || m.email} como titular (co-titular)? Podrá gestionar el equipo y los datos de la inmobiliaria.`,
-        confirmLabel: 'Promover',
-        onConfirm: () => doCambiarRol(m, nuevoRol),
-      })
-      return
+    const quien = m.nombre || m.email
+    const efecto: Record<RolMiembro, string> = {
+      owner: 'Podrá gestionar el equipo y los datos de la inmobiliaria.',
+      miembro: 'Podrá crear y editar datos de la cartera, pero no gestionar el equipo.',
+      solo_lectura: 'Solo podrá consultar la cartera; no podrá crear ni modificar nada.',
     }
-    void doCambiarRol(m, nuevoRol)
+    setConfirm({
+      title: m.es_yo ? 'Cambiar tu propio rol' : `Cambiar el rol a ${ROL_LABEL[nuevoRol]}`,
+      message: m.es_yo
+        ? `Vas a pasar a ${ROL_LABEL[nuevoRol]}. ${efecto[nuevoRol]} Si dejas de ser titular, no podrás deshacerlo tú: tendrá que hacerlo otro titular.`
+        : `${quien} pasará a ${ROL_LABEL[nuevoRol]}. ${efecto[nuevoRol]}`,
+      confirmLabel: 'Cambiar rol',
+      variant: m.es_yo && nuevoRol !== 'owner' ? 'danger' : 'default',
+      onConfirm: () => doCambiarRol(m, nuevoRol),
+    })
   }
 
   const doSalir = async () => {
@@ -242,6 +262,20 @@ export default function EquipoPage() {
         <div className="flex items-center justify-center py-16">
           <IconLoader size={32} className="animate-spin text-primary-600" />
         </div>
+      ) : errorCarga && !data ? (
+        <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
+          <p className="text-sm text-red-700 mb-3">No pudimos cargar el equipo. Puede ser un problema de conexión.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              void cargar()
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
+        </div>
       ) : !data || !data.organizacion.id ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
           <IconUsers size={32} className="text-gray-400 mx-auto mb-3" />
@@ -267,6 +301,7 @@ export default function EquipoPage() {
                   <input
                     type="email"
                     required
+                    aria-label="Correo de la persona que invitas"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="correo@ejemplo.com"
@@ -278,6 +313,7 @@ export default function EquipoPage() {
                   onChange={(e) => setRolInvitar(e.target.value as 'miembro' | 'solo_lectura')}
                   className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                   title="Rol del miembro"
+                  aria-label="Rol del miembro invitado"
                 >
                   <option value="miembro">Miembro (gestiona datos)</option>
                   <option value="solo_lectura">Sólo lectura</option>
@@ -317,6 +353,7 @@ export default function EquipoPage() {
                   type="button"
                   role="switch"
                   aria-checked={data.miembros_ven_todo}
+                  aria-label="Los miembros ven toda la cartera"
                   disabled={savingVenTodo}
                   onClick={() => handleToggleVenTodo(!data.miembros_ven_todo)}
                   title={data.miembros_ven_todo ? 'Ven todo' : 'Ven solo lo suyo'}
@@ -341,17 +378,17 @@ export default function EquipoPage() {
             </div>
             <ul className="divide-y divide-gray-100">
               {data.miembros.map((m) => (
-                <li key={m.id} className="px-5 py-4 flex items-center justify-between gap-4">
+                <li key={m.id} className="px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 break-all">
                         {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
                       </p>
                       <RolBadge rol={m.rol_miembro} />
                       {m.es_yo && <span className="text-xs text-gray-400">(tú)</span>}
                     </div>
                     {m.nombre && m.email && (
-                      <p className="text-xs text-gray-500 truncate">{m.email}</p>
+                      <p className="text-xs text-gray-500 break-all">{m.email}</p>
                     )}
                     {/* Carga de trabajo: el titular que reparte estudios entre
                         varios miembros no tenía cómo ver quién lleva cuántos. */}
@@ -363,7 +400,7 @@ export default function EquipoPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-3 sm:flex-shrink-0">
                     {m.estado === 'activo' ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
                         <IconUserCheck size={12} />
@@ -383,6 +420,7 @@ export default function EquipoPage() {
                         disabled={busyId === m.id}
                         onChange={(e) => handleCambiarRol(m, e.target.value as RolMiembro)}
                         title="Cambiar rol"
+                        aria-label={`Rol de ${m.nombre || m.email}`}
                         className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
                       >
                         <option value="owner">Titular</option>

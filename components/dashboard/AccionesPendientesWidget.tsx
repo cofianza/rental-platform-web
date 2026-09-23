@@ -18,8 +18,15 @@ import { useAccionesPendientes } from '@/hooks/useAccionesPendientes'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
+/** Son acciones (confirmar, habilitar, generar): quien solo consulta no las ve. */
 export function AccionesPendientesWidget() {
+  const puedeEditar = usePuedeEditar()
+  return puedeEditar ? <AccionesPendientes /> : null
+}
+
+function AccionesPendientes() {
   const { data, isLoading, error, refetch } = useAccionesPendientes()
 
   if (isLoading) {
@@ -52,7 +59,7 @@ export function AccionesPendientesWidget() {
       <div className="bg-white rounded-lg border border-gray-200">
         <EmptyState
           icon={IconCalendar}
-          title="Todo al dia"
+          title="Todo al día"
           description="No tienes acciones pendientes en este momento."
         />
       </div>
@@ -62,7 +69,7 @@ export function AccionesPendientesWidget() {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Tus proximas acciones</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Tus próximas acciones</h2>
         <Link
           href="/citas"
           className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"

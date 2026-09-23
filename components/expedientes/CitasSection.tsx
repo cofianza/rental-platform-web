@@ -24,6 +24,7 @@ import SlotSelector, {
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
 interface CitasSectionProps {
   expedienteId: string
@@ -63,7 +64,11 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
   const [showCancelarModal, setShowCancelarModal] = useState<ICita | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const canManageCitas = user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador'
+  // Sin botones que el API rechaza: el miembro «Sólo lectura» no gestiona citas.
+  const puedeEditar = usePuedeEditar()
+  const canManageCitas =
+    (user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador') && puedeEditar
+  const esSolicitante = user?.rol === 'solicitante'
 
   // Estado del pago del estudio. Se consulta solo cuando hay una cita
   // realizada con estudio_habilitado=true. null = cargando, undefined =
@@ -249,7 +254,15 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
         </div>
       )}
 
-      {hasNoActiveCita && !citaOmitida && (
+      {/* Quien no gestiona citas ni es el arrendatario (analista, Gerencia, sólo
+          lectura) solo ve el estado: el texto y el botón de abajo son del prospecto. */}
+      {hasNoActiveCita && !citaOmitida && !canManageCitas && !esSolicitante && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          Aún no hay una visita agendada para este estudio.
+        </div>
+      )}
+
+      {hasNoActiveCita && !citaOmitida && (canManageCitas || esSolicitante) && (
         <div className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-primary-100/50 to-cyan-50 border-2 border-primary-200 rounded-xl p-6">
           {/* Decoración de fondo */}
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary-200/40 rounded-full blur-2xl pointer-events-none" />
@@ -266,8 +279,8 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               </h4>
               <p className="text-sm text-gray-600">
                 {canManageCitas
-                  ? 'Programa una visita confirmada con el solicitante. Recibira una notificacion por correo y WhatsApp.'
-                  : 'Antes de continuar con la evaluación crediticia, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmara.'}
+                  ? 'Programa una visita confirmada con el solicitante. Recibirá una notificación por correo y WhatsApp.'
+                  : 'Antes de continuar con la evaluación crediticia, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmará.'}
               </p>
             </div>
 

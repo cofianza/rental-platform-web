@@ -19,7 +19,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { IconSearch, IconPlus, IconRefresh, IconAlertTriangle } from '@/components/icons'
+import { IconSearch, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
@@ -59,6 +59,8 @@ export function EstudiosExpedientesFusion() {
   } = useExpedientes({ conStats: false })
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
+  // Cargando o con error, las tarjetas no muestran «0» ni «Sin decisiones aún».
+  const [statsError, setStatsError] = useState(false)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [saldoError, setSaldoError] = useState(false)
   // Mapa perfil_id → nombre de los miembros del equipo, para mostrar en la
@@ -66,7 +68,7 @@ export function EstudiosExpedientesFusion() {
   const [miembrosById, setMiembrosById] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    estudioService.getStats().then(setStats).catch(() => {})
+    estudioService.getStats().then(setStats).catch(() => setStatsError(true))
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
       .then((res) => {
@@ -85,6 +87,8 @@ export function EstudiosExpedientesFusion() {
   const tasa = decididos > 0 ? Math.round((stats!.aprobados / decididos) * 1000) / 10 : null
   const tasaNoAprobable = decididos > 0 ? Math.round((stats!.rechazados / decididos) * 1000) / 10 : null
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
+  const cifra = (n: number | undefined) => (stats ? (n ?? 0) : statsError ? '—' : '…')
+  const sinDato = statsError ? 'No se pudo cargar' : 'Cargando…'
 
   if (error) {
     return (
@@ -135,18 +139,18 @@ export function EstudiosExpedientesFusion() {
           activan al hacer clic, para no tener dos controles que parecen
           filtrar y solo uno lo hace. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Este mes" value={stats?.este_mes ?? 0} sub="Evaluaciones iniciadas" />
+        <StatCard label="Este mes" value={cifra(stats?.este_mes)} sub="Evaluaciones iniciadas" />
         <StatCard
           label="Aprobados"
-          value={stats?.aprobados ?? 0}
+          value={cifra(stats?.aprobados)}
           color="text-primary-600"
-          sub={tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
+          sub={!stats ? sinDato : tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
           activo={activeChip === 'aprobado'}
           onClick={() => setFilters({ estudio_filtro: 'aprobado', page: 1 })}
         />
         <StatCard
           label="En proceso"
-          value={stats?.por_resultado?.pendiente ?? stats?.en_proceso ?? 0}
+          value={cifra(stats?.por_resultado?.pendiente ?? stats?.en_proceso)}
           color="text-blue-600"
           sub="Esperando al prospecto o al buró"
           activo={activeChip === 'en_proceso'}
@@ -154,9 +158,9 @@ export function EstudiosExpedientesFusion() {
         />
         <StatCard
           label="No aprobables"
-          value={stats?.rechazados ?? 0}
+          value={cifra(stats?.rechazados)}
           color="text-red-500"
-          sub={tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
+          sub={!stats ? sinDato : tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
           activo={activeChip === 'rechazado'}
           onClick={() => setFilters({ estudio_filtro: 'rechazado', page: 1 })}
         />
@@ -194,8 +198,16 @@ export function EstudiosExpedientesFusion() {
       </div>
 
       {/* Lista de expedientes con badge de estudio embebido */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60' : ''}`}
+        aria-busy={isLoading}
+      >
         {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+        {isLoading && expedientes.length > 0 && (
+          <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+            <IconLoader size={12} className="animate-spin" /> Actualizando…
+          </span>
+        )}
         {isLoading && expedientes.length === 0 ? (
           <ExpedientesSkeleton count={filters.limit} />
         ) : (
@@ -226,7 +238,7 @@ function StatCard({
   onClick,
 }: {
   label: string
-  value: number
+  value: number | string
   sub: string
   color?: string
   activo?: boolean

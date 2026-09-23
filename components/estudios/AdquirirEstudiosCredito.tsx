@@ -17,10 +17,17 @@ import {
   type ISaldoCreditos,
 } from '@/services/creditosEstudiosService'
 import { IconCheckCircle, IconDollarSign, IconLoader, IconArrowRight, IconClock } from '@/components/icons'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
 const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`
 
+/** Comprar créditos es escribir: Gerencia y el miembro «Sólo lectura» no lo ven. */
 export function AdquirirEstudiosCredito() {
+  const puedeEditar = usePuedeEditar()
+  return puedeEditar ? <AdquirirEstudiosCreditoContenido /> : null
+}
+
+function AdquirirEstudiosCreditoContenido() {
   const searchParams = useSearchParams()
   const status = searchParams?.get('status')
 

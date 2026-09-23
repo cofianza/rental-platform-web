@@ -338,12 +338,15 @@ function Tabla({
         variant="danger"
         minLength={3}
         isLoading={cambiando}
-        onConfirm={(motivo) =>
-          conCambio(async () => {
-            if (inhabilitar) await cambiarEstado(inhabilitar.id, { estado: 'inhabilitada', motivo })
-            setInhabilitar(null)
+        // Si falla, el diálogo queda abierto con el motivo escrito (antes se cerraba y se perdía).
+        onConfirm={async (motivo) => {
+          let ok = false
+          await conCambio(async () => {
+            if (inhabilitar) ok = (await cambiarEstado(inhabilitar.id, { estado: 'inhabilitada', motivo })) !== false
           })
-        }
+          if (ok) setInhabilitar(null)
+          return ok
+        }}
       />
 
       <ConfirmDialog

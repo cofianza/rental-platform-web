@@ -106,12 +106,13 @@ export function EstudiosInmobiliariaView({
   } = useEstudiosList()
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
+  const [statsError, setStatsError] = useState(false)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [detalle, setDetalle] = useState<IEstudio | null>(null)
   const [cargandoDetalle, setCargandoDetalle] = useState(false)
 
   useEffect(() => {
-    estudioService.getStats().then(setStats).catch(() => {})
+    estudioService.getStats().then(setStats).catch(() => setStatsError(true))
     if (showSaldo) creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => {})
   }, [showSaldo])
 
@@ -152,6 +153,9 @@ export function EstudiosInmobiliariaView({
     }
   }
 
+  const cifra = (n: number | undefined) => (stats ? (n ?? 0) : statsError ? '—' : '…')
+  const sinDato = statsError ? 'No se pudo cargar' : 'Cargando…'
+
   return (
     <div className="space-y-6">
       {/* Encabezado: intro + saldo + nuevo estudio */}
@@ -176,25 +180,27 @@ export function EstudiosInmobiliariaView({
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Este mes" value={stats?.este_mes ?? 0} sub="Estudios iniciados" />
+        <StatCard label="Este mes" value={cifra(stats?.este_mes)} sub="Estudios iniciados" />
         <StatCard
           label="Aprobados"
-          value={stats?.aprobados ?? 0}
+          value={cifra(stats?.aprobados)}
           color="text-primary-600"
-          sub={tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
+          sub={!stats ? sinDato : tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
         />
         <StatCard
           label="En proceso"
-          value={stats?.en_proceso ?? 0}
+          value={cifra(stats?.en_proceso)}
           color="text-blue-600"
           sub="Esperando prospecto"
         />
         <StatCard
           label="No aprobables"
-          value={stats?.rechazados ?? 0}
+          value={cifra(stats?.rechazados)}
           color="text-red-500"
           sub={
-            stats && stats.condicionados > 0
+            !stats
+              ? sinDato
+              : stats.condicionados > 0
               ? `${stats.condicionados} condicionado${stats.condicionados === 1 ? '' : 's'}`
               : 'Sin condicionados'
           }
@@ -349,7 +355,7 @@ function StatCard({
   color = 'text-gray-900',
 }: {
   label: string
-  value: number
+  value: number | string
   sub: string
   color?: string
 }) {

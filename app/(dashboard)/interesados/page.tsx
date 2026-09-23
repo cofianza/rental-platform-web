@@ -256,6 +256,11 @@ export default function InteresadosPage() {
                   {/* Convertir el interesado en expediente (datos pre-llenados) */}
                   <Link
                     href={crearExpedienteHref(it)}
+                    // Al convertirlo en estudio ya se está atendiendo: deja de
+                    // figurar como «Nuevo» y de contar en la pestaña.
+                    onClick={() => {
+                      if (it.estado === 'nuevo') void interesadosService.updateEstado(it.id, 'contactado').catch(() => undefined)
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
                   >
                     <IconFileText size={13} />

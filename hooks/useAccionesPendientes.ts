@@ -58,8 +58,10 @@ export function useAccionesPendientes() {
       // categorias de citas (degradacion suave).
       const [citasRes, expedientesRes] = await Promise.allSettled([
         citaService.listMisCitas({ limit: 50 }),
+        // Solo aprobados: un condicionado todavía no admite contrato (lo decide
+        // Cofianza) y salía como «Estudio aprobado · Generar contrato».
         expedienteService.getExpedientes({
-          estado: ['aprobado', 'condicionado'],
+          estado: ['aprobado'],
           page: 1,
           limit: 20,
           sortBy: 'created_at',

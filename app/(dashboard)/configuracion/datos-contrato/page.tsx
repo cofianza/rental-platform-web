@@ -51,8 +51,16 @@ export default function DatosContratoPage() {
   const [deletingLogo, setDeletingLogo] = useState(false)
   const [form, setForm] = useState<IUpdatePerfilArrendadorInput>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Lo que falta para guardar, a la vista junto al botón (antes: un toast de
+  // hasta 12 campos que desaparecía en segundos).
+  const [problemas, setProblemas] = useState<string[]>([])
+  const problemasRef = useRef<HTMLDivElement>(null)
+  const [errorCarga, setErrorCarga] = useState(false)
+  const [recarga, setRecarga] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
+    setErrorCarga(false)
     perfilArrendadorService
       .getMe()
       .then((data) => {
@@ -80,9 +88,9 @@ export default function DatosContratoPage() {
           cuenta_recaudo_titular_nit: data.cuenta_recaudo_titular_nit,
         })
       })
-      .catch((err) => toast.error(err instanceof Error ? err.message : 'Error al cargar el perfil'))
+      .catch(() => setErrorCarga(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [recarga])
 
   const onChange = (field: keyof IUpdatePerfilArrendadorInput, value: string | null) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -92,9 +100,9 @@ export default function DatosContratoPage() {
     // El WhatsApp del arrendador es obligatorio: es a donde llega el enlace de
     // firma del contrato. PhoneInput emite "+57 301..."; validamos sin espacios.
     const waRecaudo = (form.whatsapp_recaudo ?? '').replace(/\s+/g, '').trim()
+    const lista: string[] = []
     if (!waRecaudo || !/^\+?\d{7,15}$/.test(waRecaudo)) {
-      toast.error('Falta un WhatsApp válido del arrendador: es donde recibes el enlace para firmar el contrato.')
-      return
+      lista.push('WhatsApp del arrendador (válido): es donde recibes el enlace para firmar el contrato')
     }
     // Todos estos datos salen impresos en el contrato. Si falta cualquiera, el
     // PDF queda con campos en blanco, asi que son obligatorios al guardar.
@@ -117,21 +125,19 @@ export default function DatosContratoPage() {
         { valor: form.matricula_arrendador, etiqueta: 'Matrícula de arrendador' },
       )
     }
-    const faltantes = requeridos
-      .filter((r) => !r.valor || String(r.valor).trim().length === 0)
-      .map((r) => r.etiqueta)
-    if (faltantes.length > 0) {
-      toast.error(
-        `Faltan datos obligatorios para el contrato: ${faltantes.join(', ')}.`,
-      )
-      return
-    }
+    lista.push(
+      ...requeridos.filter((r) => !r.valor || String(r.valor).trim().length === 0).map((r) => r.etiqueta),
+    )
     // Documento del representante legal: opcional aquí (solo lo exige el
     // asistente de contratos), pero tipo y número van juntos.
     const tieneTipoRep = !!form.representante_legal_tipo_documento
     const tieneDocRep = !!form.representante_legal_documento?.trim()
     if (tieneTipoRep !== tieneDocRep) {
-      toast.error('Completa el tipo y el número de documento del representante legal, o deja ambos vacíos.')
+      lista.push('Documento del representante legal: tipo y número juntos, o ninguno de los dos')
+    }
+    setProblemas(lista)
+    if (lista.length > 0) {
+      setTimeout(() => problemasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
       return
     }
     setSaving(true)
@@ -151,9 +157,27 @@ export default function DatosContratoPage() {
     }
   }
 
-  const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    if (file) void subirLogo(file)
+  }
+
+  // «Arrastra una imagen aquí» no aceptaba soltar: el navegador abría la
+  // imagen y se perdía lo escrito en el formulario.
+  const [arrastrando, setArrastrando] = useState(false)
+  const handleLogoDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setArrastrando(false)
+    const file = e.dataTransfer.files?.[0]
     if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('El logo debe ser PNG, JPG o WebP')
+      return
+    }
+    void subirLogo(file)
+  }
+
+  const subirLogo = async (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
       toast.error('El logo no puede superar 2 MB')
       return
@@ -202,8 +226,19 @@ export default function DatosContratoPage() {
     )
   }
 
-  if (!perfil) {
-    return <div className="text-gray-500">No se pudo cargar el perfil.</div>
+  if (!perfil || errorCarga) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-sm text-red-700 mb-3">No pudimos cargar tus datos para contrato. Puede ser un problema de conexión.</p>
+        <button
+          type="button"
+          onClick={() => setRecarga((n) => n + 1)}
+          className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
   }
 
   const rolLabel = ROL_LABELS[perfil.rol] ?? perfil.rol
@@ -274,8 +309,14 @@ export default function DatosContratoPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setArrastrando(true)
+              }}
+              onDragLeave={() => setArrastrando(false)}
+              onDrop={handleLogoDrop}
               disabled={uploadingLogo}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-400 hover:bg-primary-50 transition-colors disabled:opacity-50"
+              className={`w-full border-2 border-dashed rounded-lg p-8 text-center hover:border-primary-400 hover:bg-primary-50 transition-colors disabled:opacity-50 ${arrastrando ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}`}
             >
               <IconUpload size={32} className="mx-auto text-gray-400 mb-2" />
               <p className="text-sm font-medium text-gray-700">
@@ -515,6 +556,17 @@ export default function DatosContratoPage() {
       </div>
 
       {/* Botón guardar — solo el titular (los miembros ven en modo lectura) */}
+      {!soloLectura && problemas.length > 0 && (
+        <div ref={problemasRef} role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-800">Para guardar falta completar:</p>
+          <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-red-700">
+            {problemas.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!soloLectura && (
         <div className="flex justify-end">
           <button

@@ -250,12 +250,14 @@ class ExpedienteService {
    */
   async asignarResponsable(
     id: string,
-    analistaId: string
+    analistaId: string,
+    /** «Tomar»: 409 EXPEDIENTE_YA_ASIGNADO si otro analista ya lo tomó. */
+    soloSiLibre = false,
   ): Promise<IExpedienteDetalle> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.post(
       `/expedientes/${id}/assignments`,
-      { analista_id: analistaId }
+      { analista_id: analistaId, ...(soloSiLibre ? { solo_si_libre: true } : {}) }
     )) as any
 
     return mapExpediente<IExpedienteDetalle>(response.data)

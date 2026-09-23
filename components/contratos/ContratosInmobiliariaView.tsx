@@ -201,6 +201,17 @@ export function ContratosInmobiliariaView() {
   }, [])
 
   const hasActiveFilters = !!(search || filters.estado || filters.fecha_desde || filters.fecha_hasta)
+  // La búsqueda también acota los estudios aprobados sin contrato (antes los ignoraba).
+  const plegar = (t: string) => t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  const sinContratoVisibles = searchAplicado
+    ? sinContrato.filter((e) =>
+        plegar(
+          [e.solicitante?.nombre, e.numero_expediente, e.inmueble?.codigo, e.inmueble?.direccion, e.inmueble?.ciudad]
+            .filter(Boolean)
+            .join(' '),
+        ).includes(plegar(searchAplicado.trim())),
+      )
+    : sinContrato
   // Esta vista solo tiene paneles hasta "vigente": si se filtra por finalizado o
   // cancelado no hay dónde pintarlos, y sin este aviso el gestor vería tres
   // paneles vacíos sin saber por qué.
@@ -294,8 +305,10 @@ export function ContratosInmobiliariaView() {
             <IconLoader size={20} className="mx-auto mb-2 animate-spin text-primary-600" />
             Buscando estudios aprobados…
           </div>
-        ) : sinContrato.length === 0 ? (
-          <EmptyRow texto="Ningún estudio aprobado espera contrato." />
+        ) : sinContratoVisibles.length === 0 ? (
+          <EmptyRow
+            texto={sinContrato.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
+          />
         ) : (
           <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
@@ -307,7 +320,7 @@ export function ContratosInmobiliariaView() {
               </tr>
             </thead>
             <tbody>
-              {sinContrato.map((e) => (
+              {sinContratoVisibles.map((e) => (
                 <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
                   <td className="px-6 py-3 font-medium text-gray-900">{e.solicitante?.nombre ?? '—'}</td>
                   <td className="px-6 py-3">

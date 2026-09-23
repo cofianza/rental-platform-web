@@ -19,6 +19,7 @@ import {
   IconTrash,
   IconChevronDown,
   IconChevronRight,
+  IconRefresh,
 } from '@/components/icons'
 import {
   adminActualizarConvenio,
@@ -132,13 +133,17 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [revocarTarget, setRevocarTarget] = useState<Miembro | null>(null)
+  // Cambio de rol pendiente de confirmar (antes se aplicaba al instante, incluso «Titular»).
+  const [rolTarget, setRolTarget] = useState<{ m: Miembro; rol: RolMiembro } | null>(null)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
       const res = await adminListMiembros(orgId)
       setData(res)
-    } catch (err: unknown) {
-      toast.error((err as { message?: string }).message || 'No se pudieron cargar los miembros')
+      setErrorCarga(false)
+    } catch {
+      setErrorCarga(true)
     } finally {
       setLoading(false)
     }
@@ -148,8 +153,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
     cargar()
   }, [cargar])
 
-  const handleCambiarRol = async (m: Miembro, nuevoRol: RolMiembro) => {
-    if (nuevoRol === m.rol_miembro) return
+  const doCambiarRol = async (m: Miembro, nuevoRol: RolMiembro) => {
     setBusyId(m.id)
     try {
       await adminCambiarRolMiembro(orgId, m.id, nuevoRol)
@@ -182,6 +186,23 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
       </div>
     )
   }
+  if (errorCarga && !data) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <p className="text-sm text-red-700">No se pudieron cargar los miembros.</p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            void cargar()
+          }}
+          className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+        >
+          <IconRefresh size={14} /> Reintentar
+        </button>
+      </div>
+    )
+  }
   if (!data || data.miembros.length === 0) {
     return <p className="px-5 py-4 text-sm text-gray-500">Sin miembros.</p>
   }
@@ -190,10 +211,10 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
     <>
     <ul className="divide-y divide-gray-100 bg-gray-50/50">
       {data.miembros.map((m) => (
-        <li key={m.id} className="px-5 py-3 flex items-center justify-between gap-4">
+        <li key={m.id} className="px-5 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-gray-900 break-all">
                 {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
               </p>
               <RolBadge rol={m.rol_miembro} />
@@ -201,7 +222,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
                 <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">Pendiente</span>
               )}
             </div>
-            {m.nombre && m.email && <p className="text-xs text-gray-500 truncate">{m.email}</p>}
+            {m.nombre && m.email && <p className="text-xs text-gray-500 break-all">{m.email}</p>}
           </div>
 
           {m.estado === 'activo' && (
@@ -209,8 +230,12 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
               <select
                 value={m.rol_miembro}
                 disabled={busyId === m.id}
-                onChange={(e) => handleCambiarRol(m, e.target.value as RolMiembro)}
+                onChange={(e) => {
+                  const rol = e.target.value as RolMiembro
+                  if (rol !== m.rol_miembro) setRolTarget({ m, rol })
+                }}
                 title="Cambiar rol"
+                aria-label={`Rol de ${m.nombre || m.email}`}
                 className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
               >
                 <option value="owner">Titular</option>
@@ -231,6 +256,17 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
       ))}
     </ul>
     <ConfirmDialog
+      isOpen={!!rolTarget}
+      onClose={() => setRolTarget(null)}
+      onConfirm={async () => {
+        if (rolTarget) await doCambiarRol(rolTarget.m, rolTarget.rol)
+      }}
+      title={`Cambiar el rol a ${rolTarget ? ROL_LABEL[rolTarget.rol] : ''}`}
+      message={`${rolTarget?.m.nombre || rolTarget?.m.email || 'Este miembro'} pasará a ${rolTarget ? ROL_LABEL[rolTarget.rol] : ''} en esta inmobiliaria.`}
+      confirmLabel="Cambiar rol"
+      isLoading={!!rolTarget && busyId === rolTarget.m.id}
+    />
+    <ConfirmDialog
       isOpen={!!revocarTarget}
       onClose={() => setRevocarTarget(null)}
       onConfirm={async () => {
@@ -250,18 +286,23 @@ export default function AdminInmobiliariasPage() {
   const [orgs, setOrgs] = useState<InmobiliariaAdmin[]>([])
   const [loading, setLoading] = useState(true)
   const [abierta, setAbierta] = useState<string | null>(null)
+  const [errorCarga, setErrorCarga] = useState(false)
+
+  const cargarOrgs = useCallback(async () => {
+    setLoading(true)
+    try {
+      setOrgs(await adminListInmobiliarias())
+      setErrorCarga(false)
+    } catch {
+      setErrorCarga(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        setOrgs(await adminListInmobiliarias())
-      } catch (err: unknown) {
-        toast.error((err as { message?: string }).message || 'No se pudieron cargar las inmobiliarias')
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [])
+    void cargarOrgs()
+  }, [cargarOrgs])
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -273,6 +314,17 @@ export default function AdminInmobiliariasPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <IconLoader size={32} className="animate-spin text-primary-600" />
+        </div>
+      ) : errorCarga ? (
+        <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
+          <p className="text-sm text-red-700 mb-3">No se pudieron cargar las inmobiliarias.</p>
+          <button
+            type="button"
+            onClick={() => void cargarOrgs()}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
         </div>
       ) : orgs.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">

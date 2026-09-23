@@ -41,7 +41,7 @@ function NuevoInmuebleContenido() {
       <div className="space-y-6">
         <PageHeader
           title="Nuevo Inmueble"
-          subtitle="Antes de continuar, completá tus datos para contrato"
+          subtitle="Antes de continuar, completa tus datos para contrato"
         />
         <PerfilIncompletoBanner completitud={completitud} />
       </div>

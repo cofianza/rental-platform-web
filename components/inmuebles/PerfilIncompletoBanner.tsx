@@ -39,7 +39,7 @@ export function PerfilIncompletoBanner({ completitud, compact = false }: Props) 
       <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900">
-          Completá tus Datos para contrato antes de publicar inmuebles
+          Completa tus Datos para contrato antes de publicar inmuebles
         </p>
         <p className="text-xs text-amber-800 mt-1">
           Sin estos datos los contratos de arrendamiento que se generen para tus inmuebles van a salir con campos en blanco.

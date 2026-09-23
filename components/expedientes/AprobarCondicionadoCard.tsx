@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { expedienteService } from '@/services/expedienteService'
@@ -37,6 +37,7 @@ export function AprobarCondicionadoCard({
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
+  const aprobando = useRef(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
@@ -63,7 +64,9 @@ export function AprobarCondicionadoCard({
   }
 
   const handleAprobar = async () => {
-    if (!evaluacionCompleta(evaluacion)) return
+    // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
+    if (aprobando.current || !evaluacionCompleta(evaluacion)) return
+    aprobando.current = true
     setLoading(true)
     try {
       // Sin datos de contrato: solo aprueba. El contrato se genera después en
@@ -83,6 +86,7 @@ export function AprobarCondicionadoCard({
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
       toast.error(msg)
     } finally {
+      aprobando.current = false
       setLoading(false)
     }
   }

@@ -5,7 +5,7 @@
 
 'use client'
 
-import type { ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Modal } from './Modal'
 import { cn } from '@/lib/utils'
 
@@ -41,13 +41,23 @@ export function ConfirmDialog({
   //     instantaneo y el cierre se ve igual que antes.
   // El padre tambien puede cerrar el dialog cambiando isOpen — onClose()
   // aqui es idempotente por seguridad.
+  // Un doble clic llega antes de que el padre pinte isLoading: sin este
+  // candado la acción (aprobar, eliminar, enviar…) corría dos veces.
+  const enCurso = useRef(false)
+  const [ocupado, setOcupado] = useState(false)
   const handleConfirm = async () => {
+    if (enCurso.current) return
+    enCurso.current = true
+    setOcupado(true)
     try {
       await onConfirm()
     } finally {
+      enCurso.current = false
+      setOcupado(false)
       onClose()
     }
   }
+  const bloqueado = isLoading || ocupado
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
@@ -59,7 +69,7 @@ export function ConfirmDialog({
             type="button"
             autoFocus={variant === 'danger'}
             onClick={onClose}
-            disabled={isLoading}
+            disabled={bloqueado}
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               'border border-gray-300 text-gray-700',
@@ -74,7 +84,7 @@ export function ConfirmDialog({
             type="button"
             autoFocus={variant !== 'danger'}
             onClick={handleConfirm}
-            disabled={isLoading}
+            disabled={bloqueado}
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               'text-white',
@@ -84,7 +94,7 @@ export function ConfirmDialog({
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >
-            {isLoading ? 'Procesando...' : confirmLabel}
+            {bloqueado ? 'Procesando…' : confirmLabel}
           </button>
         </div>
       </div>

@@ -151,6 +151,14 @@ export default function NotificacionesPage() {
   // Estado de lectura vigente de las 50 primeras (store: realtime + acciones).
   const leidasStore = useMemo(() => new Map(items.map((n) => [n.id, n.leida_at])), [items])
   const estaLeida = (n: INotificacion) => Boolean(leidasStore.get(n.id) ?? n.leida_at)
+  // Las que llegan en vivo (Realtime → store) van arriba del historial: antes
+  // subía el contador pero la fila no aparecía hasta recargar.
+  const lista = useMemo(() => {
+    const ids = new Set(todas.map((n) => n.id))
+    const tope = todas[0]?.created_at ?? ''
+    const nuevas = items.filter((n) => !ids.has(n.id) && n.created_at > tope)
+    return nuevas.length ? [...nuevas, ...todas] : todas
+  }, [items, todas])
 
   const handleLoadMore = async () => {
     setLoadingMore(true)
@@ -198,7 +206,7 @@ export default function NotificacionesPage() {
         subtitle={
           unreadCount > 0
             ? `${unreadCount} sin leer`
-            : todas.length === 0
+            : lista.length === 0
             ? 'Sin actividad reciente'
             : 'Todo al dia'
         }
@@ -215,11 +223,11 @@ export default function NotificacionesPage() {
       />
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading && todas.length === 0 ? (
+        {loading && lista.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <IconLoader size={24} className="animate-spin text-gray-400" />
           </div>
-        ) : fallo && todas.length === 0 ? (
+        ) : fallo && lista.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-amber-300 mb-3" />
             <p className="text-sm font-medium text-amber-900">No se pudieron cargar</p>
@@ -232,7 +240,7 @@ export default function NotificacionesPage() {
               Reintentar
             </button>
           </div>
-        ) : todas.length === 0 ? (
+        ) : lista.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-700">Sin notificaciones</p>
@@ -240,7 +248,7 @@ export default function NotificacionesPage() {
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {todas.map((n) => {
+            {lista.map((n) => {
               const unread = !estaLeida(n)
               return (
                 <li key={n.id}>

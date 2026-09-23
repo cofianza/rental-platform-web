@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Badge } from '@/components/ui/Badge'
@@ -53,6 +53,8 @@ export function TransicionModal({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [error, setError] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
+  // Doble clic: el segundo llega antes de que el padre pinte isLoading.
+  const enviando = useRef(false)
   // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
   const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
 
@@ -95,13 +97,19 @@ export function TransicionModal({
       return
     }
     setConfirmando(false)
-    await onConfirmar(
-      estadoSeleccionado,
-      comentario.trim(),
-      transicionSeleccionada?.etiqueta,
-      esRevisionManual ? documentos : undefined,
-      pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
-    )
+    if (enviando.current) return
+    enviando.current = true
+    try {
+      await onConfirmar(
+        estadoSeleccionado,
+        comentario.trim(),
+        transicionSeleccionada?.etiqueta,
+        esRevisionManual ? documentos : undefined,
+        pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
+      )
+    } finally {
+      enviando.current = false
+    }
     handleClose()
   }
 

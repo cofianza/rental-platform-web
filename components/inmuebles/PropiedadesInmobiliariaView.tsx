@@ -16,6 +16,7 @@
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Image from 'next/image'
@@ -27,7 +28,7 @@ import { useInmuebles } from '@/hooks/useInmuebles'
 import { useAuth } from '@/hooks/useAuth'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { inmuebleService } from '@/services/inmuebleService'
-import type { IInmueble } from '@/types/inmueble'
+import type { IInmueble, IInmuebleFilters } from '@/types/inmueble'
 import { TIPO_LABELS } from './constants'
 import { EstudiosActivosBadge } from './InmuebleBadges'
 import { money } from '@/components/dashboard/secciones/_shared'
@@ -127,12 +128,28 @@ export function PropiedadesInmobiliariaView() {
   const perfilIncompleto =
     user?.rol === 'inmobiliaria' && completitud !== null && !completitud.completo
 
-  // Stat-cards reales derivados del listado en pantalla + meta.
-  // Publicado real = flag + disponible (un ocupado con flag residual no cuenta).
-  const enVitrina = inmuebles.filter(estaPublicado).length
-  const disponibles = inmuebles.filter((i) => i.estado === 'disponible').length
-  // 2.5: pausada = disponible pero fuera de vitrina (lo que hace "Pausar").
-  const pausadas = inmuebles.filter((i) => !i.visible_vitrina && i.estado === 'disponible').length
+  // Contadores de TODA la cartera (antes contaban solo la página visible y el
+  // chip activo). Cada uno es el total del listado con su filtro, limit 1.
+  // Publicado real = flag + disponible; pausada = disponible fuera de vitrina.
+  const [conteos, setConteos] = useState<{ total: number; enVitrina: number; disponibles: number; pausadas: number } | null>(null)
+  const [recargaConteos, setRecargaConteos] = useState(0)
+  useEffect(() => {
+    let vivo = true
+    const total = (f: Partial<IInmuebleFilters>) =>
+      inmuebleService.getInmuebles({ ...f, page: 1, limit: 1 }).then((r) => r.meta.total)
+    Promise.all([
+      total({}),
+      total({ visible_vitrina: true, estado: 'disponible' }),
+      total({ estado: 'disponible' }),
+      total({ visible_vitrina: false, estado: 'disponible' }),
+    ])
+      .then(([t, v, d, p]) => vivo && setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: p }))
+      .catch(() => vivo && setConteos(null))
+    return () => {
+      vivo = false
+    }
+  }, [recargaConteos])
+  const cifra = (n: number | undefined) => (n === undefined ? '…' : n)
 
   // Detección endurecida: los chips vitrina/pausadas setean flag + estado
   // 'disponible'; una combinación mixta (p. ej. flag=true con otro estado,
@@ -161,6 +178,7 @@ export function PropiedadesInmobiliariaView() {
     try {
       await inmuebleService.toggleVisibleVitrina(inmueble.id, value)
       toast.success(value ? 'Inmueble publicado en la vitrina' : 'Inmueble retirado de la vitrina')
+      setRecargaConteos((n) => n + 1)
     } catch {
       updateInmuebleInList({ ...inmueble, visible_vitrina: !value })
       toast.error('Error al actualizar la visibilidad en vitrina')
@@ -202,14 +220,14 @@ export function PropiedadesInmobiliariaView() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="Total"
-          value={meta?.total ?? inmuebles.length}
+          value={cifra(conteos?.total)}
           sub="Propiedades registradas"
           icon={IconBuilding2}
           iconClass="bg-slate-100 text-slate-500"
         />
         <StatCard
           label="En vitrina"
-          value={enVitrina}
+          value={cifra(conteos?.enVitrina)}
           color="text-primary-600"
           sub="Publicadas en cofianza.co"
           icon={IconGlobe}
@@ -217,7 +235,7 @@ export function PropiedadesInmobiliariaView() {
         />
         <StatCard
           label="Disponibles"
-          value={disponibles}
+          value={cifra(conteos?.disponibles)}
           color="text-blue-600"
           sub="Listas para arrendar"
           icon={IconCheck}
@@ -225,8 +243,8 @@ export function PropiedadesInmobiliariaView() {
         />
         <StatCard
           label="Pausadas"
-          value={pausadas}
-          sub="Inactivas en este momento"
+          value={cifra(conteos?.pausadas)}
+          sub="Disponibles, fuera de la vitrina"
           icon={IconEyeOff}
           iconClass="bg-gray-100 text-gray-500"
         />
@@ -257,7 +275,13 @@ export function PropiedadesInmobiliariaView() {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className={cn('relative p-6', isLoading && inmuebles.length > 0 && 'opacity-60')} aria-busy={isLoading}>
+          {/* Al filtrar o paginar se siguen viendo las filas anteriores: que se note que se están actualizando. */}
+          {isLoading && inmuebles.length > 0 && (
+            <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+              <IconLoader size={12} className="animate-spin" /> Actualizando…
+            </span>
+          )}
           {isLoading && inmuebles.length === 0 ? (
             <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
               <IconLoader size={20} className="animate-spin text-primary-600" />
@@ -378,14 +402,18 @@ export function PropiedadesInmobiliariaView() {
 
                     {/* Acciones */}
                     <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
+                      {/* «Ver en web» abre la ficha pública de la vitrina; si no está
+                          publicada no hay ficha pública y se ofrece la interna. */}
                       <Link
-                        href={`/inmuebles/${i.id}`}
+                        href={estaPublicado(i) ? `/inmueble/${i.id}` : `/inmuebles/${i.id}`}
+                        target={estaPublicado(i) ? '_blank' : undefined}
+                        rel={estaPublicado(i) ? 'noopener noreferrer' : undefined}
                         className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
                       >
                         <IconGlobe size={13} />
-                        Ver en web
+                        {estaPublicado(i) ? 'Ver en web' : 'Ver ficha'}
                       </Link>
-                      {puedeTogglear && (
+                      {puedeEditar && puedeTogglear && (
                         <button
                           type="button"
                           onClick={() => handleToggleVitrina(i, !flagVitrina)}
@@ -395,14 +423,16 @@ export function PropiedadesInmobiliariaView() {
                           {flagVitrina ? 'Pausar' : 'Publicar'}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/inmuebles/${i.id}/editar`)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
-                      >
-                        <IconPencil size={13} />
-                        Editar
-                      </button>
+                      {puedeEditar && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/inmuebles/${i.id}/editar`)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        >
+                          <IconPencil size={13} />
+                          Editar
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -453,7 +483,7 @@ function StatCard({
   iconClass = 'bg-gray-100 text-gray-500',
 }: {
   label: string
-  value: number
+  value: number | string
   sub: string
   color?: string
   icon?: typeof IconBuilding2

@@ -35,7 +35,7 @@ export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo,
     listMiembros()
       .then((r) => {
         setSoyOwner(r.soy_owner)
-        setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id))
+        setMiembros(r.miembros.filter((m) => m.estado === 'activo' && m.perfil_id && m.rol_miembro !== 'solo_lectura'))
       })
       .catch(() => {
         // Sin organización o sin permiso: no mostramos el card.
