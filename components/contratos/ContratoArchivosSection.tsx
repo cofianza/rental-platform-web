@@ -9,6 +9,7 @@ import {
   IconLoader,
   IconFileText,
   IconPlus,
+  IconRefresh,
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
@@ -34,6 +35,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
 
   const [archivos, setArchivos] = useState<IContratoArchivo[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedTipo, setSelectedTipo] = useState<TipoArchivoContrato | ''>('')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -46,11 +48,14 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
   }, [contrato.id])
 
   async function loadArchivos() {
+    setLoading(true)
+    setLoadError(false)
     try {
       const data = await contratoService.listarArchivos(contrato.id)
       setArchivos(data)
     } catch {
-      // Non-critical
+      // Sin esto, un fallo de red se leía como «Sin archivos» en cada grupo.
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -67,7 +72,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
     if (fileInputRef.current) fileInputRef.current.value = ''
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('El archivo excede el limite de 20 MB')
+      toast.error('El archivo excede el límite de 20 MB')
       return
     }
 
@@ -151,6 +156,17 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
       {loading ? (
         <div className="flex items-center justify-center py-6">
           <IconLoader size={20} className="animate-spin text-gray-400" />
+        </div>
+      ) : loadError ? (
+        <div className="text-center py-6">
+          <p className="text-sm text-red-600 mb-3">No se pudieron cargar los archivos</p>
+          <button
+            onClick={loadArchivos}
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+          >
+            <IconRefresh size={16} />
+            Reintentar
+          </button>
         </div>
       ) : (
         <div className="space-y-4">

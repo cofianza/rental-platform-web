@@ -43,7 +43,7 @@ export function CompararVersionesModal({
     contratoService
       .compararVersiones(contratoId, v1, v2)
       .then(setComparison)
-      .catch(() => setError('Error al cargar la comparacion'))
+      .catch(() => setError('Error al cargar la comparación'))
       .finally(() => setIsLoading(false))
   }, [isOpen, contratoId, v1, v2])
 
@@ -58,7 +58,7 @@ export function CompararVersionesModal({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">
-          Comparar Version v{v1} vs v{v2}
+          Comparar versiones v{v1} y v{v2}
         </h2>
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
@@ -130,7 +130,7 @@ export function CompararVersionesModal({
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
-                        Variable
+                        Campo
                       </th>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
                         v{v1}
@@ -148,16 +148,13 @@ export function CompararVersionesModal({
                       const style = CAMBIO_STYLES[d.cambio]
                       return (
                         <tr key={d.variable} className="hover:bg-gray-50">
-                          <td className="px-4 py-2.5">
-                            <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-teal-100 text-teal-800">
-                              {`{{${d.variable}}}`}
-                            </span>
+                          {/* El API ya manda la etiqueta legible («Canon mensual»). */}
+                          <td className="px-4 py-2.5 text-gray-900">{d.variable}</td>
+                          <td className="px-4 py-2.5 text-gray-700 max-w-[200px] truncate">
+                            {d.valor_v1 || <span className="text-gray-400">(vacío)</span>}
                           </td>
                           <td className="px-4 py-2.5 text-gray-700 max-w-[200px] truncate">
-                            {d.valor_v1 || <span className="text-gray-400">(vacio)</span>}
-                          </td>
-                          <td className="px-4 py-2.5 text-gray-700 max-w-[200px] truncate">
-                            {d.valor_v2 || <span className="text-gray-400">(vacio)</span>}
+                            {d.valor_v2 || <span className="text-gray-400">(vacío)</span>}
                           </td>
                           <td className="px-4 py-2.5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>

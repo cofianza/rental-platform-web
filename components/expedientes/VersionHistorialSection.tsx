@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconDownload, IconHistory, IconLoader } from '@/components/icons'
+import { IconDownload, IconHistory, IconLoader, IconRefresh } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoVersion } from '@/types/contrato'
@@ -28,15 +28,18 @@ export function VersionHistorialSection({
 }: VersionHistorialSectionProps) {
   const [versiones, setVersiones] = useState<IContratoVersion[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [downloadingVersion, setDownloadingVersion] = useState<number | null>(null)
 
   const fetchVersiones = useCallback(async () => {
     setIsLoading(true)
+    setLoadError(false)
     try {
       const data = await contratoService.getVersiones(contratoId)
       setVersiones(data)
     } catch {
-      // Silent fail — section is supplementary
+      // Sin esto, un fallo de red se leía como «Sin versiones anteriores».
+      setLoadError(true)
     } finally {
       setIsLoading(false)
     }
@@ -57,7 +60,7 @@ export function VersionHistorialSection({
       a.click()
       document.body.removeChild(a)
     } catch {
-      toast.error('Error al descargar la version')
+      toast.error('Error al descargar la versión')
     } finally {
       setDownloadingVersion(null)
     }
@@ -71,14 +74,27 @@ export function VersionHistorialSection({
     )
   }
 
-  if (versiones.length === 0) {
+  if (loadError || versiones.length === 0) {
     return (
       <div>
         <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
           <IconHistory size={16} className="text-gray-500" />
           Historial de Versiones
         </h3>
-        <p className="text-xs text-gray-500">Sin versiones anteriores</p>
+        {loadError ? (
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-red-600">No se pudo cargar el historial</p>
+            <button
+              onClick={fetchVersiones}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
+            >
+              <IconRefresh size={12} />
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">Sin versiones anteriores</p>
+        )}
       </div>
     )
   }
