@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import type { IEstudioListItem, IEstudioFilters, IEstudiosMeta } from '@/types/estudio'
 import { EstudioDetailModal } from '@/components/expedientes/EstudioDetailModal'
 import { estudioService } from '@/services/estudioService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { IEstudio } from '@/types/estudio'
 
 // ============================================
@@ -125,6 +126,10 @@ export function EstudiosTable({
 }: EstudiosTableProps) {
   const [selectedEstudio, setSelectedEstudio] = useState<IEstudio | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  // Gerencia también llega a /estudios, pero solo lee: el API le da 403 en
+  // soportes, re-evaluación y certificado. Mismo criterio que EstudiosSection.
+  const rol = useAuthStore((s) => s.user?.rol)
+  const canManage = rol === 'administrador' || rol === 'operador_analista'
 
   const handleRowClick = async (estudioId: string) => {
     setLoadingDetail(true)
@@ -440,6 +445,7 @@ export function EstudiosTable({
           estudio={selectedEstudio}
           isOpen={!!selectedEstudio}
           onClose={() => setSelectedEstudio(null)}
+          readOnly={!canManage}
         />
       )}
     </>

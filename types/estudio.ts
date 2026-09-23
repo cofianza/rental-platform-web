@@ -243,6 +243,8 @@ export interface IEstudioHistorialItem extends IEstudio {
 export interface IEstudioHistorial {
   total_en_cadena: number
   puede_reevaluar: boolean
+  /** Pasaron más de 15 días hábiles desde que se completó la última evaluación (Política §8). */
+  plazo_vencido?: boolean
   historial: IEstudioHistorialItem[]
 }
 

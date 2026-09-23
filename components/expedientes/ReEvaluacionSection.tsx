@@ -135,6 +135,7 @@ export function ReEvaluacionSection({
   const currentHistorialItem = historial?.historial.find((h) => h.id === estudio.id)
   const documentosSoporte = currentHistorialItem?.documentos_soporte || []
   const puedeReevaluar = historial?.puede_reevaluar ?? false
+  const plazoVencido = historial?.plazo_vencido ?? false
   const totalEnCadena = historial?.total_en_cadena ?? 1
 
   // Check if a child re-evaluation already exists
@@ -204,7 +205,9 @@ export function ReEvaluacionSection({
             Este estudio fue {estudio.resultado === 'rechazado' ? 'rechazado' : 'condicionado'}
           </p>
           <p className="text-sm text-gray-600 mt-1">
-            Puede subir documentos adicionales para solicitar una re-evaluacion.
+            {plazoVencido && !hasChildReeval
+              ? 'Venció el plazo de 15 días hábiles para re-evaluar. Para volver a evaluar al solicitante, habilita una evaluación nueva.'
+              : 'Puede subir documentos adicionales para solicitar una re-evaluacion.'}
             {totalEnCadena > 1 && ` Re-evaluacion ${totalEnCadena - 1} de ${MAX_REEVALUACIONES}.`}
           </p>
         </div>
