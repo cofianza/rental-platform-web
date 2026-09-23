@@ -9,6 +9,7 @@ import {
   IconLoader,
   IconCheck,
   IconX,
+  IconAlertTriangle,
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
@@ -20,9 +21,12 @@ import type { IContrato, IContratoInfoFirma, IContratoVerificacionIntegridad } f
 interface ContratoFirmadoSectionProps {
   contrato: IContrato
   onContratoUpdated: () => void
+  /** De dónde sale el documento firmado (la página ya lo pide para el visor):
+   *  undefined mientras carga, null si no hay ninguno. */
+  fuente?: 'manual' | 'auco' | 'combinado' | 'original' | null
 }
 
-export function ContratoFirmadoSection({ contrato, onContratoUpdated }: ContratoFirmadoSectionProps) {
+export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: ContratoFirmadoSectionProps) {
   const { user } = useAuth()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   const isAdmin = user?.rol === 'administrador'
@@ -40,7 +44,13 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
   // el contrato original + acuses de Auco en la primera descarga.
   const FIRMADO_ESTADOS = ['firmado', 'vigente', 'finalizado']
   const contratoFirmado = FIRMADO_ESTADOS.includes(contrato.estado)
-  const tieneFirmado = !!contrato.firmado_storage_key || contratoFirmado
+  const conAuco = fuente === 'auco' || fuente === 'combinado'
+  // Un cancelado que alcanzó a firmarse en Auco también muestra su documento.
+  const tieneFirmado = !!contrato.firmado_storage_key || contratoFirmado || conAuco
+  // Sin PDF con firmas (firmado en papel, o cancelado sin firmar) se puede
+  // subir el escaneado; con el de Auco no, porque la subida lo taparía.
+  const sinDocumentoFirmado = !contrato.firmado_storage_key && (fuente === 'original' || fuente === null)
+  const puedeSubir = canManage && sinDocumentoFirmado
 
   async function handleDescargar() {
     setDownloadLoading(true)
@@ -127,7 +137,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
           {/* Caso 1: Auco firmo pero aun no se ha generado el PDF combinado.
               Mostramos un banner verde con CTA para descargar. La descarga
               dispara la generacion lazy en backend y refresca la vista. */}
-          {!contrato.firmado_storage_key && contratoFirmado && (
+          {!contrato.firmado_storage_key && conAuco && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <IconCheck size={18} className="text-green-600 mt-0.5 shrink-0" />
@@ -137,6 +147,25 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
                   </p>
                   <p className="text-xs text-green-700 mt-1">
                     El documento con los acuses de firma está listo para descargar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Firmado sin documento de Auco (p. ej. "Registrar firma" de un
+              contrato en papel): la descarga entrega el original sin firmas. */}
+          {sinDocumentoFirmado && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-900">
+                    Contrato firmado sin documento de Auco (p. ej. en papel)
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    La descarga entrega el contrato generado, sin firmas.
+                    {puedeSubir && ' Sube el escaneado firmado para guardarlo aquí.'}
                   </p>
                 </div>
               </div>
@@ -234,6 +263,16 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
               Descargar
             </button>
 
+            {puedeSubir && (
+              <button
+                onClick={() => setSubirOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              >
+                <IconUpload size={14} />
+                Subir contrato firmado
+              </button>
+            )}
+
             {/* Verificar/accesos solo despues de tener el PDF combinado: sin
                 hash o sin archivo en storage estos endpoints fallarian. */}
             {isAdmin && contrato.firmado_storage_key && (
@@ -259,15 +298,15 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated }: Contrato
       ) : (
         <div className="text-center py-4">
           <p className="text-sm text-gray-500 mb-3">
-            El contrato aún no ha sido firmado
+            Este contrato no tiene documento firmado
           </p>
-          {canManage && (
+          {puedeSubir && (
             <button
               onClick={() => setSubirOpen(true)}
               className="flex items-center gap-1.5 mx-auto px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
             >
               <IconUpload size={16} />
-              Subir Contrato Firmado
+              Subir contrato firmado
             </button>
           )}
         </div>

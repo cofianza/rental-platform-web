@@ -104,6 +104,14 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => !isUploading && fileInputRef.current?.click()}
+          role="button"
+          tabIndex={isUploading ? -1 : 0}
+          aria-label="Seleccionar el PDF firmado"
+          onKeyDown={(e) => {
+            if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+            e.preventDefault()
+            if (!isUploading) fileInputRef.current?.click()
+          }}
           className={`
             border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
             ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}
