@@ -236,9 +236,8 @@ export default function RegisterInmobiliariaPage() {
       if (error instanceof ApiClientError) {
         if (error.code === 'EMAIL_ALREADY_EXISTS') {
           setServerError('Ya existe una cuenta con este email.')
-        } else if (error.code === 'NIT_ALREADY_EXISTS') {
-          setServerError('Ya existe una cuenta con este NIT.')
         } else {
+          // NIT_ALREADY_EXISTS cae aquí: el API ya dice qué hacer (pedir invitación al titular).
           setServerError(error.message)
         }
       } else {
