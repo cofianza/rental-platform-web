@@ -550,7 +550,7 @@ export default function ExpedienteDetallePage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio cancelado</h3>
                     <p className="text-sm text-red-800">
-                      El estudio fue cancelado y no continuara con el proceso.
+                      El estudio fue cancelado y no continuará con el proceso.
                     </p>
                     {expediente.motivo_cancelacion && (
                       <p className="text-sm text-red-700 mt-2">

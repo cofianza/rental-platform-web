@@ -12,7 +12,7 @@ const SUGERENCIAS_RAPIDAS = [
   'Documento ilegible o de baja calidad',
   'No coincide con el tipo de documento solicitado',
   'Documento vencido o fuera de vigencia',
-  'Informacion incompleta o datos faltantes',
+  'Información incompleta o datos faltantes',
 ]
 
 const MIN_CHARS = 10
@@ -63,7 +63,7 @@ export function RechazoModal({
 
         {/* Sugerencias rapidas */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Sugerencias rapidas:</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Sugerencias rápidas:</p>
           <div className="flex flex-wrap gap-2">
             {SUGERENCIAS_RAPIDAS.map((sugerencia) => (
               <button
@@ -84,7 +84,7 @@ export function RechazoModal({
           <textarea
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Describe el motivo del rechazo (min. 10 caracteres)..."
+            placeholder="Describe el motivo del rechazo (mín. 10 caracteres)..."
             maxLength={MAX_CHARS}
             rows={4}
             disabled={isLoading}
@@ -92,7 +92,7 @@ export function RechazoModal({
           />
           <div className="flex justify-between mt-1">
             <span className={`text-xs ${charCount < MIN_CHARS ? 'text-red-500' : 'text-gray-400'}`}>
-              {charCount < MIN_CHARS ? `Minimo ${MIN_CHARS} caracteres` : ''}
+              {charCount < MIN_CHARS ? `Mínimo ${MIN_CHARS} caracteres` : ''}
             </span>
             <span className={`text-xs ${charCount > MAX_CHARS * 0.9 ? 'text-yellow-600' : 'text-gray-400'}`}>
               {charCount}/{MAX_CHARS}

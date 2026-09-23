@@ -26,9 +26,9 @@ import type { IEstudio, IDocumentoSoporte, PropositoSoporte, IEstudioHistorial }
 // ============================================
 
 const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
-  certificacion_laboral: 'Certificacion laboral',
+  certificacion_laboral: 'Certificación laboral',
   extractos_bancarios: 'Extractos bancarios',
-  declaracion_renta: 'Declaracion de renta',
+  declaracion_renta: 'Declaración de renta',
   carta_referencia: 'Carta de referencia',
   codeudor: 'Codeudor / avalista',
   poliza: 'Póliza de arrendamiento',
@@ -165,12 +165,12 @@ export function ReEvaluacionSection({
         estudio.id,
         observaciones || undefined,
       )
-      toast.success('Re-evaluacion solicitada correctamente')
+      toast.success('Reevaluación solicitada correctamente')
       setShowConfirm(false)
       setObservaciones('')
       onReEvaluacionCreated(nuevoEstudio)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al solicitar re-evaluacion'
+      const msg = err instanceof Error ? err.message : 'Error al solicitar la reevaluación'
       toast.error(msg)
     } finally {
       setRequesting(false)
@@ -182,7 +182,7 @@ export function ReEvaluacionSection({
       window.open(doc.archivo_url, '_blank')
       return
     }
-    toast.info('URL no disponible. Recargue la pagina.')
+    toast.info('URL no disponible. Recarga la página.')
   }
 
   return (
@@ -202,13 +202,13 @@ export function ReEvaluacionSection({
         />
         <div>
           <p className={cn('text-sm font-medium', estudio.resultado === 'rechazado' ? 'text-red-800' : 'text-yellow-800')}>
-            Este estudio fue {estudio.resultado === 'rechazado' ? 'rechazado' : 'condicionado'}
+            Esta evaluación fue {estudio.resultado === 'rechazado' ? 'rechazada' : 'condicionada'}
           </p>
           <p className="text-sm text-gray-600 mt-1">
             {plazoVencido && !hasChildReeval
-              ? 'Venció el plazo de 15 días hábiles para re-evaluar. Para volver a evaluar al solicitante, habilita una evaluación nueva.'
-              : 'Puede subir documentos adicionales para solicitar una re-evaluacion.'}
-            {totalEnCadena > 1 && ` Re-evaluacion ${totalEnCadena - 1} de ${MAX_REEVALUACIONES}.`}
+              ? 'Venció el plazo de 15 días hábiles para reevaluar. Para volver a evaluar al solicitante, habilita una evaluación nueva.'
+              : 'Puedes subir documentos adicionales para solicitar una reevaluación.'}
+            {totalEnCadena > 1 && ` Reevaluación ${totalEnCadena - 1} de ${MAX_REEVALUACIONES}.`}
           </p>
         </div>
       </div>
@@ -344,11 +344,11 @@ export function ReEvaluacionSection({
             )}
           >
             <IconCheck size={16} />
-            Solicitar re-evaluacion
+            Solicitar reevaluación
           </button>
           {documentosSoporte.length === 0 && (
             <p className="text-xs text-gray-500 mt-1">
-              Debe subir al menos un documento soporte antes de solicitar re-evaluacion
+              Debes subir al menos un documento soporte antes de solicitar la reevaluación.
             </p>
           )}
         </div>
@@ -359,7 +359,7 @@ export function ReEvaluacionSection({
         <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <IconCheck size={16} className="text-blue-600" />
           <p className="text-sm text-blue-800">
-            Ya se solicito una re-evaluacion para este estudio.
+            Ya se solicitó una reevaluación.
           </p>
         </div>
       )}
@@ -369,8 +369,8 @@ export function ReEvaluacionSection({
         isOpen={showConfirm}
         onClose={() => { setShowConfirm(false); setObservaciones('') }}
         onConfirm={handleSolicitarReEvaluacion}
-        title="Solicitar re-evaluacion"
-        message={`Se creara un nuevo estudio vinculado al actual con los ${documentosSoporte.length} documento(s) soporte adjuntos. Esta accion no se puede deshacer.`}
+        title="Solicitar reevaluación"
+        message={`Se creará una nueva evaluación vinculada a la actual con los ${documentosSoporte.length} documento(s) soporte adjuntos. Esta acción no se puede deshacer.`}
         confirmLabel="Solicitar"
         isLoading={requesting}
       />

@@ -211,11 +211,11 @@ export function ReasignarEstudioModal({
       // la propiedad anterior mientras el QR ya muestra la nueva.
       if (res.certificado === 'desactualizado') {
         toast.warning(
-          'El certificado emitido quedo describiendo la propiedad anterior. Regeneralo desde el estudio antes de entregarlo.',
+          'El certificado emitido quedó describiendo la propiedad anterior. Regenéralo desde el estudio antes de entregarlo.',
           { duration: 10000 },
         )
       } else if (res.certificado === 'regenerado') {
-        toast.info('El certificado se regenero con la propiedad nueva, conservando su codigo y su vencimiento.')
+        toast.info('El certificado se regeneró con la propiedad nueva, conservando su código y su vencimiento.')
       }
       onReasignado?.()
       onClose()
@@ -235,16 +235,16 @@ export function ReasignarEstudioModal({
     <Modal isOpen={isOpen} onClose={handleClose} title="Reasignar estudio a otra propiedad" size="lg">
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          El estudio ya esta pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
+          El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
           <span className="font-medium text-gray-800">sin costo adicional</span>. Conserva su
           vigencia original — reasignarlo no la extiende. Solo se traslada dentro de la misma
-          cartera, y no si el estudio ya genero contrato o tiene una visita agendada.
+          cartera, y no si el estudio ya generó contrato o tiene una visita agendada.
         </p>
 
         {canonOrigen !== null ? (
           <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
-            Se evaluo con un canon de{' '}
-            <span className="font-semibold">{formatCurrency(canonOrigen)}</span>. Sin una evaluacion
+            Se evaluó con un canon de{' '}
+            <span className="font-semibold">{formatCurrency(canonOrigen)}</span>. Sin una evaluación
             nueva, la tolerancia llega hasta{' '}
             <span className="font-semibold">{formatCurrency(canonMaximo as number)}</span> (+
             {TOLERANCIA_PCT}%).
@@ -257,9 +257,9 @@ export function ReasignarEstudioModal({
           <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
             <span>
-              Este estudio no tiene registrado el canon con el que se evaluo, asi que no podemos
+              Este estudio no tiene registrado el canon con el que se evaluó, así que no podemos
               verificar la tolerancia de portabilidad. Es muy probable que para otra propiedad se
-              requiera una evaluacion nueva.
+              requiera una evaluación nueva.
             </span>
           </div>
         )}
@@ -344,7 +344,7 @@ export function ReasignarEstudioModal({
                     )}
                     {seleccionable && fueraDeTolerancia && (
                       <p className="mt-1 text-xs text-amber-700">
-                        Por encima de la tolerancia estimada — probablemente requiera una evaluacion
+                        Por encima de la tolerancia estimada — probablemente requiera una evaluación
                         nueva.
                       </p>
                     )}
@@ -366,7 +366,7 @@ export function ReasignarEstudioModal({
               </span>
             </div>
             <p className="mt-1 text-xs text-gray-600">
-              No se generara ningun cobro ni se descontara ningun credito, y el estudio conserva su
+              No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su
               vigencia original.
             </p>
           </div>

@@ -275,7 +275,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
       <div className="mt-8 border-t border-gray-200 pt-6">
         <div className="flex items-center gap-2 text-gray-500">
           <IconLoader size={18} className="animate-spin" />
-          <span className="text-sm">Cargando panel de revision...</span>
+          <span className="text-sm">Cargando panel de revisión...</span>
         </div>
       </div>
     )
@@ -309,7 +309,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
-          <h4 className="text-base font-semibold text-gray-900">Revision de documentos</h4>
+          <h4 className="text-base font-semibold text-gray-900">Revisión de documentos</h4>
         </div>
         <button
           onClick={fetchDocumentos}
