@@ -102,8 +102,11 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
   // Espera a que el check de expediente termine para decidir bien. Si ya hay
   // expediente activo, no abre modal (la rama "Ver mi estudio" toma control).
   // Limpia el query param con router.replace para que cerrar el modal no lo
-  // re-abra en loops de re-render.
+  // re-abra en loops de re-render. Solo la tarjeta (primary), que se ve en
+  // todos los anchos: si también abría la barra fija quedaban dos modales
+  // apilados (y en computador el oculto dejaba la página sin scroll).
   useEffect(() => {
+    if (variant !== 'primary') return
     if (!isInitialized || !isAuthenticated || !isSolicitante) return
     if (isCheckingExpediente) return
     if (expedienteActivo) return
@@ -112,6 +115,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
     setShowModal(true)
     router.replace(pathname, { scroll: false })
   }, [
+    variant,
     isInitialized,
     isAuthenticated,
     isSolicitante,
