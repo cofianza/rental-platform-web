@@ -207,7 +207,7 @@ export function AprobarCondicionadoCard({
 
                 <Opcion titulo="Sumar un co-arrendatario (en el recuadro de abajo)">
                   <p>
-                    Es la persona con quien vivirá el solicitante: se le hace su propio estudio y el analista decide con
+                    Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
                     los dos resultados. Si el co-arrendatario tiene un impedimento que no admite excepciones (por
                     ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
                   </p>

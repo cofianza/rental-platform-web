@@ -180,7 +180,7 @@ export function CoarrendatarioPropietarioCard({
           {fechaAceptacion && <InfoRow label="Aceptó el" value={fechaAceptacion} />}
         </div>
 
-        {/* Estado de la invitación + estudio */}
+        {/* Estado de la invitación + evaluación */}
         <EstadoBlock coa={coa} />
 
         {/* Invitación pendiente: permitir corregir el contacto y reenviar —
@@ -255,8 +255,8 @@ function EstadoBlock({ coa }: { coa: ICoarrendatario }) {
     },
     estudio_completado: {
       color: 'bg-gray-50 border-gray-200 text-gray-900',
-      label: 'Estudio completado',
-      mensaje: 'El estudio del co-arrendatario terminó. Ver resultado abajo.',
+      label: 'Evaluación completada',
+      mensaje: 'La evaluación del co-arrendatario terminó. Ver resultado abajo.',
     },
   }
   const c = cfg[coa.estado]
@@ -290,7 +290,7 @@ function ResultadoEstudioBlock({
     <div className={`mt-3 border rounded-md p-3 ${c.color}`}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <p className="text-sm font-semibold">Resultado del estudio: {c.label}</p>
+          <p className="text-sm font-semibold">Resultado de la evaluación: {c.label}</p>
           {estudio.score !== null && estudio.score !== undefined && (
             <p className="text-xs mt-1 opacity-90">Score: <strong>{estudio.score}</strong></p>
           )}

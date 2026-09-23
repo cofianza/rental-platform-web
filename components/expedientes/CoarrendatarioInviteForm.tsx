@@ -105,7 +105,7 @@ export function CoarrendatarioInviteForm({
             {esGestor ? (
               <>
                 El estudio quedó condicionado. Puedes invitar a la persona con quien vivirá el
-                solicitante como <strong>co-arrendatario</strong>: se hace un estudio a ambos y los
+                solicitante como <strong>co-arrendatario</strong>: se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador ni codeudor.</strong>
               </>
             ) : (

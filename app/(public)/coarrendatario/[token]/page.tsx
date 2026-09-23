@@ -162,7 +162,7 @@ export default function CoarrendatarioPublicPage() {
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
         <p className="text-sm text-gray-700">
-          {resultMsg || 'Aceptación registrada. Estamos procesando tu estudio.'}
+          {resultMsg || 'Aceptación registrada. Estamos procesando tu evaluación.'}
         </p>
         <p className="text-xs text-gray-400 mt-4">
           {view?.estado === 'estudio_completado'
@@ -315,7 +315,7 @@ export default function CoarrendatarioPublicPage() {
               disabled={procesando || !acceptTerms || !acceptData}
               className="flex-1 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
             >
-              {phase === 'aceptando' ? 'Procesando…' : 'Aceptar y autorizar estudio'}
+              {phase === 'aceptando' ? 'Procesando…' : 'Aceptar y autorizar la evaluación'}
             </button>
             <button
               onClick={() => setConfirmandoRechazo(true)}
