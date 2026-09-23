@@ -192,7 +192,10 @@ export function NotificationBell() {
       {open && (
         <div
           className={cn(
-            'absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-50',
+            // En celular se ubica respecto a la ventana, bajo el header (h-16): anclado a la
+            // campana, con avatar y botones a su derecha, se salía por la izquierda.
+            'fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96',
+            'bg-white rounded-xl shadow-lg border border-gray-200 z-50',
             'max-h-[28rem] flex flex-col',
           )}
         >
