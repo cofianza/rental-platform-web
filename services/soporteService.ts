@@ -30,9 +30,13 @@ export interface ListTicketsResponse {
   // apiClient mapea data → la lista. Mantenemos solo la lista aquí.
 }
 
+export const SOPORTE_LIMITE = 100
+
 class SoporteService {
   async listTickets(params?: { estado?: TicketEstado; prioridad?: TicketPrioridad }): Promise<TicketSoporte[]> {
-    const qs = new URLSearchParams()
+    // El máximo del API: la pantalla calcula filtros y KPIs sobre esta lista, y
+    // el API trae primero los no resueltos (con 20, los más vencidos no llegaban).
+    const qs = new URLSearchParams({ limit: String(SOPORTE_LIMITE) })
     if (params?.estado) qs.set('estado', params.estado)
     if (params?.prioridad) qs.set('prioridad', params.prioridad)
     const query = qs.toString()

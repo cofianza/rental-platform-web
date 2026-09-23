@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   soporteService,
+  SOPORTE_LIMITE,
   type TicketSoporte,
   type TicketEstado,
   type TicketPrioridad,
@@ -210,6 +211,8 @@ export function SoporteSection() {
         <Kpi
           label="Resueltos"
           value={resueltos}
+          // Con la lista llena, los resueltos más viejos quedan fuera: el conteo es de los recientes.
+          sub={tickets.length >= SOPORTE_LIMITE ? 'Los más recientes' : undefined}
           tone="green"
           Icon={IconCheckCircle}
           onClick={() => toggleEstado('resuelto')}
