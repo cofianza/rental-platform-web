@@ -136,6 +136,12 @@ export const ACTION_LABELS: Record<string, string> = {
   whatsapp_fallido: 'WhatsApp fallido',
   whatsapp_mock: 'WhatsApp simulado',
 
+  // Moras
+  mora_reportada: 'Mora reportada',
+  mora_escalada: 'Mora escalada',
+  mora_pagada: 'Mora marcada como pagada',
+  mora_cancelada: 'Mora cancelada',
+
   // Equipo de la inmobiliaria
   miembro_invitado: 'Miembro invitado',
   miembro_revocado: 'Miembro revocado',
@@ -173,6 +179,7 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['plantilla_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['firma_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['pago_', { bg: 'bg-green-100', text: 'text-green-800' }],
+  ['mora_', { bg: 'bg-orange-100', text: 'text-orange-800' }],
   ['inmueble_', { bg: 'bg-cyan-100', text: 'text-cyan-800' }],
   ['foto_', { bg: 'bg-cyan-100', text: 'text-cyan-800' }],
   ['solicitante_', { bg: 'bg-cyan-100', text: 'text-cyan-800' }],
@@ -203,6 +210,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   pago: 'Pago',
   whatsapp: 'WhatsApp',
   inmobiliaria_miembro: 'Miembro de inmobiliaria',
+  mora: 'Mora',
 }
 
 function toOption(value: string): { value: string; label: string } {
@@ -334,6 +342,10 @@ export const ACTION_GROUPS: Array<{
       'pago_refunded',
       'pago_cancelled',
     ].map(toOption),
+  },
+  {
+    label: 'Moras',
+    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada'].map(toOption),
   },
   {
     label: 'WhatsApp',

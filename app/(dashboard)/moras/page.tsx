@@ -835,6 +835,11 @@ function MoraDetalleModal({
                     mora.mensajes.map((msg) => {
                       const esSistema = msg.autor_tipo === 'sistema'
                       const esInquilino = msg.autor_tipo === 'inquilino'
+                      // El nombre de quien escribió o hizo la acción: el tipo
+                      // crudo decía «PROPIETARIO» también de la inmobiliaria.
+                      const autor = msg.autor
+                        ? `${msg.autor.nombre ?? ''} ${msg.autor.apellido ?? ''}`.trim()
+                        : ''
                       return (
                         <div
                           key={msg.id}
@@ -851,7 +856,7 @@ function MoraDetalleModal({
                           >
                             {!esSistema && (
                               <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">
-                                {msg.autor_tipo}
+                                {autor || msg.autor_tipo}
                               </p>
                             )}
                             <p>{msg.mensaje}</p>
@@ -862,6 +867,7 @@ function MoraDetalleModal({
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
+                              {esSistema && autor && ` · ${autor}`}
                             </p>
                           </div>
                         </div>

@@ -43,6 +43,8 @@ export interface IMoraMensaje {
   mora_id: string
   autor_tipo: 'sistema' | 'asesor' | 'inquilino' | 'propietario'
   autor_id: string | null
+  /** Quién escribió o hizo la acción (también en los mensajes de sistema). */
+  autor?: { nombre: string | null; apellido: string | null } | null
   mensaje: string
   via_whatsapp: boolean
   whatsapp_message_id: string | null
