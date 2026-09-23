@@ -682,6 +682,13 @@ export default function ExpedienteDetallePage() {
                   // primero que queda desactualizado).
                   inmuebleActualId={expediente.inmueble?.id}
                   onReasignado={fetchExpediente}
+                  // Mismos guards de la API (reasignacion.service): cerrado o
+                  // rechazado, o titular de la reserva del inmueble (su contrato).
+                  reasignable={
+                    expediente.estado !== 'cerrado' &&
+                    expediente.estado !== 'rechazado' &&
+                    expediente.inmueble?.reservado_por_expediente_id !== id
+                  }
                   reconsultaEnGuia={esCondicionado && puedeEditar}
                 />
 

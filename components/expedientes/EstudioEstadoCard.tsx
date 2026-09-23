@@ -54,6 +54,11 @@ interface EstudioEstadoCardProps {
   /** Se llama tras reasignar, para que el expediente se recargue. */
   onReasignado?: () => void
   /**
+   * false = la API no lo va a trasladar (estudio cerrado o rechazado, o ya
+   * reservó el inmueble para su contrato): no se ofrece el botón.
+   */
+  reasignable?: boolean
+  /**
    * La consulta al otro buró del titular condicionado se ofrece en la guía
    * "Estudio condicionado: qué sigue" (AprobarCondicionadoCard): aquí se omite
    * para no tener el mismo formulario dos veces en la pantalla.
@@ -240,6 +245,7 @@ export function EstudioEstadoCard({
   solicitante,
   inmuebleActualId,
   onReasignado,
+  reasignable = true,
   reconsultaEnGuia,
 }: EstudioEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -304,10 +310,10 @@ export function EstudioEstadoCard({
           onRetried={fetchEstudios}
           ocultarReconsulta={reconsultaEnGuia}
           inmuebleActualId={inmuebleActualId}
-          onReasignado={() => {
+          onReasignado={reasignable ? () => {
             fetchEstudios()
             onReasignado?.()
-          }}
+          } : undefined}
         />
       )}
       {estudioCoa && (

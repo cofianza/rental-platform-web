@@ -26,9 +26,10 @@
  * La UNICA excepcion es la CARTERA, y no es una adivinanza sino un hecho: el
  * traslado no cruza de agencia ni de propietario (mover el expediente a la
  * propiedad de otra cartera lo mudaria de dueño, con los datos del solicitante
- * y el resultado del buro dentro). Para admin y operador esta lista trae el
- * inventario COMPLETO sin decir de quien es cada propiedad, asi que elegir mal
- * era un clic indistinguible: esas filas se marcan y se deshabilitan.
+ * y el resultado del buro dentro). Por eso la lista se pide filtrada por la
+ * cartera del inmueble actual (admin y operador recibian el inventario de toda
+ * la plataforma) y con buscador; las filas de otra cartera que aun lleguen se
+ * marcan y se deshabilitan.
  */
 
 'use client'
@@ -92,6 +93,10 @@ export function ReasignarEstudioModal({
   const [seleccionado, setSeleccionado] = useState<IInmueble | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Buscador: `busqueda` es lo que se escribe; `search`, lo que se pide (con
+  // pausa, para no disparar una consulta por tecla).
+  const [busqueda, setBusqueda] = useState('')
+  const [search, setSearch] = useState('')
   // Cartera del inmueble ACTUAL. La API solo traslada dentro de la misma
   // cartera (mover el expediente a la propiedad de otra agencia lo mudaria de
   // dueño, con los datos del solicitante y el resultado del buro dentro), y
@@ -113,31 +118,33 @@ export function ReasignarEstudioModal({
     setError(null)
     try {
       // El backend scopea por rol: propietario/inmobiliaria solo reciben su
-      // cartera. Para admin/operador, en cambio, llega TODO el inventario, y
-      // por eso hace falta saber de que cartera es el inmueble actual: es el
-      // unico dato con el que esta pantalla puede marcar los destinos que la
-      // API va a negar (§4.3 no cruza carteras).
-      const [res, actual] = await Promise.all([
-        inmuebleService.getInmuebles({ limit: INMUEBLES_LIMIT }),
-        inmuebleActualId
-          ? inmuebleService.getInmuebleById(inmuebleActualId).catch(() => null)
-          : Promise.resolve(null),
-      ])
+      // cartera. Para admin/operador llegaba TODO el inventario (los 100 mas
+      // recientes de la plataforma), asi que se pide solo la cartera del
+      // inmueble actual: la organizacion, o el propietario si no hay
+      // organizacion (§4.3 no cruza carteras).
+      const actual = inmuebleActualId
+        ? await inmuebleService.getInmuebleById(inmuebleActualId).catch(() => null)
+        : null
+      const cartera = actual
+        ? { inmobiliariaId: actual.inmobiliaria_id ?? null, propietarioId: actual.propietario_id ?? null }
+        : null
+      const res = await inmuebleService.getInmuebles({
+        limit: INMUEBLES_LIMIT,
+        ...(search ? { search } : {}),
+        ...(cartera?.inmobiliariaId
+          ? { inmobiliaria_id: cartera.inmobiliariaId }
+          : cartera?.propietarioId
+            ? { propietario_id: cartera.propietarioId }
+            : {}),
+      })
       setInmuebles(res.data.filter((i) => i.id !== inmuebleActualId))
-      setCarteraActual(
-        actual
-          ? {
-              inmobiliariaId: actual.inmobiliaria_id ?? null,
-              propietarioId: actual.propietario_id ?? null,
-            }
-          : null,
-      )
+      setCarteraActual(cartera)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar las propiedades')
     } finally {
       setIsLoading(false)
     }
-  }, [inmuebleActualId])
+  }, [inmuebleActualId, search])
 
   useEffect(() => {
     if (!isOpen) return
@@ -146,6 +153,11 @@ export function ReasignarEstudioModal({
     setCarteraActual(null)
     cargarInmuebles()
   }, [isOpen, cargarInmuebles])
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(busqueda.trim()), 300)
+    return () => clearTimeout(t)
+  }, [busqueda])
 
   // Misma regla que el backend: misma organizacion, y cuando no hay
   // organizacion (cartera de un propietario individual), mismo propietario.
@@ -258,6 +270,21 @@ export function ReasignarEstudioModal({
           </div>
         )}
 
+        <div>
+          <label htmlFor="reasignar-estudio-busqueda" className="sr-only">
+            Buscar propiedad
+          </label>
+          <input
+            id="reasignar-estudio-busqueda"
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por código, dirección o ciudad"
+            disabled={isSaving}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          />
+        </div>
+
         <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
           {isLoading && (
             <div className="flex items-center justify-center gap-2 p-6 text-sm text-gray-500">
@@ -268,7 +295,9 @@ export function ReasignarEstudioModal({
 
           {!isLoading && ordenados.length === 0 && (
             <div className="p-6 text-center text-sm text-gray-500">
-              No hay otras propiedades disponibles para reasignar este estudio.
+              {search
+                ? 'Ninguna propiedad de esta cartera coincide con la búsqueda.'
+                : 'No hay otras propiedades disponibles para reasignar este estudio.'}
             </div>
           )}
 

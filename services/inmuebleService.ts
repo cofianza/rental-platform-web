@@ -44,6 +44,7 @@ function buildQueryString(filters: Partial<IInmuebleFilters>): string {
     params.append('estrato', filters.estrato.toString())
   }
   if (filters.propietario_id) params.append('propietario_id', filters.propietario_id)
+  if (filters.inmobiliaria_id) params.append('inmobiliaria_id', filters.inmobiliaria_id)
   if (filters.visible_vitrina !== '' && filters.visible_vitrina !== undefined) {
     params.append('visible_vitrina', filters.visible_vitrina.toString())
   }

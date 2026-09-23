@@ -170,6 +170,8 @@ export interface IInmuebleFilters {
   estado: EstadoInmueble | ''
   estrato: number | ''
   propietario_id: string
+  /** Cartera de una organización (reasignar estudio §4.3). */
+  inmobiliaria_id?: string
   visible_vitrina: boolean | ''
   // Rangos de arriendo
   rent_min: number | ''
