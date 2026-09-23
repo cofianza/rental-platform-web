@@ -24,6 +24,8 @@
 
 'use client'
 
+import { IconAlertTriangle, IconInfo } from '@/components/icons'
+
 interface ExpedienteRechazadoBannerProps {
   motivo?: string | null
   /** true cuando quien mira es el propio solicitante (rol 'solicitante'). */
@@ -57,9 +59,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
       <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0">
-            <svg className="h-7 w-7 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconInfo size={28} className="text-slate-500" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-slate-900 mb-0.5">No aprobable por ahora</h3>
@@ -82,9 +82,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
     <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
-          <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <IconAlertTriangle size={28} className="text-red-600" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio no aprobable</h3>

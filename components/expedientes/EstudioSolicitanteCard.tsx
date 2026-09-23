@@ -666,9 +666,7 @@ export function EstudioSolicitanteCard({
       return (
         <div className="border border-slate-200 bg-slate-50 rounded-lg p-5">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-slate-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconInfo size={20} className="text-slate-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-slate-900 mb-0.5">No aprobable por ahora</p>
               <p className="text-sm text-slate-700">
