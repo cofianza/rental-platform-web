@@ -2,8 +2,9 @@
  * Centro de Control — sección "Ingresos".
  *
  * Consume GET /api/v1/dashboard/admin/ingresos. El ingreso de Cofianza es la
- * tarifa fija de afianzamiento por contrato activo (NO un % del canon), y la
- * garantía está exenta de IVA — por eso se comunica explícitamente.
+ * tarifa mensual de cada contrato activo (el % de su estudio sobre su canon) y
+ * causa IVA (Adenda 1 de contratos §1.1). Es lo causado, no lo recaudado: el
+ * recaudo de la tarifa lo hace el arrendador, fuera de la plataforma.
  */
 
 'use client'
@@ -56,7 +57,7 @@ export function IngresosSection() {
     <div className="font-display">
       <SeccionHeader
         title={`Ingresos · ${periodoActual()}`}
-        subtitle="El ingreso es la tarifa fija de afianzamiento por contrato activo (NO un % del canon)."
+        subtitle="La tarifa mensual de cada contrato activo (el % de su estudio sobre su canon), más IVA. Es lo causado del mes, no lo recaudado."
         right={
           <Link
             href="/facturacion"
@@ -84,9 +85,9 @@ export function IngresosSection() {
             <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-coral-50 text-coral-600">
               <IconInfo size={14} />
             </span>
-            <Chip tone="orange">IVA garantía {data.ivaGarantiaPorcentaje}%</Chip>
+            <Chip tone="orange">IVA de la tarifa {data.ivaGarantiaPorcentaje}%</Chip>
             <span className="text-[11px] text-ink-500">
-              IVA recaudado: <span className="font-semibold text-ink-700">{money(data.totalIva)}</span>
+              IVA causado: <span className="font-semibold text-ink-700">{money(data.totalIva)}</span>
             </span>
           </div>
         ))}
@@ -107,9 +108,9 @@ export function IngresosSection() {
           Icon={IconBarChart3}
         />
         <Kpi
-          label="Tarifa por contrato"
+          label="Tarifa promedio"
           value={money(data?.valorAfianzamientoMensual)}
-          sub={`× ${contratosActivos} contratos activos`}
+          sub={`por contrato · ${contratosActivos} activos`}
           tone="gray"
           Icon={IconFileText}
         />

@@ -201,7 +201,7 @@ export function ResumenSection() {
 
   if (!data) return null
 
-  const { kpis, histSiniestralidad, contratosPorVencer, contratosZonaRiesgo, moraActiva, actividadReciente, meta } = data
+  const { kpis, config, histSiniestralidad, contratosPorVencer, contratosZonaRiesgo, moraActiva, actividadReciente, meta } = data
   const noData = new Set(meta.metricasNoDisponibles)
 
   const fechaActual = new Date().toLocaleString('es-CO', { month: 'long', year: 'numeric' })
@@ -372,7 +372,7 @@ export function ResumenSection() {
           tone="green"
           label="Ingresos fianzas"
           value={money(kpis.ingresosFianzas)}
-          sub={kpis.ivaRecaudado > 0 ? `+ ${money(kpis.ivaRecaudado)} IVA` : 'garantía exenta de IVA'}
+          sub={config.ivaGarantiaPorcentaje > 0 ? `+ ${money(kpis.ivaRecaudado)} IVA` : 'tarifa exenta de IVA'}
           onClick={goIngresos}
         />
         <Kpi

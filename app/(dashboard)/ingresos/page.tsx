@@ -1,7 +1,7 @@
 /**
  * /ingresos — Reporte de ingresos por afianzamiento (admin, solo lectura).
- * Ingreso = tarifa de afianzamiento × contratos activos. IVA según concepto
- * garantía (hoy exento). Para facturación electrónica ir a /facturacion.
+ * Ingreso = la tarifa mensual de cada contrato activo, más IVA (TARIFA_IVA).
+ * Para facturación electrónica ir a /facturacion.
  */
 
 'use client'

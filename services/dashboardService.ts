@@ -56,9 +56,9 @@ export interface AdminOverviewKpis {
 }
 
 export interface AdminOverviewConfig {
-  // Tarifa plana mensual de afianzamiento por contrato (COP).
+  // Promedio de la tarifa mensual por contrato activo (COP, sin IVA): cada contrato tiene la suya.
   valorAfianzamientoMensual: number
-  // IVA de la garantía/fianza (hoy 0 = exento).
+  // TARIFA_IVA: la tarifa de la fianza causa IVA (Adenda 1 de contratos).
   ivaGarantiaPorcentaje: number
 }
 
