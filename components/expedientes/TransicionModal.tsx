@@ -125,7 +125,7 @@ export function TransicionModal({
       estadoActual === 'condicionado' ? ' y al prospecto, con su derecho de apelación' : ''
     }. Desde "rechazado" el estudio solo puede cerrarse: no hay vuelta atrás.`,
     cerrado:
-      'El estudio queda archivado y sale del flujo. No se puede reabrir.',
+      'El estudio queda archivado y sale del flujo. Se cancelan los contratos que aún no se hayan firmado y se libera la reserva del inmueble. No se puede reabrir.',
   }
 
   return (
