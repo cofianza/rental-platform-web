@@ -186,6 +186,7 @@ interface FormData {
   propiedad_horizontal: 'auto' | 'si' | 'no'
   cuarto_util: boolean
   ubicacion_detallada: string
+  matricula_inmobiliaria: string
 }
 
 interface FormErrors {
@@ -233,6 +234,7 @@ const initialFormData: FormData = {
   propiedad_horizontal: 'auto',
   cuarto_util: false,
   ubicacion_detallada: '',
+  matricula_inmobiliaria: '',
 }
 
 // Etiquetas para el aviso de 'falta X' (antes: 'completa todos los campos requeridos' sin decir cual).
@@ -351,6 +353,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           : 'auto',
         cuarto_util: Boolean(inmueble.cuarto_util),
         ubicacion_detallada: inmueble.ubicacion_detallada || '',
+        matricula_inmobiliaria: inmueble.matricula_inmobiliaria || '',
       })
 
       // Cargar datos del propietario si existen
@@ -474,6 +477,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
             : formData.propiedad_horizontal === 'si',
           cuarto_util: formData.cuarto_util,
           ubicacion_detallada: formData.ubicacion_detallada || null,
+          matricula_inmobiliaria: formData.matricula_inmobiliaria.trim() || null,
         }
 
         const newInmueble = await inmuebleService.createInmueble(createData)
@@ -536,6 +540,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
             : formData.propiedad_horizontal === 'si',
           cuarto_util: formData.cuarto_util,
           ubicacion_detallada: formData.ubicacion_detallada || null,
+          matricula_inmobiliaria: formData.matricula_inmobiliaria.trim() || null,
         }
 
         await inmuebleService.updateInmueble(inmueble.id, updateData)
@@ -1235,6 +1240,24 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               <label htmlFor="cuarto_util" className="ml-2 text-sm text-gray-700">
                 El inmueble incluye <strong>cuarto útil</strong>
               </label>
+            </div>
+
+            {/* Matrícula inmobiliaria */}
+            <div>
+              <label htmlFor="matricula_inmobiliaria" className="block text-sm font-medium text-gray-700 mb-1">
+                Matrícula inmobiliaria (opcional)
+                <FieldTooltip text="El número del folio de matrícula del certificado de tradición y libertad. Si lo dejas vacío, el contrato no lo menciona." />
+              </label>
+              <input
+                type="text"
+                id="matricula_inmobiliaria"
+                value={formData.matricula_inmobiliaria}
+                onChange={(e) => handleChange('matricula_inmobiliaria', e.target.value)}
+                disabled={isSubmitting}
+                maxLength={40}
+                placeholder="Ej. 001-1234567"
+                className={inputClasses(false)}
+              />
             </div>
 
             {/* Ubicación detallada */}

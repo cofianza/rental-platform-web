@@ -91,6 +91,7 @@ export interface IInmueble {
   propiedad_horizontal?: boolean | null
   cuarto_util?: boolean | null
   ubicacion_detallada?: string | null
+  matricula_inmobiliaria?: string | null
 }
 
 // Formulario de creación
@@ -126,6 +127,7 @@ export interface IInmuebleCreateData {
   propiedad_horizontal?: boolean | null
   cuarto_util?: boolean
   ubicacion_detallada?: string | null
+  matricula_inmobiliaria?: string | null
 }
 
 // Formulario de edición (todos opcionales)
@@ -160,6 +162,7 @@ export interface IInmuebleUpdateData {
   propiedad_horizontal?: boolean | null
   cuarto_util?: boolean | null
   ubicacion_detallada?: string | null
+  matricula_inmobiliaria?: string | null
 }
 
 // Filtros de listado
