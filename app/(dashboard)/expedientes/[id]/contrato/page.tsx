@@ -528,12 +528,15 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         }
       />
       {banner}
-      {/* Adenda 1 contratos, respuesta 15: la reserva vence a los días hábiles del parámetro. */}
-      <Aviso>
-        El inmueble está reservado hasta el {contrato.reservadoHasta.split('-').reverse().join('/')}. Si el contrato no se
-        envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenaste se conserva para
-        cuando lo vuelvas a iniciar.
-      </Aviso>
+      {/* Adenda 1 contratos, respuesta 15: la reserva vence a los días hábiles del parámetro.
+          Condicional: un API anterior (despliegue a medias) no trae la fecha. */}
+      {contrato.reservadoHasta && (
+        <Aviso>
+          El inmueble está reservado hasta el {contrato.reservadoHasta.split('-').reverse().join('/')}. Si el contrato no
+          se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenaste se conserva para
+          cuando lo vuelvas a iniciar.
+        </Aviso>
+      )}
 
       <BloqueosContrato
         bloqueos={bloqueosArriba}
