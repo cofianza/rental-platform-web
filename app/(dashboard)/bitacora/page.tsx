@@ -29,11 +29,11 @@ function BitacoraContent() {
   if (!isAdmin) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Bitacora" subtitle="Registro de actividad del sistema" />
+        <PageHeader title="Bitácora" subtitle="Registro de actividad del sistema" />
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <div className="text-red-600 mb-2">Acceso Denegado</div>
           <p className="text-gray-500">
-            Solo los administradores pueden acceder a esta seccion.
+            Solo los administradores pueden acceder a esta sección.
           </p>
         </div>
       </div>
@@ -43,7 +43,7 @@ function BitacoraContent() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Bitacora"
+        title="Bitácora"
         subtitle={meta ? `${meta.total} registros de actividad` : 'Cargando...'}
       />
 
@@ -79,7 +79,7 @@ function BitacoraContent() {
 function LoadingFallback() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Bitacora" subtitle="Cargando..." />
+      <PageHeader title="Bitácora" subtitle="Cargando..." />
       <div className="flex items-center justify-center h-64">
         <IconLoader size={32} className="text-primary-600 animate-spin" />
       </div>

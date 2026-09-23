@@ -260,7 +260,7 @@ export default function AprobacionExpedientesPage() {
             {tasaGlobal != null ? `${tasaGlobal.toFixed(1)}%` : 'N/A'}
           </p>
           <p className="text-sm mt-1 opacity-80">
-            Tasa de aprobacion global del periodo
+            Tasa de aprobación global del periodo
           </p>
         </div>
       )}

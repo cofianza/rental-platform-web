@@ -136,7 +136,7 @@ export default function DashboardPage() {
     if (estadoResult.status === 'fulfilled') {
       setPorEstado(estadoResult.value)
     } else {
-      errors.chart = 'Error al cargar grafica'
+      errors.chart = 'Error al cargar la gráfica'
     }
 
     if (pendientesResult.status === 'fulfilled') {
@@ -274,14 +274,14 @@ export default function DashboardPage() {
             accentColor="bg-primary-600"
           />
           <KPICard
-            title="Tasa de aprobacion"
+            title="Tasa de aprobación"
             value={`${summary.tasaAprobacion}%`}
             icon={IconCheck}
             accentColor="bg-green-600"
           />
           <KPICard
             title="Tiempo promedio"
-            value={`${summary.tiempoPromedioResolucionDias} dias`}
+            value={`${summary.tiempoPromedioResolucionDias} días`}
             icon={IconClock}
             accentColor="bg-amber-600"
           />
