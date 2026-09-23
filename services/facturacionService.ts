@@ -42,8 +42,13 @@ export interface IDatosFiscalesPagoFactura {
 // ============================================
 
 export interface IPagoPendienteFacturar {
-  pago_id: string
-  expediente_id: string
+  /** null en una compra de paquete de créditos (ver compra_id). */
+  pago_id: string | null
+  /** Compra de paquete de créditos (solo la ven admin/operador); null en un pago. */
+  compra_id: string | null
+  /** En una compra: la organización que compró. */
+  cliente_nombre: string | null
+  expediente_id: string | null
   expediente_numero: string
   concepto: string
   monto: number

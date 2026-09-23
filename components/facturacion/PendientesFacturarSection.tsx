@@ -5,7 +5,8 @@
  *
  * Para el solicitante: solo ve sus propios pagos (filtrado backend).
  * Para inmobiliaria/propietario: pagos de expedientes asociados.
- * Para admin/operador: todo el universo.
+ * Para admin/operador: todo el universo, incluidas las compras de paquetes
+ * de créditos (se facturan a la inmobiliaria que compró).
  *
  * Si los datos fiscales del solicitante estan incompletos, la emision
  * fallara con CLIENTE_DATOS_INCOMPLETOS — mostramos un toast con el
@@ -18,6 +19,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { facturacionService, type IPagoPendienteFacturar } from '@/services/facturacionService'
+import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconLoader, IconCheck, IconAlertTriangle, IconRefresh } from '@/components/icons'
 
@@ -54,19 +56,25 @@ export function PendientesFacturarSection({
   useEffect(() => { fetchPendientes() }, [fetchPendientes])
 
   const handleFacturar = async (pago: IPagoPendienteFacturar) => {
-    setEmitiendo(pago.pago_id)
+    const id = itemId(pago)
+    setEmitiendo(id)
     try {
-      await facturacionService.facturarPago(pago.pago_id)
+      if (pago.compra_id) await creditosEstudiosService.facturarCompra(pago.compra_id)
+      else await facturacionService.facturarPago(id)
       toast.success('Factura emitida correctamente')
       onFacturaEmitida?.()
       // Quitar el pago de la lista; el item ya esta facturado.
-      setItems((prev) => prev.filter((p) => p.pago_id !== pago.pago_id))
+      setItems((prev) => prev.filter((p) => itemId(p) !== id))
     } catch (err) {
       // El backend devuelve CLIENTE_DATOS_INCOMPLETOS con details.faltantes
       // cuando faltan campos del solicitante. Detectamos ese caso para
       // ofrecer la accion correcta al usuario.
       const errObj = err as { code?: string; message?: string; details?: { faltantes?: string[] } }
-      if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS') {
+      if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS' && pago.compra_id) {
+        // Los datos son de la inmobiliaria que compró, no los de Cofianza.
+        const faltantes = errObj.details?.faltantes?.join(', ') ?? 'algunos campos'
+        toast.error(`Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. Debe completarlos en Configuración › Datos para contrato.`)
+      } else if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS') {
         const faltantes = errObj.details?.faltantes?.join(', ') ?? 'algunos campos'
         toast.error(`Faltan datos fiscales: ${faltantes}. Completa tus datos para continuar.`)
         onDatosFiscalesIncompletos?.()
@@ -126,17 +134,21 @@ export function PendientesFacturarSection({
 
       <div className="divide-y divide-gray-100">
         {items.map((pago) => {
-          const isEmitiendo = emitiendo === pago.pago_id
+          const isEmitiendo = emitiendo === itemId(pago)
           return (
-            <div key={pago.pago_id} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+            <div key={itemId(pago)} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-gray-900">
                     {inferConceptoLabel(pago.concepto)}
                   </span>
-                  <span className="font-mono text-xs text-primary-700">
-                    {pago.expediente_numero || '—'}
-                  </span>
+                  {pago.compra_id ? (
+                    <span className="text-xs text-gray-600">{pago.cliente_nombre || '—'}</span>
+                  ) : (
+                    <span className="font-mono text-xs text-primary-700">
+                      {pago.expediente_numero || '—'}
+                    </span>
+                  )}
                   {pago.factura_estado === 'fallida' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
                       <IconAlertTriangle size={11} />
@@ -184,6 +196,11 @@ export function PendientesFacturarSection({
       </div>
     </div>
   )
+}
+
+// Un pago o una compra de créditos: uno de los dos ids viene siempre.
+function itemId(p: IPagoPendienteFacturar): string {
+  return (p.pago_id ?? p.compra_id)!
 }
 
 // Labels mas legibles que el slug del concepto. Si aparece un concepto nuevo
