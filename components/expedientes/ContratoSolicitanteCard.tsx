@@ -48,6 +48,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [solicitudId, setSolicitudId] = useState<string | null>(null)
+  // Multi-parte (un sobre para todos): la API no deja cambiar el correo del
+  // firmante, así que "Reenviar a otro correo" siempre fallaba.
+  const [esMultiparte, setEsMultiparte] = useState(false)
   const [showResendForm, setShowResendForm] = useState(false)
   const [resendEmail, setResendEmail] = useState('')
   const [resending, setResending] = useState(false)
@@ -92,6 +95,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
   useEffect(() => {
     if (contrato?.estado !== 'pendiente_firma' || contrato.destinacion) {
       setSolicitudId(null)
+      setEsMultiparte(false)
       return
     }
     firmaService
@@ -103,6 +107,10 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         setSolicitudId(activa?.id ?? null)
       })
       .catch(() => setSolicitudId(null))
+    firmaService
+      .listarFirmantes(contrato.id)
+      .then(({ firmantes }) => setEsMultiparte(firmantes.length > 0))
+      .catch(() => setEsMultiparte(false))
   }, [contrato])
 
   const handleResend = async (toAlternativeEmail: boolean) => {
@@ -274,7 +282,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                 {/* "Auco" es el proveedor de firma: el arrendatario no sabe
                     quién es y leerlo aquí solo genera desconfianza. */}
                 <p className="text-xs text-gray-500">
-                  ¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.
+                  {esMultiparte
+                    ? '¿No te llegó el WhatsApp de firma? Pídelo de nuevo. Si tu número o correo cambió, pide a la inmobiliaria o al propietario que lo actualice.'
+                    : '¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.'}
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   <button
@@ -284,14 +294,18 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                   >
                     {resending ? 'Reenviando…' : 'Reenviar WhatsApp / correo'}
                   </button>
-                  <span className="self-center text-xs text-gray-300">·</span>
-                  <button
-                    onClick={() => setShowResendForm(true)}
-                    disabled={resending || !solicitudId}
-                    className="inline-flex min-h-11 items-center text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Reenviar a otro correo
-                  </button>
+                  {!esMultiparte && (
+                    <>
+                      <span className="self-center text-xs text-gray-300">·</span>
+                      <button
+                        onClick={() => setShowResendForm(true)}
+                        disabled={resending || !solicitudId}
+                        className="inline-flex min-h-11 items-center text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Reenviar a otro correo
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
