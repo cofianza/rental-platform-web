@@ -128,12 +128,14 @@ interface EstudiosSectionProps {
     numero_documento?: string | null
     email?: string | null
   } | null
-  /** Refresca el expediente padre cuando el email del solicitante se corrigió
-   *  desde el modal de enviar enlace (evita que el prop quede desactualizado). */
-  onContactoActualizado?: () => void
+  /** Refresca el expediente padre tras cualquier acción sobre una evaluación
+   *  (solicitar, cancelar, reintentar, registrar resultado, enviar enlace): el
+   *  Resumen queda montado aunque esté oculto y sin esto mostraba lo anterior.
+   *  Esta lista se vuelve a pedir sola al subir `version`. */
+  onEstudioActualizado?: () => void
 }
 
-export function EstudiosSection({ expedienteId, solicitante, onContactoActualizado }: EstudiosSectionProps) {
+export function EstudiosSection({ expedienteId, solicitante, onEstudioActualizado }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const user = useAuthStore((s) => s.user)
@@ -182,6 +184,10 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
     fetchEstudios()
   }, [fetchEstudios, version])
 
+  // Tras una acción: con padre, recarga el estudio (y esta lista con él);
+  // sin padre, solo la lista.
+  const trasCambio = () => (onEstudioActualizado ? onEstudioActualizado() : fetchEstudios())
+
   // ============================================
   // Actions
   // ============================================
@@ -194,7 +200,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
     try {
       await estudioService.createEstudio(expedienteId, data)
       toast.success('Evaluación solicitada exitosamente')
-      await fetchEstudios()
+      trasCambio()
       return true
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo solicitar la evaluación.'
@@ -212,7 +218,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
       await estudioService.cancelEstudio(cancelTarget.id)
       toast.success('Evaluación cancelada')
       setCancelTarget(null)
-      await fetchEstudios()
+      trasCambio()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo cancelar la evaluación.'
       toast.error(msg)
@@ -240,10 +246,8 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
       )
       toast.success(`Enlace enviado a ${res.email_destino}`)
       setSendLinkTarget(null)
-      await fetchEstudios()
-      // Si se corrigió el email, refrescar el expediente padre para que el
-      // prop `solicitante.email` no quede desactualizado.
-      if (conOverride) onContactoActualizado?.()
+      // También refresca `solicitante.email` si se corrigió.
+      trasCambio()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar enlace'
       toast.error(msg)
@@ -511,7 +515,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
                       expedienteId={expedienteId}
                       esReconsulta={esCondicionadoSinInfo(estudio)}
                       esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
-                      onRetried={fetchEstudios}
+                      onRetried={trasCambio}
                     />
                   </div>
                 )}
@@ -544,7 +548,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
         onSuccess={() => {
           toast.success('Resultado registrado exitosamente')
           setResultadoTarget(null)
-          fetchEstudios()
+          trasCambio()
         }}
       />
 

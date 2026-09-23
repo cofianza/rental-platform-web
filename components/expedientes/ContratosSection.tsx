@@ -30,9 +30,10 @@ interface ContratosSectionProps {
   expedienteId: string
   /** Estado del expediente — el contrato solo se genera tras la aprobación. */
   expedienteEstado?: string
-  /** Se dispara cuando un contrato cambia de forma relevante (p. ej. al firmar
-   *  todas las partes), para que el padre re-consulte el EXPEDIENTE: su estado
-   *  puede pasar a 'cerrado' y el stepper avanzar a "Listo" sin refresco manual. */
+  /** Se dispara cuando un contrato cambia (se genera, se regenera, se envía a
+   *  firma, cambia de estado o firman todas las partes), para que el padre
+   *  re-consulte el EXPEDIENTE: el Resumen (montado aunque esté oculto) y el
+   *  stepper leen los contratos, y el estado puede pasar a 'cerrado'. */
   onContratoActualizado?: () => void
   /** Contratos V3: el contrato se crea y edita en el asistente
    *  (/expedientes/:id/contrato), no con GenerarContratoModal. */
@@ -164,6 +165,7 @@ export function ContratosSection({
   function handleGenerated() {
     setGenerarOpen(false)
     fetchContratos()
+    onContratoActualizado?.()
   }
 
   // Envío efectivo a firma (Auco). Propaga errores; los callers muestran el toast.
@@ -171,6 +173,7 @@ export function ContratosSection({
     const res = await contratoService.enviarAFirma(contrato.id)
     toast.success(res.message || 'Contrato enviado a firma')
     await fetchContratos()
+    onContratoActualizado?.()
     setFirmaContratoId(contrato.id) // mostrar el progreso de firmas
   }
 
@@ -545,7 +548,7 @@ export function ContratosSection({
           duracion_meses: regenerarTarget.duracion_meses,
           valor_arriendo: regenerarTarget.valor_arriendo,
         } : null}
-        onRegenerated={() => { setRegenerarTarget(null); fetchContratos() }}
+        onRegenerated={() => { setRegenerarTarget(null); fetchContratos(); onContratoActualizado?.() }}
       />
 
       {/* Pre-chequeo de firmantes antes de enviar a firma (4.3) */}

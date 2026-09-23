@@ -242,7 +242,8 @@ export default function ExpedienteDetallePage() {
   // onAllSigned ya hizo). Esperamos ~2.5s y re-consultamos el expediente UNA vez
   // para que el stepper avance a "Listo" sin que el usuario refresque. Se dispara
   // una sola vez (onAllSigned está guardado en FirmantesContratoSection), así que
-  // no hay loop de refetch.
+  // no hay loop de refetch. Generar, regenerar, enviar a firma y cambiar de
+  // estado también lo llaman: el Resumen oculto se refresca con esta carga.
   const handleContratoActualizado = useCallback(() => {
     setTimeout(() => { fetchExpediente() }, 2500)
   }, [fetchExpediente])
@@ -962,7 +963,7 @@ export default function ExpedienteDetallePage() {
             <EstudiosSection
               expedienteId={id}
               solicitante={expediente.solicitante}
-              onContactoActualizado={fetchExpediente}
+              onEstudioActualizado={fetchExpediente}
             />
 
             {/* Decisión sobre un estudio condicionado, también aquí y no solo en
