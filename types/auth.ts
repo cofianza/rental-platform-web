@@ -136,7 +136,7 @@ export interface IRefreshResponse {
   access_token: string
   refresh_token: string
   expires_at: number
-  /** Perfil y permisos: si vienen, checkSession no pide /auth/me ni /auth/permissions. */
+  /** Perfil y permisos: si vienen al abrir la app, checkSession no pide /auth/me ni /auth/permissions. */
   user?: IMeResponse
   permissions?: PermissionMap | null
 }

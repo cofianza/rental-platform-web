@@ -132,6 +132,10 @@ class AuthService {
     const store = useAuthStore.getState()
     store.setLoading(true)
 
+    // Usuario previo: si ya había uno (Mi cuenta tras guardar el perfil), el
+    // refresh no lo toca y hay que releer /auth/me para ver el perfil al día.
+    const antes = store.user
+
     try {
       // Primero refrescar el token para tener accessToken en memoria
       // Pasamos false para que no haga logout automático si falla
@@ -142,12 +146,13 @@ class AuthService {
         return null
       }
 
-      // El refresh ya deja perfil y permisos en el store. Si no los trajo (no
-      // pudo leer el perfil), se piden aparte y a la vez. fetchPermissions nunca
-      // lanza; se espera también si /auth/me falla, para que el logout del catch
-      // quede después y limpie lo que traiga.
+      // Al abrir la app el refresh ya deja perfil y permisos en el store. Si no
+      // los trajo (no pudo leer el perfil) o el usuario ya estaba, se piden
+      // aparte y a la vez. fetchPermissions nunca lanza; se espera también si
+      // /auth/me falla, para que el logout del catch quede después y limpie lo
+      // que traiga.
       let user = useAuthStore.getState().user
-      if (!user) {
+      if (!user || user === antes) {
         const permisos = this.fetchPermissions()
         const response = await apiClient.get<IMeResponse>('/auth/me').finally(() => permisos)
         user = perfilAUsuario(response.data)
