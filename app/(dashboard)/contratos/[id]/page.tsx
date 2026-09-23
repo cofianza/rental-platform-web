@@ -182,7 +182,7 @@ export default function ContratoDetallePage() {
         let esFirmado = false
         if (FIRMADO_VISIBLE_STATES.includes(data.estado)) {
           try {
-            const firmado = await contratoService.descargarContratoFirmado(id)
+            const firmado = await contratoService.descargarContratoFirmado(id, { vista: true })
             urlPreview = firmado.url
             // fuente: 'auco'/'manual' = PDF con firmas reales; 'combinado' =
             // original + acuses; 'original' = SIN firmas (no pintar el banner

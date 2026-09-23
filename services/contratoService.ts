@@ -274,12 +274,13 @@ class ContratoService {
     return json.data
   }
 
-  async descargarContratoFirmado(id: string): Promise<IContratoDownloadResponse> {
-    // GET idempotente que piden a la vez la página (preview) y
-    // ContratoFirmadoSection al montar → coalesce lo colapsa en 1 request.
-    return coalesceRequest(`contrato-firmado-dl:${id}`, async () => {
+  async descargarContratoFirmado(id: string, opts?: { vista?: boolean }): Promise<IContratoDownloadResponse> {
+    // `vista`: la vista previa del detalle; el API la registra como
+    // visualización, no como descarga. Clave aparte para no fusionarla con un
+    // clic real en «Descargar».
+    return coalesceRequest(`contrato-firmado-dl:${id}:${opts?.vista ? 'v' : 'd'}`, async () => {
       const response = (await apiClient.get(
-        `/contratos/${id}/descargar-firmado`
+        `/contratos/${id}/descargar-firmado${opts?.vista ? '?vista=1' : ''}`
       )) as unknown as IContratoDownloadApiResponse
       return response.data
     })
