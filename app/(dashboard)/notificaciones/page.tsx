@@ -196,7 +196,7 @@ export default function NotificacionesPage() {
     try {
       await notificacionService.markAllAsRead()
     } catch {
-      toast.error('No se pudieron marcar todas como leidas')
+      toast.error('No se pudieron marcar todas como leídas')
     }
   }
 
@@ -209,7 +209,7 @@ export default function NotificacionesPage() {
             ? `${unreadCount} sin leer`
             : lista.length === 0
             ? 'Sin actividad reciente'
-            : 'Todo al dia'
+            : 'Todo al día'
         }
         actions={
           unreadCount > 0 ? (
@@ -217,7 +217,7 @@ export default function NotificacionesPage() {
               onClick={handleMarkAll}
               className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Marcar todas como leidas
+              Marcar todas como leídas
             </button>
           ) : undefined
         }
@@ -245,7 +245,7 @@ export default function NotificacionesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-700">Sin notificaciones</p>
-            <p className="text-xs text-gray-500 mt-1">Aqui veras los avisos de tus solicitudes.</p>
+            <p className="text-xs text-gray-500 mt-1">Aquí verás los avisos de tus solicitudes.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
@@ -289,7 +289,7 @@ export default function NotificacionesPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60"
               >
                 {loadingMore && <IconLoader size={16} className="animate-spin" />}
-                Cargar mas ({total - todas.length} anteriores)
+                Cargar más ({total - todas.length} anteriores)
               </button>
             )}
             <p className="text-xs text-gray-400">

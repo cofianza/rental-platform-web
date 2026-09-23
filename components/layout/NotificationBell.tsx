@@ -158,7 +158,7 @@ export function NotificationBell() {
     try {
       await notificacionService.markAllAsRead()
     } catch {
-      toast.error('No se pudieron marcar todas como leidas')
+      toast.error('No se pudieron marcar todas como leídas')
     }
   }
 
@@ -210,7 +210,7 @@ export function NotificationBell() {
                 onClick={handleLimpiar}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700"
               >
-                {unreadCount > 0 ? 'Marcar todas como leidas' : 'Limpiar'}
+                {unreadCount > 0 ? 'Marcar todas como leídas' : 'Limpiar'}
               </button>
             )}
           </div>
