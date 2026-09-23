@@ -98,6 +98,7 @@ function RegistroSolicitanteContent() {
     }
     if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
     if (password.length < 8) e.password = 'Mínimo 8 caracteres'
+    else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) e.password = 'Debe tener al menos una mayúscula, una minúscula y un número'
     if (password !== confirmPassword) e.confirm_password = 'No coinciden'
     if (!acceptTerms) e.accept_terms = 'Debe aceptar los términos'
     if (!acceptData) e.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
@@ -264,7 +265,7 @@ function RegistroSolicitanteContent() {
             </div>
           </div>
 
-          <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres" />
+          <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número" />
           <FormField label="Confirmar contraseña" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
 
           {/* Checkboxes */}

@@ -96,6 +96,10 @@ export default function InvitacionMiembroPage() {
       toast.error('Ingresa un teléfono válido (con código de país, ej. +57…). Es tu WhatsApp de contacto.')
       return
     }
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      toast.error('La contraseña debe tener al menos una mayúscula, una minúscula y un número.')
+      return
+    }
     setSubmitting(true)
     try {
       await registrarMiembro(token, {
@@ -260,7 +264,7 @@ export default function InvitacionMiembroPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número"
               className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
