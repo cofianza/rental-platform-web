@@ -53,7 +53,11 @@ export interface InmobiliariaAdmin {
    *  (dato de conversión). null si no lo reportó. */
   afianzadora_actual?: string | null
   afianzadora_tipo?: 'afianzadora' | 'aseguradora' | 'ninguna' | null
+  /** Contratos V3 §7.2: modalidad de la fianza que fija el convenio; null = no fija. */
+  modalidad_fianza_defecto?: ModalidadFianza | null
 }
+
+export type ModalidadFianza = 'trasladada' | 'tradicional'
 
 export interface AdminMiembrosResponse {
   organizacion: { id: string; nombre: string }
@@ -105,6 +109,18 @@ export async function salirDeMiInmobiliaria(): Promise<{ message: string }> {
 
 export async function adminListInmobiliarias(): Promise<InmobiliariaAdmin[]> {
   const res = await apiClient.get<InmobiliariaAdmin[]>('/admin/inmobiliarias')
+  return res.data
+}
+
+/** Convenio de la inmobiliaria (Contratos V3 §7.2). */
+export async function adminActualizarConvenio(
+  orgId: string,
+  modalidad_fianza_defecto: ModalidadFianza | null,
+): Promise<{ modalidad_fianza_defecto: ModalidadFianza | null }> {
+  const res = await apiClient.patch<{ modalidad_fianza_defecto: ModalidadFianza | null }>(
+    `/admin/inmobiliarias/${orgId}`,
+    { modalidad_fianza_defecto },
+  )
   return res.data
 }
 

@@ -41,6 +41,9 @@ export default function CoarrendatarioPublicPage() {
   // Estos `false` son normativos — no los cambies ni los derives de nada.
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptData, setAcceptData] = useState(false)
+  // Sus datos de notificación: el contrato los imprime (cláusula de notificaciones).
+  const [direccion, setDireccion] = useState('')
+  const [municipio, setMunicipio] = useState('')
   const [resultMsg, setResultMsg] = useState<string | null>(null)
 
   const fetchView = useCallback(async () => {
@@ -75,6 +78,10 @@ export default function CoarrendatarioPublicPage() {
 
   const handleAceptar = async () => {
     if (!token) return
+    if (direccion.trim().length < 5 || municipio.trim().length < 2) {
+      setErrorMsg('Escribe tu dirección de residencia y tu municipio.')
+      return
+    }
     if (!acceptTerms || !acceptData) {
       setErrorMsg('Debes aceptar los términos y la política de tratamiento de datos.')
       return
@@ -82,7 +89,7 @@ export default function CoarrendatarioPublicPage() {
     setErrorMsg(null)
     setPhase('aceptando')
     try {
-      const r = await coarrendatarioService.aceptar(token)
+      const r = await coarrendatarioService.aceptar(token, { direccion: direccion.trim(), municipio: municipio.trim() })
       setResultMsg(r.mensaje)
       setPhase('aceptado')
     } catch (err) {
@@ -221,6 +228,49 @@ export default function CoarrendatarioPublicPage() {
               </div>
             </div>
           )}
+
+          {/* Datos de notificación: el contrato los imprime en la cláusula de
+              notificaciones y producen efectos legales. */}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-gray-900">Tus datos de contacto para el contrato</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <label htmlFor="coa-direccion" className="mb-1 block text-xs font-medium text-gray-700">
+                  Dirección de residencia
+                </label>
+                <input
+                  id="coa-direccion"
+                  type="text"
+                  autoComplete="street-address"
+                  value={direccion}
+                  maxLength={300}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  disabled={procesando}
+                  placeholder="Calle 10 # 20-30, apartamento 501"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="coa-municipio" className="mb-1 block text-xs font-medium text-gray-700">
+                  Municipio
+                </label>
+                <input
+                  id="coa-municipio"
+                  type="text"
+                  autoComplete="address-level2"
+                  value={municipio}
+                  maxLength={120}
+                  onChange={(e) => setMunicipio(e.target.value)}
+                  disabled={procesando}
+                  placeholder="Medellín"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              A esta dirección, a tu correo y a tu celular llegarán las notificaciones del contrato.
+            </p>
+          </div>
 
           <div className="space-y-3">
             <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">

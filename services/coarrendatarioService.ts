@@ -112,10 +112,15 @@ export const coarrendatarioService = {
   },
 
   /** Invitado acepta T&C — el backend dispara su estudio TransUnion. */
-  async aceptar(token: string): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
+  /** `notificacion`: su dirección y municipio para el contrato (Contratos V3 §8.7.2). */
+  async aceptar(
+    token: string,
+    notificacion?: { direccion: string; municipio: string },
+  ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
       acepta_terminos: true,
       acepta_datos: true,
+      ...notificacion,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
     return res.data
   },

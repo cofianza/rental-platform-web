@@ -487,6 +487,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             resumen={resumen}
             expedienteId={expedienteId}
             esTitular={esTitular}
+            modalidadConvenio={prefill[1].modalidad}
           />
         )}
         {paso === 2 && <Paso2Inmueble value={forms[2]} onChange={poner(2)} errores={errores} />}

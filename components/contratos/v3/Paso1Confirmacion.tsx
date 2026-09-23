@@ -156,9 +156,11 @@ interface Paso1Props {
   resumen: Resumen | null
   expedienteId: string
   esTitular: boolean
+  /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
+  modalidadConvenio?: Paso1['modalidad']
 }
 
-export function Paso1Confirmacion({ value, onChange, errores, resumen, expedienteId, esTitular }: Paso1Props) {
+export function Paso1Confirmacion({ value, onChange, errores, resumen, expedienteId, esTitular, modalidadConvenio }: Paso1Props) {
   const evaluadoCop = resumen?.canon.evaluadoCop ?? null
   const maximo = resumen?.canon.maximoSinNuevaEvaluacionCop ?? null
 
@@ -249,6 +251,13 @@ export function Paso1Confirmacion({ value, onChange, errores, resumen, expedient
           icono={IconBuilding2}
         />
         {errores.modalidad && <p className="text-xs text-red-600">{errores.modalidad}</p>}
+        {modalidadConvenio && (
+          <p className="text-xs text-gray-500">
+            {value.modalidad === modalidadConvenio
+              ? 'Viene preseleccionada según el convenio de tu inmobiliaria con Cofianza; la puedes cambiar para este contrato.'
+              : `El convenio de tu inmobiliaria con Cofianza indica la modalidad ${modalidadConvenio === 'trasladada' ? 'Trasladada' : 'Tradicional'}.`}
+          </p>
+        )}
         {value.modalidad && <Aviso>La cuota de administración no está cubierta por la fianza.</Aviso>}
         {/* El Anexo de la Ruta B cubre las dos modalidades: el pendiente es solo del contrato A. */}
         {value.modalidad === 'tradicional' && value.ruta !== 'B' && (

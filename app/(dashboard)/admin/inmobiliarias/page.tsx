@@ -21,6 +21,7 @@ import {
   IconChevronRight,
 } from '@/components/icons'
 import {
+  adminActualizarConvenio,
   adminListInmobiliarias,
   adminListMiembros,
   adminCambiarRolMiembro,
@@ -28,8 +29,72 @@ import {
   type InmobiliariaAdmin,
   type AdminMiembrosResponse,
   type Miembro,
+  type ModalidadFianza,
   type RolMiembro,
 } from '@/services/miembrosService'
+
+const MODALIDAD_LABEL: Record<ModalidadFianza, string> = {
+  trasladada: 'Trasladada (la paga el arrendatario)',
+  tradicional: 'Tradicional (la asume la inmobiliaria)',
+}
+
+/**
+ * Convenio de Cofianza con la inmobiliaria (Contratos V3 §7.2): la modalidad de
+ * la fianza que el asistente de contratos le presenta preseleccionada. La
+ * inmobiliaria la puede cambiar contrato por contrato.
+ */
+function ConvenioPanel({ org, onGuardado }: { org: InmobiliariaAdmin; onGuardado: (m: ModalidadFianza | null) => void }) {
+  const actual = org.modalidad_fianza_defecto ?? null
+  const [valor, setValor] = useState<ModalidadFianza | ''>(actual ?? '')
+  const [guardando, setGuardando] = useState(false)
+  const cambio = (valor || null) !== actual
+
+  const guardar = async () => {
+    setGuardando(true)
+    try {
+      const r = await adminActualizarConvenio(org.id, valor || null)
+      onGuardado(r.modalidad_fianza_defecto)
+      toast.success('Convenio guardado. Aplica a los contratos que se inicien desde ahora.')
+    } catch (err: unknown) {
+      toast.error((err as { message?: string }).message || 'No se pudo guardar el convenio')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+      <label htmlFor={`convenio-${org.id}`} className="block text-sm font-medium text-gray-900">
+        Modalidad de la fianza por defecto
+      </label>
+      <p className="mt-0.5 text-xs text-gray-500">
+        La que fija el convenio con esta inmobiliaria. Sale preseleccionada al crear un contrato y se puede cambiar en cada uno.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <select
+          id={`convenio-${org.id}`}
+          value={valor}
+          onChange={(e) => setValor(e.target.value as ModalidadFianza | '')}
+          disabled={guardando}
+          className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 sm:flex-none"
+        >
+          <option value="">Sin modalidad por defecto</option>
+          <option value="trasladada">{MODALIDAD_LABEL.trasladada}</option>
+          <option value="tradicional">{MODALIDAD_LABEL.tradicional}</option>
+        </select>
+        <button
+          type="button"
+          onClick={guardar}
+          disabled={!cambio || guardando}
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {guardando && <IconLoader size={14} className="animate-spin" />}
+          Guardar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const ROL_LABEL: Record<RolMiembro, string> = {
   owner: 'Titular',
@@ -202,7 +267,7 @@ export default function AdminInmobiliariasPage() {
     <div className="max-w-4xl mx-auto">
       <PageHeader
         title="Equipos de inmobiliarias"
-        subtitle="Gestiona los miembros y titulares de cada organización aliada."
+        subtitle="Gestiona el convenio, los miembros y los titulares de cada organización aliada."
       />
 
       {loading ? (
@@ -239,6 +304,11 @@ export default function AdminInmobiliariasPage() {
                     ) : o.afianzadora_tipo === 'ninguna' ? (
                       <p className="text-xs text-gray-400 truncate">Sin afianzadora previa</p>
                     ) : null}
+                    {o.modalidad_fianza_defecto && (
+                      <p className="text-xs text-gray-400 truncate">
+                        Fianza por defecto: {MODALIDAD_LABEL[o.modalidad_fianza_defecto]}
+                      </p>
+                    )}
                   </div>
                   {open ? (
                     <IconChevronDown size={18} className="text-gray-400 flex-shrink-0" />
@@ -248,6 +318,12 @@ export default function AdminInmobiliariasPage() {
                 </button>
                 {open && (
                   <div className="border-t border-gray-200">
+                    <ConvenioPanel
+                      org={o}
+                      onGuardado={(m) =>
+                        setOrgs((xs) => xs.map((x) => (x.id === o.id ? { ...x, modalidad_fianza_defecto: m } : x)))
+                      }
+                    />
                     <MiembrosPanel orgId={o.id} />
                   </div>
                 )}
