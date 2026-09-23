@@ -567,16 +567,10 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             expedienteId={expedienteId}
             esTitular={esTitular}
             modalidadConvenio={contrato.modalidadConvenio ?? undefined}
-            tradicionalPendiente={contrato.textosSinAprobar.tradicional}
           />
         )}
         {paso === 2 && (
-          <Paso2Inmueble
-            value={forms[2]}
-            onChange={poner(2)}
-            errores={errores}
-            sinPhPendiente={contrato.textosSinAprobar.sinPropiedadHorizontal}
-          />
+          <Paso2Inmueble value={forms[2]} onChange={poner(2)} errores={errores} />
         )}
         {paso === 3 && (
           <Paso3Condiciones

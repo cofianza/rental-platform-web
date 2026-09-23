@@ -130,7 +130,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, canon }: Res
             <Dato label="Ruta de aprobación" valor={VIA_LABEL[fianza.via] ?? fianza.via} />
             <Dato
               label="Condiciones"
-              valor={`Prima ${porcentaje(fianza.primaPct)} %, tarifa mensual ${porcentaje(fianza.tarifaPct)} % + IVA, cashback ${porcentaje(fianza.cashbackPct)} %`}
+              valor={`Prima ${porcentaje(fianza.primaPct)} % + IVA, tarifa mensual ${porcentaje(fianza.tarifaPct)} % + IVA, cashback ${porcentaje(fianza.cashbackPct)} %`}
             />
             <Dato
               label="Certificado de Riesgo"
@@ -159,8 +159,6 @@ interface Paso1Props {
   esTitular: boolean
   /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
   modalidadConvenio?: Paso1['modalidad']
-  /** El texto de la modalidad Tradicional (Ruta A) todavía no está aprobado (lo dice el API). */
-  tradicionalPendiente: boolean
 }
 
 export function Paso1Confirmacion({
@@ -171,7 +169,6 @@ export function Paso1Confirmacion({
   expedienteId,
   esTitular,
   modalidadConvenio,
-  tradicionalPendiente,
 }: Paso1Props) {
   const evaluadoCop = resumen?.canon.evaluadoCop ?? null
   const maximo = resumen?.canon.maximoSinNuevaEvaluacionCop ?? null
@@ -248,7 +245,7 @@ export function Paso1Confirmacion({
           checked={value.modalidad === 'tradicional'}
           onSelect={() => onChange({ ...value, modalidad: 'tradicional' })}
           titulo="Tradicional"
-          descripcion="La inmobiliaria asume la tarifa; el arrendatario no paga suma alguna por fianza."
+          descripcion="La inmobiliaria asume la prima y la tarifa; el arrendatario no paga suma alguna por fianza."
           icono={IconBuilding2}
         />
         {errores.modalidad && <p className="text-xs text-red-600">{errores.modalidad}</p>}
@@ -260,13 +257,6 @@ export function Paso1Confirmacion({
           </p>
         )}
         {value.modalidad && <Aviso>La cuota de administración no está cubierta por la fianza.</Aviso>}
-        {/* El Anexo de la Ruta B cubre las dos modalidades: el pendiente es solo del contrato A. */}
-        {tradicionalPendiente && value.modalidad === 'tradicional' && value.ruta !== 'B' && (
-          <Aviso tono="aviso">
-            El texto de la modalidad Tradicional está pendiente de aprobación de Cofianza: la vista previa saldrá marcada y
-            el contrato aún no se podrá enviar a firma.
-          </Aviso>
-        )}
       </fieldset>
     </div>
   )

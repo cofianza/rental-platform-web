@@ -9,7 +9,7 @@
 
 import type { Borrador, ErroresPaso } from '@/hooks/useContratoV3'
 import type { Paso2 } from '@/types/contratoV3'
-import { Aviso, Campo, EncabezadoPaso, SiNo, numeroDe } from './campos'
+import { Campo, EncabezadoPaso, SiNo, numeroDe } from './campos'
 
 type Usos = Paso2['usos']
 
@@ -23,11 +23,9 @@ interface Props {
   value: Borrador<Paso2>
   onChange: (v: Borrador<Paso2>) => void
   errores: ErroresPaso
-  /** El texto de administración sin propiedad horizontal todavía no está aprobado (lo dice el API). */
-  sinPhPendiente: boolean
 }
 
-export function Paso2Inmueble({ value, onChange, errores, sinPhPendiente }: Props) {
+export function Paso2Inmueble({ value, onChange, errores }: Props) {
   const usos = value.usos ?? {}
   const ponerUso = (clave: keyof Usos, v: string | null) => onChange({ ...value, usos: { ...usos, [clave]: v } })
 
@@ -109,12 +107,6 @@ export function Paso2Inmueble({ value, onChange, errores, sinPhPendiente }: Prop
             onChange={(e) => onChange({ ...value, nombreCopropiedad: e.target.value })}
             error={errores.nombreCopropiedad}
           />
-        )}
-        {sinPhPendiente && value.propiedadHorizontal === false && (
-          <Aviso tono="aviso">
-            Sin propiedad horizontal, el texto de la cláusula de administración está pendiente de aprobación de Cofianza:
-            la vista previa saldrá marcada y el contrato aún no se podrá enviar a firma.
-          </Aviso>
         )}
       </div>
     </div>
