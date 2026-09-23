@@ -194,12 +194,12 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
       errors.tipo_documento = 'Tipo de documento requerido'
     }
     if (!form.numero_documento?.trim()) {
-      errors.numero_documento = 'Numero de documento requerido'
+      errors.numero_documento = 'Número de documento requerido'
     }
     if (!form.email?.trim()) {
-      errors.email = 'Email requerido'
+      errors.email = 'Correo requerido'
     } else if (!EMAIL_REGEX.test(form.email)) {
-      errors.email = 'Email invalido'
+      errors.email = 'Correo inválido'
     }
     if (!form.telefono?.trim()) {
       errors.telefono = 'Teléfono requerido: a este WhatsApp le llega el enlace para firmar el contrato.'
@@ -432,7 +432,9 @@ export function useExpedienteWizard() {
           form.tipo_documento &&
           form.numero_documento?.trim() &&
           form.telefono?.trim() &&
-          EMAIL_REGEX.test(form.email ?? '')
+          // Solo que haya correo: el formato lo valida validateStep2 al pulsar
+          // «Siguiente» y lo dice bajo el campo (con el botón gris no había cómo).
+          form.email?.trim()
         )
       }
       return false
