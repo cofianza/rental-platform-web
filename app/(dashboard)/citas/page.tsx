@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader, EmptyState } from '@/components/ui'
 import { IconLoader, IconCalendar, IconRefresh } from '@/components/icons'
@@ -46,12 +46,16 @@ export default function CitasPage() {
   const router = useRouter()
   const { hasRole } = usePermissions()
   const isInitialized = useAuthStore((s) => s.isInitialized)
-  const { citas, filters, isLoading, error, refetch, setFilters, resetFilters } = useMisCitas()
+  const { citas, meta, filters, isLoading, error, refetch, setFilters, resetFilters } = useMisCitas()
   const [inmuebles, setInmuebles] = useState<InmuebleOption[]>([])
   // Estado del pago del estudio por expediente. Solo se consulta para citas
   // realizadas con estudio_habilitado — ahí es donde la card muestra la pill.
   // null = cargando, undefined = no aplica.
   const [pagoEstudioByExp, setPagoEstudioByExp] = useState<Record<string, string | null>>({})
+  // Estudios cuyo pago ya se pidió: cada confirmar/cancelar refresca la lista y
+  // antes volvía a pedir el pago de TODAS las realizadas (hasta 50 peticiones
+  // por clic). «Refrescar» lo vacía para traer el estado al día.
+  const pagoPedidoRef = useRef<Set<string>>(new Set())
 
   // Llega desde el widget con #cita-<id>: el navegador no puede saltar solo
   // porque las tarjetas se pintan despues del fetch.
@@ -103,8 +107,9 @@ export default function CitasPage() {
           )
           .map((c) => c.expediente!.id),
       ),
-    )
+    ).filter((id) => !pagoPedidoRef.current.has(id))
     if (expedienteIds.length === 0) return
+    for (const id of expedienteIds) pagoPedidoRef.current.add(id)
 
     // Marcar como cargando los que aún no tenemos.
     setPagoEstudioByExp((prev) => {
@@ -218,7 +223,10 @@ export default function CitasPage() {
             </button>
           )}
           <button
-            onClick={() => refetch()}
+            onClick={() => {
+              pagoPedidoRef.current.clear()
+              refetch()
+            }}
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
             title="Refrescar"
           >
@@ -268,6 +276,15 @@ export default function CitasPage() {
               : undefined
           }
         />
+      )}
+
+      {/* La lista trae las citas más recientes; pasado el límite, las viejas
+          desaparecían del tablero sin aviso. */}
+      {!isLoading && meta && meta.total > totalCitas && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          Mostrando las {totalCitas} citas más recientes de {meta.total}. Usa los filtros de fecha o de
+          inmueble para ver las anteriores.
+        </p>
       )}
 
       {/* Kanban — scroll horizontal forzado para que se vean los 5 estados.

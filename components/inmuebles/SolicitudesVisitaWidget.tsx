@@ -38,9 +38,22 @@ export function SolicitudesVisitaWidget() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    citaService
-      .listMisCitas({ limit: 20, page: 1 })
-      .then((r) => setCitas(r.data.filter((c) => ESTADOS_VISIBLES.has(c.estado))))
+    // Se piden solo las activas: con las 20 más recientes de cualquier estado,
+    // una solicitud pendiente vieja quedaba por fuera si detrás había 20
+    // visitas ya realizadas o canceladas.
+    Promise.all(
+      (['solicitada', 'confirmada'] as const).map((estado) =>
+        citaService.listMisCitas({ estado, limit: 100, page: 1 }),
+      ),
+    )
+      .then((rs) =>
+        setCitas(
+          rs
+            .flatMap((r) => r.data)
+            .filter((c) => ESTADOS_VISIBLES.has(c.estado))
+            .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+        ),
+      )
       .catch(() => setCitas([]))
       .finally(() => setLoading(false))
   }, [])
