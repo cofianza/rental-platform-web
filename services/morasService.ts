@@ -77,7 +77,9 @@ export interface IReportarMoraInput {
 }
 
 export interface IListMorasQuery {
-  estado?: 'todas' | MoraEstado
+  /** 'activas' = fases 1 a 3 (la cola, sin pagadas ni canceladas). */
+  estado?: 'todas' | 'activas' | MoraEstado
+  orden?: 'asc' | 'desc'
   contrato_id?: string
   page?: number
   limit?: number
@@ -104,6 +106,7 @@ class MorasService {
   }> {
     const params = new URLSearchParams()
     if (query.estado) params.set('estado', query.estado)
+    if (query.orden) params.set('orden', query.orden)
     if (query.contrato_id) params.set('contrato_id', query.contrato_id)
     if (query.page) params.set('page', String(query.page))
     if (query.limit) params.set('limit', String(query.limit))
@@ -128,8 +131,9 @@ class MorasService {
     return res.data
   }
 
-  async escalar(id: string, notas?: string): Promise<IMoraConAviso> {
-    const res = await apiClient.patch<IMoraConAviso>(`${this.base}/${id}/escalar`, { notas })
+  /** `desde` = la fase que ve la pantalla: si otro ya la escaló, el API responde 409. */
+  async escalar(id: string, desde?: MoraEstado, notas?: string): Promise<IMoraConAviso> {
+    const res = await apiClient.patch<IMoraConAviso>(`${this.base}/${id}/escalar`, { notas, desde })
     return res.data
   }
 

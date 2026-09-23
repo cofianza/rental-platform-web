@@ -37,6 +37,7 @@ import { formatCurrency } from '@/lib/constants'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { useAuthStore } from '@/stores/auth.store'
+import { ApiClientError } from '@/lib/api'
 
 interface ContratoSelectItem {
   id: string
@@ -94,7 +95,8 @@ function avisarResultado(accion: string, estado: WhatsappEstado | undefined) {
   }
 }
 
-const FILTROS: Array<{ key: 'todas' | MoraEstado; label: string }> = [
+const FILTROS: Array<{ key: 'todas' | 'activas' | MoraEstado; label: string }> = [
+  { key: 'activas', label: 'Activas' },
   { key: 'todas', label: 'Todas' },
   { key: 'fase_1', label: 'Fase 1' },
   { key: 'fase_2', label: 'Fase 2' },
@@ -118,7 +120,9 @@ export default function ReportarMoraPage() {
   const [falloContratos, setFalloContratos] = useState(false)
   const [totalContratos, setTotalContratos] = useState(0)
   const [filtroContrato, setFiltroContrato] = useState('')
-  const [filtro, setFiltro] = useState<'todas' | MoraEstado>('todas')
+  // El operador arranca en la cola (activas): «Todas» suma pagadas y canceladas.
+  const [filtro, setFiltro] = useState<'todas' | 'activas' | MoraEstado>(esInterno ? 'activas' : 'todas')
+  const [totalMoras, setTotalMoras] = useState(0)
   const [loading, setLoading] = useState(true)
   // Si la carga falla no se puede decir «Aún no hay moras» ni pintar KPI en 0:
   // el operador creía que la cola estaba vacía y ese día no escalaba nada.
@@ -163,10 +167,13 @@ export default function ReportarMoraPage() {
     try {
       const [statsRes, morasRes] = await Promise.all([
         morasService.stats(),
-        morasService.list({ estado: filtro, limit: 100 }),
+        // El operador atiende primero lo más viejo: el API ordena y corta, así
+        // las 100 que llegan son las más viejas y no las más recientes.
+        morasService.list({ estado: filtro, limit: 100, orden: esInterno ? 'asc' : 'desc' }),
       ])
       setStats(statsRes)
       setMoras(morasRes.data)
+      setTotalMoras(morasRes.pagination.total)
     } catch {
       setFalloCarga(true)
       setMoras([])
@@ -174,7 +181,7 @@ export default function ReportarMoraPage() {
     } finally {
       setLoading(false)
     }
-  }, [filtro])
+  }, [filtro, esInterno])
 
   useEffect(() => {
     cargarDatos()
@@ -211,12 +218,6 @@ export default function ReportarMoraPage() {
         `${c.numero} ${c.inquilino}`.toLowerCase().includes(filtroContrato.toLowerCase()),
       )
     : contratos
-
-  // El operador atiende primero lo más viejo; el orden que llegaba de la API
-  // no lo dejaba claro.
-  const lista = esInterno
-    ? [...moras].sort((a, b) => a.reportado_at.localeCompare(b.reportado_at))
-    : moras
 
   const contratoSeleccionado = contratos.find((c) => c.id === contratoId)
   useEffect(() => {
@@ -421,6 +422,7 @@ export default function ReportarMoraPage() {
           <p className="mt-0.5 text-xs text-gray-500">
             Haz clic en una fila o en el ticket para ver el detalle y el chat del inquilino.
             {esInterno && ' Ordenadas de más antigua a más reciente.'}
+            {!loading && totalMoras > moras.length && ` Mostrando ${moras.length} de ${totalMoras}.`}
           </p>
         </div>
         {FILTROS.map((f) => (
@@ -433,7 +435,7 @@ export default function ReportarMoraPage() {
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
             }`}
           >
-            {f.key !== 'todas' && (
+            {f.key !== 'todas' && f.key !== 'activas' && (
               <span className={`h-1.5 w-1.5 rounded-full ${FASE_CONFIG[f.key as MoraEstado].bdot}`} />
             )}
             {f.label}
@@ -461,7 +463,9 @@ export default function ReportarMoraPage() {
         <div className="p-8 text-center text-gray-500 text-sm">
           {filtro === 'todas'
             ? 'Aún no hay moras reportadas. Cuando reportes una aparecerá aquí.'
-            : 'Sin resultados para este filtro.'}
+            : filtro === 'activas'
+              ? 'No hay moras en gestión.'
+              : 'Sin resultados para este filtro.'}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -498,7 +502,7 @@ export default function ReportarMoraPage() {
             </tr>
           </thead>
           <tbody>
-            {lista.map((m) => {
+            {moras.map((m) => {
               const dias = Math.floor(
                 (Date.now() - new Date(m.reportado_at).getTime()) / 86_400_000,
               )
@@ -731,12 +735,17 @@ function MoraDetalleModal({
   async function handleEscalar() {
     setActing(true)
     try {
-      const escalada = await morasService.escalar(moraId)
+      const escalada = await morasService.escalar(moraId, mora?.estado)
       avisarResultado('Mora escalada', escalada.whatsapp_estado)
       await recargar()
       onChange()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al escalar')
+      // 409: otra persona ya la movió de fase; se muestra la fase real.
+      if (err instanceof ApiClientError && err.statusCode === 409) {
+        await recargar()
+        onChange()
+      }
     } finally {
       setActing(false)
     }
