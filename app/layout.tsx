@@ -9,9 +9,11 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+// Solo la usa el panel: sin precarga, las páginas públicas no la descargan.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 // Fuentes del rebranding del cliente (entregadas en cofianza_login v1).

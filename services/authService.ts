@@ -4,7 +4,6 @@
  */
 
 import { apiClient, ApiClientError } from '@/lib/api'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth.store'
 import { AUTH_MESSAGES, AUTH_ROUTES } from '@/lib/constants'
 import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse, IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
@@ -98,6 +97,7 @@ class AuthService {
     // Cerrar sesión de Supabase (si hay). Solo la de este dispositivo: sin
     // alcance, supabase-js usa 'global' y cerraba también las otras.
     try {
+      const { supabase } = await import('@/lib/supabase')
       await supabase.auth.signOut({ scope: 'local' })
     } catch {
       // Ignorar errores de Supabase
@@ -221,6 +221,7 @@ class AuthService {
     store.clearError()
 
     try {
+      const { supabase } = await import('@/lib/supabase')
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -251,7 +252,10 @@ class AuthService {
     store.setLoading(true)
 
     try {
-      // Verificar usuario autenticado en Supabase (getUser valida el JWT server-side)
+      // Verificar usuario autenticado en Supabase (getUser valida el JWT server-side).
+      // Import diferido: supabase-js no viaja en el layout raíz (landing, vitrina,
+      // enlaces públicos); el cliente lee el hash del callback al crearse aquí.
+      const { supabase } = await import('@/lib/supabase')
       const { data: { user: supabaseUser } } = await supabase.auth.getUser()
 
       if (!supabaseUser) {
