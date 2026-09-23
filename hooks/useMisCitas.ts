@@ -9,6 +9,7 @@ import { useCallback, useEffect } from 'react'
 import { citaService } from '@/services/citaService'
 import { useCitasStore } from '@/stores/citasStore'
 import type { ICitaFilters } from '@/types/cita'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 export function useMisCitas() {
   const citas = useCitasStore((s) => s.citas)
@@ -29,8 +30,7 @@ export function useMisCitas() {
       const { data, meta } = await citaService.listMisCitas(filters)
       setCitas(data, meta)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al cargar citas'
-      setError(msg)
+      setError(mensajeParaProspecto(err, 'Inténtalo de nuevo.'))
     } finally {
       setLoading(false)
     }

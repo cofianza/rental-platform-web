@@ -227,10 +227,18 @@ export default function CitasPage() {
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-          {error}
+      {/* Error (con reintento). Un fallo NO es "aún no tienes citas": antes
+          salían los dos a la vez y el vacío invitaba a ir a los inmuebles. */}
+      {error && !isLoading && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-800">No pudimos cargar las citas. {error}</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
         </div>
       )}
 
@@ -242,7 +250,7 @@ export default function CitasPage() {
       )}
 
       {/* Empty state global */}
-      {!isLoading && totalCitas === 0 && (
+      {!isLoading && !error && totalCitas === 0 && (
         <EmptyState
           icon={IconCalendar}
           title={hasActiveFilters ? 'Sin resultados' : 'Aún no tienes citas'}
