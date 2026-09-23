@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { IconEye, IconDownload, IconArrowRight, IconLoader, IconChevronLeft, IconChevronRight, IconRefresh } from '@/components/icons'
-import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime } from '@/lib/constants'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, rutaContrato } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { RegenerarContratoModal } from './RegenerarContratoModal'
@@ -126,7 +126,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                 return (
                   <tr
                     key={c.id}
-                    onClick={() => router.push(`/contratos/${c.id}`)}
+                    onClick={() => router.push(rutaContrato(c))}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -190,7 +190,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            router.push(`/contratos/${c.id}`)
+                            router.push(rutaContrato(c))
                           }}
                           className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
                           title="Ver detalle"
@@ -250,7 +250,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
           return (
             <div
               key={c.id}
-              onClick={() => router.push(`/contratos/${c.id}`)}
+              onClick={() => router.push(rutaContrato(c))}
               className="p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
             >
               <div className="flex items-start justify-between mb-2">

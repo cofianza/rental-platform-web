@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconLoader, IconArrowRight, IconAlertTriangle } from '@/components/icons'
-import { ESTADOS_CONTRATO, etiquetaContrato, formatCurrency, formatDateTime } from '@/lib/constants'
+import { ESTADOS_CONTRATO, etiquetaContrato, formatCurrency, formatDateTime, rutaContrato } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import type { IContratoListItem } from '@/types/contrato'
 
@@ -49,10 +49,10 @@ function EstadoChip({ c }: { c: IContratoListItem }) {
   )
 }
 
-function Accion({ id, label }: { id: string; label: string }) {
+function Accion({ c, label }: { c: IContratoListItem; label: string }) {
   return (
     <Link
-      href={`/contratos/${id}`}
+      href={rutaContrato(c)}
       className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900"
     >
       {label} <IconArrowRight size={13} />
@@ -178,7 +178,7 @@ export function ContratosAgrupados() {
             </td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fecha(c.fecha_generacion ?? c.created_at)}</td>
             <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
-            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Continuar" /></td>
+            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion c={c} label="Continuar" /></td>
           </tr>
         ))}
       </Panel>
@@ -198,7 +198,7 @@ export function ContratosAgrupados() {
             <td className="px-4 py-3"><Propiedad c={c} /></td>
             <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fecha(c.fecha_generacion ?? c.created_at)}</td>
-            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Ver" /></td>
+            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion c={c} label="Ver" /></td>
           </tr>
         ))}
       </Panel>
@@ -221,7 +221,7 @@ export function ContratosAgrupados() {
             </td>
             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{c.fecha_inicio || '—'}</td>
             <td className="px-4 py-3 whitespace-nowrap"><EstadoChip c={c} /></td>
-            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion id={c.id} label="Ver" /></td>
+            <td className="px-4 py-3 text-right whitespace-nowrap"><Accion c={c} label="Ver" /></td>
           </tr>
         ))}
       </Panel>

@@ -128,8 +128,12 @@ class AuthService {
         return null
       }
 
-      // Ahora obtener el perfil del usuario
-      const response = await apiClient.get<IMeResponse>('/auth/me')
+      // Perfil y permisos a la vez: los permisos solo necesitan el token (antes
+      // iban uno tras otro, ~1 s más en cada carga). fetchPermissions nunca lanza;
+      // se espera también si /auth/me falla, para que el logout del catch quede
+      // después y limpie lo que traiga.
+      const permisos = this.fetchPermissions()
+      const response = await apiClient.get<IMeResponse>('/auth/me').finally(() => permisos)
       const profile = response.data
 
       // Convertir perfil a IUser
@@ -144,9 +148,6 @@ class AuthService {
       }
 
       store.setUser(user)
-
-      // Cargar permisos del usuario
-      await this.fetchPermissions()
 
       // Renovar cookie de sesión
       setSessionCookie()

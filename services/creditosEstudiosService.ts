@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 
 export interface IPaqueteCreditos {
   id: string
@@ -110,7 +111,8 @@ class CreditosEstudiosService {
   }
 
   async getMiSaldo(): Promise<ISaldoCreditos> {
-    const res = (await apiClient.get('/creditos-estudios/me/saldo')) as unknown as {
+    // Varias tarjetas la piden a la vez al montar (estudios, pago del estudio) → 1 petición.
+    const res = (await coalesceRequest('creditos-saldo', () => apiClient.get('/creditos-estudios/me/saldo'))) as unknown as {
       data: ISaldoCreditos
     }
     return res.data

@@ -66,14 +66,15 @@ export function CoarrendatarioPropietarioCard({
   const fetchCoa = useCallback(async () => {
     try {
       const data = await coarrendatarioService.getDelExpediente(expedienteId)
+      const primeraCarga = !coaLoadedRef.current
       setCoa(data)
       coaLoadedRef.current = true
-      if (
-        data?.estudio?.estado === 'completado' &&
-        !estudioCompletadoNotificadoRef.current
-      ) {
+      if (data?.estudio?.estado === 'completado' && !estudioCompletadoNotificadoRef.current) {
         estudioCompletadoNotificadoRef.current = true
-        onEstudioCompletado?.()
+        // Solo si se completó MIENTRAS se miraba (polling). Si ya venía completado,
+        // el padre ya tiene el dato: avisarle lo recargaba, esta tarjeta se volvía
+        // a montar y avisaba otra vez → recargas sin fin.
+        if (!primeraCarga) onEstudioCompletado?.()
       }
     } catch {
       // No borrar la card por un error transitorio del polling (502 / red

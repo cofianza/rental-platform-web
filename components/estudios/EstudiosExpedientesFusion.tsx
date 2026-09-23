@@ -56,7 +56,7 @@ export function EstudiosExpedientesFusion() {
     handleSort,
     hasActiveFilters,
     fetchExpedientes,
-  } = useExpedientes()
+  } = useExpedientes({ conStats: false })
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
@@ -195,7 +195,8 @@ export function EstudiosExpedientesFusion() {
 
       {/* Lista de expedientes con badge de estudio embebido */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        {isLoading ? (
+        {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+        {isLoading && expedientes.length === 0 ? (
           <ExpedientesSkeleton count={filters.limit} />
         ) : (
           <ExpedientesTable

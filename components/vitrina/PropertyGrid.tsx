@@ -72,6 +72,8 @@ export function PropertyGrid() {
   const [, setFiltersLoaded] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // La primera carga va sin debounce (antes esperaba 300 ms).
+  const primeraCargaRef = useRef(true)
 
   // ── Load filter options once ────────────────
 
@@ -132,10 +134,12 @@ export function PropertyGrid() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_MS
+    primeraCargaRef.current = false
     debounceRef.current = setTimeout(() => {
       fetchProperties()
       syncUrl()
-    }, DEBOUNCE_MS)
+    }, espera)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [fetchProperties, syncUrl])
 

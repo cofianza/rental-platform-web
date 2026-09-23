@@ -25,6 +25,7 @@ import {
   formatDate,
   formatDateTime,
   type EstadoContratoKey,
+  rutaContrato,
 } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
@@ -372,7 +373,7 @@ export function ContratosInmobiliariaView() {
                   <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-right">
                     <Link
-                      href={`/contratos/${c.id}`}
+                      href={rutaContrato(c)}
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-600 transition-colors hover:bg-coral-50"
                     >
                       Revisar y enviar a firma
@@ -410,7 +411,7 @@ export function ContratosInmobiliariaView() {
                   <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
                   <td className="px-6 py-3 text-right">
-                    <VerLink id={c.id} />
+                    <VerLink c={c} />
                   </td>
                 </tr>
               ))}
@@ -447,7 +448,7 @@ export function ContratosInmobiliariaView() {
                   <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
                   <td className="px-6 py-3"><EstadoBadge c={c} /></td>
                   <td className="px-6 py-3 text-right">
-                    <VerLink id={c.id} />
+                    <VerLink c={c} />
                   </td>
                 </tr>
               ))}
@@ -560,10 +561,10 @@ function EmptyRow({ texto }: { texto: string }) {
   )
 }
 
-function VerLink({ id }: { id: string }) {
+function VerLink({ c }: { c: Parameters<typeof rutaContrato>[0] }) {
   return (
     <Link
-      href={`/contratos/${id}`}
+      href={rutaContrato(c)}
       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
     >
       Ver

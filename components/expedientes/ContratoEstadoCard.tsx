@@ -45,7 +45,8 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
 
   const fetchContrato = useCallback(async () => {
     try {
-      const res = await contratoService.getContratosForExpediente(expedienteId, { page: 1, limit: 5 })
+      // Los mismos parámetros que ExpedienteProgressBar: al montar, las dos comparten una petición.
+      const res = await contratoService.getContratosForExpediente(expedienteId, { limit: 20 })
       const ordered = [...res.data].sort((a, b) => {
         const p = (PRIORIDAD[b.estado] ?? 0) - (PRIORIDAD[a.estado] ?? 0)
         if (p !== 0) return p

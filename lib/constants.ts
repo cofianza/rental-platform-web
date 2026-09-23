@@ -485,6 +485,14 @@ const ETIQUETA_V3: Partial<Record<EstadoContratoKey, string>> = {
   finalizado: 'Terminado',
 }
 
+/**
+ * A dónde lleva un contrato: el V3 (con destinacion) se ve en el asistente del
+ * estudio. /contratos/:id también redirige ahí, pero después de una espera.
+ */
+export function rutaContrato(c: { id: string; destinacion?: string | null; expediente_id?: string | null }): string {
+  return c.destinacion && c.expediente_id ? `/expedientes/${c.expediente_id}/contrato` : `/contratos/${c.id}`
+}
+
 /** Etiqueta del estado de un contrato; `v3` = el contrato tiene destinacion (asistente V3). */
 export function etiquetaContrato(estado: string, v3: boolean): string {
   const k = estado as EstadoContratoKey

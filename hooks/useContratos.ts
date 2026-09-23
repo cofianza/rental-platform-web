@@ -17,32 +17,26 @@ const DEFAULT_FILTERS: IContratoListFilters = {
 export function useContratos() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const initializedRef = useRef(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // La primera carga va sin debounce (antes esperaba 300 ms).
+  const primeraCargaRef = useRef(true)
 
   const [contratos, setContratos] = useState<IContratoListItem[]>([])
   const [meta, setMeta] = useState<IContratoMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
-  const [filters, setFiltersState] = useState<IContratoListFilters>(DEFAULT_FILTERS)
+  // Filtros iniciales desde la URL, ya en el primer render (antes un efecto los
+  // ponía después y la primera carga salía 300 ms tarde).
+  const [filters, setFiltersState] = useState<IContratoListFilters>(() => ({
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+    sortBy: searchParams.get('sortBy') || 'created_at',
+    sortDir: (searchParams.get('sortDir') as 'asc' | 'desc') || 'desc',
+    estado: searchParams.get('estado') || undefined,
+    search: searchParams.get('search') || undefined,
+    fecha_desde: searchParams.get('fecha_desde') || undefined,
+    fecha_hasta: searchParams.get('fecha_hasta') || undefined,
+  }))
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Initialize filters from URL
-  useEffect(() => {
-    if (initializedRef.current) return
-    initializedRef.current = true
-
-    const urlFilters: IContratoListFilters = {
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-      sortBy: searchParams.get('sortBy') || 'created_at',
-      sortDir: (searchParams.get('sortDir') as 'asc' | 'desc') || 'desc',
-      estado: searchParams.get('estado') || undefined,
-      search: searchParams.get('search') || undefined,
-      fecha_desde: searchParams.get('fecha_desde') || undefined,
-      fecha_hasta: searchParams.get('fecha_hasta') || undefined,
-    }
-    setFiltersState(urlFilters)
-  }, [searchParams])
 
   // Sync filters to URL
   const updateUrl = useCallback((f: IContratoListFilters) => {
@@ -76,13 +70,13 @@ export function useContratos() {
 
   // Debounced fetch on filter changes
   useEffect(() => {
-    if (!initializedRef.current) return
-
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_DELAY
+    primeraCargaRef.current = false
     debounceRef.current = setTimeout(() => {
       fetchContratos(filters)
       updateUrl(filters)
-    }, DEBOUNCE_DELAY)
+    }, espera)
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)

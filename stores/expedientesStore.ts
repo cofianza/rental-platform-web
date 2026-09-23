@@ -83,7 +83,9 @@ const initialState: IExpedientesState = {
   stats: null,
   filters: DEFAULT_EXPEDIENTE_FILTERS,
   analistas: [],
-  isLoading: false,
+  // true hasta la primera carga: sin esto la lista vacía ("no hay estudios")
+  // asomaba antes del primer fetch.
+  isLoading: true,
   isLoadingStats: false,
   error: null,
   selectedExpediente: null,

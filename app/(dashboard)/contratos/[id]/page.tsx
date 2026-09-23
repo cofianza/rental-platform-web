@@ -72,6 +72,8 @@ export default function ContratoDetallePage() {
 
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  // El PDF carga aparte, con la página ya pintada.
+  const [previewCargando, setPreviewCargando] = useState(false)
   // true = el preview muestra el documento FIRMADO (con firmas + acuses); false
   // = el PDF generado de la plantilla.
   const [previewFirmado, setPreviewFirmado] = useState(false)
@@ -144,7 +146,32 @@ export default function ContratoDetallePage() {
       }
       setContrato(data)
 
+      // Transiciones (no críticas) y vista previa del PDF A LA VEZ, con la página
+      // ya pintada: antes todo iba en serie detrás del contrato (3-4 esperas
+      // antes de ver nada).
+      // Transiciones también en silent: es barato y es justo lo que cambia
+      // cuando el contrato avanza de estado.
+      const transiciones = (async () => {
+        if (data.estado && !TERMINAL_STATES.includes(data.estado)) {
+          try {
+            const t = await contratoService.getTransicionesDisponibles(id)
+            setTransiciones(t.transiciones_disponibles ?? [])
+            setMorasActivas(t.moras_activas ?? 0)
+          } catch {
+            // Silent
+          }
+        } else {
+          // Estado terminal (finalizado/cancelado): limpiar las transiciones
+          // viejas — sin esto, los botones de transición seguían pintados tras
+          // finalizar y un click daba error.
+          setTransiciones([])
+          setMorasActivas(0)
+        }
+      })()
+
       if (!silent) {
+        setIsLoading(false)
+        setPreviewCargando(true)
         // Preview del PDF. Si el contrato ya está FIRMADO, mostramos el DOCUMENTO
         // FIRMADO (con las firmas + los acuses de Auco) — el mismo que se le envía
         // al cliente. Si aún no está disponible o falla su generación, caemos al
@@ -179,25 +206,9 @@ export default function ContratoDetallePage() {
         }
         setPreviewUrl(urlPreview)
         setPreviewFirmado(esFirmado)
+        setPreviewCargando(false)
       }
-
-      // Fetch available transitions (non-critical) — también en silent: es
-      // barato y es justo lo que cambia cuando el contrato avanza de estado.
-      if (data.estado && !TERMINAL_STATES.includes(data.estado)) {
-        try {
-          const t = await contratoService.getTransicionesDisponibles(id)
-          setTransiciones(t.transiciones_disponibles ?? [])
-          setMorasActivas(t.moras_activas ?? 0)
-        } catch {
-          // Silent
-        }
-      } else {
-        // Estado terminal (finalizado/cancelado): limpiar las transiciones
-        // viejas — sin esto, los botones de transición seguían pintados tras
-        // finalizar y un click daba error.
-        setTransiciones([])
-        setMorasActivas(0)
-      }
+      await transiciones
     } catch (err: unknown) {
       // Un refresco silencioso que falla NO debe tumbar la página ya cargada.
       if (!silent) {
@@ -556,6 +567,10 @@ export default function ContratoDetallePage() {
               <ContratoVerificacionView contratoId={id} />
             ) : previewUrl ? (
               <PdfViewer url={previewUrl} />
+            ) : previewCargando ? (
+              <div className="flex h-full items-center justify-center text-gray-400">
+                <IconLoader size={24} className="animate-spin" />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">

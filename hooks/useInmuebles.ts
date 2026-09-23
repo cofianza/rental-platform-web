@@ -36,6 +36,8 @@ export function useInmuebles() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // La primera carga va sin debounce (antes esperaba 300 ms mostrando la lista vacía).
+  const primeraCargaRef = useRef(true)
   const initializedRef = useRef(false)
 
   // Estado del store
@@ -185,10 +187,12 @@ export function useInmuebles() {
       clearTimeout(debounceRef.current)
     }
 
+    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_DELAY
+    primeraCargaRef.current = false
     debounceRef.current = setTimeout(() => {
       fetchInmuebles()
       updateUrl(filters)
-    }, DEBOUNCE_DELAY)
+    }, espera)
 
     return () => {
       if (debounceRef.current) {

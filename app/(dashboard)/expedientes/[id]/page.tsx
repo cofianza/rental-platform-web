@@ -117,6 +117,9 @@ export default function ExpedienteDetallePage() {
   const [expediente, setExpediente] = useState<IExpedienteDetalle | null>(null)
   const [transiciones, setTransiciones] = useState<ITransicionDisponible[] | null>([])
   const [isLoading, setIsLoading] = useState(true)
+  // Sube en cada carga correcta: es la `key` del contenido, así las tarjetas se
+  // remontan y vuelven a pedir sus datos sin pasar por el skeleton de página.
+  const [cargas, setCargas] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
 
@@ -193,6 +196,7 @@ export default function ExpedienteDetallePage() {
       ])
       setExpediente(expedienteData)
       setTransiciones(transicionesData)
+      setCargas((n) => n + 1)
     } catch (err) {
       if (err instanceof Error && err.message.includes('no encontrado')) {
         setNotFound(true)
@@ -279,8 +283,9 @@ export default function ExpedienteDetallePage() {
     handleAsignarResponsable(user.id).catch(() => {})
   }
 
-  // Estado de carga
-  if (isLoading) {
+  // Estado de carga: el skeleton de página solo la primera vez. Al recargar tras
+  // una acción se sigue viendo el estudio (antes: ~2 s de página en blanco).
+  if (isLoading && !expediente) {
     return <ExpedienteDetalleSkeleton />
   }
 
@@ -330,7 +335,7 @@ export default function ExpedienteDetallePage() {
     : null
 
   return (
-    <div className="space-y-6">
+    <div key={cargas} className="space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex items-start gap-4">

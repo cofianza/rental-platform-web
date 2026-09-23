@@ -46,7 +46,8 @@ export interface IContratosStats {
 
 class ContratoService {
   async getStats(): Promise<IContratosStats> {
-    const response = (await apiClient.get('/contratos/stats')) as unknown as {
+    // La página de contratos y su vista la piden a la vez al montar → 1 petición.
+    const response = (await coalesceRequest('contratos-stats', () => apiClient.get('/contratos/stats'))) as unknown as {
       success: boolean
       data: IContratosStats
     }

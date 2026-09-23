@@ -32,6 +32,7 @@ import { TIPO_LABELS } from './constants'
 import { EstudiosActivosBadge } from './InmuebleBadges'
 import { money } from '@/components/dashboard/secciones/_shared'
 import { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
+import { PerfilIncompletoBanner } from './PerfilIncompletoBanner'
 import { cn } from '@/lib/utils'
 import {
   IconPlus,
@@ -177,6 +178,7 @@ export function PropiedadesInmobiliariaView() {
 
   return (
     <div className="space-y-6">
+      {perfilIncompleto && <PerfilIncompletoBanner completitud={completitud} />}
       {/* Encabezado: intro + saldo + agregar propiedad */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-medium text-gray-500">
@@ -256,7 +258,7 @@ export function PropiedadesInmobiliariaView() {
         </div>
 
         <div className="p-6">
-          {isLoading ? (
+          {isLoading && inmuebles.length === 0 ? (
             <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
               <IconLoader size={20} className="animate-spin text-primary-600" />
               Cargando propiedades…

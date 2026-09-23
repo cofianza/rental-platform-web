@@ -53,7 +53,8 @@ const initialState: IInmueblesState = {
   meta: null,
   filters: DEFAULT_INMUEBLE_FILTERS,
   filterOptions: null,
-  isLoading: false,
+  // true hasta la primera carga: sin esto el estado vacío asomaba antes del primer fetch.
+  isLoading: true,
   error: null,
   selectedInmueble: null,
 }

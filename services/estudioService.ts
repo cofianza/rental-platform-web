@@ -4,6 +4,7 @@
  */
 
 import { apiClient, ApiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import type {
   ITarifaEstudio,
   ITarifaOverrideInput,
@@ -77,9 +78,10 @@ export const estudioService = {
     page = 1,
     limit = 10,
   ): Promise<{ data: IEstudio[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
-    const res = await apiClient.get<IEstudio[]>(
-      `/expedientes/${expedienteId}/estudios?page=${page}&limit=${limit}`,
-    )
+    // Coalescing: en el detalle la tarjeta del estudio y la página lo piden a la
+    // vez al montar → 1 sola petición.
+    const url = `/expedientes/${expedienteId}/estudios?page=${page}&limit=${limit}`
+    const res = await coalesceRequest(url, () => apiClient.get<IEstudio[]>(url))
     return res as unknown as { data: IEstudio[]; pagination: { total: number; page: number; limit: number; totalPages: number } }
   },
 

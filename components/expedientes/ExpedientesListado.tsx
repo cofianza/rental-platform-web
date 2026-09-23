@@ -144,7 +144,8 @@ export function ExpedientesListado() {
 
       {/* Tabla / Skeleton / Empty */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        {isLoading ? (
+        {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+        {isLoading && expedientes.length === 0 ? (
           <ExpedientesSkeleton count={filters.limit} />
         ) : (
           <ExpedientesTable

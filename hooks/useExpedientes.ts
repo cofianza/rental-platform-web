@@ -21,11 +21,14 @@ const EXPEDIENTE_MESSAGES = {
   ANALISTAS_ERROR: 'Error al cargar analistas',
 }
 
-export function useExpedientes() {
+/** `conStats: false` para vistas que no muestran las estadísticas de estudios (una llamada menos). */
+export function useExpedientes({ conStats = true }: { conStats?: boolean } = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // La primera carga va sin debounce (antes esperaba 300 ms mostrando la lista vacía).
+  const primeraCargaRef = useRef(true)
   const initializedRef = useRef(false)
 
   // Auth
@@ -189,10 +192,12 @@ export function useExpedientes() {
       clearTimeout(debounceRef.current)
     }
 
+    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_DELAY
+    primeraCargaRef.current = false
     debounceRef.current = setTimeout(() => {
       fetchExpedientes()
       updateUrl(filters)
-    }, DEBOUNCE_DELAY)
+    }, espera)
 
     return () => {
       if (debounceRef.current) {
@@ -206,8 +211,8 @@ export function useExpedientes() {
    */
   useEffect(() => {
     fetchAnalistas()
-    fetchStats()
-  }, [fetchStats, fetchAnalistas])
+    if (conStats) fetchStats()
+  }, [fetchStats, fetchAnalistas, conStats])
 
   /**
    * Actualiza filtros (con reset de página si no es cambio de página)

@@ -41,6 +41,11 @@ export function useNotificationsRealtime() {
 
   // Guardar canal entre renders para limpiar bien al desmontar.
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  // ¿El canal Realtime está suscrito? Con canal vivo el polling es solo una red
+  // de seguridad cada 5 min; caído, cada 60 s (Effect 4).
+  const vivoRef = useRef(false)
+  // Hora del último fetch correcto de la lista (inicial o de polling).
+  const ultimoFetchRef = useRef(0)
 
   // ── Effect 1: fetch inicial + canal Realtime ────────────────────
   // Solo depende del usuario. NO incluimos accessToken aquí; eso lo
@@ -62,12 +67,13 @@ export function useNotificationsRealtime() {
     let gaveUp = false
 
     setLoading(true)
-    notificacionService
-      .list({ limit: 30 })
-      .then((res) => {
+    const cargar = () =>
+      notificacionService.list({ limit: 30 }).then((res) => {
         if (cancelled) return
         setItems(res.data)
+        ultimoFetchRef.current = Date.now()
       })
+    cargar()
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.error('[useNotificationsRealtime] fetch inicial fallo:', err)
@@ -116,9 +122,14 @@ export function useNotificationsRealtime() {
         // callback pertenece a un canal viejo: no toques el estado nuevo.
         if (cancelled) return
         if (status === 'SUBSCRIBED') {
+          // Tras una caída, postgres_changes no reenvía lo que se perdió: una
+          // lectura para ponerse al día.
+          if (errorCount > 0) cargar().catch(() => undefined)
           errorCount = 0
+          vivoRef.current = true
           return
         }
+        vivoRef.current = false
         // Solo CHANNEL_ERROR / TIMED_OUT cuentan como fallo real. Tras 3
         // intentos cerramos el canal para cortar el bucle de reconexión
         // (y el ruido en consola) — el polling de 60s toma el relevo.
@@ -144,6 +155,7 @@ export function useNotificationsRealtime() {
 
     return () => {
       cancelled = true
+      vivoRef.current = false
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
         channelRef.current = null
@@ -172,25 +184,35 @@ export function useNotificationsRealtime() {
     }
   }, [])
 
-  // ── Effect 4: polling cada 60s como red de seguridad ────────────
+  // ── Effect 4: polling como red de seguridad ─────────────────────
   // Realtime via postgres_changes es la via principal, pero si la WS se
   // cae (red intermitente, idle prolongado, evento perdido), el badge se
-  // queda desactualizado. Cada 60 segundos refrescamos la lista desde el
-  // backend para garantizar que las notificaciones lleguen incluso si el
-  // canal Realtime esta inactivo. La pestaña en background pausa el
-  // setInterval (browser throttling), asi que el costo es bajo.
+  // queda desactualizado. Solo en la pestaña visible (un setInterval en
+  // background sigue disparando, aunque Chrome lo espacie): cada 5 min con el
+  // canal vivo, cada 60 s con el canal caído, y al volver a la pestaña si ya
+  // tocaba. Era el 41 % de las llamadas a la API.
   useEffect(() => {
     if (!isAuthenticated || !userId) return
     const tick = () => {
+      if (document.hidden) return
+      const espera = vivoRef.current ? 5 * 60_000 : 60_000
+      if (Date.now() - ultimoFetchRef.current < espera) return
       notificacionService
         .list({ limit: 30 })
-        .then((res) => setItems(res.data))
+        .then((res) => {
+          setItems(res.data)
+          ultimoFetchRef.current = Date.now()
+        })
         .catch((err) => {
           // eslint-disable-next-line no-console
           console.warn('[notif polling] fetch fallo:', err)
         })
     }
     const intervalId = setInterval(tick, 60_000)
-    return () => clearInterval(intervalId)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [isAuthenticated, userId, setItems])
 }
