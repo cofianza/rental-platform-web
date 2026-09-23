@@ -151,7 +151,11 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
     return 'Estudio cancelado.'
   }
   if (estudio.estado === 'en_proceso') {
-    return 'Consultando con el buró de crédito. El resultado llega en minutos.'
+    // Pasados 10 min la consulta se cortó (p. ej. un reinicio): la API la
+    // recoge en su barrido; no seguir prometiendo "minutos".
+    return Date.now() - new Date(estudio.updated_at).getTime() > 10 * 60 * 1000
+      ? 'La consulta al buró está tardando más de lo normal. Cofianza la está revisando.'
+      : 'Consultando con el buró de crédito. El resultado llega en minutos.'
   }
   // §6.3: el orden es AUTORIZACION -> PAGO -> EJECUCION. 'solicitado' es la
   // espera de la firma; 'pago_pendiente' es la espera del cobro, ya autorizado.
