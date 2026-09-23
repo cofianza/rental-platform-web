@@ -165,7 +165,10 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     estudio.estado === 'completado' &&
     (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
 
+  // El CRC se emite sobre el estudio del titular: el del co-arrendatario ya se
+  // refleja en él (la API responde 409).
   const isCertificable =
+    estudio.tipo !== 'con_coarrendatario' &&
     estudio.estado === 'completado' &&
     (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado')
 
