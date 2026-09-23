@@ -495,15 +495,13 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               <p className="text-xs text-blue-600">
                 {estado.monto_formateado} COP — el pago se inició (PSE/efectivo); se confirma automáticamente.
               </p>
+              {/* Sin "cancelar": el PSE o el recibo de efectivo ya salió y
+                  cancelarlo cobraría el estudio dos veces (el API responde 409). */}
+              <p className="text-xs text-blue-600">
+                Si el pago vence, podrás {cancelarConCredito ? 'liberarlo con crédito' : 'pagarlo tú'}.
+              </p>
             </div>
           </div>
-          <button
-            onClick={onCancelar}
-            disabled={isSubmitting}
-            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            {labelCancelar}
-          </button>
         </div>
       )}
 
