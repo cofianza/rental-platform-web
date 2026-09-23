@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { rutaInterna } from '@/lib/utils'
 import type { ILoginCredentials } from '@/types/auth'
 
 export function useAuth() {
@@ -35,7 +36,7 @@ export function useAuth() {
     async (credentials: ILoginCredentials, redirectTo?: string) => {
       try {
         await authService.login(credentials)
-        const target = redirectTo && redirectTo.startsWith('/') ? redirectTo : AUTH_ROUTES.DASHBOARD
+        const target = rutaInterna(redirectTo) ?? AUTH_ROUTES.DASHBOARD
         window.location.replace(target)
       } catch {
         // Error ya manejado en authService

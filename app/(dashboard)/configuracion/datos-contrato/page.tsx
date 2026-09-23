@@ -22,6 +22,7 @@ import {
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { rutaInterna } from '@/lib/utils'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
 const ROL_LABELS: Record<string, string> = {
@@ -42,7 +43,7 @@ export default function DatosContratoPage() {
   // al guardar volvemos a donde estabamos. Validamos que sea un path
   // interno seguro para evitar open-redirect.
   const returnToParam = searchParams?.get('returnTo')
-  const returnTo = returnToParam && returnToParam.startsWith('/') ? returnToParam : null
+  const returnTo = rutaInterna(returnToParam)
 
   const [perfil, setPerfil] = useState<IPerfilArrendador | null>(null)
   const [loading, setLoading] = useState(true)

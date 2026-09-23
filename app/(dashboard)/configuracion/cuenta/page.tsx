@@ -18,6 +18,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
+import { rutaInterna } from '@/lib/utils'
 import type { IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
 import { IconLoader, IconCheck } from '@/components/icons'
 
@@ -56,7 +57,7 @@ export default function MiCuentaPage() {
   // Si vinimos redirigidos (banner "completá tu perfil"), al guardar volvemos
   // a donde estabamos. Solo aceptamos paths internos (evita open-redirect).
   const returnToParam = searchParams?.get('returnTo')
-  const returnTo = returnToParam && returnToParam.startsWith('/') ? returnToParam : null
+  const returnTo = rutaInterna(returnToParam)
   const isInmobiliaria = user?.rol === 'inmobiliaria'
   const isSolicitante = user?.rol === 'solicitante'
 

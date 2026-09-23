@@ -12,6 +12,7 @@ import { InmuebleForm } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
 import { IconLoader } from '@/components/icons'
 import { inmuebleService } from '@/services/inmuebleService'
+import { rutaInterna } from '@/lib/utils'
 import type { IInmueble } from '@/types/inmueble'
 
 export default function EditarInmueblePage() {
@@ -20,7 +21,7 @@ export default function EditarInmueblePage() {
   const id = params.id as string
   // Desde el asistente de contratos: al guardar (o cancelar) se vuelve allá. Solo rutas internas.
   const returnToParam = useSearchParams()?.get('returnTo')
-  const returnTo = returnToParam?.startsWith('/') && !returnToParam.startsWith('//') ? returnToParam : undefined
+  const returnTo = rutaInterna(returnToParam) ?? undefined
 
   const [inmueble, setInmueble] = useState<IInmueble | null>(null)
   const [isLoading, setIsLoading] = useState(true)

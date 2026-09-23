@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconArrowRight, IconEye, IconEyeOff, IconGoogle, IconLoader } from '@/components/icons'
-import { cn, isValidEmail } from '@/lib/utils'
+import { cn, isValidEmail, rutaInterna } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -96,7 +96,7 @@ function LoginForm() {
       // expediente + cita en un solo paso.
       return `/inmueble/${propertyId}?agendar=1`
     }
-    return searchParams.get('redirect') || AUTH_ROUTES.DASHBOARD
+    return rutaInterna(searchParams.get('redirect')) ?? AUTH_ROUTES.DASHBOARD
   }
 
   // Redirigir si ya está autenticado (ej: navega a /login estando logueado)

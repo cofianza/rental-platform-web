@@ -15,6 +15,20 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Ruta interna para redirigir (?redirect=, ?returnTo=) o null. Se decide con el
+ * mismo parser del navegador: "//otro-sitio", "/\otro-sitio" o "/<tab>/otro-sitio"
+ * empiezan por "/" pero llevan a otro dominio (redirección abierta, phishing).
+ */
+export function rutaInterna(ruta?: string | null): string | null {
+  if (!ruta?.startsWith('/')) return null
+  try {
+    return new URL(ruta, 'https://cofianza.invalid').host === 'cofianza.invalid' ? ruta : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Genera un ID único simple
  */
 export function generateId(): string {
