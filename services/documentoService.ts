@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import type {
   IDocumento,
   ITipoDocumento,
@@ -97,11 +98,11 @@ class DocumentoService {
       totalPages: number
     }
   }> {
-    const queryString = buildQueryString(query)
+    // Coalescing: la pestaña Documentos y el panel de revisión lo piden a la vez
+    // al montar → 1 sola petición.
+    const url = `/expedientes/${expedienteId}/documentos${buildQueryString(query)}`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get(
-      `/expedientes/${expedienteId}/documentos${queryString}`
-    )) as any
+    const response = (await coalesceRequest(url, () => apiClient.get(url))) as any
 
     return {
       documentos: response.data || [],

@@ -178,11 +178,9 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
     setError(null)
 
     try {
-      const result = await documentoService.getDocumentosByExpediente(expedienteId, {
-        limit: 100,
-        sortBy: 'created_at',
-        sortOrder: 'desc',
-      })
+      // Misma consulta que DocumentosSection (created_at desc es el orden por
+      // defecto del API): así las dos comparten una sola petición.
+      const result = await documentoService.getDocumentosByExpediente(expedienteId, { limit: 100 })
 
       const docs = result.documentos.filter((d) => d.estado !== 'reemplazado')
       setDocumentos(docs)
