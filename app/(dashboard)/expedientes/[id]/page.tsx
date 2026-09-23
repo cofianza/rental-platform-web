@@ -132,6 +132,13 @@ export default function ExpedienteDetallePage() {
 
   // Estado de tabs
   const [activeTab, setActiveTab] = useState('resumen')
+  // Documentos queda montado (oculto) por el contador de pendientes; al abrir
+  // la pestaña se remonta para traer lo último, como antes.
+  const [visitasDocumentos, setVisitasDocumentos] = useState(0)
+  const cambiarTab = (tab: string) => {
+    if (tab === 'documentos' && activeTab !== 'documentos') setVisitasDocumentos((n) => n + 1)
+    setActiveTab(tab)
+  }
 
   // 3.1: nº total de expedientes de esta persona — permite al gestor "evaluar
   // cada caso" cuando la ficha se reutilizó (el toast del wizard es efímero).
@@ -500,14 +507,15 @@ export default function ExpedienteDetallePage() {
       )}
 
       {/* Tabs */}
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={cambiarTab} />
 
       {/* Contenido de tabs. Mientras se actualiza no se puede volver a pulsar
           una acción sobre datos que están por cambiar (doble clic). */}
       <div className={`bg-white rounded-lg shadow-sm border border-gray-200${isLoading ? ' pointer-events-none' : ''}`}>
-        {/* Tab: Resumen */}
-        {activeTab === 'resumen' && (
-          <div className="p-6 space-y-6">
+        {/* Tab: Resumen. Siempre montado (oculto en las otras pestañas): al
+            volver no se desmontan y re-piden sus tarjetas. Se mantienen al día
+            con el contador de cargas (fetchExpediente), no remontándose. */}
+        <div className="p-6 space-y-6" hidden={activeTab !== 'resumen'}>
             {/* Miembro del equipo con perfil personal incompleto: explica por
                 qué no puede administrar y enlaza a completar su perfil. */}
             <PerfilPersonalIncompletoBanner user={user} />
@@ -924,13 +932,14 @@ export default function ExpedienteDetallePage() {
                 )}
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
-        {/* Tab: Documentos (HP-295) */}
-        {activeTab === 'documentos' && (
-          <div className="p-6">
+        {/* Tab: Documentos (HP-295). Montado desde el inicio (oculto) para que
+            el contador de pendientes de la pestaña se vea sin tener que abrirla. */}
+        {user?.rol !== 'solicitante' && (
+          <div className="p-6" hidden={activeTab !== 'documentos'}>
             <DocumentosSection
+              key={visitasDocumentos}
               expedienteId={id}
               userRole={user?.rol}
               onPendientesChange={setPendientesCount}
@@ -1002,7 +1011,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Pagos (HP-351) */}
         {activeTab === 'pagos' && (
           <div className="p-6">
-            <PagosSection expedienteId={id} />
+            <PagosSection expedienteId={id} onPagoActualizado={fetchExpediente} />
           </div>
         )}
 

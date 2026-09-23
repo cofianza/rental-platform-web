@@ -33,6 +33,8 @@ import { abrirEnPestana } from '@/lib/utils'
 
 interface PagosSectionProps {
   expedienteId: string
+  /** Tras cancelar, reenviar o registrar un pago: el Resumen (montado aparte) se refresca. */
+  onPagoActualizado?: () => void
 }
 
 type PageState = 'loading' | 'ready' | 'error'
@@ -84,7 +86,7 @@ function formatCOP(amount: number): string {
 // Component
 // ============================================
 
-export function PagosSection({ expedienteId }: PagosSectionProps) {
+export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionProps) {
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Facturar tiene un permiso más amplio: admin, operador, inmobiliaria y
@@ -188,12 +190,13 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
     try {
       await pagoService.reenviarLink(pagoId)
       toast.success('Link reenviado por email')
+      onPagoActualizado?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al reenviar')
     } finally {
       setActionLoading(null)
     }
-  }, [])
+  }, [onPagoActualizado])
 
   const handleFacturar = useCallback((pagoId: string) => {
     toast('¿Generar factura electrónica para este pago?', {
@@ -233,6 +236,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
             await pagoService.cancelar(pagoId)
             toast.success('Pago cancelado')
             fetchPagos()
+            onPagoActualizado?.()
           } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Error al cancelar')
           } finally {
@@ -245,7 +249,7 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
         onClick: () => {},
       },
     })
-  }, [fetchPagos])
+  }, [fetchPagos, onPagoActualizado])
 
   const handleDescargarComprobante = useCallback(async (pagoId: string) => {
     setActionLoading(pagoId)
@@ -265,8 +269,9 @@ export function PagosSection({ expedienteId }: PagosSectionProps) {
 
   const handleSuccess = useCallback(() => {
     fetchPagos()
+    onPagoActualizado?.()
     toast.success('Pago registrado correctamente')
-  }, [fetchPagos])
+  }, [fetchPagos, onPagoActualizado])
 
   // ============================================
   // Render: Loading
