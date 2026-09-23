@@ -594,7 +594,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             <EncabezadoPaso titulo="Cláusulas adicionales" />
             <Aviso>
               En la Ruta B no hay cláusulas adicionales: se firma el contrato de la inmobiliaria tal como lo cargues,
-              seguido del Anexo de condiciones de Cofianza.
+              seguido de una página divisoria y del Anexo de condiciones de Cofianza.
             </Aviso>
           </div>
         )}
@@ -676,7 +676,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             </ol>
             <p>
               {crc ? `Se adjunta el CRC N° ${crc.codigo}.` : 'Se adjunta el CRC.'}
-              {rutaB && ' El PDF de la inmobiliaria va sin modificaciones, seguido del Anexo de condiciones.'}
+              {rutaB && ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones.'}
             </p>
             <p className="font-medium text-gray-900">
               Después de enviarlo, el contrato no se puede editar. Cada envío consume un crédito de firma.

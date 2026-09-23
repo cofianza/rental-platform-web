@@ -22,7 +22,7 @@ import {
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { Borrador, ErroresPaso } from '@/hooks/useContratoV3'
 import type { EstadoAsistente, Paso1 } from '@/types/contratoV3'
-import { Aviso, CampoPesos, Dato, EncabezadoPaso, OpcionTarjeta, Tarjeta, documento, porcentaje } from './campos'
+import { Aviso, CampoPesos, Dato, EncabezadoPaso, OpcionTarjeta, RUTA_B_SIN_FIRMA, Tarjeta, documento, porcentaje } from './campos'
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
 
@@ -215,14 +215,14 @@ export function Paso1Confirmacion({
           checked={value.ruta === 'B'}
           onSelect={() => onChange({ ...value, ruta: 'B' })}
           titulo="Ruta B — contrato propio de la inmobiliaria"
-          descripcion="Cargas tu contrato en PDF y se firma sin modificaciones, seguido del Anexo de condiciones de la fianza."
+          descripcion="Cargas tu contrato en PDF: va primero y sin modificaciones, seguido de una página divisoria y del Anexo de condiciones de la fianza."
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
         {value.ruta === 'B' && (
           <Aviso>
             En la Ruta B no hay cláusulas adicionales. En el paso 5 cargas el contrato en PDF (máximo 6 MB y 60
-            páginas, sin contraseña ni campos editables) y generas el Anexo.
+            páginas, sin contraseña ni campos editables) y generas el Anexo. {RUTA_B_SIN_FIRMA}
           </Aviso>
         )}
       </fieldset>

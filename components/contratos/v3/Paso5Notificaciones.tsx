@@ -27,7 +27,7 @@ import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
 import type { Contacto, EstadoAsistente, NumeroPaso, Paso5 } from '@/types/contratoV3'
 import { AvisosContrato, BloqueosContrato } from './BloqueosContrato'
-import { Aviso, Campo, EncabezadoPaso } from './campos'
+import { Aviso, Campo, EncabezadoPaso, RUTA_B_SIN_FIRMA } from './campos'
 
 const PdfViewer = dynamic(() => import('@/components/ui/PdfViewer').then((m) => ({ default: m.PdfViewer })), {
   ssr: false,
@@ -207,6 +207,7 @@ export function VistaPreviaContrato({
   // Lo que se firma es lo que se revisó: documento vigente, sin textos pendientes y, en B, con el PDF cargado.
   const motivoNoEnviar =
     motivoNoGenerar ??
+    (rutaB ? RUTA_B_SIN_FIRMA : null) ??
     (!documento
       ? rutaB
         ? 'Genera el Anexo y revísalo antes de enviar a firma.'
