@@ -88,6 +88,19 @@ export interface IPresignedUrlResponse {
   expires_in: number
 }
 
+/**
+ * La garantía es la prima de vinculación y lleva IVA (Adenda 1 de contratos
+ * §1.1). Sugerencia del API: el % del estudio sobre el canon del contrato o,
+ * sin contrato, sobre el evaluado. Montos en null si no hay canon.
+ */
+export interface IPrimaSugerida {
+  canon: 'contrato' | 'estudio'
+  prima_vinculacion_pct: number
+  prima_vinculacion_cop: number | null
+  iva_pct: number
+  prima_vinculacion_con_iva_cop: number | null
+}
+
 export interface IComprobanteUrlResponse {
   url: string
   nombre_original: string | null
@@ -123,6 +136,12 @@ class PagoService {
       pagos: response.data,
       pagination: response.pagination,
     }
+  }
+
+  /** La prima con IVA que se sugiere al cobrar la garantía. */
+  async getPrimaSugerida(expedienteId: string): Promise<IPrimaSugerida> {
+    const response = await apiClient.get<IPrimaSugerida>(`/expedientes/${expedienteId}/pagos/prima-sugerida`)
+    return response.data
   }
 
   /**

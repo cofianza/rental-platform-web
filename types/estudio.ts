@@ -410,7 +410,10 @@ export interface ITarifasCalculadas {
   iva_pct: number
   tarifa_mensual_con_iva_cop: number | null
   prima_vinculacion_pct: number
+  /** Base, sin IVA. */
   prima_vinculacion_cop: number | null
+  /** La prima más IVA (Adenda 1 de contratos §1.1); opcional mientras el API no la mande. */
+  prima_vinculacion_con_iva_cop?: number | null
   cashback_pct: number
   /** true cuando alguna cifra viene de condiciones especiales autorizadas. */
   negociada: boolean

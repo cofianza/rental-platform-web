@@ -28,6 +28,12 @@ const VIA_LABEL: Record<ViaAprobacion, string> = {
 const INPUT_CLASS =
   'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50'
 
+/** " ($300.000 + IVA = $357.000)": la base y lo que se cobra. */
+function pesosConIva(base: number | null, conIva: number | null | undefined): string {
+  if (base == null) return ''
+  return ` (${formatCurrency(base)}${conIva != null ? ` + IVA = ${formatCurrency(conIva)}` : ''})`
+}
+
 function avisarCrc(d: ITarifaEstudio) {
   if (d.crc_regenerado) toast.success('CRC regenerado con las nuevas condiciones')
   else if (d.crc_error) toast.warning(`La tarifa quedó guardada, pero el CRC no se regeneró: ${d.crc_error}`)
@@ -92,15 +98,14 @@ export function TarifaEstudioBlock({ estudio, userRol }: { estudio: IEstudio; us
         <div>
           <dt className="text-xs text-gray-500">Mensual</dt>
           <dd className="font-semibold">
-            {t.tarifa_mensual_pct}% + IVA
-            {t.tarifa_mensual_cop != null && ` (${formatCurrency(t.tarifa_mensual_cop)})`}
+            {t.tarifa_mensual_pct}% + IVA{pesosConIva(t.tarifa_mensual_cop, t.tarifa_mensual_con_iva_cop)}
           </dd>
         </div>
         <div>
+          {/* La prima también causa IVA (Adenda 1 de contratos §1.1). */}
           <dt className="text-xs text-gray-500">Prima</dt>
           <dd className="font-semibold">
-            {t.prima_vinculacion_pct}%
-            {t.prima_vinculacion_cop != null && ` (${formatCurrency(t.prima_vinculacion_cop)})`}
+            {t.prima_vinculacion_pct}% + IVA{pesosConIva(t.prima_vinculacion_cop, t.prima_vinculacion_con_iva_cop)}
           </dd>
         </div>
         <div>

@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
 import { pagoService } from '@/services/pagoService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
+import { GarantiaIvaAyuda, usePrimaSugerida } from './GarantiaIva'
 
 // ============================================
 // Types
@@ -73,6 +74,14 @@ export function GenerarLinkPagoModal({
   useEffect(() => {
     if (esEstudio && montoEstudio !== null) setMonto(String(montoEstudio))
   }, [esEstudio, montoEstudio])
+
+  // La garantía (prima de vinculación) se sugiere con IVA; el monto sigue siendo editable.
+  const esGarantia = concepto === 'garantia'
+  const primaSugerida = usePrimaSugerida(expedienteId, isOpen && esGarantia)
+  useEffect(() => {
+    const total = primaSugerida?.prima_vinculacion_con_iva_cop
+    if (esGarantia && total != null) setMonto((m) => m || String(total))
+  }, [esGarantia, primaSugerida])
 
   const resetForm = useCallback(() => {
     setConcepto('')
@@ -214,6 +223,7 @@ export function GenerarLinkPagoModal({
                 ? `$${formatMontoDisplay(monto)} COP`
                 : ''}
           </p>
+          {esGarantia && <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} />}
         </div>
 
         {/* Descripcion */}
