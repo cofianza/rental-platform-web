@@ -15,6 +15,9 @@ import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/e
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 
+/** transitionBodySchema del API exige el comentario con al menos 10 caracteres. */
+const MIN_MOTIVO = 10
+
 export interface TransicionModalProps {
   isOpen: boolean
   onClose: () => void
@@ -74,6 +77,9 @@ export function TransicionModal({
   const estadoSeleccionado = transicionSeleccionada?.estado_destino ?? null
   // Adenda 2 §4.3: aprobar una revisión manual recalcula el puntaje con V7/V9.
   const pideEvaluacion = esRevisionManual && estadoSeleccionado === 'aprobado'
+  // Mismo mínimo que transitionBodySchema en el API: sin esto se pasaba por la
+  // confirmación roja y el 400 llegaba después.
+  const motivoValido = comentario.trim().length >= MIN_MOTIVO
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
@@ -81,8 +87,8 @@ export function TransicionModal({
       return
     }
 
-    if (!comentario.trim()) {
-      setError('El comentario es obligatorio')
+    if (!motivoValido) {
+      setError(`Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
@@ -211,7 +217,8 @@ export function TransicionModal({
           <p className="mt-1 text-xs text-gray-500">
             {esRevisionManual
               ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
-              : 'Este comentario quedará registrado en el historial del estudio'}
+              : 'Este comentario quedará registrado en el historial del estudio.'}
+            {!motivoValido && ` Mínimo ${MIN_MOTIVO} caracteres (${comentario.trim().length}/${MIN_MOTIVO}).`}
           </p>
         </div>
 
@@ -243,7 +250,7 @@ export function TransicionModal({
           <button
             type="button"
             onClick={handleConfirmar}
-            disabled={isLoading || !estadoSeleccionado || !comentario.trim()}
+            disabled={isLoading || !estadoSeleccionado || !motivoValido}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
               esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
             }`}
