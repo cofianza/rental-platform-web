@@ -226,8 +226,11 @@ export default function ContratoDetallePage() {
 
   // Refresco tras completar todas las firmas: EN SITIO (no full-page skeleton),
   // para no desmontar/re-montar FirmantesContratoSection y evitar el bucle.
+  // El webhook de Auco marca la última firma y DESPUÉS pasa el contrato a
+  // firmado → vigente: una segunda lectura recoge ese cierre sin recargar.
   const handleAllSigned = useCallback(() => {
     fetchContrato({ silent: true })
+    setTimeout(() => { fetchContrato({ silent: true }) }, 2500)
   }, [fetchContrato])
 
   useEffect(() => {
