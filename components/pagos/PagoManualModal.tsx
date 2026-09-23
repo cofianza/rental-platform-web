@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { pagoService } from '@/services/pagoService'
+import { hoyBogota } from '@/hooks/useContratoV3'
 
 // ============================================
 // Types
@@ -43,7 +44,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
   const [descripcion, setDescripcion] = useState('')
   const [referenciaBancaria, setReferenciaBancaria] = useState('')
   const [notas, setNotas] = useState('')
-  const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0])
+  const [fechaPago, setFechaPago] = useState(hoyBogota)
   const [file, setFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,7 +58,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
     setDescripcion('')
     setReferenciaBancaria('')
     setNotas('')
-    setFechaPago(new Date().toISOString().split('T')[0])
+    setFechaPago(hoyBogota())
     setFile(null)
     setFilePreview(null)
     setError(null)
@@ -114,7 +115,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
     if (!metodo) { setError('Selecciona un metodo de pago'); return }
     if (!fechaPago) { setError('Selecciona la fecha de pago'); return }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = hoyBogota()
     if (fechaPago > today) { setError('La fecha de pago no puede ser futura'); return }
 
     setIsSubmitting(true)
@@ -216,7 +217,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
               type="date"
               value={fechaPago}
               onChange={(e) => setFechaPago(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              max={hoyBogota()}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
               disabled={isSubmitting}
             />

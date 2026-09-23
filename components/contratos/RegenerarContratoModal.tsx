@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconRefresh } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import { hoyBogota } from '@/hooks/useContratoV3'
 import { SERVICIOS_CONTRATO } from '@/components/expedientes/serviciosContrato'
 import type { CargoServicio } from '@/types/contrato'
 
@@ -52,7 +53,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
 
   useEffect(() => {
     if (isOpen && contrato) {
-      setFechaInicio(contrato.fecha_inicio || new Date().toISOString().split('T')[0])
+      setFechaInicio(contrato.fecha_inicio || hoyBogota())
       setDuracionMeses(String(contrato.duracion_meses || 12))
       setValorArriendo(contrato.valor_arriendo ? String(contrato.valor_arriendo) : '')
       setReasignarServicios(false)

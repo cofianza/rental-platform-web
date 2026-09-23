@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconFileText, IconUpload } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import { hoyBogota } from '@/hooks/useContratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/contrato'
 
@@ -69,7 +70,7 @@ export function GenerarContratoModal({
   useEffect(() => {
     if (isOpen) {
       setTipo('cofianza')
-      setFechaInicio(new Date().toISOString().split('T')[0])
+      setFechaInicio(hoyBogota())
       setDuracionMeses('12')
       setModalidad('plena')
       setCotitular({})
