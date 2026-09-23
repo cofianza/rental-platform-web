@@ -112,7 +112,7 @@ export default function AdminPaquetesPage() {
     }
     const input: ICreatePaqueteInput = {
       nombre: form.nombre.trim(),
-      descripcion: form.descripcion.trim() || undefined,
+      descripcion: form.descripcion.trim(), // vacía = quitarla (la API la guarda como null)
       cantidad_estudios: parseInt(form.cantidad_estudios, 10),
       precio_cop: parseInt(form.precio_cop, 10),
       vence_en_dias: form.vence_en_dias ? parseInt(form.vence_en_dias, 10) : null,
@@ -169,7 +169,7 @@ export default function AdminPaquetesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Paquetes de créditos de estudios"
-        subtitle="Configure los paquetes que las inmobiliarias compran para liberar estudios"
+        subtitle="Configura los paquetes que las inmobiliarias compran para liberar estudios"
         actions={
           <button
             onClick={openCreate}
