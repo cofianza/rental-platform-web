@@ -8,6 +8,7 @@
 import { useState, useEffect, use } from 'react'
 import { estudioPublicService } from '@/services/estudioService'
 import type { IVerificacionCertificado } from '@/types/estudio'
+import { IconAlertTriangle, IconCheck, IconX } from '@/components/icons'
 
 interface PageProps {
   params: Promise<{ codigo: string }>
@@ -90,9 +91,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <IconX size={32} className="text-red-600" />
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de Verificación</h1>
         <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intenta nuevamente.</p>
@@ -105,9 +104,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <IconX size={32} className="text-red-600" />
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Certificado No Encontrado</h1>
         <p className="text-sm text-gray-600 mb-4">
@@ -133,13 +130,9 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           }`}
         >
           {isVigente ? (
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <IconCheck size={32} className="text-green-600" />
           ) : (
-            <svg className="w-8 h-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+            <IconAlertTriangle size={32} className="text-yellow-600" />
           )}
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-1">
