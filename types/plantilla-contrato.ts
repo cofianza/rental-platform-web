@@ -7,6 +7,8 @@ export interface IPlantillaContrato {
   nombre: string
   descripcion: string | null
   contenido: string
+  /** Plantillas HTML (V1/V4) que usa el generador de PDF; no se editan en el panel. */
+  contenido_html?: string | null
   variables: string[]
   activa: boolean
   version: number
@@ -18,7 +20,8 @@ export interface IPlantillaContrato {
 export interface IPlantillaContratoFormData {
   nombre: string
   descripcion?: string
-  contenido: string
+  /** Ausente al editar una plantilla HTML: solo cambian nombre, descripción y activa. */
+  contenido?: string
   activa?: boolean
 }
 

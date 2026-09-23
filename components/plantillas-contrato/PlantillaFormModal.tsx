@@ -2,7 +2,7 @@
 
 import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect, useMemo } from 'react'
-import { IconX } from '@/components/icons'
+import { IconAlertTriangle, IconX } from '@/components/icons'
 import { RichTextEditor } from './RichTextEditor'
 import type { IPlantillaContrato, IPlantillaContratoFormData } from '@/types/plantilla-contrato'
 
@@ -27,6 +27,9 @@ export function PlantillaFormModal({
   const [activa, setActiva] = useState(true)
 
   const isEditing = !!plantilla
+  // V1/V4 viven en contenido_html con estilos de impresión, tablas, logo y las
+  // anclas de firma de Auco: el editor las destruye, así que no se montan.
+  const esHtml = !!plantilla?.contenido_html
 
   useEffect(() => {
     if (plantilla) {
@@ -60,7 +63,7 @@ export function PlantillaFormModal({
     onSubmit({
       nombre: nombre.trim(),
       descripcion: descripcion.trim() || undefined,
-      contenido,
+      ...(esHtml ? {} : { contenido }),
       activa,
     })
   }
@@ -118,20 +121,32 @@ export function PlantillaFormModal({
         {/* Contenido */}
         <div>
           <p className="block text-sm font-medium text-gray-700 mb-1">
-            Contenido <span className="text-red-500">*</span>
+            Contenido {!esHtml && <span className="text-red-500">*</span>}
           </p>
-          <RichTextEditor
-            content={contenido}
-            onChange={setContenido}
-            placeholder="Escribe el contenido del contrato aqui. Usa el boton 'Variable' para insertar datos dinamicos..."
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Usa el boton <strong>+ Variable</strong> en la barra de herramientas para insertar datos dinamicos como nombres, documentos, fechas, etc.
-          </p>
+          {esHtml ? (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <IconAlertTriangle size={18} className="mt-0.5 shrink-0" />
+              <p>
+                Esta plantilla es un documento HTML con formato de impresión y los espacios de firma, así que su contenido no se edita desde aquí.
+                Puedes cambiar el nombre, la descripción y si está activa.
+              </p>
+            </div>
+          ) : (
+            <>
+              <RichTextEditor
+                content={contenido}
+                onChange={setContenido}
+                placeholder="Escribe el contenido del contrato aqui. Usa el boton 'Variable' para insertar datos dinamicos..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Usa el boton <strong>+ Variable</strong> en la barra de herramientas para insertar datos dinamicos como nombres, documentos, fechas, etc.
+              </p>
+            </>
+          )}
         </div>
 
         {/* Variables detectadas */}
-        {detectedVariables.length > 0 && (
+        {!esHtml && detectedVariables.length > 0 && (
           <div>
             <p className="block text-sm font-medium text-gray-700 mb-1">
               Variables detectadas ({detectedVariables.length})
@@ -175,7 +190,7 @@ export function PlantillaFormModal({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || !nombre.trim() || !contenido.trim()}
+            disabled={isSubmitting || !nombre.trim() || (!esHtml && !contenido.trim())}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting

@@ -387,10 +387,12 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
   })
 
-  // Sync external content changes (e.g. when switching between create/edit)
+  // Sync external content changes (e.g. when switching between create/edit).
+  // Sin emitUpdate: cargar contenido no es editarlo; si emitiera, onChange
+  // reescribiría el HTML del padre con lo que TipTap sabe representar.
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content, { emitUpdate: false })
     }
   }, [editor, content])
 

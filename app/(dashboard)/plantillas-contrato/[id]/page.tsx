@@ -63,7 +63,7 @@ export default function PlantillaDetallePage() {
     fetchPlantilla()
   }, [fetchPlantilla])
 
-  async function handleUpdate(data: { nombre: string; descripcion?: string; contenido: string; activa?: boolean }) {
+  async function handleUpdate(data: { nombre: string; descripcion?: string; contenido?: string; activa?: boolean }) {
     setIsSubmitting(true)
     try {
       await plantillaContratoService.updatePlantilla(id, data)
