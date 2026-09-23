@@ -20,7 +20,7 @@ import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { rutaInterna } from '@/lib/utils'
 import type { IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
-import { IconLoader, IconCheck } from '@/components/icons'
+import { IconLoader, IconCheck, IconLock } from '@/components/icons'
 
 const TIPO_DOCUMENTO_LABELS: Record<string, string> = {
   cc: 'Cédula de ciudadanía',
@@ -64,6 +64,7 @@ export default function MiCuentaPage() {
   const [perfil, setPerfil] = useState<IMyProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [form, setForm] = useState<FormState>({
     nombre: '',
     apellido: '',
@@ -168,6 +169,23 @@ export default function MiCuentaPage() {
       toast.error(err instanceof Error ? err.message : 'Error al guardar')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Cambiar la contraseña con la sesión abierta: se reusa el enlace de
+  // restablecer (el mismo correo de "¿Olvidaste tu contraseña?").
+  const handleCambiarContrasena = async () => {
+    if (!perfil) return
+    setEnviandoEnlace(true)
+    try {
+      await authService.forgotPassword(perfil.email)
+      toast.success('Te enviamos un enlace a tu correo para cambiar la contraseña', {
+        description: `Revisa ${perfil.email}. El enlace vence en una hora.`,
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos enviar el enlace')
+    } finally {
+      setEnviandoEnlace(false)
     }
   }
 
@@ -298,6 +316,28 @@ export default function MiCuentaPage() {
             <IconCheck size={16} />
           )}
           {saving ? 'Guardando…' : 'Guardar cambios'}
+        </button>
+      </div>
+
+      {/* Contraseña */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+        <h3 className="text-base font-semibold text-gray-900">Contraseña</h3>
+        <p className="text-sm text-gray-600">
+          Te enviamos a tu correo un enlace para elegir una contraseña nueva. Úsalo también si
+          recibiste una contraseña temporal. Si entras con Google, no necesitas contraseña.
+        </p>
+        <button
+          type="button"
+          onClick={handleCambiarContrasena}
+          disabled={enviandoEnlace}
+          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {enviandoEnlace ? (
+            <IconLoader size={16} className="animate-spin" />
+          ) : (
+            <IconLock size={16} />
+          )}
+          {enviandoEnlace ? 'Enviando…' : 'Cambiar contraseña'}
         </button>
       </div>
     </div>
