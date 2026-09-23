@@ -15,7 +15,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { authService } from '@/services/authService'
 
 const TIPO_DOC_OPTIONS = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
@@ -142,10 +142,10 @@ function RegistroSolicitanteContent() {
         return
       }
 
-      // Auto-login: store tokens
+      // Auto-login: la misma sesión que deja el login (token, refresh token,
+      // cookie y refresh programado), para que sobreviva la recarga de abajo.
       const { user, session } = json.data
-      useAuthStore.getState().login(user, session.access_token)
-      localStorage.setItem('cofianza_refresh_token', session.refresh_token)
+      authService.adoptarSesion(user, session)
 
       toast.success('Registro exitoso')
 

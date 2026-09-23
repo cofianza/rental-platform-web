@@ -51,27 +51,7 @@ class AuthService {
       const response = await apiClient.post<ILoginResponse>('/auth/login', credentials)
       const { user, session } = response.data
 
-      // Convertir usuario de login a IUser
-      const fullUser: IUser = {
-        id: user.id,
-        email: user.email,
-        rol: user.rol,
-      }
-
-      // Guardar en memoria (Zustand)
-      store.login(fullUser, session.access_token)
-
-      // Persistir refresh token para sobrevivir recargas de pagina
-      localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token)
-
-      // Establecer cookie de sesión para el middleware
-      setSessionCookie()
-
-      // Programar refresh antes de expiración (expires_at es Unix timestamp)
-      this.scheduleTokenRefreshFromTimestamp(session.expires_at)
-
-      // Cargar permisos en background (no bloquear el login/redirect)
-      this.fetchPermissions()
+      this.adoptarSesion({ id: user.id, email: user.email, rol: user.rol }, session)
 
       return response.data
     } catch (error) {
@@ -81,6 +61,25 @@ class AuthService {
     } finally {
       store.setLoading(false)
     }
+  }
+
+  /**
+   * Deja abierta una sesión recién emitida por el API (login o registro): el
+   * token en memoria, el refresh token donde lo lee checkSession, la cookie
+   * que mira el middleware y el refresh programado. Sin esto el registro del
+   * arrendatario perdía la sesión en la primera recarga.
+   */
+  adoptarSesion(
+    user: IUser,
+    session: { access_token: string; refresh_token: string; expires_at: number },
+  ): void {
+    useAuthStore.getState().login(user, session.access_token)
+    localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token)
+    setSessionCookie()
+    // expires_at es Unix timestamp
+    this.scheduleTokenRefreshFromTimestamp(session.expires_at)
+    // Permisos en background (no bloquear el redirect)
+    this.fetchPermissions()
   }
 
   /**

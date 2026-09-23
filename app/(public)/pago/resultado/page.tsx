@@ -130,8 +130,11 @@ function PagoResultadoContent() {
   const isPending = status === 'pending'
   // La única acción posible para el invitado sin sesión que canceló o al que
   // le rechazaron el pago: el checkout sigue vivo y el backend lo devuelve
-  // mientras el pago no esté completado ni cancelado.
-  const retryHref = !isSuccess ? resultado?.payment_link_url ?? null : null
+  // mientras el pago no esté completado ni cancelado. Nunca con el pago en
+  // proceso (PSE/efectivo): el texto dice "no necesitas volver a pagar" y el
+  // botón era una invitación a un cobro doble.
+  const enProceso = isPending || resultado?.estado === 'procesando'
+  const retryHref = !isSuccess && !enProceso ? resultado?.payment_link_url ?? null : null
 
   return (
     <div className="max-w-md mx-auto py-8">

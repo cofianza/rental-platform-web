@@ -8,7 +8,8 @@
 
 import { Button } from '@/components/ui/Button'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { ExpedienteRefrescoContext } from '@/components/expedientes/ExpedienteRefresco'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -24,6 +25,7 @@ import {
   IconAlertTriangle,
   IconX,
   IconCheck,
+  IconLoader,
 } from '@/components/icons'
 import {
   ExpedienteProgressBar,
@@ -117,9 +119,10 @@ export default function ExpedienteDetallePage() {
   const [expediente, setExpediente] = useState<IExpedienteDetalle | null>(null)
   const [transiciones, setTransiciones] = useState<ITransicionDisponible[] | null>([])
   const [isLoading, setIsLoading] = useState(true)
-  // Sube en cada carga correcta: es la `key` del contenido, así las tarjetas se
-  // remontan y vuelven a pedir sus datos sin pasar por el skeleton de página.
+  // Sube en cada carga correcta; las tarjetas lo leen por contexto y se
+  // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
+  const expedienteCargadoRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
 
@@ -197,7 +200,14 @@ export default function ExpedienteDetallePage() {
       setExpediente(expedienteData)
       setTransiciones(transicionesData)
       setCargas((n) => n + 1)
+      expedienteCargadoRef.current = true
     } catch (err) {
+      // Con el estudio ya en pantalla, un refresco que falla (red, límite de
+      // peticiones) no la reemplaza por la de error: se avisa y queda lo último.
+      if (expedienteCargadoRef.current) {
+        toast.error('No se pudo actualizar el estudio; se muestra la última información.')
+        return
+      }
       if (err instanceof Error && err.message.includes('no encontrado')) {
         setNotFound(true)
       } else {
@@ -335,7 +345,8 @@ export default function ExpedienteDetallePage() {
     : null
 
   return (
-    <div key={cargas} className="space-y-6">
+    <ExpedienteRefrescoContext.Provider value={cargas}>
+    <div className="space-y-6" aria-busy={isLoading}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex items-start gap-4">
@@ -351,6 +362,12 @@ export default function ExpedienteDetallePage() {
               <h1 className="text-2xl font-bold text-gray-900">
                 {expediente.numero_expediente}
               </h1>
+              {isLoading && (
+                <span role="status" className="inline-flex items-center gap-1 text-xs text-gray-500">
+                  <IconLoader size={14} className="animate-spin" />
+                  Actualizando…
+                </span>
+              )}
               {expediente.cancelado_at ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                   Cancelado
@@ -461,8 +478,9 @@ export default function ExpedienteDetallePage() {
       {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      {/* Contenido de tabs */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Contenido de tabs. Mientras se actualiza no se puede volver a pulsar
+          una acción sobre datos que están por cambiar (doble clic). */}
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200${isLoading ? ' pointer-events-none' : ''}`}>
         {/* Tab: Resumen */}
         {activeTab === 'resumen' && (
           <div className="p-6 space-y-6">
@@ -960,6 +978,7 @@ export default function ExpedienteDetallePage() {
         isLoading={isAsignando}
       />
     </div>
+    </ExpedienteRefrescoContext.Provider>
   )
 }
 

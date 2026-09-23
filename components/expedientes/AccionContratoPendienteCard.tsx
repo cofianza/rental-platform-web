@@ -25,6 +25,7 @@ import { buttonClasses } from '@/components/ui/Button'
 import { IconArrowRight, IconFileText, IconLoader } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
 import { GenerarContratoModal } from './GenerarContratoModal'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AccionContratoPendienteCardProps {
   expedienteId: string
@@ -42,6 +43,8 @@ export function AccionContratoPendienteCard({
   contratosV3,
   onGenerated,
 }: AccionContratoPendienteCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [loading, setLoading] = useState(true)
   // Contrato vivo más reciente (null = ninguno). Antes bastaba un booleano; V3
   // necesita saber si es su borrador para ofrecer "Continuar".
@@ -60,7 +63,7 @@ export function AccionContratoPendienteCard({
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchContratos() }, [fetchContratos])
+  useEffect(() => { fetchContratos() }, [fetchContratos, version])
 
   // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
   // En 'condicionado' se muestra AprobarCondicionadoCard, no este card.

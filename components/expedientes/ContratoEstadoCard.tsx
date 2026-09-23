@@ -15,6 +15,7 @@ import { IconAlertTriangle, IconCheck, IconCalendar } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
 import type { IContrato } from '@/types/contrato'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface ContratoEstadoCardProps {
   expedienteId: string
@@ -38,6 +39,8 @@ const PRIORIDAD: Record<string, number> = {
 }
 
 export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEstadoCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [contrato, setContrato] = useState<IContrato | null>(null)
   // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
   const [actaPendiente, setActaPendiente] = useState(false)
@@ -67,7 +70,7 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos }: ContratoEst
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchContrato() }, [fetchContrato])
+  useEffect(() => { fetchContrato() }, [fetchContrato, version])
 
   if (loading) return null
   if (!contrato) return null

@@ -25,6 +25,7 @@ import { IconInfo, IconClock, IconUsers, IconCheckCircle, IconDownload } from '@
 import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface EstudioSolicitanteCardProps {
   expedienteId: string
@@ -64,6 +65,8 @@ export function EstudioSolicitanteCard({
   prefillNumeroDocumento,
   solicitanteTelefono,
 }: EstudioSolicitanteCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -134,7 +137,7 @@ export function EstudioSolicitanteCard({
 
   useEffect(() => {
     fetchEstudio()
-  }, [fetchEstudio])
+  }, [fetchEstudio, version])
 
   // Si ya cargamos la autorización al menos una vez, un error transitorio en un
   // tick del polling (red móvil, 502) NO debe resetearla a null — eso haría
@@ -156,7 +159,7 @@ export function EstudioSolicitanteCard({
 
   useEffect(() => {
     fetchAutorizacion()
-  }, [fetchAutorizacion])
+  }, [fetchAutorizacion, version])
 
   // Polling suave mientras el estudio está "en_proceso" para detectar el
   // resultado sin que el usuario tenga que recargar.

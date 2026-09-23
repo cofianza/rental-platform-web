@@ -22,6 +22,7 @@ import {
   esCondicionadoSinInfo,
 } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 // ============================================
 // Constants
@@ -132,6 +133,8 @@ interface EstudiosSectionProps {
 }
 
 export function EstudiosSection({ expedienteId, solicitante, onContactoActualizado }: EstudiosSectionProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Propietario/inmobiliaria pueden ver el detalle completo del estudio
@@ -176,7 +179,7 @@ export function EstudiosSection({ expedienteId, solicitante, onContactoActualiza
 
   useEffect(() => {
     fetchEstudios()
-  }, [fetchEstudios])
+  }, [fetchEstudios, version])
 
   // ============================================
   // Actions

@@ -23,6 +23,7 @@ import SlotSelector, {
   formatSlotHora,
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface CitasSectionProps {
   expedienteId: string
@@ -46,6 +47,8 @@ interface CitasSectionProps {
 }
 
 export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmuebleId, solicitanteId, solicitanteTelefono, onSolicitanteUpdated, onCitaRealizada }: CitasSectionProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   // El estudio ya corrió (o el expediente cerró): el pago del estudio ya no es
   // accionable, así que no mostramos el pill "Aún sin pago"/"Pago pendiente".
   const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
@@ -78,7 +81,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchCitas() }, [fetchCitas])
+  useEffect(() => { fetchCitas() }, [fetchCitas, version])
 
   // Disparar fetch del pago de estudio cuando la cita realizada tenga el
   // estudio habilitado. Si el endpoint falla (ej. solicitante sin permisos

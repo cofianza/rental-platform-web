@@ -11,6 +11,7 @@ import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstu
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface PagoEstudioSectionProps {
   expedienteId: string
@@ -30,6 +31,8 @@ interface PagoEstudioSectionProps {
 }
 
 export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono }: PagoEstudioSectionProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -66,8 +69,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }, [puedeUsarCreditos])
 
-  useEffect(() => { fetchEstado() }, [fetchEstado])
-  useEffect(() => { fetchSaldo() }, [fetchSaldo])
+  useEffect(() => { fetchEstado() }, [fetchEstado, version])
+  useEffect(() => { fetchSaldo() }, [fetchSaldo, version])
 
   // Polling automático mientras esperamos pago. Cuando el solicitante paga
   // por Stripe, el webhook tarda 1-3 seg en marcar el pago como 'completado'

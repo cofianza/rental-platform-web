@@ -23,6 +23,7 @@ import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
@@ -51,6 +52,8 @@ export function CoarrendatarioPropietarioCard({
   userRol,
   onEstudioCompletado,
 }: CoarrendatarioPropietarioCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
   const [loading, setLoading] = useState(true)
   const [estudioFull, setEstudioFull] = useState<IEstudio | null>(null)
@@ -85,7 +88,7 @@ export function CoarrendatarioPropietarioCard({
     }
   }, [expedienteId, onEstudioCompletado])
 
-  useEffect(() => { fetchCoa() }, [fetchCoa])
+  useEffect(() => { fetchCoa() }, [fetchCoa, version])
 
   // Polling sutil mientras la invitación está pendiente o el estudio en proceso,
   // para que el propietario vea el avance sin recargar.

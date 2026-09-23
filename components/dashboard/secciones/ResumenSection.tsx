@@ -12,7 +12,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { WipeTestDataCard } from '@/components/dashboard/WipeTestDataCard'
 import { dashboardService } from '@/services/dashboardService'
 import type { AdminOverview } from '@/services/dashboardService'
 import {
@@ -535,9 +534,6 @@ export function ResumenSection() {
         </div>
       </section>
 
-      {/* TEMPORAL: herramienta de QA "Borrar datos de prueba" — solo admin.
-          Eliminar antes de producción. */}
-      <WipeTestDataCard />
     </div>
   )
 }

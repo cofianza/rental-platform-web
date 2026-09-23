@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react'
 import { expedienteService, type IAuditoriaScoreReporte } from '@/services/expedienteService'
 import { IconLoader, IconCheck, IconX, IconAlertTriangle } from '@/components/icons'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AuditoriaScoreCardProps {
   expedienteId: string
@@ -30,12 +31,15 @@ const DECISION_LABEL: Record<string, string> = {
 }
 
 export function AuditoriaScoreCard({ expedienteId }: AuditoriaScoreCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [data, setData] = useState<IAuditoriaScoreReporte | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
+    // El spinner solo en la primera carga; al refrescar se ve lo anterior.
+    if (!data) setLoading(true)
     setError(null)
     expedienteService
       .getAuditoriaScore(expedienteId)
@@ -51,7 +55,9 @@ export function AuditoriaScoreCard({ expedienteId }: AuditoriaScoreCardProps) {
         }
       })
       .finally(() => setLoading(false))
-  }, [expedienteId])
+    // `data` fuera de las dependencias a propósito: solo decide el spinner.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expedienteId, version])
 
   if (loading) {
     return (

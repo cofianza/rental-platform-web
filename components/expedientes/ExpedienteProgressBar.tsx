@@ -16,6 +16,7 @@ import { contratoService } from '@/services/contratoService'
 import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 export interface ExpedienteProgressBarProps {
   expedienteId: string
@@ -41,6 +42,8 @@ export function ExpedienteProgressBar({
   sinInfoBuro,
   className,
 }: ExpedienteProgressBarProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [citaRealizada, setCitaRealizada] = useState(false)
   // El paso "Firma"/"Listo" NO se refleja en expediente.estado: el expediente
   // sigue en 'aprobado' mientras el contrato se firma, y solo pasa a 'cerrado'
@@ -58,7 +61,7 @@ export function ExpedienteProgressBar({
       })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [expedienteId, estadoActual])
+  }, [expedienteId, estadoActual, version])
 
   useEffect(() => {
     // Solo importa en 'aprobado': antes el contrato no existe; en 'cerrado' ya
@@ -79,7 +82,7 @@ export function ExpedienteProgressBar({
       })
       .catch(() => { if (!cancelled) setContratoStep(null) })
     return () => { cancelled = true }
-  }, [expedienteId, estadoActual])
+  }, [expedienteId, estadoActual, version])
 
   const isRejected = estadoActual === 'rechazado'
   const isConditioned = estadoActual === 'condicionado'

@@ -27,6 +27,7 @@ import { IconShieldCheck, IconLoader, IconAlertTriangle, IconCalendar } from '@/
 import { Modal } from '@/components/ui'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 // Estados del expediente donde la RPC fn_habilitar_estudio_expediente permite
 // habilitar. Fuera de ellos (aprobado, cerrado, cancelado…) la card sería un
@@ -65,6 +66,8 @@ export function AccionHabilitarEstudioCard({
   userRol,
   onAction,
 }: AccionHabilitarEstudioCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const puedeDecidir =
     userRol === 'propietario' ||
     userRol === 'inmobiliaria' ||
@@ -103,7 +106,7 @@ export function AccionHabilitarEstudioCard({
     }
   }, [expedienteId, puedeDecidir, estadoPermitido, estudioHabilitado, estudioRechazado])
 
-  useEffect(() => { fetchCitas() }, [fetchCitas])
+  useEffect(() => { fetchCitas() }, [fetchCitas, version])
 
   const handleHabilitar = async () => {
     setSubmitting(true)

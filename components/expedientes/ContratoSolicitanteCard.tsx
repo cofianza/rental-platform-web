@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import type { IContrato } from '@/types/contrato'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 // Fechas date-only (YYYY-MM-DD): construir al mediodia UTC para que toLocaleDateString
 // con cualquier zona horaria America no reste un dia. Sin esto, "2026-06-02" sale
@@ -40,6 +41,8 @@ interface ContratoSolicitanteCardProps {
 }
 
 export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: ContratoSolicitanteCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
@@ -70,7 +73,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchContrato() }, [fetchContrato])
+  useEffect(() => { fetchContrato() }, [fetchContrato, version])
 
   // Polling sutil mientras está en estados previos a pendiente_firma, para
   // que el solicitante no tenga que recargar al momento en que se genera/aprueba.

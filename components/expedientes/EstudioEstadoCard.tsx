@@ -25,6 +25,7 @@ import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -230,6 +231,8 @@ export function EstudioEstadoCard({
   inmuebleActualId,
   onReasignado,
 }: EstudioEstadoCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   // Guardamos hasta 2 estudios: el del titular (tipo='individual') y el del
   // coarrendatario (tipo='con_coarrendatario'). Cuando existen los dos, los
   // mostramos en paneles separados para que cada uno muestre los datos y el
@@ -261,7 +264,7 @@ export function EstudioEstadoCard({
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchEstudios() }, [fetchEstudios])
+  useEffect(() => { fetchEstudios() }, [fetchEstudios, version])
 
   // Polling suave mientras alguno este en_proceso para que el propietario vea
   // el resultado en cuanto entre, sin recargar la pagina.

@@ -22,6 +22,7 @@ import {
 import { expedienteService } from '@/services/expedienteService'
 import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
 import { cn } from '@/lib/utils'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 export interface TimelineSectionProps {
   expedienteId: string
@@ -110,6 +111,8 @@ const PAGE_SIZE = 10
 // ============================================
 
 export function TimelineSection({ expedienteId }: TimelineSectionProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [eventos, setEventos] = useState<ITimelineEvento[]>([])
   const [pagination, setPagination] = useState<ITimelinePagination | null>(null)
   const [filtro, setFiltro] = useState<TipoEvento | 'todos'>('todos')
@@ -156,7 +159,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
   useEffect(() => {
     fetchTimeline(1)
-  }, [fetchTimeline])
+  }, [fetchTimeline, version])
 
   const handleFiltroChange = (nuevoFiltro: TipoEvento | 'todos') => {
     setFiltro(nuevoFiltro)

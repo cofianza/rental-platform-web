@@ -19,6 +19,7 @@ import { autorizacionService } from '@/services/autorizacionService'
 import type { IPerfilProspecto } from '@/types/autorizacion'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface CoarrendatarioCardProps {
   expedienteId: string
@@ -33,6 +34,8 @@ export function CoarrendatarioCard({
   userRol,
   onUpdate,
 }: CoarrendatarioCardProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -51,7 +54,7 @@ export function CoarrendatarioCard({
     }
   }, [expedienteId])
 
-  useEffect(() => { fetchCoa() }, [fetchCoa])
+  useEffect(() => { fetchCoa() }, [fetchCoa, version])
 
   // Al autorizar, el prospecto ya escribió nombre/apellido/correo/WhatsApp de
   // la persona con quien va a vivir, y ahí le prometimos que "no tenía que

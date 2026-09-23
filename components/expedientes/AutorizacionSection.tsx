@@ -12,6 +12,7 @@ import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriang
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { IAutorizacion } from '@/types/autorizacion'
+import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -51,6 +52,8 @@ export function AutorizacionSection({
   onContactoActualizado,
   soloLectura = false,
 }: AutorizacionSectionProps) {
+  // Refresco en sitio cuando el detalle del estudio recarga.
+  const version = useRefrescoExpediente()
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -80,7 +83,7 @@ export function AutorizacionSection({
 
   useEffect(() => {
     fetchStatus()
-  }, [fetchStatus])
+  }, [fetchStatus, version])
 
   // §6.3: con el orden invertido, la firma del arrendatario es lo que dispara
   // el cobro y la ejecución del estudio. Sin polling el gestor no se enteraba
