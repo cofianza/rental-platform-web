@@ -77,7 +77,7 @@ const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   formulario_enviado: 'Esperando datos del solicitante',
   formulario_completado: 'Formulario completado',
   documentos_cargados: 'Documentos cargados',
-  en_proceso: 'Consultando buro de credito',
+  en_proceso: 'Consultando el buró de crédito',
   completado: 'Completado',
   fallido: 'Fallido',
   cancelado: 'Cancelado',
@@ -138,7 +138,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
     // etiqueta (redactarEstudioParaProspecto en la API).
     const etiqueta = estudio.ruta?.etiquetaGestor
     if (estudio.resultado === 'aprobado') {
-      const base = `Estudio aprobado por ${buro}. Siguiente paso: generar contrato.`
+      const base = `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.`
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
