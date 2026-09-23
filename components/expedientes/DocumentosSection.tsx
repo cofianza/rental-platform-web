@@ -872,7 +872,9 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   // Render
   // ============================================
 
-  if (isLoading) {
+  // Esqueleto solo en la primera carga: en las recargas (aprobar, rechazar,
+  // subir) desmontaba RevisionPanel y se perdían filtro, scroll y lugar.
+  if (isLoading && tiposDocumento.length === 0) {
     return (
       <div className="space-y-4">
         {/* Skeleton */}
