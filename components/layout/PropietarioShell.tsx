@@ -140,6 +140,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
             <Link
               key={it.href}
               href={it.href}
+              aria-current={isActive(it) ? 'page' : undefined}
               className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 isActive(it)
                   ? 'border-primary-600 text-primary-700'
@@ -170,6 +171,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={it.href}
                     href={it.href}
+                    aria-current={active ? 'page' : undefined}
                     className={`flex items-center gap-2.5 border-l-[3px] px-4 py-2.5 text-sm transition-colors ${
                       active
                         ? 'border-primary-600 bg-primary-50 font-semibold text-primary-700'
@@ -188,7 +190,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Contenido */}
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-7">
+        <main id="contenido" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 sm:px-7 focus:outline-none">
           <div className="mx-auto max-w-[1200px]">{children}</div>
         </main>
       </div>

@@ -9,6 +9,7 @@
 import { IconPlus } from '@/components/icons'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
@@ -26,6 +27,8 @@ function formatCompactCOP(monto: number): string {
 
 export function OficinaVirtualHero() {
   const puedeEditar = usePuedeEditar()
+  // Un solo h1 por pantalla: solo /dashboard no trae título propio (PageHeader).
+  const Titulo = usePathname() === '/dashboard' ? 'h1' : 'p'
   const [stats, setStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
   // Tercer estado. El catch devolvia un objeto de ceros, asi que un fallo de red
@@ -54,9 +57,9 @@ export function OficinaVirtualHero() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto]">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
+          <Titulo className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
             {titulo}
-          </h1>
+          </Titulo>
           <p className="text-sm md:text-[15px] text-white/85 mb-4">{subtitulo}</p>
           {puedeEditar && (
             <Link

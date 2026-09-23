@@ -54,23 +54,35 @@ export function DashboardShell({ children }: Props) {
     )
   }
 
+  // Primera parada de Tab en los tres shells: sin esto el teclado recorría
+  // todo el menú (14 a 25 paradas) en cada página. Cada <main> es #contenido.
+  const saltar = (
+    <a
+      href="#contenido"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-700 focus:shadow-lg"
+    >
+      Saltar al contenido
+    </a>
+  )
+
   // Propietario — layout con sidebar (Gestión · Financiero), mockup 14.
   if (rol === 'propietario') {
-    return <PropietarioShell>{children}</PropietarioShell>
+    return <>{saltar}<PropietarioShell>{children}</PropietarioShell></>
   }
 
   // Inmobiliaria — conserva el shell "Oficina Virtual" con tab bar superior.
   if (rol === 'inmobiliaria') {
-    return <OficinaVirtualShell rol={rol}>{children}</OficinaVirtualShell>
+    return <>{saltar}<OficinaVirtualShell rol={rol}>{children}</OficinaVirtualShell></>
   }
 
   // Layout clásico para admin/operador/gerencia/solicitante.
   return (
     <>
+      {saltar}
       <Sidebar />
       <DashboardLayoutWrapper>
         <Header />
-        <main className="p-4 lg:p-6 overflow-x-hidden">
+        <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-hidden focus:outline-none">
           {children}
         </main>
       </DashboardLayoutWrapper>

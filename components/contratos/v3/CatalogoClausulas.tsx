@@ -120,7 +120,7 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
       />
 
       {/* Los dos paneles quedan montados para que cada búsqueda conserve lo escrito. */}
-      <div role="tabpanel" hidden={pestana !== 'biblioteca'} className="space-y-3 pt-4">
+      <div role="tabpanel" id="panel-biblioteca" aria-labelledby="tab-biblioteca" hidden={pestana !== 'biblioteca'} className="space-y-3 pt-4">
         <p className="text-sm text-gray-500">
           Modelos sugeridos por Cofianza. Al incorporarlos quedan bajo responsabilidad de la inmobiliaria.
         </p>
@@ -131,7 +131,7 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
         {lista(catalogo.biblioteca, q.biblioteca, 'Cofianza aún no ha publicado cláusulas en la biblioteca.')}
       </div>
 
-      <div role="tabpanel" hidden={pestana !== 'propias'} className="space-y-3 pt-4">
+      <div role="tabpanel" id="panel-propias" aria-labelledby="tab-propias" hidden={pestana !== 'propias'} className="space-y-3 pt-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <SearchInput
             className="flex-1"

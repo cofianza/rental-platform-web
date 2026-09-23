@@ -76,7 +76,7 @@ export default function FacturacionPage() {
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="mt-6 space-y-6">
+      <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} className="mt-6 space-y-6">
         {activeTab === 'datos-fiscales' && (
           <>
             {isSolicitante ? (

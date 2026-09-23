@@ -201,7 +201,7 @@ export function OficinaVirtualShell({ rol, children }: Props) {
       {/* Tab bar */}
       <OficinaVirtualNav rol={rol} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main id="contenido" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 focus:outline-none">
         {children}
       </main>
     </div>

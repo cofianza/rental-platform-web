@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUIStore } from '@/stores/ui.store'
 import { NAV_ITEMS } from '@/lib/constants'
 import { ICON_MAP } from '@/components/icons'
@@ -76,6 +76,19 @@ export function Sidebar() {
     return () => window.removeEventListener('resize', handleResize)
   }, [closeSidebar])
 
+  // Drawer abierto en el celular: el foco entra al menú (el <aside> va antes
+  // del header en el DOM y Tab seguía hacia el contenido tapado) y Escape cierra.
+  const cerrarRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!sidebarOpen || !esMovil) return
+    cerrarRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeSidebar()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [sidebarOpen, esMovil, closeSidebar])
+
   // Verificar si una ruta está activa
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -96,6 +109,7 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside
+        id="menu-lateral"
         inert={esMovil && !sidebarOpen ? true : undefined}
         aria-hidden={esMovil && !sidebarOpen ? true : undefined}
         className={cn(
@@ -135,6 +149,7 @@ export function Sidebar() {
 
           {/* Botón cerrar (solo mobile) */}
           <button
+            ref={cerrarRef}
             type="button"
             onClick={closeSidebar}
             aria-label="Cerrar menú"

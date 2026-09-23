@@ -78,10 +78,10 @@ function Contenido() {
         onChange={(id) => setPestana(id as Pestana)}
       />
       {/* Los dos paneles quedan montados: cada uno conserva sus filtros y filas abiertas. */}
-      <div role="tabpanel" hidden={pestana !== 'biblioteca'}>
+      <div role="tabpanel" id="panel-biblioteca" aria-labelledby="tab-biblioteca" hidden={pestana !== 'biblioteca'}>
         <Biblioteca />
       </div>
-      <div role="tabpanel" hidden={pestana !== 'registro'}>
+      <div role="tabpanel" id="panel-registro" aria-labelledby="tab-registro" hidden={pestana !== 'registro'}>
         <Registro />
       </div>
     </div>

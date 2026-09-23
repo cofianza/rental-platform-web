@@ -128,6 +128,7 @@ export function OficinaVirtualNav({ rol }: Props) {
               <Link
                 key={tab.href}
                 href={tab.href}
+                aria-current={isActive ? 'page' : undefined}
                 className={[
                   'inline-flex items-center gap-2 px-4 py-4 text-sm font-bold whitespace-nowrap border-b-2 transition-colors',
                   isActive

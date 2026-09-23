@@ -518,7 +518,12 @@ export default function ExpedienteDetallePage() {
 
       {/* Contenido de tabs. Mientras se actualiza no se puede volver a pulsar
           una acción sobre datos que están por cambiar (doble clic). */}
-      <div className={`bg-white rounded-lg shadow-sm border border-gray-200${isLoading ? ' pointer-events-none' : ''}`}>
+      <div
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        className={`bg-white rounded-lg shadow-sm border border-gray-200${isLoading ? ' pointer-events-none' : ''}`}
+      >
         {/* Tab: Resumen. Siempre montado (oculto en las otras pestañas): al
             volver no se desmontan y re-piden sus tarjetas. Se mantienen al día
             con el contador de cargas (fetchExpediente), no remontándose. */}

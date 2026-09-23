@@ -21,7 +21,7 @@ const ROLE_DISPLAY: Record<string, string> = {
 }
 
 export function Header() {
-  const { openSidebar } = useUIStore()
+  const { openSidebar, sidebarOpen } = useUIStore()
   const user = useAuthStore((state) => state.user)
   const breadcrumbs = useBreadcrumbs()
 
@@ -44,9 +44,12 @@ export function Header() {
     >
       {/* Botón hamburguesa (solo mobile) */}
       <button
+        type="button"
         onClick={openSidebar}
         className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label="Abrir menú"
+        aria-expanded={sidebarOpen}
+        aria-controls="menu-lateral"
       >
         <IconMenu size={20} className="text-gray-700" />
       </button>
