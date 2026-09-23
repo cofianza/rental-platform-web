@@ -518,10 +518,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           uso: formData.uso,
           destinacion: formData.destinacion || null,
           valor_comercial: formData.valor_comercial ? Number(formData.valor_comercial) : null,
-          administracion: formData.administracion ? Number(formData.administracion) : undefined,
+          // Siempre un número: con undefined el 0 («Déjalo en 0 si no aplica») o
+          // el campo vacío no se guardaban y quedaba el valor anterior.
+          administracion: Number(formData.administracion || 0),
           area_m2: formData.area_m2 ? Number(formData.area_m2) : null,
-          habitaciones: formData.habitaciones ? Number(formData.habitaciones) : undefined,
-          banos: formData.banos ? Number(formData.banos) : undefined,
+          habitaciones: Number(formData.habitaciones || 0),
+          banos: Number(formData.banos || 0),
           parqueadero: formData.parqueadero,
           parqueaderos: formData.parqueaderos ? Number(formData.parqueaderos) : null,
           piso: formData.piso || null,
