@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import type { ICambioInmueble, ICambiosResumen } from '@/types/cambio-inmueble'
 
 const CAMPOS_MONETARIOS = ['valor_arriendo', 'valor_comercial', 'administracion']
-const CAMPOS_BOOLEANOS = ['parqueadero', 'visible_vitrina']
+const CAMPOS_BOOLEANOS = ['parqueadero', 'visible_vitrina', 'propiedad_horizontal', 'cuarto_util']
 const ITEMS_PER_PAGE = 15
 
 interface HistorialSectionProps {

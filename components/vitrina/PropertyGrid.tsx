@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { IconSearch, IconHome, IconBed, IconBath, IconCar, IconRuler, IconChevronLeft, IconChevronRight, IconX } from '@/components/icons'
+import { IconSearch, IconHome, IconBed, IconBath, IconCar, IconRuler, IconChevronLeft, IconChevronRight, IconX, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import {
   getPublicProperties,
   getPublicPropertyFilters,
@@ -69,6 +69,8 @@ export function PropertyGrid() {
   const [totalPages, setTotalPages] = useState(0)
   const [filterOptions, setFilterOptions] = useState<PublicPropertyFilters>({ ciudades: [], tipos: [], estratos: [] })
   const [loading, setLoading] = useState(true)
+  // Si la carga falla no se dice «No hay resultados»: culpaba a los filtros.
+  const [error, setError] = useState(false)
   const [, setFiltersLoaded] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -101,12 +103,14 @@ export function PropertyGrid() {
 
   const fetchProperties = useCallback(async () => {
     setLoading(true)
+    setError(false)
     try {
       const result = await getPublicProperties(buildQuery())
       setProperties(result.data)
       setTotal(result.meta.total)
       setTotalPages(result.meta.totalPages)
     } catch {
+      setError(true)
       setProperties([])
       setTotal(0)
       setTotalPages(0)
@@ -270,7 +274,7 @@ export function PropertyGrid() {
         <p className="text-sm text-gray-600">
           {loading ? (
             <span className="inline-block w-40 h-4 bg-gray-200 rounded animate-pulse" />
-          ) : (
+          ) : error ? null : (
             <><span className="font-semibold text-gray-900">{total}</span> propiedades encontradas</>
           )}
         </p>
@@ -283,12 +287,25 @@ export function PropertyGrid() {
             <PropertyCardSkeleton key={i} />
           ))}
         </div>
+      ) : error ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+          <IconAlertTriangle size={48} className="mx-auto text-amber-400 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No pudimos cargar los inmuebles</h3>
+          <p className="text-sm text-gray-500 mb-4">Tuvimos un problema al buscar. Inténtalo de nuevo en un momento.</p>
+          <button
+            onClick={fetchProperties}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          >
+            <IconRefresh size={16} />
+            Reintentar
+          </button>
+        </div>
       ) : properties.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <IconHome size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay resultados</h3>
           <p className="text-sm text-gray-500 mb-4">
-            No encontramos inmuebles con los filtros actuales. Intenta ampliar tu busqueda.
+            No encontramos inmuebles con los filtros actuales. Intenta ampliar tu búsqueda.
           </p>
           {hasActiveFilters && (
             <button
