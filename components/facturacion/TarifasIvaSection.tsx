@@ -8,7 +8,7 @@ import { IconLoader, IconCheck } from '@/components/icons'
 
 const CONCEPTO_LABELS: Record<string, string> = {
   estudio: 'Evaluación crediticia',
-  garantia: 'Garantía de arrendamiento',
+  garantia: 'Garantía (prima de vinculación)',
   primer_canon: 'Primer canon',
   deposito: 'Depósito',
   otro: 'Otros conceptos',
@@ -75,8 +75,9 @@ export function TarifasIvaSection() {
       <div className="mb-4">
         <h3 className="text-base font-semibold text-gray-900">Tarifas de IVA por concepto</h3>
         <p className="text-sm text-gray-500 mt-1">
-          Tasa aplicada al emitir facturas electrónicas. <strong>0 = exento</strong> (servicio
-          financiero excluido de IVA, opción por defecto en Cofianza).
+          Tasa aplicada al emitir facturas electrónicas; si es mayor que 0, el monto cobrado lleva
+          el IVA incluido. <strong>0 = exento</strong>. La garantía (prima de vinculación) va gravada
+          y no puede quedar en 0 (Adenda 1 de contratos).
         </p>
       </div>
 
