@@ -59,7 +59,7 @@ const SECCIONES: Array<{
     id: 'creditos-estudios',
     href: '/configuracion/creditos-estudios',
     titulo: 'Créditos de estudios',
-    descripcion: 'Compre paquetes de estudios y libérelos manualmente para sus solicitantes.',
+    descripcion: 'Compra paquetes de estudios y libéralos manualmente para tus solicitantes.',
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['inmobiliaria'],

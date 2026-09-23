@@ -96,18 +96,6 @@ export function OficinaVirtualShell({ rol, children }: Props) {
             <CofianzaLogo size={32} withText textClassName="text-xl" />
           </Link>
 
-          {/* Breadcrumb (mockup 13_v2): Dashboard / Tu Oficina Virtual */}
-          <nav
-            aria-label="Ruta de navegación"
-            className="hidden md:flex items-center gap-1.5 text-xs text-gray-500"
-          >
-            <Link href="/dashboard" className="hover:text-primary-700 transition-colors">
-              Dashboard
-            </Link>
-            <span className="text-gray-300">/</span>
-            <span className="font-semibold text-gray-900">Tu Oficina Virtual</span>
-          </nav>
-
           <div className="flex items-center gap-3">
             <NotificationBell />
 

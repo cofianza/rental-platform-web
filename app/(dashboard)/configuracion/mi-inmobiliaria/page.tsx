@@ -25,6 +25,7 @@ import {
   IconFileCheck,
   IconId,
   IconScrollText,
+  IconArrowRight,
 } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -324,7 +325,7 @@ export default function MiInmobiliariaPage() {
               href="/configuracion/datos-contrato"
               className="inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline"
             >
-              Editar datos →
+              Editar datos <IconArrowRight size={16} />
             </Link>
           </div>
         </div>

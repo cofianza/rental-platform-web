@@ -9,16 +9,10 @@ import Link from 'next/link'
 import { useUIStore } from '@/stores/ui.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
-import { ROLES } from '@/lib/constants'
+import { ROLE_LABELS } from '@/components/users/constants'
 import { IconMenu, IconChevronRight } from '@/components/icons'
 import { NotificationBell } from './NotificationBell'
 import { cn } from '@/lib/utils'
-
-const ROLE_DISPLAY: Record<string, string> = {
-  administrador: ROLES.ADMINISTRADOR,
-  operador_analista: ROLES.OPERADOR,
-  gerencia_consulta: ROLES.GERENCIA,
-}
 
 export function Header() {
   const { openSidebar, sidebarOpen } = useUIStore()
@@ -32,7 +26,9 @@ export function Header() {
     .join('')
     .toUpperCase()
     .slice(0, 2)
-  const rolDisplay = user?.rol ? ROLE_DISPLAY[user.rol] ?? user.rol : ''
+  // Al inquilino se le nombra como en el registro («Soy Arrendatario»); antes
+  // veía el valor interno «solicitante».
+  const rolDisplay = user?.rol === 'solicitante' ? 'Arrendatario' : user?.rol ? ROLE_LABELS[user.rol] ?? '' : ''
 
   return (
     <header

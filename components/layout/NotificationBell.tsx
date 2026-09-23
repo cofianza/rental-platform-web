@@ -223,7 +223,7 @@ export function NotificationBell() {
               <div className="px-4 py-12 text-center">
                 <p className="text-sm text-gray-700 font-medium">Sin notificaciones</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Te avisaremos aqui cuando haya novedades.
+                  Te avisaremos aquí cuando haya novedades.
                 </p>
               </div>
             ) : (

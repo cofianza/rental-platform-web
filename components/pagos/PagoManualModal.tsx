@@ -176,7 +176,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
           <div>
             <label htmlFor="pago-manual-modal-metodo-de-pago" className="block text-sm font-medium text-gray-700 mb-1">
-              Metodo de pago <span className="text-red-500">*</span>
+              Método de pago <span className="text-red-500">*</span>
             </label>
             <select id="pago-manual-modal-metodo-de-pago"
               value={metodo}
@@ -234,7 +234,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             type="text"
             value={referenciaBancaria}
             onChange={(e) => setReferenciaBancaria(e.target.value)}
-            placeholder="Numero de referencia o transaccion"
+            placeholder="Número de referencia o transacción"
             maxLength={255}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}

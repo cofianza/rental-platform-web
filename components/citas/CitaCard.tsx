@@ -296,9 +296,9 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
             ) : expediente.estudio_rechazado ? (
               <span
                 className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
-                title={expediente.motivo_estudio_rechazado || 'El propietario decidió no habilitar la evaluación.'}
+                title={expediente.motivo_estudio_rechazado || 'El propietario decidio no habilitar la evaluación.'}
               >
-                Evaluación no habilitada
+                Estudio no habilitado
               </span>
             ) : expediente && puedeEditar ? (
               <button
@@ -478,7 +478,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleNoAsistio}
         title="Marcar no asistió"
-        message="El solicitante no se presentó a la visita. El estudio quedará registrado y podrá agendar una nueva cita si lo desea."
+        message="El solicitante no se presentó a la visita. El estudio quedará registrado y podrás agendar una nueva cita si lo deseas."
         confirmLabel="Marcar no asistió"
         variant="danger"
         isLoading={isLoading}
@@ -490,7 +490,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleHabilitarEstudio}
         title="Habilitar evaluación crediticia"
-        message="Se habilitará la evaluación y al solicitante le llegará el enlace para autorizar la consulta en centrales; el cobro va después. ¿Continuar?"
+        message="Se habilitara el estudio y al solicitante le llegara el enlace para autorizar la consulta en centrales; el cobro va despues. ¿Continuar?"
         confirmLabel="Habilitar evaluación"
         isLoading={isLoading}
       />

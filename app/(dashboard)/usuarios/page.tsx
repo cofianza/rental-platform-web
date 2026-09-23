@@ -9,7 +9,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { IconLoader, IconArrowRight } from '@/components/icons'
 import {
   UserFilters,
   UsersTable,
@@ -137,9 +137,9 @@ function UsuariosContent() {
         />
         <Link
           href="/usuarios/huerfanos"
-          className="text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
         >
-          Limpiar cuentas huérfanas →
+          Limpiar cuentas huérfanas <IconArrowRight size={16} />
         </Link>
       </div>
 

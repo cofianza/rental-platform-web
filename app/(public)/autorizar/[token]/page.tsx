@@ -55,7 +55,7 @@ import {
   IconUserCheck,
   IconUserX,
   IconBuilding2,
-  IconUser, IconArrowLeft, IconRefresh } from '@/components/icons'
+  IconUser, IconArrowLeft, IconArrowRight, IconRefresh } from '@/components/icons'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
@@ -831,9 +831,9 @@ export default function AutorizarPage() {
               type="button"
               onClick={() => irAPaso(2)}
               disabled={!acepta}
-              className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Acepto y continúo →
+              Acepto y continúo <IconArrowRight size={16} />
             </button>
             </div>
             )}
@@ -1040,9 +1040,9 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={guardarPerfilYSeguir}
-              className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
             >
-              Continuar →
+              Continuar <IconArrowRight size={16} />
             </button>
             <button
               type="button"
@@ -1110,9 +1110,9 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={salirDeBeneficios}
-              className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
             >
-              Continuar →
+              Continuar <IconArrowRight size={16} />
             </button>
             <button
               type="button"

@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ConfirmDialog } from '@/components/ui'
-import { IconLoader, IconTrash, IconAlertTriangle } from '@/components/icons'
+import { IconLoader, IconTrash, IconAlertTriangle, IconArrowLeft } from '@/components/icons'
 import { userService } from '@/services/userService'
 import { useAuth } from '@/hooks/useAuth'
 import type { IOrphanAuthUser } from '@/types/user'
@@ -228,9 +228,9 @@ export default function HuerfanosPage() {
       <div className="flex justify-between items-center">
         <Link
           href="/usuarios"
-          className="text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
         >
-          ← Volver a usuarios
+          <IconArrowLeft size={16} /> Volver a usuarios
         </Link>
         <button
           onClick={fetchOrphans}

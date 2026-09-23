@@ -33,7 +33,7 @@ export const NAV_GROUPS = ['Principal', 'Operación', 'Financiero', 'Administrac
 export const NAV_ITEMS: NavItem[] = [
   // ── Principal ──────────────────────────────────────────────
   {
-    label: 'Dashboard',
+    label: 'Inicio',
     href: '/dashboard',
     icon: 'LayoutDashboard',
     description: 'Vista general y KPIs',
