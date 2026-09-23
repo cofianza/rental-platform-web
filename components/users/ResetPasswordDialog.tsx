@@ -111,8 +111,9 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
 
           <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
             <p className="text-xs text-amber-800 leading-relaxed">
-              El usuario podrá ingresar con esta contraseña en su próximo inicio de sesión. Compártesela
-              por un canal seguro y pídele que la cambie cuando ingrese.
+              Se cerrarán todas sus sesiones abiertas y tendrá que ingresar con esta contraseña.
+              Compártesela por un canal seguro; después puede elegir una propia desde «¿Olvidaste tu
+              contraseña?».
             </p>
           </div>
 
