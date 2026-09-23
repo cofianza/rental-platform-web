@@ -10,6 +10,10 @@
  * escribe el historial. La advertencia de la Adenda (p. ej. lo que el factor
  * de ingreso hace con las reglas duras) se muestra al lado del valor, no
  * escondida: es la parte del documento que Gerencia pidió "dejar registrada".
+ *
+ * Adenda 1 del módulo de contratos, respuesta 17: los parámetros de riesgo
+ * solo los cambia la Gerencia General; a otro administrador le llegan con
+ * `editable: false` y se ven de solo lectura (el API igual responde 403).
  */
 
 'use client'
@@ -134,7 +138,9 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
             </p>
           )}
           <p className="mt-1 text-[11px] text-gray-400">
-            {p.seccion} · <code>{p.clave}</code> · rango {fmt(p.min, p.entero)} – {fmt(p.max, p.entero)} · default{' '}
+            {p.seccion} · <code>{p.clave}</code>
+            {p.nivel && ` · ${p.nivel === 'riesgo' ? 'de riesgo' : 'operativo'}`} · rango {fmt(p.min, p.entero)} –{' '}
+            {fmt(p.max, p.entero)} · default{' '}
             {fmt(p.valorDefault, p.entero)}
             {p.actualizado_en ? ` · último cambio ${formatDate(p.actualizado_en)}` : ' · sin cambios desde el despliegue'}
           </p>
@@ -199,13 +205,20 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
         ) : (
           <div className="flex items-center gap-3">
             <span className="font-mono text-2xl font-extrabold text-gray-900">{fmt(p.valor, p.entero)}</span>
-            <button
-              type="button"
-              onClick={() => setEditando(true)}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            >
-              Editar
-            </button>
+            {p.editable === false ? (
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <IconLock size={14} />
+                Solo Gerencia General
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditando(true)}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Editar
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -383,6 +396,16 @@ export default function AdminCalibracionPage() {
           </section>
 
           <div className="space-y-3">
+            {params.some((p) => p.editable === false) && (
+              <p className="flex items-start gap-1.5 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+                <IconLock size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  Los parámetros de riesgo (topes de canon, umbrales de score, vigencia del certificado, entre otros)
+                  solo los cambia la Gerencia General. Tú puedes cambiar los operativos, y cada cambio queda en el
+                  historial.
+                </span>
+              </p>
+            )}
             {params.map((p) => (
               <FilaParametro key={p.clave} p={p} onGuardado={cargar} />
             ))}

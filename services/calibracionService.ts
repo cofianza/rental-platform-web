@@ -16,6 +16,13 @@ export interface IParametroCalibracion {
   advertencia?: string
   actualizado_en: string | null
   actualizado_por: string | null
+  /**
+   * Adenda 1 del módulo de contratos, respuesta 17: los de riesgo solo los
+   * cambia la Gerencia General; los operativos, cualquier administrador.
+   * `editable` ya dice si ESTE usuario puede (el API rechaza con 403 si no).
+   */
+  nivel?: 'riesgo' | 'operativo'
+  editable?: boolean
 }
 
 export interface IHistorialCalibracion {
