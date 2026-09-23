@@ -49,7 +49,7 @@ function SuccessContent() {
 
         <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
           <p>Revisa tu <span className="font-medium">bandeja de entrada</span> y la carpeta de <span className="font-medium">spam</span>.</p>
-          <p>Una vez verificado tu email, un administrador activará tu cuenta para que puedas acceder a la plataforma.</p>
+          <p>Cuando confirmes tu correo, tu cuenta queda activa y ya puedes iniciar sesión. El enlace vence en 24 horas.</p>
         </div>
 
         {resendMessage && (
