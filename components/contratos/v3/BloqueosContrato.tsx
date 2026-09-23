@@ -26,11 +26,14 @@ interface Props {
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
 
-/** Bloqueos cuya salida es una evaluación nueva (o, los del canon, pactar uno menor en el paso 1). */
+/**
+ * Bloqueos cuya salida es una evaluación nueva (o, los del canon, pactar uno menor en el paso 1).
+ * No el del tope (CANON_EXCEDE_TOPE): una evaluación no lo resuelve; se pacta uno menor o
+ * decide la Gerencia General sobre el coafianzamiento (Adenda 1 contratos §2.4).
+ */
 export const PIDEN_NUEVA_EVALUACION = [
   'ESTUDIO_VENCIDO',
   'CANON_SIN_EVALUADO',
-  'CANON_EXCEDE_TOPE',
   'CANON_FUERA_DE_TOLERANCIA',
   'CANON_INGRESO_EXCEDE',
 ]

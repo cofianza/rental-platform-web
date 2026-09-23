@@ -98,8 +98,8 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
       onRegenerated()
       onClose()
     } catch (err) {
-      // El backend devuelve un mensaje claro si el canon supera el tope del 10%
-      // (CANON_EXCEDE_TOPE) con las cifras exactas.
+      // El backend devuelve un mensaje claro con las cifras exactas si el canon supera
+      // el 10 % o el tope de canon (CANON_EXCEDE_TOPE: el caso se escala a la Gerencia).
       toast.error(err instanceof Error ? err.message : 'Error al regenerar el contrato')
     } finally {
       setSubmitting(false)
