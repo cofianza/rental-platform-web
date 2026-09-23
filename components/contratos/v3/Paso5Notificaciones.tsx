@@ -213,7 +213,7 @@ export function VistaPreviaContrato({
         ? 'Genera el Anexo y revísalo antes de enviar a firma.'
         : 'Genera la vista previa y revísala antes de enviar a firma.'
       : documento.desactualizado
-        ? `Hay datos nuevos desde que se generó ${rutaB ? 'el Anexo' : 'la vista previa'}: vuelve a generarlo antes de enviar.`
+        ? `Hay cambios desde que se generó ${rutaB ? 'el Anexo: vuelve a generarlo' : 'la vista previa: vuelve a generarla'} antes de enviar.`
         : documento.pendientes.length > 0
           ? 'El documento tiene textos pendientes de aprobación de Cofianza: todavía no se puede enviar a firma.'
           : rutaB && !propio
@@ -275,11 +275,12 @@ export function VistaPreviaContrato({
       <BloqueosContrato bloqueos={[]} faltantes={pendientes} onIrPaso={onIrPaso} />
 
       {documento?.desactualizado && (
-        // No siempre es un cambio del usuario: también el estudio, el CRC o los Datos para contrato.
+        // No siempre es un cambio del usuario: también el estudio, el CRC, los Datos para contrato o un
+        // texto nuevo o aprobado de la plantilla de Cofianza.
         <Aviso tono="aviso">
           {rutaB
-            ? 'Hay datos nuevos desde que se generó el Anexo (de los pasos, del estudio o de los Datos para contrato). Vuelve a generarlo.'
-            : 'Hay datos nuevos desde que se generó la vista previa (de los pasos, del estudio o de los Datos para contrato). Vuelve a generarla.'}
+            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelve a generarlo.'
+            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelve a generarla.'}
         </Aviso>
       )}
 
