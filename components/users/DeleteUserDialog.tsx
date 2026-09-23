@@ -67,7 +67,7 @@ export function DeleteUserDialog({ isOpen, user, onDelete, onClose }: DeleteUser
   const userName = `${user.nombre} ${user.apellido}`.trim() || user.email
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="sm">
+    <Modal isOpen={isOpen} onClose={handleClose} size="sm" ariaLabel="Eliminar usuario">
       <div className="flex flex-col items-start text-left">
         <div className="self-center p-3 rounded-full bg-red-100 text-red-600 mb-4">
           <IconAlertTriangle size={24} />
@@ -77,13 +77,14 @@ export function DeleteUserDialog({ isOpen, user, onDelete, onClose }: DeleteUser
         <p className="self-center text-sm text-gray-600 text-center mb-4">
           {tieneBlockers ? (
             <>
-              <strong>{userName}</strong> tiene datos asociados. Si eliminas de todos modos, las
-              tablas con cascade limpiarán; las que tienen restricción rechazarán el borrado.
+              <strong>{userName}</strong> tiene datos asociados. Si continúas, se intentará
+              borrar; lo que no se pueda borrar impedirá la eliminación. Si solo quieres quitarle
+              el acceso, desactívalo.
             </>
           ) : (
             <>
               ¿Eliminar a <strong>{userName}</strong> ({user.email})? Esta acción es irreversible —
-              también se borra de auth.users.
+              también se borra su cuenta de acceso.
             </>
           )}
         </p>
