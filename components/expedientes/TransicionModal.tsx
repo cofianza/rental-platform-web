@@ -121,8 +121,9 @@ export function TransicionModal({
   const esDestructiva =
     estadoSeleccionado === 'rechazado' || estadoSeleccionado === 'cerrado'
   const CONSECUENCIAS: Record<string, string> = {
-    rechazado:
-      'Se libera la reserva del inmueble, se cancelan los contratos que aún no se hayan firmado y se le avisa por correo al co-arrendatario. Desde "rechazado" el estudio solo puede cerrarse: no hay vuelta atrás.',
+    rechazado: `Se libera la reserva del inmueble, se cancelan los contratos que aún no se hayan firmado y se le avisa por correo al co-arrendatario${
+      estadoActual === 'condicionado' ? ' y al prospecto, con su derecho de apelación' : ''
+    }. Desde "rechazado" el estudio solo puede cerrarse: no hay vuelta atrás.`,
     cerrado:
       'El estudio queda archivado y sale del flujo. No se puede reabrir.',
   }
