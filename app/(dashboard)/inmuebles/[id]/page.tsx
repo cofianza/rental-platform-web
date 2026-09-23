@@ -71,6 +71,7 @@ export default function InmuebleDetailPage() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingExpedientes, setIsLoadingExpedientes] = useState(false)
+  const [expedientesError, setExpedientesError] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('info')
   // Keep-alive del tab Contrato: se monta en la primera visita y luego solo se
@@ -152,11 +153,13 @@ export default function InmuebleDetailPage() {
     if (!id) return
 
     setIsLoadingExpedientes(true)
+    setExpedientesError(false)
     try {
       const result = await inmuebleService.getExpedientesByInmueble(id)
       setExpedientes(result.data)
     } catch (err) {
       console.error('Error fetching estudios:', err)
+      setExpedientesError(true)
     } finally {
       setIsLoadingExpedientes(false)
     }
@@ -744,6 +747,8 @@ export default function InmuebleDetailPage() {
                   expedientes={expedientes}
                   inmuebleId={inmueble.id}
                   isLoading={isLoadingExpedientes}
+                  error={expedientesError}
+                  onRetry={fetchExpedientes}
                   // §4.2: se puede abrir otro expediente mientras haya
                   // estudios en curso; solo lo impide una propiedad
                   // comprometida ('ocupado' = reservada o arrendada) o dada de

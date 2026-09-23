@@ -16,6 +16,9 @@ interface ExpedientesSectionProps {
   inmuebleId: string
   isLoading?: boolean
   canCreate?: boolean
+  /** La carga falló: no se muestra «No hay estudios» ni el botón de crear. */
+  error?: boolean
+  onRetry?: () => void
 }
 
 export function ExpedientesSection({
@@ -23,11 +26,33 @@ export function ExpedientesSection({
   inmuebleId,
   isLoading = false,
   canCreate = true,
+  error = false,
+  onRetry,
 }: ExpedientesSectionProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <IconLoader size={24} className="text-primary-600 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
+        <p className="font-semibold text-amber-900">No pudimos cargar los estudios</p>
+        <p className="text-sm text-amber-800 mt-1">
+          Esto no significa que el inmueble no tenga estudios.
+        </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-4 rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        )}
       </div>
     )
   }
