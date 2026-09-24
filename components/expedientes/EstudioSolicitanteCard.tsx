@@ -26,6 +26,7 @@ import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { NotaApelacion } from '@/components/expedientes/ExpedienteRechazadoBanner'
 import { abrirEnPestana } from '@/lib/utils'
 
 interface EstudioSolicitanteCardProps {
@@ -49,16 +50,18 @@ interface EstudioSolicitanteCardProps {
 type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
 
 /**
- * §10: "se indica que puede mejorar. Nunca es un portazo." Solo cuando la API
- * no manda motivo (lo manda si decidió una regla dura, con la salida de su
- * causa): sin saber la causa no se ofrece co-arrendatario ni canon menor, que
- * no cambian un rechazo así (P30).
+ * §10: "Nunca es un portazo", pero sin saber la causa (la API manda el motivo
+ * solo si decidió una regla dura, con la salida de cada causa) no se sugiere
+ * nada a ciegas (P30): se ofrece revisar el caso y el derecho de apelación.
  */
-const MEJORAS_SUGERIDAS = [
-  'Ponerte al día en las obligaciones que tengas en mora.',
-  'Volver a solicitarlo más adelante.',
-  'Escribirnos para revisar tu caso.',
-]
+function SinMotivo({ className }: { className: string }) {
+  return (
+    <>
+      <p className={className}>Escríbenos y revisamos tu caso.</p>
+      <NotaApelacion className="mt-1.5" />
+    </>
+  )
+}
 
 export function EstudioSolicitanteCard({
   expedienteId,
@@ -595,14 +598,7 @@ export function EstudioSolicitanteCard({
                 <p className={`mt-3 text-sm ${tono.texto}`}>{estudio.motivo_rechazo}</p>
               )}
               {r.ruta === 'no_aprobable' && !estudio.motivo_rechazo && (
-                <ul className={`mt-3 space-y-1.5 text-sm ${tono.texto}`}>
-                  {MEJORAS_SUGERIDAS.map((m) => (
-                    <li key={m} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
-                      <span>{m}</span>
-                    </li>
-                  ))}
-                </ul>
+                <SinMotivo className={`mt-3 text-sm ${tono.texto}`} />
               )}
 
               {/* §10: el incentivo comercial del perfil medio. */}
@@ -680,10 +676,16 @@ export function EstudioSolicitanteCard({
             <IconInfo size={20} className="text-slate-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-slate-900 mb-0.5">No aprobable por ahora</p>
-              <p className="text-sm text-slate-700">
-                {estudio.motivo_rechazo ||
-                  'Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti: puedes volver a solicitarlo más adelante o escribirnos para revisar tu caso.'}
-              </p>
+              {estudio.motivo_rechazo ? (
+                <p className="text-sm text-slate-700">{estudio.motivo_rechazo}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-700">
+                    Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti.
+                  </p>
+                  <SinMotivo className="mt-1 text-sm text-slate-700" />
+                </>
+              )}
             </div>
           </div>
         </div>
