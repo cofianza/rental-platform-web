@@ -261,8 +261,11 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
     aceptado: {
       color: fallida ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
+      // P2: sin evaluación terminada no entra al contrato ni al certificado.
       mensaje: fallida
-        ? 'Su evaluación falló por un problema técnico (no es un rechazo). Reinténtala en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
+        ? sinEfecto
+          ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
+          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtala en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
           : 'Procesando su evaluación crediticia.',

@@ -133,9 +133,16 @@ interface EstudiosSectionProps {
    *  Resumen queda montado aunque esté oculto y sin esto mostraba lo anterior.
    *  Esta lista se vuelve a pedir sola al subir `version`. */
   onEstudioActualizado?: () => void
+  /** P3: con el estudio ya resuelto no se reintenta la evaluación del co-arrendatario. */
+  coarrendatarioEnRevision?: boolean
 }
 
-export function EstudiosSection({ expedienteId, solicitante, onEstudioActualizado }: EstudiosSectionProps) {
+export function EstudiosSection({
+  expedienteId,
+  solicitante,
+  onEstudioActualizado,
+  coarrendatarioEnRevision = true,
+}: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const user = useAuthStore((s) => s.user)
@@ -498,7 +505,9 @@ export function EstudiosSection({ expedienteId, solicitante, onEstudioActualizad
                     solo existía en la card del resumen). Gestores + dueños:
                     el backend autoriza a ambos en /ejecutar. stopPropagation
                     para no abrir el modal de detalle al interactuar. */}
-                {(canManage || isStakeholder) && puedeRelanzarEstudio(estudio) && (
+                {(canManage || isStakeholder) &&
+                  puedeRelanzarEstudio(estudio) &&
+                  (coarrendatarioEnRevision || estudio.tipo !== 'con_coarrendatario') && (
                   <div
                     className="mt-3"
                     onClick={(e) => e.stopPropagation()}

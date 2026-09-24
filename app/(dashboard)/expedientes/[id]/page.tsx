@@ -765,6 +765,7 @@ export default function ExpedienteDetallePage() {
                     expediente.inmueble?.reservado_por_expediente_id !== id
                   }
                   reconsultaEnGuia={esCondicionado && puedeEditar}
+                  coarrendatarioEnRevision={esCondicionado}
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}
@@ -1026,6 +1027,7 @@ export default function ExpedienteDetallePage() {
               expedienteId={id}
               solicitante={expediente.solicitante}
               onEstudioActualizado={fetchExpediente}
+              coarrendatarioEnRevision={expediente.estado === 'condicionado'}
             />
 
             {/* Decisión sobre un estudio condicionado, también aquí y no solo en

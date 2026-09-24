@@ -64,6 +64,8 @@ interface EstudioEstadoCardProps {
    * para no tener el mismo formulario dos veces en la pantalla.
    */
   reconsultaEnGuia?: boolean
+  /** P3: con el estudio ya resuelto no se reintenta la evaluación del co-arrendatario. */
+  coarrendatarioEnRevision?: boolean
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -247,6 +249,7 @@ export function EstudioEstadoCard({
   onReasignado,
   reasignable = true,
   reconsultaEnGuia,
+  coarrendatarioEnRevision = true,
 }: EstudioEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -325,6 +328,7 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
+          sinReintento={!coarrendatarioEnRevision}
           // La reasignacion NO se ofrece desde el panel del co-arrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
@@ -356,6 +360,8 @@ interface EstudioPanelProps {
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
+  /** Co-arrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
+  sinReintento?: boolean
 }
 
 function EstudioPanel({
@@ -369,6 +375,7 @@ function EstudioPanel({
   inmuebleActualId,
   onReasignado,
   expedienteId,
+  sinReintento,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
@@ -384,7 +391,8 @@ function EstudioPanel({
   // Incluye el condicionado-sin-información: ahí el form no reintenta sino que
   // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
   const esReconsulta = esCondicionadoSinInfo(estudio)
-  const puedeReintentar = esGestor && puedeRelanzarEstudio(estudio) && !(ocultarReconsulta && esReconsulta)
+  const puedeReintentar =
+    esGestor && !sinReintento && puedeRelanzarEstudio(estudio) && !(ocultarReconsulta && esReconsulta)
   // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
   // otra propiedad sin volver a cobrar. El caso natural es el candidato que
   // perdio el inmueble porque otro fue aprobado primero (§4.2 ya se lo avisa
@@ -413,10 +421,10 @@ function EstudioPanel({
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
-  const siguientePaso = getSiguientePaso(
-    estudio,
-    userRol === 'administrador' || userRol === 'operador_analista',
-  )
+  const siguientePaso =
+    sinReintento && estudio.estado === 'fallido'
+      ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
+      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista')
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
 
   return (
