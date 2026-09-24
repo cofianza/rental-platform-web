@@ -54,6 +54,8 @@ export interface IInvitarCoarrendatarioInput {
 export interface ICoarrendatarioPublicView {
   nombre: string
   apellido: string
+  /** Enmascarado («CC ••••5678»): el invitado reconoce si es el suyo. */
+  documento: string
   email: string
   estado: CoarrendatarioEstado
   expediente: {
@@ -83,17 +85,26 @@ export const coarrendatarioService = {
   },
 
   /**
-   * Reenvía la invitación pendiente, corrigiendo email/teléfono si venían mal.
-   * El backend regenera el token (invalida el enlace anterior) y reenvía el correo.
+   * Reenvía la invitación pendiente, corrigiendo lo que venía mal (contacto,
+   * nombre o documento). El backend regenera el token (invalida el enlace
+   * anterior) y reenvía el correo.
    */
   async reenviar(
     expedienteId: string,
-    input: { email?: string; telefono?: string } = {},
+    input: Partial<IInvitarCoarrendatarioInput> = {},
   ): Promise<ICoarrendatario> {
     const res = (await apiClient.post(
       `/expedientes/${expedienteId}/coarrendatario/reenviar`,
       input,
     )) as unknown as { data: ICoarrendatario }
+    return res.data
+  },
+
+  /** Cancela la invitación antes de que la acepte: libera el cupo para invitar a otra persona. */
+  async cancelar(expedienteId: string): Promise<{ ok: true }> {
+    const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario/cancelar`, {})) as unknown as {
+      data: { ok: true }
+    }
     return res.data
   },
 

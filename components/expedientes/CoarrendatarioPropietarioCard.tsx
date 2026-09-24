@@ -186,15 +186,15 @@ export function CoarrendatarioPropietarioCard({
         {/* Estado de la invitación + evaluación */}
         <EstadoBlock coa={coa} />
 
-        {/* Invitación pendiente: permitir corregir el contacto y reenviar —
-            un email mal escrito no debe dejar el expediente sin salida. El key
-            remonta el form cuando el contacto guardado cambia tras reenviar. */}
+        {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
+            otra persona (P4). El key remonta el form cuando los datos guardados
+            cambian. */}
         {coa.estado === 'pendiente_aceptacion' && puedeEditar && (
           <CoarrendatarioReenviarInvitacion
-            key={`${coa.email}|${coa.telefono ?? ''}`}
+            key={coa.updated_at}
             expedienteId={expedienteId}
             coa={coa}
-            onReenviado={fetchCoa}
+            onCambio={fetchCoa}
           />
         )}
 

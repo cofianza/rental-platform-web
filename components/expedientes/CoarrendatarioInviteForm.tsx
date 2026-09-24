@@ -25,7 +25,7 @@ import {
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad) ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría).
-const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
+export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
   { value: 'nit', label: 'NIT' },

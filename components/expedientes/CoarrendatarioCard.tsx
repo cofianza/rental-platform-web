@@ -126,15 +126,15 @@ export function CoarrendatarioCard({
 
       <EstadoBadge coa={coa} />
 
-      {/* Invitación pendiente: el solicitante puede corregir el contacto y
-          reenviar — un email mal escrito no debe dejarlo esperando para
-          siempre. El key remonta el form cuando el contacto guardado cambia. */}
+      {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
+          cancelarla para invitar a otra persona (P4). El key remonta el form
+          cuando los datos guardados cambian. */}
       {coa.estado === 'pendiente_aceptacion' && (
         <CoarrendatarioReenviarInvitacion
-          key={`${coa.email}|${coa.telefono ?? ''}`}
+          key={coa.updated_at}
           expedienteId={expedienteId}
           coa={coa}
-          onReenviado={fetchCoa}
+          onCambio={fetchCoa}
         />
       )}
     </div>

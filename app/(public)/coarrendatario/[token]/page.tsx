@@ -189,7 +189,13 @@ export default function CoarrendatarioPublicPage() {
 
         <div className="p-6 space-y-5">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Hola, {view?.nombre} {view?.apellido}</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Hola, {view?.nombre} {view?.apellido}</h2>
+            {/* P4: si el documento no es el suyo, que decline en vez de autorizar una consulta ajena. */}
+            {view?.documento && (
+              <p className="text-xs text-gray-500 mb-2">
+                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el tuyo, declina la invitación.
+              </p>
+            )}
             <p className="text-sm text-gray-700 leading-relaxed">
               En Cofianza <strong>rentamos sin fiador</strong>. {titular} te invita a ser su co-arrendatario para que
               tomen el arriendo juntos: los dos firman como un solo arrendatario y nosotros los respaldamos.
