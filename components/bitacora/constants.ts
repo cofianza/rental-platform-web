@@ -151,7 +151,7 @@ export const ACTION_LABELS: Record<string, string> = {
   miembro_revocado: 'Miembro revocado',
   miembro_acepto: 'Miembro aceptó la invitación',
   miembro_rol_cambiado: 'Rol del miembro cambiado',
-  inmobiliaria_cerrada: 'Inmobiliaria cerrada (su titular se unió a otra)',
+  inmobiliaria_cerrada: 'Inmobiliaria cerrada por su titular',
 }
 
 /**
