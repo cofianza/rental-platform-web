@@ -352,7 +352,8 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                       )}
                       Descargar Certificado
                     </button>
-                    {!readOnly && (
+                    {/* Sin efecto (P32), la API no lo regenera. */}
+                    {!readOnly && !estudio.certificado_sin_efecto && (
                       <button
                         onClick={handleGenerarCertificado}
                         disabled={generatingCert}
@@ -367,9 +368,11 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                       </button>
                     )}
                   </div>
-                ) : readOnly ? (
+                ) : readOnly || estudio.certificado_sin_efecto ? (
                   <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                    El certificado aún no ha sido generado por el equipo de Cofianza.
+                    {estudio.certificado_sin_efecto
+                      ? 'Este certificado ya no tiene efecto.'
+                      : 'El certificado aún no ha sido generado por el equipo de Cofianza.'}
                   </p>
                 ) : (
                   <button

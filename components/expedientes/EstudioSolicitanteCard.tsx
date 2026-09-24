@@ -541,8 +541,11 @@ export function EstudioSolicitanteCard({
     //
     // El CRC (§11) solo existe para aprobado/condicionado y solo cuando la API
     // ya lo emitió (certificado_url); se ofrece en la ruta y en los fallbacks.
+    // Sin efecto (P32), la API lo niega: no se ofrece.
     const botonCertificado =
-      estudio.certificado_url && (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado') ? (
+      estudio.certificado_url &&
+      !estudio.certificado_sin_efecto &&
+      (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado') ? (
         <button
           type="button"
           onClick={handleDescargarCertificado}
