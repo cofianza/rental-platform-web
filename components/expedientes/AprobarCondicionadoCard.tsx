@@ -73,7 +73,7 @@ export function AprobarCondicionadoCard({
     setEnviandoEnlace(true)
     try {
       const res = await expedienteService.enviarEnlaceDocumentos(expedienteId)
-      toast.success(`Enlace de carga enviado al solicitante (${res.email_destino}).`)
+      toast.success(`Enlace de carga enviado al solicitante (${res.email_destino}). El anterior ya no sirve.`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo enviar el enlace.')
     } finally {
@@ -158,7 +158,7 @@ export function AprobarCondicionadoCard({
                 <Opcion titulo="Pedir soportes al solicitante">
                   <p>
                     Le llega un enlace para cargar documentos (certificado laboral, extractos, etc.). Aparecen aquí y
-                    el analista los tiene en cuenta.
+                    el analista los tiene en cuenta. Cada envío genera un enlace nuevo: el anterior deja de servir.
                   </p>
                   <button
                     onClick={handleEnviarEnlace}
