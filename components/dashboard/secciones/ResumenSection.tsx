@@ -405,8 +405,10 @@ export function ResumenSection() {
           tone={kpis.desembolsado ? 'red' : 'green'}
           accent={kpis.desembolsado ? 'danger' : 'none'}
           label="Desembolsado"
-          value={money(kpis.desembolsado)}
+          // Sin registro de desembolsos todavía: «—», no un $0 que afirma que no se pagó.
+          value={noData.has('desembolsado') ? '—' : money(kpis.desembolsado)}
           sub="pagado a propietarios"
+          unavailable={noData.has('desembolsado')}
         />
         <Kpi
           Icon={IconInbox}
