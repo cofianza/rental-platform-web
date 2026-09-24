@@ -67,6 +67,8 @@ export interface IGenerarContratoInput {
   // Condiciones de fianza del contrato V4.
   modalidad_fianza?: ModalidadFianza
   servicios_reparto?: Record<string, CargoServicio>
+  /** P12: comisión de intermediación de la inmobiliaria en este contrato (0 o sin ella, no se imprime). */
+  comision_pct?: number
 }
 
 export interface IRenovarContratoInput {

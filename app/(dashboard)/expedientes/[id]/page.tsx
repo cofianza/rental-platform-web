@@ -712,6 +712,7 @@ export default function ExpedienteDetallePage() {
                     userRol={user?.rol}
                     contratosV3={expediente.contratos_v3}
                     inmuebleReservadoPorOtro={reservadoPorOtro}
+                    conComision={!!expediente.inmueble?.inmobiliaria_id}
                     onGenerated={fetchExpediente}
                   />
                 )}
@@ -1068,6 +1069,7 @@ export default function ExpedienteDetallePage() {
               expedienteEstado={expediente.estado}
               contratosV3={expediente.contratos_v3}
               inmuebleReservadoPorOtro={reservadoPorOtro}
+              conComision={!!expediente.inmueble?.inmobiliaria_id}
               onContratoActualizado={handleContratoActualizado}
             />
           </div>

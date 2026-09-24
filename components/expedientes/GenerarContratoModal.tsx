@@ -35,6 +35,8 @@ const SERVICIOS_DEFAULT: Record<string, CargoServicio> = Object.fromEntries(
 interface GenerarContratoModalProps {
   isOpen: boolean
   expedienteId: string
+  /** Inmueble de una inmobiliaria: pide su comisión de intermediación (P12). El propietario directo no la cobra. */
+  conComision?: boolean
   onClose: () => void
   onGenerated: () => void
 }
@@ -42,12 +44,14 @@ interface GenerarContratoModalProps {
 export function GenerarContratoModal({
   isOpen,
   expedienteId,
+  conComision = false,
   onClose,
   onGenerated,
 }: GenerarContratoModalProps) {
   const [fechaInicio, setFechaInicio] = useState('')
   const [duracionMeses, setDuracionMeses] = useState('12')
   const [modalidad, setModalidad] = useState<ModalidadFianza>('plena')
+  const [comision, setComision] = useState('')
   const [servicios, setServicios] = useState<Record<string, CargoServicio>>(SERVICIOS_DEFAULT)
   const [generating, setGenerating] = useState(false)
 
@@ -56,10 +60,13 @@ export function GenerarContratoModal({
       setFechaInicio(hoyBogota())
       setDuracionMeses('12')
       setModalidad('plena')
+      setComision('')
       setServicios(SERVICIOS_DEFAULT)
       setGenerating(false)
     }
   }, [isOpen])
+
+  const comisionInvalida = comision.trim() !== '' && !(Number(comision) >= 0 && Number(comision) <= 100)
 
   async function handleGenerar() {
     setGenerating(true)
@@ -69,6 +76,7 @@ export function GenerarContratoModal({
         duracion_meses: duracionMeses ? Number(duracionMeses) : undefined,
         modalidad_fianza: modalidad,
         servicios_reparto: servicios,
+        ...(conComision && comision.trim() ? { comision_pct: Number(comision) } : {}),
       })
       toast.success('Contrato generado correctamente')
       onGenerated()
@@ -125,6 +133,32 @@ export function GenerarContratoModal({
             Por defecto 12 meses, prorrogables tácitamente segun la cláusula QUINTA.
           </p>
         </div>
+
+        {conComision && (
+          <div>
+            <label htmlFor="generar-contrato-modal-comision" className="block text-sm font-medium text-gray-700 mb-1">
+              Comisión de intermediación (%)
+            </label>
+            <input id="generar-contrato-modal-comision"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              max={100}
+              step="0.01"
+              placeholder="0"
+              value={comision}
+              onChange={(e) => setComision(e.target.value)}
+              disabled={generating}
+              aria-invalid={comisionInvalida}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
+            />
+            <p className={`text-xs mt-1 ${comisionInvalida ? 'text-red-600' : 'text-gray-500'}`}>
+              {comisionInvalida
+                ? 'Escribe un porcentaje entre 0 y 100.'
+                : 'La que cobra la inmobiliaria al arrendatario, más IVA, una sola vez al inicio. En 0 o vacía, el contrato no lleva esa cláusula.'}
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4 pt-3 border-t border-gray-200">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -191,7 +225,7 @@ export function GenerarContratoModal({
         </button>
         <button
           onClick={handleGenerar}
-          disabled={generating || !fechaInicio || !duracionMeses}
+          disabled={generating || !fechaInicio || !duracionMeses || comisionInvalida}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
           {generating ? <IconLoader size={16} className="animate-spin" /> : <IconFileText size={16} />}

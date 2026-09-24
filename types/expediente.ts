@@ -243,6 +243,8 @@ export interface IExpedienteInmuebleDetalle {
   estado?: string
   /** El estudio cuyo contrato reservó el inmueble (con estado 'ocupado'); null si nadie. */
   reservado_por_expediente_id?: string | null
+  /** Inmueble de una inmobiliaria (null = propietario directo). */
+  inmobiliaria_id?: string | null
 }
 
 /**

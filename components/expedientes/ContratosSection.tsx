@@ -40,6 +40,8 @@ interface ContratosSectionProps {
   contratosV3?: boolean
   /** El contrato de otro estudio reservó el inmueble: no se ofrece "Crear contrato". */
   inmuebleReservadoPorOtro?: boolean
+  /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
+  conComision?: boolean
 }
 
 export function ContratosSection({
@@ -48,6 +50,7 @@ export function ContratosSection({
   onContratoActualizado,
   contratosV3,
   inmuebleReservadoPorOtro,
+  conComision,
 }: ContratosSectionProps) {
   const { user } = useAuth()
   const router = useRouter()
@@ -521,6 +524,7 @@ export function ContratosSection({
       <GenerarContratoModal
         isOpen={generarOpen}
         expedienteId={expedienteId}
+        conComision={conComision}
         onClose={() => setGenerarOpen(false)}
         onGenerated={handleGenerated}
       />

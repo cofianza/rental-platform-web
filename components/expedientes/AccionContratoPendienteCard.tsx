@@ -35,6 +35,8 @@ interface AccionContratoPendienteCardProps {
   contratosV3?: boolean
   /** El contrato de otro estudio reservó el inmueble: no hay contrato que crear aquí por ahora. */
   inmuebleReservadoPorOtro?: boolean
+  /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
+  conComision?: boolean
   onGenerated?: () => void
 }
 
@@ -44,6 +46,7 @@ export function AccionContratoPendienteCard({
   userRol,
   contratosV3,
   inmuebleReservadoPorOtro,
+  conComision,
   onGenerated,
 }: AccionContratoPendienteCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -143,6 +146,7 @@ export function AccionContratoPendienteCard({
         <GenerarContratoModal
           isOpen={modalOpen}
           expedienteId={expedienteId}
+          conComision={conComision}
           onClose={() => setModalOpen(false)}
           onGenerated={() => {
             setModalOpen(false)
