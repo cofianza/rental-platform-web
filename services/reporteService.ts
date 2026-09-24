@@ -27,9 +27,17 @@ export interface VolumenFilters {
   estado?: string
 }
 
+/**
+ * Tasa de aprobación (P26): la decisión vigente de cada estudio; los aprobados
+ * por ruta de aprobación; `condicionados` son los que siguen «en decisión» y
+ * quedan fuera de la tasa; `total` son los decididos (aprobados + no aprobables).
+ */
 export interface AprobacionPeriodo {
   periodo: string
   aprobados: number
+  aprobados_automatica: number
+  aprobados_coarrendatario: number
+  aprobados_revision_manual: number
   rechazados: number
   condicionados: number
   total: number
@@ -40,6 +48,9 @@ export interface AprobacionData {
   meses: AprobacionPeriodo[]
   totales: {
     total_aprobados: number
+    total_aprobados_automatica: number
+    total_aprobados_coarrendatario: number
+    total_aprobados_revision_manual: number
     total_rechazados: number
     total_condicionados: number
     total_resueltos: number
