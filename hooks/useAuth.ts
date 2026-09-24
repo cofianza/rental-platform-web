@@ -53,17 +53,6 @@ export function useAuth() {
     router.push(AUTH_ROUTES.LOGIN)
   }, [router])
 
-  /**
-   * Inicia sesión con Google
-   */
-  const signInWithGoogle = useCallback(async () => {
-    try {
-      await authService.signInWithGoogle()
-    } catch {
-      // Error ya manejado en authService
-    }
-  }, [])
-
   return {
     // Estado
     user,
@@ -75,7 +64,6 @@ export function useAuth() {
     // Acciones
     login,
     logout,
-    signInWithGoogle,
     clearError,
   }
 }

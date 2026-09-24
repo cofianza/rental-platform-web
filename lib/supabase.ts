@@ -1,7 +1,7 @@
 /**
  * Cliente Supabase - HP-95
- * Se usa principalmente para Google OAuth
- * El resto de la autenticación va por el backend
+ * Solo para el Realtime de notificaciones: la autenticación va por el backend
+ * (sin Google desde P15), así que este cliente nunca guarda una sesión propia.
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -18,10 +18,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Persistir sesión solo para que el callback de OAuth funcione
-    persistSession: true,
+    // Sin OAuth no hay sesión que persistir ni que leer de la URL.
+    persistSession: false,
     // No auto-refrescar: nosotros manejamos tokens via nuestro backend
     autoRefreshToken: false,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
   },
 })

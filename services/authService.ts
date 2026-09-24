@@ -5,7 +5,7 @@
 
 import { apiClient, ApiClientError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
-import { AUTH_MESSAGES, AUTH_ROUTES } from '@/lib/constants'
+import { AUTH_MESSAGES } from '@/lib/constants'
 import type { ILoginCredentials, ILoginResponse, IUser, IAuthError, IMeResponse, IRefreshResponse, IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
 import type { PermissionsResponse } from '@/types/permissions'
 
@@ -225,67 +225,6 @@ class AuthService {
         }
       }
       return null
-    }
-  }
-
-  /**
-   * Inicia Google Sign-In via Supabase OAuth
-   */
-  async signInWithGoogle(): Promise<void> {
-    const store = useAuthStore.getState()
-    store.setLoading(true)
-    store.clearError()
-
-    try {
-      const { supabase } = await import('@/lib/supabase')
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}${AUTH_ROUTES.LOGIN}`,
-        },
-      })
-
-      if (error) {
-        throw error
-      }
-      // El usuario será redirigido a Google
-      // Al regresar, Supabase establecerá la sesión
-    } catch (error) {
-      store.setError({
-        code: 'SERVER_ERROR',
-        message: error instanceof Error ? error.message : AUTH_MESSAGES.SERVER_ERROR,
-      })
-      store.setLoading(false)
-      throw error
-    }
-  }
-
-  /**
-   * Maneja el callback de Supabase OAuth y sincroniza con el backend
-   */
-  async handleOAuthCallback(): Promise<IUser | null> {
-    const store = useAuthStore.getState()
-    store.setLoading(true)
-
-    try {
-      // Verificar usuario autenticado en Supabase (getUser valida el JWT server-side).
-      // Import diferido: supabase-js no viaja en el layout raíz (landing, vitrina,
-      // enlaces públicos); el cliente lee el hash del callback al crearse aquí.
-      const { supabase } = await import('@/lib/supabase')
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-
-      if (!supabaseUser) {
-        return null
-      }
-
-      // Sincronizar con nuestro backend
-      const user = await this.checkSession()
-      return user
-    } catch {
-      store.logout()
-      return null
-    } finally {
-      store.setLoading(false)
     }
   }
 

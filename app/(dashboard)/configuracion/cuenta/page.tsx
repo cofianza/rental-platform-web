@@ -324,7 +324,7 @@ export default function MiCuentaPage() {
         <h3 className="text-base font-semibold text-gray-900">Contraseña</h3>
         <p className="text-sm text-gray-600">
           Te enviamos a tu correo un enlace para elegir una contraseña nueva. Úsalo también si
-          recibiste una contraseña temporal. Si entras con Google, no necesitas contraseña.
+          recibiste una contraseña temporal.
         </p>
         <button
           type="button"

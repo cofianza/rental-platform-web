@@ -1,6 +1,7 @@
 /**
  * Página de inicio de sesión (HP-95)
- * Login con email/contraseña + Google Sign In
+ * Login con email/contraseña. Sin Google (P15): no deja prueba de la
+ * autorización de datos que pide el registro por rol.
  */
 
 'use client'
@@ -9,7 +10,7 @@ import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconArrowRight, IconEye, IconEyeOff, IconGoogle, IconLoader } from '@/components/icons'
+import { IconArrowRight, IconEye, IconEyeOff, IconLoader } from '@/components/icons'
 import { cn, isValidEmail, rutaInterna } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
@@ -27,13 +28,12 @@ interface FormErrors {
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login, signInWithGoogle, isAuthenticated, isLoading, error, clearError } = useAuth()
+  const { login, isAuthenticated, isLoading, error, clearError } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
   // Llegó desde la invitación a su estudio (guardó el token al tocar "Iniciar
   // sesión"): si no tiene cuenta, la que necesita es la de arrendatario, y
@@ -140,15 +140,6 @@ function LoginForm() {
     }
 
     await login({ email, password }, computePostLoginRedirect())
-  }
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true)
-    try {
-      await signInWithGoogle()
-    } finally {
-      setIsGoogleLoading(false)
-    }
   }
 
   // Si veniamos del flujo "Me interesa" (vitrina), preservamos query params
@@ -315,38 +306,6 @@ function LoginForm() {
           )}
         </button>
       </form>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3.5 my-6 text-[13px] text-slate-500">
-        <div className="flex-1 h-px bg-slate-200" />
-        o continúa con
-        <div className="flex-1 h-px bg-slate-200" />
-      </div>
-
-      {/* Google */}
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={isLoading || isGoogleLoading}
-        className={cn(
-          'w-full py-2.5 rounded-[10px] border-[1.5px] border-slate-200 bg-white',
-          'text-sm font-semibold text-slate-900 flex items-center justify-center gap-2.5',
-          'hover:border-slate-400 hover:bg-slate-50 transition-colors',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-        )}
-      >
-        {isGoogleLoading ? (
-          <>
-            <IconLoader size={18} className="animate-spin" />
-            Conectando…
-          </>
-        ) : (
-          <>
-            <IconGoogle size={18} />
-            Continuar con Google
-          </>
-        )}
-      </button>
 
       {/* Footer */}
       <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
