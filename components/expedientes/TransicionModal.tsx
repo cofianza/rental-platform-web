@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
+import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 
@@ -88,6 +89,14 @@ export function TransicionModal({
   // motivo corto para la inmobiliaria o el propietario (el API lo exige).
   const pideMotivoGestor = estadoSeleccionado === 'rechazado'
   const motivoGestorValido = !pideMotivoGestor || motivoGestor.trim().length >= MIN_MOTIVO
+  // Al cancelar, este texto se guarda como motivo de la cancelación, que ven la
+  // inmobiliaria o el propietario y el solicitante en el estudio. No hay otro
+  // campo: quien cancela desde Cofianza tiene que saberlo al escribirlo.
+  const { userRole } = usePermissions()
+  const cancelaCofianza =
+    estadoSeleccionado === 'cerrado' &&
+    !!transicionSeleccionada?.etiqueta.startsWith('Cancelar') &&
+    (userRole === 'administrador' || userRole === 'operador_analista')
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
@@ -218,7 +227,12 @@ export function TransicionModal({
         {/* Campo de comentario */}
         <div>
           <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">
-            {pideMotivoGestor ? 'Fundamento interno' : 'Comentario / Motivo'} <span className="text-red-500">*</span>
+            {pideMotivoGestor
+              ? 'Fundamento interno'
+              : cancelaCofianza
+                ? 'Motivo de la cancelación (lo ven la inmobiliaria o el propietario y el solicitante)'
+                : 'Comentario / Motivo'}{' '}
+            <span className="text-red-500">*</span>
           </label>
           <textarea id="transicion-modal-comentario-motivo"
             value={comentario}
@@ -231,9 +245,11 @@ export function TransicionModal({
           <p className="mt-1 text-xs text-gray-500">
             {pideMotivoGestor
               ? 'Solo lo ve Cofianza: queda en el historial del estudio con tu usuario y la fecha.'
-              : esRevisionManual
-                ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
-                : 'Este comentario quedará registrado en el historial del estudio.'}
+              : cancelaCofianza
+                ? 'No incluyas datos del buró ni el fundamento interno.'
+                : esRevisionManual
+                  ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
+                  : 'Este comentario quedará registrado en el historial del estudio.'}
             {!motivoValido && ` Mínimo ${MIN_MOTIVO} caracteres (${comentario.trim().length}/${MIN_MOTIVO}).`}
           </p>
         </div>
