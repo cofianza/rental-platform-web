@@ -147,8 +147,9 @@ export function CarteraAnaliticaSection() {
               value={d.aprobados}
               variant="border-primary-600 bg-primary-50 text-primary-700"
             />
+            {/* P26: condicionados que el analista aún no resuelve; no entran en la tasa. */}
             <DecisionCard
-              label="Condicionados"
+              label="En decisión"
               value={d.condicionados}
               variant="border-amber-300 bg-amber-50 text-amber-700"
             />

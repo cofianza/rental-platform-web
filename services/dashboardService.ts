@@ -356,9 +356,12 @@ export interface MiCarteraAnalitica {
     scorePromedio: number | null
     decisiones30d: {
       aprobados: number
+      /** P26: en decisión (condicionados que el analista aún no resuelve); fuera de la tasa. */
       condicionados: number
       rechazados: number
+      /** Decididos: aprobados + rechazados. */
       total: number
+      /** Aprobados sobre decididos, con la decisión efectiva (igual que el informe y el dashboard). */
       tasaAprobacion: number
     }
   }
