@@ -24,6 +24,13 @@ import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioServi
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
 // NIT: el co-arrendatario es una persona natural (el contrato lo rechaza y el
 // enlace del prospecto solo acepta estas dos).
+/**
+ * Mismo filtro que el API (letras, espacios, apóstrofo, punto y guion): el
+ * nombre va en el correo y el WhatsApp a un tercero. Validarlo aquí evita el
+ * error, y desde el enlace del prospecto, gastar uno de sus intentos del día.
+ */
+export const NOMBRE_VALIDO = /^\p{L}[\p{L}\p{M} '’.-]*$/u
+
 export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
@@ -63,6 +70,10 @@ export function CoarrendatarioInviteForm({
   const handleInvitar = async () => {
     if (!nombre.trim() || !apellido.trim() || !numDoc.trim() || !email.trim()) {
       toast.error('Llena todos los campos requeridos.')
+      return
+    }
+    if (!NOMBRE_VALIDO.test(nombre.trim()) || !NOMBRE_VALIDO.test(apellido.trim())) {
+      toast.error('El nombre y el apellido solo pueden tener letras.')
       return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
