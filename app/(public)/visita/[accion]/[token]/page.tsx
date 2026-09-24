@@ -421,7 +421,7 @@ function ContactoAyuda({ contacto, className }: { contacto?: IVisitaPublica['con
     <p className={cn('text-xs text-gray-500', className)}>
       {contacto.whatsapp ? (
         <>
-          Para coordinar otra fecha o si necesitas ayuda, escríbele a {contacto.nombre} por WhatsApp al{' '}
+          Para coordinar otra fecha o si necesitas ayuda, escríbele {contacto.nombre ? `a ${contacto.nombre}` : 'a quien publicó el inmueble'} por WhatsApp al{' '}
           <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-700 underline">
             {contacto.whatsapp}
           </a>

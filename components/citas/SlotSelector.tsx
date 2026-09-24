@@ -26,6 +26,7 @@ import {
   type IDiaDisponibilidad,
 } from '@/services/disponibilidadService'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth.store'
 
 interface SlotSelectorProps {
   inmuebleId: string
@@ -226,6 +227,10 @@ export default function SlotSelector({
  * slots sin cerrar el modal. Renderizar SOLO para gestores.
  */
 export function EditarHorariosHint({ onRefresh }: { onRefresh: () => void }) {
+  // P37: la agenda es una sola por inmobiliaria y solo sus titulares la cambian;
+  // a los demás miembros no se les ofrece un ajuste que no pueden hacer.
+  const user = useAuthStore((s) => s.user)
+  if (user?.rol === 'inmobiliaria' && user.rol_miembro && user.rol_miembro !== 'owner') return null
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50/70 px-3 py-2">
       <span className="text-xs text-gray-500">
