@@ -380,22 +380,28 @@ class FacturacionService {
   }
 
   // ── Configuración admin: tarifas de IVA por concepto ───────
-  /** `derivada`: no se edita aquí (la prima de vinculación sale de TARIFA_IVA). */
-  async getTarifasIva(): Promise<{ concepto: string; tasa: number; derivada?: boolean }[]> {
-    const response = (await apiClient.get('/facturas/configuracion-iva')) as unknown as {
-      data: { concepto: string; tasa: number; derivada?: boolean }[]
-    }
+  /**
+   * `derivada`: no se edita aquí (la prima de vinculación sale de TARIFA_IVA;
+   * los paquetes de créditos, `derivada_de: 'estudio'`, de la evaluación).
+   */
+  async getTarifasIva(): Promise<ITarifaIva[]> {
+    const response = (await apiClient.get('/facturas/configuracion-iva')) as unknown as { data: ITarifaIva[] }
     return response.data
   }
 
-  async updateTarifasIva(
-    tarifas: { concepto: string; tasa: number }[],
-  ): Promise<{ concepto: string; tasa: number; derivada?: boolean }[]> {
+  async updateTarifasIva(tarifas: { concepto: string; tasa: number }[]): Promise<ITarifaIva[]> {
     const response = (await apiClient.put('/facturas/configuracion-iva', { tarifas })) as unknown as {
-      data: { concepto: string; tasa: number; derivada?: boolean }[]
+      data: ITarifaIva[]
     }
     return response.data
   }
+}
+
+export interface ITarifaIva {
+  concepto: string
+  tasa: number
+  derivada?: boolean
+  derivada_de?: 'estudio'
 }
 
 export const facturacionService = new FacturacionService()

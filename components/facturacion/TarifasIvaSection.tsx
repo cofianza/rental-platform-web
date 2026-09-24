@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { facturacionService } from '@/services/facturacionService'
+import { facturacionService, type ITarifaIva as Tarifa } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconLoader, IconCheck } from '@/components/icons'
 
@@ -12,13 +12,7 @@ const CONCEPTO_LABELS: Record<string, string> = {
   primer_canon: 'Primer canon',
   deposito: 'Depósito',
   otro: 'Otros conceptos',
-}
-
-interface Tarifa {
-  concepto: string
-  tasa: number
-  /** La prima de vinculación: sale de TARIFA_IVA (Calibración), aquí solo se muestra. */
-  derivada?: boolean
+  creditos_estudios: 'Paquetes de créditos de evaluación',
 }
 
 export function TarifasIvaSection() {
@@ -81,7 +75,8 @@ export function TarifasIvaSection() {
         <p className="text-sm text-gray-500 mt-1">
           Tasa aplicada al emitir facturas electrónicas; si es mayor que 0, el monto cobrado lleva
           el IVA incluido. <strong>0 = exento</strong>. La prima de vinculación va gravada con la
-          tasa de IVA de Calibración, la misma con la que se cobra (Adenda 1 de contratos).
+          tasa de IVA de Calibración, la misma con la que se cobra (Adenda 1 de contratos). Los
+          paquetes de créditos son el pago anticipado de evaluaciones y llevan su misma tasa.
         </p>
       </div>
 
@@ -105,7 +100,9 @@ export function TarifasIvaSection() {
               />
               <span className="text-sm text-gray-500 w-4">%</span>
               {t.derivada ? (
-                <span className="text-xs text-gray-500">de Calibración</span>
+                <span className="text-xs text-gray-500">
+                  {t.derivada_de === 'estudio' ? 'igual a la evaluación' : 'de Calibración'}
+                </span>
               ) : (
                 t.tasa === 0 && <span className="text-xs text-emerald-600 font-medium">Exento</span>
               )}
