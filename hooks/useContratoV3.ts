@@ -22,6 +22,7 @@ import type {
   EstadoAsistente,
   GuardarPasoBody,
   Hallazgo,
+  MarcaFirma,
   NumeroPaso,
   OrigenClausula,
   Paso1,
@@ -39,6 +40,7 @@ export type AccionContratoV3 =
   | 'autorizar'
   // Entrega 5: Ruta B y firma
   | 'propio'
+  | 'firmas'
   | 'enviar'
   | 'reenviar'
   | 'reintentar'
@@ -196,6 +198,12 @@ export function useContratoV3(expedienteId: string) {
     },
     [mutar, expedienteId],
   )
+  /** Ruta B: dónde firma cada parte sobre el PDF de la inmobiliaria cuyo sha256 se pasa. true si se guardó. */
+  const guardarFirmasPropio = useCallback(
+    (propioSha256: string, firmas: MarcaFirma[]) =>
+      mutar('firmas', () => contratoV3Service.guardarFirmasPropio(expedienteId, propioSha256, firmas)),
+    [mutar, expedienteId],
+  )
   /** URL firmada (1 h) del contrato de la inmobiliaria (Ruta B). */
   const propioUrl = useCallback(() => contratoV3Service.propioUrl(expedienteId), [expedienteId])
   /**
@@ -309,6 +317,7 @@ export function useContratoV3(expedienteId: string) {
     errorPaso: errorPaso?.expedienteId === expedienteId ? errorPaso : null,
     limpiarErrorPaso,
     subirPropio,
+    guardarFirmasPropio,
     propioUrl,
     crcUrl,
     enviar,

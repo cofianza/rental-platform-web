@@ -2,7 +2,8 @@
  * Paso 5 del asistente de contratos V3: datos de notificación de cada parte y
  * ciudad de suscripción, más la vista previa del contrato (modo revisión, D6)
  * y el envío a firma (Entrega 5). En la Ruta B, aquí se carga el contrato de la
- * inmobiliaria y se genera el Anexo. Los PDF los sirve el API con URL firmada.
+ * inmobiliaria, se ubica dónde firma cada parte sobre él y se genera el Anexo.
+ * Los PDF los sirve el API con URL firmada.
  */
 
 'use client'
@@ -11,6 +12,7 @@ import { useCallback, useId, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import {
   IconAlertTriangle,
@@ -25,11 +27,15 @@ import { formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
-import type { Contacto, EstadoAsistente, NumeroPaso, Paso5 } from '@/types/contratoV3'
+import type { Contacto, EstadoAsistente, MarcaFirma, NumeroPaso, Paso5 } from '@/types/contratoV3'
 import { AvisosContrato, BloqueosContrato } from './BloqueosContrato'
-import { Aviso, Campo, EncabezadoPaso, RUTA_B_SIN_FIRMA } from './campos'
+import { Aviso, Campo, EncabezadoPaso } from './campos'
+import type { ParteFirma } from './UbicarFirmas'
 
 const PdfViewer = dynamic(() => import('@/components/ui/PdfViewer').then((m) => ({ default: m.PdfViewer })), {
+  ssr: false,
+})
+const UbicarFirmas = dynamic(() => import('./UbicarFirmas').then((m) => ({ default: m.UbicarFirmas })), {
   ssr: false,
 })
 
@@ -149,6 +155,11 @@ interface VistaPreviaProps {
   motivoNoGenerar: string | null
   /** Abre la confirmación del envío (la arma la página: tiene el resumen y el paso 5). */
   onEnviar: () => void
+  /** Ruta B: quién firma (para ubicar sus firmas sobre el PDF propio). */
+  partesFirma: ParteFirma[]
+  /** Ruta B: las firmas ubicadas y sin guardar (null = las guardadas). Las guarda la página. */
+  borradorFirmas: MarcaFirma[] | null
+  onBorradorFirmas: (marcas: MarcaFirma[] | null) => void
 }
 
 /** Fuera del <fieldset disabled>: el de solo lectura también puede ver los PDF. */
@@ -161,6 +172,9 @@ export function VistaPreviaContrato({
   onIrPaso,
   motivoNoGenerar,
   onEnviar,
+  partesFirma,
+  borradorFirmas,
+  onBorradorFirmas,
 }: VistaPreviaProps) {
   const { documento, propio } = contrato
   const visor = useVisor()
@@ -171,6 +185,9 @@ export function VistaPreviaContrato({
   const errorPdf = errorArchivo ?? v3.errorPropio
   const motivoId = useId()
   const ocupado = v3.accion !== null
+  // Las firmas ubicadas son de ESTE PDF: reemplazarlo las borra, así que se confirma.
+  const [confirmarReemplazo, setConfirmarReemplazo] = useState(false)
+  const conFirmas = (propio?.firmas?.length ?? 0) > 0 || !!borradorFirmas?.length
 
   const cargarDocumento = async () => (await contratoService.descargarContrato(contrato.id, { inline: true })).url
   const docs: DocVisor[] = [
@@ -200,14 +217,20 @@ export function VistaPreviaContrato({
       return
     }
     if (!(await v3.subirPropio(archivo))) return
-    toast.success('Contrato de la inmobiliaria cargado')
-    void visor.abrir('propio', v3.propioUrl)
+    toast.success('Contrato de la inmobiliaria cargado: ahora ubica dónde firma cada parte.')
   }
 
-  // Lo que se firma es lo que se revisó: documento vigente, sin textos pendientes y, en B, con el PDF cargado.
+  const guardarFirmas = async () => {
+    if (!propio || !borradorFirmas) return
+    if (!(await v3.guardarFirmasPropio(propio.sha256, borradorFirmas))) return
+    onBorradorFirmas(null)
+    toast.success('Ubicación de las firmas guardada')
+  }
+
+  // Lo que se firma es lo que se revisó: documento vigente, sin textos pendientes y, en B, con el PDF
+  // cargado y dónde firma cada parte sobre él, guardado.
   const motivoNoEnviar =
     motivoNoGenerar ??
-    (rutaB ? RUTA_B_SIN_FIRMA : null) ??
     (!documento
       ? rutaB
         ? 'Genera el Anexo y revísalo antes de enviar a firma.'
@@ -218,7 +241,11 @@ export function VistaPreviaContrato({
           ? 'El documento tiene textos pendientes de aprobación de Cofianza: todavía no se puede enviar a firma.'
           : rutaB && !propio
             ? 'Carga el contrato de la inmobiliaria en PDF para enviarlo a firma.'
-            : null)
+            : rutaB && borradorFirmas
+              ? 'Guarda la ubicación de las firmas antes de enviar a firma.'
+              : rutaB && propio && !propio.firmasCompletas
+                ? `Ubica en el contrato de la inmobiliaria dónde firma: ${(propio.partesSinFirma ?? []).join(', ')}.`
+                : null)
 
   return (
     <section id="vista-previa" className="scroll-mt-20 space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
@@ -309,7 +336,12 @@ export function VistaPreviaContrato({
                   <IconEye size={14} /> Ver
                 </Button>
                 {editable && (
-                  <Button variante="secondary" tamano="sm" onClick={() => archivoRef.current?.click()} disabled={ocupado}>
+                  <Button
+                    variante="secondary"
+                    tamano="sm"
+                    onClick={() => (conFirmas ? setConfirmarReemplazo(true) : archivoRef.current?.click())}
+                    disabled={ocupado}
+                  >
                     {v3.accion === 'propio' ? <IconLoader size={14} className="animate-spin" /> : <IconUpload size={14} />}
                     {v3.accion === 'propio' ? 'Cargando…' : 'Reemplazar'}
                   </Button>
@@ -358,6 +390,23 @@ export function VistaPreviaContrato({
               <p>{errorPdf}</p>
             </Aviso>
           )}
+          {propio && (
+            // Por PDF: cargar otro borra sus marcas (también en el API).
+            <UbicarFirmas
+              key={propio.sha256}
+              propio={propio}
+              partes={partesFirma}
+              marcas={borradorFirmas ?? propio.firmas ?? []}
+              sinGuardar={borradorFirmas !== null}
+              editable={editable}
+              ocupado={ocupado}
+              guardando={v3.accion === 'firmas'}
+              cargarUrl={v3.propioUrl}
+              onCambiar={onBorradorFirmas}
+              onGuardar={() => void guardarFirmas()}
+              onDescartar={() => onBorradorFirmas(null)}
+            />
+          )}
           {editable && (
             // sr-only y no `hidden`: Safari de iOS no abre el selector de un input con display:none.
             // Se maneja con la zona de arrastre o "Reemplazar"; por eso queda fuera del tabulador.
@@ -378,6 +427,17 @@ export function VistaPreviaContrato({
       )}
 
       <VisorDocumentos docs={docs} visor={visor} />
+
+      <ConfirmDialog
+        isOpen={confirmarReemplazo}
+        onClose={() => setConfirmarReemplazo(false)}
+        // En el mismo clic: Safari de iOS solo abre el selector de archivos dentro de un gesto del usuario.
+        onConfirm={() => archivoRef.current?.click()}
+        title="¿Reemplazar el contrato de la inmobiliaria?"
+        message="Las firmas que ubicaste son de este PDF: con el nuevo tendrás que ubicarlas otra vez."
+        confirmLabel="Elegir otro PDF"
+        cancelLabel="Volver"
+      />
     </section>
   )
 }

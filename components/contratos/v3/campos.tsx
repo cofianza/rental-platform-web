@@ -24,15 +24,6 @@ const TIPO_DOCUMENTO: Record<string, string> = {
 export const documento = (tipo: string, numero: string) =>
   `${TIPO_DOCUMENTO[tipo] ?? tipo.toUpperCase()} ${numero}`
 
-/**
- * Adenda 1 del módulo de contratos, respuesta 6: la Ruta B no sale a firma
- * hasta ubicar las firmas sobre las líneas de firma del contrato de la
- * inmobiliaria. Mismo texto y mismo bloqueo del API (RUTA_B_SIN_FIRMA en
- * firma/reglas.ts): se quitan juntos.
- */
-export const RUTA_B_SIN_FIRMA =
-  'La Ruta B todavía no se puede enviar a firma: falta ubicar las firmas sobre las líneas de firma del contrato de la inmobiliaria. Por ahora usa la Ruta A.'
-
 /** "2,5" — porcentajes es-CO con hasta dos decimales (como el contrato). */
 export const porcentaje = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
 

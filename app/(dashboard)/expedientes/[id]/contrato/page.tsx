@@ -53,12 +53,14 @@ import type { UserRole } from '@/types/auth'
 import type {
   EstadoAsistente,
   GuardarPasoBody,
+  MarcaFirma,
   NumeroPaso,
   Paso1,
   Paso2,
   Paso3,
   Paso5,
 } from '@/types/contratoV3'
+import type { ParteFirma } from '@/components/contratos/v3/UbicarFirmas'
 
 // Mismo roleGuard que el GET del API; propietario y solicitante no llegan aquí.
 const ROLES_PERMITIDOS: UserRole[] = ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria']
@@ -295,6 +297,10 @@ function Asistente({
   const [errores, setErrores] = useState<ErroresPaso>({})
   // Pasos con cambios sin guardar: activan el aviso del navegador al salir.
   const [sucios, setSucios] = useState<NumeroPaso[]>([])
+  // Ruta B: firmas ubicadas sin guardar, ligadas al PDF sobre el que se marcaron (con otro, no valen).
+  const [firmas, setFirmas] = useState<{ sha256: string; marcas: MarcaFirma[] } | null>(null)
+  const borradorFirmas = firmas && firmas.sha256 === contrato.propio?.sha256 ? firmas.marcas : null
+  const hayCambios = sucios.length > 0 || borradorFirmas !== null
   const [confirmarCancelar, setConfirmarCancelar] = useState(false)
   const [confirmarEnvio, setConfirmarEnvio] = useState(false)
   // Si el aviso de responsabilidad cambia (409 AVISO_CAMBIADO y recarga), hay que leerlo y aceptarlo de nuevo.
@@ -314,21 +320,21 @@ function Asistente({
   }
 
   useEffect(() => {
-    if (sucios.length === 0) return
+    if (!hayCambios) return
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [sucios.length])
+  }, [hayCambios])
 
   // Navegar DENTRO de la app (menú, migas, «Editar en el inmueble») no dispara
   // beforeunload: con cambios sin guardar se pregunta antes de salir.
   const router = useRouter()
   const [salirA, setSalirA] = useState<string | null>(null)
   useEffect(() => {
-    if (sucios.length === 0) return
+    if (!hayCambios) return
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null
@@ -341,7 +347,7 @@ function Asistente({
     }
     document.addEventListener('click', onClick, true)
     return () => document.removeEventListener('click', onClick, true)
-  }, [sucios.length])
+  }, [hayCambios])
 
   const poner =
     <N extends keyof Formularios>(n: N) =>
@@ -491,6 +497,12 @@ function Asistente({
     },
   ]
   const crc = resumen?.fianza?.crc
+  // Ruta B: las mismas partes, para ubicar sus firmas sobre el contrato de la inmobiliaria.
+  const partesFirma: ParteFirma[] = [
+    { parte: 'arrendatario', nombre: resumen?.arrendatario.nombre ?? '' },
+    ...(resumen?.coarrendatario ? [{ parte: 'coarrendatario' as const, indice: 0, nombre: resumen.coarrendatario.nombre }] : []),
+    { parte: 'arrendador', nombre: resumen?.arrendador.representanteLegal ?? resumen?.arrendador.razonSocial ?? '' },
+  ]
 
   // Ruta B: el paso 4 no aplica (ni cuenta como pendiente ni como cambio sin guardar).
   const pendientesSinGuardar = sucios.filter((n) => !(rutaB && n === 4)).sort()
@@ -698,6 +710,11 @@ function Asistente({
           onIrPaso={irA}
           motivoNoGenerar={motivoNoGenerar}
           onEnviar={() => setConfirmarEnvio(true)}
+          partesFirma={partesFirma}
+          borradorFirmas={borradorFirmas}
+          onBorradorFirmas={(marcas) =>
+            setFirmas(marcas && contrato.propio ? { sha256: contrato.propio.sha256, marcas } : null)
+          }
         />
       )}
 
@@ -719,7 +736,8 @@ function Asistente({
             </ol>
             <p>
               {crc ? `Se adjunta el CRC N° ${crc.codigo}.` : 'Se adjunta el CRC.'}
-              {rutaB && ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones.'}
+              {rutaB &&
+                ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones. Cada parte firma donde ubicaste su firma en tu contrato y sobre su línea en el Anexo.'}
             </p>
             <p className="font-medium text-gray-900">
               Después de enviarlo, el contrato no se puede editar. Cada envío consume un crédito de firma.
@@ -748,6 +766,7 @@ function Asistente({
         onConfirm={() => {
           const destino = salirA
           setSucios([])
+          setFirmas(null)
           if (destino) router.push(destino)
         }}
         title="¿Salir sin guardar?"

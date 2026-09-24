@@ -7,7 +7,7 @@
 import { apiClient, ApiClientError, handleApiError, type ApiResponse } from '@/lib/api'
 import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
-import type { EstadoAsistente, GuardarPasoBody } from '@/types/contratoV3'
+import type { EstadoAsistente, GuardarPasoBody, MarcaFirma } from '@/types/contratoV3'
 
 const ruta = (expedienteId: string) => `/expedientes/${expedienteId}/contrato-v3`
 
@@ -82,6 +82,14 @@ export const contratoV3Service = {
     }
     if (!res.ok) await handleApiError(res)
     return ((await res.json()) as ApiResponse<EstadoAsistente>).data
+  },
+  /**
+   * Ruta B: dónde firma cada parte sobre el contrato de la inmobiliaria (reemplaza todas las
+   * marcas). `propioSha256` = el PDF sobre el que se marcaron: si ya es otro, 409.
+   */
+  async guardarFirmasPropio(expedienteId: string, propioSha256: string, firmas: MarcaFirma[]): Promise<EstadoAsistente> {
+    const res = await apiClient.put<EstadoAsistente>(`${ruta(expedienteId)}/propio/firmas`, { propioSha256, firmas })
+    return res.data
   },
   /** URL firmada (10 min) del contrato propio, en cualquier estado del contrato. */
   async propioUrl(expedienteId: string): Promise<string> {

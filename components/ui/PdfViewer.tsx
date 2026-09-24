@@ -53,6 +53,21 @@ if (typeof window !== 'undefined') {
   }
 }
 
+/**
+ * Marca que hay un visor de PDF vivo: acota el guard de rechazos benignos de
+ * pdfjs para que solo actúe mientras se está usando react-pdf. Otro visor con
+ * react-pdf (p. ej. el de ubicar firmas) lo llama también: importarlo de aquí
+ * deja configurado el worker.
+ */
+export function usePdfjsActivo() {
+  useEffect(() => {
+    pdfViewersActive += 1
+    return () => {
+      pdfViewersActive -= 1
+    }
+  }, [])
+}
+
 interface PdfViewerProps {
   url: string
 }
@@ -69,14 +84,7 @@ export function PdfViewer({ url }: PdfViewerProps) {
 
   const scale = SCALE_LEVELS[scaleIndex]
 
-  // Marca que hay un visor de PDF vivo: acota el guard de rechazos benignos de
-  // pdfjs para que solo actúe mientras se está usando react-pdf.
-  useEffect(() => {
-    pdfViewersActive += 1
-    return () => {
-      pdfViewersActive -= 1
-    }
-  }, [])
+  usePdfjsActivo()
 
   const onDocumentLoadSuccess = useCallback(({ numPages: total }: { numPages: number }) => {
     setNumPages(total)
