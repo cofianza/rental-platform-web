@@ -35,6 +35,8 @@ import type { MarcaFirma, PdfPropio } from '@/types/contratoV3'
 const FIRMA = { w: 150, h: 50 }
 /** Tope del API (MAX_MARCAS_FIRMA). */
 const MAX_MARCAS = 30
+/** Una marca a menos de esto (pt) de otra de la misma parte en la misma página es la misma. */
+const CASI_IGUAL_PT = 10
 const ANCHO_MAXIMO = 900
 
 /** Una parte que firma: el coarrendatario, con su índice (desde 0). */
@@ -143,13 +145,10 @@ export function UbicarFirmas({
   const enPagina = (n: number) => marcas.filter((m) => m.pagina === n).length
 
   const marcar = (e: MouseEvent<HTMLDivElement>) => {
-    if (!editable || ocupado || !tamano) return
+    // El segundo clic de un doble clic (detail 2) no ubica otra firma.
+    if (!editable || ocupado || !tamano || e.detail > 1) return
     const parte = partes.find((p) => clave(p) === sel)
     if (!parte) return
-    if (marcas.length >= MAX_MARCAS) {
-      toast.error(`Máximo ${MAX_MARCAS} firmas sobre el contrato. Quita alguna para ubicar otra.`)
-      return
-    }
     const r = e.currentTarget.getBoundingClientRect()
     const { x, y } = ajustar((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, tamano)
     const rel = (n: number) => Math.round(dentro(n, 0, 1) * 1e4) / 1e4
@@ -159,6 +158,18 @@ export function UbicarFirmas({
       pagina,
       x: rel(x),
       y: rel(y),
+    }
+    // Casi encima de otra de la misma parte en la misma página: es la misma, no se repite.
+    const repetida = marcas.some(
+      (m) =>
+        clave(m) === clave(nueva) &&
+        m.pagina === nueva.pagina &&
+        Math.hypot((m.x - nueva.x) * tamano.w, (m.y - nueva.y) * tamano.h) < CASI_IGUAL_PT,
+    )
+    if (repetida) return
+    if (marcas.length >= MAX_MARCAS) {
+      toast.error(`Máximo ${MAX_MARCAS} firmas sobre el contrato. Quita alguna para ubicar otra.`)
+      return
     }
     onCambiar([...marcas, nueva])
   }
