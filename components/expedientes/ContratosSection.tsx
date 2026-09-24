@@ -504,6 +504,7 @@ export function ContratosSection({
           <FirmantesContratoSection
             contratoId={firmaContratoId}
             canManage={canRegenerate}
+            enFirma={contratos.find((c) => c.id === firmaContratoId)?.estado === 'pendiente_firma'}
             onAllSigned={() => { fetchContratos(); onContratoActualizado?.() }}
             onFirmantesLoaded={(total) => setTieneMultiparte(total > 0)}
           />

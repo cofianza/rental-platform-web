@@ -13,7 +13,8 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail, IconAlertTriangle } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
-import { formatDateTime } from '@/lib/constants'
+import { contratoService } from '@/services/contratoService'
+import { formatDate, formatDateTime } from '@/lib/constants'
 import { VerificacionIdentidadFirma } from './VerificacionIdentidadFirma'
 import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma, IVerificacionIdentidad } from '@/types/firma'
 
@@ -39,12 +40,15 @@ const POLL_MS = 15000
 export function FirmantesContratoSection({
   contratoId,
   canManage = false,
+  enFirma = false,
   onAllSigned,
   onFirmantesLoaded,
 }: {
   contratoId: string
   /** Habilita el botón "Enviar recordatorio" (inmobiliaria/propietario/admin). */
   canManage?: boolean
+  /** El contrato sigue en «Enviado a firma»: si el proceso venció o lo rechazaron, se ofrece reenviarlo. */
+  enFirma?: boolean
   /** Se dispara (una vez) cuando todas las partes quedan firmadas, para que el
    *  padre refresque el estado del contrato (badge "Enviado a Firma" → "Firmado"). */
   onAllSigned?: () => void
@@ -60,6 +64,7 @@ export function FirmantesContratoSection({
   // Auco re-notifica a las partes pendientes (no crea documento → SIN costo).
   const [solicitud, setSolicitud] = useState<ISolicitudFirma | null>(null)
   const [enviandoRecordatorio, setEnviandoRecordatorio] = useState(false)
+  const [reenviando, setReenviando] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -81,8 +86,11 @@ export function FirmantesContratoSection({
       setVerificaciones(vs)
       // Con verificación en curso tampoco va la sección legacy de un firmante.
       onFirmantesLoadedRef.current?.(fs.length + vs.length)
-      // Sobre aún en proceso (no firmado/expirado/cancelado) → recordable.
-      setSolicitud(sols.find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado)) ?? null)
+      // Sobre aún en proceso (no firmado/expirado/cancelado, y dentro de su
+      // plazo aunque el aviso de Auco no haya llegado) → recordable.
+      setSolicitud(
+        sols.find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado) && Date.parse(s.token_expiracion) > Date.now()) ?? null,
+      )
     } catch {
       // Silencioso: si el contrato no es multi-parte, no hay panel que mostrar.
       if (!silencioso) {
@@ -105,11 +113,14 @@ export function FirmantesContratoSection({
   const todasFirmaron = total > 0 && firmados === total
   const pendientes = total > 0 && !todasFirmaron
   const identidadPendiente = verificaciones.some((v) => v.estado === 'pendiente')
+  // contratos-firma-2: el proceso venció o una parte lo rechazó y el contrato sigue en firma.
+  const sinProceso = enFirma && !isLoading && pendientes && !solicitud && !identidadPendiente
+  const rechazo = firmantes.some((f) => f.estado === 'cancelado')
 
   // Auto-refresco mientras haya firmas (o la verificación de identidad)
   // pendientes: cuando llega el webhook de Auco o el arrendatario confirma su
   // identidad, la BD cambia y el panel se actualiza solo.
-  const enCurso = pendientes || identidadPendiente
+  const enCurso = (pendientes && !sinProceso) || identidadPendiente
   const enCursoRef = useRef(enCurso)
   enCursoRef.current = enCurso
   useEffect(() => {
@@ -146,6 +157,20 @@ export function FirmantesContratoSection({
     }
   }
   const recordatoriosAgotados = !!solicitud && solicitud.envios_realizados >= solicitud.max_envios
+
+  // Un proceso nuevo con plazo nuevo (el recordatorio no revive uno vencido).
+  const handleReenviar = async () => {
+    setReenviando(true)
+    try {
+      const res = await contratoService.enviarAFirma(contratoId)
+      toast.success(res.message)
+      cargar(true)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo reenviar a firma')
+    } finally {
+      setReenviando(false)
+    }
+  }
 
   const identidad = verificaciones.length > 0 && (
     <VerificacionIdentidadFirma
@@ -233,6 +258,29 @@ export function FirmantesContratoSection({
         </div>
       )}
 
+      {pendientes && solicitud && (
+        <p className="mb-3 text-xs text-gray-500">Plazo para firmar: hasta el {formatDate(solicitud.token_expiracion)}.</p>
+      )}
+
+      {sinProceso && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <span className="flex items-center gap-2">
+            <IconAlertTriangle size={16} className="shrink-0" />
+            {rechazo ? 'Una de las partes rechazó la firma.' : 'Venció el plazo para firmar.'}
+          </span>
+          {canManage && (
+            <button
+              onClick={handleReenviar}
+              disabled={reenviando}
+              className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-red-200 hover:bg-red-100 disabled:opacity-50"
+            >
+              {reenviando ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
+              Reenviar a firma
+            </button>
+          )}
+        </div>
+      )}
+
       {!isLoading && telsDuplicados.size > 0 && (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
@@ -300,7 +348,7 @@ export function FirmantesContratoSection({
         </ol>
       )}
 
-      {pendientes && !isLoading && (
+      {pendientes && !isLoading && !sinProceso && (
         <p className="mt-3 text-xs text-gray-400">
           Se actualiza solo cuando cada parte firma. También puedes refrescar con ↻.
         </p>

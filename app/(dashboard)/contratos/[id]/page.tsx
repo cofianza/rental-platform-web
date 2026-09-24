@@ -657,7 +657,12 @@ export default function ContratoDetallePage() {
               firma. Se auto-oculta si el contrato no usa firma multi-parte.
               El recordatorio lo permite la API también al dueño (inmobiliaria
               o propietario), no solo a los roles internos. */}
-          <FirmantesContratoSection contratoId={id} canManage={canRegenerate} onAllSigned={handleAllSigned} />
+          <FirmantesContratoSection
+            contratoId={id}
+            canManage={canRegenerate}
+            enFirma={contrato.estado === 'pendiente_firma'}
+            onAllSigned={handleAllSigned}
+          />
 
           {/* Accesos: expediente + historial de estados, agrupados en una sola
               tarjeta de lista en vez de dos tarjetas sueltas. */}
