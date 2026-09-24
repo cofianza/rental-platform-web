@@ -392,6 +392,20 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         </div>
       )}
 
+      {/* P1: el estudio terminó sin consultar el buró y la evaluación se devolvió */}
+      {estado.estado === 'reembolsado' && (
+        <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <IconRefresh size={20} className="text-gray-500 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-gray-800">Evaluación devuelta</p>
+            <p className="text-xs text-gray-600">
+              {estado.monto_formateado} COP — el estudio terminó sin consultar el buró
+              {estado.pago?.metodo === 'pasarela' ? ' y el pago se reembolsó por Mercado Pago.' : ' y el crédito volvió al saldo.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Completado (via pasarela) */}
       {estado.estado === 'completado' && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -1040,6 +1054,18 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             Reintentar pago
           </a>
         )}
+      </div>
+    )
+  }
+
+  // P1: el estudio terminó sin consultar el buró y la evaluación se devolvió.
+  if (estado.estado === 'reembolsado') {
+    return (
+      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <p className="text-sm font-medium text-gray-800">La evaluación se devolvió</p>
+        <p className="text-xs text-gray-500 mt-1">
+          El estudio terminó sin consultar las centrales de riesgo, así que el pago se le devolvió a quien lo hizo.
+        </p>
       </div>
     )
   }

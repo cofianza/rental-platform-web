@@ -63,6 +63,9 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   'pago.disponible': { icon: IconCreditCard, badge: 'bg-indigo-50 text-indigo-600' },
   'pago.confirmado': { icon: IconReceipt, badge: 'bg-indigo-50 text-indigo-600' },
   'pago.no_conciliado': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
+  // P1 y P22: evaluación por devolver y contracargo de una compra de créditos.
+  'pago.reembolso_pendiente': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
+  'creditos.contracargo': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   'contrato.pendiente_firma': { icon: IconPencil, badge: 'bg-violet-50 text-violet-600' },
   'contrato.vigente': { icon: IconFileCheck, badge: 'bg-emerald-50 text-emerald-600' },
   'contrato.prorrogado': { icon: IconRefresh, badge: 'bg-emerald-50 text-emerald-600' },

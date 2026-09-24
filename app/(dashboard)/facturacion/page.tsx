@@ -13,6 +13,7 @@ import { DatosFiscalesSolicitanteSection } from '@/components/facturacion/DatosF
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
 import { PendientesFacturarSection } from '@/components/facturacion/PendientesFacturarSection'
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
+import { ReembolsosSection } from '@/components/facturacion/ReembolsosSection'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
@@ -22,6 +23,9 @@ export default function FacturacionPage() {
   // las gestionan — propietario e inmobiliaria no necesitan verlas y ademas el
   // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
   const canSeeTarifasIva = user?.rol === 'administrador' || user?.rol === 'operador_analista'
+  // P1: devolver plata por Mercado Pago es una decisión de Cofianza (la API
+  // también lo exige).
+  const canReembolsar = user?.rol === 'administrador'
   // Mismo criterio una linea arriba: 'Datos Fiscales' pega a
   // /perfil-arrendador/me, cuyo router es roleGuard(admin, inmobiliaria,
   // propietario). Para operador_analista y gerencia_consulta la pestaña —que
@@ -49,6 +53,7 @@ export default function FacturacionPage() {
         ...(canSeeDatosFiscales ? [{ id: 'datos-fiscales', label: 'Datos Fiscales' }] : []),
         { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
+        ...(canReembolsar ? [{ id: 'reembolsos', label: 'Reembolsos' }] : []),
       ]
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales.
@@ -97,6 +102,7 @@ export default function FacturacionPage() {
             onFacturarPendiente={() => setActiveTab('pendientes')}
           />
         )}
+        {activeTab === 'reembolsos' && canReembolsar && <ReembolsosSection />}
       </div>
     </div>
   )

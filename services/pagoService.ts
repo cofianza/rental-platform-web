@@ -247,6 +247,38 @@ class PagoService {
     const response = await apiClient.post<{ message: string }>(`/pagos/${pagoId}/reenviar-link`)
     return response.data
   }
+
+  /** P1: pagos de Mercado Pago por devolver (administrador). */
+  async listReembolsos(): Promise<IReembolsoPendiente[]> {
+    const response = await apiClient.get<IReembolsoPendiente[]>('/pagos/reembolsos')
+    return response.data
+  }
+
+  /** «Reembolsar en Mercado Pago»: devuelve el pago completo (administrador). */
+  async reembolsar(id: string): Promise<IReembolsoResultado> {
+    const response = await apiClient.post<IReembolsoResultado>(`/pagos/reembolsos/${id}/reembolsar`)
+    return response.data
+  }
+}
+
+export interface IReembolsoPendiente {
+  id: string
+  monto: number | null
+  motivo: string
+  /** Por qué hay que devolverlo, en palabras. */
+  motivo_texto: string
+  provider_payment_id: string
+  concepto: string | null
+  expediente: { id: string; numero: string } | null
+  notas: string | null
+  created_at: string
+}
+
+export interface IReembolsoResultado {
+  estado: 'reembolsado' | 'en_proceso' | 'ya_reembolsado'
+  refund_id: string | null
+  /** Factura DIAN del pago: necesita nota crédito en Factus. */
+  factura_numero: string | null
 }
 
 export const pagoService = new PagoService()

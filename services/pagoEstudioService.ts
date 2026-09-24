@@ -9,7 +9,17 @@ export interface IPagoEstudioEstado {
   /** `esperando_autorizacion` (§6.3): el gestor ya eligió "enviar link al
    *  arrendatario", pero el cobro todavía no existe — primero tiene que firmar
    *  el habeas data. Es el estado nuevo del orden invertido. */
-  estado: 'sin_definir' | 'esperando_autorizacion' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
+  estado:
+    | 'sin_definir'
+    | 'esperando_autorizacion'
+    | 'pendiente'
+    | 'procesando'
+    | 'completado'
+    | 'fallido'
+    | 'cancelado'
+    | 'asumido_inmobiliaria'
+    /** P1: el estudio terminó sin consultar el buró y la evaluación se devolvió. */
+    | 'reembolsado'
   /** El estudio ya se puede ejecutar (= hay pago confirmado). */
   puede_avanzar: boolean
   /** El TITULAR ya firmó el habeas data y sigue vigente. Distingue "esperando
