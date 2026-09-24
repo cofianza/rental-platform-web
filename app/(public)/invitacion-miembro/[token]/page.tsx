@@ -4,8 +4,9 @@
  *  - sin cuenta  -> formulario de registro (/registrar crea cuenta + lo une).
  *  - con cuenta, no autenticado -> iniciar sesión y volver.
  *  - autenticado y coincide el email -> botón aceptar.
- *  - el correo es de un propietario o arrendatario -> no puede unirse: se
- *    explica y se pide otro correo (la cuenta no cambia de rol).
+ *  - el correo ya es de un propietario, un arrendatario o del equipo de
+ *    Cofianza -> no puede unirse: se explica y se pide otro correo (la cuenta
+ *    no cambia de rol).
  */
 
 'use client'
@@ -215,13 +216,15 @@ export default function InvitacionMiembroPage() {
         Invitación enviada a: <strong className="text-gray-700">{info.email}</strong>
       </p>
 
-      {/* El correo es de un propietario o arrendatario: ni iniciar sesión ni
-          aceptar lo resuelven, hace falta otro correo. */}
+      {/* El correo ya tiene otra cuenta: ni iniciar sesión ni aceptar lo
+          resuelven, hace falta otro correo. */}
       {info.cuenta_otro_rol && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Este correo ya tiene una cuenta de propietario o arrendatario en Cofianza y no puede
-            unirse a un equipo. Pídele a {info.invitador ? <strong>{info.invitador}</strong> : 'quien te invitó'}{' '}
+            {info.cuenta_otro_rol === 'interna'
+              ? 'Este correo ya tiene una cuenta en Cofianza con otro tipo de acceso'
+              : 'Este correo ya tiene una cuenta de propietario o arrendatario en Cofianza'}{' '}
+            y no puede unirse a un equipo. Pídele a {info.invitador ? <strong>{info.invitador}</strong> : 'quien te invitó'}{' '}
             que te envíe la invitación a otro correo.
           </p>
         </div>
