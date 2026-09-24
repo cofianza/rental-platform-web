@@ -32,6 +32,7 @@ const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; t
   firmado: { label: 'Firmado', bg: 'bg-green-100', text: 'text-green-700' },
   expirado: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700' },
   cancelado: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700' },
+  bloqueado: { label: 'Bloqueado · Cofianza lo desbloquea', bg: 'bg-amber-100', text: 'text-amber-800' },
 }
 
 // Cada cuánto re-consultamos el estado de las firmas mientras haya pendientes.
@@ -258,6 +259,16 @@ export function FirmantesContratoSection({
       {todasFirmaron && (
         <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
           <IconCheck size={16} /> Todas las partes firmaron el contrato.
+        </div>
+      )}
+
+      {!isLoading && firmantes.some((f) => f.estado === 'bloqueado') && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            Un firmante quedó bloqueado tras varios intentos fallidos del código de firma. Cofianza lo
+            desbloquea en Auco; el proceso sigue abierto y después podrá firmar.
+          </span>
         </div>
       )}
 

@@ -17,6 +17,7 @@ const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; t
   firmado: { label: 'Firmado', bg: 'bg-green-100', text: 'text-green-700' },
   expirado: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700' },
   cancelado: { label: 'Cancelado', bg: 'bg-slate-100', text: 'text-slate-700' },
+  bloqueado: { label: 'Bloqueado', bg: 'bg-amber-100', text: 'text-amber-800' },
 }
 
 interface FirmaSolicitudesSectionProps {

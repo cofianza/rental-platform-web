@@ -10,6 +10,8 @@ export type EstadoSolicitudFirma =
   | 'firmado'
   | 'expirado'
   | 'cancelado'
+  // Firmante bloqueado en Auco tras varios códigos fallidos: no es final, Cofianza lo desbloquea.
+  | 'bloqueado'
 
 export type RolFirmante = 'arrendatario' | 'arrendador' | 'cofianza'
 
