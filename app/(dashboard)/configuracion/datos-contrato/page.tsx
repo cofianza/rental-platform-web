@@ -455,7 +455,7 @@ export default function DatosContratoPage() {
               value={form.matricula_expedida_por}
               onChange={(v) => onChange('matricula_expedida_por', v)}
               placeholder="Ej. Cámara de Comercio de Medellín"
-              help="Entidad que expidió la matrícula. Se imprime en el contrato."
+              help="Entidad que expidió la matrícula. Se imprime en el contrato y sin ella no se puede generar."
             />
             <Field
               label="Fecha de expedición de la matrícula"
