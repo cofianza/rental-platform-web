@@ -85,6 +85,9 @@ const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado' | 'programado'>,
   sin_telefono: 'no se pudo avisar al inquilino por WhatsApp porque no tiene teléfono registrado. Avísale por otro medio.',
   fallido: 'el WhatsApp al inquilino falló. Avísale por otro medio.',
   mock: 'el WhatsApp está en modo de prueba y no se envió al inquilino.',
+  // Ley 2300 con el envío automático apagado: no se promete hora.
+  retenido:
+    'el WhatsApp al inquilino quedó en espera por el horario de cobranza y el envío automático está apagado: no sale hasta que lo enciendan. Si es urgente, avísale por otro medio dentro del horario.',
 }
 
 function avisarResultado(accion: string, r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null }) {
@@ -712,6 +715,10 @@ function MoraDetalleModal({
   const [mora, setMora] = useState<IMoraDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [mensaje, setMensaje] = useState('')
+  // P27: en Fase 3 el dueño anota que el inquilino le pagó; Cofianza lo revisa.
+  const [reportaPago, setReportaPago] = useState(false)
+  const rol = useAuthStore((s) => s.user?.rol)
+  const esInterno = rol === 'administrador' || rol === 'operador_analista'
   const [enviando, setEnviando] = useState(false)
   const [acting, setActing] = useState(false)
 
@@ -735,8 +742,13 @@ function MoraDetalleModal({
     if (!mensaje.trim()) return
     setEnviando(true)
     try {
-      await morasService.agregarMensaje(moraId, mensaje.trim())
+      const pago = reportaPago && mora?.estado === 'fase_3'
+      await morasService.agregarMensaje(moraId, mensaje.trim(), pago)
+      if (mora?.estado === 'fase_3' && !esInterno) {
+        toast.success(pago ? 'Le avisamos a Cofianza del pago para que lo revise.' : 'Le avisamos a Cofianza de tu nota.')
+      }
       setMensaje('')
+      setReportaPago(false)
       await recargar()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al enviar mensaje')
@@ -759,6 +771,20 @@ function MoraDetalleModal({
         await recargar()
         onChange()
       }
+    } finally {
+      setActing(false)
+    }
+  }
+
+  async function handleReanudar() {
+    setActing(true)
+    try {
+      await morasService.reanudarWhatsapp(moraId)
+      toast.success('El WhatsApp de Fase 3 sigue: sale en el horario de cobranza.')
+      await recargar()
+      onChange()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo reanudar el WhatsApp')
     } finally {
       setActing(false)
     }
@@ -803,8 +829,6 @@ function MoraDetalleModal({
   const sinAcciones = esTerminal || !puedeEditar
   // P27: la Fase 3 la decide Cofianza; el dueño escala a Fase 2 desde el día 4
   // del reporte y, en Fase 3, ya no cierra el caso (anota el pago en el historial).
-  const rol = useAuthStore((s) => s.user?.rol)
-  const esInterno = rol === 'administrador' || rol === 'operador_analista'
   const fase2Desde = mora ? new Date(new Date(mora.reportado_at).getTime() + 4 * 86_400_000) : null
   const puedeEscalar = esInterno
     ? mora?.estado !== 'fase_3'
@@ -946,6 +970,25 @@ function MoraDetalleModal({
                   )}
                 </div>
 
+                {mora.whatsapp_pausado_at && mora.estado === 'fase_3' && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <p className="mr-auto">
+                      El WhatsApp de Fase 3 está en pausa: el dueño reportó un pago.
+                      {esInterno && ' Si lo confirmas, marca la mora pagada; si no, reanúdalo.'}
+                    </p>
+                    {esInterno && puedeEditar && (
+                      <button
+                        type="button"
+                        onClick={handleReanudar}
+                        disabled={acting}
+                        className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        Reanudar WhatsApp
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {!sinAcciones && (
                   <div className="mt-3 flex gap-2">
                     <input
@@ -970,6 +1013,17 @@ function MoraDetalleModal({
                       {enviando ? <IconLoader size={14} className="animate-spin" /> : 'Enviar'}
                     </button>
                   </div>
+                )}
+                {!sinAcciones && !esInterno && mora.estado === 'fase_3' && (
+                  <label className="mt-2 flex items-center gap-2 text-xs text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={reportaPago}
+                      onChange={(e) => setReportaPago(e.target.checked)}
+                      className="h-4 w-4 accent-primary-600"
+                    />
+                    Es un pago del inquilino (Cofianza lo revisa antes de seguir con el cobro)
+                  </label>
                 )}
               </div>
             </>

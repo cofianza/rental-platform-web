@@ -34,6 +34,10 @@ export interface IMoraTicket {
   cofianza_pago_realizado: boolean | null
   cofianza_pago_monto: number | null
   cofianza_pago_fecha: string | null
+  // Ley 2300: cuándo sale el WhatsApp de cobro que quedó esperando; y P27: el
+  // dueño reportó un pago en Fase 3 y el WhatsApp espera la revisión de Cofianza.
+  whatsapp_programado_para?: string | null
+  whatsapp_pausado_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -57,8 +61,9 @@ export interface IMoraDetalle extends IMoraTicket {
 
 /** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =
  *  fuera del horario de cobranza de la Ley 2300 (o ya tuvo una gestión ese día):
- *  sale en `whatsapp_programado_para`. */
-export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono' | 'programado'
+ *  sale en `whatsapp_programado_para`. 'retenido' = igual, pero el envío
+ *  automático está apagado y nada lo va a mandar solo. */
+export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono' | 'programado' | 'retenido'
 
 export interface IMoraConAviso extends IMoraDetalle {
   whatsapp_estado: WhatsappEstado
@@ -153,15 +158,18 @@ class MorasService {
     return res.data
   }
 
-  async agregarMensaje(
-    id: string,
-    mensaje: string,
-    viaWhatsapp = false,
-  ): Promise<IMoraMensaje> {
+  /** `reportaPago`: el dueño anota en Fase 3 que el inquilino le pagó (Cofianza lo revisa). */
+  async agregarMensaje(id: string, mensaje: string, reportaPago = false): Promise<IMoraMensaje> {
     const res = await apiClient.post<IMoraMensaje>(`${this.base}/${id}/mensajes`, {
       mensaje,
-      via_whatsapp: viaWhatsapp,
+      reporta_pago: reportaPago,
     })
+    return res.data
+  }
+
+  /** Cofianza revisó el pago reportado y el cobro sigue: el WhatsApp de Fase 3 sale. */
+  async reanudarWhatsapp(id: string): Promise<IMoraDetalle> {
+    const res = await apiClient.patch<IMoraDetalle>(`${this.base}/${id}/reanudar-whatsapp`, {})
     return res.data
   }
 }
