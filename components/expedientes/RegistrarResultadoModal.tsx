@@ -60,6 +60,7 @@ export function RegistrarResultadoModal({
   const [score, setScore] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [motivoRechazo, setMotivoRechazo] = useState('')
+  const [fundamento, setFundamento] = useState('')
   const [condiciones, setCondiciones] = useState('')
   const [archivo, setArchivo] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
@@ -73,6 +74,7 @@ export function RegistrarResultadoModal({
     setScore('')
     setObservaciones('')
     setMotivoRechazo('')
+    setFundamento('')
     setCondiciones('')
     setArchivo(null)
     setUploadProgress(null)
@@ -90,8 +92,11 @@ export function RegistrarResultadoModal({
   const validate = (): string | null => {
     if (!resultado) return 'Debe seleccionar un resultado'
     if (observaciones.trim().length < 10) return 'Las observaciones deben tener al menos 10 caracteres'
+    if (resultado === 'rechazado' && fundamento.trim().length < 10) {
+      return 'El fundamento interno debe tener al menos 10 caracteres'
+    }
     if (resultado === 'rechazado' && motivoRechazo.trim().length < 10) {
-      return 'El motivo de rechazo debe tener al menos 10 caracteres'
+      return 'El motivo para la inmobiliaria o el propietario debe tener al menos 10 caracteres'
     }
     if (resultado === 'condicionado' && condiciones.trim().length < 10) {
       return 'Las condiciones deben tener al menos 10 caracteres'
@@ -143,7 +148,7 @@ export function RegistrarResultadoModal({
         resultado,
         observaciones: observaciones.trim(),
         ...(score ? { score: Number(score) } : {}),
-        ...(resultado === 'rechazado' ? { motivo_rechazo: motivoRechazo.trim() } : {}),
+        ...(resultado === 'rechazado' ? { motivo_rechazo: motivoRechazo.trim(), fundamento: fundamento.trim() } : {}),
         ...(resultado === 'condicionado' ? { condiciones: condiciones.trim() } : {}),
         ...(storageKey ? { certificado_storage_key: storageKey } : {}),
       }
@@ -271,23 +276,44 @@ export function RegistrarResultadoModal({
               placeholder="Resumen del analisis y hallazgos relevantes..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
             />
-            <p className="text-xs text-gray-400 mt-1">{observaciones.length}/3000</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {observaciones.length}/3000 · Las ven la inmobiliaria o el propietario en el detalle de la evaluación.
+            </p>
           </div>
 
-          {/* Motivo rechazo (conditional) */}
+          {/* Rechazo (P34): fundamento interno y motivo corto para el gestor */}
           {resultado === 'rechazado' && (
-            <div>
-              <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-red-700 mb-1">
-                Motivo de rechazo <span className="text-red-500">*</span>
-              </label>
-              <textarea id="registrar-resultado-modal-motivo-de-rechazo"
-                value={motivoRechazo}
-                onChange={(e) => setMotivoRechazo(e.target.value)}
-                rows={3}
-                maxLength={2000}
-                placeholder="Explique las razones del rechazo..."
-                className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-              />
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="registrar-resultado-modal-fundamento" className="block text-sm font-medium text-red-700 mb-1">
+                  Fundamento interno <span className="text-red-500">*</span>
+                </label>
+                <textarea id="registrar-resultado-modal-fundamento"
+                  value={fundamento}
+                  onChange={(e) => setFundamento(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Por qué no es aprobable..."
+                  className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Solo lo ve Cofianza: queda en el historial del estudio.</p>
+              </div>
+              <div>
+                <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-red-700 mb-1">
+                  Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
+                </label>
+                <textarea id="registrar-resultado-modal-motivo-de-rechazo"
+                  value={motivoRechazo}
+                  onChange={(e) => setMotivoRechazo(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Ej.: El caso no cumple la política de evaluación de Cofianza."
+                  className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Lo verán en el estudio. Escríbelo corto, sin cifras del buró ni datos del co-arrendatario.
+                </p>
+              </div>
             </div>
           )}
 

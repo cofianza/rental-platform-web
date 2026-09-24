@@ -157,7 +157,10 @@ export interface IRegistrarResultadoInput {
   resultado: 'aprobado' | 'rechazado' | 'condicionado'
   score?: number
   observaciones: string
+  /** Al rechazar: el motivo corto que ven la inmobiliaria o el propietario (P34). */
   motivo_rechazo?: string
+  /** Al rechazar: el fundamento interno, solo para Cofianza (P34). */
+  fundamento?: string
   condiciones?: string
   certificado_storage_key?: string
 }

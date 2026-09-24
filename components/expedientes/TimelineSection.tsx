@@ -424,6 +424,17 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     )
   }
 
+  // Fundamento interno del analista (P33, P34): este timeline es solo de Cofianza.
+  if (tipo === 'estudio' && typeof detalle.fundamento === 'string') {
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-xs text-gray-500">
+          <span className="font-medium text-gray-700">Fundamento:</span> {detalle.fundamento}
+        </p>
+      </div>
+    )
+  }
+
   if (tipo === 'firma') {
     const firmadoEn = detalle.firmado_en as string | null
     const nombreFirmante = detalle.nombre_firmante as string | null
