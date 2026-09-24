@@ -16,9 +16,8 @@
  *   fresco. RLS auth.uid() resuelve correctamente y los eventos
  *   postgres_changes propagan.
  *
- * Adicionalmente escuchamos onAuthStateChange para captar TOKEN_REFRESHED
- * incluso si el store no actualizó accessToken (defensa contra desincronía
- * entre auth.store y supabase.auth).
+ * El token sale siempre del auth.store (lo refresca el API): supabase.auth no
+ * tiene sesión propia desde que se quitó el ingreso con Google.
  */
 
 'use client'
@@ -42,7 +41,7 @@ export function useNotificationsRealtime() {
   // Guardar canal entre renders para limpiar bien al desmontar.
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   // ¿El canal Realtime está suscrito? Con canal vivo el polling es solo una red
-  // de seguridad cada 5 min; caído, cada 60 s (Effect 4).
+  // de seguridad cada 5 min; caído, cada 60 s (Effect 3).
   const vivoRef = useRef(false)
   // Hora del último fetch correcto de la lista (inicial o de polling).
   const ultimoFetchRef = useRef(0)
@@ -57,7 +56,7 @@ export function useNotificationsRealtime() {
     }
 
     let cancelled = false
-    // Realtime es un lujo, no la vía crítica (el Effect 4 poll de 60s cubre
+    // Realtime es un lujo, no la vía crítica (el Effect 3 poll de 60s cubre
     // la funcionalidad). Si el join del canal falla repetidamente —RLS, WS
     // bloqueado por red/proxy, o churn de StrictMode/Fast Refresh en dev—
     // supabase-js reintenta en bucle y ensucia la consola con
@@ -170,21 +169,7 @@ export function useNotificationsRealtime() {
     supabase.realtime.setAuth(accessToken)
   }, [accessToken])
 
-  // ── Effect 3: defensa contra desincronía entre auth.store y supabase.auth.
-  // Si supabase rota el token internamente y nuestro store no se entera
-  // a tiempo, captamos TOKEN_REFRESHED y re-autenticamos el realtime.
-  useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'TOKEN_REFRESHED' && session?.access_token) {
-        supabase.realtime.setAuth(session.access_token)
-      }
-    })
-    return () => {
-      data.subscription.unsubscribe()
-    }
-  }, [])
-
-  // ── Effect 4: polling como red de seguridad ─────────────────────
+  // ── Effect 3: polling como red de seguridad ─────────────────────
   // Realtime via postgres_changes es la via principal, pero si la WS se
   // cae (red intermitente, idle prolongado, evento perdido), el badge se
   // queda desactualizado. Solo en la pestaña visible (un setInterval en
