@@ -63,6 +63,8 @@ export function FirmantesContratoSection({
   // Solicitud-sobre activa del contrato: la usamos para mandar el recordatorio.
   // Auco re-notifica a las partes pendientes (no crea documento → SIN costo).
   const [solicitud, setSolicitud] = useState<ISolicitudFirma | null>(null)
+  // No se pudieron leer los sobres: no se sabe si el proceso sigue vivo.
+  const [errorSobres, setErrorSobres] = useState(false)
   const [enviandoRecordatorio, setEnviandoRecordatorio] = useState(false)
   const [reenviando, setReenviando] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -80,7 +82,7 @@ export function FirmantesContratoSection({
     try {
       const [{ firmantes: fs, verificaciones: vs }, sols] = await Promise.all([
         firmaService.listarFirmantes(contratoId),
-        firmaService.listarPorContrato(contratoId).catch(() => [] as ISolicitudFirma[]),
+        firmaService.listarPorContrato(contratoId).catch(() => null),
       ])
       setFirmantes(fs)
       setVerificaciones(vs)
@@ -88,8 +90,9 @@ export function FirmantesContratoSection({
       onFirmantesLoadedRef.current?.(fs.length + vs.length)
       // Sobre aún en proceso (no firmado/expirado/cancelado, y dentro de su
       // plazo aunque el aviso de Auco no haya llegado) → recordable.
+      setErrorSobres(sols === null)
       setSolicitud(
-        sols.find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado) && Date.parse(s.token_expiracion) > Date.now()) ?? null,
+        (sols ?? []).find((s) => !['firmado', 'expirado', 'cancelado'].includes(s.estado) && Date.parse(s.token_expiracion) > Date.now()) ?? null,
       )
     } catch {
       // Silencioso: si el contrato no es multi-parte, no hay panel que mostrar.
@@ -114,7 +117,7 @@ export function FirmantesContratoSection({
   const pendientes = total > 0 && !todasFirmaron
   const identidadPendiente = verificaciones.some((v) => v.estado === 'pendiente')
   // contratos-firma-2: el proceso venció o una parte lo rechazó y el contrato sigue en firma.
-  const sinProceso = enFirma && !isLoading && pendientes && !solicitud && !identidadPendiente
+  const sinProceso = enFirma && !isLoading && pendientes && !solicitud && !identidadPendiente && !errorSobres
   const rechazo = firmantes.some((f) => f.estado === 'cancelado')
 
   // Auto-refresco mientras haya firmas (o la verificación de identidad)
@@ -260,6 +263,23 @@ export function FirmantesContratoSection({
 
       {pendientes && solicitud && (
         <p className="mb-3 text-xs text-gray-500">Plazo para firmar: hasta el {formatDate(solicitud.token_expiracion)}.</p>
+      )}
+
+      {!isLoading && pendientes && errorSobres && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <span className="flex items-center gap-2">
+            <IconAlertTriangle size={16} className="shrink-0" />
+            No pudimos consultar el envío a firma.
+          </span>
+          <button
+            onClick={() => cargar(true)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100 disabled:opacity-50"
+          >
+            <IconRefresh size={12} className={refreshing ? 'animate-spin' : ''} />
+            Reintentar
+          </button>
+        </div>
       )}
 
       {sinProceso && (
