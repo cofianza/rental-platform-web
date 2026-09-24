@@ -232,8 +232,8 @@ export default function HomePage() {
               },
               {
                 tag: 'Cashback',
-                title: 'Si cumples, recuperas el 30% de lo que pagaste.',
-                body: 'Al terminar tu contrato sin moras, te devolvemos el 30% de las comisiones. No es un gasto — es una inversión.',
+                title: 'Si cumples, recuperas el 30% de tus tarifas mensuales.',
+                body: 'Al terminar tu contrato te devolvemos el 30% de las tarifas mensuales de la fianza que pagaste. Solo lo pierdes si tuvimos que pagar por ti o si la inmobiliaria o el propietario no nos reportó a tiempo.',
                 variant: 'orange',
               },
             ].map((c) => (
@@ -568,7 +568,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una prima de vinculación equivalente al 10% de un canon y luego una comisión mensual. Al terminar sin moras, recuperas el 30% de las comisiones pagadas.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una prima de vinculación equivalente al 10% de un canon y luego una tarifa mensual. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no nos haya reportado a tiempo.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
@@ -576,7 +576,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cómo funciona el cashback del 30%?',
-                a: 'Al terminar tu contrato sin moras y con el inmueble en buen estado, te devolvemos el 30% de todas las comisiones mensuales pagadas. Es nuestra manera de reconocer a los buenos arrendatarios.',
+                a: 'Al terminar tu contrato te devolvemos el 30% de todas las tarifas mensuales de la fianza que pagaste (no aplica sobre la prima de vinculación). Solo lo pierdes si tuvimos que pagar alguna suma por ti, aunque sea una sola vez y de pocos pesos, o si la inmobiliaria o el propietario no nos reportó a tiempo. Es nuestra manera de reconocer a los buenos arrendatarios.',
               },
               {
                 q: '¿Necesito registrarme para ver inmuebles?',
