@@ -340,25 +340,6 @@ export interface MisInmueblesData {
   inmuebles: MiInmueble[]
 }
 
-// ── Pagos a Cofianza (inmobiliaria) ─────────────────────────
-
-export interface PagoCofianzaContratoRow {
-  contratoId: string
-  inquilino: string
-  inmueble: string
-  canon: number
-  comision: number
-  iva: number
-  total: number
-}
-
-export interface MisPagosCofianzaData {
-  comisionPorcentaje: number
-  ivaPorcentaje: number
-  detalle: PagoCofianzaContratoRow[]
-  totales: { canon: number; comision: number; iva: number; total: number }
-}
-
 // ── Analítica de cartera (inmobiliaria) ─────────────────────
 
 export interface MiCarteraAnalitica {
@@ -465,11 +446,6 @@ class DashboardService {
 
   async getMisInmuebles(): Promise<MisInmueblesData> {
     const res = await apiClient.get<MisInmueblesData>('/dashboard/mis-inmuebles')
-    return res.data
-  }
-
-  async getMisPagosCofianza(): Promise<MisPagosCofianzaData> {
-    const res = await apiClient.get<MisPagosCofianzaData>('/dashboard/mis-pagos-cofianza')
     return res.data
   }
 

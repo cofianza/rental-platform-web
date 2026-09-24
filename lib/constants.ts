@@ -165,19 +165,20 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     // Rename Mario 12-may-2026: "Facturación" -> "Pagos a Cofianza".
-    // El alcance se mantiene (comisiones, facturas Factus, datos fiscales);
-    // el label refleja la lógica de negocio (la inmobiliaria le paga a Cofianza).
+    // Facturas Factus y datos fiscales; el label refleja la lógica de negocio
+    // (la inmobiliaria le paga a Cofianza las evaluaciones y los paquetes). La
+    // comisión de intermediación no: la paga el arrendatario a la inmobiliaria.
     label: 'Pagos a Cofianza',
     href: '/facturacion',
     icon: 'Receipt',
-    description: 'Comisiones y facturación con Cofianza',
+    description: 'Facturas y datos fiscales con Cofianza',
     resource: 'facturas',
     // Excluido propietario: la facturacion la maneja la inmobiliaria a su
     // nombre, no el propietario individual. El propietario consulta los
     // pagos y contratos en su expediente; no necesita el panel fiscal.
-    // Excluido solicitante: este label habla de las comisiones que la
-    // inmobiliaria le paga a Cofianza. El arrendatario paga una sola
-    // evaluación, así que tiene su propia entrada (misma ruta, otro nombre).
+    // Excluido solicitante: este label habla de lo que la inmobiliaria le
+    // paga a Cofianza. El arrendatario paga una sola evaluación, así que
+    // tiene su propia entrada (misma ruta, otro nombre).
     requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria'],
     group: 'Financiero',
   },

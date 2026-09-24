@@ -13,13 +13,11 @@ import { DatosFiscalesSolicitanteSection } from '@/components/facturacion/DatosF
 import { FacturasSection } from '@/components/facturacion/FacturasSection'
 import { PendientesFacturarSection } from '@/components/facturacion/PendientesFacturarSection'
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
-import { PagosCofianzaSection } from '@/components/facturacion/PagosCofianzaSection'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
   const user = useAuthStore((s) => s.user)
   const isSolicitante = user?.rol === 'solicitante'
-  const isInmobiliaria = user?.rol === 'inmobiliaria'
   // Tarifas de IVA son configuracion del emisor (Cofianza). Solo admin/operador
   // las gestionan — propietario e inmobiliaria no necesitan verlas y ademas el
   // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
@@ -51,8 +49,6 @@ export default function FacturacionPage() {
         ...(canSeeDatosFiscales ? [{ id: 'datos-fiscales', label: 'Datos Fiscales' }] : []),
         { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
-        // Tab agregado para la inmobiliaria (mockup 13_v2): comisión por contrato.
-        ...(isInmobiliaria ? [{ id: 'pagos-cofianza', label: 'Pagos a Cofianza' }] : []),
       ]
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales.
@@ -101,7 +97,6 @@ export default function FacturacionPage() {
             onFacturarPendiente={() => setActiveTab('pendientes')}
           />
         )}
-        {activeTab === 'pagos-cofianza' && <PagosCofianzaSection />}
       </div>
     </div>
   )
