@@ -26,7 +26,6 @@ import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { NotaApelacion } from '@/components/expedientes/ExpedienteRechazadoBanner'
 import { abrirEnPestana } from '@/lib/utils'
 
 interface EstudioSolicitanteCardProps {
@@ -52,15 +51,11 @@ type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
 /**
  * §10: "Nunca es un portazo", pero sin saber la causa (la API manda el motivo
  * solo si decidió una regla dura, con la salida de cada causa) no se sugiere
- * nada a ciegas (P30): se ofrece revisar el caso y el derecho de apelación.
+ * nada a ciegas (P30): se ofrece revisar el caso. La nota de apelación la pone
+ * una sola vez el banner del estudio, en esta misma pantalla.
  */
 function SinMotivo({ className }: { className: string }) {
-  return (
-    <>
-      <p className={className}>Escríbenos y revisamos tu caso.</p>
-      <NotaApelacion className="mt-1.5" />
-    </>
-  )
+  return <p className={className}>Escríbenos y revisamos tu caso.</p>
 }
 
 export function EstudioSolicitanteCard({
