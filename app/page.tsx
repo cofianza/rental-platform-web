@@ -568,7 +568,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una prima de vinculación equivalente al 10% de un canon y luego una tarifa mensual. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no nos haya reportado a tiempo.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una sola vez la prima de vinculación: 20% de un canon si firmas solo o 10% si tienes co-arrendatario, más IVA. Luego pagas una tarifa mensual. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no nos haya reportado a tiempo.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
