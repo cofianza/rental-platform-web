@@ -18,6 +18,8 @@ interface Props {
   /** Sin él (solo faltantes) no se pintan los enlaces de acción. */
   expedienteId?: string
   inmuebleId?: string
+  /** ¿Abre la ficha del inmueble? El asesor restringido, solo lo suyo o asignado; null mientras se consulta. */
+  inmuebleAccesible?: boolean | null
   /** Titular de la inmobiliaria: el único que edita los Datos para contrato. */
   esTitular?: boolean
   /** Si llega, los ítems con paso muestran "Ir al paso N". */
@@ -38,7 +40,15 @@ export const PIDEN_NUEVA_EVALUACION = [
   'CANON_INGRESO_EXCEDE',
 ]
 
-export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmuebleId, esTitular, onIrPaso }: Props) {
+export function BloqueosContrato({
+  bloqueos,
+  faltantes = [],
+  expedienteId,
+  inmuebleId,
+  inmuebleAccesible = true,
+  esTitular,
+  onIrPaso,
+}: Props) {
   if (bloqueos.length === 0 && faltantes.length === 0) return null
 
   const accion = (b: Bloqueo) => {
@@ -65,11 +75,15 @@ export function BloqueosContrato({ bloqueos, faltantes = [], expedienteId, inmue
           </Link>
         )
       case 'inmueble':
-        return inmuebleId ? (
+        if (!inmuebleId || inmuebleAccesible === null) return null
+        if (!inmuebleAccesible) {
+          return <p className="text-xs text-red-700">Pídele al titular o al responsable del inmueble que lo haga.</p>
+        }
+        return (
           <Link href={`/inmuebles/${inmuebleId}/editar?returnTo=${volverAqui}`} className={enlace}>
             Editar el inmueble <IconArrowRight size={12} />
           </Link>
-        ) : null
+        )
       default:
         return null
     }

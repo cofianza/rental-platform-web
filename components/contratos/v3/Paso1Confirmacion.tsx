@@ -40,8 +40,8 @@ interface ResumenProps {
   resumen: Resumen
   expedienteId: string
   esTitular: boolean
-  /** Sin acceso a la ficha del inmueble (asesor restringido) no se ofrece editarlo. */
-  inmuebleAccesible?: boolean
+  /** Sin acceso a la ficha del inmueble (asesor restringido) no se ofrece editarlo; null mientras se consulta. */
+  inmuebleAccesible?: boolean | null
   /** Contenido del canon en la tarjeta del inmueble; por defecto, el canon registrado. */
   canon?: ReactNode
 }
@@ -106,7 +106,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         icono={IconHome}
         pie={
           // returnTo: al guardar el inmueble se vuelve al contrato.
-          inmuebleAccesible ? (
+          inmuebleAccesible === null ? null : inmuebleAccesible ? (
             <Link href={`/inmuebles/${inmueble.id}/editar?returnTo=${returnTo}`} className={enlace}>
               Editar en el inmueble <IconArrowRight size={12} />
             </Link>
@@ -163,7 +163,7 @@ interface Paso1Props {
   resumen: Resumen | null
   expedienteId: string
   esTitular: boolean
-  inmuebleAccesible?: boolean
+  inmuebleAccesible?: boolean | null
   /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
   modalidadConvenio?: Paso1['modalidad']
 }

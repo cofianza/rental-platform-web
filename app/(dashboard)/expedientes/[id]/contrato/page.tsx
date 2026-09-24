@@ -183,8 +183,8 @@ interface VistaProps {
   expedienteId: string
   editable: boolean
   esTitular: boolean
-  /** Puede abrir la ficha del inmueble (el asesor restringido, solo lo suyo o asignado). */
-  inmuebleAccesible: boolean
+  /** Puede abrir la ficha del inmueble (el asesor restringido, solo lo suyo o asignado); null mientras se consulta. */
+  inmuebleAccesible: boolean | null
   banner: ReactNode
   v3: V3
 }
@@ -219,7 +219,8 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
       <BloqueosContrato
         bloqueos={bloqueos}
         expedienteId={expedienteId}
-        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
+        inmuebleId={resumen?.inmueble.id}
+        inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
       />
       <AvisosContrato avisos={avisos} />
@@ -569,7 +570,8 @@ function Asistente({
       <BloqueosContrato
         bloqueos={bloqueosArriba}
         expedienteId={expedienteId}
-        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
+        inmuebleId={resumen?.inmueble.id}
+        inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
         onIrPaso={irA}
       />
@@ -597,7 +599,8 @@ function Asistente({
         bloqueos={bloqueosDelPaso}
         faltantes={faltantesDelPaso}
         expedienteId={expedienteId}
-        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
+        inmuebleId={resumen?.inmueble.id}
+        inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
       />
 
