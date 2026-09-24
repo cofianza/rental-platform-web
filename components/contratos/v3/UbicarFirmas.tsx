@@ -107,6 +107,9 @@ export function UbicarFirmas({
   // Tamaño en puntos de la página como se ve (con /Rotate y CropBox): el recuadro va a esa escala.
   const [tamano, setTamano] = useState<{ w: number; h: number } | null>(null)
   const [ancho, setAncho] = useState(0)
+  // Una página que no se pudo cargar o dibujar: mensaje con «Reintentar» (la vuelve a montar).
+  const [errorPagina, setErrorPagina] = useState(false)
+  const [intentoPagina, setIntentoPagina] = useState(0)
   const caja = useRef<HTMLDivElement>(null)
   const primeraSinMarca = partes.find((p) => !marcas.some((m) => clave(m) === clave(p)))
   const [sel, setSel] = useState(clave(primeraSinMarca ?? partes[0] ?? { parte: 'arrendatario' }))
@@ -178,6 +181,7 @@ export function UbicarFirmas({
   // Sin el tamaño de la página anterior: una girada tiene otro.
   const irA = (n: number) => {
     setTamano(null)
+    setErrorPagina(false)
     setPagina(n)
   }
 
@@ -309,17 +313,40 @@ export function UbicarFirmas({
             }
             onLoadError={() => setError('No pudimos abrir el contrato de la inmobiliaria.')}
           >
-            {ancho > 0 && (
+            {ancho > 0 && errorPagina && (
+              <div role="alert" className="flex flex-col items-center gap-3 p-6 text-center">
+                <IconAlertTriangle size={24} className="text-red-500" />
+                <p className="text-sm text-red-800">No pudimos mostrar la página {pagina} del contrato.</p>
+                <Button
+                  variante="secondary"
+                  tamano="sm"
+                  onClick={() => {
+                    setErrorPagina(false)
+                    setIntentoPagina((n) => n + 1)
+                  }}
+                >
+                  <IconRefresh size={14} /> Reintentar
+                </Button>
+              </div>
+            )}
+            {ancho > 0 && !errorPagina && (
               <div className="relative mx-auto" style={{ width: ancho }}>
                 <Page
+                  key={intentoPagina}
                   pageNumber={pagina}
                   width={ancho}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                   loading={null}
+                  error={null}
                   onLoadSuccess={(p) => setTamano({ w: p.originalWidth, h: p.originalHeight })}
+                  onLoadError={() => setErrorPagina(true)}
+                  onRenderError={() => setErrorPagina(true)}
                 />
                 {tamano && (
+                  // ponytail: ubicar una firma es con el ratón (herramienta de escritorio para el gestor); elegir
+                  // la parte y quitar marcas sí van con teclado. Si hace falta sin ratón: un cursor que se mueva
+                  // con las flechas sobre la página y Enter para ubicar.
                   <div
                     className={cn('absolute inset-0', editable && !ocupado && 'cursor-crosshair')}
                     onClick={marcar}
@@ -339,7 +366,7 @@ export function UbicarFirmas({
                             )}
                             style={{ left: `${a.x * 100 - w / 2}%`, top: `${a.y * 100 - h}%`, width: `${w}%`, height: `${h}%` }}
                           >
-                            <span className="truncate text-[10px] leading-tight font-semibold">
+                            <span className={cn('truncate text-[10px] leading-tight font-semibold', editable && 'pr-6')}>
                               {ROTULO[m.parte]}
                               {nombreDe(m) ? ` · ${nombreDe(m)}` : ''}
                             </span>
@@ -352,9 +379,10 @@ export function UbicarFirmas({
                                 }}
                                 disabled={ocupado}
                                 aria-label={`Quitar la firma de ${ROTULO[m.parte]} en la página ${m.pagina}`}
-                                className="pointer-events-auto absolute -top-2.5 -right-2.5 rounded-full border border-gray-300 bg-white p-0.5 text-gray-700 shadow-sm hover:bg-red-50 hover:text-red-700"
+                                // 24 px y dentro del recuadro (que siempre cabe en la página): nunca queda recortada.
+                                className="pointer-events-auto absolute top-0.5 right-0.5 flex size-6 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-red-50 hover:text-red-700"
                               >
-                                <IconX size={12} />
+                                <IconX size={14} />
                               </button>
                             )}
                           </div>
