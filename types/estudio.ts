@@ -286,12 +286,12 @@ export interface ICertificadoDownloadResponse {
 
 export type VerificacionStatus = 'valido_vigente' | 'valido_vencido' | 'invalido'
 
+// P10: la identidad llega reducida (iniciales y últimos 4 del documento), sin dirección.
 export interface IVerificacionCertificado {
   status: VerificacionStatus
   codigo: string
   nombre_masked: string
   resultado: ResultadoEstudio | string
-  direccion_masked: string
   fecha_emision: string
   fecha_vencimiento: string
   empresa: string

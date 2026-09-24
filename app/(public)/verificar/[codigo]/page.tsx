@@ -155,12 +155,11 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           </span>
         </div>
 
-        {/* Details */}
+        {/* Details: P10, identidad reducida y sin dirección */}
         <div className="px-5 py-2">
           <InfoRow label="Código" value={data.codigo} />
           <InfoRow label="Nombre" value={data.nombre_masked} />
           <InfoRow label="Documento" value={data.numero_documento_masked} />
-          <InfoRow label="Dirección" value={data.direccion_masked} />
           <InfoRow label="Fecha emisión" value={formatDate(data.fecha_emision)} />
           <InfoRow label="Fecha vencimiento" value={formatDate(data.fecha_vencimiento)} />
         </div>
