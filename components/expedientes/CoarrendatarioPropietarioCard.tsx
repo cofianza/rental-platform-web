@@ -316,6 +316,12 @@ function ResultadoEstudioBlock({
           {estudio.fecha_completado && (
             <p className="text-xs mt-1 opacity-90">Completado el {formatFecha(estudio.fecha_completado)}</p>
           )}
+          {/* P2: solo cuenta con la evaluación terminada y no rechazada. */}
+          {resultado === 'rechazado' && (
+            <p className="text-xs mt-1 font-medium">
+              Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin co-arrendatario.
+            </p>
+          )}
           {estudio.observaciones && (
             <p className="text-xs mt-2 opacity-90 whitespace-pre-wrap">{estudio.observaciones}</p>
           )}
