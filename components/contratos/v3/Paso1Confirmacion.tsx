@@ -40,12 +40,14 @@ interface ResumenProps {
   resumen: Resumen
   expedienteId: string
   esTitular: boolean
+  /** Sin acceso a la ficha del inmueble (asesor restringido) no se ofrece editarlo. */
+  inmuebleAccesible?: boolean
   /** Contenido del canon en la tarjeta del inmueble; por defecto, el canon registrado. */
   canon?: ReactNode
 }
 
 /** Tarjetas de solo lectura: se ven antes de iniciar y en el paso 1. */
-export function ResumenContrato({ resumen, expedienteId, esTitular, canon }: ResumenProps) {
+export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAccesible = true, canon }: ResumenProps) {
   const { arrendador: a, arrendatario, coarrendatario, inmueble, fianza } = resumen
   const returnTo = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
   const tomadoDelEstudio = 'Tomados del estudio evaluado; no se pueden cambiar.'
@@ -104,9 +106,13 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, canon }: Res
         icono={IconHome}
         pie={
           // returnTo: al guardar el inmueble se vuelve al contrato.
-          <Link href={`/inmuebles/${inmueble.id}/editar?returnTo=${returnTo}`} className={enlace}>
-            Editar en el inmueble <IconArrowRight size={12} />
-          </Link>
+          inmuebleAccesible ? (
+            <Link href={`/inmuebles/${inmueble.id}/editar?returnTo=${returnTo}`} className={enlace}>
+              Editar en el inmueble <IconArrowRight size={12} />
+            </Link>
+          ) : (
+            'Solo el titular o el responsable del inmueble pueden cambiar estos datos.'
+          )
         }
       >
         <Dato label="Dirección" valor={inmueble.direccion} />
@@ -157,6 +163,7 @@ interface Paso1Props {
   resumen: Resumen | null
   expedienteId: string
   esTitular: boolean
+  inmuebleAccesible?: boolean
   /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
   modalidadConvenio?: Paso1['modalidad']
 }
@@ -168,6 +175,7 @@ export function Paso1Confirmacion({
   resumen,
   expedienteId,
   esTitular,
+  inmuebleAccesible,
   modalidadConvenio,
 }: Paso1Props) {
   const evaluadoCop = resumen?.canon.evaluadoCop ?? null
@@ -195,7 +203,13 @@ export function Paso1Confirmacion({
       <EncabezadoPaso titulo="Confirmación" subtitulo="Revisa las partes y la fianza, y pacta el canon y la modalidad." />
 
       {resumen ? (
-        <ResumenContrato resumen={resumen} expedienteId={expedienteId} esTitular={esTitular} canon={canon} />
+        <ResumenContrato
+          resumen={resumen}
+          expedienteId={expedienteId}
+          esTitular={esTitular}
+          inmuebleAccesible={inmuebleAccesible}
+          canon={canon}
+        />
       ) : (
         canon
       )}

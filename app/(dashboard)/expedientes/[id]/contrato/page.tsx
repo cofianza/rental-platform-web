@@ -36,6 +36,7 @@ import { EstadoFirma } from '@/components/contratos/v3/EstadoFirma'
 import { Aviso, EncabezadoPaso, enfocarPrimerError } from '@/components/contratos/v3/campos'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useAccesoInmueble } from '@/hooks/useAccesoInmueble'
 import {
   useContratoV3,
   validarPaso1,
@@ -94,6 +95,9 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
   const esTitular = user?.rol_miembro === 'owner'
   const v3 = useContratoV3(expedienteId)
   const { estado, isLoading, error, recargar } = v3
+  // El asesor restringido trabaja estudios asignados sobre inmuebles de un
+  // compañero cuya ficha no abre: ahí no se ofrece «Editar en el inmueble».
+  const inmuebleAccesible = useAccesoInmueble(estado?.resumen?.inmueble.id)
 
   const volver = (
     <Link
@@ -150,7 +154,7 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
     <Aviso>Tu acceso es de solo lectura.</Aviso>
   ) : null
 
-  const comun = { estado, expedienteId, editable, esTitular, banner, v3 }
+  const comun = { estado, expedienteId, editable, esTitular, inmuebleAccesible, banner, v3 }
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
       {volver}
@@ -179,12 +183,14 @@ interface VistaProps {
   expedienteId: string
   editable: boolean
   esTitular: boolean
+  /** Puede abrir la ficha del inmueble (el asesor restringido, solo lo suyo o asignado). */
+  inmuebleAccesible: boolean
   banner: ReactNode
   v3: V3
 }
 
 /** Vista sin efectos: bloqueos, avisos y resumen; "Iniciar contrato" solo sin bloqueos. */
-function PreIniciar({ estado, expedienteId, editable, esTitular, banner, v3 }: VistaProps) {
+function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesible, banner, v3 }: VistaProps) {
   const [confirmar, setConfirmar] = useState(false)
   const { bloqueos, avisos, resumen } = estado
   const iniciando = v3.accion === 'iniciar'
@@ -213,11 +219,18 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, banner, v3 }: V
       <BloqueosContrato
         bloqueos={bloqueos}
         expedienteId={expedienteId}
-        inmuebleId={resumen?.inmueble.id}
+        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
         esTitular={esTitular}
       />
       <AvisosContrato avisos={avisos} />
-      {resumen && <ResumenContrato resumen={resumen} expedienteId={expedienteId} esTitular={esTitular} />}
+      {resumen && (
+        <ResumenContrato
+          resumen={resumen}
+          expedienteId={expedienteId}
+          esTitular={esTitular}
+          inmuebleAccesible={inmuebleAccesible}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={confirmar}
@@ -251,7 +264,16 @@ const REGUARDAR_PASO4 = ['CLAUSULA_MODELO_ALTERADO', 'ACEPTACION_PENDIENTE']
 /** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
 const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
 
-function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner, v3 }: VistaProps & { contrato: Contrato }) {
+function Asistente({
+  estado,
+  contrato,
+  expedienteId,
+  editable,
+  esTitular,
+  inmuebleAccesible,
+  banner,
+  v3,
+}: VistaProps & { contrato: Contrato }) {
   const { guardados, prefill, faltantes, adicionales } = contrato
   const { bloqueos, avisos, resumen } = estado
   const { accion, guardarPaso, limpiarErrorPaso } = v3
@@ -547,7 +569,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
       <BloqueosContrato
         bloqueos={bloqueosArriba}
         expedienteId={expedienteId}
-        inmuebleId={resumen?.inmueble.id}
+        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
         esTitular={esTitular}
         onIrPaso={irA}
       />
@@ -575,7 +597,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
         bloqueos={bloqueosDelPaso}
         faltantes={faltantesDelPaso}
         expedienteId={expedienteId}
-        inmuebleId={resumen?.inmueble.id}
+        inmuebleId={inmuebleAccesible ? resumen?.inmueble.id : undefined}
         esTitular={esTitular}
       />
 
@@ -591,6 +613,7 @@ function Asistente({ estado, contrato, expedienteId, editable, esTitular, banner
             resumen={resumen}
             expedienteId={expedienteId}
             esTitular={esTitular}
+            inmuebleAccesible={inmuebleAccesible}
             modalidadConvenio={contrato.modalidadConvenio ?? undefined}
           />
         )}
