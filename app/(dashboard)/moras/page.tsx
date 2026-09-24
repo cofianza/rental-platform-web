@@ -4,7 +4,7 @@
  *   - KPIs reales (reportadas mes / resueltas / en gestión / monto total)
  *   - Form de reporte (contrato + fecha vencimiento + monto + descripción)
  *   - Tabla con filter chips por fase
- *   - Modal de detalle con chat + acciones (escalar / marcar pagada / cancelar)
+ *   - Modal de detalle con el historial del caso + acciones (escalar / marcar pagada / cancelar)
  */
 
 'use client'
@@ -431,7 +431,7 @@ export default function ReportarMoraPage() {
             Seguimiento de moras
           </h3>
           <p className="mt-0.5 text-xs text-gray-500">
-            Haz clic en una fila o en el ticket para ver el detalle y el chat del inquilino.
+            Haz clic en una fila o en el ticket para ver el detalle y el historial del caso.
             {esInterno && ' Ordenadas de más antigua a más reciente.'}
             {!loading && totalMoras > moras.length && ` Mostrando ${moras.length} de ${totalMoras}.`}
           </p>
@@ -697,7 +697,7 @@ function formatCompactCOP(monto: number): string {
 }
 
 // ============================================================
-// Modal detalle + chat
+// Modal detalle + historial del caso
 // ============================================================
 
 function MoraDetalleModal({
@@ -896,7 +896,7 @@ function MoraDetalleModal({
               {/* Chat */}
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Historial y chat
+                  Historial del caso
                 </h3>
                 <div className="bg-gray-100 rounded-lg p-3 max-h-72 overflow-y-auto space-y-2">
                   {mora.mensajes.length === 0 ? (
