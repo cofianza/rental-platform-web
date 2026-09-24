@@ -55,11 +55,14 @@ export interface IMoraDetalle extends IMoraTicket {
   mensajes: IMoraMensaje[]
 }
 
-/** Qué pasó con el WhatsApp al inquilino al reportar o escalar. */
-export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono'
+/** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =
+ *  fuera del horario de cobranza de la Ley 2300 (o ya tuvo una gestión ese día):
+ *  sale en `whatsapp_programado_para`. */
+export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono' | 'programado'
 
 export interface IMoraConAviso extends IMoraDetalle {
   whatsapp_estado: WhatsappEstado
+  whatsapp_programado_para?: string | null
 }
 
 export interface IMorasStats {

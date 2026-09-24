@@ -81,14 +81,24 @@ const FASE_CONFIG: Record<MoraEstado, { label: string; chip: string; chipText: s
 
 // El toast decía «se notificó al inquilino vía WhatsApp» aunque no tuviera
 // teléfono o Meta rechazara el envío: se dice lo que pasó de verdad.
-const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado'>, string> = {
+const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado' | 'programado'>, string> = {
   sin_telefono: 'no se pudo avisar al inquilino por WhatsApp porque no tiene teléfono registrado. Avísale por otro medio.',
   fallido: 'el WhatsApp al inquilino falló. Avísale por otro medio.',
   mock: 'el WhatsApp está en modo de prueba y no se envió al inquilino.',
 }
 
-function avisarResultado(accion: string, estado: WhatsappEstado | undefined) {
-  if (!estado || estado === 'aceptado') {
+function avisarResultado(accion: string, r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null }) {
+  const estado = r.whatsapp_estado
+  if (estado === 'programado') {
+    // Ley 2300: fuera del horario de cobranza (o con otra gestión ese día) el
+    // WhatsApp espera; no se pierde.
+    const cuando = r.whatsapp_programado_para
+      ? `el ${new Date(r.whatsapp_programado_para).toLocaleString('es-CO', {
+          timeZone: 'America/Bogota', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true,
+        })}`
+      : 'en el siguiente horario permitido'
+    toast.success(`${accion}. El WhatsApp al inquilino sale ${cuando}, dentro del horario de cobranza que permite la ley.`)
+  } else if (!estado || estado === 'aceptado') {
     toast.success(`${accion}. Se envió el WhatsApp al inquilino.`)
   } else {
     toast.warning(`${accion}, pero ${FALLO_WHATSAPP[estado]}`)
@@ -247,7 +257,7 @@ export default function ReportarMoraPage() {
         monto_mora: montoNum,
         descripcion: descripcion.trim() || undefined,
       })
-      avisarResultado(esInterno ? 'Mora registrada' : 'Mora reportada a Cofianza', creada.whatsapp_estado)
+      avisarResultado(esInterno ? 'Mora registrada' : 'Mora reportada a Cofianza', creada)
       setContratoId('')
       setMonto('')
       setDescripcion('')
@@ -274,7 +284,8 @@ export default function ReportarMoraPage() {
           <p>
             <strong>Flujo de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
             al inquilino (Fase 1). Si no paga en 4 días, Cofianza lo pasa a Fase 2 (Urgencia) y a
-            los 10 días a Fase 3 (Legal), donde toma el control del caso.
+            los 10 días a Fase 3 (Legal), donde toma el control del caso. Los WhatsApp salen en el
+            horario de cobranza que permite la ley (L-V 7 a. m.-7 p. m., sábados 8 a. m.-3 p. m.).
           </p>
         </div>
 
@@ -738,7 +749,7 @@ function MoraDetalleModal({
     setActing(true)
     try {
       const escalada = await morasService.escalar(moraId, mora?.estado)
-      avisarResultado('Mora escalada', escalada.whatsapp_estado)
+      avisarResultado('Mora escalada', escalada)
       await recargar()
       onChange()
     } catch (err) {
@@ -1024,7 +1035,7 @@ function MoraDetalleModal({
         isLoading={acting}
         variant="danger"
         title={`Escalar a ${mora?.estado === 'fase_1' ? 'Fase 2 (Urgencia)' : 'Fase 3 (Legal)'}`}
-        message="Al inquilino le llega de inmediato el WhatsApp de escalación. No se puede deshacer."
+        message="Al inquilino le llega el WhatsApp de escalación (fuera del horario de cobranza, en el siguiente horario permitido). No se puede deshacer."
         confirmLabel="Escalar"
       />
       <MotivoDialog
