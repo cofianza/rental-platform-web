@@ -159,11 +159,11 @@ export default function CargarDocumentosPage() {
           <p className="text-sm text-gray-600 mt-1">
             Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
             {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-            {ctx.coarrendatario.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
+            {ctx.coarrendatario?.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
           </p>
         </div>
 
-        {ctx.coarrendatario.puede_invitar && (
+        {ctx.coarrendatario?.puede_invitar && (
           <CoarrendatarioInviteForm
             audience="solicitante"
             initial={ctx.coarrendatario.sugerido}
@@ -172,7 +172,7 @@ export default function CargarDocumentosPage() {
           />
         )}
 
-        {ctx.coarrendatario.invitado && (
+        {ctx.coarrendatario?.invitado && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">

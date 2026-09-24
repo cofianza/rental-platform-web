@@ -20,8 +20,8 @@ export interface ContextoCargaDocumentos {
   estado: string
   puede_subir: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
-  /** Su co-arrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar. */
-  coarrendatario: {
+  /** Su co-arrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
+  coarrendatario?: {
     puede_invitar: boolean
     invitado: { nombre: string; estado: CoarrendatarioEstado } | null
     sugerido: { nombre: string; apellido: string; email?: string; telefono?: string } | null
