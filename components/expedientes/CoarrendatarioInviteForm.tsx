@@ -142,7 +142,7 @@ export function CoarrendatarioInviteForm({
         <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">
           <p className="text-sm text-gray-700">
             {initial?.nombre
-              ? `Ya nos contaste de ${initial.nombre}: confirma su cédula y envíale la invitación.`
+              ? `Ya nos contaste de ${initial.nombre}: completa sus datos y envíale la invitación.`
               : esGestor
                 ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
                 : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}

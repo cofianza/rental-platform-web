@@ -21,12 +21,18 @@ import {
 } from '@/services/cargarDocumentosService'
 
 // Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
-// estudio ya resuelto no se promete una revisión que no va a ocurrir.
+// estudio ya resuelto no se promete una revisión que no va a ocurrir, y al
+// cerrarlo no se le escribe (solo al decidirlo).
 function textoInvitado(
   invitado: NonNullable<NonNullable<ContextoCargaDocumentos['coarrendatario']>['invitado']>,
-  enRevision: boolean,
+  estadoEstudio: string,
 ): string {
-  if (!enRevision) {
+  if (estadoEstudio === 'cerrado') {
+    return invitado.estado === 'pendiente_aceptacion'
+      ? 'Tu estudio se cerró, así que esta invitación quedó sin efecto.'
+      : 'Tu estudio se cerró, así que tu co-arrendatario ya no sigue en el proceso.'
+  }
+  if (estadoEstudio !== 'condicionado') {
     return invitado.estado === 'pendiente_aceptacion'
       ? 'Tu estudio ya se resolvió, así que esta invitación quedó sin efecto.'
       : 'Tu estudio ya se resolvió; te escribimos por correo con la decisión.'
@@ -189,7 +195,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Invitaste a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado === 'condicionado')}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado)}</p>
             </div>
           </div>
         )}
