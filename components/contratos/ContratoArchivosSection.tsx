@@ -14,6 +14,7 @@ import {
 import { formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IContrato, IContratoArchivo, TipoArchivoContrato } from '@/types/contrato'
 
 interface ContratoArchivosSectionProps {
@@ -32,6 +33,11 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
   const { user } = useAuth()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   const isAdmin = user?.rol === 'administrador'
+  // A9 (Adenda 1 contratos, respuesta 21): el acta la carga el arrendador
+  // (inmobiliaria o propietario), nunca Cofianza; lo demás, Cofianza.
+  const puedeEditar = usePuedeEditar()
+  const esArrendador = puedeEditar && (user?.rol === 'inmobiliaria' || user?.rol === 'propietario')
+  const puedeSubir = (tipo: TipoArchivoContrato) => (tipo === 'acta_entrega' ? esArrendador : canManage)
 
   const [archivos, setArchivos] = useState<IContratoArchivo[]>([])
   const [loading, setLoading] = useState(true)
@@ -176,7 +182,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {grupo.label}
                 </p>
-                {canManage && (
+                {puedeSubir(grupo.value) && (
                   <button
                     onClick={() => handleUploadClick(grupo.value)}
                     disabled={uploading}
