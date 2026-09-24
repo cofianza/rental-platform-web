@@ -48,7 +48,7 @@ function FormSection({ num, title, children }: { num: number; title: string; chi
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-600 text-[11px] font-bold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-700 text-[11px] font-bold text-white">
           {num}
         </span>
         <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
@@ -71,7 +71,7 @@ function PasswordRequirements({ password }: { password: string }) {
       {checks.map((check) => (
         <div key={check.label} className="flex items-center gap-2">
           <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
-          <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-400')}>
+          <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-500')}>
             {check.label}
           </span>
         </div>
@@ -255,7 +255,7 @@ export default function RegisterPropietarioPage() {
             <div>
               <label htmlFor="propietario-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-nombre"
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
@@ -270,7 +270,7 @@ export default function RegisterPropietarioPage() {
             <div>
               <label htmlFor="propietario-apellido" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-apellido"
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
@@ -288,7 +288,7 @@ export default function RegisterPropietarioPage() {
             <div>
               <label htmlFor="propietario-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="propietario-tipo-de-documento"
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
@@ -306,7 +306,7 @@ export default function RegisterPropietarioPage() {
             <div>
               <label htmlFor="propietario-numero-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-numero-de-documento"
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
@@ -330,7 +330,7 @@ export default function RegisterPropietarioPage() {
           <div>
             <label htmlFor="propietario-direccion-de-residencia" className="block text-sm font-medium text-gray-700 mb-1">Dirección de residencia</label>
             <div className="relative">
-              <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-direccion-de-residencia"
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
@@ -349,7 +349,7 @@ export default function RegisterPropietarioPage() {
           <div>
             <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <div className="relative">
-              <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-email"
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
@@ -367,7 +367,7 @@ export default function RegisterPropietarioPage() {
           <div>
             <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-contrasena"
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
@@ -377,7 +377,7 @@ export default function RegisterPropietarioPage() {
                 autoComplete="new-password"
                 aria-invalid={!!errors.password}
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
                 {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
               </button>
             </div>
@@ -388,7 +388,7 @@ export default function RegisterPropietarioPage() {
           <div>
             <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
             <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-confirmar-contrasena"
                 type={showConfirm ? 'text' : 'password'}
                 value={formData.confirm_password}
@@ -398,7 +398,7 @@ export default function RegisterPropietarioPage() {
                 autoComplete="new-password"
                 aria-invalid={!!errors.confirm_password}
               />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
                 {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
               </button>
             </div>
@@ -464,7 +464,7 @@ export default function RegisterPropietarioPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-white text-sm font-bold rounded-xl hover:bg-coral-600 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-ink-900 text-sm font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isLoading ? (
               <>

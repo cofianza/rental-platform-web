@@ -300,9 +300,9 @@ function AccordionSection({
           {badge}
         </div>
         {open ? (
-          <IconChevronUp size={16} className="text-gray-400" />
+          <IconChevronUp size={16} className="text-gray-500" />
         ) : (
-          <IconChevronDown size={16} className="text-gray-400" />
+          <IconChevronDown size={16} className="text-gray-500" />
         )}
       </button>
       {open && <div className="px-4 py-3">{children}</div>}
@@ -499,7 +499,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
     <div className="space-y-3">
       {/* Trazabilidad: la consulta y el corte de los datos no son la misma fecha */}
       {(productResult?.consultDate || fechaCorte) && (
-        <p className="text-[10px] text-gray-400">
+        <p className="text-[10px] text-gray-500">
           Consulta del {formatDate(productResult?.consultDate)}
           {fechaCorte ? ` · Datos con corte a ${formatDate(fechaCorte)}` : ''}
           {productResult?.securityCode ? ` · Código ${productResult.securityCode}` : ''}
@@ -584,7 +584,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
         <AccordionSection
           title="Resumen crediticio"
           defaultOpen
-          badge={<span className="text-[10px] text-gray-400 font-normal">Consolidado general</span>}
+          badge={<span className="text-[10px] text-gray-500 font-normal">Consolidado general</span>}
         >
           <div className="grid grid-cols-2 gap-3">
             <SummaryCard label="Créditos vigentes" value={formatEntero(vigentes)} isNumber />
@@ -612,7 +612,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
                   <span>
                     {formatCOP(ingreso.promedio, MILES)}
                     {ingreso.minimo && ingreso.maximo && (
-                      <span className="text-[10px] text-gray-400 font-normal">
+                      <span className="text-[10px] text-gray-500 font-normal">
                         {' '}
                         · rango {formatCOP(ingreso.minimo, MILES)} a {formatCOP(ingreso.maximo, MILES)}
                       </span>
@@ -641,7 +641,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
                   <span className="text-gray-900">
                     {cargaIngreso}%
                     {cargaIngresoPiso !== null && cargaIngresoTecho !== null && (
-                      <span className="text-[10px] text-gray-400 font-normal">
+                      <span className="text-[10px] text-gray-500 font-normal">
                         {' '}
                         · entre {cargaIngresoPiso}% y {cargaIngresoTecho}% según el rango del ingreso
                       </span>
@@ -697,7 +697,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
             )}
           </div>
 
-          <p className="text-[10px] text-gray-400 mt-2">
+          <p className="text-[10px] text-gray-500 mt-2">
             Montos consolidados convertidos desde miles de pesos, como los entrega el proveedor.
             {score !== null
               ? ' Los cortes de puntaje del modelo son provisionales: Experian no publica el rango oficial.'
@@ -711,7 +711,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
         <AccordionSection
           title="Obligaciones"
           badge={
-            <span className="text-[10px] text-gray-400 font-normal">
+            <span className="text-[10px] text-gray-500 font-normal">
               {totalVigentes} vigentes de {obligacionesOrdenadas.length}
               {totalNegativas > 0 && (
                 <span className="text-red-600"> · {totalNegativas} con historial negativo</span>
@@ -794,7 +794,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
               </button>
             </div>
           )}
-          <p className="text-[10px] text-gray-400 mt-2">
+          <p className="text-[10px] text-gray-500 mt-2">
             Saldo, cuota y mora en pesos. Las obligaciones ya canceladas no reportan importes: se muestran con
             guion.
           </p>
@@ -805,7 +805,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
       {globalIndebtedness.length > 0 && (
         <AccordionSection
           title="Endeudamiento global"
-          badge={<span className="text-[10px] text-gray-400 font-normal">{badgeEndeudamiento}</span>}
+          badge={<span className="text-[10px] text-gray-500 font-normal">{badgeEndeudamiento}</span>}
         >
           <div className="overflow-x-auto -mx-1">
             <table className="w-full text-xs">
@@ -845,7 +845,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
             </table>
           </div>
           {globalIndebtedness.length > MAX_FILAS && (
-            <p className="text-[10px] text-gray-400 text-center mt-2">
+            <p className="text-[10px] text-gray-500 text-center mt-2">
               y {plural(globalIndebtedness.length - MAX_FILAS, 'registro más', 'registros más')}...
             </p>
           )}
@@ -857,7 +857,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
         <AccordionSection
           title="Huella de consulta"
           badge={
-            <span className="text-[10px] text-gray-400 font-normal">
+            <span className="text-[10px] text-gray-500 font-normal">
               {plural(huellas.length, 'registrada', 'registradas')}
             </span>
           }
@@ -876,16 +876,16 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
                     <p className="text-xs font-medium text-gray-700">
                       {limpiar(consulta?.inquiryBusinessName) ?? 'Entidad desconocida'}
                     </p>
-                    <p className="text-[10px] text-gray-400">{detalle}</p>
+                    <p className="text-[10px] text-gray-500">{detalle}</p>
                   </div>
-                  <span className="text-[10px] text-gray-400 shrink-0 ml-2">
+                  <span className="text-[10px] text-gray-500 shrink-0 ml-2">
                     {formatDate(consulta?.inquiryDate)}
                   </span>
                 </div>
               )
             })}
             {huellas.length > MAX_CONSULTAS && (
-              <p className="text-[10px] text-gray-400 text-center">
+              <p className="text-[10px] text-gray-500 text-center">
                 y {plural(huellas.length - MAX_CONSULTAS, 'consulta más', 'consultas más')}...
               </p>
             )}

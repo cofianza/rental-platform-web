@@ -135,7 +135,7 @@ export function CoarrendatarioInviteForm({
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
         >
           Agregar co-arrendatario
           <IconArrowRight size={16} />
@@ -189,7 +189,7 @@ export function CoarrendatarioInviteForm({
             <button
               onClick={handleInvitar}
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors"
             >
               {submitting ? 'Enviando…' : 'Enviar invitación'}
             </button>

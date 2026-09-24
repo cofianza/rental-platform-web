@@ -96,7 +96,7 @@ function AdquirirEstudiosCreditoContenido() {
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <IconDollarSign size={18} className="text-coral-600" />
+          <IconDollarSign size={18} className="text-coral-700" />
           <h2 className="text-lg font-bold text-gray-900">Adquirir estudios de crédito</h2>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
@@ -134,11 +134,11 @@ function AdquirirEstudiosCreditoContenido() {
                 }`}
               >
                 {popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-coral-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-coral-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-ink-900 shadow-sm">
                     Más popular
                   </span>
                 )}
-                <div className="text-[11px] font-bold uppercase tracking-wide text-coral-600">{p.nombre}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-coral-700">{p.nombre}</div>
                 {p.descripcion && <div className="mt-0.5 text-xs text-gray-500">{p.descripcion}</div>}
                 <div className="mt-3 text-3xl font-extrabold text-primary-600">
                   {p.cantidad_estudios}
@@ -160,8 +160,8 @@ function AdquirirEstudiosCreditoContenido() {
                   type="button"
                   onClick={() => handleComprar(p.id)}
                   disabled={comprando !== null}
-                  className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${
-                    popular ? 'bg-coral-500 hover:bg-coral-600' : 'bg-primary-600 hover:bg-primary-700'
+                  className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                    popular ? 'bg-coral-500 text-ink-900 hover:bg-coral-400' : 'bg-primary-700 text-white hover:bg-primary-800'
                   }`}
                 >
                   {comprando === p.id ? (

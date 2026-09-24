@@ -161,7 +161,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
 
       {loading ? (
         <div className="flex items-center justify-center py-6">
-          <IconLoader size={20} className="animate-spin text-gray-400" />
+          <IconLoader size={20} className="animate-spin text-gray-500" />
         </div>
       ) : loadError ? (
         <div className="text-center py-6">
@@ -201,7 +201,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                       key={archivo.id}
                       className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg group"
                     >
-                      <IconFileText size={16} className="text-gray-400 shrink-0" />
+                      <IconFileText size={16} className="text-gray-500 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {archivo.nombre_archivo}
@@ -216,7 +216,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                         <button
                           onClick={() => handleDescargar(archivo)}
                           disabled={downloadingId === archivo.id}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 rounded disabled:opacity-50"
+                          className="p-1.5 text-gray-500 hover:text-gray-600 rounded disabled:opacity-50"
                           title="Descargar"
                         >
                           {downloadingId === archivo.id ? (
@@ -229,7 +229,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                           <button
                             onClick={() => handleEliminar(archivo)}
                             disabled={deletingId === archivo.id}
-                            className="p-1.5 text-gray-400 hover:text-red-600 rounded disabled:opacity-50"
+                            className="p-1.5 text-gray-500 hover:text-red-600 rounded disabled:opacity-50"
                             title="Eliminar"
                           >
                             {deletingId === archivo.id ? (
@@ -244,7 +244,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 italic py-2">Sin archivos</p>
+                <p className="text-xs text-gray-500 italic py-2">Sin archivos</p>
               )}
             </div>
           ))}

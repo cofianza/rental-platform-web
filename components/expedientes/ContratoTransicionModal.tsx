@@ -170,7 +170,7 @@ export function ContratoTransicionModal({
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${configActual?.bgColor || 'bg-gray-100'} ${configActual?.textColor || 'text-gray-700'}`}>
               {configActual?.label || estadoActual}
             </span>
-            <IconArrowRight size={20} className="text-gray-400" />
+            <IconArrowRight size={20} className="text-gray-500" />
             {(() => {
               const targetConfig = ESTADOS_CONTRATO[estadoSeleccionado as EstadoContratoKey]
               return (
@@ -239,7 +239,7 @@ export function ContratoTransicionModal({
             type="button"
             onClick={handleConfirmar}
             disabled={isLoading || !estadoSeleccionado || !comentario.trim() || (requiresMotivo && !motivo.trim())}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}
             Confirmar Cambio

@@ -32,7 +32,7 @@ import type { IEstudio } from '@/types/estudio'
 // ============================================
 
 function ScoreBar({ score }: { score?: number | null }) {
-  if (score == null) return <span className="text-sm text-gray-400">-</span>
+  if (score == null) return <span className="text-sm text-gray-500">-</span>
 
   const pct = Math.min(100, Math.max(0, (score / 999) * 100))
 
@@ -416,7 +416,7 @@ export function EstudiosTable({
                     className={cn(
                       'w-8 h-8 rounded text-sm font-medium transition-colors',
                       pageNum === meta.page
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-primary-700 text-white'
                         : 'hover:bg-gray-100 text-gray-600'
                     )}
                   >

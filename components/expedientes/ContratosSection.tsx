@@ -306,7 +306,7 @@ export function ContratosSection({
         {canCreate && expedienteAprobado && !contratosV3 && (
           <button
             onClick={() => setGenerarOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconPlus size={16} />
             Generar Contrato
@@ -319,20 +319,20 @@ export function ContratosSection({
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
           <p className="text-gray-500 mb-2">No hay contratos generados</p>
           {!expedienteAprobado ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               El contrato se podrá generar cuando el estudio del arrendatario
               esté aprobado.
             </p>
           ) : canCreate && contratosV3 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               Pulsa «Crear contrato» para abrir el asistente.
             </p>
           ) : canCreate ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               Pulsa &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
             </p>
           ) : (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               El contrato se generará cuando el propietario lo emita, ahora que el
               estudio fue aprobado.
             </p>
@@ -427,7 +427,7 @@ export function ContratosSection({
                             <button
                               onClick={() => handleEnviarAFirma(c)}
                               disabled={enviandoFirmaId === c.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-coral-500 rounded-md hover:bg-coral-600 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-900 bg-coral-500 rounded-md hover:bg-coral-400 disabled:opacity-50"
                               title="Llevar a firma y enviar al/los firmante(s)"
                             >
                               {enviandoFirmaId === c.id ? (
@@ -443,7 +443,7 @@ export function ContratosSection({
                           {!esV3 && !esDuenio && (
                             <button
                               onClick={() => router.push(`/contratos/${c.id}`)}
-                              className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                              className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                               title="Ver detalle"
                               aria-label="Ver detalle del contrato"
                             >
@@ -453,7 +453,7 @@ export function ContratosSection({
                           <button
                             onClick={() => handleDownload(c)}
                             disabled={downloadingId === c.id || !c.storage_key}
-                            className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                            className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                             title="Descargar PDF"
                             aria-label="Descargar PDF del contrato"
                           >
@@ -466,7 +466,7 @@ export function ContratosSection({
                           {!esV3 && canRegenerate && c.estado === 'borrador' && (
                             <button
                               onClick={() => setRegenerarTarget(c)}
-                              className="p-1.5 text-gray-400 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                              className="p-1.5 text-gray-500 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                               title="Editar y regenerar (fecha, plazo, canon, servicios)"
                               aria-label="Editar y regenerar el contrato"
                             >
@@ -493,7 +493,7 @@ export function ContratosSection({
                             !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
                             <button
                               onClick={() => handleOpenTransicion(c)}
-                              className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                              className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                               title="Cambiar estado"
                               aria-label="Cambiar el estado del contrato"
                             >

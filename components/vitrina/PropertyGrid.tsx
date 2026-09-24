@@ -182,7 +182,7 @@ export function PropertyGrid() {
     <div className="space-y-6">
       {/* Search bar */}
       <div className="relative">
-        <IconSearch size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <IconSearch size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
         <input
           type="text"
           value={search}
@@ -302,7 +302,7 @@ export function PropertyGrid() {
           <p className="text-sm text-gray-500 mb-4">Tuvimos un problema al buscar. Inténtalo de nuevo en un momento.</p>
           <button
             onClick={fetchProperties}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconRefresh size={16} />
             Reintentar
@@ -346,14 +346,14 @@ export function PropertyGrid() {
 
           {generatePageNumbers(page, totalPages).map((p, idx) =>
             p === '...' ? (
-              <span key={`dots-${idx}`} className="px-2 text-gray-400 text-sm">...</span>
+              <span key={`dots-${idx}`} className="px-2 text-gray-500 text-sm">...</span>
             ) : (
               <button
                 key={p}
                 onClick={() => setPage(Number(p))}
                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                   Number(p) === page
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-primary-700 text-white'
                     : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -428,7 +428,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             <p className="text-sm text-gray-700 font-medium truncate">
               {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
             </p>
-            <p className="text-xs text-gray-400">Estrato {property.estrato}</p>
+            <p className="text-xs text-gray-500">Estrato {property.estrato}</p>
           </div>
           {property.inmobiliaria?.logo_url && (
             <Image

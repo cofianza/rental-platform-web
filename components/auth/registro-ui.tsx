@@ -29,10 +29,10 @@ export function RegistroStepper({ steps }: { steps: StepDef[] }) {
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-bold transition-colors',
                 s.done
-                  ? 'border-primary-600 bg-primary-600 text-white'
+                  ? 'border-primary-700 bg-primary-700 text-white'
                   : current
                     ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-gray-300 bg-white text-gray-400',
+                    : 'border-gray-300 bg-white text-gray-500',
               )}
             >
               {s.done ? <IconCheck size={14} /> : i + 1}
@@ -40,7 +40,7 @@ export function RegistroStepper({ steps }: { steps: StepDef[] }) {
             <span
               className={cn(
                 'hidden truncate text-[11px] font-semibold uppercase tracking-wide sm:block',
-                s.done || current ? 'text-primary-700' : 'text-gray-400',
+                s.done || current ? 'text-primary-700' : 'text-gray-500',
               )}
             >
               {s.label}

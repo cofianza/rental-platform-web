@@ -34,7 +34,7 @@ export function PlantillaPreviewModal({
         </div>
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
-          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100"
         >
           <IconX size={20} />
         </button>

@@ -42,7 +42,7 @@ export function ConfirmDialog({
     },
     default: {
       icon: 'text-primary-600 bg-primary-100',
-      button: 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500',
+      button: 'bg-primary-700 hover:bg-primary-800 focus:ring-primary-500',
     },
   }
 

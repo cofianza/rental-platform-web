@@ -115,7 +115,7 @@ export default function EmpresaPage() {
                 <>
                   <label htmlFor={`empresa-${c.key}`} className="block text-sm font-medium text-gray-700 mb-1">
                     {c.label}
-                    {c.required && <span className="text-coral-500"> *</span>}
+                    {c.required && <span className="text-coral-700"> *</span>}
                   </label>
                   <input
                     id={`empresa-${c.key}`}
@@ -134,7 +134,7 @@ export default function EmpresaPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-coral-500 rounded-lg hover:bg-coral-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="px-5 py-2.5 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {saving && <IconLoader size={16} className="animate-spin" />}
               Guardar cambios

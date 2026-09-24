@@ -50,7 +50,7 @@ const tipoLabel = (t: string | null) => (t && TIPO_LABELS[t as keyof typeof TIPO
 const btnS =
   'inline-flex items-center gap-1 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition-colors hover:bg-ink-50'
 const btnP =
-  'inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-700'
+  'inline-flex items-center gap-1 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary-800'
 const btnD =
   'inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100'
 

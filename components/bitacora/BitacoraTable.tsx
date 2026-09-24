@@ -97,7 +97,7 @@ export function BitacoraTable({
                   {formatDateTime(log.created_at)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {log.usuario_nombre || <span className="text-gray-400">Sistema</span>}
+                  {log.usuario_nombre || <span className="text-gray-500">Sistema</span>}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <ActionBadge action={log.accion} />
@@ -105,7 +105,7 @@ export function BitacoraTable({
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {ENTITY_LABELS[log.entidad] || log.entidad}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                   {log.ip || '-'}
                 </td>
               </tr>
@@ -140,7 +140,7 @@ export function BitacoraTable({
               <span>{ENTITY_LABELS[log.entidad] || log.entidad}</span>
               {log.ip && <span className="font-mono">{log.ip}</span>}
             </div>
-            <div className="text-xs text-gray-400">{formatDateTime(log.created_at)}</div>
+            <div className="text-xs text-gray-500">{formatDateTime(log.created_at)}</div>
           </div>
         ))}
       </div>

@@ -168,7 +168,7 @@ export function PropietarioSelector({
         <div className="relative">
           <IconSearch
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
           />
           <input
             ref={inputRef}
@@ -188,7 +188,7 @@ export function PropietarioSelector({
           {isLoading && (
             <IconLoader
               size={18}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 animate-spin"
             />
           )}
         </div>
@@ -230,7 +230,7 @@ export function PropietarioSelector({
                         <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       )}
                       {user.rol && (
-                        <p className="text-xs text-gray-400 truncate capitalize">{user.rol.replace('_', ' ')}</p>
+                        <p className="text-xs text-gray-500 truncate capitalize">{user.rol.replace('_', ' ')}</p>
                       )}
                     </div>
                   </button>

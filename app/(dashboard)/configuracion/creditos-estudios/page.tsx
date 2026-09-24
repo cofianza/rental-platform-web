@@ -310,7 +310,7 @@ export default function CreditosEstudiosPage() {
                       }`}
                     >
                       {esPopular && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-coral-500 text-white shadow-sm whitespace-nowrap">
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-coral-500 text-ink-900 shadow-sm whitespace-nowrap">
                           ⭐ Más popular
                         </span>
                       )}
@@ -345,10 +345,10 @@ export default function CreditosEstudiosPage() {
                       <button
                         onClick={() => handleComprar(p.id)}
                         disabled={comprando !== null}
-                        className={`w-full mt-4 px-4 py-2 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition flex items-center justify-center gap-2 ${
+                        className={`w-full mt-4 px-4 py-2 disabled:bg-gray-400 rounded-md text-sm font-medium transition flex items-center justify-center gap-2 ${
                           esPopular
-                            ? 'bg-coral-500 hover:bg-coral-600'
-                            : 'bg-primary-600 hover:bg-primary-700'
+                            ? 'bg-coral-500 text-ink-900 hover:bg-coral-400'
+                            : 'bg-primary-700 text-white hover:bg-primary-800'
                         }`}
                       >
                         {comprando === p.id ? (
@@ -672,7 +672,7 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
         <button
           onClick={onSubmit}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && <IconLoader className="animate-spin" size={14} />}
           Emitir factura

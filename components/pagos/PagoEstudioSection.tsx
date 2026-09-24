@@ -427,7 +427,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           {estado.pago?.payment_link_url && (
             <a
               href={estado.pago.payment_link_url}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors"
             >
               Abrir Mercado Pago
             </a>
@@ -717,7 +717,7 @@ function EnviarLinkModal({
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center gap-2"
             disabled={isSubmitting}
           >
             {isSubmitting && (
@@ -1013,7 +1013,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
               href={linkPago}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
             >
               Pagar ahora
               <IconArrowRight size={16} />
@@ -1231,7 +1231,7 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
         <button
           onClick={onSubmit}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && (
             <IconLoader size={16} className="animate-spin" />
@@ -1333,7 +1333,7 @@ function ConfirmFacturaModal({
         <button
           onClick={onConfirmar}
           disabled={loading}
-          className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && (
             <IconLoader size={16} className="animate-spin" />

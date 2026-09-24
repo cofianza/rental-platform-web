@@ -236,7 +236,7 @@ export function Step3Configuration({
                 <span
                   className={cn(
                     'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                    seleccionada ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-500',
+                    seleccionada ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-500',
                   )}
                 >
                   {seleccionada ? <IconCheck size={18} /> : <Icono size={18} />}
@@ -257,7 +257,7 @@ export function Step3Configuration({
                           No pudimos consultar tu saldo de estudios.
                         </span>
                       ) : saldo === null ? (
-                        <span className="text-gray-400">Consultando saldo…</span>
+                        <span className="text-gray-500">Consultando saldo…</span>
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
                           No te quedan estudios en el paquete.{' '}
@@ -304,9 +304,9 @@ export function Step3Configuration({
           reintentar y a pagar otra consulta. */}
       <fieldset className="space-y-2">
         <legend className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <IconSearch size={16} className="text-gray-400" />
+          <IconSearch size={16} className="text-gray-500" />
           Buró a consultar
-          <span className="font-normal text-gray-400">(opcional)</span>
+          <span className="font-normal text-gray-500">(opcional)</span>
         </legend>
         <p className="text-xs text-gray-500">
           Si no eliges, Cofianza decide cuál consultar. Cambiarlo después obliga a repetir la
@@ -338,9 +338,9 @@ export function Step3Configuration({
       {/* Notas internas */}
       <div className="space-y-2">
         <label htmlFor="step3-configuration-opcional" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <IconFileText size={16} className="text-gray-400" />
+          <IconFileText size={16} className="text-gray-500" />
           {WIZARD_MESSAGES.NOTAS_LABEL}
-          <span className="text-gray-400 font-normal">(opcional)</span>
+          <span className="text-gray-500 font-normal">(opcional)</span>
         </label>
         <textarea id="step3-configuration-opcional"
           value={data.notas}
@@ -357,12 +357,12 @@ export function Step3Configuration({
           {errors.notas ? (
             <p className="text-red-600">{errors.notas}</p>
           ) : (
-            <p className="text-gray-400">
+            <p className="text-gray-500">
               Notas visibles solo para el equipo interno
             </p>
           )}
           <p className={cn(
-            'text-gray-400',
+            'text-gray-500',
             notasRemaining < 500 && 'text-amber-600',
             notasRemaining < 100 && 'text-red-600'
           )}>
@@ -375,9 +375,9 @@ export function Step3Configuration({
       {esInterno && (
       <div className="space-y-2">
         <label htmlFor="step3-analista" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <IconUser size={16} className="text-gray-400" />
+          <IconUser size={16} className="text-gray-500" />
           {WIZARD_MESSAGES.ANALISTA_LABEL}
-          <span className="text-gray-400 font-normal">(opcional)</span>
+          <span className="text-gray-500 font-normal">(opcional)</span>
         </label>
 
         {isLoadingAnalistas ? (
@@ -419,7 +419,7 @@ export function Step3Configuration({
             )}
           </select>
         )}
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-500">
           El responsable asignado recibira notificaciones del estudio
         </p>
       </div>
@@ -429,9 +429,9 @@ export function Step3Configuration({
       {esInmobiliaria && (
         <div className="space-y-2">
           <label htmlFor="step3-configuration-responsable-del-estudio-opcional" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <IconUser size={16} className="text-gray-400" />
+            <IconUser size={16} className="text-gray-500" />
             Responsable del estudio
-            <span className="text-gray-400 font-normal">(opcional)</span>
+            <span className="text-gray-500 font-normal">(opcional)</span>
           </label>
           {isLoadingMiembros ? (
             <div className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-500">
@@ -465,7 +465,7 @@ export function Step3Configuration({
               ))}
             </select>
           )}
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500">
             El miembro asignado será responsable del estudio y recibirá una notificación.
           </p>
         </div>

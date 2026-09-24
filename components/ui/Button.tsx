@@ -13,9 +13,11 @@ type Variante = 'primary' | 'accent' | 'secondary' | 'danger'
 type Tamano = 'sm' | 'md'
 
 const VARIANTES: Record<Variante, string> = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700',
+  // Contraste AA (P29): el blanco va sobre verde 700 (5,5:1; sobre 600 da 3,8:1)
+  // y sobre coral el texto es ink-900 (6,4:1; blanco da 2,8:1).
+  primary: 'bg-primary-700 text-white hover:bg-primary-800',
   // Coral: CTA de acento de la marca (pantallas de la Oficina Virtual).
-  accent: 'bg-coral-500 text-white hover:bg-coral-600',
+  accent: 'bg-coral-500 text-ink-900 hover:bg-coral-400',
   secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 }

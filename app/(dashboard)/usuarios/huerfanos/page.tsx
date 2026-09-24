@@ -157,14 +157,14 @@ export default function HuerfanosPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <p className="text-sm font-medium text-gray-900">{orphan.email || '—'}</p>
-                        <p className="text-xs text-gray-400 font-mono">{orphan.id.slice(0, 8)}…</p>
+                        <p className="text-xs text-gray-500 font-mono">{orphan.id.slice(0, 8)}…</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {formatDate(orphan.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {orphan.last_sign_in_at ? formatDate(orphan.last_sign_in_at) : <span className="text-gray-400">nunca</span>}
+                      {orphan.last_sign_in_at ? formatDate(orphan.last_sign_in_at) : <span className="text-gray-500">nunca</span>}
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-500 max-w-xs">
                       <span className="truncate block">
@@ -202,7 +202,7 @@ export default function HuerfanosPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{orphan.email || '—'}</p>
-                    <p className="text-xs text-gray-400 font-mono truncate">{orphan.id}</p>
+                    <p className="text-xs text-gray-500 font-mono truncate">{orphan.id}</p>
                   </div>
                   <button
                     onClick={() => handleDelete(orphan)}

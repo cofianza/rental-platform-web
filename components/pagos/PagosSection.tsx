@@ -316,7 +316,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         <p className="text-sm text-gray-500 mb-4">{errorMessage}</p>
         <button
           onClick={fetchPagos}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           Reintentar
@@ -340,7 +340,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
           <div className="flex justify-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
               Generar Link de Pago
@@ -464,7 +464,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
               Generar Link
@@ -671,7 +671,7 @@ function PagoTableRow({
       <td className="px-4 py-3 whitespace-nowrap text-right">
         <div className="flex items-center justify-end gap-1">
           {isLoading ? (
-            <IconLoader size={16} className="animate-spin text-gray-400" />
+            <IconLoader size={16} className="animate-spin text-gray-500" />
           ) : (
             <>
               <button
@@ -810,7 +810,7 @@ function PagoCard({
 
       <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
         {isLoading ? (
-          <IconLoader size={16} className="animate-spin text-gray-400" />
+          <IconLoader size={16} className="animate-spin text-gray-500" />
         ) : (
           <>
             <button

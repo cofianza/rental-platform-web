@@ -368,7 +368,7 @@ export default function ExpedienteDetallePage() {
         </p>
         <button
           onClick={() => router.push(rutaListado)}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+          className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
         >
           {user?.rol === 'solicitante' ? 'Ver mis solicitudes' : 'Volver al listado'}
         </button>
@@ -387,7 +387,7 @@ export default function ExpedienteDetallePage() {
         <p className="text-gray-500 mb-6">{error}</p>
         <button
           onClick={fetchExpediente}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           Reintentar
@@ -454,13 +454,13 @@ export default function ExpedienteDetallePage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
               {expediente.inmueble && (
                 <span>
-                  <span className="text-gray-400">Inmueble:</span>{' '}
+                  <span className="text-gray-500">Inmueble:</span>{' '}
                   {expediente.inmueble.titulo || expediente.inmueble.direccion}
                 </span>
               )}
               {expediente.solicitante && (
                 <span>
-                  <span className="text-gray-400">Solicitante:</span>{' '}
+                  <span className="text-gray-500">Solicitante:</span>{' '}
                   {`${expediente.solicitante.nombre} ${expediente.solicitante.apellido}`.trim()}
                 </span>
               )}
@@ -472,7 +472,7 @@ export default function ExpedienteDetallePage() {
                 "Responsable del expediente" (miembro) del tab Resumen. */}
             {puedeAsignar && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Responsable:</span>
+                <span className="text-sm text-gray-500">Responsable:</span>
                 {nombreAnalista ? (
                   <button
                     onClick={() => setShowAsignacionModal(true)}
@@ -480,7 +480,7 @@ export default function ExpedienteDetallePage() {
                   >
                     <Avatar name={nombreAnalista} size="sm" />
                     <span>{nombreAnalista}</span>
-                    <IconEdit size={14} className="text-gray-400" />
+                    <IconEdit size={14} className="text-gray-500" />
                   </button>
                 ) : (
                   <button

@@ -201,7 +201,7 @@ export default function SlotSelector({
                           className={cn(
                             'px-2 py-1.5 rounded-full text-xs font-medium transition whitespace-nowrap',
                             selected
-                              ? 'bg-primary-600 text-white'
+                              ? 'bg-primary-700 text-white'
                               : 'bg-primary-50 text-primary-700 hover:bg-primary-100',
                           )}
                         >

@@ -63,11 +63,11 @@ export function ScoreGauge({ score, resultado, size = 'md' }: ScoreGaugeProps) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-            <span className={`${config.fontSize} font-bold text-gray-400`}>N/A</span>
+            <span className={`${config.fontSize} font-bold text-gray-500`}>N/A</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5 mt-1">
-          <IconInfo size={14} className="text-gray-400" />
+          <IconInfo size={14} className="text-gray-500" />
           <span className={`${config.labelSize} text-gray-500`}>
             {resultado ? getResultadoLabel(resultado) : 'Score no disponible'}
           </span>
@@ -123,8 +123,8 @@ export function ScoreGauge({ score, resultado, size = 'md' }: ScoreGaugeProps) {
       {/* Scale labels */}
       {size !== 'sm' && (
         <div className="flex justify-between w-full mt-1 px-1">
-          <span className="text-[10px] text-gray-400">0</span>
-          <span className="text-[10px] text-gray-400">999</span>
+          <span className="text-[10px] text-gray-500">0</span>
+          <span className="text-[10px] text-gray-500">999</span>
         </div>
       )}
     </div>

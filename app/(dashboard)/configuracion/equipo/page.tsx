@@ -291,7 +291,7 @@ export default function EquipoPage() {
         </div>
       ) : !data || !data.organizacion.id ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <IconUsers size={32} className="text-gray-400 mx-auto mb-3" />
+          <IconUsers size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-600">
             Aún no tienes una organización configurada. Si crees que es un error, contacta a soporte.
           </p>
@@ -309,7 +309,7 @@ export default function EquipoPage() {
                 <div className="relative flex-1">
                   <IconMail
                     size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
                   />
                   <input
                     type="email"
@@ -334,7 +334,7 @@ export default function EquipoPage() {
                 <button
                   type="submit"
                   disabled={inviting}
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-coral-500 rounded-lg hover:bg-coral-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="px-5 py-2.5 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {inviting ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
                   Enviar invitación
@@ -398,7 +398,7 @@ export default function EquipoPage() {
                         {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
                       </p>
                       <RolBadge rol={m.rol_miembro} />
-                      {m.es_yo && <span className="text-xs text-gray-400">(tú)</span>}
+                      {m.es_yo && <span className="text-xs text-gray-500">(tú)</span>}
                     </div>
                     {m.nombre && m.email && (
                       <p className="text-xs text-gray-500 break-all">{m.email}</p>

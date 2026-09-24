@@ -261,7 +261,7 @@ export function TipoDocumentoForm({
           Solo letras minusculas, numeros y guion bajo (_)
         </p>
         {isCheckingCodigo && (
-          <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+          <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
             <IconLoader size={12} className="animate-spin" /> Verificando disponibilidad...
           </p>
         )}
@@ -394,7 +394,7 @@ export function TipoDocumentoForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
         >
           {isLoading && <IconLoader size={16} className="animate-spin" />}
           {mode === 'create' ? 'Crear Tipo' : 'Guardar Cambios'}

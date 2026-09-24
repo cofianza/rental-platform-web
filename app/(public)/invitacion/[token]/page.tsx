@@ -128,7 +128,7 @@ export default function InvitacionPage() {
         </p>
         <Link
           href={isAuthenticated ? '/dashboard' : '/login'}
-          className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           {isAuthenticated ? 'Ir a mi cuenta' : 'Ingresar'}
         </Link>
@@ -153,7 +153,7 @@ export default function InvitacionPage() {
           <button
             type="button"
             onClick={cargar}
-            className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconRefresh size={16} />
             Reintentar
@@ -161,7 +161,7 @@ export default function InvitacionPage() {
         ) : (
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconHome size={16} />
             Volver al inicio
@@ -227,7 +227,7 @@ export default function InvitacionPage() {
             </button>
             <button
               onClick={() => saveTokenAndGo('/registro/solicitante')}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
             >
               Crear cuenta
             </button>
@@ -282,7 +282,7 @@ export default function InvitacionPage() {
           <button
             onClick={handleCanjear}
             disabled={canjeando}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {canjeando ? (
               <>

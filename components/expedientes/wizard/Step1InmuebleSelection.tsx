@@ -356,9 +356,9 @@ export function Step1InmuebleSelection({
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               {isSearching ? (
-                <IconLoader size={20} className="text-gray-400 animate-spin" />
+                <IconLoader size={20} className="text-gray-500 animate-spin" />
               ) : (
-                <IconSearch size={20} className="text-gray-400" />
+                <IconSearch size={20} className="text-gray-500" />
               )}
             </div>
             <input
@@ -571,7 +571,7 @@ export function Step1InmuebleSelection({
 
               {/* Direccion */}
               <div className="flex items-start gap-2">
-                <IconMapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                <IconMapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {data.inmueble.direccion}

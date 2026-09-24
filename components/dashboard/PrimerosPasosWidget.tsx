@@ -85,7 +85,7 @@ export function PrimerosPasosWidget() {
             <>
               <span
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                  p.hecho ? 'bg-primary-600 text-white' : 'border border-gray-300 bg-white text-gray-600'
+                  p.hecho ? 'bg-primary-700 text-white' : 'border border-gray-300 bg-white text-gray-600'
                 }`}
               >
                 {p.hecho ? <IconCheck size={16} aria-hidden /> : i + 1}
@@ -96,7 +96,7 @@ export function PrimerosPasosWidget() {
                 </span>
                 <span className="block text-xs text-gray-500">{p.detalle}</span>
               </span>
-              {!p.hecho && !p.bloqueado && <IconChevronRight size={18} className="shrink-0 text-gray-400" />}
+              {!p.hecho && !p.bloqueado && <IconChevronRight size={18} className="shrink-0 text-gray-500" />}
             </>
           )
           return (

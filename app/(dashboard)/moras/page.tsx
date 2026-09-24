@@ -295,7 +295,7 @@ export default function ReportarMoraPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="moras-contrato" className="block text-sm font-medium text-gray-700 mb-1">
-              Contrato <span className="text-coral-500">*</span>
+              Contrato <span className="text-coral-700">*</span>
             </label>
             {/* El filtro vive dentro del formulario de reporte: sin esto, un
                 Enter mientras se busca el contrato enviaba la mora a medias. */}
@@ -338,7 +338,7 @@ export default function ReportarMoraPage() {
           </div>
           <div>
             <label htmlFor="moras-fecha-de-vencimiento-del-canon" className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha de vencimiento del canon <span className="text-coral-500">*</span>
+              Fecha de vencimiento del canon <span className="text-coral-700">*</span>
             </label>
             <input id="moras-fecha-de-vencimiento-del-canon"
               type="date"
@@ -365,7 +365,7 @@ export default function ReportarMoraPage() {
             </div>
             <div>
               <label htmlFor="moras-fecha-del-reporte-hoy" className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha del reporte <span className="text-gray-400 font-normal">(hoy)</span>
+                Fecha del reporte <span className="text-gray-500 font-normal">(hoy)</span>
               </label>
               <input id="moras-fecha-del-reporte-hoy"
                 type="text"
@@ -380,7 +380,7 @@ export default function ReportarMoraPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="moras-monto-en-mora" className="block text-sm font-medium text-gray-700 mb-1">
-              Monto en mora <span className="text-coral-500">*</span>
+              Monto en mora <span className="text-coral-700">*</span>
             </label>
             <input id="moras-monto-en-mora"
               type="text"
@@ -397,7 +397,7 @@ export default function ReportarMoraPage() {
           </div>
           <div>
             <label htmlFor="moras-descripcion-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Descripción <span className="text-gray-400 font-normal">(opcional)</span>
+              Descripción <span className="text-gray-500 font-normal">(opcional)</span>
             </label>
             <input id="moras-descripcion-opcional"
               type="text"
@@ -414,7 +414,7 @@ export default function ReportarMoraPage() {
           <button
             type="submit"
             disabled={reportando || !contratoId || !monto}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-coral-500 hover:bg-coral-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-ink-900 bg-coral-500 hover:bg-coral-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
           >
             {reportando ? <IconLoader size={16} className="animate-spin" /> : <IconAlertTriangle size={16} />}
             {reportando ? 'Reportando…' : esInterno ? 'Registrar mora' : 'Reportar a Cofianza'}
@@ -580,7 +580,7 @@ export default function ReportarMoraPage() {
                         Sí
                       </span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -677,7 +677,7 @@ function KpiCard({
     color === 'primary'
       ? 'text-primary-600'
       : color === 'coral'
-        ? 'text-coral-500'
+        ? 'text-coral-700'
         : color === 'red'
           ? 'text-red-500'
           : 'text-gray-900'
@@ -870,7 +870,7 @@ function MoraDetalleModal({
           <button data-modal-close aria-label="Cerrar"
             type="button"
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md hover:bg-gray-100"
+            className="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
           >
             <IconX size={20} />
           </button>
@@ -924,7 +924,7 @@ function MoraDetalleModal({
                 </h3>
                 <div className="bg-gray-100 rounded-lg p-3 max-h-72 overflow-y-auto space-y-2">
                   {mora.mensajes.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">Sin mensajes todavía</p>
+                    <p className="text-xs text-gray-500 text-center py-4">Sin mensajes todavía</p>
                   ) : (
                     mora.mensajes.map((msg) => {
                       const esSistema = msg.autor_tipo === 'sistema'
@@ -1008,7 +1008,7 @@ function MoraDetalleModal({
                       type="button"
                       onClick={handleEnviarMensaje}
                       disabled={enviando || !mensaje.trim()}
-                      className="px-4 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg"
+                      className="px-4 py-2 text-sm font-bold text-white bg-primary-700 hover:bg-primary-800 disabled:opacity-50 rounded-lg"
                     >
                       {enviando ? <IconLoader size={14} className="animate-spin" /> : 'Enviar'}
                     </button>
@@ -1058,7 +1058,7 @@ function MoraDetalleModal({
                 type="button"
                 onClick={() => setEscalarAbierto(true)}
                 disabled={acting}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-coral-500 hover:bg-coral-600 rounded-lg disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-ink-900 bg-coral-500 hover:bg-coral-400 rounded-lg disabled:opacity-50"
               >
                 {acting ? <IconLoader size={14} className="animate-spin" /> : <IconClock size={14} />}
                 Escalar a {mora.estado === 'fase_1' ? 'Fase 2 (Urgencia)' : 'Fase 3 (Legal)'}

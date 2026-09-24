@@ -13,11 +13,11 @@ type BadgeKind = 'aprobado' | 'rechazado' | 'condicionado' | 'procesando' | 'esp
 const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
   aprobado: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
   rechazado: { wrap: 'bg-red-50 text-red-500', dot: 'bg-red-500' },
-  condicionado: { wrap: 'bg-coral-50 text-coral-600', dot: 'bg-coral-500' },
+  condicionado: { wrap: 'bg-coral-50 text-coral-700', dot: 'bg-coral-500' },
   procesando: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
   esperando: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
   expirado: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
-  sin: { wrap: 'bg-gray-50 text-gray-400 border border-dashed border-gray-300', dot: 'bg-gray-300' },
+  sin: { wrap: 'bg-gray-50 text-gray-500 border border-dashed border-gray-300', dot: 'bg-gray-300' },
 }
 
 function resolveBadge(

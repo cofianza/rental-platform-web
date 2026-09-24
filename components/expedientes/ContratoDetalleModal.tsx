@@ -57,7 +57,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
           <button type="button" data-modal-close aria-label="Cerrar"
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+            className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100"
           >
             <IconX size={20} />
           </button>
@@ -82,7 +82,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
               </div>
             ) : pdfLoading ? (
               <div className="flex items-center justify-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <IconLoader size={24} className="animate-spin text-gray-400" />
+                <IconLoader size={24} className="animate-spin text-gray-500" />
               </div>
             ) : pdfError ? (
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">

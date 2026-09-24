@@ -81,9 +81,9 @@ function AccordionSection({
           {badge}
         </div>
         {open ? (
-          <IconChevronUp size={16} className="text-gray-400" />
+          <IconChevronUp size={16} className="text-gray-500" />
         ) : (
-          <IconChevronDown size={16} className="text-gray-400" />
+          <IconChevronDown size={16} className="text-gray-500" />
         )}
       </button>
       {open && <div className="px-4 py-3">{children}</div>}
@@ -152,7 +152,7 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
           title="Resumen Crediticio"
           defaultOpen
           badge={
-            <span className="text-[10px] text-gray-400 font-normal">Consolidado general</span>
+            <span className="text-[10px] text-gray-500 font-normal">Consolidado general</span>
           }
         >
           <div className="grid grid-cols-2 gap-3">
@@ -227,17 +227,17 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
                   <p className="text-xs font-medium text-gray-700">
                     {consulta.NombreEntidad ?? 'Entidad desconocida'}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[10px] text-gray-500">
                     {consulta.Ciudad ?? ''}{consulta.MotivoConsulta ? ` · ${consulta.MotivoConsulta}` : ''}
                   </p>
                 </div>
-                <span className="text-[10px] text-gray-400 shrink-0 ml-2">
+                <span className="text-[10px] text-gray-500 shrink-0 ml-2">
                   {formatDate(consulta.FechaConsulta)}
                 </span>
               </div>
             ))}
             {huellas.length > 10 && (
-              <p className="text-[10px] text-gray-400 text-center">
+              <p className="text-[10px] text-gray-500 text-center">
                 y {huellas.length - 10} consultas mas...
               </p>
             )}

@@ -199,7 +199,7 @@ export function VerificacionIdentidadFirma({
               onClick={() => { void handleRevisar() }}
               disabled={guardando || nota.trim().length < 10}
               className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-                revision?.resultado === 'suplantacion' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+                revision?.resultado === 'suplantacion' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
               }`}
             >
               {guardando ? 'Guardando…' : revision?.resultado === 'suplantacion' ? 'Cancelar el contrato' : 'Confirmar identidad'}

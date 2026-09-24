@@ -156,7 +156,7 @@ export function SolicitarEstudioModal({
         {/* Observaciones */}
         <div>
           <label htmlFor="solicitar-estudio-modal-observaciones-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-            Observaciones <span className="text-gray-400">(opcional)</span>
+            Observaciones <span className="text-gray-500">(opcional)</span>
           </label>
           <textarea id="solicitar-estudio-modal-observaciones-opcional"
             value={observaciones}
@@ -180,7 +180,7 @@ export function SolicitarEstudioModal({
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {isLoading ? (
               <>

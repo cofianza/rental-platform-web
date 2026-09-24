@@ -74,8 +74,8 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
                   className={cn(
                     'flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors',
                     isCurrent && 'border-primary-600 bg-white text-primary-600 ring-4 ring-primary-100',
-                    isCompleted && 'border-primary-600 bg-primary-600 text-white',
-                    !isCurrent && !isCompleted && 'border-gray-300 bg-white text-gray-400',
+                    isCompleted && 'border-primary-700 bg-primary-700 text-white',
+                    !isCurrent && !isCompleted && 'border-gray-300 bg-white text-gray-500',
                     !clickable && !isCurrent && 'opacity-60',
                   )}
                 >
@@ -115,7 +115,7 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
                   'relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white transition-all',
-                  isCompleted && 'border-primary-600 bg-primary-600',
+                  isCompleted && 'border-primary-700 bg-primary-700',
                   clickable && 'cursor-pointer hover:ring-4 hover:ring-primary-100',
                   !clickable && 'cursor-default',
                   isCurrent && 'border-primary-600 ring-4 ring-primary-100',
@@ -129,7 +129,7 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
                     className={cn(
                       'text-sm font-bold',
                       isCurrent && 'text-primary-600',
-                      isPending && 'text-gray-400'
+                      isPending && 'text-gray-500'
                     )}
                   >
                     {stepNumber}
@@ -141,7 +141,7 @@ export function WizardStepIndicator({ currentStep, onStepClick, steps = WIZARD_S
                 className={cn(
                   'mt-2 px-1 text-center text-[10px] font-bold uppercase tracking-wide leading-tight lg:text-[11px]',
                   (isCompleted || isCurrent) && 'text-primary-700',
-                  isPending && 'text-gray-400'
+                  isPending && 'text-gray-500'
                 )}
               >
                 {step}

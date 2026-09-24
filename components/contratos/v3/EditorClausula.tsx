@@ -196,7 +196,7 @@ function Formulario({
 
       <div>
         <label htmlFor={idTexto} className="mb-1 block text-sm font-medium text-gray-700">
-          Texto<span className="text-coral-500"> *</span>
+          Texto<span className="text-coral-700"> *</span>
         </label>
         <textarea
           id={idTexto}

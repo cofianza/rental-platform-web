@@ -184,7 +184,7 @@ export function SoporteSection() {
         right={
           <button
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-white hover:bg-coral-600 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-ink-900 hover:bg-coral-400 transition-colors"
           >
             <IconPlus size={16} /> Nuevo ticket
           </button>
@@ -274,7 +274,7 @@ export function SoporteSection() {
                   action: (
                     <button
                       onClick={() => setCreateOpen(true)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-white hover:bg-coral-600 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-ink-900 hover:bg-coral-400 transition-colors"
                     >
                       <IconPlus size={16} /> Nuevo ticket
                     </button>
@@ -321,7 +321,7 @@ export function SoporteSection() {
                 <Td className="text-right">
                   <button
                     onClick={() => openDetail(t.id)}
-                    className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-coral-400 hover:text-coral-600 transition-colors"
+                    className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-coral-400 hover:text-coral-700 transition-colors"
                   >
                     Ver
                   </button>
@@ -391,7 +391,7 @@ export function SoporteSection() {
             <button
               onClick={handleCreate}
               disabled={creating}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
             >
               {creating && <IconLoader size={16} className="animate-spin" />}
               Crear ticket
@@ -406,31 +406,31 @@ export function SoporteSection() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Remitente</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Remitente</div>
                 <div className="font-medium text-gray-900">
                   {detail.remitente ? `${detail.remitente.nombre} ${detail.remitente.apellido}`.trim() : '—'}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Tipo</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Tipo</div>
                 <div className="text-gray-700">{detail.tipo}</div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Prioridad</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Prioridad</div>
                 <Chip tone={PRIORIDAD_TONE[detail.prioridad]}>{PRIORIDAD_LABEL[detail.prioridad]}</Chip>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Creado</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Creado</div>
                 <div className="text-gray-700">{fechaCorta(detail.createdAt)}</div>
               </div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">Asunto</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Asunto</div>
               <p className="text-sm font-medium text-gray-900">{detail.asunto}</p>
               {detail.descripcion && <p className="mt-1 text-sm text-gray-600 leading-relaxed">{detail.descripcion}</p>}
             </div>
             <div className="pt-3 border-t border-gray-200">
-              <div className="text-[11px] uppercase tracking-wide text-gray-400 mb-2">Cambiar estado</div>
+              <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Cambiar estado</div>
               <div className="flex flex-wrap gap-2">
                 {(['abierto', 'en_proceso', 'resuelto'] as TicketEstado[]).map((es) => (
                   <button
@@ -485,7 +485,7 @@ function CeldaSla({
   const barColor =
     estado === 'vencido' ? 'bg-red-500' : estado === 'warning' ? 'bg-coral-500' : 'bg-primary-500'
   const textColor =
-    estado === 'vencido' ? 'text-red-600' : estado === 'warning' ? 'text-coral-600' : 'text-primary-700'
+    estado === 'vencido' ? 'text-red-600' : estado === 'warning' ? 'text-coral-700' : 'text-primary-700'
 
   return (
     <div className="min-w-26">

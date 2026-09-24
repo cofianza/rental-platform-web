@@ -188,7 +188,7 @@ export function ExpedientesTable({
         {puedeCrear && (
           <button
             onClick={() => router.push('/expedientes/nuevo')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
             {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
@@ -543,7 +543,7 @@ export function ExpedientesTable({
                     className={cn(
                       'w-8 h-8 rounded text-sm font-medium transition-colors',
                       pageNum === meta.page
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-primary-700 text-white'
                         : 'hover:bg-gray-100 text-gray-600'
                     )}
                   >

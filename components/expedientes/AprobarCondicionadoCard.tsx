@@ -137,7 +137,7 @@ export function AprobarCondicionadoCard({
                   <button
                     onClick={() => setConfirmAprobarOpen(true)}
                     disabled={loading || enviandoEnlace}
-                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
                   >
                     {loading ? 'Aprobando…' : 'Aprobar estudio'}
                   </button>
@@ -266,7 +266,7 @@ export function AprobarCondicionadoCard({
             type="button"
             onClick={() => { void handleAprobar() }}
             disabled={loading || fundamento.trim().length < 10 || !evaluacionCompleta(evaluacion)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}
           </button>

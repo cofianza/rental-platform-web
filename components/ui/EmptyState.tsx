@@ -36,7 +36,7 @@ export function EmptyState({
       {/* Icono */}
       {Icon && (
         <div className="mb-4">
-          <Icon size={64} className="text-gray-400" />
+          <Icon size={64} className="text-gray-500" />
         </div>
       )}
 
@@ -52,7 +52,7 @@ export function EmptyState({
       {action && (
         <button
           onClick={action.onClick}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors text-sm font-medium"
         >
           {action.label}
         </button>

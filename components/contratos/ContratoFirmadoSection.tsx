@@ -266,7 +266,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
             {puedeSubir && (
               <button
                 onClick={() => setSubirOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
               >
                 <IconUpload size={14} />
                 Subir contrato firmado
@@ -303,7 +303,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
           {puedeSubir && (
             <button
               onClick={() => setSubirOpen(true)}
-              className="flex items-center gap-1.5 mx-auto px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              className="flex items-center gap-1.5 mx-auto px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
             >
               <IconUpload size={16} />
               Subir contrato firmado

@@ -290,30 +290,30 @@ export default function MiInmobiliariaPage() {
                   className="h-20 w-20 rounded-lg object-contain border border-gray-200 bg-gray-50"
                 />
               ) : (
-                <div className="h-20 w-20 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-[11px] text-gray-400 text-center px-2">
+                <div className="h-20 w-20 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-[11px] text-gray-500 text-center px-2">
                   Sin logo
                 </div>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Nombre comercial</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Nombre comercial</div>
                 <div className="font-medium text-gray-900">
                   {perfil.razon_social || `${perfil.nombre} ${perfil.apellido}`.trim() || '—'}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">NIT / Documento</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">NIT / Documento</div>
                 <div className="font-medium text-gray-900">{perfil.numero_documento || '—'}</div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Dirección</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Dirección</div>
                 <div className="font-medium text-gray-900">
                   {[perfil.domicilio_direccion, perfil.domicilio_ciudad].filter(Boolean).join(', ') || '—'}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-400">Contacto</div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-500">Contacto</div>
                 <div className="font-medium text-gray-900">
                   {perfil.whatsapp_recaudo || perfil.email_recaudo || '—'}
                 </div>
@@ -364,14 +364,14 @@ export default function MiInmobiliariaPage() {
             )}
           </div>
           {soloLectura ? (
-            <p className="mt-3 text-xs text-gray-400">Solo el titular de la inmobiliaria puede editar este dato.</p>
+            <p className="mt-3 text-xs text-gray-500">Solo el titular de la inmobiliaria puede editar este dato.</p>
           ) : (
             <div className="mt-4 text-right">
               <button
                 type="button"
                 onClick={guardarAfianzadora}
                 disabled={savingAf || !afDirty}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingAf ? <IconLoader size={15} className="animate-spin" /> : null}
                 {savingAf ? 'Guardando…' : 'Guardar'}
@@ -525,7 +525,7 @@ function DocumentoCard({
             className="flex items-center gap-1.5 font-medium text-gray-800"
             title={documento.nombre_archivo}
           >
-            <IconFileText size={13} className="shrink-0 text-gray-400" />
+            <IconFileText size={13} className="shrink-0 text-gray-500" />
             <span className="truncate">{documento.nombre_archivo}</span>
           </p>
           <p className="mt-0.5 text-gray-500">
@@ -582,7 +582,7 @@ function DocumentoCard({
         )}
 
         {soloLectura && !cargado && (
-          <p className="text-center text-xs text-gray-400">Pendiente — lo carga el titular.</p>
+          <p className="text-center text-xs text-gray-500">Pendiente — lo carga el titular.</p>
         )}
 
         <input

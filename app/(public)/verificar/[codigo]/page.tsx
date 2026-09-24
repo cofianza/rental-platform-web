@@ -110,7 +110,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         <p className="text-sm text-gray-600 mb-4">
           El código <span className="font-mono font-medium">{codigo}</span> no corresponde a ningún certificado emitido.
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-500">
           Si crees que esto es un error, contacta a {data.empresa}.
         </p>
       </div>
@@ -175,14 +175,14 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
 
         {/* Footer */}
         <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-gray-500 text-center">
             Emitido por {data.empresa}
           </p>
         </div>
       </div>
 
       {/* Disclaimer */}
-      <p className="text-xs text-gray-400 text-center mt-6 px-4">
+      <p className="text-xs text-gray-500 text-center mt-6 px-4">
         Este certificado fue generado electrónicamente. La información mostrada ha sido parcialmente
         enmascarada por privacidad. Para más información, contacta a {data.empresa}.
       </p>

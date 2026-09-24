@@ -140,7 +140,7 @@ function CitaSection({
       <div className="flex items-center gap-2 mb-3">
         {icon}
         <h3 className="text-sm font-semibold text-gray-700">
-          {title} <span className="text-gray-400 font-normal">({items.length})</span>
+          {title} <span className="text-gray-500 font-normal">({items.length})</span>
         </h3>
       </div>
       <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
@@ -222,7 +222,7 @@ function ExpedienteSection({
       <div className="flex items-center gap-2 mb-3">
         {icon}
         <h3 className="text-sm font-semibold text-gray-700">
-          {title} <span className="text-gray-400 font-normal">({items.length})</span>
+          {title} <span className="text-gray-500 font-normal">({items.length})</span>
         </h3>
       </div>
       <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">

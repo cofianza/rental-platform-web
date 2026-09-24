@@ -159,7 +159,7 @@ export default function CargarDocumentosPage() {
             <button
               type="button"
               onClick={reintentar}
-              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800"
             >
               <IconRefresh size={16} /> Reintentar
             </button>
@@ -247,7 +247,7 @@ export default function CargarDocumentosPage() {
             <button
               type="submit"
               disabled={subiendo}
-              className="w-full px-5 py-2.5 text-sm font-medium text-white bg-coral-500 rounded-lg hover:bg-coral-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full px-5 py-2.5 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {subiendo ? <IconLoader size={16} className="animate-spin" /> : null}
               {subiendo ? 'Subiendo…' : 'Subir documento'}

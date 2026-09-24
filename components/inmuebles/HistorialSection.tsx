@@ -170,10 +170,10 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
     return (
       <div className="text-center py-12">
         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <IconHistory size={24} className="text-gray-400" />
+          <IconHistory size={24} className="text-gray-500" />
         </div>
         <p className="text-gray-600 mb-1">No hay cambios registrados</p>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-gray-500">
           Los cambios se registran automáticamente al editar el inmueble
         </p>
       </div>
@@ -253,7 +253,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
         )}
 
         {total > 0 && (
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-gray-500 ml-auto">
             {total} resultado{total !== 1 ? 's' : ''}
           </span>
         )}
@@ -319,7 +319,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
                       >
                         {cambio.campo_label}
                       </span>
-                      <span className="text-xs text-gray-400 whitespace-nowrap flex items-center gap-1">
+                      <span className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
                         <IconClock size={12} />
                         {getTimeString(cambio.created_at)}
                       </span>
@@ -330,7 +330,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
                       <span className="text-gray-500 line-through">
                         {formatValue(cambio.campo, cambio.valor_anterior)}
                       </span>
-                      <span className="text-gray-400 mx-1.5">&rarr;</span>
+                      <span className="text-gray-500 mx-1.5">&rarr;</span>
                       <span className={cn(
                         'font-medium',
                         isEstado ? 'text-amber-700' : 'text-gray-900'
@@ -340,7 +340,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
                     </div>
 
                     {/* User */}
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <IconUser size={12} />
                       <span>{cambio.usuario_nombre || 'Usuario desconocido'}</span>
                     </div>

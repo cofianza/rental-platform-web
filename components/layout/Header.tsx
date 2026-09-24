@@ -57,7 +57,7 @@ export function Header() {
             {breadcrumbs.map((crumb, index) => (
               <div key={crumb.href} className="flex items-center gap-2">
                 {index > 0 && (
-                  <IconChevronRight size={16} className="text-gray-400" />
+                  <IconChevronRight size={16} className="text-gray-500" />
                 )}
                 {crumb.isLast ? (
                   <span className="text-sm font-medium text-gray-900">
@@ -100,7 +100,7 @@ export function Header() {
             </span>
             <span className="text-xs text-gray-500">{rolDisplay}</span>
           </div>
-          <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+          <div className="w-10 h-10 bg-primary-700 rounded-full flex items-center justify-center text-white font-semibold text-sm">
             {iniciales}
           </div>
         </Link>

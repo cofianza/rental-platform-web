@@ -121,7 +121,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
               onClick={logout}
               aria-label="Cerrar sesión"
               title="Cerrar sesión"
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-ink-500 transition-colors hover:bg-ink-50 hover:text-coral-600"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-ink-500 transition-colors hover:bg-ink-50 hover:text-coral-700"
             >
               <IconLogOut size={16} />
             </button>
@@ -149,7 +149,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
             >
               <Icon size={14} /> {it.label}
               {it.href === '/interesados' && interesadosNuevos > 0 && (
-                <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">{interesadosNuevos}</span>
+                <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-ink-900">{interesadosNuevos}</span>
               )}
             </Link>
           )
@@ -180,7 +180,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
                   >
                     <Icon size={17} /> {it.label}
                     {it.href === '/interesados' && interesadosNuevos > 0 && (
-                      <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">{interesadosNuevos}</span>
+                      <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-ink-900">{interesadosNuevos}</span>
                     )}
                   </Link>
                 )

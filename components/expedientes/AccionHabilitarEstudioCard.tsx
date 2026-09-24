@@ -238,7 +238,7 @@ export function AccionHabilitarEstudioCard({
               <button
                 onClick={handleOmitirCita}
                 disabled={submitting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && <IconLoader size={14} className="animate-spin" />}
                 Omitir cita y continuar
@@ -284,7 +284,7 @@ export function AccionHabilitarEstudioCard({
                     className={[
                       'px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50',
                       proveedor === b.value
-                        ? 'bg-primary-600 text-white border-primary-600'
+                        ? 'bg-primary-700 text-white border-primary-700'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
                     ].join(' ')}
                   >
@@ -297,7 +297,7 @@ export function AccionHabilitarEstudioCard({
               <button
                 onClick={handleHabilitar}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {submitting ? <IconLoader size={14} className="animate-spin" /> : <IconShieldCheck size={14} />}
                 Habilitar evaluación

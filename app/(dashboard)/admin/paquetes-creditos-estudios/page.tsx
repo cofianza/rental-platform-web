@@ -173,7 +173,7 @@ export default function AdminPaquetesPage() {
         actions={
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 transition"
           >
             <IconPlus size={16} />
             Nuevo paquete
@@ -393,7 +393,7 @@ export default function AdminPaquetesPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 transition flex items-center gap-2"
             >
               {saving && <IconLoader className="animate-spin" size={14} />}
               {editing ? 'Guardar cambios' : 'Crear paquete'}

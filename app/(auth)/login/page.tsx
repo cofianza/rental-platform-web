@@ -287,8 +287,8 @@ function LoginForm() {
           type="submit"
           disabled={isLoading}
           className={cn(
-            'w-full py-3.5 rounded-xl text-white font-bold text-[15px] flex items-center justify-center gap-2',
-            'bg-coral-500 hover:bg-coral-600 hover:-translate-y-px transition-all',
+            'w-full py-3.5 rounded-xl text-ink-900 font-bold text-[15px] flex items-center justify-center gap-2',
+            'bg-coral-500 hover:bg-coral-400 hover:-translate-y-px transition-all',
             'shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)]',
             'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
           )}

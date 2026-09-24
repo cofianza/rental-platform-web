@@ -237,7 +237,7 @@ export function FirmantesContratoSection({
                 {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
                 Recordatorio
               </button>
-              <span className="text-[11px] font-medium text-gray-400" title="Recordatorios/envíos realizados de los permitidos">
+              <span className="text-[11px] font-medium text-gray-500" title="Recordatorios/envíos realizados de los permitidos">
                 {solicitud.envios_realizados}/{solicitud.max_envios}
               </span>
             </span>
@@ -245,7 +245,7 @@ export function FirmantesContratoSection({
           <button
             onClick={() => cargar(true)}
             disabled={refreshing || isLoading}
-            className="p-1 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+            className="p-1 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
             title="Actualizar estado de firmas"
           >
             <IconRefresh size={14} className={refreshing ? 'animate-spin' : ''} />
@@ -352,7 +352,7 @@ export function FirmantesContratoSection({
                   <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${firmado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                     {firmado ? <IconCheck size={14} /> : f.orden}
                   </span>
-                  <span className={`shrink-0 ${firmado ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`shrink-0 ${firmado ? 'text-green-600' : 'text-gray-500'}`}>
                     <Icon size={16} />
                   </span>
                   <div className="min-w-0">
@@ -371,11 +371,11 @@ export function FirmantesContratoSection({
                       </p>
                     )}
                     {f.firmado_en ? (
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
                         <IconClock size={11} /> Firmó el {formatDateTime(f.firmado_en)}
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-400 truncate">{f.email}</p>
+                      <p className="text-xs text-gray-500 truncate">{f.email}</p>
                     )}
                   </div>
                 </div>
@@ -389,7 +389,7 @@ export function FirmantesContratoSection({
       )}
 
       {pendientes && !isLoading && !sinProceso && (
-        <p className="mt-3 text-xs text-gray-400">
+        <p className="mt-3 text-xs text-gray-500">
           Se actualiza solo cuando cada parte firma. También puedes refrescar con ↻.
         </p>
       )}

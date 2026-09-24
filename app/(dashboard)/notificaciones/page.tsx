@@ -239,7 +239,7 @@ export default function NotificacionesPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading && lista.length === 0 ? (
           <div className="flex items-center justify-center py-16">
-            <IconLoader size={24} className="animate-spin text-gray-400" />
+            <IconLoader size={24} className="animate-spin text-gray-500" />
           </div>
         ) : fallo && lista.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -279,7 +279,7 @@ export default function NotificacionesPage() {
                         <p className={cn('text-sm text-gray-900', unread && 'font-semibold')}>
                           {n.titulo}
                         </p>
-                        <span className="text-xs text-gray-400 shrink-0">{formatDateTime(n.created_at)}</span>
+                        <span className="text-xs text-gray-500 shrink-0">{formatDateTime(n.created_at)}</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">{n.mensaje}</p>
                     </div>
@@ -305,7 +305,7 @@ export default function NotificacionesPage() {
                 Cargar más ({total - todas.length} anteriores)
               </button>
             )}
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               Mostrando {todas.length} de {total}
             </p>
           </div>

@@ -61,13 +61,13 @@ export function ExpedientesSection({
     return (
       <div className="text-center py-8">
         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <IconFolderOpen size={24} className="text-gray-400" />
+          <IconFolderOpen size={24} className="text-gray-500" />
         </div>
         <p className="text-gray-600 mb-4">No hay estudios asociados a este inmueble</p>
         {canCreate && (
           <Link
             href={`/expedientes/nuevo?inmueble_id=${inmuebleId}`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={16} />
             Crear Estudio
@@ -120,7 +120,7 @@ export function ExpedientesSection({
                   {solicitanteNombre}
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-400">
+              <div className="flex items-center gap-3 text-sm text-gray-500">
                 <span>{formatDate(expediente.created_at)}</span>
                 <IconExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>

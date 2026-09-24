@@ -152,7 +152,7 @@ function VersionHistoryPanel({ documentoId }: { documentoId: string }) {
         <div className="mt-2 space-y-2">
           {isLoading ? (
             <div className="flex items-center gap-2 py-2">
-              <IconLoader size={14} className="animate-spin text-gray-400" />
+              <IconLoader size={14} className="animate-spin text-gray-500" />
               <span className="text-xs text-gray-500">Cargando...</span>
             </div>
           ) : error ? (
@@ -433,7 +433,7 @@ function DocumentUploadCard({
                   <button
                     onClick={(e) => { e.stopPropagation(); handleCameraClick() }}
                     disabled={isUploading}
-                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <IconCamera size={16} />
                     Tomar nueva selfie
@@ -451,7 +451,7 @@ function DocumentUploadCard({
                 <button
                   onClick={handleClick}
                   disabled={isUploading}
-                  className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <IconUpload size={16} />
                   Resubir documento
@@ -521,18 +521,18 @@ function DocumentUploadCard({
                         e.stopPropagation()
                         handleCameraClick()
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
                     >
                       <IconCamera size={20} />
                       Tomar selfie con camara
                     </button>
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-gray-500">
                       <div className="flex-1 h-px bg-gray-200" />
                       <span className="text-xs">o</span>
                       <div className="flex-1 h-px bg-gray-200" />
                     </div>
                     <div className="text-center">
-                      <IconUpload size={24} className="mx-auto text-gray-400 mb-1" />
+                      <IconUpload size={24} className="mx-auto text-gray-500 mb-1" />
                       <p className="text-xs text-gray-500">
                         Subir imagen existente
                       </p>
@@ -540,7 +540,7 @@ function DocumentUploadCard({
                   </div>
                 ) : (
                   <>
-                    <IconUpload size={32} className="mx-auto text-gray-400 mb-2" />
+                    <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
                     <p className="text-sm font-medium text-gray-900">
                       Arrastra un archivo o haz clic para seleccionar
                     </p>

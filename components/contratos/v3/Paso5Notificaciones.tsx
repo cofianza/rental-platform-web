@@ -338,9 +338,9 @@ export function VistaPreviaContrato({
               )}
             >
               {v3.accion === 'propio' ? (
-                <IconLoader size={28} className="animate-spin text-gray-400" />
+                <IconLoader size={28} className="animate-spin text-gray-500" />
               ) : (
-                <IconUpload size={28} className="text-gray-400" />
+                <IconUpload size={28} className="text-gray-500" />
               )}
               <span className="text-sm font-medium text-gray-900">
                 {v3.accion === 'propio' ? 'Cargando…' : 'Arrastra el PDF aquí o haz clic para elegirlo'}

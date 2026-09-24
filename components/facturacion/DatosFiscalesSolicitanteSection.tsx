@@ -198,7 +198,7 @@ export function DatosFiscalesSolicitanteSection() {
   if (loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-400" />
+        <IconLoader size={20} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -291,7 +291,7 @@ export function DatosFiscalesSolicitanteSection() {
                 disabled
                 className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-700"
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Para cambiar tu nombre, contacta soporte.
               </p>
             </div>
@@ -429,7 +429,7 @@ export function DatosFiscalesSolicitanteSection() {
           <button
             type="submit"
             disabled={saving || !dirty}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? (
               <IconLoader size={16} className="animate-spin" />

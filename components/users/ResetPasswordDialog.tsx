@@ -93,7 +93,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
         <button type="button" data-modal-close
           onClick={onClose}
           disabled={loading}
-          className="text-gray-400 hover:text-gray-600 disabled:opacity-40"
+          className="text-gray-500 hover:text-gray-600 disabled:opacity-40"
           aria-label="Cerrar"
         >
           <IconX size={20} />
@@ -139,7 +139,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
               <button
                 type="button"
                 onClick={() => setShowPwd((s) => !s)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600"
                 tabIndex={-1}
               >
                 {showPwd ? <IconEyeOff size={16} /> : <IconEye size={16} />}

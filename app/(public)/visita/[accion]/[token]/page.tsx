@@ -225,7 +225,7 @@ export default function GestionarVisitaPage() {
         <div className="mt-4 space-y-2 text-sm">
           {visita.inmueble && (
             <div className="flex items-start gap-2">
-              <IconMapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
+              <IconMapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
               <span className="text-gray-700">
                 {visita.inmueble.direccion}, {visita.inmueble.ciudad}
               </span>
@@ -233,7 +233,7 @@ export default function GestionarVisitaPage() {
           )}
           {visita.fecha && (
             <div className="flex items-center gap-2">
-              <IconCalendar size={16} className="text-gray-400 shrink-0" />
+              <IconCalendar size={16} className="text-gray-500 shrink-0" />
               <span className="text-gray-700 capitalize">{fmtFechaLarga(visita.fecha)}</span>
             </div>
           )}
@@ -287,7 +287,7 @@ export default function GestionarVisitaPage() {
                 type="button"
                 onClick={handleConfirmar}
                 disabled={submitting}
-                className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <IconLoader size={16} className="animate-spin" />}
                 Sí, confirmo mi asistencia
@@ -336,7 +336,7 @@ export default function GestionarVisitaPage() {
           <p className="text-sm font-medium text-gray-700 mb-3">Horarios disponibles</p>
           {slotsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <IconLoader size={24} className="animate-spin text-gray-400" />
+              <IconLoader size={24} className="animate-spin text-gray-500" />
             </div>
           ) : slotsError ? (
             <div className="py-4 text-center">
@@ -372,7 +372,7 @@ export default function GestionarVisitaPage() {
                         className={cn(
                           'px-3 py-1.5 rounded-lg border text-sm font-medium transition flex items-center gap-1',
                           slotSel === s.inicio
-                            ? 'bg-primary-600 text-white border-primary-600'
+                            ? 'bg-primary-700 text-white border-primary-700'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400',
                         )}
                       >
@@ -392,7 +392,7 @@ export default function GestionarVisitaPage() {
             type="button"
             onClick={handleReprogramar}
             disabled={submitting || !slotSel}
-            className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting && <IconLoader size={16} className="animate-spin" />}
             Confirmar nueva fecha

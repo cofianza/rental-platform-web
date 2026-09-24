@@ -63,7 +63,7 @@ export function ContratoVerificacionView({ contratoId }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <IconLoader size={28} className="animate-spin text-gray-400" />
+        <IconLoader size={28} className="animate-spin text-gray-500" />
       </div>
     )
   }

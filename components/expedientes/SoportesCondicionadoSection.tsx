@@ -162,7 +162,7 @@ export function SoportesCondicionadoSection({
         <ul className="space-y-2">
           {soportes.map((doc) => (
             <li key={doc.id} className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg">
-              <IconFileText size={20} className="text-gray-400 shrink-0 mt-0.5" />
+              <IconFileText size={20} className="text-gray-500 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{doc.nombre_original}</p>
                 <p className="text-xs text-gray-500">
@@ -188,7 +188,7 @@ export function SoportesCondicionadoSection({
       {permitirSubir && !showUploadForm && (
         <button
           onClick={() => setShowUploadForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconPlus size={16} />
           Subir documento
@@ -231,7 +231,7 @@ export function SoportesCondicionadoSection({
             <button
               onClick={handleUpload}
               disabled={uploading || !file}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors"
             >
               {uploading ? 'Subiendo…' : 'Subir'}
             </button>

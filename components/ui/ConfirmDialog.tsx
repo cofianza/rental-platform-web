@@ -90,7 +90,7 @@ export function ConfirmDialog({
               'text-white',
               variant === 'danger'
                 ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-primary-600 hover:bg-primary-700',
+                : 'bg-primary-700 hover:bg-primary-800',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >

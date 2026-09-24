@@ -36,7 +36,7 @@ export default function InmuebleError({ reset }: { error: Error & { digest?: str
                 reset()
               })
             }
-            className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 disabled:opacity-60"
+            className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-700 text-white font-medium hover:bg-primary-800 disabled:opacity-60"
           >
             {reintentando ? 'Reintentando…' : 'Reintentar'}
           </button>

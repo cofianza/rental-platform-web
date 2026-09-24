@@ -272,7 +272,7 @@ function TarifaOverrideModal({
             type="button"
             onClick={guardar}
             disabled={guardando}
-            className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            className="rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-800 disabled:opacity-50"
           >
             {guardando ? 'Guardando…' : 'Guardar'}
           </button>

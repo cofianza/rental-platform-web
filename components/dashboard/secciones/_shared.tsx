@@ -201,7 +201,7 @@ type KpiTone = 'green' | 'orange' | 'blue' | 'red' | 'purple' | 'gray'
 
 const KPI_TONE: Record<KpiTone, { value: string; iconBg: string }> = {
   green: { value: 'text-primary-700', iconBg: 'bg-primary-50 text-primary-600' },
-  orange: { value: 'text-coral-600', iconBg: 'bg-coral-50 text-coral-600' },
+  orange: { value: 'text-coral-700', iconBg: 'bg-coral-50 text-coral-700' },
   blue: { value: 'text-blue-600', iconBg: 'bg-blue-50 text-blue-600' },
   red: { value: 'text-red-600', iconBg: 'bg-red-50 text-red-600' },
   purple: { value: 'text-purple-600', iconBg: 'bg-purple-50 text-purple-600' },

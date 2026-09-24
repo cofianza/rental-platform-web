@@ -41,7 +41,7 @@ export function SearchInput({
     <div className={cn('relative', className)}>
       {/* Icono de lupa */}
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <IconSearch size={18} className="text-gray-400" />
+        <IconSearch size={18} className="text-gray-500" />
       </div>
 
       {/* Input */}
@@ -67,7 +67,7 @@ export function SearchInput({
           className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-700 transition-colors"
           aria-label="Limpiar búsqueda"
         >
-          <IconX size={16} className="text-gray-400 hover:text-gray-600" />
+          <IconX size={16} className="text-gray-500 hover:text-gray-600" />
         </button>
       )}
     </div>

@@ -203,7 +203,7 @@ export default function InvitacionMiembroPage() {
         <p className="text-sm text-gray-600 mb-6">{errorMsg}</p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           <IconHome size={16} />
           Volver al inicio
@@ -225,7 +225,7 @@ export default function InvitacionMiembroPage() {
         </p>
         <button
           onClick={() => router.push('/login')}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Iniciar sesión
         </button>
@@ -276,7 +276,7 @@ export default function InvitacionMiembroPage() {
           </p>
           <button
             onClick={() => saveTokenAndGo('/login')}
-            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             Iniciar sesión
           </button>
@@ -336,7 +336,7 @@ export default function InvitacionMiembroPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <IconLoader size={16} className="animate-spin" /> : null}
             Crear cuenta y unirme
@@ -407,7 +407,7 @@ export default function InvitacionMiembroPage() {
           <button
             onClick={handleAceptar}
             disabled={submitting}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <IconLoader size={16} className="animate-spin" /> : null}
             Aceptar invitación

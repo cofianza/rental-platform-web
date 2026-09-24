@@ -13,7 +13,7 @@ export default function PaginaNoEncontrada() {
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           href="/vitrina"
-          className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700"
+          className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-700 text-white font-medium hover:bg-primary-800"
         >
           Ver inmuebles
         </Link>

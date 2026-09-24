@@ -58,7 +58,7 @@ function VitrinaToggle({
       }
     >
       {disabled ? (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-100 text-gray-400 text-[11px]">
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-100 text-gray-500 text-[11px]">
           <IconEyeOff size={13} />
           No disponible
         </span>
@@ -145,7 +145,7 @@ function SortableHeader({
       <Icon
         size={14}
         className={`transition-colors ${
-          isActive ? 'text-primary-600' : 'text-gray-400 opacity-0 group-hover:opacity-100'
+          isActive ? 'text-primary-600' : 'text-gray-500 opacity-0 group-hover:opacity-100'
         }`}
       />
     </button>
@@ -186,7 +186,7 @@ export function InmueblesTable({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconRefresh size={18} />
             Reintentar
@@ -204,7 +204,7 @@ export function InmueblesTable({
         {canCreate && onCreateNew && (
           <button
             onClick={onCreateNew}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
             Nuevo Inmueble

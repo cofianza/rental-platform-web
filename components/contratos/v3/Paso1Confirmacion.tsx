@@ -238,7 +238,7 @@ export function Paso1Confirmacion({
 
       <fieldset className="space-y-2.5">
         <legend className="mb-2 text-sm font-medium text-gray-700">
-          Modalidad de la fianza<span className="text-coral-500"> *</span>
+          Modalidad de la fianza<span className="text-coral-700"> *</span>
         </legend>
         <OpcionTarjeta
           name="modalidad"

@@ -180,7 +180,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
       <div>
         <FilterChips filtro={filtro} onChange={handleFiltroChange} />
         <div className="flex items-center justify-center py-12">
-          <IconLoader size={24} className="text-gray-400 animate-spin" />
+          <IconLoader size={24} className="text-gray-500 animate-spin" />
         </div>
       </div>
     )
@@ -303,7 +303,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
       {/* Total info */}
       {pagination && (
-        <p className="text-xs text-gray-400 text-center mt-3">
+        <p className="text-xs text-gray-500 text-center mt-3">
           Mostrando {eventos.length} de {pagination.total} eventos
         </p>
       )}

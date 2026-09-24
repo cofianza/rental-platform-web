@@ -344,7 +344,7 @@ export default function InmuebleDetailPage() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => fetchInmueble()}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconRefresh size={16} />
               Reintentar
@@ -396,7 +396,7 @@ export default function InmuebleDetailPage() {
             <Link
               key="iniciar-estudio"
               href={`/expedientes/nuevo?inmueble_id=${inmueble.id}`}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlay size={16} />
               Iniciar Estudio
@@ -444,7 +444,7 @@ export default function InmuebleDetailPage() {
             actions.push(
               <span
                 key="ver-contrato-loading"
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-400"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-500"
               >
                 <IconLoader size={16} className="animate-spin" />
                 Cargando contrato…
@@ -554,7 +554,7 @@ export default function InmuebleDetailPage() {
                 priority
               />
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
                 <IconBuilding2 size={64} />
                 <span className="mt-2 text-sm">Sin foto de fachada</span>
               </div>
@@ -855,7 +855,7 @@ export default function InmuebleDetailPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <IconGlobe size={18} className="text-gray-400" />
+                  <IconGlobe size={18} className="text-gray-500" />
                   <span className="text-sm font-medium text-gray-900">
                     Visible en vitrina
                   </span>
@@ -882,7 +882,7 @@ export default function InmuebleDetailPage() {
                     {isTogglingVitrina && (
                       <IconLoader
                         size={12}
-                        className="absolute inset-0 m-auto text-gray-400 animate-spin"
+                        className="absolute inset-0 m-auto text-gray-500 animate-spin"
                       />
                     )}
                   </span>

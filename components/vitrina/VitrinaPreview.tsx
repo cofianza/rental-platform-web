@@ -95,7 +95,7 @@ export function VitrinaPreview() {
             <p className="text-gray-500 mb-4">Aún no hay inmuebles publicados en la vitrina.</p>
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-xl hover:bg-primary-800 transition-colors"
             >
               Registrarme →
             </Link>
@@ -110,7 +110,7 @@ export function VitrinaPreview() {
             <div className="flex justify-center mt-12">
               <Link
                 href="/vitrina"
-                className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-2xl shadow-lg shadow-primary-600/25 transition-all hover:-translate-y-px"
+                className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold text-white bg-primary-700 hover:bg-primary-800 rounded-2xl shadow-lg shadow-primary-600/25 transition-all hover:-translate-y-px"
               >
                 Ver todos los inmuebles →
               </Link>
@@ -159,7 +159,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
         {/* Badge NUEVO (arriba-derecha) */}
         {nuevo && (
-          <span className="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-coral-500 text-white uppercase tracking-wide shadow-sm">
+          <span className="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-coral-500 text-ink-900 uppercase tracking-wide shadow-sm">
             Nuevo
           </span>
         )}
@@ -210,7 +210,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             <div className="text-xl font-extrabold text-ink-900 leading-none">
               {formatCurrency(property.valor_arriendo)}
             </div>
-            <div className="text-[11px] text-gray-400 mt-1">Canon mensual</div>
+            <div className="text-[11px] text-gray-500 mt-1">Canon mensual</div>
           </div>
           <span className="text-sm font-semibold text-primary-600 group-hover:gap-2 inline-flex items-center gap-1 transition-all">
             Me interesa →

@@ -42,7 +42,7 @@ function arrendatario(c: IContratoListItem): string {
 
 function Propiedad({ c }: { c: IContratoListItem }) {
   const inm = c.expedientes?.inmuebles
-  if (!inm) return <span className="text-gray-400">—</span>
+  if (!inm) return <span className="text-gray-500">—</span>
   return (
     <div>
       <span className="text-gray-900">
@@ -77,7 +77,7 @@ function Arrendatario({ c }: { c: IContratoListItem }) {
 type BadgeKind = 'pendiente' | 'firma' | 'incompleta' | 'activo' | 'finalizado' | 'cancelado'
 
 const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
-  pendiente: { wrap: 'bg-coral-50 text-coral-600', dot: 'bg-coral-500' },
+  pendiente: { wrap: 'bg-coral-50 text-coral-700', dot: 'bg-coral-500' },
   firma: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
   // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
   incompleta: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-600' },
@@ -297,7 +297,7 @@ export function ContratosInmobiliariaView() {
         <StatCard
           label="Pendientes de generar"
           value={sinContrato.length}
-          color="text-coral-500"
+          color="text-coral-700"
           sub="Estudios aprobados sin contrato"
         />
         <StatCard
@@ -323,7 +323,7 @@ export function ContratosInmobiliariaView() {
         subtitle="Genera el contrato desde el estudio"
       >
         {loadingSinContrato ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400" role="status" aria-live="polite">
+          <div className="px-6 py-8 text-center text-sm text-gray-500" role="status" aria-live="polite">
             <IconLoader size={20} className="mx-auto mb-2 animate-spin text-primary-600" />
             Buscando estudios aprobados…
           </div>
@@ -363,14 +363,14 @@ export function ContratosInmobiliariaView() {
                         {e.inmueble.ciudad && <span className="block text-xs text-gray-500">{e.inmueble.ciudad}</span>}
                       </div>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-6 py-3 text-xs text-gray-500">{formatDate(e.updated_at)}</td>
                   <td className="px-6 py-3 text-right">
                     <Link
                       href={`/expedientes/${e.id}`}
-                      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-600 transition-colors hover:bg-coral-50"
+                      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
                     >
                       Generar contrato
                       <IconChevronRight size={14} />
@@ -413,7 +413,7 @@ export function ContratosInmobiliariaView() {
                   <td className="px-6 py-3 text-right">
                     <Link
                       href={rutaContrato(c)}
-                      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-600 transition-colors hover:bg-coral-50"
+                      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
                     >
                       {/* Un borrador V3 puede estar en el paso 1: "enviar a firma" sería prometer de más. */}
                       {c.destinacion ? 'Continuar contrato' : 'Revisar y enviar a firma'}
@@ -594,7 +594,7 @@ function Panel({
 
 function EmptyRow({ texto }: { texto: string }) {
   return (
-    <div className="px-6 py-8 text-center text-sm text-gray-400">
+    <div className="px-6 py-8 text-center text-sm text-gray-500">
       <IconFileText size={28} className="mx-auto mb-2 text-gray-300" />
       {texto}
     </div>
@@ -605,7 +605,7 @@ function VerLink({ c }: { c: Parameters<typeof rutaContrato>[0] }) {
   return (
     <Link
       href={rutaContrato(c)}
-      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700"
     >
       Ver
       <IconChevronRight size={14} />

@@ -561,7 +561,7 @@ function SiniestralidadChart({
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-coral-400/70"
         style={{ top: `${linePct(5)}%` }}
       >
-        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[8px] font-bold text-coral-500">5%</span>
+        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[8px] font-bold text-coral-700">5%</span>
       </span>
       <span
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-red-400/70"

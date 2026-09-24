@@ -163,7 +163,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
           <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
             onClick={fetchPago}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             Reintentar
           </button>
@@ -375,7 +375,7 @@ function EventoTimelineItem({ evento, isLast }: EventoTimelineItemProps) {
         <p className="text-xs text-gray-500 mt-0.5">
           {formatDateTime(evento.created_at)}
           {evento.origen && evento.origen !== 'system' && (
-            <span className="ml-2 text-gray-400">({evento.origen})</span>
+            <span className="ml-2 text-gray-500">({evento.origen})</span>
           )}
         </p>
         {evento.detalles && Object.keys(evento.detalles).length > 0 && (

@@ -162,7 +162,7 @@ export function PhoneInput({
           >
             <span className="text-base leading-none">{selectedCountry.flag}</span>
             <span className="text-gray-700 font-medium">{selectedCountry.dial}</span>
-            <svg className={cn('w-3 h-3 text-gray-400 transition-transform', open && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={cn('w-3 h-3 text-gray-500 transition-transform', open && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -193,11 +193,11 @@ export function PhoneInput({
                   >
                     <span className="text-base leading-none">{country.flag}</span>
                     <span className="flex-1 truncate">{country.name}</span>
-                    <span className="text-gray-400 text-xs">{country.dial}</span>
+                    <span className="text-gray-500 text-xs">{country.dial}</span>
                   </button>
                 ))}
                 {filteredCountries.length === 0 && (
-                  <p className="px-3 py-2 text-sm text-gray-400">Sin resultados</p>
+                  <p className="px-3 py-2 text-sm text-gray-500">Sin resultados</p>
                 )}
               </div>
             </div>
@@ -207,7 +207,7 @@ export function PhoneInput({
         {/* Phone number input */}
         <div className="relative flex-1">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
               {icon}
             </div>
           )}

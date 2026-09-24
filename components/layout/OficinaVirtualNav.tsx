@@ -132,14 +132,14 @@ export function OficinaVirtualNav({ rol }: Props) {
                 className={[
                   'inline-flex items-center gap-2 px-4 py-4 text-sm font-bold whitespace-nowrap border-b-2 transition-colors',
                   isActive
-                    ? 'border-coral-500 text-coral-600'
-                    : 'border-transparent text-gray-500 hover:text-coral-600 hover:bg-coral-50/40',
+                    ? 'border-coral-500 text-coral-700'
+                    : 'border-transparent text-gray-500 hover:text-coral-700 hover:bg-coral-50/40',
                 ].join(' ')}
               >
                 <Icon size={18} />
                 {tab.label}
                 {tab.href === '/interesados' && interesadosNuevos > 0 && (
-                  <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-white">
+                  <span className="ml-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-coral-500 px-1.5 text-[10px] font-bold text-ink-900">
                     {interesadosNuevos}
                   </span>
                 )}

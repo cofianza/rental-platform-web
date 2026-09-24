@@ -189,7 +189,7 @@ export default function ConfiguracionPage() {
                   {seccion.descripcion}
                 </p>
               </div>
-              <IconChevronRight size={20} className="text-gray-400" />
+              <IconChevronRight size={20} className="text-gray-500" />
             </Link>
           )
         })}

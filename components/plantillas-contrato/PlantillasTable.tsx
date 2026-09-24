@@ -132,7 +132,7 @@ export function PlantillasTable({
                   <div className="flex items-center justify-end gap-2">
                     <Link
                       href={`/plantillas-contrato/${p.id}`}
-                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                      className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                       title="Ver detalle"
                     >
                       <IconEye size={16} />
@@ -140,7 +140,7 @@ export function PlantillasTable({
                     {canEdit && (
                       <button
                         onClick={() => onEdit(p)}
-                        className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                         title="Editar"
                       >
                         <IconEdit size={16} />
@@ -149,7 +149,7 @@ export function PlantillasTable({
                     {canDelete && p.activa && (
                       <button
                         onClick={() => onDeactivate(p)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                        className="p-1.5 text-gray-500 hover:text-red-600 rounded-md hover:bg-gray-100"
                         title="Desactivar"
                       >
                         <IconPower size={16} />

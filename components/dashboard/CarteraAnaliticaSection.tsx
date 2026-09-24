@@ -101,7 +101,7 @@ export function CarteraAnaliticaSection() {
           <StatCard
             label="Días prom. de mora"
             value={s.diasPromedioMora || '—'}
-            color="text-coral-500"
+            color="text-coral-700"
             sub="cuando hay incumplimiento"
           />
           <StatCard

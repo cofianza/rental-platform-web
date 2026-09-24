@@ -49,9 +49,9 @@ export function InmueblesFilters({
         <div className="relative flex-1 max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             {isLoading ? (
-              <IconLoader size={18} className="text-gray-400 animate-spin" />
+              <IconLoader size={18} className="text-gray-500 animate-spin" />
             ) : (
-              <IconSearch size={18} className="text-gray-400" />
+              <IconSearch size={18} className="text-gray-500" />
             )}
           </div>
           <input
@@ -67,7 +67,7 @@ export function InmueblesFilters({
         {canCreate && (
           <button
             onClick={onCreateClick}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
             <IconPlus size={18} />
             Nuevo Inmueble

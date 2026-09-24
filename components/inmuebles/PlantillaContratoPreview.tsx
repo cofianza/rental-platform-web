@@ -82,7 +82,7 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <IconLoader size={24} className="animate-spin text-gray-400" />
+          <IconLoader size={24} className="animate-spin text-gray-500" />
         </div>
       ) : error ? (
         <div className="flex items-start gap-3 p-6 bg-red-50">

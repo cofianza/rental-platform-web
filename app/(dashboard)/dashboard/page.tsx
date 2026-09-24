@@ -227,14 +227,14 @@ export default function DashboardPage() {
 
       {/* Date filter bar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <IconCalendar size={16} className="text-gray-400" />
+        <IconCalendar size={16} className="text-gray-500" />
         {DATE_PRESETS.map((preset, idx) => (
           <button
             key={preset.label}
             onClick={() => handlePresetClick(idx)}
             className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
               activePreset === idx
-                ? 'bg-primary-600 text-white'
+                ? 'bg-primary-700 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                   aria-pressed={alcance === a.key}
                   className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                     alcance === a.key
-                      ? 'bg-primary-600 text-white'
+                      ? 'bg-primary-700 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                         : 'Sin solicitante'}
                       {exp.inmueble?.direccion ? ` · ${exp.inmueble.direccion}` : ''}
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[10px] text-gray-500 mt-0.5">
                       {formatDate(exp.created_at)}
                       {/* Sin este aviso, un estudio huérfano se veía igual que
                           uno ya asignado y se quedaba parado sin que nadie lo
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                       )}
                     </p>
                   </div>
-                  <IconChevronRight size={16} className="text-gray-400 shrink-0" />
+                  <IconChevronRight size={16} className="text-gray-500 shrink-0" />
                 </Link>
               ))}
             </div>
@@ -613,7 +613,7 @@ function SolicitanteDashboard() {
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
-            <div key={`sin-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+            <div key={`sin-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-6 text-white shadow-lg">
               <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
               <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -704,7 +704,7 @@ function SolicitanteDashboard() {
             const pago = pagoByExpediente[exp.id]
             const esFallido = pago?.estado === 'fallido'
             return (
-              <div key={`pago-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+              <div key={`pago-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-6 text-white shadow-lg">
                 <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -831,7 +831,7 @@ function SolicitanteDashboard() {
           <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin estudios activos</h3>
           <p className="text-sm text-gray-500 mb-4">Aún no tienes solicitudes de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
-          <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors">
             Explorar inmuebles
           </Link>
         </div>
@@ -881,7 +881,7 @@ function SolicitanteDashboard() {
                       {exp.inmueble?.ciudad ? `, ${exp.inmueble.ciudad}` : ''}
                     </p>
                   </div>
-                  <IconChevronRight size={20} className="text-gray-400 mt-1" />
+                  <IconChevronRight size={20} className="text-gray-500 mt-1" />
                 </div>
 
                 {/* Stepper */}
@@ -917,12 +917,12 @@ function SolicitanteDashboard() {
                             <div
                               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                                 isComplete
-                                  ? 'bg-primary-600 text-white'
+                                  ? 'bg-primary-700 text-white'
                                   : isCurrent && !isFailed
                                     ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-600'
                                     : isFailed
                                       ? 'bg-red-100 text-red-600 ring-2 ring-red-300'
-                                      : 'bg-gray-100 text-gray-400'
+                                      : 'bg-gray-100 text-gray-500'
                               }`}
                             >
                               {isComplete ? (
@@ -936,7 +936,7 @@ function SolicitanteDashboard() {
                             <span className={`text-xs mt-1 text-center leading-tight ${
                               isCurrent && !isFailed ? 'text-primary-700 font-semibold'
                                 : isFailed ? 'text-red-600 font-medium'
-                                : 'text-gray-400'
+                                : 'text-gray-500'
                             }`}>
                               {step.label}
                             </span>
@@ -1004,7 +1004,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-sm text-gray-400">Sin datos para el periodo</p>
+        <p className="text-sm text-gray-500">Sin datos para el periodo</p>
       </div>
     )
   }
@@ -1013,7 +1013,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
   if (total === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-sm text-gray-400">Sin estudios en el periodo</p>
+        <p className="text-sm text-gray-500">Sin estudios en el periodo</p>
       </div>
     )
   }

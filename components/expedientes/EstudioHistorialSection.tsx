@@ -34,7 +34,7 @@ export function EstudioHistorialSection({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-6">
-        <IconLoader size={20} className="animate-spin text-gray-400" />
+        <IconLoader size={20} className="animate-spin text-gray-500" />
       </div>
     )
   }

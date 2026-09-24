@@ -139,7 +139,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
               <span>{p.advertencia}</span>
             </p>
           )}
-          <p className="mt-1 text-[11px] text-gray-400">
+          <p className="mt-1 text-[11px] text-gray-500">
             {p.seccion} · <code>{p.clave}</code>
             {p.nivel && ` · ${p.nivel === 'riesgo' ? 'de riesgo' : 'operativo'}`} · rango {fmt(p.min, p.entero)} –{' '}
             {fmt(p.max, p.entero)} · default{' '}
@@ -186,7 +186,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
                 type="button"
                 onClick={pedirConfirmacion}
                 disabled={guardando || !cambiado}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary-600 px-3 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary-700 px-3 py-2 text-sm font-bold text-white hover:bg-primary-800 disabled:opacity-50"
               >
                 {guardando ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
                 Guardar
@@ -326,9 +326,9 @@ export default function AdminCalibracionPage() {
           <section className="rounded-xl border border-gray-200 bg-white p-4">
             <h2 className="text-sm font-bold text-gray-900">Cascada de centrales (últimos 30 días)</h2>
             {cascada === null ? (
-              <p className="mt-1 text-sm text-gray-400">No se pudo cargar la cascada.</p>
+              <p className="mt-1 text-sm text-gray-500">No se pudo cargar la cascada.</p>
             ) : cascada.total === 0 ? (
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-gray-500">
                 Sin estudios ejecutados desde {formatDate(cascada.desde)}.
               </p>
             ) : (
@@ -359,7 +359,7 @@ export default function AdminCalibracionPage() {
           <section className="rounded-xl border border-gray-200 bg-white p-4">
             <h2 className="text-sm font-bold text-gray-900">Revisión manual y DataCrédito (últimos 30 días)</h2>
             {revision === null ? (
-              <p className="mt-1 text-sm text-gray-400">No se pudo cargar el resumen.</p>
+              <p className="mt-1 text-sm text-gray-500">No se pudo cargar el resumen.</p>
             ) : (
               <>
                 <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -390,7 +390,7 @@ export default function AdminCalibracionPage() {
                     sub="documento o apellido, no la central"
                   />
                 </dl>
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-gray-500">
                   Horas hábiles: lunes a viernes de 8:00 a 18:00 (sin descontar festivos). Las caídas se distinguen desde el 11 de septiembre de 2026.
                 </p>
               </>
@@ -416,7 +416,7 @@ export default function AdminCalibracionPage() {
           <section>
             <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Historial de cambios</h2>
             {historial.length === 0 ? (
-              <p className="text-sm text-gray-400">Sin cambios registrados.</p>
+              <p className="text-sm text-gray-500">Sin cambios registrados.</p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
                 <table className="w-full text-sm">

@@ -21,7 +21,7 @@ function Dato({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <dt className="text-xs font-medium text-gray-500">{label}</dt>
-      <dd className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+      <dd className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-500 italic'}`}>
         {value || 'Sin registrar'}
       </dd>
     </div>

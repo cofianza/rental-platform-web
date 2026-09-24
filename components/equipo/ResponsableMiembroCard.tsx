@@ -77,7 +77,7 @@ export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo,
       <div className="flex items-center gap-2 mb-2">
         <IconUserCheck size={16} className="text-primary-600" />
         <h3 className="text-sm font-semibold text-gray-900">{titulo}</h3>
-        {saving && <IconLoader size={14} className="animate-spin text-gray-400" />}
+        {saving && <IconLoader size={14} className="animate-spin text-gray-500" />}
       </div>
 
       {soyOwner ? (

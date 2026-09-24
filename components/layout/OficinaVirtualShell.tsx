@@ -131,7 +131,7 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                 )}
                 <IconChevronDown
                   size={16}
-                  className={`hidden sm:block text-gray-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                  className={`hidden sm:block text-gray-500 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
@@ -171,7 +171,7 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                       setMenuOpen(false)
                       logout()
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-coral-50 hover:text-coral-600 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-coral-50 hover:text-coral-700 transition-colors"
                   >
                     <IconLogOut size={16} />
                     Cerrar sesión
@@ -214,7 +214,7 @@ function MenuLink({
       onClick={onClick}
       className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-700 transition-colors"
     >
-      <span className="text-gray-400">{icon}</span>
+      <span className="text-gray-500">{icon}</span>
       {children}
     </Link>
   )

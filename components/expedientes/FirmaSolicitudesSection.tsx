@@ -123,7 +123,7 @@ export function FirmaSolicitudesSection({
         {canSendFirma && (
           <button
             onClick={() => setEnviarOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconMail size={14} />
             Enviar para firma
@@ -135,7 +135,7 @@ export function FirmaSolicitudesSection({
         <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
           <p className="text-sm text-gray-500">No hay solicitudes de firma</p>
           {canSendFirma && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Envía un enlace seguro al firmante para que revise y firme el contrato
             </p>
           )}
@@ -160,7 +160,7 @@ export function FirmaSolicitudesSection({
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 truncate">{s.email_firmante}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <IconClock size={12} />
                       {formatDateTime(s.created_at)}
@@ -202,7 +202,7 @@ export function FirmaSolicitudesSection({
                       <button
                         onClick={() => handleCancelar(s.id)}
                         disabled={cancelandoId === s.id}
-                        className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                        className="p-1 text-gray-500 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
                         title="Cancelar solicitud"
                       >
                         {cancelandoId === s.id ? (
@@ -279,7 +279,7 @@ export function FirmaSolicitudesSection({
             </button>
             <button
               onClick={handleReenviarConfirmed}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-lg"
             >
               Reenviar enlace
             </button>

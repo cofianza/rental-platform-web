@@ -89,7 +89,7 @@ export function PendientesFacturarSection({
   if (loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-400" />
+        <IconLoader size={20} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -176,7 +176,7 @@ export function PendientesFacturarSection({
                 onClick={() => handleFacturar(pago)}
                 hidden={!puedeEditar}
                 disabled={isEmitiendo || emitiendo !== null}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
               >
                 {isEmitiendo ? (
                   <>

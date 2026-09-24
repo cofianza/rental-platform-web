@@ -169,7 +169,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <IconLoader size={20} className="animate-spin text-gray-400" />
+        <IconLoader size={20} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -286,7 +286,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
 
             <button
               onClick={() => setShowCrearModal(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-md hover:shadow-lg transition-all shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 shadow-md hover:shadow-lg transition-all shrink-0"
             >
               <IconCalendar size={16} />
               {canManageCitas ? 'Agendar visita' : 'Solicitar visita'}
@@ -349,7 +349,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
       {/* Historial de citas canceladas/no asistio */}
       {citas.filter((c) => c.estado === 'cancelada' || c.estado === 'no_asistio').length > 0 && (
         <details className="mt-3">
-          <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-600">
             Ver historial ({citas.filter((c) => c.estado === 'cancelada' || c.estado === 'no_asistio').length})
           </summary>
           <div className="mt-2 space-y-2">
@@ -471,7 +471,7 @@ function CitaCard({
           <div className="space-y-1 text-sm">
             {cita.fecha_propuesta && (
               <p className="text-gray-700 flex items-center gap-1.5">
-                <IconClock size={14} className="text-gray-400" />
+                <IconClock size={14} className="text-gray-500" />
                 <span className="font-medium">Propuesta:</span> {formatDateTime(cita.fecha_propuesta)}
               </p>
             )}
@@ -503,7 +503,7 @@ function CitaCard({
                 <button
                   onClick={onAcusarReprogramacion}
                   disabled={isLoading}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 transition-colors"
                 >
                   Aceptar nuevo horario
                 </button>
@@ -525,7 +525,7 @@ function CitaCard({
             {cita.estado === 'solicitada' && onConfirmar && (
               <button
                 onClick={onConfirmar}
-                className="px-2.5 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors"
               >
                 Confirmar
               </button>
@@ -592,7 +592,7 @@ function CitaCard({
         )}
 
         {isLoading && (
-          <IconLoader size={16} className="animate-spin text-gray-400 shrink-0" />
+          <IconLoader size={16} className="animate-spin text-gray-500 shrink-0" />
         )}
       </div>
     </div>
@@ -785,7 +785,7 @@ function CrearCitaModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !slot || (faltaTelefono && !telefonoValido)}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
             {isOwnerOrAgency ? 'Confirmar visita' : 'Solicitar cita'}
@@ -868,7 +868,7 @@ function ConfirmarCitaModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
             Confirmar cita
@@ -1021,7 +1021,7 @@ function ReprogramarCitaModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !slot}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting && <IconLoader size={14} className="animate-spin" />}
             {ctaLabel}
@@ -1107,7 +1107,7 @@ function PagoEstudioPill({ estado }: { estado?: string | null }) {
   if (estado === undefined) return null
   if (estado === null) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-50 border border-gray-200">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200">
         Pago: …
       </span>
     )

@@ -92,7 +92,7 @@ export function IngresosSection() {
           </div>
         ) : (
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-coral-200 bg-coral-50/50 px-3 py-2">
-            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-coral-50 text-coral-600">
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-coral-50 text-coral-700">
               <IconInfo size={14} />
             </span>
             <Chip tone="orange">IVA de la tarifa {data.ivaGarantiaPorcentaje}%</Chip>

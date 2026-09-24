@@ -183,7 +183,7 @@ export default function TesoreriaPage() {
               type="button"
               onClick={handleSave}
               disabled={saving || reservaExcede}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? <IconLoader size={16} className="animate-spin" /> : <IconCheck size={16} />}
               {saving ? 'Guardando…' : 'Guardar cambios'}

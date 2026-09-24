@@ -436,7 +436,7 @@ export default function DisponibilidadPage() {
                 className={
                   'px-4 py-2 rounded-lg border text-sm font-medium transition ' +
                   (duracion === value
-                    ? 'bg-primary-600 text-white border-primary-600'
+                    ? 'bg-primary-700 text-white border-primary-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
                 }
               >
@@ -464,7 +464,7 @@ export default function DisponibilidadPage() {
                 className={
                   'px-4 py-2 rounded-lg border text-sm font-medium transition ' +
                   (antelacion === value
-                    ? 'bg-primary-600 text-white border-primary-600'
+                    ? 'bg-primary-700 text-white border-primary-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
                 }
               >
@@ -653,7 +653,7 @@ export default function DisponibilidadPage() {
               onClick={agregarFechaBloqueada}
               disabled={!nuevaFecha}
               title={!nuevaFecha ? 'Selecciona una fecha primero' : undefined}
-              className="px-4 py-1.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              className="px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
               <IconPlus size={16} />
               Agregar
@@ -676,7 +676,7 @@ export default function DisponibilidadPage() {
                   <button
                     type="button"
                     onClick={() => quitarFechaBloqueada(b.fecha)}
-                    className="text-gray-400 hover:text-red-600 transition-colors"
+                    className="text-gray-500 hover:text-red-600 transition-colors"
                     aria-label={`Quitar ${fechaCO(b.fecha)}`}
                   >
                     <IconTrash size={16} />
@@ -694,7 +694,7 @@ export default function DisponibilidadPage() {
             <button
               type="button"
               disabled
-              className="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg opacity-50 cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg opacity-50 cursor-not-allowed flex items-center gap-2"
             >
               Guardar cambios
             </button>

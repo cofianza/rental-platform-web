@@ -95,7 +95,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
     return (
       <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-200">
         <p className="text-gray-500 text-lg mb-1">No se encontraron contratos</p>
-        <p className="text-sm text-gray-400">Intenta ajustar los filtros de busqueda</p>
+        <p className="text-sm text-gray-500">Intenta ajustar los filtros de busqueda</p>
       </div>
     )
   }
@@ -159,7 +159,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                           {expediente.numero}
                         </button>
                       ) : (
-                        <span className="text-sm text-gray-400">—</span>
+                        <span className="text-sm text-gray-500">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -169,7 +169,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                           <p className="text-xs text-gray-500">{inmueble.ciudad}</p>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">—</span>
+                        <span className="text-sm text-gray-500">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -192,7 +192,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                             e.stopPropagation()
                             router.push(rutaContrato(c))
                           }}
-                          className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                           title="Ver detalle"
                         >
                           <IconEye size={16} />
@@ -200,7 +200,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                         <button
                           onClick={(e) => handleDownload(e, c)}
                           disabled={downloadingId === c.id || !c.storage_key}
-                          className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                           title="Descargar PDF"
                         >
                           {downloadingId === c.id ? (
@@ -215,7 +215,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                               e.stopPropagation()
                               setRegenerarTarget(c)
                             }}
-                            className="p-1.5 text-gray-400 hover:text-emerald-600 rounded-md hover:bg-gray-100"
+                            className="p-1.5 text-gray-500 hover:text-emerald-600 rounded-md hover:bg-gray-100"
                             title="Editar y regenerar"
                           >
                             <IconRefresh size={16} />
@@ -224,7 +224,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                         {canManage && !TERMINAL_STATES.includes(c.estado) && (
                           <button
                             onClick={(e) => handleOpenTransicion(e, c)}
-                            className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100"
+                            className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
                             title="Cambiar estado"
                           >
                             <IconArrowRight size={16} />
@@ -266,7 +266,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                 <p className="text-xs text-gray-500 mb-2">{inmueble.direccion}, {inmueble.ciudad}</p>
               )}
               <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500">
                   {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
                 </span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

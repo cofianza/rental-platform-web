@@ -128,7 +128,7 @@ function SortablePhoto({
 
       {/* Badge de fachada */}
       {foto.es_fachada && (
-        <div className="absolute top-2 left-2 px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded flex items-center gap-1 z-10">
+        <div className="absolute top-2 left-2 px-2 py-1 bg-primary-700 text-white text-xs font-medium rounded flex items-center gap-1 z-10">
           <IconHome size={12} />
           Fachada
         </div>
@@ -522,7 +522,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
             >
               <IconUpload
                 size={24}
-                className={atLimit ? 'text-gray-400' : 'text-primary-600'}
+                className={atLimit ? 'text-gray-500' : 'text-primary-600'}
               />
             </div>
 
@@ -531,7 +531,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
                 <p className="text-sm font-medium text-gray-500">
                   Límite de fotos alcanzado
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-500">
                   Máximo {FOTO_LIMITS.MAX_FOTOS_PER_INMUEBLE} fotos por inmueble
                 </p>
               </>
@@ -572,7 +572,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
             >
               <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
-                <IconImage size={20} className="text-gray-400" />
+                <IconImage size={20} className="text-gray-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-700 truncate">{uf.file.name}</p>
@@ -592,7 +592,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
                   onClick={() =>
                     setUploadingFiles((prev) => prev.filter((u) => u.id !== uf.id))
                   }
-                  className="p-1 text-gray-400 hover:text-gray-600"
+                  className="p-1 text-gray-500 hover:text-gray-600"
                 >
                   <IconX size={16} />
                 </button>
@@ -606,7 +606,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
       {fotos.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <IconImage size={32} className="text-gray-400" />
+            <IconImage size={32} className="text-gray-500" />
           </div>
           <p className="text-gray-600">No hay fotos del inmueble</p>
           {canEdit && (
@@ -693,7 +693,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
             <button
               onClick={handleSaveDescription}
               disabled={isSavingDescription}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isSavingDescription ? (
                 <IconLoader size={16} className="animate-spin" />

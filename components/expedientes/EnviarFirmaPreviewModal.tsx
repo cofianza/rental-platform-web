@@ -93,7 +93,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
           disabled={submitting}
-          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
         >
           <IconX size={20} />
         </button>
@@ -137,7 +137,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className={`shrink-0 ${problema ? 'text-red-500' : 'text-gray-400'}`}>
+                    <span className={`shrink-0 ${problema ? 'text-red-500' : 'text-gray-500'}`}>
                       <Icon size={16} />
                     </span>
                     <div className="min-w-0">
@@ -146,7 +146,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                         <span className="font-normal text-gray-500"> · {f.nombre}</span>
                       </p>
                       {f.auto ? (
-                        <p className="text-xs text-gray-400">Firma automática (sello institucional) — no requiere número</p>
+                        <p className="text-xs text-gray-500">Firma automática (sello institucional) — no requiere número</p>
                       ) : (
                         <p className={`text-xs flex items-center gap-1 truncate ${problema ? 'text-red-700' : 'text-gray-500'}`}>
                           <IconWhatsapp size={11} className="text-green-600 shrink-0" />
@@ -195,7 +195,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                       <button
                         onClick={() => guardarTelefono(f)}
                         disabled={guardando}
-                        className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
                       >
                         {guardando ? <IconLoader size={13} className="animate-spin" /> : <IconCheck size={13} />}
                         Guardar
@@ -236,7 +236,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         <button
           onClick={onConfirm}
           disabled={submitting || !puedeEnviar}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           title={!puedeEnviar ? 'Corrige los números repetidos o faltantes antes de enviar' : undefined}
         >
           {submitting && <IconLoader size={16} className="animate-spin" />}

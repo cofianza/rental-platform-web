@@ -267,7 +267,7 @@ function PagoResultadoContent() {
                 }
               }, 300)
             }}
-            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
           >
             {isAuthenticated ? 'Cerrar y volver al estudio' : 'Cerrar ventana'}
           </button>
@@ -303,7 +303,7 @@ function PagoResultadoContent() {
         <div className="mt-6">
           <a
             href={retryHref}
-            className="inline-flex w-full items-center justify-center px-5 py-3 text-base font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+            className="inline-flex w-full items-center justify-center px-5 py-3 text-base font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
           >
             Volver a intentar el pago
           </a>
@@ -320,7 +320,7 @@ function PagoResultadoContent() {
             className={`inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
               retryHref
                 ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                : 'text-white bg-primary-600 hover:bg-primary-700 shadow-sm'
+                : 'text-white bg-primary-700 hover:bg-primary-800 shadow-sm'
             }`}
           >
             {expedienteId ? 'Ver mi estudio' : 'Ir a mi panel'}
@@ -330,7 +330,7 @@ function PagoResultadoContent() {
 
       {/* Footer — solo cuando no hay auto-cierre activo */}
       {!isSuccess && (
-        <p className="text-xs text-gray-400 text-center mt-8">
+        <p className="text-xs text-gray-500 text-center mt-8">
           {isAuthInitialized && isAuthenticated
             ? 'También puedes cerrar esta ventana — el estado quedó guardado.'
             : 'Puedes cerrar esta ventana de forma segura.'}

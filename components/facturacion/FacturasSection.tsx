@@ -143,7 +143,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
         <p className="text-sm text-gray-500 mb-4">{errorMessage}</p>
         <button
           onClick={fetchFacturas}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           Reintentar
@@ -166,7 +166,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
         {isAdmin && onFacturarPendiente && (
           <button
             onClick={onFacturarPendiente}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
             Facturar un pago pendiente
@@ -186,7 +186,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <IconSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <IconSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
               value={filterBusqueda}
@@ -216,7 +216,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
               onChange={(e) => setFilterFechaDesde(e.target.value)}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-gray-500">-</span>
             <input
               type="date"
               value={filterFechaHasta}
@@ -239,7 +239,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           {isAdmin && onFacturarPendiente && (
             <button
               onClick={onFacturarPendiente}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
               Facturar un pago pendiente

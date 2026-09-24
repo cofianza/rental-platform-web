@@ -77,7 +77,7 @@ export function ContratoHistorialModal({
                       {configAnterior.label}
                     </span>
                   )}
-                  <IconArrowRight size={14} className="text-gray-400" />
+                  <IconArrowRight size={14} className="text-gray-500" />
                   {configNuevo && (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${configNuevo.bgColor} ${configNuevo.textColor}`}>
                       {configNuevo.label}

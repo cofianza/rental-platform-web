@@ -147,7 +147,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               {expediente.numero}
             </Link>
           ) : (
-            <span className="text-xs text-gray-400">Sin estudio</span>
+            <span className="text-xs text-gray-500">Sin estudio</span>
           )}
           {inmueble && (
             <p className="text-sm font-medium text-gray-900 mt-0.5 truncate" title={inmueble.direccion}>
@@ -229,7 +229,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       {/* Acciones por estado */}
       <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
         {!puedeEditar && (cita.estado === 'solicitada' || cita.estado === 'confirmada') && (
-          <span className="text-xs text-gray-400 italic">Solo consulta</span>
+          <span className="text-xs text-gray-500 italic">Solo consulta</span>
         )}
         {puedeEditar && cita.estado === 'solicitada' && (
           <>
@@ -238,7 +238,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
                 setConfirmMode('aceptar')
                 setAction('confirmar')
               }}
-              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700"
+              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded hover:bg-primary-800"
             >
               Confirmar
             </button>
@@ -264,7 +264,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           <>
             <button
               onClick={() => setAction('realizar')}
-              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700"
+              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded hover:bg-primary-800"
             >
               Marcar realizada
             </button>
@@ -313,7 +313,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         )}
 
         {(cita.estado === 'cancelada' || cita.estado === 'no_asistio') && (
-          <span className="text-xs text-gray-400 italic">Sin acciones disponibles</span>
+          <span className="text-xs text-gray-500 italic">Sin acciones disponibles</span>
         )}
       </div>
 
@@ -408,7 +408,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
             <button
               onClick={handleConfirmar}
               disabled={isLoading || (confirmMode === 'reprogramar' && !slotElegido)}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading && <IconLoader size={14} className="animate-spin" />}
               {confirmMode === 'reprogramar' ? 'Enviar nueva propuesta' : 'Confirmar cita'}
@@ -507,7 +507,7 @@ function PagoEstudioPill({ estado }: { estado?: string | null }) {
   if (estado === undefined) return null
   if (estado === null) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-50 border border-gray-200">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200">
         Pago: …
       </span>
     )

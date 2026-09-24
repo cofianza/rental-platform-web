@@ -31,9 +31,9 @@ export function EstudiosFilters({
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             {isLoading ? (
-              <IconLoader size={18} className="text-gray-400 animate-spin" />
+              <IconLoader size={18} className="text-gray-500 animate-spin" />
             ) : (
-              <IconSearch size={18} className="text-gray-400" />
+              <IconSearch size={18} className="text-gray-500" />
             )}
           </div>
           <input
@@ -46,7 +46,7 @@ export function EstudiosFilters({
           {filters.search && (
             <button
               onClick={() => onFilterChange({ search: '' })}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600"
             >
               <IconX size={16} />
             </button>
@@ -88,7 +88,7 @@ export function EstudiosFilters({
         <div className="flex gap-2 lg:w-auto">
           <div className="relative flex-1 lg:w-40">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconCalendar size={16} className="text-gray-400" />
+              <IconCalendar size={16} className="text-gray-500" />
             </div>
             <input
               type="date"
@@ -99,7 +99,7 @@ export function EstudiosFilters({
           </div>
           <div className="relative flex-1 lg:w-40">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconCalendar size={16} className="text-gray-400" />
+              <IconCalendar size={16} className="text-gray-500" />
             </div>
             <input
               type="date"

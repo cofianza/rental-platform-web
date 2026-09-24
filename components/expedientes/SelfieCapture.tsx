@@ -65,7 +65,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
         {/* Instructions list */}
         <div className="text-left space-y-4 mb-8">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center text-white font-semibold text-sm shrink-0">
               1
             </div>
             <div>
@@ -75,7 +75,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center text-white font-semibold text-sm shrink-0">
               2
             </div>
             <div>
@@ -85,7 +85,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center text-white font-semibold text-sm shrink-0">
               3
             </div>
             <div>
@@ -99,7 +99,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
         <div className="space-y-3">
           <button
             onClick={onContinue}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors font-medium"
           >
             Continuar
             <IconArrowRight size={20} />
@@ -333,7 +333,7 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
               <p className="mb-4">{error}</p>
               <button
                 onClick={initializeCamera}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
               >
                 <IconRefresh size={18} />
                 Reintentar
@@ -478,7 +478,7 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
               <button
                 onClick={confirmCapture}
                 disabled={isUploading}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-3 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50"
               >
                 {isUploading ? (
                   <>

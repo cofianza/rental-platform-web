@@ -211,7 +211,7 @@ export function GestionPerfilesPage({ rol }: Props) {
   const nuevoBtn = (
     <button
       onClick={openCreate}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-white hover:bg-coral-600 transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-semibold text-ink-900 hover:bg-coral-400 transition-colors"
     >
       <IconPlus size={16} /> {labelNuevo}
     </button>

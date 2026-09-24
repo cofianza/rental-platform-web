@@ -328,7 +328,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                   <button
                     onClick={() => handleResend(true)}
                     disabled={resending || !resendEmail.trim()}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 transition-colors"
                   >
                     {resending ? 'Enviando…' : 'Enviar'}
                   </button>

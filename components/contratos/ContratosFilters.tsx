@@ -32,9 +32,9 @@ export function ContratosFilters({
       <div className="relative flex-1 min-w-0">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           {isLoading ? (
-            <IconLoader size={16} className="animate-spin text-gray-400" />
+            <IconLoader size={16} className="animate-spin text-gray-500" />
           ) : (
-            <IconSearch size={16} className="text-gray-400" />
+            <IconSearch size={16} className="text-gray-500" />
           )}
         </div>
         <input
@@ -49,7 +49,7 @@ export function ContratosFilters({
             onClick={() => onFilterChange({ search: undefined })}
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
-            <IconX size={14} className="text-gray-400 hover:text-gray-600" />
+            <IconX size={14} className="text-gray-500 hover:text-gray-600" />
           </button>
         )}
       </div>
@@ -71,7 +71,7 @@ export function ContratosFilters({
       {/* Fecha desde */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <IconCalendar size={16} className="text-gray-400" />
+          <IconCalendar size={16} className="text-gray-500" />
         </div>
         <input
           type="date"
@@ -85,7 +85,7 @@ export function ContratosFilters({
       {/* Fecha hasta */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <IconCalendar size={16} className="text-gray-400" />
+          <IconCalendar size={16} className="text-gray-500" />
         </div>
         <input
           type="date"

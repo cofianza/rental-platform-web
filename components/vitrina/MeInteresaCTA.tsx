@@ -344,7 +344,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               placeholder="Cuéntale por qué te interesa, o deja alguna observación para la visita."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-            <p className="text-xs text-gray-400 mt-1 text-right">{notas.length}/500</p>
+            <p className="text-xs text-gray-500 mt-1 text-right">{notas.length}/500</p>
           </div>
 
           <div className="flex flex-col items-end gap-2 pt-2">
@@ -359,7 +359,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !fechaPropuesta}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && <IconLoader size={14} className="animate-spin" />}
                 Enviar solicitud
@@ -393,7 +393,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             </div>
             <button
               onClick={closeLeadModal}
-              className="px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              className="px-5 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
             >
               Entendido
             </button>
@@ -407,7 +407,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
             <div>
               <label htmlFor="me-interesa-c-t-a-nombre" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre <span className="text-coral-500">*</span>
+                Nombre <span className="text-coral-700">*</span>
               </label>
               <input id="me-interesa-c-t-a-nombre"
                 type="text"
@@ -428,7 +428,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
             <div>
               <label htmlFor="me-interesa-c-t-a-correo" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo <span className="text-coral-500">*</span>
+                Correo <span className="text-coral-700">*</span>
               </label>
               <input id="me-interesa-c-t-a-correo"
                 type="email"
@@ -441,7 +441,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
             <div>
               <label htmlFor="me-interesa-c-t-a-mensaje-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-                Mensaje <span className="font-normal text-gray-400">(opcional)</span>
+                Mensaje <span className="font-normal text-gray-500">(opcional)</span>
               </label>
               <textarea id="me-interesa-c-t-a-mensaje-opcional"
                 value={leadMensaje}
@@ -481,7 +481,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               <button
                 onClick={handleLeadSubmit}
                 disabled={leadSubmitting || !leadAcepta}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
               >
                 {leadSubmitting && <IconLoader size={14} className="animate-spin" />}
                 Enviar
@@ -502,7 +502,7 @@ function buttonClasses(variant: Variant, state: 'primary' | 'disabled' | 'loadin
     : 'w-full py-3.5 font-semibold rounded-xl text-center transition-colors'
 
   if (state === 'primary') {
-    return `${base} bg-primary-600 text-white hover:bg-primary-700`
+    return `${base} bg-primary-700 text-white hover:bg-primary-800`
   }
   if (state === 'disabled') {
     return `${base} bg-gray-200 text-gray-400`

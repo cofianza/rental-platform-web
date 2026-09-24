@@ -140,10 +140,10 @@ export function ExpedienteProgressBar({
                 <div
                   className={cn(
                     'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
-                    isComplete && 'bg-primary-600 text-white',
+                    isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
-                    !isComplete && !isCurrent && !isFailed && 'bg-gray-100 text-gray-400',
+                    !isComplete && !isCurrent && !isFailed && 'bg-gray-100 text-gray-500',
                   )}
                 >
                   {isComplete ? (
@@ -162,7 +162,7 @@ export function ExpedienteProgressBar({
                     isCurrent && !isFailed ? 'text-amber-700 font-semibold'
                       : isFailed ? 'text-red-600 font-medium'
                       : isComplete ? 'text-primary-700 font-medium'
-                      : 'text-gray-400',
+                      : 'text-gray-500',
                   )}
                 >
                   {step.label}

@@ -160,7 +160,7 @@ function ResetPasswordForm() {
             onClick={validar}
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
-              'bg-primary-600 hover:bg-primary-700 text-white',
+              'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
             )}
@@ -189,7 +189,7 @@ function ResetPasswordForm() {
             href={AUTH_ROUTES.FORGOT_PASSWORD}
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
-              'bg-primary-600 hover:bg-primary-700 text-white',
+              'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
             )}
@@ -223,14 +223,14 @@ function ResetPasswordForm() {
           <p className="text-gray-500 mb-2">
             Tu contraseña ha sido actualizada exitosamente.
           </p>
-          <p className="text-sm text-gray-400 mb-8">
+          <p className="text-sm text-gray-500 mb-8">
             Serás redirigido al inicio de sesión en unos segundos...
           </p>
           <Link
             href={AUTH_ROUTES.LOGIN}
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
-              'bg-primary-600 hover:bg-primary-700 text-white',
+              'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
             )}
@@ -271,7 +271,7 @@ function ResetPasswordForm() {
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconLock size={18} className="text-gray-400" />
+              <IconLock size={18} className="text-gray-500" />
             </div>
             <input
               id="password"
@@ -298,7 +298,7 @@ function ResetPasswordForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
               tabIndex={-1}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -316,7 +316,7 @@ function ResetPasswordForm() {
                   key={req.label}
                   className={cn(
                     'flex items-center gap-2 text-xs',
-                    req.met ? 'text-green-600' : 'text-gray-400'
+                    req.met ? 'text-green-600' : 'text-gray-500'
                   )}
                 >
                   {req.met ? (
@@ -341,7 +341,7 @@ function ResetPasswordForm() {
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconLock size={18} className="text-gray-400" />
+              <IconLock size={18} className="text-gray-500" />
             </div>
             <input
               id="confirmPassword"
@@ -366,7 +366,7 @@ function ResetPasswordForm() {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
               tabIndex={-1}
             >
               {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -383,7 +383,7 @@ function ResetPasswordForm() {
           disabled={isLoading}
           className={cn(
             'w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm',
-            'bg-primary-600 hover:bg-primary-700',
+            'bg-primary-700 hover:bg-primary-800',
             'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'transition-colors flex items-center justify-center gap-2',
             'disabled:opacity-50 disabled:cursor-not-allowed'

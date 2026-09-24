@@ -98,7 +98,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <IconHome size={64} className="text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-400">Sin fotos disponibles</p>
+                  <p className="text-sm text-gray-500">Sin fotos disponibles</p>
                 </div>
               )}
               {hasPhotos && (
@@ -146,7 +146,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
           {/* Map (approximate location) */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Ubicación aproximada</h2>
-            <p className="text-xs text-gray-400 mb-3">
+            <p className="text-xs text-gray-500 mb-3">
               Se muestra la zona general del inmueble. La dirección exacta se comparte al avanzar en el proceso.
             </p>
             <div className="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100">
@@ -195,7 +195,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
 
               {/* Location */}
               <div className="flex items-start gap-2 mb-4">
-                <IconMapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                <IconMapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
@@ -215,7 +215,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
               </div>
 
               {/* Published date */}
-              <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
                 <IconCalendar size={14} />
                 Publicado: {formatDate(property.created_at)}
               </div>
@@ -265,9 +265,9 @@ function SpecItem({ icon: Icon, label, value }: {
 }) {
   return (
     <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg">
-      <Icon size={16} className="text-gray-400 shrink-0" />
+      <Icon size={16} className="text-gray-500 shrink-0" />
       <div>
-        <p className="text-[10px] text-gray-400">{label}</p>
+        <p className="text-[10px] text-gray-500">{label}</p>
         <p className="text-sm font-semibold text-gray-900">{value}</p>
       </div>
     </div>
@@ -295,7 +295,7 @@ function SimilarCard({ property }: { property: PublicProperty }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-primary-700">{formatCurrency(property.valor_arriendo)}<span className="text-[10px] font-normal text-gray-500">/mes</span></p>
         <p className="text-xs text-gray-700 truncate">{property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}</p>
-        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+        <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-1">
           <span>{tipoLabel}</span>
           {property.area_m2 && <span>{property.area_m2}m²</span>}
           <span>{property.habitaciones} hab</span>

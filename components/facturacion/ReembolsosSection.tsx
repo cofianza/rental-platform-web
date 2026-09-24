@@ -87,7 +87,7 @@ export function ReembolsosSection() {
   if (loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-400" />
+        <IconLoader size={20} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -192,7 +192,7 @@ export function ReembolsosSection() {
               <p className="mt-1 text-xs text-gray-600">
                 {r.motivo_texto.charAt(0).toUpperCase() + r.motivo_texto.slice(1)}.
               </p>
-              <p className="mt-0.5 text-xs text-gray-400">
+              <p className="mt-0.5 text-xs text-gray-500">
                 {ORIGEN[r.proveedor] ?? `Pago de Mercado Pago ${r.provider_payment_id}`}
               </p>
               {r.notas && (
@@ -220,7 +220,7 @@ export function ReembolsosSection() {
                   <button
                     onClick={() => setConfirmar(r)}
                     disabled={reembolsando !== null}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {reembolsando === r.id ? (
                       <>

@@ -192,7 +192,7 @@ export default function MiCuentaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-gray-400" />
+        <IconLoader size={28} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -267,7 +267,7 @@ export default function MiCuentaPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="cuenta-tipo" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo{isInmobiliaria && <span className="text-coral-500"> *</span>}
+              Tipo{isInmobiliaria && <span className="text-coral-700"> *</span>}
             </label>
             <select id="cuenta-tipo"
               value={form.tipo_documento}
@@ -308,7 +308,7 @@ export default function MiCuentaPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <IconLoader size={16} className="animate-spin" />

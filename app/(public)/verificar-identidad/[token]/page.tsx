@@ -173,7 +173,7 @@ export default function VerificarIdentidadPage() {
             type="button"
             onClick={confirmarOpcion}
             disabled={!opcion || enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando ? <IconLoader size={20} className="animate-spin" /> : <IconArrowRight size={18} />}
             Continuar
@@ -208,7 +208,7 @@ export default function VerificarIdentidadPage() {
             type="button"
             onClick={verificar}
             disabled={!documento || !selfie || enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando && <IconLoader size={20} className="animate-spin" />}
             {enviando ? 'Verificando…' : aviso ? 'Intentar de nuevo' : 'Verificar mi identidad'}
@@ -224,7 +224,7 @@ export default function VerificarIdentidadPage() {
           >
             Continuar sin la verificación con foto
           </button>
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-500">
             Si continúas sin la foto, un analista de Cofianza verificará tu identidad por otro medio. Tu trámite
             sigue igual.
           </p>

@@ -13,7 +13,7 @@ export interface AvatarProps {
 
 // Paleta de 8 colores para avatares
 const AVATAR_COLORS = [
-  'bg-primary-600',
+  'bg-primary-700',
   'bg-blue-600',
   'bg-purple-600',
   'bg-pink-600',

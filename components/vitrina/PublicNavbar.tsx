@@ -106,7 +106,7 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
             </Link>
             <Link
               href="/registro"
-              className="px-2.5 sm:px-5 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+              className="px-2.5 sm:px-5 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
             >
               Registrarme
             </Link>

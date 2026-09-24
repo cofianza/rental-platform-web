@@ -222,7 +222,7 @@ export default function DatosContratoPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-gray-400" />
+        <IconLoader size={28} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -283,7 +283,7 @@ export default function DatosContratoPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingLogo}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-primary-700 text-white rounded-lg hover:bg-primary-800 disabled:opacity-50"
                 >
                   {uploadingLogo ? (
                     <IconLoader size={16} className="animate-spin" />
@@ -319,7 +319,7 @@ export default function DatosContratoPage() {
               disabled={uploadingLogo}
               className={`w-full border-2 border-dashed rounded-lg p-8 text-center hover:border-primary-400 hover:bg-primary-50 transition-colors disabled:opacity-50 ${arrastrando ? 'border-primary-500 bg-primary-50' : 'border-gray-300'}`}
             >
-              <IconUpload size={32} className="mx-auto text-gray-400 mb-2" />
+              <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
               <p className="text-sm font-medium text-gray-700">
                 {uploadingLogo ? 'Subiendo…' : 'Subir logo'}
               </p>
@@ -485,7 +485,7 @@ export default function DatosContratoPage() {
           />
           <div>
             <label htmlFor="datos-contrato-tipo-de-cuenta" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de cuenta<span className="text-coral-500"> *</span>
+              Tipo de cuenta<span className="text-coral-700"> *</span>
             </label>
             <select id="datos-contrato-tipo-de-cuenta"
               value={form.cuenta_recaudo_tipo ?? ''}
@@ -573,7 +573,7 @@ export default function DatosContratoPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <IconLoader size={16} className="animate-spin" />
@@ -607,7 +607,7 @@ function Field({ label, value, onChange, placeholder, help, type = 'text', requi
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
         {label}
-        {required && <span className="text-coral-500"> *</span>}
+        {required && <span className="text-coral-700"> *</span>}
       </label>
       <input
         id={id}

@@ -80,7 +80,7 @@ function EstudiosAdminView() {
         <p className="text-sm text-gray-500 mb-4">{error}</p>
         <button
           onClick={() => fetchEstudios()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           {ESTUDIO_UI_MESSAGES.ERROR_RETRY}

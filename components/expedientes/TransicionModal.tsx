@@ -219,7 +219,7 @@ export function TransicionModal({
         {estadoSeleccionado && (
           <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
             <Badge estado={estadoActual} />
-            <IconArrowRight size={20} className="text-gray-400" />
+            <IconArrowRight size={20} className="text-gray-500" />
             <Badge estado={estadoSeleccionado} />
           </div>
         )}
@@ -305,7 +305,7 @@ export function TransicionModal({
             onClick={handleConfirmar}
             disabled={isLoading || !estadoSeleccionado || !motivoValido || !motivoGestorValido}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-              esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+              esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
             }`}
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}

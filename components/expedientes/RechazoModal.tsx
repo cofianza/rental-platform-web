@@ -91,10 +91,10 @@ export function RechazoModal({
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:bg-gray-50"
           />
           <div className="flex justify-between mt-1">
-            <span className={`text-xs ${charCount < MIN_CHARS ? 'text-red-500' : 'text-gray-400'}`}>
+            <span className={`text-xs ${charCount < MIN_CHARS ? 'text-red-500' : 'text-gray-500'}`}>
               {charCount < MIN_CHARS ? `Mínimo ${MIN_CHARS} caracteres` : ''}
             </span>
-            <span className={`text-xs ${charCount > MAX_CHARS * 0.9 ? 'text-yellow-600' : 'text-gray-400'}`}>
+            <span className={`text-xs ${charCount > MAX_CHARS * 0.9 ? 'text-yellow-600' : 'text-gray-500'}`}>
               {charCount}/{MAX_CHARS}
             </span>
           </div>

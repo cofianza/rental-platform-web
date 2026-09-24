@@ -69,7 +69,7 @@ export function VersionHistorialSection({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <IconLoader size={18} className="animate-spin text-gray-400" />
+        <IconLoader size={18} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -145,7 +145,7 @@ export function VersionHistorialSection({
                   {v.fecha_generacion ? formatDateTime(v.fecha_generacion) : '—'}
                 </span>
                 {v.plantilla_version && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     (plantilla v{v.plantilla_version})
                   </span>
                 )}
@@ -173,7 +173,7 @@ export function VersionHistorialSection({
               <button
                 onClick={() => handleDownloadVersion(v.version)}
                 disabled={downloadingVersion === v.version}
-                className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
                 title={`Descargar v${v.version}`}
               >
                 {downloadingVersion === v.version ? (

@@ -526,7 +526,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={cargar}
-              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-800"
             >
               <IconRefresh size={16} /> Reintentar
             </button>
@@ -550,7 +550,7 @@ export default function AutorizarPage() {
             Gracias por avisarnos. Este enlace ya no sirve y <strong>nadie va a consultar tus datos</strong> con
             él. El equipo de Cofianza ya fue notificado y revisará el caso.
           </p>
-          <p className="mt-4 text-sm text-gray-400">Puedes cerrar esta página.</p>
+          <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
         </div>
       </Card>
     )
@@ -590,7 +590,7 @@ export default function AutorizarPage() {
                   </p>
                   <a
                     href={pago.payment_link_url}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-primary-600 px-5 py-3 text-base font-semibold text-white hover:bg-primary-700 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-primary-700 px-5 py-3 text-base font-semibold text-white hover:bg-primary-800 sm:w-auto"
                   >
                     Pagar {pago.monto_formateado ?? 'el estudio'} ahora
                   </a>
@@ -649,7 +649,7 @@ export default function AutorizarPage() {
       {/* Header de marca */}
       <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-700 text-white">
             <IconShieldCheck size={18} />
           </span>
           <div className="leading-tight">
@@ -671,7 +671,7 @@ export default function AutorizarPage() {
           return (
             <div key={label}>
               <div className={cn('h-1.5 rounded-full', on ? 'bg-primary-600' : 'bg-gray-200')} />
-              <p className={cn('mt-1 text-[10px] font-bold leading-tight', on ? 'text-primary-700' : 'text-gray-400')}>
+              <p className={cn('mt-1 text-[10px] font-bold leading-tight', on ? 'text-primary-700' : 'text-gray-500')}>
                 {i + 1} · {label}
               </p>
             </div>
@@ -731,7 +731,7 @@ export default function AutorizarPage() {
                   <button
                     type="button"
                     onClick={() => setIdentidadOk(true)}
-                    className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
+                    className="w-full rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
                   >
                     Sí, soy yo
                   </button>
@@ -776,7 +776,7 @@ export default function AutorizarPage() {
                       </span>
                       <IconChevronDown
                         size={16}
-                        className={cn('shrink-0 text-gray-400 transition-transform', open && 'rotate-180')}
+                        className={cn('shrink-0 text-gray-500 transition-transform', open && 'rotate-180')}
                       />
                     </button>
                     {open && (
@@ -831,7 +831,7 @@ export default function AutorizarPage() {
               type="button"
               onClick={() => irAPaso(2)}
               disabled={!acepta}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Acepto y continúo <IconArrowRight size={16} />
             </button>
@@ -844,7 +844,7 @@ export default function AutorizarPage() {
         {/* ── Paso 2: Sobre ti (§8.2 laboral/ingreso + §8.3 solo o acompañado) ── */}
         {paso === 2 && (
           <div className="space-y-5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-coral-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-coral-700">
               Paso 2 · Opcional
             </span>
             <div>
@@ -886,7 +886,7 @@ export default function AutorizarPage() {
                 {SITUACIONES.find((x) => x.key === situacion)?.pregunta ?? '¿Dónde trabajas?'}
               </label>
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3">
-                <IconBuilding2 size={16} className="shrink-0 text-gray-400" />
+                <IconBuilding2 size={16} className="shrink-0 text-gray-500" />
                 <input
                   id="donde-labora"
                   type="text"
@@ -914,7 +914,7 @@ export default function AutorizarPage() {
                 ¿Cuánto recibes al mes, aproximadamente?
               </label>
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3">
-                <span className="shrink-0 text-base font-bold text-gray-400">$</span>
+                <span className="shrink-0 text-base font-bold text-gray-500">$</span>
                 <input
                   id="ingreso"
                   type="text"
@@ -1040,14 +1040,14 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={guardarPerfilYSeguir}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
             >
               Continuar <IconArrowRight size={16} />
             </button>
             <button
               type="button"
               onClick={volverPaso}
-              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
             </button>
@@ -1057,7 +1057,7 @@ export default function AutorizarPage() {
         {/* ── Paso 3: Beneficios (opcional) ── */}
         {paso === 3 && (
           <div className="space-y-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-coral-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-coral-700">
               Paso 3 · Opcional
             </span>
             <div>
@@ -1110,14 +1110,14 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={salirDeBeneficios}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
             >
               Continuar <IconArrowRight size={16} />
             </button>
             <button
               type="button"
               onClick={volverPaso}
-              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
             </button>
@@ -1166,13 +1166,13 @@ export default function AutorizarPage() {
                     <span
                       className={cn(
                         'flex h-4 w-4 shrink-0 items-center justify-center rounded',
-                        r.on ? 'bg-primary-600 text-white' : 'border border-gray-300 text-transparent',
+                        r.on ? 'bg-primary-700 text-white' : 'border border-gray-300 text-transparent',
                       )}
                     >
                       <IconCheck size={11} />
                     </span>
                     <span className="flex-1 text-gray-700">{r.txt}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{r.lock}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{r.lock}</span>
                   </li>
                 ))}
               </ul>
@@ -1186,7 +1186,7 @@ export default function AutorizarPage() {
               type="button"
               onClick={handleConfirmarYFirmar}
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting && <IconLoader size={20} className="animate-spin" />}
               {submitting ? 'Registrando…' : 'Confirmar y autorizar'}
@@ -1195,7 +1195,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={volverPaso}
-              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
             >
               <IconArrowLeft size={14} /> Volver
             </button>
@@ -1256,7 +1256,7 @@ export default function AutorizarPage() {
             type="button"
             onClick={handleReportar}
             disabled={reportando}
-            className="w-full rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:opacity-50"
           >
             {reportando ? 'Enviando…' : 'Detener y avisar a Cofianza'}
           </button>

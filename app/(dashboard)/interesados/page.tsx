@@ -179,7 +179,7 @@ export default function InteresadosPage() {
             onClick={() => setFiltro(f.value)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               filtro === f.value
-                ? 'bg-primary-600 text-white'
+                ? 'bg-primary-700 text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -250,7 +250,7 @@ export default function InteresadosPage() {
                   </span>
                 </div>
                 <p className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-                  <IconHome size={13} className="shrink-0 text-gray-400" />
+                  <IconHome size={13} className="shrink-0 text-gray-500" />
                   <span className="truncate">{inmuebleLabel(it)}</span>
                   <span className="text-gray-300">·</span>
                   <span>{formatFecha(it.created_at)}</span>
@@ -286,7 +286,7 @@ export default function InteresadosPage() {
                     onClick={() => {
                       if (it.estado === 'nuevo') void interesadosService.updateEstado(it.id, 'contactado').catch(() => undefined)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800"
                   >
                     <IconFileText size={13} />
                     Crear estudio

@@ -94,7 +94,7 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
         {tooltip && <FieldTooltip text={tooltip} />}
       </label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
         <input
           type="text"
           inputMode="numeric"
@@ -671,7 +671,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">Fotos adicionales</h3>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
               </div>
               <p className="text-sm text-gray-500 mb-4">
                 Agrega fotos del interior. La primera foto sera la de fachada. Puedes reordenar y editar descripciones despues desde el detalle.
@@ -696,7 +696,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
 
                 {fotosAdicionales.length < 10 && (
                   <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
-                    <IconImage size={24} className="text-gray-400 mb-1" />
+                    <IconImage size={24} className="text-gray-500 mb-1" />
                     <span className="text-xs text-gray-500">Agregar</span>
                     <input
                       type="file"
@@ -1293,7 +1293,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
           >
             {isSubmitting && <IconLoader size={16} className="animate-spin" />}
             {mode === 'create' ? 'Crear Inmueble' : 'Guardar Cambios'}

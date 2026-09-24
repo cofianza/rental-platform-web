@@ -87,7 +87,7 @@ export function ExpedienteExternoModal({
             Email del cliente
           </label>
           <div className="relative">
-            <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input id="expediente-externo-modal-email-del-cliente"
               type="email"
               value={email}
@@ -121,7 +121,7 @@ export function ExpedienteExternoModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !email.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting ? (
               <><IconLoader size={14} className="animate-spin" /> Enviando...</>

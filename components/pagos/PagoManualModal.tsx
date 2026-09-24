@@ -276,11 +276,11 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-colors"
             >
-              <IconUpload size={40} className="mx-auto text-gray-400" />
+              <IconUpload size={40} className="mx-auto text-gray-500" />
               <p className="mt-2 text-sm text-gray-600">
                 Haz clic para seleccionar archivo
               </p>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-gray-500">
                 PDF, JPG o PNG (max 5MB)
               </p>
             </div>
@@ -346,7 +346,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             disabled={isSubmitting}
           >
             {isSubmitting && (

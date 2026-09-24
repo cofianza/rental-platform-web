@@ -76,7 +76,7 @@ export function SolicitudesVisitaWidget() {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-coral-500 shrink-0" />
           <h3 className="text-sm font-semibold text-coral-900">Solicitudes de visita recibidas</h3>
-          <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full bg-coral-600 text-white text-xs font-bold">
+          <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full bg-coral-600 text-ink-900 text-xs font-bold">
             {citas.length}
           </span>
         </div>
@@ -119,7 +119,7 @@ export function SolicitudesVisitaWidget() {
                         <IconPhone size={13} /> {sol.telefono}
                       </a>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-500">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">

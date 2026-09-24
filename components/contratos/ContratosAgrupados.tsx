@@ -24,7 +24,7 @@ const arrendatario = (c: IContratoListItem): string => {
 
 function Propiedad({ c }: { c: IContratoListItem }) {
   const inm = c.expedientes?.inmuebles
-  if (!inm) return <span className="text-gray-400">—</span>
+  if (!inm) return <span className="text-gray-500">—</span>
   return (
     <div>
       <span className="text-gray-900">
@@ -100,7 +100,7 @@ function Panel({
         {subtitle && <span className="text-xs text-gray-500">{subtitle}</span>}
       </div>
       {count === 0 ? (
-        <div className="px-5 py-8 text-center text-sm text-gray-400">{vacio}</div>
+        <div className="px-5 py-8 text-center text-sm text-gray-500">{vacio}</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

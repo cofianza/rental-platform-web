@@ -209,7 +209,7 @@ export function ReEvaluacionSection({
                 className="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-100"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <IconFileText size={18} className="text-gray-400 shrink-0" />
+                  <IconFileText size={18} className="text-gray-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{doc.nombre_original}</p>
                     <p className="text-xs text-gray-500">
@@ -272,13 +272,13 @@ export function ReEvaluacionSection({
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <IconFileText size={16} />
                 <span className="truncate max-w-[200px]">{selectedFile.name}</span>
-                <span className="text-gray-400">({formatFileSize(selectedFile.size)})</span>
+                <span className="text-gray-500">({formatFileSize(selectedFile.size)})</span>
                 <button
                   onClick={() => {
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-500 hover:text-gray-600"
                 >
                   <IconTrash size={14} />
                 </button>
@@ -306,7 +306,7 @@ export function ReEvaluacionSection({
           {selectedFile && !uploading && (
             <button
               onClick={handleUpload}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
             >
               <IconUpload size={16} />
               Subir documento
@@ -324,7 +324,7 @@ export function ReEvaluacionSection({
             className={cn(
               'inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors',
               documentosSoporte.length > 0
-                ? 'text-white bg-primary-600 hover:bg-primary-700'
+                ? 'text-white bg-primary-700 hover:bg-primary-800'
                 : 'text-gray-400 bg-gray-100 cursor-not-allowed',
             )}
           >

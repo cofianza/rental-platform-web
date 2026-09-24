@@ -136,7 +136,7 @@ export function RentabilidadPropietarioSection() {
             </button>
           </div>
         ) : inmuebles.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-gray-400">
+          <p className="px-6 py-8 text-center text-sm text-gray-500">
             Aún no tienes inmuebles registrados.
           </p>
         ) : (
@@ -218,7 +218,7 @@ export function RentabilidadPropietarioSection() {
       <Panel title="Resumen de tu cartera" dot="bg-primary-600">
         <div className="grid grid-cols-2 gap-4 p-5 lg:grid-cols-4">
           <Stat label="Ingresos brutos" value={money(cartera.brutos)} sub="mensual" Icon={IconDollarSign} color="text-blue-600" />
-          <Stat label="Gastos" value={money(cartera.gastosMes)} sub="mensual" Icon={IconBarChart3} color="text-coral-500" />
+          <Stat label="Gastos" value={money(cartera.gastosMes)} sub="mensual" Icon={IconBarChart3} color="text-coral-700" />
           <Stat
             label="Ingreso neto"
             value={money(cartera.netoMes)}

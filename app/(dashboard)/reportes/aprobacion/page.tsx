@@ -171,7 +171,7 @@ function EmptyChart() {
       <p className="text-gray-500 text-sm">
         No hay datos de aprobación para el periodo seleccionado.
       </p>
-      <p className="text-gray-400 text-xs mt-1">
+      <p className="text-gray-500 text-xs mt-1">
         Intenta ajustar los filtros de fecha.
       </p>
     </div>
@@ -291,7 +291,7 @@ export default function AprobacionExpedientesPage() {
         <button
           onClick={handleApply}
           disabled={loading}
-          className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Aplicar
         </button>
@@ -400,7 +400,7 @@ export default function AprobacionExpedientesPage() {
             </tfoot>
           </table>
         ) : !loading ? (
-          <div className="p-6 text-center text-gray-400 text-sm">Sin datos para mostrar</div>
+          <div className="p-6 text-center text-gray-500 text-sm">Sin datos para mostrar</div>
         ) : null}
       </div>
     </div>

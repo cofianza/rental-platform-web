@@ -320,7 +320,7 @@ export function ReasignarEstudioModal({
                     activo && 'bg-primary-50',
                   )}
                 >
-                  <div className="mt-0.5 text-gray-400">
+                  <div className="mt-0.5 text-gray-500">
                     <IconHome size={16} />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -360,7 +360,7 @@ export function ReasignarEstudioModal({
               <span className="font-medium">
                 {canonOrigen !== null ? formatCurrency(canonOrigen) : 'Canon no registrado'}
               </span>
-              <IconArrowRight size={14} className="text-gray-400" />
+              <IconArrowRight size={14} className="text-gray-500" />
               <span className="font-medium">
                 {seleccionado.codigo} · {formatCurrency(seleccionado.valor_arriendo)}
               </span>
@@ -385,7 +385,7 @@ export function ReasignarEstudioModal({
             type="button"
             onClick={handleReasignar}
             disabled={!seleccionado || isSaving}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50"
           >
             {isSaving && <IconLoader size={14} className="animate-spin" />}
             Reasignar sin costo

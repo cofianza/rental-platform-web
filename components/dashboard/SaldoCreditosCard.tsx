@@ -52,8 +52,8 @@ export function SaldoCreditosCard() {
           <h3 className="text-sm font-semibold text-gray-700">Créditos de estudios</h3>
           {loading ? (
             <div className="flex items-center gap-2 mt-1">
-              <IconLoader className="animate-spin text-gray-400" size={16} />
-              <span className="text-xs text-gray-400">cargando…</span>
+              <IconLoader className="animate-spin text-gray-500" size={16} />
+              <span className="text-xs text-gray-500">cargando…</span>
             </div>
           ) : (
             <>
@@ -90,7 +90,7 @@ export function SaldoCreditosCard() {
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
               sinSaldo
                 ? 'bg-amber-600 text-white hover:bg-amber-700'
-                : 'bg-primary-600 text-white hover:bg-primary-700'
+                : 'bg-primary-700 text-white hover:bg-primary-800'
             }`}
           >
             <IconPlus size={14} />

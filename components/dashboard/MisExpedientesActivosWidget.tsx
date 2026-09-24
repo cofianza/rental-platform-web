@@ -144,7 +144,7 @@ export function MisExpedientesActivosWidget() {
                     → {paso.label}
                   </div>
                 </div>
-                <IconChevronRight size={16} className="text-gray-400 shrink-0" />
+                <IconChevronRight size={16} className="text-gray-500 shrink-0" />
               </Link>
             </li>
           )

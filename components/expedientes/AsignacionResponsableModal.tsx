@@ -134,7 +134,7 @@ export function AsignacionResponsableModal({
 
             {isLoadingAnalistas ? (
               <div className="flex items-center justify-center py-8">
-                <IconLoader size={24} className="text-gray-400 animate-spin" />
+                <IconLoader size={24} className="text-gray-500 animate-spin" />
               </div>
             ) : analistas.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -207,7 +207,7 @@ export function AsignacionResponsableModal({
               type="button"
               onClick={handleConfirmar}
               disabled={isLoading || !analistaSeleccionado || isLoadingAnalistas}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isLoading && <IconLoader size={16} className="animate-spin" />}
               {analistaActual ? 'Reasignar' : 'Asignar'}

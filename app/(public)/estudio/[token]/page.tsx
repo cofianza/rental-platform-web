@@ -168,12 +168,12 @@ export default function EstudioFormularioPage() {
           <button
             type="button"
             onClick={load}
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800"
           >
             <IconRefresh size={16} /> Reintentar
           </button>
         ) : (
-          <p className="text-sm text-gray-400 mt-4">
+          <p className="text-sm text-gray-500 mt-4">
             Si necesitas un nuevo enlace, contacta a tu agente inmobiliario.
           </p>
         )}
@@ -194,7 +194,7 @@ export default function EstudioFormularioPage() {
           Gracias, recibimos tus datos. Tu evaluación arranca cuando firmes la autorización de consulta,
           que te llega en otro enlace por correo o WhatsApp. Si ya la firmaste, no tienes que hacer nada más.
         </p>
-        <p className="text-sm text-gray-400 mt-4">
+        <p className="text-sm text-gray-500 mt-4">
           Puedes cerrar esta ventana.
         </p>
       </div>
@@ -292,7 +292,7 @@ export default function EstudioFormularioPage() {
             )}
           </div>
 
-          <p className="text-xs text-gray-400 pt-2">
+          <p className="text-xs text-gray-500 pt-2">
             No tienes que volver a enviarlo. Si todavía no firmaste la autorización de consulta, búscala en tu
             correo o WhatsApp: sin ella no podemos evaluar tu solicitud. Puedes cerrar esta ventana.
           </p>
@@ -417,7 +417,7 @@ export default function EstudioFormularioPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="estudio-ingresos" className="block text-sm font-medium text-gray-700 mb-1">
-              Ingresos mensuales <span className="text-gray-400">(opcional)</span>
+              Ingresos mensuales <span className="text-gray-500">(opcional)</span>
             </label>
             {/* Texto con separador de miles, no type="number": "2.500.000"
                 tecleado en un celular es-CO quedaba en blanco. */}
@@ -435,7 +435,7 @@ export default function EstudioFormularioPage() {
           </div>
           <div>
             <label htmlFor="estudio-ocupacion" className="block text-sm font-medium text-gray-700 mb-1">
-              Ocupación <span className="text-gray-400">(opcional)</span>
+              Ocupación <span className="text-gray-500">(opcional)</span>
             </label>
             <input id="estudio-ocupacion"
               type="text"
@@ -450,7 +450,7 @@ export default function EstudioFormularioPage() {
         {/* Empresa */}
         <div>
           <label htmlFor="estudio-empresa" className="block text-sm font-medium text-gray-700 mb-1">
-            Empresa donde trabajas <span className="text-gray-400">(opcional)</span>
+            Empresa donde trabajas <span className="text-gray-500">(opcional)</span>
           </label>
           <input id="estudio-empresa"
             type="text"
@@ -464,7 +464,7 @@ export default function EstudioFormularioPage() {
         {/* Direccion */}
         <div>
           <label htmlFor="estudio-direccion" className="block text-sm font-medium text-gray-700 mb-1">
-            Dirección de residencia <span className="text-gray-400">(opcional)</span>
+            Dirección de residencia <span className="text-gray-500">(opcional)</span>
           </label>
           <input id="estudio-direccion"
             type="text"
@@ -519,7 +519,7 @@ export default function EstudioFormularioPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3 px-4 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-3 px-4 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? 'Enviando...' : 'Enviar formulario'}
           </button>

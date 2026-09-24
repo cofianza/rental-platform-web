@@ -169,7 +169,7 @@ export function Sidebar() {
                 <>
                   <div
                     className={cn(
-                      'px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400',
+                      'px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500',
                       'md:hidden',
                       sidebarExpanded && 'lg:block'
                     )}

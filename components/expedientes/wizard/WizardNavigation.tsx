@@ -77,7 +77,7 @@ export function WizardNavigation({
           type="button"
           onClick={handleNextClick}
           disabled={!canProceed || isSubmitting}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {isSubmitting ? (
             <>

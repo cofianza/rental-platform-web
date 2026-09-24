@@ -265,7 +265,7 @@ export function NotificationBell() {
                             )}
                           </div>
                           <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.mensaje}</p>
-                          <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(n.created_at)}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(n.created_at)}</p>
                         </div>
                       </button>
                     </li>

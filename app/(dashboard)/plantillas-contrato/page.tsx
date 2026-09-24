@@ -155,7 +155,7 @@ export default function PlantillasContratoPage() {
         {canCreate && (
           <button
             onClick={() => setFormModal({ isOpen: true, plantilla: null })}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800"
           >
             <IconPlus size={18} />
             Nueva Plantilla

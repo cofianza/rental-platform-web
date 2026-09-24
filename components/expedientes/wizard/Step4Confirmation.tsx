@@ -104,7 +104,7 @@ export function Step4Confirmation({
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
-            <IconHome size={16} className="text-gray-400" />
+            <IconHome size={16} className="text-gray-500" />
             Inmueble Seleccionado
           </h3>
           <button
@@ -166,7 +166,7 @@ export function Step4Confirmation({
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
-            <IconUser size={16} className="text-gray-400" />
+            <IconUser size={16} className="text-gray-500" />
             Solicitante
             {isNewSolicitante && (
               <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
@@ -205,12 +205,12 @@ export function Step4Confirmation({
               {/* Contacto */}
               <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-1">
-                  <IconMail size={14} className="text-gray-400" />
+                  <IconMail size={14} className="text-gray-500" />
                   {solicitanteData.email}
                 </span>
                 {solicitanteData.telefono && (
                   <span className="flex items-center gap-1">
-                    <IconPhone size={14} className="text-gray-400" />
+                    <IconPhone size={14} className="text-gray-500" />
                     {solicitanteData.telefono}
                   </span>
                 )}
@@ -219,7 +219,7 @@ export function Step4Confirmation({
               {/* Info adicional si existe */}
               {(solicitanteData.ocupacion || solicitanteData.empresa) && (
                 <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <IconBuilding2 size={14} className="text-gray-400" />
+                  <IconBuilding2 size={14} className="text-gray-500" />
                   {solicitanteData.ocupacion}
                   {solicitanteData.empresa && ` - ${solicitanteData.empresa}`}
                 </div>
@@ -233,7 +233,7 @@ export function Step4Confirmation({
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
-            <IconFileText size={16} className="text-gray-400" />
+            <IconFileText size={16} className="text-gray-500" />
             Configuracion
           </h3>
           <button
@@ -251,7 +251,7 @@ export function Step4Confirmation({
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Forma de pago del estudio</p>
             {forma_pago ? (
               <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
-                <IconCreditCard size={14} className="text-gray-400" />
+                <IconCreditCard size={14} className="text-gray-500" />
                 {FORMA_PAGO_LABEL[forma_pago]}
               </p>
             ) : (
@@ -267,7 +267,7 @@ export function Step4Confirmation({
                 {notas}
               </p>
             ) : (
-              <p className="text-sm text-gray-400 italic">Sin notas</p>
+              <p className="text-sm text-gray-500 italic">Sin notas</p>
             )}
           </div>
 
@@ -277,19 +277,19 @@ export function Step4Confirmation({
             {miembro_responsable_id ? (
               <p className="text-sm text-gray-700">
                 <span className="inline-flex items-center gap-1">
-                  <IconUser size={14} className="text-gray-400" />
+                  <IconUser size={14} className="text-gray-500" />
                   {miembro_responsable_nombre || 'Responsable asignado'}
                 </span>
               </p>
             ) : analista_id ? (
               <p className="text-sm text-gray-700">
                 <span className="inline-flex items-center gap-1">
-                  <IconUser size={14} className="text-gray-400" />
+                  <IconUser size={14} className="text-gray-500" />
                   Analista asignado
                 </span>
               </p>
             ) : (
-              <p className="text-sm text-gray-400 italic">Sin asignar</p>
+              <p className="text-sm text-gray-500 italic">Sin asignar</p>
             )}
           </div>
         </div>
@@ -305,7 +305,7 @@ export function Step4Confirmation({
             'flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-colors',
             isSubmitting
               ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-              : 'bg-coral-500 text-white shadow-sm hover:bg-coral-600'
+              : 'bg-coral-500 text-ink-900 shadow-sm hover:bg-coral-400'
           )}
         >
           {isSubmitting ? (

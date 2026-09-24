@@ -89,7 +89,7 @@ export function MotivoDialog({
             onClick={confirmar}
             disabled={!valido || isLoading}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 ${
-              variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
+              variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
             }`}
           >
             {isLoading ? 'Guardando…' : confirmLabel}

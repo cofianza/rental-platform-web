@@ -130,12 +130,12 @@ export default function CoarrendatarioPublicPage() {
           <button
             type="button"
             onClick={fetchView}
-            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-800"
           >
             <IconRefresh size={16} /> Reintentar
           </button>
         )}
-        <p className="text-xs text-gray-400 mt-4">
+        <p className="text-xs text-gray-500 mt-4">
           Si crees que es un error, escribe a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
         </p>
       </div>
@@ -149,7 +149,7 @@ export default function CoarrendatarioPublicPage() {
         <p className="text-sm text-gray-600 mb-4">
           Le avisamos a {view?.expediente.titular_nombre} que no continuarás como co-arrendatario.
         </p>
-        <p className="text-xs text-gray-400">Puedes cerrar esta página.</p>
+        <p className="text-xs text-gray-500">Puedes cerrar esta página.</p>
       </div>
     )
   }
@@ -164,7 +164,7 @@ export default function CoarrendatarioPublicPage() {
         <p className="text-sm text-gray-700">
           {resultMsg || 'Aceptación registrada. Estamos procesando tu evaluación.'}
         </p>
-        <p className="text-xs text-gray-400 mt-4">
+        <p className="text-xs text-gray-500 mt-4">
           {view?.estado === 'estudio_completado'
             ? `Te enviamos el resultado a ${view.email}.`
             : `Te enviaremos a ${view?.email} el resultado de tu evaluación cuando esté listo.`}
@@ -319,7 +319,7 @@ export default function CoarrendatarioPublicPage() {
               type="button"
               onClick={handleAceptar}
               disabled={procesando || !acceptTerms || !acceptData}
-              className="flex-1 px-5 py-3 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-sm"
+              className="flex-1 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
             >
               {phase === 'aceptando' ? 'Procesando…' : 'Aceptar y autorizar la evaluación'}
             </button>

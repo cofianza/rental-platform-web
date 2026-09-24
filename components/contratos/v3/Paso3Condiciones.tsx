@@ -90,7 +90,7 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
         />
         <div>
           <p className="mb-1 block text-sm font-medium text-gray-700">
-            Fecha de vencimiento <span className="font-normal text-gray-400">(calculada)</span>
+            Fecha de vencimiento <span className="font-normal text-gray-500">(calculada)</span>
           </p>
           <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{vencimiento}</p>
         </div>
@@ -144,7 +144,7 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
           {errores.administracion && <p className="text-xs text-red-600">{errores.administracion}</p>}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Cuota de administración a cargo de<span className="text-coral-500"> *</span>
+              Cuota de administración a cargo de<span className="text-coral-700"> *</span>
               <select
                 aria-invalid={!!errores['administracion.aCargoDe']}
                 value={adm.aCargoDe ?? ''}

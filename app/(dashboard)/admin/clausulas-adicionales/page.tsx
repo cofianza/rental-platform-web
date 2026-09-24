@@ -281,9 +281,9 @@ function Tabla({
                         className="flex items-start gap-1.5 text-left font-medium text-gray-900 hover:text-primary-700"
                       >
                         {open ? (
-                          <IconChevronDown size={16} className="mt-0.5 shrink-0 text-gray-400" />
+                          <IconChevronDown size={16} className="mt-0.5 shrink-0 text-gray-500" />
                         ) : (
-                          <IconChevronRight size={16} className="mt-0.5 shrink-0 text-gray-400" />
+                          <IconChevronRight size={16} className="mt-0.5 shrink-0 text-gray-500" />
                         )}
                         <span className="break-words">{c.titulo}</span>
                       </button>

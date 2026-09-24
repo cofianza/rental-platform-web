@@ -82,7 +82,7 @@ function ActionMenu({ onEdit, onDelete, canEdit, canDelete }: ActionMenuProps) {
         onClick={() => setOpen(!open)}
         className="p-1 rounded hover:bg-gray-200 transition-colors"
       >
-        <IconMoreVertical size={16} className="text-gray-400" />
+        <IconMoreVertical size={16} className="text-gray-500" />
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
@@ -302,7 +302,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="text-gray-400 animate-spin" />
+        <IconLoader size={24} className="text-gray-500 animate-spin" />
       </div>
     )
   }
@@ -338,7 +338,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
           <button
             type="submit"
             disabled={!nuevoComentario.trim() || isSending}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSending && <IconLoader size={16} className="animate-spin" />}
             Agregar comentario
@@ -378,7 +378,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
                       {timeAgo(comentario.created_at)}
                     </span>
                     {edited && (
-                      <span className="text-xs text-gray-400 italic">(editado)</span>
+                      <span className="text-xs text-gray-500 italic">(editado)</span>
                     )}
                     {/* Action menu - visible on hover or when menu is open */}
                     <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
@@ -409,7 +409,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
                         <button
                           onClick={handleSaveEdit}
                           disabled={!editText.trim() || isSavingEdit}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors disabled:opacity-50"
                         >
                           {isSavingEdit ? (
                             <IconLoader size={12} className="animate-spin" />
@@ -426,7 +426,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
                           <IconX size={12} />
                           Cancelar
                         </button>
-                        <span className="text-xs text-gray-400 ml-auto">
+                        <span className="text-xs text-gray-500 ml-auto">
                           Cmd+Enter para guardar
                         </span>
                       </div>

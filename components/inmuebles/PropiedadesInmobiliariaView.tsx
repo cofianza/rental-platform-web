@@ -356,7 +356,7 @@ export function PropiedadesInmobiliariaView() {
                         >
                           {i.codigo}
                         </button>
-                        <span className="truncate text-xs font-medium text-gray-400">{TIPO_LABELS[i.tipo]}</span>
+                        <span className="truncate text-xs font-medium text-gray-500">{TIPO_LABELS[i.tipo]}</span>
                         {/* Indicador §4.2: varios candidatos en paralelo sobre la misma propiedad. */}
                         <EstudiosActivosBadge count={i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
                       </div>
@@ -364,7 +364,7 @@ export function PropiedadesInmobiliariaView() {
                       <h4 className="truncate text-base font-bold text-gray-900">{i.direccion}</h4>
                       {i.ciudad && (
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-                          <IconMapPin size={12} className="shrink-0 text-gray-400" />
+                          <IconMapPin size={12} className="shrink-0 text-gray-500" />
                           <span className="truncate">{i.ciudad}</span>
                         </p>
                       )}
@@ -373,25 +373,25 @@ export function PropiedadesInmobiliariaView() {
                       <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs font-medium text-gray-500">
                         {i.habitaciones > 0 && (
                           <span className="inline-flex items-center gap-1" title="Habitaciones">
-                            <IconBed size={14} className="text-gray-400" />
+                            <IconBed size={14} className="text-gray-500" />
                             {i.habitaciones}
                           </span>
                         )}
                         {i.banos > 0 && (
                           <span className="inline-flex items-center gap-1" title="Baños">
-                            <IconBath size={14} className="text-gray-400" />
+                            <IconBath size={14} className="text-gray-500" />
                             {i.banos}
                           </span>
                         )}
                         {i.area_m2 ? (
                           <span className="inline-flex items-center gap-1" title="Área">
-                            <IconRuler size={14} className="text-gray-400" />
+                            <IconRuler size={14} className="text-gray-500" />
                             {i.area_m2} m²
                           </span>
                         ) : null}
                         {i.parqueaderos > 0 && (
                           <span className="inline-flex items-center gap-1" title="Parqueaderos">
-                            <IconCar size={14} className="text-gray-400" />
+                            <IconCar size={14} className="text-gray-500" />
                             {i.parqueaderos}
                           </span>
                         )}
@@ -400,7 +400,7 @@ export function PropiedadesInmobiliariaView() {
                       {/* Precio */}
                       <p className="mt-2">
                         <span className="text-lg font-black tracking-tight text-gray-900">{money(i.valor_arriendo)}</span>
-                        <span className="ml-1 text-xs font-medium text-gray-400">/mes</span>
+                        <span className="ml-1 text-xs font-medium text-gray-500">/mes</span>
                       </p>
                     </div>
 
@@ -412,7 +412,7 @@ export function PropiedadesInmobiliariaView() {
                         href={estaPublicado(i) ? `/inmueble/${i.id}` : `/inmuebles/${i.id}`}
                         target={estaPublicado(i) ? '_blank' : undefined}
                         rel={estaPublicado(i) ? 'noopener noreferrer' : undefined}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700"
                       >
                         <IconGlobe size={13} />
                         {estaPublicado(i) ? 'Ver en web' : 'Ver ficha'}
@@ -421,7 +421,7 @@ export function PropiedadesInmobiliariaView() {
                         <button
                           type="button"
                           onClick={() => handleToggleVitrina(i, !flagVitrina)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700"
                         >
                           {flagVitrina ? <IconEyeOff size={13} /> : <IconEye size={13} />}
                           {flagVitrina ? 'Pausar' : 'Publicar'}
@@ -431,7 +431,7 @@ export function PropiedadesInmobiliariaView() {
                         <button
                           type="button"
                           onClick={() => router.push(`/inmuebles/${i.id}/editar`)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700"
                         >
                           <IconPencil size={13} />
                           Editar

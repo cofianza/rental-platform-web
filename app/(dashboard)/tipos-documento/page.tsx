@@ -81,7 +81,7 @@ function SortableRow({ tipo, onEdit, onToggle }: SortableRowProps) {
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none"
+          className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-600 touch-none"
           aria-label="Arrastrar para reordenar"
         >
           <IconMenu size={16} />
@@ -314,7 +314,7 @@ function TiposDocumentoContent() {
               className={cn(
                 'px-3 py-1.5 text-sm rounded-lg transition-colors',
                 filterActivo === filter
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-primary-700 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
               )}
             >
@@ -335,7 +335,7 @@ function TiposDocumentoContent() {
 
         <Link
           href="/tipos-documento/nuevo"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconPlus size={16} />
           Nuevo tipo

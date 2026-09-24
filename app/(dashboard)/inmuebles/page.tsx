@@ -329,7 +329,7 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
             onClick={() => onSelect(c.patch)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
               isActive
-                ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                ? 'bg-primary-700 text-white border-primary-700 shadow-sm'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
             }`}
           >

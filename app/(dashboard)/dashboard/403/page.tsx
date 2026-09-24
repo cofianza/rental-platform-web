@@ -46,7 +46,7 @@ export default function ForbiddenPage() {
 
       <Link
         href="/dashboard"
-        className="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+        className="px-6 py-2.5 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors font-medium"
       >
         Volver al Dashboard
       </Link>

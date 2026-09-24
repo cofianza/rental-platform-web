@@ -55,7 +55,7 @@ function Etiqueta({ htmlFor, children, requerido }: { htmlFor?: string; children
   return (
     <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-gray-700">
       {children}
-      {requerido && <span className="text-coral-500"> *</span>}
+      {requerido && <span className="text-coral-700"> *</span>}
     </label>
   )
 }
@@ -155,7 +155,7 @@ export function SiNo({
     <fieldset>
       <legend className="mb-1 block text-sm font-medium text-gray-700">
         {label}
-        <span className="text-coral-500"> *</span>
+        <span className="text-coral-700"> *</span>
       </legend>
       <div className="flex gap-2">
         {[true, false].map((v) => (
@@ -233,7 +233,7 @@ export function OpcionTarjeta({
       <span
         className={cn(
           'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-          checked ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-500',
+          checked ? 'bg-primary-700 text-white' : 'bg-gray-100 text-gray-500',
         )}
       >
         {checked ? <IconCheck size={18} /> : <Icono size={18} />}
@@ -296,7 +296,7 @@ export function Dato({ label, valor, ancho }: { label: string; valor: ReactNode;
     <div className={cn('min-w-0', ancho && 'sm:col-span-2')}>
       <dt className="text-xs text-gray-500">{label}</dt>
       <dd className="break-words text-sm font-medium text-gray-900">
-        {valor === null || valor === undefined || valor === '' ? <span className="text-gray-400">Sin registrar</span> : valor}
+        {valor === null || valor === undefined || valor === '' ? <span className="text-gray-500">Sin registrar</span> : valor}
       </dd>
     </div>
   )

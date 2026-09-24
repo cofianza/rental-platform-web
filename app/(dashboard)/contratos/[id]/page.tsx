@@ -389,12 +389,12 @@ export default function ContratoDetallePage() {
   if (notFound) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <IconAlertTriangle size={48} className="text-gray-400 mb-4" />
+        <IconAlertTriangle size={48} className="text-gray-500 mb-4" />
         <p className="text-lg font-medium text-gray-900 mb-2">Contrato no encontrado</p>
         <p className="text-sm text-gray-500 mb-4">El contrato solicitado no existe o fue eliminado</p>
         <button
           onClick={() => router.push('/contratos')}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Volver a Contratos
         </button>
@@ -411,7 +411,7 @@ export default function ContratoDetallePage() {
         <p className="text-sm text-gray-500 mb-4">{error}</p>
         <button
           onClick={() => fetchContrato()}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Reintentar
         </button>
@@ -429,7 +429,7 @@ export default function ContratoDetallePage() {
       <div className="flex items-center gap-2 text-sm">
         <button
           onClick={() => router.push('/contratos')}
-          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
           aria-label="Volver a Contratos"
         >
           <IconArrowLeft size={18} />
@@ -440,7 +440,7 @@ export default function ContratoDetallePage() {
         >
           Contratos
         </button>
-        <IconChevronRight size={14} className="text-gray-400" />
+        <IconChevronRight size={14} className="text-gray-500" />
         <span className="text-gray-900 font-medium truncate">{contrato.nombre_archivo || 'contrato.pdf'}</span>
       </div>
 
@@ -490,7 +490,7 @@ export default function ContratoDetallePage() {
               onClick={handleEnviarAFirma}
               disabled={enviandoFirma || !contrato.storage_key}
               title={!contrato.storage_key ? 'Genera el PDF antes de enviar a firma' : 'Llevar a firma y notificar al arrendatario por WhatsApp'}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-coral-500 rounded-lg hover:bg-coral-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-500/40"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-500/40"
             >
               {enviandoFirma ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
               {enviandoFirma ? 'Preparando…' : 'Enviar a firma'}
@@ -500,7 +500,7 @@ export default function ContratoDetallePage() {
             <button
               key={t.estado}
               onClick={() => handleAbrirTransicion(t.estado)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
             >
               <IconArrowRight size={16} />
               {t.label}
@@ -571,17 +571,17 @@ export default function ContratoDetallePage() {
             ) : previewUrl ? (
               <PdfViewer url={previewUrl} />
             ) : previewCargando ? (
-              <div className="flex h-full items-center justify-center text-gray-400">
+              <div className="flex h-full items-center justify-center text-gray-500">
                 <IconLoader size={24} className="animate-spin" />
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-500">
                   <IconFileText size={26} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">PDF no disponible</p>
-                  <p className="text-xs text-gray-400 mt-0.5">El documento aún no se ha generado o no pudo cargarse.</p>
+                  <p className="text-xs text-gray-500 mt-0.5">El documento aún no se ha generado o no pudo cargarse.</p>
                 </div>
               </div>
             )}
@@ -594,7 +594,7 @@ export default function ContratoDetallePage() {
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Canon mensual — la cifra clave del contrato, destacada. */}
             <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Canon mensual</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Canon mensual</p>
               <p className="mt-1 text-2xl font-bold text-gray-900 tabular-nums">{valorArriendoFmt}</p>
             </div>
             <div className="p-5">
@@ -781,7 +781,7 @@ function InfoRow({ icon, label, value }: { icon?: ReactNode; label: string; valu
   return (
     <div className="flex items-center justify-between gap-3">
       <dt className="flex items-center gap-2 text-gray-500">
-        {icon && <span className="text-gray-400 shrink-0">{icon}</span>}
+        {icon && <span className="text-gray-500 shrink-0">{icon}</span>}
         {label}
       </dt>
       <dd className="font-medium text-gray-900 text-right tabular-nums">{value}</dd>

@@ -147,7 +147,7 @@ export function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disable
         <span
           className={cn(
             'flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg',
-            valor ? 'bg-white' : 'bg-white text-gray-400',
+            valor ? 'bg-white' : 'bg-white text-gray-500',
           )}
         >
           {cargando ? (
@@ -282,7 +282,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
             type="button"
             onClick={verificar}
             disabled={!listo || enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando ? <IconLoader size={20} className="animate-spin" /> : resultado ? <IconRefresh size={18} /> : null}
             {enviando ? 'Verificando…' : resultado ? 'Intentar de nuevo' : 'Verificar mi identidad'}
@@ -299,7 +299,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
         className={cn(
           'w-full rounded-lg px-6 py-3 text-sm font-bold transition-colors',
           verificada
-            ? 'bg-primary-600 text-white hover:bg-primary-700'
+            ? 'bg-primary-700 text-white hover:bg-primary-800'
             : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
         )}
       >
@@ -307,7 +307,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
       </button>
 
       {!verificada && (
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-500">
           Tu foto solo se usa para confirmar tu identidad. No se guarda en Cofianza ni se comparte con la
           inmobiliaria.{' '}
           <button
@@ -326,7 +326,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
         type="button"
         onClick={onVolver}
         disabled={enviando}
-        className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-600"
+        className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
       >
         <IconArrowLeft size={14} /> Volver
       </button>

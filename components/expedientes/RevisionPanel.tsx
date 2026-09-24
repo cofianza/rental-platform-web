@@ -121,7 +121,7 @@ function ThumbnailImage({ doc, onClick }: { doc: IDocumento; onClick: () => void
   if (isLoadingUrl) {
     return (
       <div className="w-full h-32 bg-gray-50 rounded-lg flex items-center justify-center">
-        <IconLoader size={18} className="animate-spin text-gray-400" />
+        <IconLoader size={18} className="animate-spin text-gray-500" />
       </div>
     )
   }
@@ -313,7 +313,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
         </div>
         <button
           onClick={fetchDocumentos}
-          className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+          className="p-1.5 text-gray-500 hover:text-gray-600 rounded transition-colors"
           title="Actualizar"
         >
           <IconRefresh size={16} />
@@ -422,7 +422,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
                       {doc.tipo_documento?.nombre ?? 'Sin tipo'} • {formatFileSize(doc.tamano_bytes)} • v{doc.version}
                     </p>
                     {doc.fecha_revision && doc.validador && (
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Revisado por {doc.validador.nombre} {doc.validador.apellido} el{' '}
                         {formatDate(doc.fecha_revision)}
                       </p>
@@ -482,7 +482,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
                   )}
 
                   {doc.estado === 'rechazado' && (
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-400 ml-auto">
+                    <span className="inline-flex items-center gap-1 text-xs text-gray-500 ml-auto">
                       <IconClock size={14} />
                       Esperando resubida
                     </span>

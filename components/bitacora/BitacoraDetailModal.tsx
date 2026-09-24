@@ -57,7 +57,7 @@ export function BitacoraDetailModal({ log, onClose }: BitacoraDetailModalProps) 
       <div className="space-y-1">
         <DetailRow label="Fecha/Hora">{formatDateTime(log.created_at)}</DetailRow>
         <DetailRow label="Usuario">
-          {log.usuario_nombre || <span className="text-gray-400">Sistema</span>}
+          {log.usuario_nombre || <span className="text-gray-500">Sistema</span>}
         </DetailRow>
         <DetailRow label="Accion">
           <ActionBadge action={log.accion} />

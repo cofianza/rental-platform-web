@@ -312,7 +312,7 @@ export default function CitasPage() {
                 </div>
                 <div className="space-y-2 min-h-[100px]">
                   {items.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-6 italic">
+                    <p className="text-xs text-gray-500 text-center py-6 italic">
                       Sin citas en este estado
                     </p>
                   ) : (

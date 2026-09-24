@@ -13,7 +13,7 @@ export default function InmuebleNoDisponible() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <PublicNavbar />
       <main className="flex-1 max-w-2xl mx-auto px-4 py-16 text-center">
-        <IconHome size={48} className="mx-auto text-gray-400 mb-4" />
+        <IconHome size={48} className="mx-auto text-gray-500 mb-4" />
         <h1 className="font-display text-2xl font-semibold text-gray-900 mb-2">
           Este inmueble ya no está disponible
         </h1>
@@ -22,7 +22,7 @@ export default function InmuebleNoDisponible() {
         </p>
         <Link
           href="/vitrina"
-          className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700"
+          className="inline-flex items-center px-5 py-2.5 rounded-lg bg-primary-700 text-white font-medium hover:bg-primary-800"
         >
           Ver otros inmuebles
         </Link>

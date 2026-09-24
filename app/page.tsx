@@ -61,7 +61,7 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-3 mb-12">
                 <Link
                   href="/vitrina"
-                  className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
+                  className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
                   Encuentra tu inmueble <IconArrowRight size={18} />
                 </Link>
@@ -179,7 +179,7 @@ export default function HomePage() {
                 {Array.isArray(s.val) ? (
                   <>
                     {s.val[0]}
-                    <span className={s.accent === 'orange' ? 'text-coral-500' : 'text-primary-600'}>
+                    <span className={s.accent === 'orange' ? 'text-coral-700' : 'text-primary-600'}>
                       {s.val[1]}
                     </span>
                   </>
@@ -241,29 +241,29 @@ export default function HomePage() {
                 key={c.tag}
                 className={`p-9 rounded-3xl border transition-all ${
                   c.variant === 'green'
-                    ? 'bg-primary-600 border-primary-600 text-white hover:bg-primary-700'
+                    ? 'bg-primary-700 border-primary-700 text-white hover:bg-primary-800'
                     : c.variant === 'orange'
-                      ? 'bg-coral-500 border-coral-500 text-white hover:bg-coral-600'
+                      ? 'bg-coral-500 border-coral-500 text-ink-900 hover:bg-coral-400'
                       : 'bg-white border-gray-200 hover:border-primary-600 hover:shadow-xl hover:shadow-primary-600/10'
                 }`}
               >
                 <div
                   className={`text-[11px] font-bold tracking-[2px] uppercase mb-3.5 ${
-                    c.variant === 'plain' ? 'text-gray-500' : 'text-white/50'
+                    c.variant === 'plain' ? 'text-gray-500' : c.variant === 'orange' ? 'text-ink-900/80' : 'text-white/50'
                   }`}
                 >
                   {c.tag}
                 </div>
                 <h3
                   className={`text-xl font-extrabold leading-tight mb-2.5 ${
-                    c.variant === 'plain' ? 'text-gray-900' : 'text-white'
+                    c.variant === 'plain' ? 'text-gray-900' : c.variant === 'orange' ? 'text-ink-900' : 'text-white'
                   }`}
                 >
                   {c.title}
                 </h3>
                 <p
                   className={`text-sm leading-relaxed ${
-                    c.variant === 'plain' ? 'text-gray-500' : 'text-white/70'
+                    c.variant === 'plain' ? 'text-gray-500' : c.variant === 'orange' ? 'text-ink-900/80' : 'text-white/70'
                   }`}
                 >
                   {c.body}
@@ -522,7 +522,7 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
-            <div className="bg-primary-600 p-10">
+            <div className="bg-primary-700 p-10">
               <h3 className="text-base font-extrabold text-white mb-6">Con Cofianza</h3>
               <ul className="space-y-2">
                 {[
@@ -617,7 +617,7 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               href="/vitrina"
-              className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-600 text-white text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
+              className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
               Encuentra tu inmueble <IconArrowRight size={18} />
             </Link>

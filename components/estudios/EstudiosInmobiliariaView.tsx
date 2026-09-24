@@ -39,7 +39,7 @@ type BadgeKind = 'aprobado' | 'rechazado' | 'procesando' | 'esperando' | 'condic
 const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
   aprobado: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
   rechazado: { wrap: 'bg-red-50 text-red-500', dot: 'bg-red-500' },
-  condicionado: { wrap: 'bg-coral-50 text-coral-600', dot: 'bg-coral-500' },
+  condicionado: { wrap: 'bg-coral-50 text-coral-700', dot: 'bg-coral-500' },
   procesando: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
   esperando: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
 }
@@ -170,7 +170,7 @@ export function EstudiosInmobiliariaView({
           )}
           <Link
             href="/expedientes/nuevo"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-coral-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-coral-500 px-4 py-2 text-sm font-bold text-ink-900 transition-colors hover:bg-coral-400"
           >
             <IconPlus size={16} />
             Nuevo estudio
@@ -271,7 +271,7 @@ export function EstudiosInmobiliariaView({
                         <span
                           className={cn(
                             'inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-                            esCoa ? 'bg-blue-50 text-blue-600' : 'bg-coral-50 text-coral-600',
+                            esCoa ? 'bg-blue-50 text-blue-600' : 'bg-coral-50 text-coral-700',
                           )}
                         >
                           {esCoa ? 'Co-arrendatario' : 'Individual'}
@@ -297,7 +297,7 @@ export function EstudiosInmobiliariaView({
                         <button
                           onClick={() => verEstudio(e.id)}
                           disabled={cargandoDetalle}
-                          className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-600 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700 disabled:opacity-50"
                         >
                           Ver
                           <IconChevronRight size={14} />

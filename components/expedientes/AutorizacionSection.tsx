@@ -237,7 +237,7 @@ export function AutorizacionSection({
   if (loading) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center gap-2 text-gray-400">
+        <div className="flex items-center gap-2 text-gray-500">
           <IconLoader size={16} className="animate-spin" />
           <span className="text-sm">Cargando autorizacion...</span>
         </div>
@@ -324,7 +324,7 @@ export function AutorizacionSection({
             <button
               onClick={handleEnviarEnlace}
               disabled={sending}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
             >
               {sending ? (
                 <IconLoader size={16} className="animate-spin" />
@@ -408,11 +408,11 @@ export function AutorizacionSection({
                 { txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false },
               ].map((c) => (
                 <div key={c.txt} className="flex items-center justify-between gap-2">
-                  <span className={`flex items-center gap-1.5 ${c.on ? 'text-gray-800' : 'text-gray-400'}`}>
+                  <span className={`flex items-center gap-1.5 ${c.on ? 'text-gray-800' : 'text-gray-500'}`}>
                     <IconCheck size={14} className={c.on ? 'text-green-600' : 'text-gray-300'} />
                     {c.txt}
                   </span>
-                  <span className={`text-[10px] font-semibold uppercase ${c.oblig ? 'text-gray-400' : c.on ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`text-[10px] font-semibold uppercase ${c.oblig ? 'text-gray-500' : c.on ? 'text-green-600' : 'text-gray-500'}`}>
                     {c.oblig ? 'Obligatorio' : c.on ? 'Aceptado' : 'No aceptado'}
                   </span>
                 </div>
@@ -427,7 +427,7 @@ export function AutorizacionSection({
               className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <span className="flex items-center gap-2"><IconShield size={14} /> Evidencia de la firma</span>
-              <span className="text-xs text-gray-400">{showEvidencia ? 'Ocultar' : 'Ver'}</span>
+              <span className="text-xs text-gray-500">{showEvidencia ? 'Ocultar' : 'Ver'}</span>
             </button>
             {showEvidencia && (
               <dl className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
@@ -463,7 +463,7 @@ export function AutorizacionSection({
                 className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <span>Texto de la autorización firmada</span>
-                <span className="text-xs text-gray-400">{showTexto ? 'Ocultar' : 'Ver'}</span>
+                <span className="text-xs text-gray-500">{showTexto ? 'Ocultar' : 'Ver'}</span>
               </button>
               {showTexto && (
                 <div className="px-4 pb-4 max-h-72 overflow-y-auto">
@@ -535,7 +535,7 @@ export function AutorizacionSection({
             <button
               onClick={handleEnviarEnlace}
               disabled={sending}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
             >
               {sending ? (
                 <IconLoader size={16} className="animate-spin" />
@@ -565,7 +565,7 @@ export function AutorizacionSection({
             <button
               onClick={handleEnviarEnlace}
               disabled={sending}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
             >
               {sending ? (
                 <IconLoader size={16} className="animate-spin" />
@@ -611,7 +611,7 @@ export function AutorizacionSection({
               <div>
                 <dt className="text-xs text-gray-500">Dónde labora</dt>
                 <dd className="text-gray-900 font-medium flex items-center gap-1.5">
-                  <IconBuilding2 size={13} className="text-gray-400" />
+                  <IconBuilding2 size={13} className="text-gray-500" />
                   {perfil.donde_labora}
                 </dd>
               </div>
@@ -630,7 +630,7 @@ export function AutorizacionSection({
                     </span>
                   )}
                 </dd>
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] text-gray-500 mt-1">
                   No se le muestra a la inmobiliaria ni al propietario (§8.2).
                 </p>
               </div>
@@ -643,7 +643,7 @@ export function AutorizacionSection({
                     un correo largo desborda la tarjeta y mete scroll horizontal
                     en toda la página del expediente vista en un móvil. */}
                 <dd className="text-gray-900 font-medium flex flex-wrap items-center gap-1.5">
-                  <IconUsers size={13} className="text-gray-400 shrink-0" />
+                  <IconUsers size={13} className="text-gray-500 shrink-0" />
                   {perfil.presentacion === 'acompanado' ? 'Con un co-arrendatario' : 'Solo'}
                   {perfil.coarrendatario_intencion && (
                     <span className="text-gray-600 font-normal min-w-0 break-all">
@@ -654,7 +654,7 @@ export function AutorizacionSection({
                   )}
                 </dd>
                 {perfil.presentacion === 'acompanado' && (
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="text-[11px] text-gray-500 mt-1">
                     Es una intención, no una invitación: la invitación real se emite desde la sección de
                     co-arrendatario cuando el estudio quede condicionado.
                   </p>

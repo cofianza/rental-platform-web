@@ -87,7 +87,7 @@ function ConvenioPanel({ org, onGuardado }: { org: InmobiliariaAdmin; onGuardado
           type="button"
           onClick={guardar}
           disabled={!cambio || guardando}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {guardando && <IconLoader size={14} className="animate-spin" />}
           Guardar
@@ -328,7 +328,7 @@ export default function AdminInmobiliariasPage() {
         </div>
       ) : orgs.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <IconUsers size={32} className="text-gray-400 mx-auto mb-3" />
+          <IconUsers size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-600">No hay inmobiliarias registradas todavía.</p>
         </div>
       ) : (
@@ -350,22 +350,22 @@ export default function AdminInmobiliariasPage() {
                     </p>
                     {/* 1.6: dato de conversión — de qué afianzadora/aseguradora vienen. */}
                     {o.afianzadora_tipo && o.afianzadora_tipo !== 'ninguna' ? (
-                      <p className="text-xs text-gray-400 truncate">
+                      <p className="text-xs text-gray-500 truncate">
                         Venía de: {o.afianzadora_actual || 'sin nombre'} ({o.afianzadora_tipo})
                       </p>
                     ) : o.afianzadora_tipo === 'ninguna' ? (
-                      <p className="text-xs text-gray-400 truncate">Sin afianzadora previa</p>
+                      <p className="text-xs text-gray-500 truncate">Sin afianzadora previa</p>
                     ) : null}
                     {o.modalidad_fianza_defecto && (
-                      <p className="text-xs text-gray-400 truncate">
+                      <p className="text-xs text-gray-500 truncate">
                         Fianza por defecto: {MODALIDAD_LABEL[o.modalidad_fianza_defecto]}
                       </p>
                     )}
                   </div>
                   {open ? (
-                    <IconChevronDown size={18} className="text-gray-400 flex-shrink-0" />
+                    <IconChevronDown size={18} className="text-gray-500 flex-shrink-0" />
                   ) : (
-                    <IconChevronRight size={18} className="text-gray-400 flex-shrink-0" />
+                    <IconChevronRight size={18} className="text-gray-500 flex-shrink-0" />
                   )}
                 </button>
                 {open && (
