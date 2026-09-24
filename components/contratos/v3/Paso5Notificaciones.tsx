@@ -29,7 +29,7 @@ import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
 import type { Contacto, EstadoAsistente, MarcaFirma, NumeroPaso, Paso5 } from '@/types/contratoV3'
 import { AvisosContrato, BloqueosContrato } from './BloqueosContrato'
-import { Aviso, Campo, EncabezadoPaso } from './campos'
+import { Aviso, Campo, EncabezadoPaso, RUTA_B_FIRMA_NO_HABILITADA } from './campos'
 import type { ParteFirma } from './UbicarFirmas'
 
 const PdfViewer = dynamic(() => import('@/components/ui/PdfViewer').then((m) => ({ default: m.PdfViewer })), {
@@ -245,7 +245,9 @@ export function VistaPreviaContrato({
               ? 'Guarda la ubicación de las firmas antes de enviar a firma.'
               : rutaB && propio && !propio.firmasCompletas
                 ? `Ubica en el contrato de la inmobiliaria dónde firma: ${(propio.partesSinFirma ?? []).join(', ')}.`
-                : null)
+                : rutaB && contrato.rutaBFirmaHabilitada === false
+                  ? RUTA_B_FIRMA_NO_HABILITADA
+                  : null)
 
   return (
     <section id="vista-previa" className="scroll-mt-20 space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
@@ -322,6 +324,8 @@ export function VistaPreviaContrato({
             <IconScrollText size={18} className="text-primary-600" />
             <h3 className="text-sm font-semibold text-gray-900">Contrato de la inmobiliaria (PDF)</h3>
           </div>
+          {/* Compuerta del API: se puede cargar el PDF y ubicar las firmas, pero todavía no enviar. */}
+          {contrato.rutaBFirmaHabilitada === false && <Aviso tono="aviso">{RUTA_B_FIRMA_NO_HABILITADA}</Aviso>}
           {propio ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">

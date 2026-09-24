@@ -630,6 +630,7 @@ function Asistente({
             esTitular={esTitular}
             inmuebleAccesible={inmuebleAccesible}
             modalidadConvenio={contrato.modalidadConvenio ?? undefined}
+            rutaBFirmaHabilitada={contrato.rutaBFirmaHabilitada}
           />
         )}
         {paso === 2 && (

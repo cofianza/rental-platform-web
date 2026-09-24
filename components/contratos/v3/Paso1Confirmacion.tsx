@@ -22,7 +22,17 @@ import {
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { Borrador, ErroresPaso } from '@/hooks/useContratoV3'
 import type { EstadoAsistente, Paso1 } from '@/types/contratoV3'
-import { Aviso, CampoPesos, Dato, EncabezadoPaso, OpcionTarjeta, Tarjeta, documento, porcentaje } from './campos'
+import {
+  Aviso,
+  CampoPesos,
+  Dato,
+  EncabezadoPaso,
+  OpcionTarjeta,
+  RUTA_B_FIRMA_NO_HABILITADA,
+  Tarjeta,
+  documento,
+  porcentaje,
+} from './campos'
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
 
@@ -166,6 +176,8 @@ interface Paso1Props {
   inmuebleAccesible?: boolean | null
   /** §7.2: la modalidad que fija el convenio de la inmobiliaria (viene preseleccionada). */
   modalidadConvenio?: Paso1['modalidad']
+  /** false = la Ruta B todavía no sale a firma (compuerta del API); se avisa al elegirla. */
+  rutaBFirmaHabilitada?: boolean
 }
 
 export function Paso1Confirmacion({
@@ -177,6 +189,7 @@ export function Paso1Confirmacion({
   esTitular,
   inmuebleAccesible,
   modalidadConvenio,
+  rutaBFirmaHabilitada,
 }: Paso1Props) {
   const evaluadoCop = resumen?.canon.evaluadoCop ?? null
   const maximo = resumen?.canon.maximoSinNuevaEvaluacionCop ?? null
@@ -233,6 +246,7 @@ export function Paso1Confirmacion({
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
+        {value.ruta === 'B' && rutaBFirmaHabilitada === false && <Aviso tono="aviso">{RUTA_B_FIRMA_NO_HABILITADA}</Aviso>}
       </fieldset>
 
       <fieldset className="space-y-2.5">

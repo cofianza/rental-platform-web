@@ -24,6 +24,13 @@ const TIPO_DOCUMENTO: Record<string, string> = {
 export const documento = (tipo: string, numero: string) =>
   `${TIPO_DOCUMENTO[tipo] ?? tipo.toUpperCase()} ${numero}`
 
+/**
+ * Compuerta temporal del API (RUTA_B_FIRMA_ENABLED, contrato.rutaBFirmaHabilitada): la Ruta B no
+ * sale a firma hasta la prueba con Auco; ubicar las firmas sí se puede. Mismo texto del API (firma/reglas.ts).
+ */
+export const RUTA_B_FIRMA_NO_HABILITADA =
+  'La firma de la Ruta B se habilita después de la prueba con Auco. Por ahora usa la Ruta A.'
+
 /** "2,5" — porcentajes es-CO con hasta dos decimales (como el contrato). */
 export const porcentaje = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
 
