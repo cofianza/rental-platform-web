@@ -1,7 +1,9 @@
 /**
  * Carga pública de documentos del solicitante — accesible sin login vía token.
  * La inmobiliaria envía este enlace cuando el estudio quedó condicionado para
- * que el solicitante suba su documentación adicional.
+ * que el solicitante suba su documentación adicional; también llega en el
+ * correo del condicionado. Desde aquí el prospecto, sin cuenta, invita a su
+ * co-arrendatario (P18).
  */
 
 'use client'
@@ -9,13 +11,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconLoader, IconCheckCircle, IconFileText, IconRefresh } from '@/components/icons'
+import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
+import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import {
   cargarDocumentosService,
   type ContextoCargaDocumentos,
   type PropositoSoporte,
 } from '@/services/cargarDocumentosService'
+import type { CoarrendatarioEstado } from '@/services/coarrendatarioService'
+
+// Lo que el prospecto ve de su invitado: en qué va, nunca su resultado.
+const ESTADO_INVITADO: Partial<Record<CoarrendatarioEstado, string>> = {
+  pendiente_aceptacion: 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.',
+  aceptado: 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.',
+  estudio_completado:
+    'Su evaluación terminó. Un analista de Cofianza decide tu caso con los resultados de los dos y te avisamos por correo.',
+}
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
   { value: 'certificacion_laboral', label: 'Certificación laboral' },
@@ -146,9 +158,29 @@ export default function CargarDocumentosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Carga de documentos</h1>
           <p className="text-sm text-gray-600 mt-1">
             Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
-            {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
+            {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
+            {ctx.coarrendatario.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
           </p>
         </div>
+
+        {ctx.coarrendatario.puede_invitar && (
+          <CoarrendatarioInviteForm
+            audience="solicitante"
+            initial={ctx.coarrendatario.sugerido}
+            invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
+            onInvited={cargar}
+          />
+        )}
+
+        {ctx.coarrendatario.invitado && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+            <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold text-gray-900">Invitaste a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
+              <p className="mt-1 text-gray-700">{ESTADO_INVITADO[ctx.coarrendatario.invitado.estado]}</p>
+            </div>
+          </div>
+        )}
 
         {ctx.puede_subir && (
           <div className="rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-900">

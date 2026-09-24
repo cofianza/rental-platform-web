@@ -3,6 +3,7 @@
 // ============================================
 
 import { apiClient } from '@/lib/api'
+import type { CoarrendatarioEstado, IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
 
 export type PropositoSoporte =
   | 'certificacion_laboral'
@@ -19,6 +20,12 @@ export interface ContextoCargaDocumentos {
   estado: string
   puede_subir: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
+  /** Su co-arrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar. */
+  coarrendatario: {
+    puede_invitar: boolean
+    invitado: { nombre: string; estado: CoarrendatarioEstado } | null
+    sugerido: { nombre: string; apellido: string; email?: string; telefono?: string } | null
+  }
 }
 
 interface PresignedInput {
@@ -52,6 +59,18 @@ export const cargarDocumentosService = {
   ): Promise<{ id: string; proposito: PropositoSoporte; nombre_original: string }> {
     const res = await apiClient.post<{ id: string; proposito: PropositoSoporte; nombre_original: string }>(
       `/public/cargar-documentos/${token}/confirmar`,
+      input,
+    )
+    return res.data
+  },
+
+  /** El prospecto invita a su co-arrendatario desde su enlace, sin cuenta. */
+  async invitarCoarrendatario(
+    token: string,
+    input: IInvitarCoarrendatarioInput,
+  ): Promise<{ nombre: string; estado: CoarrendatarioEstado }> {
+    const res = await apiClient.post<{ nombre: string; estado: CoarrendatarioEstado }>(
+      `/public/cargar-documentos/${token}/coarrendatario`,
       input,
     )
     return res.data

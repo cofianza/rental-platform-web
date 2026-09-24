@@ -132,7 +132,7 @@ export function CoarrendatarioPropietarioCard({
     if (expedienteEstado !== 'condicionado' || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm
-        expedienteId={expedienteId}
+        invitar={(input) => coarrendatarioService.invitar(expedienteId, input)}
         audience="gestor"
         onInvited={fetchCoa}
       />

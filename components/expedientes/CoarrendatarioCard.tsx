@@ -101,7 +101,7 @@ export function CoarrendatarioCard({
     if (!intencionLista) return null
     return (
       <CoarrendatarioInviteForm
-        expedienteId={expedienteId}
+        invitar={(input) => coarrendatarioService.invitar(expedienteId, input)}
         audience="solicitante"
         initial={intencion}
         onInvited={() => { fetchCoa(); onUpdate?.() }}

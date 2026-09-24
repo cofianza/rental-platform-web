@@ -1,15 +1,15 @@
 /**
  * CoarrendatarioInviteForm — formulario para invitar a un co-arrendatario
  * cuando el expediente está 'condicionado'. Compartido por:
- *   - el SOLICITANTE (audience='solicitante'), desde CoarrendatarioCard.
+ *   - el SOLICITANTE (audience='solicitante'), desde CoarrendatarioCard y, sin
+ *     cuenta, desde su enlace personal /cargar-documentos (P18).
  *   - el GESTOR (audience='gestor'): inmobiliaria / propietario / admin /
  *     operador, desde CoarrendatarioPropietarioCard. Útil cuando es la
  *     inmobiliaria quien lleva el expediente y agrega al co-arrendatario en
  *     nombre del inquilino.
  *
- * El backend ya autoriza a ambos (roleGuard del POST /:id/coarrendatario);
- * esto solo aporta la UI. Al enviar, llama onInvited() para que la card padre
- * refresque y muestre el estado de la invitación.
+ * Quien lo monta decide a qué endpoint va (`invitar`): el panel o el enlace
+ * con token. Al enviar, llama onInvited() para que el padre refresque.
  */
 
 'use client'
@@ -18,10 +18,7 @@ import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconUsers, IconArrowRight } from '@/components/icons'
-import {
-  coarrendatarioService,
-  type IInvitarCoarrendatarioInput,
-} from '@/services/coarrendatarioService'
+import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad) ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría).
@@ -32,7 +29,8 @@ export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_
 ]
 
 interface CoarrendatarioInviteFormProps {
-  expedienteId: string
+  /** Envía la invitación: el panel (por estudio) o el enlace del prospecto (por token). */
+  invitar: (input: IInvitarCoarrendatarioInput) => Promise<unknown>
   audience: 'solicitante' | 'gestor'
   /** Lo que el prospecto YA nos contó en el paso 2 de la autorizacion
    *  ("con quien vas a vivir"). Ahi se le prometio que no tendria que repetir
@@ -43,7 +41,7 @@ interface CoarrendatarioInviteFormProps {
 }
 
 export function CoarrendatarioInviteForm({
-  expedienteId,
+  invitar,
   audience,
   initial,
   onInvited,
@@ -72,7 +70,7 @@ export function CoarrendatarioInviteForm({
     }
     setSubmitting(true)
     try {
-      await coarrendatarioService.invitar(expedienteId, {
+      await invitar({
         nombre: nombre.trim(),
         apellido: apellido.trim(),
         tipo_documento: tipoDoc,
