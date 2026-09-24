@@ -68,7 +68,7 @@ export function EnviarFirmaModal({
       <form onSubmit={handleSubmit}>
         <div className="p-6 space-y-4">
           <p className="text-sm text-gray-500">
-            Se enviará un enlace seguro al firmante para que revise y firme el contrato. Tendrá 15 días para firmar, sin pasar la vigencia del certificado de riesgo.
+            Se enviará un enlace seguro al firmante para que revise y firme el contrato. El plazo para firmar nunca pasa la vigencia del certificado de riesgo.
           </p>
 
           <div>
