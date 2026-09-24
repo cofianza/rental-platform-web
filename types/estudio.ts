@@ -52,8 +52,9 @@ export interface IEstudio {
   certificado_url?: string | null
   /**
    * P32: el certificado del caso ya no tiene efecto (misma regla que
-   * /verificar); la API responde 409 si se pide o se genera. Detalle + listado
-   * por expediente; opcional por compatibilidad.
+   * /verificar). La API responde 409 si se genera o si el prospecto pide su
+   * versión; los gestores siguen bajando el completo ya emitido (su registro).
+   * Detalle + listado por expediente; opcional por compatibilidad.
    */
   certificado_sin_efecto?: boolean
   motivo_rechazo?: string | null
