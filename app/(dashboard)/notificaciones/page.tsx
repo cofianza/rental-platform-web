@@ -71,6 +71,7 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   'pago.no_conciliado': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   'contrato.pendiente_firma': { icon: IconPencil, badge: 'bg-violet-50 text-violet-600' },
   'contrato.vigente': { icon: IconFileCheck, badge: 'bg-emerald-50 text-emerald-600' },
+  'contrato.prorrogado': { icon: IconRefresh, badge: 'bg-emerald-50 text-emerald-600' },
   'contrato.fianza_activa': { icon: IconShieldCheck, badge: 'bg-emerald-50 text-emerald-600' },
   'contrato.firma_incompleta': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   // Adenda 1 contratos: reserva del inmueble vencida (respuesta 15) y canon sobre el tope escalado a la Gerencia (§2.4).

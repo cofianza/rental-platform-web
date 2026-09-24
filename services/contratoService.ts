@@ -23,7 +23,6 @@ import type {
   IVersionComparisonResponse,
   IContratoTransicionesResponse,
   IContratoHistorialResponse,
-  IRenovarContratoInput,
   IContratoTransitionInput,
   IContratoHistorialEntry,
   IContratoInfoFirma,
@@ -145,17 +144,6 @@ class ContratoService {
     const response = (await apiClient.post(
       `/contratos/${id}/regenerar`,
       input || {}
-    )) as unknown as IContratoResponse
-    return response.data
-  }
-
-  async renovarContrato(
-    id: string,
-    input: IRenovarContratoInput = {}
-  ): Promise<IContrato> {
-    const response = (await apiClient.post(
-      `/contratos/${id}/renovar`,
-      input
     )) as unknown as IContratoResponse
     return response.data
   }

@@ -13,7 +13,6 @@ import {
   IconChevronRight,
   IconHistory,
   IconArrowRight,
-  IconRotateCw,
   IconFileText,
   IconFileCheck,
   IconCalendar,
@@ -97,7 +96,6 @@ export default function ContratoDetallePage() {
   const [transicionLoading, setTransicionLoading] = useState(false)
   const [historialOpen, setHistorialOpen] = useState(false)
   const [compareVersions, setCompareVersions] = useState<{ v1: number; v2: number } | null>(null)
-  const [renewLoading, setRenewLoading] = useState(false)
   // Enviar a firma (con confirmación). Igual patrón que ContratosSection: un
   // pre-chequeo server-driven decide si mostramos el preview multi-parte
   // (firma multi-parte ON) o un ConfirmDialog simple (flujo de un firmante,
@@ -106,7 +104,6 @@ export default function ContratoDetallePage() {
   const [enviandoFirma, setEnviandoFirma] = useState(false)
   const [firmaPreview, setFirmaPreview] = useState<IFirmantesPreview | null>(null)
   const [confirmFirmaOpen, setConfirmFirmaOpen] = useState(false)
-  const [confirmRenovar, setConfirmRenovar] = useState(false)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
 
   const puedeEditar = usePuedeEditar()
@@ -295,20 +292,6 @@ export default function ContratoDetallePage() {
       return false
     } finally {
       setTransicionLoading(false)
-    }
-  }
-
-  async function handleRenovar() {
-    setRenewLoading(true)
-    try {
-      const nuevoContrato = await contratoService.renovarContrato(id)
-      toast.success('Contrato de renovacion creado correctamente')
-      router.push(`/contratos/${nuevoContrato.id}`)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al renovar el contrato'
-      toast.error(message)
-    } finally {
-      setRenewLoading(false)
     }
   }
 
@@ -508,16 +491,6 @@ export default function ContratoDetallePage() {
               {t.label}
             </button>
           ))}
-          {canManage && contrato.estado === 'vigente' && (
-            <button
-              onClick={() => setConfirmRenovar(true)}
-              disabled={renewLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-            >
-              {renewLoading ? <IconLoader size={16} className="animate-spin" /> : <IconRotateCw size={16} />}
-              Renovar Contrato
-            </button>
-          )}
         </div>
       </div>
 
@@ -776,18 +749,6 @@ export default function ContratoDetallePage() {
         }}
       />
 
-      <ConfirmDialog
-        isOpen={confirmRenovar}
-        onClose={() => setConfirmRenovar(false)}
-        onConfirm={async () => {
-          setConfirmRenovar(false)
-          await handleRenovar()
-        }}
-        isLoading={renewLoading}
-        title="Renovar el contrato"
-        message="Se genera un contrato nuevo en borrador a partir de este y te llevamos a él. El actual sigue vigente hasta que el nuevo se firme."
-        confirmLabel="Generar renovación"
-      />
       <ConfirmDialog
         isOpen={confirmFirmaOpen}
         onClose={() => setConfirmFirmaOpen(false)}

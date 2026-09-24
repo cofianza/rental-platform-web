@@ -71,12 +71,6 @@ export interface IGenerarContratoInput {
   comision_pct?: number
 }
 
-export interface IRenovarContratoInput {
-  fecha_inicio?: string
-  duracion_meses?: number
-  variables?: Record<string, string>
-}
-
 export interface IContratoMeta {
   total: number
   page: number
