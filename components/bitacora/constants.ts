@@ -150,6 +150,7 @@ export const ACTION_LABELS: Record<string, string> = {
   miembro_revocado: 'Miembro revocado',
   miembro_acepto: 'Miembro aceptó la invitación',
   miembro_rol_cambiado: 'Rol del miembro cambiado',
+  inmobiliaria_cerrada: 'Inmobiliaria cerrada (su titular se unió a otra)',
 }
 
 /**
@@ -254,6 +255,7 @@ export const ACTION_GROUPS: Array<{
       'miembro_acepto',
       'miembro_rol_cambiado',
       'miembro_revocado',
+      'inmobiliaria_cerrada',
     ].map(toOption),
   },
   {
