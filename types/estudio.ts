@@ -284,7 +284,9 @@ export interface ICertificadoDownloadResponse {
   version: number
 }
 
-export type VerificacionStatus = 'valido_vigente' | 'valido_vencido' | 'invalido'
+// sin_efecto (P32): auténtico, pero el estudio que lo respaldaba se negó o se
+// cerró sin aprobarse; llega sin resultado.
+export type VerificacionStatus = 'valido_vigente' | 'valido_vencido' | 'sin_efecto' | 'invalido'
 
 // P10: la identidad llega reducida (iniciales y últimos 4 del documento), sin dirección.
 export interface IVerificacionCertificado {

@@ -117,43 +117,52 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
     )
   }
 
-  const isVigente = data.status === 'valido_vigente'
+  const sinEfecto = data.status === 'sin_efecto'
   const badge = RESULTADO_BADGES[data.resultado] || BADGE_DESCONOCIDO
+  // P32: sin efecto no dice por qué ni muestra un resultado que ya no vale.
+  const encabezado = sinEfecto
+    ? {
+        fondo: 'bg-slate-100',
+        icono: <IconX size={32} className="text-slate-600" />,
+        titulo: 'Certificado sin efecto',
+        texto: 'Este certificado es auténtico, pero ya no respalda ningún arrendamiento.',
+      }
+    : data.status === 'valido_vigente'
+      ? {
+          fondo: 'bg-green-100',
+          icono: <IconCheck size={32} className="text-green-600" />,
+          titulo: 'Certificado Válido',
+          texto: 'Este certificado es auténtico y se encuentra vigente.',
+        }
+      : {
+          fondo: 'bg-yellow-100',
+          icono: <IconAlertTriangle size={32} className="text-yellow-600" />,
+          titulo: 'Certificado Vencido',
+          texto: 'Este certificado es auténtico pero ha expirado.',
+        }
 
   return (
     <div className="max-w-md mx-auto py-8">
       {/* Status header */}
       <div className="text-center mb-8">
-        <div
-          className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-            isVigente ? 'bg-green-100' : 'bg-yellow-100'
-          }`}
-        >
-          {isVigente ? (
-            <IconCheck size={32} className="text-green-600" />
-          ) : (
-            <IconAlertTriangle size={32} className="text-yellow-600" />
-          )}
+        <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${encabezado.fondo}`}>
+          {encabezado.icono}
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">
-          {isVigente ? 'Certificado Válido' : 'Certificado Vencido'}
-        </h1>
-        <p className="text-sm text-gray-500">
-          {isVigente
-            ? 'Este certificado es auténtico y se encuentra vigente.'
-            : 'Este certificado es auténtico pero ha expirado.'}
-        </p>
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">{encabezado.titulo}</h1>
+        <p className="text-sm text-gray-500">{encabezado.texto}</p>
       </div>
 
       {/* Certificate details */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Resultado badge */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Resultado del estudio</span>
-          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${badge.bg} ${badge.text}`}>
-            {badge.label}
-          </span>
-        </div>
+        {!sinEfecto && (
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Resultado del estudio</span>
+            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${badge.bg} ${badge.text}`}>
+              {badge.label}
+            </span>
+          </div>
+        )}
 
         {/* Details: P10, identidad reducida y sin dirección */}
         <div className="px-5 py-2">
