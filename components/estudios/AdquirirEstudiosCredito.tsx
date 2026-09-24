@@ -101,7 +101,7 @@ function AdquirirEstudiosCreditoContenido() {
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
           <IconCheckCircle size={15} />
-          {loading ? '…' : (saldo?.saldo_total ?? 0)} créditos disponibles
+          {loading ? '…' : (saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0)} créditos disponibles
         </span>
       </div>
       <p className="mb-5 text-sm text-gray-500">

@@ -115,9 +115,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     return () => clearInterval(id)
   }, [estado, expedienteId, onPagoCompletado])
 
-  // P22: con saldo en contra (compra contracargada) no se paga con créditos.
+  // P22: el saldo en contra (compra contracargada) se resta de lo disponible;
+  // se ofrece crédito solo si queda saldo efectivo (si no, la API da 409).
   const creditosEnContra = saldoCreditos?.creditos_en_contra ?? 0
-  const hayCreditosUsables = (saldoCreditos?.saldo_total ?? 0) > 0 && creditosEnContra === 0
+  const saldoUsable = saldoCreditos?.saldo_efectivo ?? saldoCreditos?.saldo_total ?? 0
+  const hayCreditosUsables = saldoUsable > 0
 
   const handleLiberarCredito = async () => {
     setIsSubmitting(true)
@@ -273,7 +275,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de tu saldo (${saldoCreditos?.saldo_total ?? 0} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    message={`Se descuenta 1 crédito de tu saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
                     confirmLabel="Descontar 1 crédito"
                   />
                   <button
@@ -283,7 +285,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   >
                     <IconShieldCheck size={32} className="text-emerald-600" />
                     <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
-                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoCreditos?.saldo_total} estudios</span>
+                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} estudios</span>
                     <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
                   </button>
                   </>
@@ -356,7 +358,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de tu saldo (${saldoCreditos?.saldo_total ?? 0} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    message={`Se descuenta 1 crédito de tu saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
                     confirmLabel="Descontar 1 crédito"
                   />
                   <button

@@ -107,6 +107,9 @@ export function EstudiosExpedientesFusion() {
     )
   }
 
+  // P22: lo que se puede gastar (lo que quedó en contra se resta).
+  const disponibles = saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0
+
   return (
     <div className="space-y-6">
       {/* Encabezado: intro + saldo + nuevo expediente */}
@@ -121,7 +124,7 @@ export function EstudiosExpedientesFusion() {
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
             <IconSearch size={14} />
             {saldo
-              ? `${saldo.saldo_total} ${saldo.saldo_total === 1 ? 'crédito disponible' : 'créditos disponibles'}`
+              ? `${disponibles} ${disponibles === 1 ? 'crédito disponible' : 'créditos disponibles'}`
               : saldoError
                 ? '— créditos disponibles'
                 : '… créditos disponibles'}

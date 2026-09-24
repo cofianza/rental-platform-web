@@ -202,8 +202,8 @@ export default function CreditosEstudiosPage() {
               Tienes {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'crédito' : 'créditos'} en contra
             </p>
             <p className="mt-0.5">
-              Se usaron créditos de una compra que se reversó con el banco. Se descuentan de tu próxima compra; mientras
-              tanto no puedes pagar evaluaciones con créditos, pero sí de inmediato o con el enlace al prospecto.
+              Se usaron créditos de una compra que se reversó con el banco. Se restan de tu saldo y se descuentan de tu
+              próxima compra; si no te queda saldo, paga las evaluaciones de inmediato o con el enlace al prospecto.
             </p>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function CreditosEstudiosPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Saldo total</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{saldo?.saldo_total ?? 0}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0}</p>
               <p className="text-xs text-gray-500 mt-1">créditos disponibles</p>
             </div>
             <div className="p-3 rounded-full bg-primary-100 text-primary-600">

@@ -28,7 +28,8 @@ export function SaldoCreditosCard() {
       .finally(() => setLoading(false))
   }, [])
 
-  const saldoTotal = saldo?.saldo_total ?? 0
+  // P22: lo que se puede gastar (lo que quedó en contra se resta).
+  const saldoTotal = saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0
   const sinSaldo = !fallo && saldoTotal === 0
 
   return (

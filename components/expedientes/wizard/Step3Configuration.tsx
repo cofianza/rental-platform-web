@@ -109,7 +109,8 @@ export function Step3Configuration({
     creditosEstudiosService
       .getMiSaldo()
       .then((s) => {
-        setSaldo(s.saldo_total)
+        // P22: lo que de verdad se puede gastar (lo que quedó en contra no).
+        setSaldo(s.saldo_efectivo ?? s.saldo_total)
         setSaldoError(false)
       })
       .catch(() => {
