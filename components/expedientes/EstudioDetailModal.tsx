@@ -186,9 +186,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   )
   const hayReporteFinanciero = Boolean(transunionData) || dcConHistoria
 
-  const isReevaluable =
-    estudio.estado === 'completado' &&
-    (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
+  // P33: la reevaluación es la apelación del no aprobado; el condicionado se
+  // resuelve con la revisión manual.
+  const isReevaluable = estudio.estado === 'completado' && estudio.resultado === 'rechazado'
 
   // El CRC se emite sobre el estudio del titular: el del co-arrendatario ya se
   // refleja en él (la API responde 409).

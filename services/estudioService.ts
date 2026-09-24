@@ -247,13 +247,11 @@ export const estudioService = {
   /**
    * Solicita re-evaluacion de un estudio
    */
-  async solicitarReEvaluacion(
-    estudioId: string,
-    observaciones?: string,
-  ): Promise<IEstudio> {
+  /** P33: el fundamento es obligatorio (mínimo 10 caracteres en el API). */
+  async solicitarReEvaluacion(estudioId: string, fundamento: string): Promise<IEstudio> {
     const res = await apiClient.post<IEstudio>(
       `/estudios/${estudioId}/re-evaluar`,
-      { observaciones },
+      { observaciones: fundamento },
     )
     return res.data
   },

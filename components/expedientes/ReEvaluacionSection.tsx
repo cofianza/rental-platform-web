@@ -1,14 +1,16 @@
 /**
  * ReEvaluacionSection
  * Seccion para subir documentos soporte y solicitar re-evaluacion
- * Visible solo cuando estudio.estado === 'completado' y resultado in [rechazado, condicionado]
+ * Visible solo cuando estudio.estado === 'completado' y resultado === 'rechazado'
+ * (P33: es la apelación del no aprobado; el condicionado se resuelve con la
+ * revisión manual).
  */
 
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import {
   IconUpload,
   IconFileText,
@@ -75,7 +77,6 @@ export function ReEvaluacionSection({
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [observaciones, setObservaciones] = useState('')
   const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -125,9 +126,7 @@ export function ReEvaluacionSection({
   }, [selectedFile, proposito, estudio.id, onDocumentoAdded])
 
   // Derived state
-  const isReevaluable =
-    estudio.estado === 'completado' &&
-    (estudio.resultado === 'rechazado' || estudio.resultado === 'condicionado')
+  const isReevaluable = estudio.estado === 'completado' && estudio.resultado === 'rechazado'
 
   if (!isReevaluable) return null
 
@@ -158,20 +157,18 @@ export function ReEvaluacionSection({
     setSelectedFile(file)
   }
 
-  const handleSolicitarReEvaluacion = async () => {
+  // `false` le dice a MotivoDialog que falló: conserva el fundamento escrito.
+  const handleSolicitarReEvaluacion = async (fundamento: string) => {
     setRequesting(true)
     try {
-      const nuevoEstudio = await estudioService.solicitarReEvaluacion(
-        estudio.id,
-        observaciones || undefined,
-      )
+      const nuevoEstudio = await estudioService.solicitarReEvaluacion(estudio.id, fundamento)
       toast.success('Reevaluación solicitada correctamente')
       setShowConfirm(false)
-      setObservaciones('')
       onReEvaluacionCreated(nuevoEstudio)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al solicitar la reevaluación'
       toast.error(msg)
+      return false
     } finally {
       setRequesting(false)
     }
@@ -188,22 +185,10 @@ export function ReEvaluacionSection({
   return (
     <div className="space-y-4">
       {/* Banner */}
-      <div
-        className={cn(
-          'flex items-start gap-3 p-4 rounded-lg border',
-          estudio.resultado === 'rechazado'
-            ? 'bg-red-50 border-red-200'
-            : 'bg-yellow-50 border-yellow-200',
-        )}
-      >
-        <IconAlertTriangle
-          size={20}
-          className={estudio.resultado === 'rechazado' ? 'text-red-500 mt-0.5' : 'text-yellow-500 mt-0.5'}
-        />
+      <div className="flex items-start gap-3 p-4 rounded-lg border bg-red-50 border-red-200">
+        <IconAlertTriangle size={20} className="text-red-500 mt-0.5" />
         <div>
-          <p className={cn('text-sm font-medium', estudio.resultado === 'rechazado' ? 'text-red-800' : 'text-yellow-800')}>
-            Esta evaluación fue {estudio.resultado === 'rechazado' ? 'rechazada' : 'condicionada'}
-          </p>
+          <p className="text-sm font-medium text-red-800">Esta evaluación fue rechazada</p>
           <p className="text-sm text-gray-600 mt-1">
             {plazoVencido && !hasChildReeval
               ? 'Venció el plazo de 15 días hábiles para reevaluar. Para volver a evaluar al solicitante, habilita una evaluación nueva.'
@@ -364,13 +349,16 @@ export function ReEvaluacionSection({
         </div>
       )}
 
-      {/* Confirm dialog */}
-      <ConfirmDialog
+      {/* Fundamento obligatorio (P33): queda en el historial con tu usuario. */}
+      <MotivoDialog
         isOpen={showConfirm}
-        onClose={() => { setShowConfirm(false); setObservaciones('') }}
+        onClose={() => setShowConfirm(false)}
         onConfirm={handleSolicitarReEvaluacion}
         title="Solicitar reevaluación"
-        message={`Se creará una nueva evaluación vinculada a la actual con los ${documentosSoporte.length} documento(s) soporte adjuntos. Esta acción no se puede deshacer.`}
+        descripcion={`Se creará una nueva evaluación vinculada a la actual con los ${documentosSoporte.length} documento(s) soporte adjuntos. Esta acción no se puede deshacer.`}
+        label="Fundamento de la reevaluación"
+        placeholder="Qué aportan los soportes y por qué pueden cambiar el resultado…"
+        minLength={10}
         confirmLabel="Solicitar"
         isLoading={requesting}
       />
