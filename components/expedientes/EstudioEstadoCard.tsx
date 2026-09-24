@@ -533,7 +533,8 @@ function EstudioPanel({
               </p>
             )}
           </div>
-          <TarifaEstudioBlock estudio={estudio} userRol={userRol} />
+          {/* La tarifa es una sola por arriendo: se ve y se negocia en el titular (P35). */}
+          {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} userRol={userRol} />}
         </div>
       </div>
 
