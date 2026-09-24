@@ -27,6 +27,8 @@ export interface MiembrosResponse {
   soy_owner: boolean
   /** Si true, todos los miembros ven toda la cartera; si false, cada miembro ve solo lo suyo. */
   miembros_ven_todo: boolean
+  /** Titular único de una inmobiliaria vacía: «Salir» la cierra. */
+  puede_cerrar?: boolean
   miembros: Miembro[]
 }
 

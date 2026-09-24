@@ -3,7 +3,9 @@
  * El invitado llega con el enlace del email. Según su estado:
  *  - sin cuenta  -> formulario de registro (/registrar crea cuenta + lo une).
  *  - con cuenta, no autenticado -> iniciar sesión y volver.
- *  - autenticado y coincide el email -> botón aceptar.
+ *  - autenticado y coincide el email -> botón aceptar. Si es titular único de
+ *    otra inmobiliaria vacía, el API lo dice (puede_cerrar) y aquí puede
+ *    cerrarla y aceptar en un paso, con confirmación.
  *  - el correo ya tiene una cuenta que no es de inmobiliaria -> no puede
  *    unirse: se explica y se pide otro correo (la cuenta no cambia de rol; no
  *    se dice qué cuenta es).
@@ -17,12 +19,17 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconX, IconCheck, IconShield } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { avisoCierreInmobiliaria } from '@/components/equipo/avisoCierreInmobiliaria'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
+import { ApiClientError } from '@/lib/api'
+import { authService } from '@/services/authService'
 import {
   getInvitacionMiembro,
   aceptarInvitacionMiembro,
   registrarMiembro,
+  salirDeMiInmobiliaria,
   type InvitacionMiembroInfo,
 } from '@/services/miembrosService'
 
@@ -59,6 +66,9 @@ export default function InvitacionMiembroPage() {
   const [telefono, setTelefono] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Titular único de otra inmobiliaria vacía: el 409 del API trae su nombre.
+  const [cierre, setCierre] = useState<{ nombre: string; mensaje: string } | null>(null)
+  const [confirmarCierre, setConfirmarCierre] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -85,17 +95,47 @@ export default function InvitacionMiembroPage() {
     router.push(dest)
   }
 
+  const aceptarYEntrar = async () => {
+    const res = await aceptarInvitacionMiembro(token)
+    sessionStorage.removeItem('invitacion_miembro_token')
+    // La sesión trae el rol en el equipo nuevo antes de entrar al panel.
+    await authService.checkSession().catch(() => {})
+    toast.success(res.message || 'Te uniste a la inmobiliaria')
+    router.push(res.redirect || '/dashboard')
+  }
+
   const handleAceptar = async () => {
     setSubmitting(true)
     try {
-      const res = await aceptarInvitacionMiembro(token)
-      sessionStorage.removeItem('invitacion_miembro_token')
-      toast.success(res.message || 'Te uniste a la inmobiliaria')
-      router.push(res.redirect || '/dashboard')
+      await aceptarYEntrar()
     } catch (err: unknown) {
-      const e = err as { message?: string }
-      toast.error(e.message || 'No se pudo aceptar la invitación')
+      const detalles =
+        err instanceof ApiClientError
+          ? (err.details as unknown as { puede_cerrar?: boolean; inmobiliaria?: string } | undefined)
+          : undefined
+      if (err instanceof ApiClientError && err.code === 'TITULAR_DE_OTRA_INMOBILIARIA' && detalles?.puede_cerrar) {
+        setCierre({ nombre: detalles.inmobiliaria || 'tu inmobiliaria', mensaje: err.message })
+      } else {
+        toast.error((err as { message?: string }).message || 'No se pudo aceptar la invitación')
+      }
       setSubmitting(false)
+    }
+  }
+
+  // Salir la cierra (el API vuelve a revisar que esté vacía) y luego se acepta.
+  const cerrarYAceptar = async () => {
+    try {
+      await salirDeMiInmobiliaria()
+    } catch (err: unknown) {
+      toast.error((err as { message?: string }).message || 'No se pudo cerrar tu inmobiliaria')
+      return
+    }
+    // Ya cerrada: si aceptar falla, queda el botón de aceptar para reintentar.
+    setCierre(null)
+    try {
+      await aceptarYEntrar()
+    } catch (err: unknown) {
+      toast.error((err as { message?: string }).message || 'No se pudo aceptar la invitación')
     }
   }
 
@@ -339,8 +379,21 @@ export default function InvitacionMiembroPage() {
         </div>
       )}
 
+      {/* Titular único de otra inmobiliaria vacía: la cierra y acepta */}
+      {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && emailMatch && cierre && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-900">{cierre.mensaje}</p>
+          <button
+            onClick={() => setConfirmarCierre(true)}
+            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+          >
+            Cerrar mi inmobiliaria y aceptar
+          </button>
+        </div>
+      )}
+
       {/* Autenticado, rol correcto, email coincide -> aceptar */}
-      {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && emailMatch && (
+      {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && emailMatch && !cierre && (
         <div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-3">
@@ -360,6 +413,17 @@ export default function InvitacionMiembroPage() {
             Aceptar invitación
           </button>
         </div>
+      )}
+
+      {cierre && (
+        <ConfirmDialog
+          isOpen={confirmarCierre}
+          onClose={() => setConfirmarCierre(false)}
+          onConfirm={cerrarYAceptar}
+          {...avisoCierreInmobiliaria(cierre.nombre)}
+          confirmLabel="Cerrar y aceptar"
+          variant="danger"
+        />
       )}
     </div>
   )

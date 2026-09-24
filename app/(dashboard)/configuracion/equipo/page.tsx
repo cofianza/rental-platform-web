@@ -2,7 +2,8 @@
  * Gestión de equipo de la inmobiliaria (multi-tenant).
  * El owner invita miembros (como staff o sólo lectura), reenvía/cancela
  * invitaciones, cambia roles (promover a co-titular, degradar, sólo lectura)
- * y revoca. Cualquier miembro puede salir de la organización.
+ * y revoca. Cualquier miembro puede salir de la organización; el titular
+ * único de una inmobiliaria vacía, al salir, la cierra.
  * Reutiliza los endpoints /inmobiliaria/miembros.
  */
 
@@ -12,6 +13,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader, ConfirmDialog } from '@/components/ui'
+import { avisoCierreInmobiliaria } from '@/components/equipo/avisoCierreInmobiliaria'
 import {
   IconUsers,
   IconMail,
@@ -38,6 +40,7 @@ import {
   type Miembro,
   type RolMiembro,
 } from '@/services/miembrosService'
+import { authService } from '@/services/authService'
 
 const ROL_LABEL: Record<RolMiembro, string> = {
   owner: 'Titular',
@@ -231,8 +234,10 @@ export default function EquipoPage() {
   const doSalir = async () => {
     setLeaving(true)
     try {
-      await salirDeMiInmobiliaria()
-      toast.success('Saliste de la inmobiliaria')
+      const res = await salirDeMiInmobiliaria()
+      // Sin equipo, la sesión ya no trae rol en la inmobiliaria.
+      await authService.checkSession().catch(() => {})
+      toast.success(res.message || 'Saliste de la inmobiliaria')
       router.push('/dashboard')
     } catch (err: unknown) {
       toast.error((err as { message?: string }).message || 'No se pudo procesar la salida')
@@ -240,6 +245,16 @@ export default function EquipoPage() {
     }
   }
   const handleSalir = () => {
+    // El titular único de una vacía: salir la cierra (el API lo vuelve a revisar).
+    if (data?.puede_cerrar) {
+      setConfirm({
+        ...avisoCierreInmobiliaria(data.organizacion.nombre),
+        confirmLabel: 'Cerrar mi inmobiliaria',
+        variant: 'danger',
+        onConfirm: doSalir,
+      })
+      return
+    }
     setConfirm({
       title: 'Salir de la inmobiliaria',
       message: 'Perderás el acceso a su cartera (inmuebles, estudios, etc.). ¿Continuar?',
@@ -468,10 +483,10 @@ export default function EquipoPage() {
                     )}
 
                     {/* Salir (yo mismo, si estoy activo y NO soy titular). Un
-                        titular no puede renunciar a su propia inmobiliaria;
-                        primero debe dejar de ser titular / transferir la
-                        titularidad a otro miembro. */}
-                    {m.es_yo && m.estado === 'activo' && m.rol_miembro !== 'owner' && (
+                        titular no puede renunciar a una inmobiliaria con equipo
+                        o cartera (primero traspasa la titularidad); si es el
+                        único y está vacía, salir la cierra. */}
+                    {m.es_yo && m.estado === 'activo' && (m.rol_miembro !== 'owner' || data.puede_cerrar) && (
                       <button
                         onClick={handleSalir}
                         disabled={leaving}
