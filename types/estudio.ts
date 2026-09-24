@@ -57,6 +57,11 @@ export interface IEstudio {
    * Detalle + listado por expediente; opcional por compatibilidad.
    */
   certificado_sin_efecto?: boolean
+  /**
+   * Lo que decidió Cofianza sobre el caso (la misma regla del CRC). null si no
+   * se calculó (sin estudio aprobado o condicionado, o sin poder leerla).
+   */
+  decision_cofianza?: 'aprobado' | 'negado' | 'sin_aprobar' | 'en_curso' | null
   motivo_rechazo?: string | null
   condiciones?: string | null
   datos_formulario?: Record<string, unknown> | null

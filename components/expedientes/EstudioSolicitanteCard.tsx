@@ -534,6 +534,10 @@ export function EstudioSolicitanteCard({
 
   // Resultado completado.
   if (estudio.estado === 'completado') {
+    // Cerrado sin aprobarse (cancelado en revisión): la página ya muestra
+    // «Estudio cancelado», y «Estamos revisando tu solicitud» debajo lo contradecía.
+    if (estudio.decision_cofianza === 'sin_aprobar') return null
+
     // Flujo §10: cuando la API manda la ruta, ELLA manda. El titulo y el
     // mensaje vienen calculados en modules/estudios/rutas-resultado.ts para
     // que el lenguaje del §10/§13 viva en un solo sitio y no se desincronice
