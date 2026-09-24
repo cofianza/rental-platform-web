@@ -33,6 +33,9 @@ import { RevisionPanel } from './RevisionPanel'
 import { SelfieCapture } from './SelfieCapture'
 import { SelfieComparisonView } from './SelfieComparisonView'
 import { documentoService } from '@/services/documentoService'
+import { usePermissions } from '@/hooks/usePermissions'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   IDocumento,
   ITipoDocumento,
@@ -214,6 +217,8 @@ interface DocumentUploadCardProps {
   onView: (documento: IDocumento) => void
   onCameraCapture?: (tipoId: string) => void // HP-327
   isSelfieType?: boolean // HP-327
+  puedeSubir: boolean
+  puedeEliminar: boolean
 }
 
 function DocumentUploadCard({
@@ -227,13 +232,15 @@ function DocumentUploadCard({
   onView,
   onCameraCapture,
   isSelfieType = false,
+  puedeSubir,
+  puedeEliminar,
 }: DocumentUploadCardProps) {
   const { tipoDocumento, documento, status, progress, error } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   const hasDocument = documento && documento.estado !== 'reemplazado'
-  const canUpload = !hasDocument || documento?.estado === 'rechazado'
+  const canUpload = puedeSubir && (!hasDocument || documento?.estado === 'rechazado')
   const isUploading = status === 'uploading'
 
   // HP-327: Camera capture handler
@@ -409,7 +416,7 @@ function DocumentUploadCard({
                   Ver
                 </button>
               )}
-              {documento.estado === 'pendiente' && (
+              {puedeEliminar && documento.estado === 'pendiente' && (
                 <button
                   onClick={() => onDelete(documento)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors ml-auto"
@@ -421,7 +428,7 @@ function DocumentUploadCard({
             </div>
 
             {/* Reupload button for rejected */}
-            {documento.estado === 'rechazado' && (
+            {documento.estado === 'rechazado' && puedeSubir && (
               isSelfieType ? (
                 <div className="mt-2 space-y-2">
                   <button
@@ -458,6 +465,8 @@ function DocumentUploadCard({
               <VersionHistoryPanel key={documento.id} documentoId={documento.id} />
             )}
           </div>
+        ) : !puedeSubir ? (
+          <p className="text-sm text-gray-500 text-center py-6">Aún no se ha cargado</p>
         ) : (
           /* Upload zone */
           <button
@@ -574,6 +583,17 @@ export interface DocumentosSectionProps {
 }
 
 export function DocumentosSection({ expedienteId, userRole, onPendientesChange }: DocumentosSectionProps) {
+  // Solo se ofrece lo que el API permite (P19): subir con documentos:create y
+  // borrar el propio pendiente (o un administrador). Antes la tarjeta ofrecía
+  // subir y eliminar a todos y el intento terminaba en un 403.
+  const { canAccess } = usePermissions()
+  const puedeEditar = usePuedeEditar()
+  const userId = useAuthStore((s) => s.user?.id)
+  const puedeSubir = puedeEditar && canAccess('documentos', 'create')
+  const puedeEliminar = (doc: IDocumento | null) =>
+    !!doc && puedeEditar && canAccess('documentos', 'delete') &&
+    (doc.subido_por === userId || userRole === 'administrador')
+
   // State
   const [tiposDocumento, setTiposDocumento] = useState<ITipoDocumento[]>([])
   const [documentos, setDocumentos] = useState<IDocumento[]>([])
@@ -921,7 +941,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
             Documentos del Estudio
           </h3>
           <p className="text-sm text-gray-500">
-            Carga los documentos requeridos para el estudio
+            {puedeSubir ? 'Carga los documentos requeridos para el estudio' : 'Documentos cargados para el estudio'}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -981,6 +1001,8 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               onView={setViewerDoc}
               onCameraCapture={handleCameraCapture}
               isSelfieType={state.tipoDocumento.codigo === SELFIE_CODIGO}
+              puedeSubir={puedeSubir}
+              puedeEliminar={puedeEliminar(state.documento)}
             />
           ))}
       </div>
