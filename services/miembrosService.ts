@@ -37,8 +37,8 @@ export interface InvitacionMiembroInfo {
   invitador: string | null
   /** true -> el invitado ya tiene cuenta (debe iniciar sesión); false -> debe registrarse. */
   tiene_cuenta: boolean
-  /** El correo ya tiene otra cuenta (de propietario o arrendatario, o del equipo de Cofianza): no puede unirse. */
-  cuenta_otro_rol?: 'propietario_o_arrendatario' | 'interna' | null
+  /** true -> el correo ya tiene una cuenta que no es de inmobiliaria: no puede unirse a un equipo. */
+  cuenta_otro_rol?: boolean
 }
 
 export interface InmobiliariaAdmin {
