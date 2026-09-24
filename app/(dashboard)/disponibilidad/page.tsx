@@ -156,6 +156,10 @@ export default function DisponibilidadPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [initial, setInitial] = useState<string>('')
   const [loadError, setLoadError] = useState(false)
+  // P37: una sola agenda por inmobiliaria (la del titular); los miembros la ven
+  // y solo los titulares la cambian.
+  const [puedeEditar, setPuedeEditar] = useState(true)
+  const [deInmobiliaria, setDeInmobiliaria] = useState(false)
 
   // Guard de rol: misma pauta que /citas del Prompt 7.
   useEffect(() => {
@@ -189,6 +193,8 @@ export default function DisponibilidadPage() {
           motivo: b.motivo ?? null,
         }))
 
+        setPuedeEditar(data.puede_editar ?? true)
+        setDeInmobiliaria(!!data.agenda_de_inmobiliaria)
         setHorarios(horariosUI)
         setDuracion(duracionUI)
         setAntelacion(antelacionUI)
@@ -394,6 +400,14 @@ export default function DisponibilidadPage() {
       />
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-3xl">
+        {!puedeEditar && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+            Esta es la agenda de visitas de tu inmobiliaria: una sola para todos sus inmuebles. Solo
+            los titulares la pueden cambiar.
+          </div>
+        )}
+        {/* Sin permiso de edición todo queda deshabilitado de forma nativa. */}
+        <fieldset disabled={!puedeEditar} className="min-w-0">
         {/* Aviso si la carga falló: mostramos valores por defecto, no la config
             real. Evita que el usuario crea que estos son sus horarios guardados
             (y solo guardaría si edita algo a propósito). */}
@@ -686,6 +700,7 @@ export default function DisponibilidadPage() {
             </button>
           </div>
         )}
+        </fieldset>
       </div>
 
       {/* Infobox explicativo */}
@@ -696,6 +711,8 @@ export default function DisponibilidadPage() {
           <strong>{antelacionLabel(antelacion)}</strong>. Si no configuras nada, se aplican
           horarios por defecto Lunes a Viernes de 9:00 a 17:00. Si desactivas todos los días,
           no recibirás solicitudes de visita.
+          {deInmobiliaria &&
+            ' Es una sola agenda para todos los inmuebles de la inmobiliaria, los registre quien los registre.'}
         </p>
       </div>
 

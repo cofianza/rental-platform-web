@@ -60,6 +60,9 @@ export interface IMiDisponibilidad {
   fechas_bloqueadas: IFechaBloqueada[]
   /** Flag backend: `true` si el propietario tiene al menos 1 fila persistida. */
   tiene_config_explicita?: boolean
+  /** P37: una sola agenda por inmobiliaria; solo sus titulares la editan. */
+  puede_editar?: boolean
+  agenda_de_inmobiliaria?: boolean
 }
 
 // ── Endpoints ──────────────────────────────────
