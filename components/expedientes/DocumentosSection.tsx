@@ -583,8 +583,8 @@ export interface DocumentosSectionProps {
 
 export function DocumentosSection({ expedienteId, userRole, onPendientesChange }: DocumentosSectionProps) {
   // Solo se ofrece lo que el API permite (P19): subir con documentos:create y
-  // eliminar lo que el listado marca `eliminable` (pendiente, propio y con el
-  // estudio sin decidir). Antes la tarjeta ofrecía las dos cosas a todos y el
+  // eliminar lo que el listado marca `eliminable` (la regla de estado y de
+  // dueño vive en el API). Antes la tarjeta ofrecía las dos cosas a todos y el
   // intento terminaba en un 403.
   const { canAccess } = usePermissions()
   const puedeEditar = usePuedeEditar()
