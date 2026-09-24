@@ -58,6 +58,17 @@ const COLOR: Record<MarcaFirma['parte'], string> = {
 const clave = (m: { parte: MarcaFirma['parte']; indice?: number }) =>
   m.parte === 'coarrendatario' ? `coarrendatario:${m.indice ?? 0}` : m.parte
 
+const dentro = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
+
+/**
+ * El recuadro cabe entero en la página (t = su tamaño en pt): con la marca pegada a un
+ * borde, se corre lo justo hacia adentro. La misma regla de posicionAuco en el API.
+ */
+const ajustar = (x: number, y: number, t: { w: number; h: number }) => ({
+  x: dentro(x, FIRMA.w / 2 / t.w, 1 - FIRMA.w / 2 / t.w),
+  y: dentro(y, FIRMA.h / t.h, 1),
+})
+
 interface Props {
   propio: PdfPropio
   partes: ParteFirma[]
@@ -132,7 +143,7 @@ export function UbicarFirmas({
   const enPagina = (n: number) => marcas.filter((m) => m.pagina === n).length
 
   const marcar = (e: MouseEvent<HTMLDivElement>) => {
-    if (!editable || ocupado) return
+    if (!editable || ocupado || !tamano) return
     const parte = partes.find((p) => clave(p) === sel)
     if (!parte) return
     if (marcas.length >= MAX_MARCAS) {
@@ -140,13 +151,14 @@ export function UbicarFirmas({
       return
     }
     const r = e.currentTarget.getBoundingClientRect()
-    const rel = (n: number) => Math.round(Math.min(1, Math.max(0, n)) * 1e4) / 1e4
+    const { x, y } = ajustar((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, tamano)
+    const rel = (n: number) => Math.round(dentro(n, 0, 1) * 1e4) / 1e4
     const nueva: MarcaFirma = {
       parte: parte.parte,
       ...(parte.parte === 'coarrendatario' ? { indice: parte.indice ?? 0 } : {}),
       pagina,
-      x: rel((e.clientX - r.left) / r.width),
-      y: rel((e.clientY - r.top) / r.height),
+      x: rel(x),
+      y: rel(y),
     }
     onCambiar([...marcas, nueva])
   }
@@ -306,6 +318,7 @@ export function UbicarFirmas({
                       .map((m, i) => {
                         const w = (FIRMA.w / tamano.w) * 100
                         const h = (FIRMA.h / tamano.h) * 100
+                        const a = ajustar(m.x, m.y, tamano)
                         return (
                           <div
                             key={`${clave(m)}-${m.x}-${m.y}-${i}`}
@@ -313,7 +326,7 @@ export function UbicarFirmas({
                               'pointer-events-none absolute flex items-end rounded-sm border-2 border-dashed px-1',
                               COLOR[m.parte],
                             )}
-                            style={{ left: `${m.x * 100 - w / 2}%`, top: `${m.y * 100 - h}%`, width: `${w}%`, height: `${h}%` }}
+                            style={{ left: `${a.x * 100 - w / 2}%`, top: `${a.y * 100 - h}%`, width: `${w}%`, height: `${h}%` }}
                           >
                             <span className="truncate text-[10px] leading-tight font-semibold">
                               {ROTULO[m.parte]}
