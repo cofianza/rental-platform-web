@@ -310,6 +310,8 @@ export interface IEjecutarTransicion {
   documentos_consultados?: string[]
   /** Adenda 2 §4.3: obligatoria al aprobar un condicionado. */
   evaluacion?: IEvaluacionRevisionManual
+  /** P34: obligatorio al rechazar; es lo que ve la inmobiliaria o el propietario. */
+  motivo?: string
 }
 
 /** Adenda 2 §4.3: V7 y V9 que puntúa el analista (códigos de OPCIONES_V7/V9 del API). */

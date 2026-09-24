@@ -29,6 +29,8 @@ export interface TransicionModalProps {
     etiqueta?: string,
     documentosConsultados?: string[],
     evaluacion?: IEvaluacionRevisionManual,
+    /** P34: al rechazar, el motivo corto que verá la inmobiliaria o el propietario. */
+    motivo?: string,
   ) => Promise<void>
   isLoading?: boolean
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
@@ -52,6 +54,7 @@ export function TransicionModal({
   // a la vez y permite key-uniqueness en el .map.
   const [labelSeleccionado, setLabelSeleccionado] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
+  const [motivoGestor, setMotivoGestor] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +68,7 @@ export function TransicionModal({
     if (isLoading) return
     setLabelSeleccionado(null)
     setComentario('')
+    setMotivoGestor('')
     setDocumentos([])
     setEvaluacion({})
     setError(null)
@@ -80,6 +84,10 @@ export function TransicionModal({
   // Mismo mínimo que transitionBodySchema en el API: sin esto se pasaba por la
   // confirmación roja y el 400 llegaba después.
   const motivoValido = comentario.trim().length >= MIN_MOTIVO
+  // P34: al rechazar, el comentario es el fundamento interno y aparte va un
+  // motivo corto para la inmobiliaria o el propietario (el API lo exige).
+  const pideMotivoGestor = estadoSeleccionado === 'rechazado'
+  const motivoGestorValido = !pideMotivoGestor || motivoGestor.trim().length >= MIN_MOTIVO
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
@@ -89,6 +97,11 @@ export function TransicionModal({
 
     if (!motivoValido) {
       setError(`Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
+      return
+    }
+
+    if (!motivoGestorValido) {
+      setError(`Escribe el motivo para la inmobiliaria o el propietario (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
@@ -112,6 +125,7 @@ export function TransicionModal({
         transicionSeleccionada?.etiqueta,
         esRevisionManual ? documentos : undefined,
         pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
+        pideMotivoGestor ? motivoGestor.trim() : undefined,
       )
     } finally {
       enviando.current = false
@@ -204,7 +218,7 @@ export function TransicionModal({
         {/* Campo de comentario */}
         <div>
           <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">
-            Comentario / Motivo <span className="text-red-500">*</span>
+            {pideMotivoGestor ? 'Fundamento interno' : 'Comentario / Motivo'} <span className="text-red-500">*</span>
           </label>
           <textarea id="transicion-modal-comentario-motivo"
             value={comentario}
@@ -215,12 +229,35 @@ export function TransicionModal({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
           />
           <p className="mt-1 text-xs text-gray-500">
-            {esRevisionManual
-              ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
-              : 'Este comentario quedará registrado en el historial del estudio.'}
+            {pideMotivoGestor
+              ? 'Solo lo ve Cofianza: queda en el historial del estudio con tu usuario y la fecha.'
+              : esRevisionManual
+                ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
+                : 'Este comentario quedará registrado en el historial del estudio.'}
             {!motivoValido && ` Mínimo ${MIN_MOTIVO} caracteres (${comentario.trim().length}/${MIN_MOTIVO}).`}
           </p>
         </div>
+
+        {pideMotivoGestor && (
+          <div>
+            <label htmlFor="transicion-modal-motivo-gestor" className="block text-sm font-medium text-gray-700 mb-2">
+              Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
+            </label>
+            <textarea id="transicion-modal-motivo-gestor"
+              value={motivoGestor}
+              onChange={(e) => setMotivoGestor(e.target.value)}
+              placeholder="Ej.: El caso no cumple la política de evaluación de Cofianza."
+              rows={2}
+              maxLength={500}
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Lo verán en el estudio. Escríbelo corto, sin cifras del buró ni datos del co-arrendatario.
+              {!motivoGestorValido && ` Mínimo ${MIN_MOTIVO} caracteres (${motivoGestor.trim().length}/${MIN_MOTIVO}).`}
+            </p>
+          </div>
+        )}
 
         {esRevisionManual && expedienteId && (
           <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={isLoading} />
@@ -250,7 +287,7 @@ export function TransicionModal({
           <button
             type="button"
             onClick={handleConfirmar}
-            disabled={isLoading || !estadoSeleccionado || !motivoValido}
+            disabled={isLoading || !estadoSeleccionado || !motivoValido || !motivoGestorValido}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
               esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'
             }`}

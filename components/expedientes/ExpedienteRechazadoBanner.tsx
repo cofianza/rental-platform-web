@@ -8,7 +8,8 @@
  * DOS lecturas del mismo hecho, según quién mira (`esProspecto`):
  *
  *  - Gestor (admin, operador, inmobiliaria, propietario): el texto operativo de
- *    siempre, con el motivo literal que escribió el motor.
+ *    siempre, con el motivo que escribió el motor o, si rechazó un analista, el
+ *    que escribió para el gestor (P34).
  *  - Prospecto (rol 'solicitante', que tiene panel propio: vitrina crea la
  *    cuenta auto-confirmada y puede abrir su expediente): flujo del módulo de
  *    estudios §13 — "Nunca usar la palabra 'rechazado' en ninguna pantalla
@@ -32,8 +33,8 @@ interface ExpedienteRechazadoBannerProps {
   esProspecto?: boolean
 }
 
-const MOTIVO_FALLBACK =
-  'El estudio no procede tras la evaluación crediticia y queda cerrado sin contrato.'
+// Neutro (P34): no culpa a la evaluación crediticia cuando pudo decidirlo un analista.
+const MOTIVO_FALLBACK = 'El estudio no quedó aprobable y termina sin contrato.'
 
 /**
  * Política V4.1 §11: canal de apelación. Va en TODA pantalla del prospecto que

@@ -241,6 +241,7 @@ class ExpedienteService {
         ...(data.etiqueta ? { etiqueta: data.etiqueta } : {}),
         ...(data.documentos_consultados ? { documentos_consultados: data.documentos_consultados } : {}),
         ...(data.evaluacion ? { evaluacion: data.evaluacion } : {}),
+        ...(data.motivo ? { motivo: data.motivo } : {}),
       }
     )) as any
 

@@ -267,6 +267,7 @@ export default function ExpedienteDetallePage() {
     etiqueta?: string,
     documentosConsultados?: string[],
     evaluacion?: IEvaluacionRevisionManual,
+    motivo?: string,
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -276,6 +277,7 @@ export default function ExpedienteDetallePage() {
         etiqueta,
         documentos_consultados: documentosConsultados,
         evaluacion,
+        motivo,
       })
       setExpediente(expedienteActualizado)
 
