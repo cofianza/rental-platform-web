@@ -66,6 +66,8 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   // P1 y P22: evaluación por devolver y contracargo de una compra de créditos.
   'pago.reembolso_pendiente': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   'creditos.contracargo': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
+  // P1/P22: contracargo ganado — restituir a mano la compra o el cobro.
+  'pago.contracargo_ganado': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   // P1: cobro reembolsado que ya tenía factura: falta su nota crédito en Factus.
   'factura.nota_credito': { icon: IconReceipt, badge: 'bg-amber-50 text-amber-600' },
   'contrato.pendiente_firma': { icon: IconPencil, badge: 'bg-violet-50 text-violet-600' },

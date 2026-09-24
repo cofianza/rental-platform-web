@@ -113,8 +113,9 @@ export function ReembolsosSection() {
         <IconCheck size={32} className="mx-auto text-green-500 mb-3" />
         <h3 className="text-base font-semibold text-gray-900 mb-1">No hay pagos por devolver</h3>
         <p className="text-sm text-gray-500">
-          Aquí aparecen las evaluaciones pagadas de estudios que terminaron sin consultar el buró y los pagos que
-          entraron sin un cobro que les corresponda.
+          Aquí aparecen las evaluaciones pagadas de estudios que terminaron sin consultar el buró, los pagos que
+          entraron sin un cobro que les corresponda y los que hay que revisar a mano (reembolsos parciales,
+          contracargos ganados).
         </p>
         <button
           onClick={cargar}

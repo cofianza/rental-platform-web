@@ -394,16 +394,14 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         </div>
       )}
 
-      {/* P1: el estudio terminó sin consultar el buró y la evaluación se devolvió */}
+      {/* P1: la evaluación se devolvió. El API no manda el motivo (estudio sin
+          consulta, contracargo, reembolso a mano): el texto no lo supone. */}
       {estado.estado === 'reembolsado' && (
         <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
           <IconRefresh size={20} className="text-gray-500 shrink-0" />
           <div>
             <p className="text-sm font-medium text-gray-800">Evaluación devuelta</p>
-            <p className="text-xs text-gray-600">
-              {estado.monto_formateado} COP — el estudio terminó sin consultar el buró
-              {estado.pago?.metodo === 'pasarela' ? ' y el pago se reembolsó por Mercado Pago.' : ' y el crédito volvió al saldo.'}
-            </p>
+            <p className="text-xs text-gray-600">{estado.monto_formateado} COP — esta evaluación se devolvió.</p>
           </div>
         </div>
       )}
@@ -1060,14 +1058,12 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     )
   }
 
-  // P1: el estudio terminó sin consultar el buró y la evaluación se devolvió.
+  // P1: la evaluación se devolvió. Sin motivo del API, el texto no lo supone.
   if (estado.estado === 'reembolsado') {
     return (
       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
         <p className="text-sm font-medium text-gray-800">La evaluación se devolvió</p>
-        <p className="text-xs text-gray-500 mt-1">
-          El estudio terminó sin consultar las centrales de riesgo, así que el pago se le devolvió a quien lo hizo.
-        </p>
+        <p className="text-xs text-gray-500 mt-1">Esta evaluación se devolvió a quien la pagó.</p>
       </div>
     )
   }
