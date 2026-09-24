@@ -1,8 +1,10 @@
 /**
- * ReembolsosSection — P1: la plata de Mercado Pago por devolver. Evaluaciones
- * de estudios que terminaron sin consultar el buró (se devuelven a quien pagó)
- * y pagos que entraron sin un cobro que les corresponda. Solo administradores:
- * «Reembolsar en Mercado Pago» devuelve el pago completo por la pasarela.
+ * ReembolsosSection — P1: la plata por devolver o revisar. Evaluaciones de
+ * estudios que terminaron sin consultar el buró (se devuelven a quien pagó, por
+ * el mismo medio) y pagos que entraron sin un cobro que les corresponda. Solo
+ * administradores: «Reembolsar en Mercado Pago» devuelve el pago completo por
+ * la pasarela; «Marcar resuelto» cierra la fila con una nota (devolución hecha
+ * a mano o desde el panel de Mercado Pago, pago conciliado, caso revisado).
  */
 
 'use client'
@@ -11,15 +13,22 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { pagoService, type IReembolsoPendiente } from '@/services/pagoService'
 import { formatCurrency, formatDate } from '@/lib/constants'
-import { IconAlertTriangle, IconCheck, IconLoader, IconRefresh } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconClock, IconLoader, IconRefresh } from '@/components/icons'
+
+const ORIGEN: Record<string, string> = {
+  manual: 'Pago registrado a mano: se devuelve por el mismo medio',
+  credito: 'Pagado con crédito del paquete',
+}
 
 export function ReembolsosSection() {
   const [items, setItems] = useState<IReembolsoPendiente[]>([])
   const [loading, setLoading] = useState(true)
   const [errorCarga, setErrorCarga] = useState<string | null>(null)
   const [confirmar, setConfirmar] = useState<IReembolsoPendiente | null>(null)
+  const [resolviendo, setResolviendo] = useState<IReembolsoPendiente | null>(null)
   const [reembolsando, setReembolsando] = useState<string | null>(null)
 
   const cargar = useCallback(async () => {
@@ -46,9 +55,30 @@ export function ReembolsosSection() {
       else if (res.estado === 'en_proceso') toast.success('Reembolso solicitado: Mercado Pago lo está procesando.')
       else toast.success('Reembolso hecho en Mercado Pago.')
       if (res.factura_numero) toast.warning(`Falta la nota crédito de la factura ${res.factura_numero} en Factus.`)
-      setItems((prev) => prev.filter((x) => x.id !== r.id))
+      // En proceso sigue en la lista hasta que Mercado Pago lo apruebe.
+      setItems((prev) =>
+        res.estado === 'en_proceso'
+          ? prev.map((x) => (x.id === r.id ? { ...x, en_proceso: true, puede_reembolsar: false } : x))
+          : prev.filter((x) => x.id !== r.id),
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo reembolsar en Mercado Pago')
+    } finally {
+      setReembolsando(null)
+    }
+  }
+
+  const resolver = async (r: IReembolsoPendiente, nota: string) => {
+    setReembolsando(r.id)
+    try {
+      const res = await pagoService.resolverReembolso(r.id, nota)
+      toast.success('Marcado como resuelto.')
+      if (res.factura_numero) toast.warning(`Falta la nota crédito de la factura ${res.factura_numero} en Factus.`)
+      setItems((prev) => prev.filter((x) => x.id !== r.id))
+      setResolviendo(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo marcar como resuelto')
+      return false
     } finally {
       setReembolsando(null)
     }
@@ -84,7 +114,7 @@ export function ReembolsosSection() {
         <h3 className="text-base font-semibold text-gray-900 mb-1">No hay pagos por devolver</h3>
         <p className="text-sm text-gray-500">
           Aquí aparecen las evaluaciones pagadas de estudios que terminaron sin consultar el buró y los pagos que
-          entraron a Mercado Pago sin un cobro que les corresponda.
+          entraron sin un cobro que les corresponda.
         </p>
         <button
           onClick={cargar}
@@ -113,13 +143,25 @@ export function ReembolsosSection() {
         confirmLabel="Reembolsar"
         variant="danger"
       />
+      <MotivoDialog
+        isOpen={resolviendo !== null}
+        onClose={() => setResolviendo(null)}
+        onConfirm={(nota) => (resolviendo ? resolver(resolviendo, nota) : undefined)}
+        isLoading={reembolsando !== null}
+        title="Marcar resuelto"
+        descripcion="La fila sale de la lista sin llamar a Mercado Pago. Si es la evaluación de un estudio que terminó sin consultar el buró, su pago queda como reembolsado."
+        label="Qué se hizo con el pago"
+        placeholder="Ej.: transferencia devuelta el 24/09, comprobante 123…"
+        confirmLabel="Marcar resuelto"
+        minLength={3}
+      />
 
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-gray-900">Pagos por devolver</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            {items.length} {items.length === 1 ? 'pago' : 'pagos'} en Mercado Pago. El reembolso va al mismo medio con
-            que se pagó.
+            {items.length} {items.length === 1 ? 'pago' : 'pagos'} por devolver o revisar. El reembolso va al mismo
+            medio con que se pagó.
           </p>
         </div>
         <button
@@ -149,7 +191,9 @@ export function ReembolsosSection() {
               <p className="mt-1 text-xs text-gray-600">
                 {r.motivo_texto.charAt(0).toUpperCase() + r.motivo_texto.slice(1)}.
               </p>
-              <p className="mt-0.5 text-xs text-gray-400">Pago de Mercado Pago {r.provider_payment_id}</p>
+              <p className="mt-0.5 text-xs text-gray-400">
+                {ORIGEN[r.proveedor] ?? `Pago de Mercado Pago ${r.provider_payment_id}`}
+              </p>
               {r.notas && (
                 <p className="mt-1 inline-flex items-start gap-1 text-xs text-amber-700">
                   <IconAlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -157,20 +201,38 @@ export function ReembolsosSection() {
                 </p>
               )}
             </div>
-            <button
-              onClick={() => setConfirmar(r)}
-              disabled={reembolsando !== null}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
-            >
-              {reembolsando === r.id ? (
-                <>
-                  <IconLoader size={14} className="animate-spin" />
-                  Reembolsando…
-                </>
-              ) : (
-                'Reembolsar en Mercado Pago'
-              )}
-            </button>
+            {r.en_proceso ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full shrink-0">
+                <IconClock size={14} />
+                Reembolso en proceso
+              </span>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                <button
+                  onClick={() => setResolviendo(r)}
+                  disabled={reembolsando !== null}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Marcar resuelto
+                </button>
+                {r.puede_reembolsar && (
+                  <button
+                    onClick={() => setConfirmar(r)}
+                    disabled={reembolsando !== null}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {reembolsando === r.id ? (
+                      <>
+                        <IconLoader size={14} className="animate-spin" />
+                        Reembolsando…
+                      </>
+                    ) : (
+                      'Reembolsar en Mercado Pago'
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

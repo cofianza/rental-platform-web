@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
@@ -60,6 +60,13 @@ export default function FacturacionPage() {
   const [activeTab, setActiveTab] = useState(
     isSolicitante || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales',
   )
+  // Los avisos enlazan a una pestaña (/facturacion?tab=reembolsos). Se lee en el
+  // cliente, y de nuevo cuando carga el usuario (decide qué pestañas hay).
+  const tabIds = tabs.map((t) => t.id).join(',')
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab && tabIds.split(',').includes(tab)) setActiveTab(tab)
+  }, [tabIds])
   // Bump cuando se emite una factura para forzar refresh del tab Mis facturas
   // si el usuario navega despues. FacturasSection no expone refetch directo.
   const [facturasReloadKey, setFacturasReloadKey] = useState(0)

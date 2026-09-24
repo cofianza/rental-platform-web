@@ -259,10 +259,21 @@ class PagoService {
     const response = await apiClient.post<IReembolsoResultado>(`/pagos/reembolsos/${id}/reembolsar`)
     return response.data
   }
+
+  /** «Marcar resuelto»: cierra la fila con una nota, sin llamar a Mercado Pago (administrador). */
+  async resolverReembolso(id: string, nota: string): Promise<{ estado: 'resuelto'; factura_numero: string | null }> {
+    const response = await apiClient.post<{ estado: 'resuelto'; factura_numero: string | null }>(
+      `/pagos/reembolsos/${id}/resolver`,
+      { nota },
+    )
+    return response.data
+  }
 }
 
 export interface IReembolsoPendiente {
   id: string
+  /** 'mercadopago' | 'manual' (registrado a mano) | 'credito' (pagado con crédito). */
+  proveedor: string
   monto: number | null
   motivo: string
   /** Por qué hay que devolverlo, en palabras. */
@@ -271,6 +282,10 @@ export interface IReembolsoPendiente {
   concepto: string | null
   expediente: { id: string; numero: string } | null
   notas: string | null
+  /** Reembolso pedido a Mercado Pago que aún no se aprueba (lo cierra el webhook). */
+  en_proceso: boolean
+  /** Solo lo de Mercado Pago que se devuelve completo admite «Reembolsar». */
+  puede_reembolsar: boolean
   created_at: string
 }
 
