@@ -790,6 +790,25 @@ function MoraDetalleModal({
   // Solo lectura: ve el caso y el historial, pero no escribe ni cambia la fase.
   const puedeEditar = usePuedeEditar()
   const sinAcciones = esTerminal || !puedeEditar
+  // P27: la Fase 3 la decide Cofianza; el dueño escala a Fase 2 desde el día 4
+  // del reporte y, en Fase 3, ya no cierra el caso (anota el pago en el historial).
+  const rol = useAuthStore((s) => s.user?.rol)
+  const esInterno = rol === 'administrador' || rol === 'operador_analista'
+  const fase2Desde = mora ? new Date(new Date(mora.reportado_at).getTime() + 4 * 86_400_000) : null
+  const puedeEscalar = esInterno
+    ? mora?.estado !== 'fase_3'
+    : mora?.estado === 'fase_1' && !!fase2Desde && Date.now() >= fase2Desde.getTime()
+  const puedeCerrar = esInterno || mora?.estado !== 'fase_3'
+  const notaDueno =
+    esInterno || !mora
+      ? null
+      : mora.estado === 'fase_3'
+        ? 'Cofianza gestiona el caso. Si el inquilino te pagó, anótalo en el historial del caso.'
+        : mora.estado === 'fase_2'
+          ? 'El paso a Fase 3 lo decide Cofianza.'
+          : !puedeEscalar && fase2Desde
+            ? `Podrás escalar a Fase 2 desde el ${fase2Desde.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}.`
+            : null
 
   return (
     <>
@@ -948,23 +967,28 @@ function MoraDetalleModal({
 
         {mora && !sinAcciones && (
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => setCancelarAbierto(true)}
-              disabled={acting}
-              className="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-            >
-              Cancelar caso
-            </button>
-            <button
-              type="button"
-              onClick={() => setPagarAbierto(true)}
-              disabled={acting}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-300 rounded-lg hover:bg-primary-100 disabled:opacity-50"
-            >
-              <IconCheck size={14} /> Marcar pagada
-            </button>
-            {mora.estado !== 'fase_3' && (
+            {notaDueno && <p className="mr-auto text-xs text-gray-600">{notaDueno}</p>}
+            {puedeCerrar && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCancelarAbierto(true)}
+                  disabled={acting}
+                  className="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Cancelar caso
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPagarAbierto(true)}
+                  disabled={acting}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary-700 bg-primary-50 border border-primary-300 rounded-lg hover:bg-primary-100 disabled:opacity-50"
+                >
+                  <IconCheck size={14} /> Marcar pagada
+                </button>
+              </>
+            )}
+            {puedeEscalar && (
               <button
                 type="button"
                 onClick={() => setEscalarAbierto(true)}
