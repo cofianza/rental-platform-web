@@ -57,16 +57,6 @@ export interface IContrato {
 export type ModalidadFianza = 'plena' | 'compartida' | 'plus'
 export type CargoServicio = 'arrendatario' | 'arrendador'
 
-export interface ICotitularFianza {
-  nombre?: string
-  tipo_documento?: string
-  documento?: string
-  celular?: string
-  correo?: string
-  direccion?: string
-  municipio?: string
-}
-
 export interface IGenerarContratoInput {
   /** Opcional: si el inmueble tiene contrato_tipo subido, se usa ese PDF y
    *  no hace falta plantilla. Si no, plantilla_id es requerido. */
@@ -76,7 +66,6 @@ export interface IGenerarContratoInput {
   duracion_meses?: number
   // Condiciones de fianza del contrato V4.
   modalidad_fianza?: ModalidadFianza
-  cotitular?: ICotitularFianza
   servicios_reparto?: Record<string, CargoServicio>
 }
 

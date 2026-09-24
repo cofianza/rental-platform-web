@@ -18,25 +18,14 @@ import { IconX, IconLoader, IconFileText } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
-import type { ModalidadFianza, CargoServicio, ICotitularFianza } from '@/types/contrato'
+import type { ModalidadFianza, CargoServicio } from '@/types/contrato'
 
-// Espejo de la cobertura de `modalidades_fianza` (cubre_danos). La modalidad ya
-// no fija el precio: la comisión mensual y la prima salen de cómo se aprobó el
-// estudio, las mismas del certificado CRC (Adendas 1 §5 y 2 §6).
-const MODALIDADES: {
-  value: ModalidadFianza
-  label: string
-  cubreDanos: boolean
-  nota?: string
-}[] = [
-  { value: 'plena', label: 'Cofianza Plena', cubreDanos: false },
-  {
-    value: 'compartida',
-    label: 'Cofianza Compartida',
-    cubreDanos: false,
-    nota: 'Requiere registrar un co-titular de la fianza.',
-  },
-  { value: 'plus', label: 'Cofianza Plus', cubreDanos: true },
+// La modalidad ya no fija el precio ni la cobertura: la comisión mensual y la
+// prima son las del certificado CRC (Adendas 1 §5 y 2 §6) y la fianza cubre
+// solo el canon. Sin «Compartida»: su co-titular no firma este contrato (P6).
+const MODALIDADES: { value: ModalidadFianza; label: string }[] = [
+  { value: 'plena', label: 'Cofianza Plena' },
+  { value: 'plus', label: 'Cofianza Plus' },
 ]
 
 const SERVICIOS_DEFAULT: Record<string, CargoServicio> = Object.fromEntries(
@@ -59,7 +48,6 @@ export function GenerarContratoModal({
   const [fechaInicio, setFechaInicio] = useState('')
   const [duracionMeses, setDuracionMeses] = useState('12')
   const [modalidad, setModalidad] = useState<ModalidadFianza>('plena')
-  const [cotitular, setCotitular] = useState<ICotitularFianza>({})
   const [servicios, setServicios] = useState<Record<string, CargoServicio>>(SERVICIOS_DEFAULT)
   const [generating, setGenerating] = useState(false)
 
@@ -68,17 +56,10 @@ export function GenerarContratoModal({
       setFechaInicio(hoyBogota())
       setDuracionMeses('12')
       setModalidad('plena')
-      setCotitular({})
       setServicios(SERVICIOS_DEFAULT)
       setGenerating(false)
     }
   }, [isOpen])
-
-  // Cofianza Compartida sin los datos minimos del co-titular generaba un PDF
-  // con la clausula en blanco.
-  const cotitularIncompleto =
-    modalidad === 'compartida' &&
-    !(cotitular.nombre?.trim() && cotitular.documento?.trim() && cotitular.celular?.trim())
 
   async function handleGenerar() {
     setGenerating(true)
@@ -88,7 +69,6 @@ export function GenerarContratoModal({
         duracion_meses: duracionMeses ? Number(duracionMeses) : undefined,
         modalidad_fianza: modalidad,
         servicios_reparto: servicios,
-        ...(modalidad === 'compartida' ? { cotitular } : {}),
       })
       toast.success('Contrato generado correctamente')
       onGenerated()
@@ -164,74 +144,17 @@ export function GenerarContratoModal({
                 <option key={m.value} value={m.value}>{m.label}</option>
               ))}
             </select>
-            {/* Descripción de la modalidad seleccionada. */}
-            {(() => {
-              const m = MODALIDADES.find((x) => x.value === modalidad)
-              if (!m) return null
-              return (
-                <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
-                  <p>
-                    Cubre cánones, servicios públicos, administración PH y cláusula penal
-                    {m.cubreDanos ? ', más daños al inmueble.' : '. No cubre daños al inmueble.'}
-                  </p>
-                  <p className="mt-0.5">
-                    La comisión mensual y la prima de vinculación son las del certificado del estudio (CRC),
-                    según cómo se aprobó.
-                  </p>
-                  {m.nota && <p className="mt-0.5 text-primary-700">{m.nota}</p>}
-                </div>
-              )
-            })()}
-          </div>
-
-          {/* Co-titular — solo en Cofianza Compartida */}
-          {modalidad === 'compartida' && (
-            <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <p className="text-xs font-semibold text-gray-700">Co-titular de la fianza</p>
-              <div className="grid grid-cols-2 gap-2">
-                <label htmlFor="cot-nombre" className="col-span-2 block text-xs font-medium text-gray-700">Nombre completo *
-                <input id="cot-nombre" placeholder="Nombre completo" value={cotitular.nombre || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, nombre: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-                <label htmlFor="cot-tipo-doc" className="block text-xs font-medium text-gray-700">Tipo de documento
-                <select id="cot-tipo-doc" value={cotitular.tipo_documento || 'CC'}
-                  onChange={(e) => setCotitular({ ...cotitular, tipo_documento: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50">
-                  <option value="CC">C.C.</option>
-                  <option value="CE">C.E.</option>
-                  <option value="NIT">NIT</option>
-                  <option value="PA">Pasaporte</option>
-                </select>
-                </label>
-                <label htmlFor="cot-documento" className=" block text-xs font-medium text-gray-700">N° de documento *
-                <input id="cot-documento" inputMode="numeric" placeholder="N° de documento" value={cotitular.documento || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, documento: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-                <label htmlFor="cot-celular" className=" block text-xs font-medium text-gray-700">Celular *
-                <input id="cot-celular" type="tel" inputMode="tel" autoComplete="tel" placeholder="Celular" value={cotitular.celular || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, celular: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-                <label htmlFor="cot-correo" className=" block text-xs font-medium text-gray-700">Correo
-                <input id="cot-correo" type="email" inputMode="email" autoComplete="email" placeholder="Correo" value={cotitular.correo || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, correo: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-                <label htmlFor="cot-direccion" className="col-span-2 block text-xs font-medium text-gray-700">Dirección de notificación
-                <input id="cot-direccion" placeholder="Dirección de notificación" value={cotitular.direccion || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, direccion: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-                <label htmlFor="cot-municipio" className="col-span-2 block text-xs font-medium text-gray-700">Municipio
-                <input id="cot-municipio" placeholder="Municipio" value={cotitular.municipio || ''}
-                  onChange={(e) => setCotitular({ ...cotitular, municipio: e.target.value })} disabled={generating}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50 w-full" />
-                </label>
-              </div>
+            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-600">
+              <p>
+                La fianza cubre solo el canon de arrendamiento, hasta 18 cánones. No cubre administración,
+                servicios públicos, daños al inmueble ni cláusula penal.
+              </p>
+              <p className="mt-0.5">
+                La comisión mensual y la prima de vinculación son las del certificado del estudio (CRC),
+                según cómo se aprobó.
+              </p>
             </div>
-          )}
+          </div>
 
           {/* Reparto de servicios públicos */}
           <div>
@@ -268,7 +191,7 @@ export function GenerarContratoModal({
         </button>
         <button
           onClick={handleGenerar}
-          disabled={generating || !fechaInicio || !duracionMeses || cotitularIncompleto}
+          disabled={generating || !fechaInicio || !duracionMeses}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
           {generating ? <IconLoader size={16} className="animate-spin" /> : <IconFileText size={16} />}
