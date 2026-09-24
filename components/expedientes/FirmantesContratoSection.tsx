@@ -170,7 +170,16 @@ export function FirmantesContratoSection({
       toast.success(res.message)
       cargar(true)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo reenviar a firma')
+      const message = err instanceof Error ? err.message : 'No se pudo reenviar a firma'
+      // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó
+      // firmado. Se recargan el panel y la página del contrato.
+      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        toast.info(message)
+        cargar(true)
+        onAllSigned?.()
+      } else {
+        toast.error(message)
+      }
     } finally {
       setReenviando(false)
     }

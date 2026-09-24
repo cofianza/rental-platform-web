@@ -288,7 +288,14 @@ export default function ContratoDetallePage() {
       return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
-      toast.error(message)
+      // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
+      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        toast.info(message)
+        setTransicionOpen(false)
+        fetchContrato()
+      } else {
+        toast.error(message)
+      }
       return false
     } finally {
       setTransicionLoading(false)
@@ -332,7 +339,15 @@ export default function ContratoDetallePage() {
       fetchContrato()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo enviar a firma'
-      toast.error(message)
+      // Todas las partes ya habían firmado el envío anterior: quedó firmado.
+      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        toast.info(message)
+        setFirmaPreview(null)
+        setConfirmFirmaOpen(false)
+        fetchContrato()
+      } else {
+        toast.error(message)
+      }
     } finally {
       setConfirmandoFirma(false)
     }

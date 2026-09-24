@@ -207,7 +207,16 @@ export function ContratosSection({
       await doEnviarAFirma(firmaPreview.contrato)
       setFirmaPreview(null)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
+      const message = err instanceof Error ? err.message : 'No se pudo enviar a firma'
+      // Todas las partes ya habían firmado el envío anterior: quedó firmado.
+      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        toast.info(message)
+        setFirmaPreview(null)
+        fetchContratos()
+        onContratoActualizado?.()
+      } else {
+        toast.error(message)
+      }
     } finally {
       setConfirmandoFirma(false)
     }
@@ -245,7 +254,15 @@ export function ContratosSection({
       return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
-      toast.error(message)
+      // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
+      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        toast.info(message)
+        setTransicionContrato(null)
+        fetchContratos()
+        onContratoActualizado?.()
+      } else {
+        toast.error(message)
+      }
       return false
     } finally {
       setTransicionLoading(false)
