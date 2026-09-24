@@ -479,6 +479,7 @@ function Asistente({
     const ok = await v3.enviar({
       generacion: contrato.documento.generacion,
       propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
+      firmasHuella: rutaB ? contrato.propio?.firmasHuella : undefined,
     })
     if (ok) toast.success(`Contrato ${contrato.numero} enviado a firma`)
   }

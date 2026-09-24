@@ -11,10 +11,12 @@ import type { EstadoAsistente, GuardarPasoBody, MarcaFirma } from '@/types/contr
 
 const ruta = (expedienteId: string) => `/expedientes/${expedienteId}/contrato-v3`
 
-/** Enviar a firma: la vista previa revisada y, en la Ruta B, el PDF propio que se vio. */
+/** Enviar a firma: la vista previa revisada y, en la Ruta B, el PDF propio y las firmas ubicadas que se vieron. */
 export interface EnviarBody {
   generacion: number
   propioSha256?: string
+  /** propio.firmasHuella del estado en pantalla: si otra sesión movió las firmas, 409 FIRMAS_CAMBIARON. */
+  firmasHuella?: string
 }
 
 /** Un dato de un firmante que Auco no acepta (422 FIRMANTES_INVALIDOS). */
