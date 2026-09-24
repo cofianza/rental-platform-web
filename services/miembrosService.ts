@@ -71,8 +71,9 @@ export interface AdminMiembrosResponse {
 
 // ── Autenticado (owner / miembro) ──────────────────────────────
 
-export async function listMiembros(): Promise<MiembrosResponse> {
-  const res = await apiClient.get<MiembrosResponse>('/inmobiliaria/miembros')
+/** `conCierre`: solo la página de Equipo, que ofrece cerrar la inmobiliaria vacía (cuesta una revisión extra). */
+export async function listMiembros(opts: { conCierre?: boolean } = {}): Promise<MiembrosResponse> {
+  const res = await apiClient.get<MiembrosResponse>(`/inmobiliaria/miembros${opts.conCierre ? '?puede_cerrar=1' : ''}`)
   return res.data
 }
 

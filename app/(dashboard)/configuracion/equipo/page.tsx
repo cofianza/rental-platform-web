@@ -96,7 +96,7 @@ export default function EquipoPage() {
 
   const cargar = useCallback(async () => {
     try {
-      const res = await listMiembros()
+      const res = await listMiembros({ conCierre: true })
       setData(res)
       setErrorCarga(false)
     } catch {
