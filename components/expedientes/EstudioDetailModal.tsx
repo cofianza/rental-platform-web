@@ -370,8 +370,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   </div>
                 ) : readOnly || estudio.certificado_sin_efecto ? (
                   <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    {/* Nunca se emitió: no hay un certificado que haya perdido efecto. */}
                     {estudio.certificado_sin_efecto
-                      ? 'Este certificado ya no tiene efecto.'
+                      ? 'Este estudio no tiene un certificado vigente.'
                       : 'El certificado aún no ha sido generado por el equipo de Cofianza.'}
                   </p>
                 ) : (
