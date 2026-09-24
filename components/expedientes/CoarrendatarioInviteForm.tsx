@@ -31,7 +31,7 @@ import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioServi
  * desde el enlace del prospecto, gastar uno de sus intentos del día.
  */
 const CON_ENLACE = /[<>]|h(?:tt|xx)ps?:|[\p{L}\d-][.．。｡]\p{L}{2,}/iu
-export const esNombreValido = (v: string) => /^\p{L}[\p{L}\p{M}'’ .-]*$/u.test(v) && !CON_ENLACE.test(v)
+export const esNombreValido = (v: string) => /^\p{L}[\p{L}\p{M}'’´ .-]*$/u.test(v) && !CON_ENLACE.test(v)
 
 export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
