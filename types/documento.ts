@@ -71,6 +71,9 @@ export interface IDocumento {
   metadatos: IDocumentoMetadatos | null // HP-327
   created_at: string
   updated_at: string
+  /** Solo en el listado del estudio: quien lo pide puede eliminarlo (pendiente,
+   *  propio y con el estudio sin decidir). Lo calcula el API (P19). */
+  eliminable?: boolean
   // Relacion con tipo_documento (join)
   tipo_documento?: {
     id: string

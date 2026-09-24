@@ -35,7 +35,6 @@ import { SelfieComparisonView } from './SelfieComparisonView'
 import { documentoService } from '@/services/documentoService'
 import { usePermissions } from '@/hooks/usePermissions'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useAuthStore } from '@/stores/auth.store'
 import type {
   IDocumento,
   ITipoDocumento,
@@ -584,15 +583,12 @@ export interface DocumentosSectionProps {
 
 export function DocumentosSection({ expedienteId, userRole, onPendientesChange }: DocumentosSectionProps) {
   // Solo se ofrece lo que el API permite (P19): subir con documentos:create y
-  // borrar el propio pendiente (o un administrador). Antes la tarjeta ofrecía
-  // subir y eliminar a todos y el intento terminaba en un 403.
+  // eliminar lo que el listado marca `eliminable` (pendiente, propio y con el
+  // estudio sin decidir). Antes la tarjeta ofrecía las dos cosas a todos y el
+  // intento terminaba en un 403.
   const { canAccess } = usePermissions()
   const puedeEditar = usePuedeEditar()
-  const userId = useAuthStore((s) => s.user?.id)
   const puedeSubir = puedeEditar && canAccess('documentos', 'create')
-  const puedeEliminar = (doc: IDocumento | null) =>
-    !!doc && puedeEditar && canAccess('documentos', 'delete') &&
-    (doc.subido_por === userId || userRole === 'administrador')
 
   // State
   const [tiposDocumento, setTiposDocumento] = useState<ITipoDocumento[]>([])
@@ -1002,7 +998,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               onCameraCapture={handleCameraCapture}
               isSelfieType={state.tipoDocumento.codigo === SELFIE_CODIGO}
               puedeSubir={puedeSubir}
-              puedeEliminar={puedeEliminar(state.documento)}
+              puedeEliminar={puedeEditar && state.documento?.eliminable === true}
             />
           ))}
       </div>
