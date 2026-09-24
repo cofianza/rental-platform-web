@@ -99,12 +99,12 @@ export function CoarrendatarioPropietarioCard({
   useEffect(() => {
     if (!coa) return
     const enEspera =
-      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa)) ||
+      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa) && expedienteEstado === 'condicionado') ||
       (coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado')
     if (!enEspera) return
     const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 8000)
     return () => clearInterval(id)
-  }, [coa, fetchCoa])
+  }, [coa, fetchCoa, expedienteEstado])
 
   const esRolValido =
     userRol === 'propietario' ||
@@ -184,12 +184,12 @@ export function CoarrendatarioPropietarioCard({
         </div>
 
         {/* Estado de la invitación + evaluación */}
-        <EstadoBlock coa={coa} />
+        <EstadoBlock coa={coa} sinEfecto={expedienteEstado !== 'condicionado'} />
 
         {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
-            otra persona (P4). El key remonta el form cuando los datos guardados
-            cambian. */}
-        {coa.estado === 'pendiente_aceptacion' && puedeEditar && (
+            otra persona (P4). Fuera de condicionado ya no rige (P3). El key
+            remonta el form cuando los datos guardados cambian. */}
+        {coa.estado === 'pendiente_aceptacion' && puedeEditar && expedienteEstado === 'condicionado' && (
           <CoarrendatarioReenviarInvitacion
             key={coa.updated_at}
             expedienteId={expedienteId}
@@ -237,10 +237,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function EstadoBlock({ coa }: { coa: ICoarrendatario }) {
+function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: boolean }) {
   const fallida = coa.estudio?.estado === 'fallido'
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
-    pendiente_aceptacion: invitacionVencida(coa)
+    // P3: con el estudio ya decidido, la invitación pendiente ya no se puede aceptar.
+    pendiente_aceptacion: sinEfecto
+      ? {
+          color: 'bg-gray-50 border-gray-200 text-gray-900',
+          label: 'Invitación sin efecto',
+          mensaje: 'El estudio ya no está en revisión, así que esta invitación ya no se puede aceptar.',
+        }
+      : invitacionVencida(coa)
       ? {
           color: 'bg-amber-50 border-amber-200 text-amber-900',
           label: 'Invitación vencida',
