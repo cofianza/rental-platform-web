@@ -68,8 +68,8 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
               decisión definitiva sobre ti: tu perfil puede cambiar.
             </p>
             <p className="text-xs text-slate-600 mt-2">
-              Puedes volver a intentarlo más adelante, presentar un co-arrendatario o escribirnos si
-              quieres entender qué pesó en la evaluación.
+              Puedes volver a intentarlo más adelante o escribirnos si quieres entender qué pesó en
+              la evaluación.
             </p>
             <NotaApelacion className="mt-2" />
           </div>

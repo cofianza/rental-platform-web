@@ -49,14 +49,15 @@ interface EstudioSolicitanteCardProps {
 type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
 
 /**
- * §10: "se indica que puede mejorar. Nunca es un portazo." Mismo texto que
- * MEJORAS_SUGERIDAS de la API. Se duplica a proposito: es copy, no logica, y
- * bajarlo por la respuesta no aportaria nada — no depende del caso.
+ * §10: "se indica que puede mejorar. Nunca es un portazo." Solo cuando la API
+ * no manda motivo (lo manda si decidió una regla dura, con la salida de su
+ * causa): sin saber la causa no se ofrece co-arrendatario ni canon menor, que
+ * no cambian un rechazo así (P30).
  */
 const MEJORAS_SUGERIDAS = [
-  'Sumar un coarrendatario con ingresos propios: no necesita finca raíz.',
   'Ponerte al día en las obligaciones que tengas en mora.',
-  'Buscar un inmueble con un canon más bajo frente a tus ingresos.',
+  'Volver a solicitarlo más adelante.',
+  'Escribirnos para revisar tu caso.',
 ]
 
 export function EstudioSolicitanteCard({
@@ -588,8 +589,12 @@ export function EstudioSolicitanteCard({
               <p className={`text-sm font-semibold ${tono.titulo} mb-0.5`}>{r.titulo}</p>
               <p className={`text-sm ${tono.texto}`}>{r.mensaje}</p>
 
-              {/* §10: "se indica que puede mejorar. Nunca es un portazo." */}
-              {r.ruta === 'no_aprobable' && (
+              {/* §10: "se indica que puede mejorar. Nunca es un portazo." El
+                  motivo de la regla dura ya trae la salida de su causa (P30). */}
+              {r.ruta === 'no_aprobable' && estudio.motivo_rechazo && (
+                <p className={`mt-3 text-sm ${tono.texto}`}>{estudio.motivo_rechazo}</p>
+              )}
+              {r.ruta === 'no_aprobable' && !estudio.motivo_rechazo && (
                 <ul className={`mt-3 space-y-1.5 text-sm ${tono.texto}`}>
                   {MEJORAS_SUGERIDAS.map((m) => (
                     <li key={m} className="flex items-start gap-2">
@@ -677,7 +682,7 @@ export function EstudioSolicitanteCard({
               <p className="text-sm font-semibold text-slate-900 mb-0.5">No aprobable por ahora</p>
               <p className="text-sm text-slate-700">
                 {estudio.motivo_rechazo ||
-                  'Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti: puedes intentarlo con un inmueble de canon menor, presentar un co-arrendatario o volver a solicitarlo más adelante.'}
+                  'Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti: puedes volver a solicitarlo más adelante o escribirnos para revisar tu caso.'}
               </p>
             </div>
           </div>

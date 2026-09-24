@@ -888,7 +888,7 @@ function SolicitanteDashboard() {
                 {isRejected ? (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                     <p className="text-sm text-slate-900 font-medium">No aprobable por ahora</p>
-                    <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre ti: puedes intentarlo con un inmueble de canon menor, presentar un co-arrendatario o volver a solicitarlo más adelante.</p>
+                    <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre ti: puedes volver a solicitarlo más adelante o escribirnos para revisar tu caso.</p>
                     <NotaApelacion className="mt-1.5" />
                   </div>
                 ) : isConditioned ? (
