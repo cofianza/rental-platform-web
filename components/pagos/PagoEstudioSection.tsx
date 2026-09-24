@@ -115,6 +115,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     return () => clearInterval(id)
   }, [estado, expedienteId, onPagoCompletado])
 
+  // P22: con saldo en contra (compra contracargada) no se paga con créditos.
+  const creditosEnContra = saldoCreditos?.creditos_en_contra ?? 0
+  const hayCreditosUsables = (saldoCreditos?.saldo_total ?? 0) > 0 && creditosEnContra === 0
+
   const handleLiberarCredito = async () => {
     setIsSubmitting(true)
     setError(null)
@@ -258,7 +262,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           <div className={`grid grid-cols-1 ${numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
               {/* Liberar con credito (inmobiliaria) */}
               {puedeUsarCreditos && (
-                (saldoCreditos?.saldo_total ?? 0) > 0 ? (
+                hayCreditosUsables ? (
                   <>
               <ConfirmDialog
                     isOpen={confirmLiberar}
@@ -290,8 +294,14 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   >
                     <IconDollarSign size={32} className="text-amber-600" />
                     <span className="text-sm font-semibold text-gray-900">Comprar paquete</span>
-                    <span className="text-xs text-amber-700">Sin créditos disponibles</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">Compra créditos con descuento por volumen.</span>
+                    <span className="text-xs text-amber-700">
+                      {creditosEnContra > 0 ? `${creditosEnContra} en contra` : 'Sin créditos disponibles'}
+                    </span>
+                    <span className="text-[11px] text-gray-500 leading-snug">
+                      {creditosEnContra > 0
+                        ? 'Una compra se reversó con el banco: lo usado se descuenta de tu próxima compra.'
+                        : 'Compra créditos con descuento por volumen.'}
+                    </span>
                   </Link>
                 )
               )}
@@ -335,7 +345,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {puedeUsarCreditos && (saldoCreditos?.saldo_total ?? 0) > 0 && (
+            {puedeUsarCreditos && hayCreditosUsables && (
               <>
               <ConfirmDialog
                     isOpen={confirmLiberar}

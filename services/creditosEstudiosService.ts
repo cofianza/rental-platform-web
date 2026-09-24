@@ -34,6 +34,9 @@ export interface ISaldoCreditos {
   saldo_perpetuo: number
   saldo_con_vencimiento: number
   proximo_vencimiento: string | null
+  /** P22: créditos usados de una compra contracargada; se descuentan de la próxima compra
+   *  y, mientras tanto, no se paga con créditos. Opcional: la API vieja no lo manda. */
+  creditos_en_contra?: number
   lotes: ILoteCredito[]
 }
 

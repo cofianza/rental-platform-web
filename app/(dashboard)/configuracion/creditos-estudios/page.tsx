@@ -193,6 +193,22 @@ export default function CreditosEstudiosPage() {
         subtitle="Compre paquetes de estudios y libérelos manualmente cuando lo necesite"
       />
 
+      {/* P22: saldo en contra por el contracargo de una compra */}
+      {(saldo?.creditos_en_contra ?? 0) > 0 && (
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+          <IconAlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <div className="text-sm text-red-800">
+            <p className="font-semibold">
+              Tienes {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'crédito' : 'créditos'} en contra
+            </p>
+            <p className="mt-0.5">
+              Se usaron créditos de una compra que se reversó con el banco. Se descuentan de tu próxima compra; mientras
+              tanto no puedes pagar evaluaciones con créditos, pero sí de inmediato o con el enlace al prospecto.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Saldo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
