@@ -4,6 +4,8 @@
  *  - sin cuenta  -> formulario de registro (/registrar crea cuenta + lo une).
  *  - con cuenta, no autenticado -> iniciar sesión y volver.
  *  - autenticado y coincide el email -> botón aceptar.
+ *  - el correo es de un propietario o arrendatario -> no puede unirse: se
+ *    explica y se pide otro correo (la cuenta no cambia de rol).
  */
 
 'use client'
@@ -24,6 +26,16 @@ import {
 } from '@/services/miembrosService'
 
 type Status = 'loading' | 'error' | 'ready' | 'registrado'
+
+// Cómo se nombra la sesión abierta: el rol interno ("solicitante") no le dice
+// nada a quien llegó por un correo.
+const CUENTA_ABIERTA: Record<string, string> = {
+  propietario: 'un propietario',
+  solicitante: 'un arrendatario',
+  administrador: 'un usuario del equipo de Cofianza',
+  operador_analista: 'un usuario del equipo de Cofianza',
+  gerencia_consulta: 'un usuario del equipo de Cofianza',
+}
 
 export default function InvitacionMiembroPage() {
   const params = useParams()
@@ -203,8 +215,20 @@ export default function InvitacionMiembroPage() {
         Invitación enviada a: <strong className="text-gray-700">{info.email}</strong>
       </p>
 
+      {/* El correo es de un propietario o arrendatario: ni iniciar sesión ni
+          aceptar lo resuelven, hace falta otro correo. */}
+      {info.cuenta_otro_rol && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-900">
+            Este correo ya tiene una cuenta de propietario o arrendatario en Cofianza y no puede
+            unirse a un equipo. Pídele a {info.invitador ? <strong>{info.invitador}</strong> : 'quien te invitó'}{' '}
+            que te envíe la invitación a otro correo.
+          </p>
+        </div>
+      )}
+
       {/* No autenticado + ya tiene cuenta -> iniciar sesión */}
-      {!isAuthenticated && info.tiene_cuenta && (
+      {!info.cuenta_otro_rol && !isAuthenticated && info.tiene_cuenta && (
         <div className="space-y-3">
           <p className="text-sm text-gray-700">
             Ya tienes una cuenta con este correo. Inicia sesión y vuelve a este enlace para aceptar.
@@ -219,7 +243,7 @@ export default function InvitacionMiembroPage() {
       )}
 
       {/* No autenticado + sin cuenta -> registro inline */}
-      {!isAuthenticated && !info.tiene_cuenta && (
+      {!info.cuenta_otro_rol && !isAuthenticated && !info.tiene_cuenta && (
         <form onSubmit={handleRegistrar} className="space-y-4">
           <p className="text-sm text-gray-700 font-medium">Crea tu cuenta para unirte</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -283,11 +307,11 @@ export default function InvitacionMiembroPage() {
       )}
 
       {/* Autenticado con rol equivocado */}
-      {isAuthenticated && wrongRole && (
+      {!info.cuenta_otro_rol && isAuthenticated && wrongRole && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Estás autenticado como <strong>{user?.rol}</strong>. Esta invitación es para unirse como
-            inmobiliaria. Cierra sesión e ingresa con la cuenta correcta.
+            Tienes abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
+            invitación es para unirse como inmobiliaria: cierra sesión e ingresa con el correo invitado.
           </p>
           <button
             onClick={handleLogout}
@@ -299,7 +323,7 @@ export default function InvitacionMiembroPage() {
       )}
 
       {/* Autenticado, rol correcto, email no coincide */}
-      {isAuthenticated && !wrongRole && !emailMatch && (
+      {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && !emailMatch && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
             Tu cuenta está asociada al email <strong>{user?.email}</strong>, pero esta invitación fue
@@ -315,7 +339,7 @@ export default function InvitacionMiembroPage() {
       )}
 
       {/* Autenticado, rol correcto, email coincide -> aceptar */}
-      {isAuthenticated && !wrongRole && emailMatch && (
+      {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && emailMatch && (
         <div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-3">

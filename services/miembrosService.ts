@@ -37,6 +37,8 @@ export interface InvitacionMiembroInfo {
   invitador: string | null
   /** true -> el invitado ya tiene cuenta (debe iniciar sesión); false -> debe registrarse. */
   tiene_cuenta: boolean
+  /** true -> el correo es de un propietario o arrendatario: no puede unirse a un equipo. */
+  cuenta_otro_rol?: boolean
 }
 
 export interface InmobiliariaAdmin {
