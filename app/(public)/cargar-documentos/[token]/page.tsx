@@ -19,14 +19,26 @@ import {
   type ContextoCargaDocumentos,
   type PropositoSoporte,
 } from '@/services/cargarDocumentosService'
-import type { CoarrendatarioEstado } from '@/services/coarrendatarioService'
 
-// Lo que el prospecto ve de su invitado: en qué va, nunca su resultado.
-const ESTADO_INVITADO: Partial<Record<CoarrendatarioEstado, string>> = {
-  pendiente_aceptacion: 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.',
-  aceptado: 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.',
-  estudio_completado:
-    'Su evaluación terminó. Un analista de Cofianza decide tu caso con los resultados de los dos y te avisamos por correo.',
+// Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
+// estudio ya resuelto no se promete una revisión que no va a ocurrir.
+function textoInvitado(
+  invitado: NonNullable<NonNullable<ContextoCargaDocumentos['coarrendatario']>['invitado']>,
+  enRevision: boolean,
+): string {
+  if (!enRevision) {
+    return invitado.estado === 'pendiente_aceptacion'
+      ? 'Tu estudio ya se resolvió, así que esta invitación quedó sin efecto.'
+      : 'Tu estudio ya se resolvió; te escribimos por correo con la decisión.'
+  }
+  if (invitado.estado === 'pendiente_aceptacion') {
+    return invitado.vencida
+      ? 'La invitación venció sin respuesta. Pídele a quien te pidió el estudio (tu inmobiliaria o el propietario) que la reenvíe.'
+      : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
+  }
+  return invitado.estado === 'aceptado'
+    ? 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
+    : 'Su evaluación terminó. Un analista de Cofianza decide tu caso con los resultados de los dos y te avisamos por correo.'
 }
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
@@ -177,7 +189,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Invitaste a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
-              <p className="mt-1 text-gray-700">{ESTADO_INVITADO[ctx.coarrendatario.invitado.estado]}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado === 'condicionado')}</p>
             </div>
           </div>
         )}

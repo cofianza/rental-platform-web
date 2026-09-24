@@ -80,22 +80,25 @@ export function CoarrendatarioCard({
   // para que el solicitante vea el cambio sin recargar. Una invitación vencida
   // ya no cambia sola (reenviarla llama a fetchCoa) y con la pestaña oculta no
   // se consulta.
+  const enRevision = expedienteEstado === 'condicionado'
   useEffect(() => {
-    if (!coa) return
+    if (!coa || !enRevision) return
     const enEspera =
       (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa)) || coa.estado === 'aceptado'
     if (!enEspera) return
     const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 6000)
     return () => clearInterval(id)
-  }, [coa, fetchCoa])
+  }, [coa, fetchCoa, enRevision])
 
-  // Visibilidad: solo cuando expediente está condicionado y el usuario es solicitante.
+  // Visibilidad: solicitante con el estudio condicionado. Ya resuelto, solo para
+  // decir que su invitación pendiente quedó sin efecto (P3).
   if (loading) return null
-  if (expedienteEstado !== 'condicionado') return null
   if (userRol !== 'solicitante') return null
+  if (!enRevision && coa?.estado !== 'pendiente_aceptacion') return null
 
   // ── Sin coarrendatario: invitar ────────────────────────────────────
   if (!coa) {
+    if (!enRevision) return null
     // Esperamos la intención antes de montar el form: sus campos se
     // inicializan una sola vez y llegar tarde equivale a no traerla.
     if (!intencionLista) return null
@@ -124,12 +127,12 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge coa={coa} />
+      <EstadoBadge coa={coa} sinEfecto={!enRevision} />
 
       {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
-          cancelarla para invitar a otra persona (P4). El key remonta el form
-          cuando los datos guardados cambian. */}
-      {coa.estado === 'pendiente_aceptacion' && (
+          cancelarla para invitar a otra persona (P4); con el estudio ya
+          resuelto no (P3). El key remonta el form cuando los datos cambian. */}
+      {coa.estado === 'pendiente_aceptacion' && enRevision && (
         <CoarrendatarioReenviarInvitacion
           key={coa.updated_at}
           expedienteId={expedienteId}
@@ -148,9 +151,15 @@ function invitacionVencida(coa: ICoarrendatario): boolean {
   return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }
 
-function EstadoBadge({ coa }: { coa: ICoarrendatario }) {
+function EstadoBadge({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: boolean }) {
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
-    pendiente_aceptacion: invitacionVencida(coa)
+    pendiente_aceptacion: sinEfecto
+      ? {
+          color: 'bg-gray-50 border-gray-200 text-gray-900',
+          label: 'Invitación sin efecto',
+          mensaje: 'Tu estudio ya se resolvió, así que esta invitación ya no se puede aceptar.',
+        }
+      : invitacionVencida(coa)
       ? {
           color: 'bg-amber-50 border-amber-200 text-amber-900',
           label: 'Invitación vencida',

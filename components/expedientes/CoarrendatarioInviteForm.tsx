@@ -20,12 +20,13 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconUsers, IconArrowRight } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
 
-// Sin tarjeta de identidad (el servicio es solo para mayores de edad) ni
-// pasaporte (los burós colombianos no lo consultan: la evaluación fallaría).
+// Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
+// pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
+// NIT: el co-arrendatario es una persona natural (el contrato lo rechaza y el
+// enlace del prospecto solo acepta estas dos).
 export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
-  { value: 'nit', label: 'NIT' },
 ]
 
 interface CoarrendatarioInviteFormProps {
