@@ -14,6 +14,8 @@ export interface IVisitaPublica {
   nombre: string
   /** Solo en citas 'confirmada': true si el solicitante ya confirmó que asistirá. */
   confirmada_asistencia: boolean
+  /** A quién escribirle: la inmobiliaria o el propietario; si no tiene número, el soporte de Cofianza. */
+  contacto?: { nombre: string; whatsapp: string | null; email: string | null }
 }
 
 export interface IVisitaSlot {

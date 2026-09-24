@@ -78,6 +78,8 @@ export default function GestionarVisitaPage() {
   // Reprogramar
   const [dias, setDias] = useState<IVisitaDia[]>([])
   const [slotsLoading, setSlotsLoading] = useState(false)
+  // Un fallo de carga no es «no hay horarios»: con eso el arrendatario dejaba de insistir.
+  const [slotsError, setSlotsError] = useState(false)
   const [slotSel, setSlotSel] = useState<string | null>(null)
 
   // Cancelar
@@ -85,11 +87,12 @@ export default function GestionarVisitaPage() {
 
   const cargarSlots = useCallback(async () => {
     setSlotsLoading(true)
+    setSlotsError(false)
     try {
       const data = await visitaService.getSlots(token, bogotaISODate(0), bogotaISODate(DIAS_RANGO))
       setDias(data.filter((d) => d.slots.length > 0))
     } catch {
-      // El error de slots no bloquea la pantalla; se muestra "sin horarios".
+      setSlotsError(true)
     } finally {
       setSlotsLoading(false)
     }
@@ -247,9 +250,7 @@ export default function GestionarVisitaPage() {
               {visita.estado === 'cancelada' && ' porque está cancelada'}
               {visita.estado === 'realizada' && ' porque ya se realizó'}.
             </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Si necesitas ayuda, responde por WhatsApp y te apoyamos.
-            </p>
+            <ContactoAyuda contacto={visita.contacto} className="mt-2" />
           </div>
         </Card>
       ) : accion === 'confirmar' ? (
@@ -337,10 +338,24 @@ export default function GestionarVisitaPage() {
             <div className="flex items-center justify-center py-8">
               <IconLoader size={24} className="animate-spin text-gray-400" />
             </div>
+          ) : slotsError ? (
+            <div className="py-4 text-center">
+              <p className="text-sm text-gray-700">No pudimos cargar los horarios.</p>
+              <button
+                type="button"
+                onClick={cargarSlots}
+                className="mt-3 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Reintentar
+              </button>
+            </div>
           ) : dias.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">
-              No hay horarios disponibles en los próximos {DIAS_RANGO} días. Responde por WhatsApp para coordinar.
-            </p>
+            <div className="py-4 text-center">
+              <p className="text-sm text-gray-500">
+                No hay horarios disponibles en los próximos {DIAS_RANGO} días.
+              </p>
+              <ContactoAyuda contacto={visita.contacto} className="mt-2" />
+            </div>
           ) : (
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
               {dias.map((dia) => (
@@ -391,6 +406,37 @@ export default function GestionarVisitaPage() {
         </Card>
       )}
     </div>
+  )
+}
+
+/**
+ * A quién escribirle: la inmobiliaria o el propietario por WhatsApp; si no tiene
+ * número, el correo de soporte de Cofianza (el WhatsApp de Cofianza nadie lo lee).
+ */
+function ContactoAyuda({ contacto, className }: { contacto?: IVisitaPublica['contacto']; className?: string }) {
+  if (!contacto) return null
+  const digitos = contacto.whatsapp?.replace(/\D/g, '') ?? ''
+  const wa = digitos.length === 10 ? `57${digitos}` : digitos
+  return (
+    <p className={cn('text-xs text-gray-500', className)}>
+      {contacto.whatsapp ? (
+        <>
+          Para coordinar otra fecha o si necesitas ayuda, escríbele a {contacto.nombre} por WhatsApp al{' '}
+          <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-700 underline">
+            {contacto.whatsapp}
+          </a>
+          .
+        </>
+      ) : contacto.email ? (
+        <>
+          Si necesitas ayuda, escríbenos a{' '}
+          <a href={`mailto:${contacto.email}`} className="font-medium text-primary-700 underline">
+            {contacto.email}
+          </a>
+          .
+        </>
+      ) : null}
+    </p>
   )
 }
 
