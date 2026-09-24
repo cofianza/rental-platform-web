@@ -22,7 +22,7 @@ import {
   type ICoarrendatario,
   type IInvitarCoarrendatarioInput,
 } from '@/services/coarrendatarioService'
-import { NOMBRE_VALIDO, TIPO_DOC_OPTIONS } from './CoarrendatarioInviteForm'
+import { esNombreValido, TIPO_DOC_OPTIONS } from './CoarrendatarioInviteForm'
 
 interface CoarrendatarioReenviarInvitacionProps {
   expedienteId: string
@@ -60,7 +60,7 @@ export function CoarrendatarioReenviarInvitacion({
       toast.error('El nombre, el apellido y el documento no pueden quedar vacíos')
       return
     }
-    if (!NOMBRE_VALIDO.test(nombre.trim()) || !NOMBRE_VALIDO.test(apellido.trim())) {
+    if (!esNombreValido(nombre.trim()) || !esNombreValido(apellido.trim())) {
       toast.error('El nombre y el apellido solo pueden tener letras.')
       return
     }

@@ -25,11 +25,13 @@ import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioServi
 // NIT: el co-arrendatario es una persona natural (el contrato lo rechaza y el
 // enlace del prospecto solo acepta estas dos).
 /**
- * Mismo filtro que el API (letras, espacios, apóstrofo, punto y guion): el
- * nombre va en el correo y el WhatsApp a un tercero. Validarlo aquí evita el
- * error, y desde el enlace del prospecto, gastar uno de sus intentos del día.
+ * Mismo filtro que el API (src/lib/textoSinEnlaces.ts): letras, espacios,
+ * apóstrofo, punto y guion, y sin dominios («www.x.co», «pago.info»). El nombre
+ * va en el correo y el WhatsApp a un tercero. Validarlo aquí evita el error, y
+ * desde el enlace del prospecto, gastar uno de sus intentos del día.
  */
-export const NOMBRE_VALIDO = /^\p{L}[\p{L}\p{M} '’.-]*$/u
+const CON_ENLACE = /[<>]|h(?:tt|xx)ps?:|[\p{L}\d-][.．。｡]\p{L}{2,}/iu
+export const esNombreValido = (v: string) => /^\p{L}[\p{L}\p{M}'’ .-]*$/u.test(v) && !CON_ENLACE.test(v)
 
 export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
@@ -72,7 +74,7 @@ export function CoarrendatarioInviteForm({
       toast.error('Llena todos los campos requeridos.')
       return
     }
-    if (!NOMBRE_VALIDO.test(nombre.trim()) || !NOMBRE_VALIDO.test(apellido.trim())) {
+    if (!esNombreValido(nombre.trim()) || !esNombreValido(apellido.trim())) {
       toast.error('El nombre y el apellido solo pueden tener letras.')
       return
     }
