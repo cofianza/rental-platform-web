@@ -232,8 +232,8 @@ export default function HomePage() {
               },
               {
                 tag: 'Cashback',
-                title: 'Si cumples, recuperas el 30% de tus tarifas mensuales.',
-                body: 'Al terminar tu contrato te devolvemos el 30% de las tarifas mensuales de la fianza que pagaste. Solo lo pierdes si tuvimos que pagar por ti o si la inmobiliaria o el propietario no nos reportó a tiempo.',
+                title: 'Recupera el 30% de tus tarifas mensuales.',
+                body: 'Al terminar tu contrato te devolvemos el 30% de las tarifas mensuales de la fianza que pagaste. Solo lo pierdes si tuvimos que pagar por ti o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza.',
                 variant: 'orange',
               },
             ].map((c) => (
@@ -568,7 +568,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una sola vez la prima de vinculación: 20% de un canon si firmas solo o 10% si tienes co-arrendatario, más IVA. Luego pagas una tarifa mensual. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no nos haya reportado a tiempo.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una sola vez la prima de vinculación: 20% de un canon si firmas solo o 10% si tienes un co-arrendatario aprobado, más IVA. Luego pagas una tarifa mensual más IVA. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
@@ -576,7 +576,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cómo funciona el cashback del 30%?',
-                a: 'Al terminar tu contrato te devolvemos el 30% de todas las tarifas mensuales de la fianza que pagaste (no aplica sobre la prima de vinculación). Solo lo pierdes si tuvimos que pagar alguna suma por ti, aunque sea una sola vez y de pocos pesos, o si la inmobiliaria o el propietario no nos reportó a tiempo. Es nuestra manera de reconocer a los buenos arrendatarios.',
+                a: 'Al terminar tu contrato te devolvemos el 30% de todas las tarifas mensuales de la fianza que pagaste (no aplica sobre la prima de vinculación). Solo lo pierdes si tuvimos que pagar alguna suma por ti, aunque sea una sola vez y de pocos pesos, o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza. Es nuestra manera de reconocer a los buenos arrendatarios.',
               },
               {
                 q: '¿Necesito registrarme para ver inmuebles?',
