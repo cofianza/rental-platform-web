@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useId, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
@@ -21,16 +21,20 @@ import {
   IconCheck,
   IconClock,
   IconLoader,
+  IconMail,
   IconRefresh,
   IconRotateCw,
   IconUpload,
 } from '@/components/icons'
 import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
 import { contratoService } from '@/services/contratoService'
+import { firmaService } from '@/services/firmaService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
 import type { EnvioV3, EstadoFirmanteV3, EstadoSobreV3 } from '@/types/contratoV3'
+import type { IVerificacionIdentidad } from '@/types/firma'
 import { Aviso, Dato } from './campos'
 import { ROL_FIRMANTE, VisorDocumentos, useVisor, type DocVisor } from './Paso5Notificaciones'
 
@@ -71,6 +75,8 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
   switch (s.motivo) {
     case 'EXPIRED':
       return 'Venció el plazo para firmar.'
+    case 'IDENTIDAD':
+      return `Venció el plazo para firmar sin que se completara la verificación de identidad${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}.`
     case 'FUERA_PLAZO':
       return `Las firmas se completaron después del plazo para firmar${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}: no cuentan.`
     case 'REJECTED':
@@ -116,9 +122,14 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const activa = e.estado === 'vigente'
   const terminado = e.estado === 'finalizado'
   const firmado = activa || terminado
-  const s = e.sobre
-  // Un proceso que no se creó en Auco (fallido) no tiene firmantes ni plazo que mostrar.
-  const creado = !!s && s.estado !== 'fallido'
+  // Reenviado con la biometría de firma: mientras alguien verifica su identidad, el último proceso es el anterior (ya cerrado).
+  const esperaIdentidad =
+    enFirma && e.identidadPendientes > 0 && !!e.sobre && !['creando', 'en_firma', 'completo'].includes(e.sobre.estado)
+  const s = esperaIdentidad ? null : e.sobre
+  // Un proceso que no se creó en Auco (fallido), o el cierre sin proceso por el plazo vencido, no tiene firmantes ni plazo que mostrar.
+  const creado = !!s && s.estado !== 'fallido' && s.firmantes.length > 0
+  // Adenda 2 §9: la revisión biométrica la registra el analista de Cofianza.
+  const esAnalista = rol === 'administrador' || rol === 'operador_analista'
   const firmantes = creado ? [...s.firmantes].sort((a, b) => a.orden - b.orden) : []
   // Auco notifica en orden: el turno es del primero que no ha firmado.
   const turno = s?.estado === 'en_firma' ? firmantes.find((f) => f.estado !== 'firmado') : undefined
@@ -175,6 +186,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   }
   const reintentar = async () => {
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
+  }
+  const reenviarIdentidad = async () => {
+    if (await v3.reenviarIdentidad()) toast.success('Enlace de verificación reenviado')
   }
   const aceptarAviso = async () => {
     if (await v3.aceptarAviso()) toast.success('Aviso aceptado')
@@ -341,10 +355,20 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {nota && <Aviso>{nota}</Aviso>}
         {enFirma && e.identidadPendientes > 0 && (
           <Aviso>
-            Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
-            identidad. El proceso de firma sale cuando todos terminen.
+            <p>
+              Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
+              identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
+              si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
+            </p>
+            {editable && (
+              <Button variante="secondary" tamano="sm" className="mt-2" onClick={reenviarIdentidad} disabled={ocupado}>
+                {accion === 'reenviarIdentidad' ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
+                Reenviar enlace de verificación
+              </Button>
+            )}
           </Aviso>
         )}
+        {esAnalista && <RevisionIdentidad contratoId={e.id} onCambio={() => void v3.recargar()} />}
         {bloqueados.length > 0 && (
           <Aviso tono="aviso">
             {bloqueados.map((f) => f.nombre).join(', ')} {bloqueados.length === 1 ? 'quedó bloqueado' : 'quedaron bloqueados'} en
@@ -476,7 +500,11 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           if (await v3.reenviar()) toast.success(`Contrato ${e.numero} reenviado a firma`)
         }}
         title="¿Reenviar a firma?"
-        message="Se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma."
+        message={
+          e.identidadPendientes > 0
+            ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma.'
+            : 'Se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma.'
+        }
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
       />
@@ -540,6 +568,37 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         isLoading={accion === 'cancelar'}
       />
     </>
+  )
+}
+
+/**
+ * Adenda 2 §9: resultado del cotejo biométrico y «Identidad confirmada / Suplantación»
+ * para el analista. El API solo le da el resultado a Cofianza.
+ */
+function RevisionIdentidad({ contratoId, onCambio }: { contratoId: string; onCambio: () => void }) {
+  const [verificaciones, setVerificaciones] = useState<IVerificacionIdentidad[]>([])
+  const cargar = useCallback(async () => {
+    try {
+      setVerificaciones((await firmaService.listarFirmantes(contratoId)).verificaciones)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos cargar la verificación de identidad.')
+    }
+  }, [contratoId])
+  useEffect(() => {
+    void cargar()
+  }, [cargar])
+  if (!verificaciones.length) return null
+  return (
+    <VerificacionIdentidadFirma
+      contratoId={contratoId}
+      verificaciones={verificaciones}
+      hayFirmantes
+      canManage={false}
+      onChange={() => {
+        void cargar()
+        onCambio()
+      }}
+    />
   )
 }
 

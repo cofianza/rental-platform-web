@@ -1,8 +1,8 @@
 /**
  * TarifaEstudioBlock — Adenda 1 §5: tarifa mensual, prima y cashback del
  * estudio segun su via de aprobacion, con las "condiciones especiales
- * negociadas caso por caso" que solo Gerencia General (administrador) puede
- * poner o quitar. Cada cambio queda con quien autorizo, cuando y por que, y
+ * negociadas caso por caso" que solo Gerencia General puede poner o quitar
+ * (`es_gerencia_general` de /auth/me; el API igual responde 403 al resto). Cada cambio queda con quien autorizo, cuando y por que, y
  * regenera el CRC ya emitido.
  *
  * Solo aparece en estudios completados y aprobados/condicionados: antes no
@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { estudioService } from '@/services/estudioService'
+import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { IEstudio, ITarifaEstudio, ITarifaOverrideInput, ViaAprobacion } from '@/types/estudio'
 
@@ -39,7 +40,7 @@ function avisarCrc(d: ITarifaEstudio) {
   else if (d.crc_error) toast.warning(`La tarifa quedó guardada, pero el CRC no se regeneró: ${d.crc_error}`)
 }
 
-export function TarifaEstudioBlock({ estudio, userRol }: { estudio: IEstudio; userRol?: string }) {
+export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
   const aplica =
     estudio.estado === 'completado' &&
     (estudio.resultado === 'aprobado' || estudio.resultado === 'condicionado')
@@ -47,6 +48,7 @@ export function TarifaEstudioBlock({ estudio, userRol }: { estudio: IEstudio; us
   const [editando, setEditando] = useState(false)
   const [confirmarQuitar, setConfirmarQuitar] = useState(false)
   const [quitando, setQuitando] = useState(false)
+  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
 
   const cargar = useCallback(async () => {
     if (!aplica) return
@@ -64,7 +66,6 @@ export function TarifaEstudioBlock({ estudio, userRol }: { estudio: IEstudio; us
   if (!aplica || !data) return null
   const t = data.tarifas
   const o = data.override
-  const esGerencia = userRol === 'administrador'
 
   const quitar = async () => {
     setQuitando(true)

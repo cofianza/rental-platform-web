@@ -27,6 +27,9 @@ export const TIPO_PERSONA_OPTIONS = [
 export const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'cc', label: 'Cedula de Ciudadania' },
   { value: 'ce', label: 'Cedula de Extranjeria' },
+  // Flujo estudios §5.1: PPT y PEP para atender poblacion migrante.
+  { value: 'ppt', label: 'Permiso por Proteccion Temporal (PPT)' },
+  { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
   { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'nit', label: 'NIT' },
 ] as const

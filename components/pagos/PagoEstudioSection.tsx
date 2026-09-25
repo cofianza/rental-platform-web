@@ -25,6 +25,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
+/** `paga` (A10): quién paga el cobro según el API — 'gestor' en la opción B. */
+type IEstadoConPagador = IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }
+
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
@@ -59,9 +62,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   // Opción B (Adenda 2 §7): el gestor paga él mismo por Mercado Pago. Ya no
   // existe "el costo queda a mi cargo" (a cuenta): no se aprobó.
   const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + 2
-  // El checkout pendiente es del propio gestor (opción B), no un enlace
-  // enviado al prospecto: se ofrece reabrirlo en vez de "reenviar correo".
-  const miEmail = useAuthStore((s) => s.user?.email)?.toLowerCase()
+  // El checkout pendiente es de la agencia (opción B), no un enlace enviado al
+  // prospecto: se ofrece reabrirlo en vez de "reenviar correo". Lo dice el API
+  // (`paga`), no el correo de quien mira: otro miembro de la agencia veía el
+  // cobro B como "Esperando pago del arrendatario" y se lo reenviaba al prospecto.
+  const pagaGestor = (estado as IEstadoConPagador | null)?.paga === 'gestor'
 
   const fetchEstado = useCallback(async () => {
     try {
@@ -418,10 +423,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       )}
 
       {/* Pendiente — checkout del propio gestor (opción B) */}
-      {estado.estado === 'pendiente' && !!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail && (
+      {estado.estado === 'pendiente' && pagaGestor && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-amber-800">Tu pago está pendiente en Mercado Pago</p>
+            <p className="text-sm font-medium text-amber-800">El pago de la agencia está pendiente en Mercado Pago</p>
             <p className="text-xs text-amber-600">{estado.monto_formateado} COP — el estudio sigue cuando se confirme.</p>
           </div>
           {estado.pago?.payment_link_url && (
@@ -436,7 +441,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       )}
 
       {/* Pendiente — enlace enviado al arrendatario */}
-      {estado.estado === 'pendiente' && !(!!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail) && (
+      {estado.estado === 'pendiente' && !pagaGestor && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
             <IconClock size={20} className="text-amber-600 shrink-0" />
@@ -740,8 +745,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   const pagoId = estado.pago?.id || null
   // Solo "recibimos tu pago" (y su factura) si pagó él: en la opción B el pago
   // lo hace el gestor con su correo y el estado igual es 'completado'.
-  const miEmail = useAuthStore((s) => s.user?.email)?.toLowerCase()
-  const pagoPropio = estado.estado === 'completado' && !!miEmail && estado.pago?.email_pagador?.toLowerCase() === miEmail
+  const pagoPropio = estado.estado === 'completado' && (estado as IEstadoConPagador).paga === 'arrendatario'
   // Si el backend ya adjunto la factura al pago (attachFacturas), la usamos.
   const facturaExistente = (estado.pago as unknown as { factura?: { id: string; numero?: string | null; estado: string } | null } | null)?.factura || null
 
@@ -970,6 +974,17 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           )}
         </Modal>
       </>
+    )
+  }
+
+  // Opción B: la agencia paga la evaluación. Su checkout no es del prospecto
+  // (el API ni siquiera le manda el enlace).
+  if ((estado as IEstadoConPagador).paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
+    return (
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona tu solicitud está pagando la evaluación</p>
+        <p className="text-sm text-blue-800">No tienes que pagar nada. Te avisaremos cuando la evaluación avance.</p>
+      </div>
     )
   }
 
@@ -1250,6 +1265,8 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
 const TIPO_DOC_LABEL: Record<string, string> = {
   cc: 'Cédula de Ciudadanía',
   ce: 'Cédula de Extranjería',
+  ppt: 'Permiso por Protección Temporal (PPT)',
+  pep: 'Permiso Especial de Permanencia (PEP)',
   ti: 'Tarjeta de Identidad',
   nit: 'NIT',
   pasaporte: 'Pasaporte',

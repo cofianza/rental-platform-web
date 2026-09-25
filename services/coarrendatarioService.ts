@@ -45,7 +45,7 @@ export interface ICoarrendatario {
 export interface IInvitarCoarrendatarioInput {
   nombre: string
   apellido: string
-  tipo_documento: 'cc' | 'ce' | 'ti' | 'pasaporte' | 'nit'
+  tipo_documento: 'cc' | 'ce' | 'ppt' | 'pep' | 'ti' | 'pasaporte' | 'nit'
   numero_documento: string
   email: string
   telefono?: string

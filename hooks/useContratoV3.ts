@@ -44,6 +44,7 @@ export type AccionContratoV3 =
   | 'enviar'
   | 'reenviar'
   | 'reintentar'
+  | 'reenviarIdentidad'
   | 'actualizar'
   | 'cancelar'
   // Entrega 6: posfirma
@@ -244,6 +245,10 @@ export function useContratoV3(expedienteId: string) {
     () => mutar('reintentar', () => contratoV3Service.reintentar(expedienteId)),
     [mutar, expedienteId],
   )
+  const reenviarIdentidad = useCallback(
+    () => mutar('reenviarIdentidad', () => contratoV3Service.reenviarIdentidad(expedienteId)),
+    [mutar, expedienteId],
+  )
   const actualizarFirma = useCallback(
     () => mutar('actualizar', () => contratoV3Service.actualizarFirma(expedienteId)),
     [mutar, expedienteId],
@@ -323,6 +328,7 @@ export function useContratoV3(expedienteId: string) {
     enviar,
     reenviar,
     reintentar,
+    reenviarIdentidad,
     actualizarFirma,
     prorrogarPlazo,
     aceptarAviso,

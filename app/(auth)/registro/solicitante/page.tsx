@@ -22,6 +22,8 @@ import { authService } from '@/services/authService'
 const TIPO_DOC_OPTIONS = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
+  { value: 'ppt', label: 'Permiso por Protección Temporal (PPT)' },
+  { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
   { value: 'nit', label: 'NIT' },
 ]
 

@@ -42,6 +42,8 @@ interface CoarrendatarioPropietarioCardProps {
 const TIPO_DOC_LABEL: Record<string, string> = {
   cc: 'CC',
   ce: 'CE',
+  ppt: 'PPT',
+  pep: 'PEP',
   ti: 'TI',
   pasaporte: 'Pasaporte',
   nit: 'NIT',

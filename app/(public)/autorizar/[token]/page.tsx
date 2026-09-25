@@ -88,6 +88,12 @@ const MOTIVOS_REPORTE: Array<{ key: 'no_soy_yo' | 'datos_incorrectos'; label: st
   { key: 'datos_incorrectos', label: 'Soy yo, pero los datos están mal', sub: 'Hay un error en el nombre o en el documento.' },
 ]
 
+// Solo es cierto con el texto sin biometría: con la selfie, la imagen del rostro
+// ES un dato sensible (cláusula 4.1 del texto 3.0-biometria).
+const SIN_DATOS_SENSIBLES = 'No tratamos datos sensibles ni de menores; el servicio es solo para mayores de 18 años.'
+const CON_BIOMETRIA =
+  'La foto de tu rostro es un dato sensible: la usamos solo para confirmar que eres el titular del documento y no estás obligado a darla. No tratamos datos de menores; el servicio es solo para mayores de 18 años.'
+
 const FINALIDADES = [
   {
     Icon: IconActivity,
@@ -134,7 +140,7 @@ const FINALIDADES = [
     detalle: [
       'Prevenimos suplantación y fraude conforme a las normas de prevención de lavado (SARLAFT).',
       'Aplicamos medidas técnicas y administrativas para proteger tu información.',
-      'No tratamos datos sensibles ni de menores; el servicio es solo para mayores de 18 años.',
+      SIN_DATOS_SENSIBLES,
     ],
   },
 ] as const
@@ -784,7 +790,7 @@ export default function AutorizarPage() {
                         {f.detalle.map((d) => (
                           <li key={d} className="flex gap-2">
                             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary-500" />
-                            <span>{d}</span>
+                            <span>{d === SIN_DATOS_SENSIBLES && conBiometria ? CON_BIOMETRIA : d}</span>
                           </li>
                         ))}
                       </ul>

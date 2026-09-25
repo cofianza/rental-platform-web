@@ -309,8 +309,8 @@ export function Step3Configuration({
           <span className="font-normal text-gray-500">(opcional)</span>
         </legend>
         <p className="text-xs text-gray-500">
-          Si no eliges, Cofianza decide cuál consultar. Cambiarlo después obliga a repetir la
-          consulta, y se cobra de nuevo.
+          Si no eliges, se consulta DataCrédito, la central principal de Cofianza (la API lo
+          aplica por defecto). Cambiarlo después obliga a repetir la consulta, y se cobra de nuevo.
         </p>
         <div className="flex flex-wrap gap-2">
           {([

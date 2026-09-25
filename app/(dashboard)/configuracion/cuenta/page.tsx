@@ -25,6 +25,8 @@ import { IconLoader, IconCheck, IconLock } from '@/components/icons'
 const TIPO_DOCUMENTO_LABELS: Record<string, string> = {
   cc: 'Cédula de ciudadanía',
   ce: 'Cédula de extranjería',
+  ppt: 'Permiso por protección temporal (PPT)',
+  pep: 'Permiso especial de permanencia (PEP)',
   ti: 'Tarjeta de identidad',
   nit: 'NIT',
   pasaporte: 'Pasaporte',
@@ -34,7 +36,7 @@ interface FormState {
   nombre: string
   apellido: string
   telefono: string
-  tipo_documento: 'cc' | 'ce' | 'ti' | 'nit' | 'pasaporte' | ''
+  tipo_documento: 'cc' | 'ce' | 'ppt' | 'pep' | 'ti' | 'nit' | 'pasaporte' | ''
   numero_documento: string
   nombre_representante: string
 }

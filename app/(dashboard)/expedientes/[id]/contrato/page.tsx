@@ -288,6 +288,8 @@ function Asistente({
   const { accion, guardarPaso, limpiarErrorPaso } = v3
   const ocupado = accion !== null
   const rol = useAuthStore((s) => s.user?.rol)
+  // Adenda 1 de contratos, resp. 14: el exceso de cláusulas lo autoriza solo la Gerencia General.
+  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
 
   // Se retoma en el primer paso sin guardar (en la Ruta B el 4 no se guarda: no aplica).
   const [paso, setPaso] = useState<NumeroPaso>(
@@ -664,7 +666,7 @@ function Asistente({
             guardado={guardado4}
             sinCambios={sinCambios4}
             incorpora={incorpora}
-            esAdmin={editable && rol === 'administrador'}
+            esAdmin={editable && esGerencia}
             excedeLimite={bloqueos.some((b) => b.codigo === 'ADICIONALES_EXCEDEN_LIMITE')}
             autorizando={accion === 'autorizar'}
             onAutorizar={v3.autorizarExceso}
@@ -726,7 +728,11 @@ function Asistente({
         title="¿Enviar el contrato a firma?"
         message={
           <div className="space-y-3">
-            <p>Se enviará por Auco (WhatsApp) para firmar en este orden, una parte a la vez:</p>
+            <p>
+              {contrato.biometriaFirma
+                ? 'Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, sale por Auco (WhatsApp) para firmar en este orden, una parte a la vez:'
+                : 'Se enviará por Auco (WhatsApp) para firmar en este orden, una parte a la vez:'}
+            </p>
             <ol className="list-decimal space-y-1 pl-5">
               {ordenFirma.map((f, i) => (
                 <li key={i}>

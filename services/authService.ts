@@ -41,6 +41,7 @@ function perfilAUsuario(profile: IMeResponse): IUser {
     nombre_completo: profile.nombre_completo,
     rol: profile.rol,
     rol_miembro: profile.rol_miembro ?? null,
+    es_gerencia_general: profile.es_gerencia_general === true,
     perfil_completo: profile.perfil_completo,
     activo: profile.activo,
   }

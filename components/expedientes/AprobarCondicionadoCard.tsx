@@ -7,8 +7,8 @@
  * puede reforzar el caso: pedir soportes al solicitante, consultar el otro buró
  * (solo si el primero no tenía información) o sumar un co-arrendatario (su
  * tarjeta va justo debajo). Cada salida dice qué pasa después:
- *  - otro buró con información → el estudio se vuelve a decidir con ese resultado
- *    (el orquestador mueve el expediente);
+ *  - otro buró con información → su resultado pasa a la revisión del analista
+ *    (un «aprobado» no aprueba solo, P33); un rechazo sí mueve el expediente;
  *  - co-arrendatario → su resultado pasa a la revisión del analista, salvo una
  *    regla dura suya, que no lo deja aprobar (ponderacion.ts del API).
  * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí): el
@@ -178,8 +178,8 @@ export function AprobarCondicionadoCard({
                 {ofreceOtroBuro && (
                   <Opcion titulo="Consultar el otro buró">
                     <p>
-                      Si el otro buró sí tiene información, el estudio se vuelve a decidir con ese resultado (puede
-                      quedar aprobado o no aprobable). Es una consulta nueva y se factura.
+                      Si el otro buró sí tiene información, su resultado pasa al analista de Cofianza, que decide
+                      el caso (si sale no aprobable, el estudio queda no aprobable). Es una consulta nueva y se factura.
                     </p>
                     {otroBuroAbierto ? (
                       <div className="mt-2">

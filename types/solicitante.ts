@@ -15,7 +15,7 @@ export type TipoPersona = 'natural' | 'juridica'
 /**
  * Tipos de documento (alineado con backend)
  */
-export type TipoDocumento = 'cc' | 'ce' | 'pasaporte' | 'nit'
+export type TipoDocumento = 'cc' | 'ce' | 'ppt' | 'pep' | 'pasaporte' | 'nit'
 
 /**
  * Niveles educativos

@@ -713,6 +713,8 @@ export function formatDateTime(date: Date | string): string {
 export const TIPOS_DOCUMENTO = {
   CC: 'Cédula de Ciudadanía',
   CE: 'Cédula de Extranjería',
+  PPT: 'Permiso por Protección Temporal (PPT)',
+  PEP: 'Permiso Especial de Permanencia (PEP)',
   NIT: 'NIT',
   PASAPORTE: 'Pasaporte',
 } as const

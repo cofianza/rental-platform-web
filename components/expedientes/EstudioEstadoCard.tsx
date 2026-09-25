@@ -312,7 +312,10 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
-          ocultarReconsulta={reconsultaEnGuia}
+          // A1: el otro buró solo se consulta con el caso en revisión manual
+          // (la API lo niega fuera de 'condicionado'); `coarrendatarioEnRevision`
+          // es justamente «expediente condicionado».
+          ocultarReconsulta={reconsultaEnGuia || !coarrendatarioEnRevision}
           inmuebleActualId={inmuebleActualId}
           onReasignado={reasignable ? () => {
             fetchEstudios()
@@ -534,7 +537,7 @@ function EstudioPanel({
             )}
           </div>
           {/* La tarifa es una sola por arriendo: se ve y se negocia en el titular (P35). */}
-          {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} userRol={userRol} />}
+          {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} />}
         </div>
       </div>
 

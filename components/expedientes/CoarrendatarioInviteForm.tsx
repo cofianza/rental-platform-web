@@ -36,6 +36,8 @@ export const esNombreValido = (v: string) => /^\p{L}[\p{L}\p{M}'’´ .-]*$/u.te
 export const TIPO_DOC_OPTIONS: Array<{ value: IInvitarCoarrendatarioInput['tipo_documento']; label: string }> = [
   { value: 'cc', label: 'Cédula de Ciudadanía' },
   { value: 'ce', label: 'Cédula de Extranjería' },
+  { value: 'ppt', label: 'Permiso por Protección Temporal (PPT)' },
+  { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
 ]
 
 interface CoarrendatarioInviteFormProps {

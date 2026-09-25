@@ -24,12 +24,15 @@ import { ApiClientError } from '@/lib/api'
 
 // Tipos soportados por TransUnion Colombia (mismo set que el backend acepta
 // en ejecutarEstudioBodySchema). Pasaporte se excluye a propósito: falla con
-// 'tercero no existe' en las centrales locales.
-export type TipoDocEstudio = 'cc' | 'nit' | 'ce' | 'ti'
+// 'tercero no existe' en las centrales locales. PPT/PEP (A13, migrantes):
+// solo DataCrédito los consulta; TransUnion no tiene código para ellos.
+export type TipoDocEstudio = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
+
+const SOLO_DATACREDITO: readonly string[] = ['ppt', 'pep']
 
 export function normalizeTipoDocEstudio(t?: string | null): TipoDocEstudio {
   const v = (t || '').toLowerCase()
-  return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ti' ? v : 'cc'
+  return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ppt' || v === 'pep' || v === 'ti' ? v : 'cc'
 }
 
 // Burós ejecutables por reintento (mismo enum que ejecutarEstudioBodySchema).
@@ -150,6 +153,7 @@ export function ReintentarEstudioForm({
   // tengo información" no aporta nada, y además el backend lo rechaza.
   const [proveedor, setProveedor] = useState<ProveedorReintento>(() => {
     const actual = normalizeProveedorReintento(proveedorActual)
+    if (SOLO_DATACREDITO.includes(normalizeTipoDocEstudio(persona?.tipo_documento))) return 'datacredito'
     return esReconsulta ? otroBuro(actual) : actual
   })
   // Si el apellido viene separado se usa tal cual; solo si no, se propone a
@@ -262,7 +266,7 @@ export function ReintentarEstudioForm({
             disabled={reintentando}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           >
-            <option value="transunion">TransUnion</option>
+            <option value="transunion" disabled={SOLO_DATACREDITO.includes(tipoDoc)}>TransUnion</option>
             <option value="datacredito">DataCrédito</option>
           </select>
         </div>
@@ -272,12 +276,18 @@ export function ReintentarEstudioForm({
           </label>
           <select id="reintentar-estudio-form-tipo-de-documento"
             value={tipoDoc}
-            onChange={(e) => setTipoDoc(e.target.value as TipoDocEstudio)}
+            onChange={(e) => {
+              const t = e.target.value as TipoDocEstudio
+              setTipoDoc(t)
+              if (SOLO_DATACREDITO.includes(t)) setProveedor('datacredito')
+            }}
             disabled={reintentando}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           >
             <option value="cc">Cédula de ciudadanía (CC)</option>
             <option value="ce">Cédula de extranjería (CE)</option>
+            <option value="ppt">Permiso por protección temporal (PPT)</option>
+            <option value="pep">Permiso especial de permanencia (PEP)</option>
             <option value="ti">Tarjeta de identidad (TI)</option>
             <option value="nit">NIT</option>
           </select>

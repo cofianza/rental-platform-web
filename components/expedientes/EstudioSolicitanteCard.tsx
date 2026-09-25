@@ -46,7 +46,7 @@ interface EstudioSolicitanteCardProps {
 // documentos extranjeros no estan en las centrales de riesgo locales — el
 // estudio falla con 'tercero no existe'. Restringimos las opciones desde
 // el dropdown para evitar el error.
-type TipoDoc = 'cc' | 'nit' | 'ce' | 'ti'
+type TipoDoc = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
 
 /**
  * §10: "Nunca es un portazo", pero sin saber la causa (la API manda el motivo
@@ -106,7 +106,7 @@ export function EstudioSolicitanteCard({
       //   1. datos_formulario del estudio (lo ultimo que el solicitante escribio).
       //   2. solicitante.tipo_documento + numero_documento (lo del registro).
       // Si el tipo no esta en el set soportado por TransUnion CO, lo ignoramos
-      // y forzamos al solicitante a elegir uno valido (cc/ce/nit; la TI ya no
+      // y forzamos al solicitante a elegir uno valido (cc/ce/ppt/pep/nit; la TI ya no
       // se ofrece: el servicio es solo para mayores de edad).
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
       const tipoFromDatos = datos.tipo_documento?.toLowerCase()
@@ -115,7 +115,7 @@ export function EstudioSolicitanteCard({
       const numeroFromPrefill = prefillNumeroDocumento?.trim() || ''
 
       const isTipoValido = (t: string | undefined): t is TipoDoc =>
-        t === 'cc' || t === 'nit' || t === 'ce'
+        t === 'cc' || t === 'nit' || t === 'ce' || t === 'ppt' || t === 'pep'
 
       if (isTipoValido(tipoFromDatos)) {
         setTipoDoc(tipoFromDatos)
@@ -329,7 +329,10 @@ export function EstudioSolicitanteCard({
               ? <strong>WhatsApp y correo</strong>
               : <strong>correo</strong>} para autorizar el tratamiento
             de tus datos y la consulta a las centrales de riesgo. Ábrelo y fírmalo: es el primer paso,
-            y apenas autorices te llega el enlace para pagar el estudio.
+            {/* Solo en la opción C paga el prospecto; en A/B ya lo cubrió la agencia. */}
+            {estudio.pago_por === 'arrendatario'
+              ? ' y apenas autorices te llega el enlace para pagar el estudio.'
+              : ' y apenas autorices empezamos tu estudio.'}
           </p>
           <p className="text-xs text-gray-500">
             El enlace es personal y {venceTexto}. ¿No te llegó? Revisa tu correo (incluido spam)
@@ -458,6 +461,8 @@ export function EstudioSolicitanteCard({
             >
               <option value="cc">Cédula de ciudadanía (CC)</option>
               <option value="ce">Cédula de extranjería (CE)</option>
+              <option value="ppt">Permiso por protección temporal (PPT)</option>
+              <option value="pep">Permiso especial de permanencia (PEP)</option>
               {/* Sin TI: el servicio es solo para mayores de edad. */}
               <option value="nit">NIT</option>
             </select>
@@ -484,7 +489,7 @@ export function EstudioSolicitanteCard({
             Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en las centrales de riesgo.
           </p>
           <p className="text-amber-700">
-            <strong>Importante:</strong> solo consultamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería (CE).
+            <strong>Importante:</strong> solo consultamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería (CE), PPT o PEP.
           </p>
         </div>
 

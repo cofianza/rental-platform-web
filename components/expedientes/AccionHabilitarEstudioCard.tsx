@@ -86,7 +86,7 @@ export function AccionHabilitarEstudioCard({
   const [showOmitir, setShowOmitir] = useState(false)
   const [motivoOmitir, setMotivoOmitir] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [proveedor, setProveedor] = useState<BuroEjecutable>('transunion')
+  const [proveedor, setProveedor] = useState<BuroEjecutable>('datacredito') // Adenda 1 §2: la central primaria
 
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
   // casos (estudio ya decidido o usuario sin permiso) salimos sin gasto.

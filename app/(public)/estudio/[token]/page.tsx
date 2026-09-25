@@ -68,7 +68,7 @@ export default function EstudioFormularioPage() {
         setTelefono(data.solicitante?.telefono ?? '')
         const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
         // Sin TI: el servicio es solo para mayores de edad.
-        const consultable = ['CC', 'CE', 'NIT'].includes(t)
+        const consultable = ['CC', 'CE', 'PPT', 'PEP', 'NIT'].includes(t)
         // Si el tipo guardado no se puede consultar (pasaporte: los burós
         // colombianos no lo tienen), NO se degrada a CC arrastrando el
         // número. Eso dejaba un par (cc, número-de-pasaporte) que no es de
@@ -359,10 +359,12 @@ export default function EstudioFormularioPage() {
               <option value="" disabled>Selecciona…</option>
               <option value="CC">Cédula de Ciudadanía</option>
               <option value="CE">Cédula de Extranjería</option>
+              <option value="PPT">Permiso por Protección Temporal (PPT)</option>
+              <option value="PEP">Permiso Especial de Permanencia (PEP)</option>
               <option value="NIT">NIT</option>
             </select>
             <p className="text-xs text-amber-700 mt-1">
-              Solo aceptamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería.
+              Solo aceptamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería, PPT o PEP.
             </p>
           </div>
           <div className="sm:col-span-2">

@@ -507,7 +507,9 @@ export function EstudiosSection({
                     para no abrir el modal de detalle al interactuar. */}
                 {(canManage || isStakeholder) &&
                   puedeRelanzarEstudio(estudio) &&
-                  (coarrendatarioEnRevision || estudio.tipo !== 'con_coarrendatario') && (
+                  (coarrendatarioEnRevision || estudio.tipo !== 'con_coarrendatario') &&
+                  // A1: la consulta al otro buró, solo con el expediente condicionado.
+                  (coarrendatarioEnRevision || !esCondicionadoSinInfo(estudio)) && (
                   <div
                     className="mt-3"
                     onClick={(e) => e.stopPropagation()}

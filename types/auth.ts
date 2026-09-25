@@ -48,6 +48,7 @@ export interface IUserProfile {
   telefono?: string | null
   rol: UserRole
   rol_miembro?: RolMiembro | null // Solo /auth/me; null si no es miembro de una org
+  es_gerencia_general?: boolean // Solo /auth/me; administrador en GERENCIA_GENERAL_EMAILS
   perfil_completo?: boolean // Solo /auth/me; datos personales mínimos completos
   activo?: boolean
   estado?: 'activo' | 'inactivo'
@@ -64,6 +65,8 @@ export interface IUser {
   nombre_completo?: string
   rol: UserRole
   rol_miembro?: RolMiembro | null
+  /** Tarifa negociada y exceso de cláusulas: solo la Gerencia General (el API da 403 al resto). */
+  es_gerencia_general?: boolean
   perfil_completo?: boolean
   activo?: boolean
 }
@@ -110,7 +113,7 @@ export interface IMyProfile {
   nombre: string
   apellido: string
   telefono: string | null
-  tipo_documento: 'cc' | 'ce' | 'ti' | 'nit' | 'pasaporte' | null
+  tipo_documento: 'cc' | 'ce' | 'ppt' | 'pep' | 'ti' | 'nit' | 'pasaporte' | null
   numero_documento: string | null
   rol: UserRole
   avatar_url: string | null
@@ -124,7 +127,7 @@ export interface IUpdateMyProfilePayload {
   nombre: string
   apellido: string
   telefono: string | null
-  tipo_documento?: 'cc' | 'ce' | 'ti' | 'nit' | 'pasaporte' | null
+  tipo_documento?: 'cc' | 'ce' | 'ppt' | 'pep' | 'ti' | 'nit' | 'pasaporte' | null
   numero_documento?: string | null
   nombre_representante?: string | null
 }

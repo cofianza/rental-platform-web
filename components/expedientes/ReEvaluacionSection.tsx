@@ -126,7 +126,13 @@ export function ReEvaluacionSection({
   }, [selectedFile, proposito, estudio.id, onDocumentoAdded])
 
   // Derived state
-  const isReevaluable = estudio.estado === 'completado' && estudio.resultado === 'rechazado'
+  // A4: el no aprobado EFECTIVO — rechazo del buró o condicionado que Cofianza negó.
+  const isReevaluable =
+    estudio.estado === 'completado' &&
+    (estudio.resultado === 'rechazado' ||
+      (estudio.resultado === 'condicionado' &&
+        estudio.tipo !== 'con_coarrendatario' &&
+        estudio.decision_cofianza === 'negado'))
 
   if (!isReevaluable) return null
 

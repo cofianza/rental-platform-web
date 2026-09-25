@@ -119,7 +119,7 @@ export function VerificacionIdentidadFirma({
           return (
             <li key={v.id} className="text-sm">
               <p className="font-medium text-gray-900">
-                Arrendatario <span className="font-normal text-gray-500">· {v.nombre}</span>
+                {v.rol === 'cotitular' ? 'Coarrendatario' : 'Arrendatario'} <span className="font-normal text-gray-500">· {v.nombre}</span>
               </p>
               {v.estado === 'pendiente' ? (
                 <p className="flex items-center gap-1 text-xs text-gray-500">

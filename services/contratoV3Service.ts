@@ -118,6 +118,11 @@ export const contratoV3Service = {
     const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/reintentar`)
     return res.data
   },
+  /** EN FIRMA con la biometría: enlace nuevo de verificación de identidad a quien no ha verificado (no toca Auco). */
+  async reenviarIdentidad(expedienteId: string): Promise<EstadoAsistente> {
+    const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/identidad/reenviar`)
+    return res.data
+  },
   /** Pregunta a Auco el estado ya, sin esperar el webhook ni el barrido. */
   async actualizarFirma(expedienteId: string): Promise<EstadoAsistente> {
     const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/firma/actualizar`)
