@@ -1,8 +1,10 @@
 /**
  * Bloqueos y pendientes del asistente de contratos V3 (Entrega 3).
  *
- * Los decide el API (§5.2 del diseño): aquí solo se pintan, cada uno con el
- * enlace a donde se corrige. Un bloqueo impide iniciar o generar; un aviso no.
+ * Los decide el API (§5.2 del diseño): aquí se pintan como una lista de puntos
+ * por resolver, en ámbar (pendiente, no error), cada uno con el enlace a donde
+ * se corrige. Los que resuelve una misma evaluación nueva van en un solo punto.
+ * Un bloqueo impide iniciar o generar; un aviso no.
  */
 
 'use client'
@@ -15,6 +17,8 @@ interface Props {
   bloqueos: Bloqueo[]
   /** Faltantes del asistente ("Falta guardar este paso", fechas vencidas…). */
   faltantes?: { paso: NumeroPaso; mensaje: string }[]
+  /** Lo que frenan (p. ej. "iniciar el contrato"): encabeza la lista con «Para …, resuelve estos N puntos:». */
+  para?: string
   /** Sin él (solo faltantes) no se pintan los enlaces de acción. */
   expedienteId?: string
   inmuebleId?: string
@@ -40,16 +44,66 @@ export const PIDEN_NUEVA_EVALUACION = [
   'CANON_INGRESO_EXCEDE',
 ]
 
+/** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
+export const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
+
+/** Del certificado de la evaluación actual: la nueva emite el suyo sola, así que no son un punto aparte. */
+const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
+
+interface Punto {
+  key: string
+  texto: string
+  razones?: string[]
+  nota?: string
+  /** El bloqueo que decide el enlace de acción. */
+  bloqueo?: Bloqueo
+  paso?: NumeroPaso
+  /** Faltante del asistente: con onIrPaso se antepone "Paso N:". */
+  esFaltante?: boolean
+}
+
+/** Los bloqueos que resuelve una misma evaluación nueva se juntan en el lugar del primero. */
+function puntosDe(bloqueos: Bloqueo[]): Punto[] {
+  const evaluacion = bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
+  const juntos = evaluacion.length
+    ? bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))
+    : []
+  const out: Punto[] = []
+  bloqueos.forEach((b, i) => {
+    if (!juntos.includes(b)) {
+      out.push({ key: `${b.codigo}-${i}`, texto: b.mensaje, razones: b.detalle, bloqueo: b, paso: b.paso })
+    } else if (b === juntos[0]) {
+      out.push({
+        key: 'nueva-evaluacion',
+        texto: 'La evaluación crediticia actual ya no sirve para el contrato:',
+        // El «Se requiere nueva evaluación.» de cada motivo sobra bajo este encabezado.
+        razones: evaluacion.map((e) => e.mensaje.replace(/\s*Se requiere nueva evaluación\.$/, '')),
+        nota:
+          juntos.length > evaluacion.length
+            ? 'Al aprobarse, la nueva evaluación emite sola su certificado de riesgo (CRC).'
+            : undefined,
+        bloqueo: evaluacion[0],
+      })
+    }
+  })
+  return out
+}
+
 export function BloqueosContrato({
   bloqueos,
   faltantes = [],
+  para,
   expedienteId,
   inmuebleId,
   inmuebleAccesible = true,
   esTitular,
   onIrPaso,
 }: Props) {
-  if (bloqueos.length === 0 && faltantes.length === 0) return null
+  const puntos: Punto[] = [
+    ...puntosDe(bloqueos),
+    ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
+  ]
+  if (puntos.length === 0) return null
 
   const accion = (b: Bloqueo) => {
     if (!expedienteId) return null
@@ -58,7 +112,7 @@ export function BloqueosContrato({
       case 'datos_contrato': {
         if (!esTitular) {
           return (
-            <p className="text-xs text-red-700">Pídele al titular de la inmobiliaria que complete los Datos para contrato.</p>
+            <p className="text-xs text-gray-600">Pídele al titular de la inmobiliaria que complete los Datos para contrato.</p>
           )
         }
         return (
@@ -77,7 +131,7 @@ export function BloqueosContrato({
       case 'inmueble':
         if (!inmuebleId || inmuebleAccesible === null) return null
         if (!inmuebleAccesible) {
-          return <p className="text-xs text-red-700">Pídele al titular o al responsable del inmueble que lo haga.</p>
+          return <p className="text-xs text-gray-600">Pídele al titular o al responsable del inmueble que lo haga.</p>
         }
         return (
           <Link href={`/inmuebles/${inmuebleId}/editar?returnTo=${volverAqui}`} className={enlace}>
@@ -96,39 +150,55 @@ export function BloqueosContrato({
       </button>
     ) : null
 
+  const numerados = puntos.length > 1
   return (
-    <div role="alert" className="space-y-2">
-      {bloqueos.map((b, i) => (
-        <div key={`${b.codigo}-${i}`} className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3">
-          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="text-sm text-red-800">{b.mensaje}</p>
-            {b.detalle && b.detalle.length > 0 && (
-              <ul className="list-disc space-y-0.5 pl-5 text-xs text-red-700">
-                {b.detalle.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
-            )}
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {accion(b)}
-              {irPaso(b.paso)}
-            </div>
-          </div>
-        </div>
-      ))}
-      {faltantes.map((f, i) => (
-        <div key={`${f.paso}-${i}`} className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="text-sm text-amber-900">
-              {onIrPaso && <span className="font-semibold">Paso {f.paso}: </span>}
-              {f.mensaje}
-            </p>
-            {irPaso(f.paso)}
-          </div>
-        </div>
-      ))}
+    <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      {para && (
+        <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-900">
+          <IconAlertTriangle size={18} className="shrink-0 text-amber-600" />
+          Para {para}, resuelve {numerados ? `estos ${puntos.length} puntos` : 'este punto'}:
+        </p>
+      )}
+      <ol className="space-y-3">
+        {puntos.map((p, i) => {
+          const hacer = p.bloqueo ? accion(p.bloqueo) : null
+          const ir = irPaso(p.paso)
+          return (
+            <li key={p.key} className="flex items-start gap-3">
+              {numerados ? (
+                <span
+                  aria-hidden
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-amber-800 ring-1 ring-amber-300"
+                >
+                  {i + 1}
+                </span>
+              ) : (
+                !para && <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              )}
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-sm font-medium text-gray-900">
+                  {p.esFaltante && onIrPaso && <span className="font-semibold">Paso {p.paso}: </span>}
+                  {p.texto}
+                </p>
+                {p.razones && p.razones.length > 0 && (
+                  <ul className="list-disc space-y-0.5 pl-5 text-sm text-gray-700">
+                    {p.razones.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+                {p.nota && <p className="text-xs text-gray-600">{p.nota}</p>}
+                {(hacer || ir) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {hacer}
+                    {ir}
+                  </div>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ol>
     </div>
   )
 }

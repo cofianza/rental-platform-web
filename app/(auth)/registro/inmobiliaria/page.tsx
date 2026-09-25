@@ -13,6 +13,7 @@ import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { validateNitModulo11 } from '@/lib/nit'
 import { RegistroStepper, regInputCls, ValidCheck, scrollToFirstError } from '@/components/auth/registro-ui'
 
 interface FormData {
@@ -54,30 +55,6 @@ const initialFormData: FormData = {
   confirm_password: '',
   accept_terms: false,
   accept_data_treatment: false,
-}
-
-/**
- * Valida el digito de verificacion del NIT colombiano con algoritmo modulo-11.
- */
-function validateNitModulo11(nit: string): boolean {
-  const match = nit.match(/^(\d{1,15})-(\d)$/)
-  if (!match) return false
-
-  const digits = match[1]
-  const expectedCheck = parseInt(match[2], 10)
-
-  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71]
-
-  let sum = 0
-  const reversed = digits.split('').reverse()
-  for (let i = 0; i < reversed.length; i++) {
-    sum += parseInt(reversed[i], 10) * weights[i]
-  }
-
-  const remainder = sum % 11
-  const checkDigit = remainder >= 2 ? 11 - remainder : remainder
-
-  return checkDigit === expectedCheck
 }
 
 // Encabezado de sección numerado (estilo mockup htmls/02_*).

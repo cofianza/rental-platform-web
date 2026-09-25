@@ -23,6 +23,7 @@ import {
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { rutaInterna } from '@/lib/utils'
+import { problemaNit } from '@/lib/nit'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
 const ROL_LABELS: Record<string, string> = {
@@ -129,6 +130,9 @@ export default function DatosContratoPage() {
     lista.push(
       ...requeridos.filter((r) => !r.valor || String(r.valor).trim().length === 0).map((r) => r.etiqueta),
     )
+    // Un NIT con el dígito equivocado se guardaba y solo aparecía al crear el contrato.
+    const nit = isInmobiliaria && form.nit?.trim() ? problemaNit(form.nit) : null
+    if (nit) lista.push(nit)
     // Documento del representante legal: opcional aquí (solo lo exige el
     // asistente de contratos), pero tipo y número van juntos.
     const tieneTipoRep = !!form.representante_legal_tipo_documento
@@ -559,7 +563,7 @@ export default function DatosContratoPage() {
       {/* Botón guardar — solo el titular (los miembros ven en modo lectura) */}
       {!soloLectura && problemas.length > 0 && (
         <div ref={problemasRef} role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-800">Para guardar falta completar:</p>
+          <p className="text-sm font-semibold text-red-800">Para guardar, completa o corrige:</p>
           <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-red-700">
             {problemas.map((p) => (
               <li key={p}>{p}</li>

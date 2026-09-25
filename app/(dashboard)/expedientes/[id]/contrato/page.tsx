@@ -26,7 +26,7 @@ import {
   PerfilPersonalIncompletoBanner,
   miembroDebeCompletarPerfil,
 } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
-import { AvisosContrato, BloqueosContrato } from '@/components/contratos/v3/BloqueosContrato'
+import { AvisosContrato, BloqueosContrato, SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
 import { Paso1Confirmacion, ResumenContrato } from '@/components/contratos/v3/Paso1Confirmacion'
 import { Paso2Inmueble } from '@/components/contratos/v3/Paso2Inmueble'
 import { Paso3Condiciones } from '@/components/contratos/v3/Paso3Condiciones'
@@ -196,6 +196,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
   const [confirmar, setConfirmar] = useState(false)
   const { bloqueos, avisos, resumen } = estado
   const iniciando = v3.accion === 'iniciar'
+  const porQueNo = editable && bloqueos.length > 0
 
   return (
     <>
@@ -204,22 +205,29 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
         title="Nuevo contrato de vivienda"
         subtitle={resumen ? `Estudio ${resumen.expedienteNumero}` : undefined}
         actions={
-          <Button
-            variante="primary"
-            disabled={bloqueos.length > 0 || !editable || iniciando}
-            onClick={() => setConfirmar(true)}
-          >
-            {iniciando && <IconLoader size={16} className="animate-spin" />}
-            Iniciar contrato
-          </Button>
+          <div className="flex flex-col gap-1 sm:items-end">
+            <Button
+              variante="primary"
+              disabled={bloqueos.length > 0 || !editable || iniciando}
+              onClick={() => setConfirmar(true)}
+              aria-describedby={porQueNo ? 'por-que-no-iniciar' : undefined}
+            >
+              {iniciando && <IconLoader size={16} className="animate-spin" />}
+              Iniciar contrato
+            </Button>
+            {/* Apagado sin explicación parecía una falla. Solo lectura ya lo dice el banner. */}
+            {porQueNo && (
+              <p id="por-que-no-iniciar" className="text-xs text-gray-500">
+                Primero resuelve lo pendiente de abajo.
+              </p>
+            )}
+          </div>
         }
       />
       {banner}
-      {bloqueos.length > 0 && (
-        <p className="text-sm font-medium text-gray-700">Resuelve estos puntos para iniciar el contrato:</p>
-      )}
       <BloqueosContrato
         bloqueos={bloqueos}
+        para="iniciar el contrato"
         expedienteId={expedienteId}
         inmuebleId={resumen?.inmueble.id}
         inmuebleAccesible={inmuebleAccesible}
@@ -263,9 +271,6 @@ const form4De = (g: Contrato['guardados'][4] | Contrato['prefill'][4]): FormPaso
 
 /** Bloqueos del paso 4 que se resuelven volviendo a guardarlo (y aceptando el aviso vigente). */
 const REGUARDAR_PASO4 = ['CLAUSULA_MODELO_ALTERADO', 'ACEPTACION_PENDIENTE']
-
-/** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
-const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
 
 function Asistente({
   estado,
@@ -529,7 +534,7 @@ function Asistente({
         !guardados[5]
         ? `Guarda el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
         : bloqueosQueFrenan.length > 0
-          ? `Resuelve ${bloqueosQueFrenan.length === 1 ? 'el bloqueo marcado' : `los ${bloqueosQueFrenan.length} bloqueos marcados`} en rojo antes de generar ${documentoTexto}.`
+          ? `Resuelve ${bloqueosQueFrenan.length === 1 ? 'el punto pendiente' : 'los puntos pendientes'} de arriba antes de generar ${documentoTexto}.`
           : pasosIncompletos.length > 0
             ? `Completa ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
             : null
