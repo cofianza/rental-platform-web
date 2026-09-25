@@ -13,7 +13,9 @@
  * Contratos V3 (Entrega 3): con `contratosV3` (flag del API + inmueble de una
  * inmobiliaria) el card no abre el modal: lleva al asistente
  * /expedientes/:id/contrato, y si ya hay un borrador V3 ofrece "Continuar"
- * en vez de ocultarse. Sin el flag, todo queda como antes.
+ * en vez de ocultarse. Sin el flag, todo queda como antes. Si la evaluación
+ * ya no sirve (vencida o sin canon evaluado), en vez de "Crear contrato" (que
+ * el asistente bloquearía) ofrece evaluar de nuevo en un estudio nuevo.
  */
 
 'use client'
@@ -21,6 +23,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService } from '@/services/contratoService'
+import { contratoV3Service } from '@/services/contratoV3Service'
+import { BloqueosContrato, DEL_CRC, SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
+import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useAuthStore } from '@/stores/auth.store'
+import type { Bloqueo } from '@/types/contratoV3'
 import { buttonClasses } from '@/components/ui/Button'
 import { IconAlertTriangle, IconArrowRight, IconFileText, IconLoader } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
@@ -56,18 +64,38 @@ export function AccionContratoPendienteCard({
   // necesita saber si es su borrador para ofrecer "Continuar".
   const [activo, setActivo] = useState<IContrato | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  // Bloqueos del asistente que solo se resuelven evaluando de nuevo: el mismo
+  // veredicto del API (no se recalcula aquí la vigencia, que es calibrable).
+  const [evaluacionVencida, setEvaluacionVencida] = useState<Bloqueo[]>([])
+  const user = useAuthStore((s) => s.user)
+  const puedeEditar = usePuedeEditar() && !miembroDebeCompletarPerfil(user)
+
+  // V3: el asistente es de admin/operador/inmobiliaria (el API no deja entrar
+  // al propietario); el propietario ve el card informativo de abajo.
+  const puedeCrearV3 =
+    contratosV3 &&
+    (userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'inmobiliaria')
 
   const fetchContratos = useCallback(async () => {
     try {
-      const res = await contratoService.getContratosForExpediente(expedienteId, { page: 1, limit: 1 })
+      const [res, estadoV3] = await Promise.all([
+        contratoService.getContratosForExpediente(expedienteId, { page: 1, limit: 1 }),
+        // Solo aprobado: en otro estado el asistente no tiene nada que decir aquí.
+        puedeCrearV3 && expedienteEstado === 'aprobado'
+          ? contratoV3Service.obtener(expedienteId).catch(() => null)
+          : null,
+      ])
       const activos = (res.data || []).filter((c) => c.estado !== 'cancelado')
       setActivo(activos[0] ?? null)
+      setEvaluacionVencida(
+        (estadoV3?.bloqueos ?? []).filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo)),
+      )
     } catch {
       setActivo(null)
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, puedeCrearV3, expedienteEstado])
 
   useEffect(() => { fetchContratos() }, [fetchContratos, version])
 
@@ -76,11 +104,6 @@ export function AccionContratoPendienteCard({
   if (loading) return null
   if (expedienteEstado !== 'aprobado') return null
 
-  // V3: el asistente es de admin/operador/inmobiliaria (el API no deja entrar
-  // al propietario); el propietario ve el card informativo de abajo.
-  const puedeCrearV3 =
-    contratosV3 &&
-    (userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'inmobiliaria')
   // El borrador V3 no oculta el card: es la puerta para retomarlo.
   const borradorV3 = contratosV3 && activo?.destinacion && activo.estado === 'borrador' ? activo : null
   if (activo && !(puedeCrearV3 && borradorV3)) return null
@@ -99,6 +122,19 @@ export function AccionContratoPendienteCard({
           </div>
         </div>
       </div>
+    )
+  }
+
+  // Sin borrador (con borrador, «Continuar» lleva al asistente, que trae la misma acción).
+  const pideEvaluacion = evaluacionVencida.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
+  if (puedeCrearV3 && pideEvaluacion && !borradorV3) {
+    return (
+      <BloqueosContrato
+        bloqueos={evaluacionVencida}
+        para="crear el contrato"
+        expedienteId={expedienteId}
+        puedeEditar={puedeEditar}
+      />
     )
   }
 

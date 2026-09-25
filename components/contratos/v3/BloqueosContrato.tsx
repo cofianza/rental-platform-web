@@ -11,6 +11,7 @@
 
 import Link from 'next/link'
 import { IconAlertTriangle, IconArrowRight, IconInfo } from '@/components/icons'
+import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 
 interface Props {
@@ -26,6 +27,10 @@ interface Props {
   inmuebleAccesible?: boolean | null
   /** Titular de la inmobiliaria: el único que edita los Datos para contrato. */
   esTitular?: boolean
+  /** Puede cancelar el estudio y crear uno nuevo (la salida de una evaluación que ya no sirve). */
+  puedeEditar?: boolean
+  /** Hay un borrador de contrato: al evaluar de nuevo también se cancela. */
+  conBorrador?: boolean
   /** Si llega, los ítems con paso muestran "Ir al paso N". */
   onIrPaso?: (paso: NumeroPaso) => void
 }
@@ -33,22 +38,16 @@ interface Props {
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
 
 /**
- * Bloqueos cuya salida es una evaluación nueva (o, los del canon, pactar uno menor en el paso 1).
- * No el del tope (CANON_EXCEDE_TOPE): una evaluación no lo resuelve; se pacta uno menor o
- * decide la Gerencia General sobre el coafianzamiento (Adenda 1 contratos §2.4).
+ * Del canon pactado (paso 1): se pacta uno menor o, con este, hace falta evaluar de nuevo sobre
+ * un canon del inmueble actualizado. Sin enlace al estudio: allí no hay nada que hacer.
  */
-export const PIDEN_NUEVA_EVALUACION = [
-  'ESTUDIO_VENCIDO',
-  'CANON_SIN_EVALUADO',
-  'CANON_FUERA_DE_TOLERANCIA',
-  'CANON_INGRESO_EXCEDE',
-]
+const CANON_PIDE_EVALUACION = ['CANON_FUERA_DE_TOLERANCIA', 'CANON_INGRESO_EXCEDE']
 
 /** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
 export const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
 
 /** Del certificado de la evaluación actual: la nueva emite el suyo sola, así que no son un punto aparte. */
-const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
+export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
 
 interface Punto {
   key: string
@@ -57,6 +56,8 @@ interface Punto {
   nota?: string
   /** El bloqueo que decide el enlace de acción. */
   bloqueo?: Bloqueo
+  /** El punto de la evaluación nueva: su acción es crear un estudio nuevo. */
+  nuevaEvaluacion?: boolean
   paso?: NumeroPaso
   /** Faltante del asistente: con onIrPaso se antepone "Paso N:". */
   esFaltante?: boolean
@@ -79,10 +80,9 @@ function puntosDe(bloqueos: Bloqueo[]): Punto[] {
         // El «Se requiere nueva evaluación.» de cada motivo sobra bajo este encabezado.
         razones: evaluacion.map((e) => e.mensaje.replace(/\s*Se requiere nueva evaluación\.$/, '')),
         nota:
-          juntos.length > evaluacion.length
-            ? 'Al aprobarse, la nueva evaluación emite sola su certificado de riesgo (CRC).'
-            : undefined,
-        bloqueo: evaluacion[0],
+          'La evaluación nueva se hace en un estudio nuevo, con su cobro' +
+          (juntos.length > evaluacion.length ? '; al aprobarse emite sola su certificado de riesgo (CRC).' : '.'),
+        nuevaEvaluacion: true,
       })
     }
   })
@@ -97,6 +97,8 @@ export function BloqueosContrato({
   inmuebleId,
   inmuebleAccesible = true,
   esTitular,
+  puedeEditar,
+  conBorrador,
   onIrPaso,
 }: Props) {
   const puntos: Punto[] = [
@@ -122,10 +124,10 @@ export function BloqueosContrato({
         )
       }
       case 'estudio':
+        if (CANON_PIDE_EVALUACION.includes(b.codigo)) return null
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>
-            {PIDEN_NUEVA_EVALUACION.includes(b.codigo) ? 'Habilitar una nueva evaluación en el estudio' : 'Ir al estudio'}{' '}
-            <IconArrowRight size={12} />
+            Ir al estudio <IconArrowRight size={12} />
           </Link>
         )
       case 'inmueble':
@@ -161,7 +163,11 @@ export function BloqueosContrato({
       )}
       <ol className="space-y-3">
         {puntos.map((p, i) => {
-          const hacer = p.bloqueo ? accion(p.bloqueo) : null
+          const hacer = p.nuevaEvaluacion ? (
+            expedienteId && puedeEditar ? <EvaluarEnEstudioNuevo expedienteId={expedienteId} conBorrador={conBorrador} /> : null
+          ) : p.bloqueo ? (
+            accion(p.bloqueo)
+          ) : null
           const ir = irPaso(p.paso)
           return (
             <li key={p.key} className="flex items-start gap-3">

@@ -21,6 +21,7 @@ import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
+import { solicitanteService } from '@/services/solicitanteService'
 import { IconAlertTriangle } from '@/components/icons'
 
 // useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
@@ -111,7 +112,15 @@ function NuevoExpedienteContent() {
         const preNombre = searchParams.get('nombre')
         const preEmail = searchParams.get('email')
         const preTelefono = searchParams.get('telefono')
-        if (preNombre || preEmail || preTelefono) {
+        // Evaluar de nuevo a quien ya se estudió (EvaluarEnEstudioNuevo): la misma persona, ya registrada.
+        const preSolicitanteId = searchParams.get('solicitante_id')
+        // Si no se puede leer, el paso 2 queda para buscarla por documento.
+        const preSolicitante = preSolicitanteId
+          ? await solicitanteService.getSolicitanteById(preSolicitanteId).catch(() => null)
+          : null
+        if (preSolicitante) {
+          updateStep2({ solicitante: preSolicitante, isNewSolicitante: false, formData: null })
+        } else if (preNombre || preEmail || preTelefono) {
           updateStep2({
             solicitante: null,
             isNewSolicitante: true,

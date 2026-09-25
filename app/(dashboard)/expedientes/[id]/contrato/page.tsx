@@ -26,7 +26,7 @@ import {
   PerfilPersonalIncompletoBanner,
   miembroDebeCompletarPerfil,
 } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
-import { AvisosContrato, BloqueosContrato, SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
+import { AvisosContrato, BloqueosContrato } from '@/components/contratos/v3/BloqueosContrato'
 import { Paso1Confirmacion, ResumenContrato } from '@/components/contratos/v3/Paso1Confirmacion'
 import { Paso2Inmueble } from '@/components/contratos/v3/Paso2Inmueble'
 import { Paso3Condiciones } from '@/components/contratos/v3/Paso3Condiciones'
@@ -232,6 +232,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
         inmuebleId={resumen?.inmueble.id}
         inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
+        puedeEditar={editable}
       />
       <AvisosContrato avisos={avisos} />
       {resumen && (
@@ -547,7 +548,6 @@ function Asistente({
   // faltantes de un paso ya guardado.
   const faltantesDelPaso = guardados[paso] ? faltantes.filter((f) => f.paso === paso) : []
 
-  const soloNuevaEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
   // dd/mm/aaaa; un API anterior (despliegue a medias) no trae la fecha.
   const reservadoHasta = contrato.reservadoHasta?.split('-').reverse().join('/')
 
@@ -585,23 +585,17 @@ function Asistente({
         </Aviso>
       )}
 
+      {/* La evaluación nueva va en un estudio nuevo: el punto trae la acción y su diálogo avisa que el borrador se cancela. */}
       <BloqueosContrato
         bloqueos={bloqueosArriba}
         expedienteId={expedienteId}
         inmuebleId={resumen?.inmueble.id}
         inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
+        puedeEditar={editable}
+        conBorrador
         onIrPaso={irA}
       />
-      {editable && soloNuevaEvaluacion && (
-        <Aviso tono="aviso">
-          Mientras se hace la nueva evaluación, este borrador mantiene el inmueble reservado, pero la reserva vence sola
-          {contrato.reservaDiasHabiles ? ` a los ${contrato.reservaDiasHabiles} días hábiles` : ''}
-          {reservadoHasta ? ` (el ${reservadoHasta})` : ''}: si para entonces no se envía a firma, el borrador se cancela y
-          el inmueble se libera. Si la evaluación va a tardar o no se hará, cancela el borrador ya para liberarlo; cuando
-          esté lista, lo creas de nuevo con los datos que ya llenaste.
-        </Aviso>
-      )}
       <AvisosContrato avisos={avisos} />
       {/* Textos sin aprobar previstos con lo guardado; con el documento ya generado los muestra la vista previa. */}
       {!(paso === 5 && contrato.documento) && <AvisosContrato avisos={contrato.textosPendientes} tono="aviso" />}
