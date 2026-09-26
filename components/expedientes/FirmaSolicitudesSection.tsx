@@ -8,6 +8,7 @@ import { EnviarFirmaModal } from './EnviarFirmaModal'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { ISolicitudFirma, EstadoSolicitudFirma } from '@/types/firma'
+import type { Bloqueo } from '@/types/contratoV3'
 
 const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; text: string }> = {
   pendiente: { label: 'Pendiente', bg: 'bg-gray-100', text: 'text-gray-700' },
@@ -27,6 +28,8 @@ interface FirmaSolicitudesSectionProps {
   defaultNombre?: string
   defaultEmail?: string
   defaultTelefono?: string
+  /** Se pasa a EnviarFirmaModal: la evaluación ya no alcanza para firmar. */
+  onEvaluacionVencida?: (bloqueo: Bloqueo) => void
 }
 
 export function FirmaSolicitudesSection({
@@ -36,6 +39,7 @@ export function FirmaSolicitudesSection({
   defaultNombre = '',
   defaultEmail = '',
   defaultTelefono = '',
+  onEvaluacionVencida,
 }: FirmaSolicitudesSectionProps) {
   const [solicitudes, setSolicitudes] = useState<ISolicitudFirma[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -228,6 +232,7 @@ export function FirmaSolicitudesSection({
         defaultNombre={defaultNombre}
         defaultEmail={defaultEmail}
         defaultTelefono={defaultTelefono}
+        onEvaluacionVencida={onEvaluacionVencida}
       />
 
       {/* Confirmation modal for reenviar */}

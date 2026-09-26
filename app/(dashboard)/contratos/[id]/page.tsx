@@ -36,6 +36,8 @@ import { RegenerarContratoModal } from '@/components/contratos/RegenerarContrato
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import type { Bloqueo } from '@/types/contratoV3'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 
@@ -105,6 +107,9 @@ export default function ContratoDetallePage() {
   const [firmaPreview, setFirmaPreview] = useState<IFirmantesPreview | null>(null)
   const [confirmFirmaOpen, setConfirmFirmaOpen] = useState(false)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
+  // Sin CRC suficiente para firmar (días 57-60 de la evaluación o después): la
+  // salida es un estudio nuevo, no el toast.
+  const [evaluacionVencida, setEvaluacionVencida] = useState<Bloqueo | null>(null)
 
   const puedeEditar = usePuedeEditar()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
@@ -288,8 +293,13 @@ export default function ContratoDetallePage() {
       return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
-      // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
-      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+      // Llevarlo a 'pendiente_firma' es el mismo envío a firma.
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (bloqueo) {
+        setTransicionOpen(false)
+        setEvaluacionVencida(bloqueo)
+      } else if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
         toast.info(message)
         setTransicionOpen(false)
         fetchContrato()
@@ -339,8 +349,13 @@ export default function ContratoDetallePage() {
       fetchContrato()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo enviar a firma'
-      // Todas las partes ya habían firmado el envío anterior: quedó firmado.
-      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (bloqueo) {
+        setFirmaPreview(null)
+        setConfirmFirmaOpen(false)
+        setEvaluacionVencida(bloqueo)
+      } else if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        // Todas las partes ya habían firmado el envío anterior: quedó firmado.
         toast.info(message)
         setFirmaPreview(null)
         setConfirmFirmaOpen(false)
@@ -508,6 +523,16 @@ export default function ContratoDetallePage() {
           ))}
         </div>
       </div>
+
+      {evaluacionVencida && (
+        <BloqueosContrato
+          bloqueos={[evaluacionVencida]}
+          para="enviar el contrato a firma"
+          expedienteId={contrato.expediente_id}
+          puedeEditar={puedeEditar}
+          conBorrador
+        />
+      )}
 
       {/* Main content: PDF + Info panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

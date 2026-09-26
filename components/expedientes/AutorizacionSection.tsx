@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
-import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
@@ -80,8 +80,7 @@ export function AutorizacionSection({
       setAutorizacion(data)
       // Solo sin autorización enviada: es la única pantalla donde cambia el texto.
       const pago = data ? null : await pagoEstudioService.getEstado(expedienteId).catch(() => null)
-      // `paga` lo manda la API (quienPaga) aunque el tipo del servicio aún no lo declare.
-      const paga = (pago as (IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }) | null)?.paga
+      const paga = pago?.paga
       setFaltaPagoGestor(!!pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido'))
     } catch {
       // silent — section just won't show data

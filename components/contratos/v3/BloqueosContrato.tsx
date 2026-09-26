@@ -16,6 +16,7 @@ import { IconAlertTriangle, IconArrowRight, IconInfo, IconLoader } from '@/compo
 import { Button } from '@/components/ui/Button'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
 import { estudioService } from '@/services/estudioService'
+import { ApiClientError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 
@@ -55,6 +56,13 @@ const CANON_PIDE_EVALUACION = ['CANON_FUERA_DE_TOLERANCIA', 'CANON_INGRESO_EXCED
  * CRC_SIN_MARGEN / CRC_VENCIDO: al certificado no le alcanza la vigencia para el proceso de firma.
  */
 export const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO', 'CRC_SIN_MARGEN', 'CRC_VENCIDO']
+
+/** El error del API que solo se resuelve con una evaluación nueva (al generar o enviar a firma en el flujo anterior), como bloqueo; null si es otro. */
+export function bloqueoDeEvaluacion(err: unknown): Bloqueo | null {
+  return err instanceof ApiClientError && SOLO_NUEVA_EVALUACION.includes(err.code ?? '')
+    ? { codigo: err.code!, mensaje: err.message }
+    : null
+}
 
 /** Del certificado de la evaluación actual: la nueva emite el suyo sola, así que no son un punto aparte. */
 export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']

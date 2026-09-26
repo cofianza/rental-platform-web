@@ -29,6 +29,9 @@ export interface IPagoEstudioEstado {
   monto: number
   moneda: string
   monto_formateado: string
+  /** A10: quién paga el cobro según el API (quienPaga) — 'gestor' en la opción B
+   *  y con crédito, 'arrendatario' en la C; null si nadie lo ha definido. */
+  paga: 'gestor' | 'arrendatario' | null
   pago: IPago | null
 }
 

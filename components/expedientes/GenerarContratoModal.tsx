@@ -16,9 +16,8 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconFileText } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
-import { ApiClientError } from '@/lib/api'
 import { hoyBogota } from '@/hooks/useContratoV3'
-import { SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
+import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio } from '@/types/contrato'
@@ -87,8 +86,9 @@ export function GenerarContratoModal({
       toast.success('Contrato generado correctamente')
       onGenerated()
     } catch (err) {
-      if (onEvaluacionVencida && err instanceof ApiClientError && SOLO_NUEVA_EVALUACION.includes(err.code ?? '')) {
-        onEvaluacionVencida({ codigo: err.code!, mensaje: err.message })
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (onEvaluacionVencida && bloqueo) {
+        onEvaluacionVencida(bloqueo)
         return
       }
       toast.error(err instanceof Error ? err.message : 'Error al generar el contrato')

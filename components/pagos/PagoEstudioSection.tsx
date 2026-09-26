@@ -25,9 +25,6 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
-/** `paga` (A10): quién paga el cobro según el API — 'gestor' en la opción B. */
-type IEstadoConPagador = IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }
-
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
@@ -66,7 +63,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   // prospecto: se ofrece reabrirlo en vez de "reenviar correo". Lo dice el API
   // (`paga`), no el correo de quien mira: otro miembro de la agencia veía el
   // cobro B como "Esperando pago del arrendatario" y se lo reenviaba al prospecto.
-  const pagaGestor = (estado as IEstadoConPagador | null)?.paga === 'gestor'
+  const pagaGestor = estado?.paga === 'gestor'
+  // B fallida → C: confirmación antes de pasarle el cobro al arrendatario.
+  const [confirmPasarArrendatario, setConfirmPasarArrendatario] = useState(false)
 
   const fetchEstado = useCallback(async () => {
     try {
@@ -152,6 +151,31 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       window.location.assign(pago.payment_link_url)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo abrir el pago')
+      setIsSubmitting(false)
+    }
+  }
+
+  // B fallida → C: el API cierra el checkout fallido de la agencia y le manda al
+  // arrendatario la autorización (el cobro le llega al firmarla). Sin sus datos
+  // en el estudio, el formulario de siempre los pide.
+  const handlePasarAlArrendatario = async () => {
+    if (!solicitanteEmail || !solicitanteNombre) {
+      setShowLinkModal(true)
+      return
+    }
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await pagoEstudioService.enviarLink(expedienteId, {
+        email_pagador: solicitanteEmail,
+        nombre_pagador: solicitanteNombre,
+        telefono: solicitanteTelefono || undefined,
+      })
+      toast.success('Listo: el cobro de la evaluación pasa al arrendatario.')
+      await fetchEstado()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo pasar el cobro al arrendatario')
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -533,25 +557,61 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           <div className="flex items-center gap-3 mb-3">
             <IconAlertTriangle size={20} className="text-red-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-red-800">Pago fallido</p>
+              <p className="text-sm font-medium text-red-800">
+                {pagaGestor ? 'El pago de la agencia en Mercado Pago falló' : 'Pago fallido'}
+              </p>
               <p className="text-xs text-red-600">{estado.monto_formateado} COP</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowLinkModal(true)}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
-            >
-              Reenviar link
-            </button>
-            <button
-              onClick={() => { void handlePagar() }}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              Pagar yo con Mercado Pago
-            </button>
+          <div className="flex flex-wrap gap-2">
+            {pagaGestor ? (
+              <>
+                {/* Opción B: el cobro fallido es de la agencia. Lo principal es
+                    reintentarlo; pasárselo al arrendatario es otra decisión (la C)
+                    y se confirma aparte. */}
+                <button
+                  onClick={() => { void handlePagar() }}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors disabled:opacity-50"
+                >
+                  Pagar de nuevo
+                </button>
+                <button
+                  onClick={() => setConfirmPasarArrendatario(true)}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Mejor que pague el arrendatario
+                </button>
+                <ConfirmDialog
+                  isOpen={confirmPasarArrendatario}
+                  onClose={() => setConfirmPasarArrendatario(false)}
+                  onConfirm={handlePasarAlArrendatario}
+                  isLoading={isSubmitting}
+                  title="¿Pasarle el cobro al arrendatario?"
+                  message={`Se cierra el pago fallido de la agencia y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro de ${estado.monto_formateado} COP, y la evaluación corre cuando lo pague.`}
+                  confirmLabel="Sí, que pague el arrendatario"
+                  cancelLabel="Volver"
+                />
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowLinkModal(true)}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
+                >
+                  Reenviar link
+                </button>
+                <button
+                  onClick={() => { void handlePagar() }}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Pagar yo con Mercado Pago
+                </button>
+              </>
+            )}
             {/* El API cierra el cobro fallido (su link seguía pagable) y descuenta el crédito. */}
             {cancelarConCredito && hayCreditosUsables && (
               <button
@@ -755,7 +815,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   const pagoId = estado.pago?.id || null
   // Solo "recibimos tu pago" (y su factura) si pagó él: en la opción B el pago
   // lo hace el gestor con su correo y el estado igual es 'completado'.
-  const pagoPropio = estado.estado === 'completado' && (estado as IEstadoConPagador).paga === 'arrendatario'
+  const pagoPropio = estado.estado === 'completado' && estado.paga === 'arrendatario'
   // Si el backend ya adjunto la factura al pago (attachFacturas), la usamos.
   const facturaExistente = (estado.pago as unknown as { factura?: { id: string; numero?: string | null; estado: string } | null } | null)?.factura || null
 
@@ -989,7 +1049,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
 
   // Opción B: la agencia paga la evaluación. Su checkout no es del prospecto
   // (el API ni siquiera le manda el enlace).
-  if ((estado as IEstadoConPagador).paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
+  if (estado.paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona tu estudio está pagando la evaluación</p>

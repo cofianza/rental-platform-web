@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { IconBuilding2, IconCheck, IconClock } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
-import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
+import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { formatDate } from '@/lib/constants'
 import {
   ReintentarEstudioForm,
@@ -150,8 +150,7 @@ async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Prom
       }
     }
   }
-  // `paga` lo manda la API (quienPaga) aunque el tipo del servicio aún no lo declare.
-  const paga = (pago as (IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }) | null)?.paga
+  const paga = pago?.paga
   if (aut === null && pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido')) {
     return {
       etiqueta: esCofianza ? 'Falta el pago de la inmobiliaria' : 'Falta tu pago',

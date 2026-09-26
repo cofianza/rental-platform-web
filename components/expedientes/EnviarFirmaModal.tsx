@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconMail } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
+import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import type { Bloqueo } from '@/types/contratoV3'
 
 interface EnviarFirmaModalProps {
   isOpen: boolean
@@ -14,6 +16,8 @@ interface EnviarFirmaModalProps {
   defaultNombre?: string
   defaultEmail?: string
   defaultTelefono?: string
+  /** La evaluación ya no alcanza para firmar (CRC_SIN_MARGEN / CRC_VENCIDO / ESTUDIO_VENCIDO): la salida es un estudio nuevo. */
+  onEvaluacionVencida?: (bloqueo: Bloqueo) => void
 }
 
 export function EnviarFirmaModal({
@@ -24,6 +28,7 @@ export function EnviarFirmaModal({
   defaultNombre = '',
   defaultEmail = '',
   defaultTelefono = '',
+  onEvaluacionVencida,
 }: EnviarFirmaModalProps) {
   const [nombre, setNombre] = useState(defaultNombre)
   const [email, setEmail] = useState(defaultEmail)
@@ -48,6 +53,12 @@ export function EnviarFirmaModal({
       onSuccess()
       onClose()
     } catch (err: unknown) {
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (bloqueo && onEvaluacionVencida) {
+        onClose()
+        onEvaluacionVencida(bloqueo)
+        return
+      }
       const message = err instanceof Error ? err.message : 'Error al enviar la solicitud'
       toast.error(message)
     } finally {

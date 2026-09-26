@@ -12,6 +12,7 @@ import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
+import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
@@ -19,6 +20,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ESTADOS_CONTRATO, etiquetaContrato, formatDateTime } from '@/lib/constants'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
+import type { Bloqueo } from '@/types/contratoV3'
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
@@ -79,6 +81,9 @@ export function ContratosSection({
   // 4.3: pre-chequeo de firmantes antes de enviar (modal con los números + bloqueo si hay repetido).
   const [firmaPreview, setFirmaPreview] = useState<{ contrato: IContrato; data: IFirmantesPreview } | null>(null)
   const [confirmandoFirma, setConfirmandoFirma] = useState(false)
+  // Flujo anterior: un borrador enviado a firma sin CRC suficiente (días 57-60 de
+  // la evaluación o después) no tiene arreglo aquí; la salida es un estudio nuevo.
+  const [evaluacionVencida, setEvaluacionVencida] = useState<Bloqueo | null>(null)
 
   // Permissions
   // El contrato se genera automaticamente al aprobar el estudio (orchestrator).
@@ -200,16 +205,20 @@ export function ContratosSection({
     }
   }
 
-  async function handleConfirmarFirma() {
-    if (!firmaPreview) return
+  // onConfirm del preview multi-parte y del ConfirmDialog de un firmante.
+  async function handleConfirmarFirma(contrato: IContrato) {
     setConfirmandoFirma(true)
     try {
-      await doEnviarAFirma(firmaPreview.contrato)
+      await doEnviarAFirma(contrato)
       setFirmaPreview(null)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo enviar a firma'
-      // Todas las partes ya habían firmado el envío anterior: quedó firmado.
-      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (bloqueo) {
+        setFirmaPreview(null)
+        setEvaluacionVencida(bloqueo)
+      } else if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        // Todas las partes ya habían firmado el envío anterior: quedó firmado.
         toast.info(message)
         setFirmaPreview(null)
         fetchContratos()
@@ -254,8 +263,13 @@ export function ContratosSection({
       return true
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado'
-      // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
-      if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+      // Llevarlo a 'pendiente_firma' es el mismo envío a firma.
+      const bloqueo = bloqueoDeEvaluacion(err)
+      if (bloqueo) {
+        setTransicionContrato(null)
+        setEvaluacionVencida(bloqueo)
+      } else if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
+        // Todas las partes ya habían firmado (el aviso de Auco se perdió): quedó firmado.
         toast.info(message)
         setTransicionContrato(null)
         fetchContratos()
@@ -313,6 +327,16 @@ export function ContratosSection({
           </button>
         )}
       </div>
+
+      {evaluacionVencida && (
+        <BloqueosContrato
+          bloqueos={[evaluacionVencida]}
+          para="enviar el contrato a firma"
+          expedienteId={expedienteId}
+          puedeEditar={puedeEditar}
+          conBorrador
+        />
+      )}
 
       {/* Empty state */}
       {contratos.length === 0 ? (
@@ -533,6 +557,7 @@ export function ContratosSection({
               contratoId={firmaContratoId}
               estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
               canManage={canRegenerate}
+              onEvaluacionVencida={setEvaluacionVencida}
             />
           )}
         </div>
@@ -580,7 +605,7 @@ export function ContratosSection({
         onConfirm={async () => {
           const c = confirmFirma
           setConfirmFirma(null)
-          if (c) await doEnviarAFirma(c)
+          if (c) await handleConfirmarFirma(c)
         }}
         title="Enviar el contrato a firma"
         message="Se crea el sobre en Auco y al arrendatario le llega el enlace de firma por WhatsApp. Cada envío consume créditos de firma."
@@ -592,7 +617,7 @@ export function ContratosSection({
         puedeEnviar={firmaPreview?.data.puede_enviar ?? false}
         biometria={firmaPreview?.data.biometria}
         submitting={confirmandoFirma}
-        onConfirm={handleConfirmarFirma}
+        onConfirm={() => { if (firmaPreview) void handleConfirmarFirma(firmaPreview.contrato) }}
         onClose={() => !confirmandoFirma && setFirmaPreview(null)}
         onFirmanteUpdated={async () => {
           // Tras corregir un teléfono en línea, re-pedimos el preview para

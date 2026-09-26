@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { IconFileText, IconLoader, IconCheck } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
+import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { ScoreGauge } from '@/components/estudios/ScoreGauge'
 import { TransUnionReportDetail } from '@/components/estudios/TransUnionReportDetail'
 import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReportDetail'
@@ -112,6 +113,24 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
+  // Quién paga según el cobro real (A10). `estudios.pago_por` se quedaba en
+  // 'arrendatario' si el gestor eligió enviar el link y después pagó él. El
+  // cobro del expediente es el del titular: el estudio del co-arrendatario
+  // conserva su pago_por. El expediente_id llega con la recarga por id (el
+  // listado por expediente no lo trae).
+  const expedienteDelCobro =
+    isOpen && estudio?.tipo !== 'con_coarrendatario' ? estudio?.expediente_id : undefined
+  const [pagaDe, setPagaDe] = useState<{ expedienteId: string; paga: IPagoEstudioEstado['paga'] } | null>(null)
+  const paga = pagaDe && pagaDe.expedienteId === expedienteDelCobro ? pagaDe.paga : null
+  useEffect(() => {
+    if (!expedienteDelCobro) return
+    pagoEstudioService
+      .getEstado(expedienteDelCobro)
+      .then((e) => setPagaDe({ expedienteId: expedienteDelCobro, paga: e.paga }))
+      .catch(() => {
+        // Sin estado de pago: queda el pago_por del estudio.
+      })
+  }, [expedienteDelCobro])
 
   // Sync con cambios del prop. Ademas, al abrir el modal recargamos el
   // estudio por id para traer `datos_formulario` (no viene en el listado;
@@ -286,7 +305,10 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
                 <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
               )}
-              <DetailRow label="Pago por" value={PAGO_LABELS[estudio.pago_por] || estudio.pago_por} />
+              <DetailRow
+                label="Pago por"
+                value={paga ? PAGO_LABELS[paga === 'gestor' ? 'inmobiliaria' : 'arrendatario'] : PAGO_LABELS[estudio.pago_por] || estudio.pago_por}
+              />
               {estudio.referencia_proveedor && (
                 <DetailRow label="Referencia proveedor" value={estudio.referencia_proveedor} />
               )}
