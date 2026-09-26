@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
+import { coarrendatarioService } from '@/services/coarrendatarioService'
 import { IconInfo, IconClock, IconUsers, IconCheckCircle, IconDownload } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
 import type { IEstudio } from '@/types/estudio'
@@ -78,6 +79,10 @@ export function EstudioSolicitanteCard({
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [descargandoCert, setDescargandoCert] = useState(false)
+  // Decisión 2 (2026-09-25): el aprobado puede sumar co-arrendatario antes del
+  // contrato y pagar la prima del 10 %. La oferta sale solo si el API abre la
+  // ventana (sin contrato fijo, sin otra invitación, canal de inmobiliaria).
+  const [puedeSumarCoa, setPuedeSumarCoa] = useState(false)
 
   // El prefill solo se aplica UNA vez (primer fetch). Sin esta guarda, los
   // pollings que llaman fetchEstudio re-aplicarían el prefill cada tick y
@@ -135,6 +140,17 @@ export function EstudioSolicitanteCard({
       setLoading(false)
     }
   }, [expedienteId, prefillTipoDocumento, prefillNumeroDocumento])
+
+  const abarata = !!estudio?.ruta?.coarrendatarioAbarataPrima
+  useEffect(() => {
+    if (!abarata) return
+    let vivo = true
+    coarrendatarioService.getVentana(expedienteId).then(
+      (v) => { if (vivo) setPuedeSumarCoa(v.puede_invitar) },
+      () => { if (vivo) setPuedeSumarCoa(false) },
+    )
+    return () => { vivo = false }
+  }, [abarata, expedienteId, version])
 
   useEffect(() => {
     fetchEstudio()
@@ -605,11 +621,22 @@ export function EstudioSolicitanteCard({
                 <SinMotivo className={`mt-3 text-sm ${tono.texto}`} />
               )}
 
-              {/* §10: el incentivo comercial del perfil medio. */}
-              {r.coarrendatarioAbarataPrima && (
-                <p className={`mt-2 text-xs ${tono.texto} opacity-80`}>
-                  Sumar un coarrendatario baja el valor de la prima.
-                </p>
+              {/* §10: el incentivo comercial del aprobado (Decisión 2). El
+                  formulario es la tarjeta del co-arrendatario, debajo. */}
+              {r.coarrendatarioAbarataPrima && puedeSumarCoa && (
+                <div className="mt-3">
+                  <p className={`text-sm ${tono.texto}`}>
+                    Si antes del contrato sumas como co-arrendatario a la persona con quien vas a vivir, la prima de
+                    vinculación baja del 20 % al 10 % del canon. No necesita finca raíz.
+                  </p>
+                  <a
+                    href="#coarrendatario"
+                    className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <IconUsers size={14} />
+                    Invitar a mi co-arrendatario
+                  </a>
+                </div>
               )}
               {botonCertificado}
             </div>

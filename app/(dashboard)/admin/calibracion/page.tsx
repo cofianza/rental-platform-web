@@ -54,7 +54,7 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   UMBRAL_ZONA_GRIS: 'Inicio de la zona gris',
   UMBRAL_SCORE_RECHAZO: 'Score mínimo de la central',
   UMBRAL_SCORE_REVISION: 'Tope de la banda de revisión por score',
-  UMBRAL_SIMILITUD_BIOMETRICA: 'Similitud biométrica mínima en la firma (%)',
+  UMBRAL_SIMILITUD_BIOMETRICA: 'Similitud biométrica mínima en la autorización y la firma (%)',
   TARIFA_IVA: 'Tarifa de IVA (%)',
   // Contratos V3 §14: rigen solo para el contrato (el motor y la reasignación no cambian).
   TOLERANCIA_CANON: 'Tolerancia del canon pactado sobre el evaluado (%)',

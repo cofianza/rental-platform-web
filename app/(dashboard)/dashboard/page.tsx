@@ -31,6 +31,7 @@ import { NotaApelacion } from '@/components/expedientes/ExpedienteRechazadoBanne
 // htmls/15_COFIANZA_Dashboard_Interno_v2.html. Las demás secciones se movieron
 // a rutas del sidebar; el dashboard del admin muestra solo el Resumen.
 import { ResumenSection } from '@/components/dashboard/secciones/ResumenSection'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 // ── Date filter presets ─────────────────────────────────────
 
@@ -375,7 +376,7 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-medium text-gray-900">
-                        {exp.numero_expediente || 'Sin numero'}
+                        {exp.numero_expediente ? `Estudio ${formatNumeroEstudio(exp.numero_expediente)}` : 'Estudio sin número'}
                       </span>
                       <Badge estado={exp.estado} />
                     </div>
@@ -864,7 +865,7 @@ function SolicitanteDashboard() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900">{exp.numero_expediente || 'Estudio'}</span>
+                      <span className="font-semibold text-gray-900">{exp.numero_expediente ? `Estudio ${formatNumeroEstudio(exp.numero_expediente)}` : 'Estudio'}</span>
                       {isCancelled ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                           Cancelado

@@ -201,6 +201,8 @@ export default function AutorizarPage() {
   const [reporteError, setReporteError] = useState('')
   // §8.2 / §8.3 — todo opcional.
   const [situacion, setSituacion] = useState<SituacionLaboral | null>(null)
+  // Política Anexo A.3/A.4: solo se pregunta al independiente.
+  const [tieneRut, setTieneRut] = useState<boolean | null>(null)
   const [dondeLabora, setDondeLabora] = useState('')
   const [ingreso, setIngreso] = useState('')
   const [presentacion, setPresentacion] = useState<'solo' | 'acompanado' | null>(null)
@@ -363,6 +365,7 @@ export default function AutorizarPage() {
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
     const perfil: IPerfilProspectoInput = {
       ...(situacion ? { situacion_laboral: situacion } : {}),
+      ...(situacion === 'independiente' && tieneRut !== null ? { tiene_rut: tieneRut } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
       ...(presentacion ? { presentacion } : {}),
@@ -670,6 +673,13 @@ export default function AutorizarPage() {
           <p className="mt-1 text-sm text-gray-500">
             Tu autorización quedó registrada con firma electrónica (Ley 527/1999).
           </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Si quieres revocarla, escríbenos a{' '}
+            <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
+              hola@cofianza.co
+            </a>
+            .
+          </p>
           {/* El SHA-256 completo a la vista se leía como un error de la
               página. Sigue disponible (es su soporte legal), pero plegado. */}
           {hashDocumento && (
@@ -939,6 +949,15 @@ export default function AutorizarPage() {
               </div>
             </div>
 
+            {/* Ley 1581 art. 8 + Decreto 1377 art. 9: el titular revoca ante Cofianza, por este canal. */}
+            <p className="text-xs leading-relaxed text-gray-500">
+              Puedes revocar esta autorización cuando quieras escribiéndonos a{' '}
+              <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
+                hola@cofianza.co
+              </a>
+              . La revocación la haces tú, ante Cofianza.
+            </p>
+
             {/* Aceptación */}
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5">
               <input
@@ -1005,6 +1024,33 @@ export default function AutorizarPage() {
                 })}
               </div>
             </div>
+
+            {situacion === 'independiente' && (
+              <div>
+                <p className="text-sm font-bold text-gray-900">¿Tienes RUT activo?</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {([true, false] as const).map((v) => {
+                    const on = tieneRut === v
+                    return (
+                      <button
+                        key={String(v)}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setTieneRut(on ? null : v)}
+                        className={cn(
+                          'rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
+                          on
+                            ? 'border-primary-600 bg-primary-50 text-primary-700'
+                            : 'border-gray-200 bg-white text-gray-700',
+                        )}
+                      >
+                        {v ? 'Sí' : 'No'}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* §8.2 Dónde labora */}
             <div>

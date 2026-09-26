@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { apiClient } from '@/lib/api'
 import { getResultadoPagoPublico, type IPagoResultadoPublico } from '@/services/pagoEstudioService'
 import { IconCheck, IconClock, IconX } from '@/components/icons'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -225,7 +226,7 @@ function PagoResultadoContent() {
             <div className="flex justify-between py-2.5">
               <span className="text-sm text-gray-500">Estudio</span>
               <span className="text-sm font-medium text-gray-900">
-                {resultado.expediente_numero}
+                {formatNumeroEstudio(resultado.expediente_numero)}
               </span>
             </div>
           )}

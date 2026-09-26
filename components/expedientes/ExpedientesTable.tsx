@@ -23,7 +23,7 @@ import {
   IconExternalLink,
   IconUserCheck,
 } from '@/components/icons'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 import type { IExpediente, IExpedienteFilters, IExpedientesMeta } from '@/types/expediente'
 
 interface SortableHeaderProps {
@@ -278,7 +278,7 @@ export function ExpedientesTable({
               >
                 <td className="px-4 py-3">
                   <span className="font-mono text-sm font-medium text-primary-600">
-                    {expediente.numero_expediente}
+                    {formatNumeroEstudio(expediente.numero_expediente)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -414,7 +414,7 @@ export function ExpedientesTable({
             {/* Header: código y estado */}
             <div className="flex items-start justify-between gap-2 mb-3">
               <span className="font-mono text-sm font-medium text-primary-600">
-                {expediente.numero_expediente}
+                {formatNumeroEstudio(expediente.numero_expediente)}
               </span>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <ProcessStepBadge

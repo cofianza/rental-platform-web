@@ -8,7 +8,10 @@
  * Visibilidad:
  *   - Aparece desde estado='condicionado' en adelante (también en
  *     'aprobado' y 'rechazado' para que quede el rastro de quién acompañó).
- *   - Si nunca se invitó coarrendatario → no se muestra.
+ *   - Sin coarrendatario, el formulario para invitarlo solo si el API abre la
+ *     ventana: en revisión o, desde la Decisión 2 (2026-09-25), aprobado antes
+ *     del contrato (prima del 10 %); nunca en el canal del propietario directo
+ *     (Decisión 4). Si no, no se muestra.
  */
 
 'use client'
@@ -16,7 +19,7 @@
 import { toast } from 'sonner'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
+import { coarrendatarioService, type ICoarrendatario, type IVentanaCoarrendatario } from '@/services/coarrendatarioService'
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
@@ -93,6 +96,20 @@ export function CoarrendatarioPropietarioCard({
 
   useEffect(() => { fetchCoa() }, [fetchCoa, version])
 
+  // Si se puede invitar y si la invitación sigue en pie (en revisión, o aprobado
+  // antes del contrato). undefined = cargando; null = no se pudo leer (se cae a
+  // la regla de antes: solo en revisión).
+  const [ventana, setVentana] = useState<IVentanaCoarrendatario | null | undefined>(undefined)
+  const fetchVentana = useCallback(() => {
+    coarrendatarioService.getVentana(expedienteId).then(setVentana, () => setVentana(null))
+  }, [expedienteId])
+  const ventanaAplica = expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado'
+  useEffect(() => {
+    if (ventanaAplica) fetchVentana()
+    else setVentana(null)
+  }, [fetchVentana, version, ventanaAplica])
+  const vigente = ventana?.vigente ?? expedienteEstado === 'condicionado'
+
   // Polling sutil mientras la invitación está pendiente o la evaluación en
   // proceso, para que el propietario vea el avance sin recargar. Una invitación
   // vencida ya no cambia sola (reenviarla llama a fetchCoa). La evaluación
@@ -101,12 +118,12 @@ export function CoarrendatarioPropietarioCard({
   useEffect(() => {
     if (!coa) return
     const enEspera =
-      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa) && expedienteEstado === 'condicionado') ||
+      (coa.estado === 'pendiente_aceptacion' && !invitacionVencida(coa) && vigente) ||
       (coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado')
     if (!enEspera) return
     const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 8000)
     return () => clearInterval(id)
-  }, [coa, fetchCoa, expedienteEstado])
+  }, [coa, fetchCoa, vigente])
 
   const esRolValido =
     userRol === 'propietario' ||
@@ -114,7 +131,7 @@ export function CoarrendatarioPropietarioCard({
     userRol === 'administrador' ||
     userRol === 'operador_analista'
 
-  if (loading) return null
+  if (loading || ventana === undefined) return null
   if (!esRolValido) return null
   // Solo aparece de la fase 'condicionado' en adelante. Mientras el expediente
   // sigue en borrador / en_revision no tiene sentido mostrar al coarrendatario.
@@ -128,15 +145,17 @@ export function CoarrendatarioPropietarioCard({
   }
   // Sin co-arrendatario aún: el gestor (inmobiliaria / propietario / admin /
   // operador) puede invitarlo directamente — útil cuando es la inmobiliaria la
-  // que lleva el expediente. Solo mientras está condicionado; en estados
-  // posteriores sin co-arrendatario, no hay nada que mostrar.
+  // que lleva el expediente. Solo con la ventana abierta (en revisión, o
+  // aprobado antes del contrato para bajar la prima al 10 %); si no, no hay
+  // nada que mostrar.
   if (!coa) {
-    if (expedienteEstado !== 'condicionado' || !puedeEditar) return null
+    if (!(ventana?.puede_invitar ?? expedienteEstado === 'condicionado') || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm
         invitar={(input) => coarrendatarioService.invitar(expedienteId, input)}
         audience="gestor"
-        onInvited={fetchCoa}
+        aprobado={expedienteEstado === 'aprobado'}
+        onInvited={() => { fetchCoa(); fetchVentana() }}
       />
     )
   }
@@ -186,12 +205,12 @@ export function CoarrendatarioPropietarioCard({
         </div>
 
         {/* Estado de la invitación + evaluación */}
-        <EstadoBlock coa={coa} sinEfecto={expedienteEstado !== 'condicionado'} />
+        <EstadoBlock coa={coa} sinEfecto={!vigente} />
 
         {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
-            otra persona (P4). Fuera de condicionado ya no rige (P3). El key
+            otra persona (P4). Con la ventana cerrada ya no rige (P3). El key
             remonta el form cuando los datos guardados cambian. */}
-        {coa.estado === 'pendiente_aceptacion' && puedeEditar && expedienteEstado === 'condicionado' && (
+        {coa.estado === 'pendiente_aceptacion' && puedeEditar && vigente && (
           <CoarrendatarioReenviarInvitacion
             key={coa.updated_at}
             expedienteId={expedienteId}
@@ -247,7 +266,7 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       ? {
           color: 'bg-gray-50 border-gray-200 text-gray-900',
           label: 'Invitación sin efecto',
-          mensaje: 'El estudio ya no está en revisión, así que esta invitación ya no se puede aceptar.',
+          mensaje: 'El estudio ya se resolvió sin co-arrendatario, así que esta invitación ya no se puede aceptar.',
         }
       : invitacionVencida(coa)
       ? {

@@ -148,6 +148,23 @@ export function ReEvaluacionSection({
     (h) => h.estudio_padre_id === estudio.id,
   ) ?? false
 
+  // Política §11: 15 días hábiles desde la notificación del rechazo para
+  // radicar la apelación (el primer soporte); radicada a tiempo, Cofianza
+  // responde en 10 aunque ya haya pasado el día 15. Fechas 'AAAA-MM-DD':
+  // al mediodía local para que no se corran un día.
+  const dia = (d: string) => formatDate(`${d}T12:00:00`)
+  const apelarHasta = historial?.apelar_hasta
+  const responderHasta = historial?.responder_hasta
+  const avisoPlazo = hasChildReeval
+    ? 'Puedes subir documentos adicionales para solicitar una reevaluación.'
+    : plazoVencido
+      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilita una evaluación nueva.`
+      : responderHasta
+        ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(responderHasta)}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
+        : apelarHasta
+          ? `El solicitante puede apelar hasta el ${dia(apelarHasta)} (15 días hábiles desde la notificación del rechazo). Sube los documentos soporte para radicar la apelación.`
+          : 'Puedes subir documentos adicionales para solicitar una reevaluación.'
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -196,9 +213,7 @@ export function ReEvaluacionSection({
         <div>
           <p className="text-sm font-medium text-red-800">Esta evaluación fue rechazada</p>
           <p className="text-sm text-gray-600 mt-1">
-            {plazoVencido && !hasChildReeval
-              ? 'Venció el plazo de 15 días hábiles para reevaluar. Para volver a evaluar al solicitante, habilita una evaluación nueva.'
-              : 'Puedes subir documentos adicionales para solicitar una reevaluación.'}
+            {avisoPlazo}
             {totalEnCadena > 1 && ` Reevaluación ${totalEnCadena - 1} de ${MAX_REEVALUACIONES}.`}
           </p>
         </div>

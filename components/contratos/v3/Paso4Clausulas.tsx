@@ -35,6 +35,7 @@ import type { ClausulaCatalogo, EstadoAsistente, Paso4 } from '@/types/contratoV
 import { Aviso, Campo, EncabezadoPaso } from './campos'
 import { CatalogoClausulas, TextoClausula } from './CatalogoClausulas'
 import { ListaHallazgos } from './EditorClausula'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 type Adicionales = NonNullable<EstadoAsistente['contrato']>['adicionales']
 export type Paso4ConClausulas = Extract<Paso4, { clausulas: unknown }>
@@ -157,7 +158,7 @@ export function Paso4Clausulas(p: Props) {
       await soporteService.createTicket({
         tipo: 'clausulas_adicionales',
         asunto: `Revisión de ${n} cláusulas adicionales — contrato ${p.contratoNumero}`,
-        descripcion: `${p.expedienteNumero ? `Estudio ${p.expedienteNumero}. ` : ''}${window.location.origin}/expedientes/${p.expedienteId}/contrato`,
+        descripcion: `${p.expedienteNumero ? `Estudio ${formatNumeroEstudio(p.expedienteNumero)}. ` : ''}${window.location.origin}/expedientes/${p.expedienteId}/contrato`,
         prioridad: 'media',
       })
       setSolicitada(true)

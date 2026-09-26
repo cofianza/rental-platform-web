@@ -20,6 +20,7 @@ import {
   type InvitacionInfo,
 } from '@/services/invitacionService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 type Status = 'loading' | 'error' | 'ready'
 
@@ -204,7 +205,7 @@ export default function InvitacionPage() {
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">
-          Estudio: <span className="font-mono">{info.expediente.numero}</span>
+          Estudio <span className="font-mono">{formatNumeroEstudio(info.expediente.numero)}</span>
         </p>
       </div>
 

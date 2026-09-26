@@ -3,7 +3,10 @@
  * La inmobiliaria envía este enlace cuando el estudio quedó condicionado para
  * que el solicitante suba su documentación adicional; también llega en el
  * correo del condicionado. Desde aquí el prospecto, sin cuenta, invita a su
- * co-arrendatario (P18).
+ * co-arrendatario (P18); desde la Decisión 2 (2026-09-25), también con el
+ * estudio aprobado y antes del contrato, para bajar la prima al 10 % (el enlace
+ * llega en el correo del aprobado). El API decide si se puede (Decisión 4: no en
+ * el canal del propietario directo).
  */
 
 'use client'
@@ -22,17 +25,19 @@ import {
 
 // Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
 // estudio ya resuelto no se promete una revisión que no va a ocurrir, y al
-// cerrarlo no se le escribe (solo al decidirlo).
+// cerrarlo no se le escribe (solo al decidirlo). `vigente`: la invitación sigue
+// en pie (en revisión, o aprobado antes del contrato).
 function textoInvitado(
   invitado: NonNullable<NonNullable<ContextoCargaDocumentos['coarrendatario']>['invitado']>,
   estadoEstudio: string,
+  vigente: boolean,
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
       ? 'Tu estudio se cerró, así que esta invitación quedó sin efecto.'
       : 'Tu estudio se cerró, así que tu co-arrendatario ya no sigue en el proceso.'
   }
-  if (estadoEstudio !== 'condicionado') {
+  if (!vigente) {
     return invitado.estado === 'pendiente_aceptacion'
       ? 'Tu estudio ya se resolvió, así que esta invitación quedó sin efecto.'
       : 'Tu estudio ya se resolvió; te escribimos por correo con la decisión.'
@@ -42,8 +47,9 @@ function textoInvitado(
       ? 'La invitación venció sin respuesta. Pídele a quien te pidió el estudio (tu inmobiliaria o el propietario) que la reenvíe.'
       : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
   }
-  return invitado.estado === 'aceptado'
-    ? 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
+  if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
+  return estadoEstudio === 'aprobado'
+    ? 'Su evaluación terminó y tu estudio sigue aprobado. Te contamos por correo si quedó vinculado y qué prima pagas.'
     : 'Su evaluación terminó. Un analista de Cofianza decide tu caso con los resultados de los dos y te avisamos por correo.'
 }
 
@@ -169,21 +175,38 @@ export default function CargarDocumentosPage() {
     )
   }
 
+  // Decisión 2: aprobado antes del contrato, el enlace sirve para sumar al co-arrendatario (no para soportes).
+  const aprobado = ctx.estado === 'aprobado'
+  const vigente = ctx.coarrendatario?.vigente ?? ctx.estado === 'condicionado'
+  const soloCoarrendatario = aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado)
+
   return (
     <div>
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Carga de documentos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {soloCoarrendatario ? 'Tu co-arrendatario' : 'Carga de documentos'}
+          </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
-            {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-            {ctx.coarrendatario?.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
+            {soloCoarrendatario ? (
+              <>
+                Hola {ctx.solicitante}, tu estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} fue aprobado.
+              </>
+            ) : (
+              <>
+                Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
+                {ctx.coarrendatario?.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
+              </>
+            )}
           </p>
         </div>
 
         {ctx.coarrendatario?.puede_invitar && (
           <CoarrendatarioInviteForm
             audience="solicitante"
+            aprobado={aprobado}
             initial={ctx.coarrendatario.sugerido}
             invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
             onInvited={cargar}
@@ -195,7 +218,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Invitaste a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado)}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente)}</p>
             </div>
           </div>
         )}
@@ -215,7 +238,7 @@ export default function CargarDocumentosPage() {
           </div>
         )}
 
-        {ctx.puede_subir ? (
+        {soloCoarrendatario ? null : ctx.puede_subir ? (
           <form onSubmit={handleSubir} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             <div>
               <label htmlFor="cargar-proposito" className="block text-sm font-medium text-gray-700 mb-1">
@@ -259,28 +282,30 @@ export default function CargarDocumentosPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-900">Documentos cargados ({ctx.soportes.length})</h2>
+        {!(soloCoarrendatario && ctx.soportes.length === 0) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-900">Documentos cargados ({ctx.soportes.length})</h2>
+            </div>
+            {ctx.soportes.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-gray-500 text-center">Aún no has subido documentos.</p>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {ctx.soportes.map((s) => (
+                  <li key={s.id} className="px-5 py-3 flex items-center gap-3">
+                    <IconCheckCircle size={18} className="text-green-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{PROPOSITO_LABEL[s.proposito] || s.proposito}</p>
+                      <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                        <IconFileText size={11} /> {s.nombre_original}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {ctx.soportes.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-gray-500 text-center">Aún no has subido documentos.</p>
-          ) : (
-            <ul className="divide-y divide-gray-100">
-              {ctx.soportes.map((s) => (
-                <li key={s.id} className="px-5 py-3 flex items-center gap-3">
-                  <IconCheckCircle size={18} className="text-green-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{PROPOSITO_LABEL[s.proposito] || s.proposito}</p>
-                    <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                      <IconFileText size={11} /> {s.nombre_original}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )

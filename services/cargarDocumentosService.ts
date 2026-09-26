@@ -22,7 +22,10 @@ export interface ContextoCargaDocumentos {
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
   /** Su co-arrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {
+    /** En revisión o aprobado antes del contrato, y canal de inmobiliaria (Decisiones 2 y 4). */
     puede_invitar: boolean
+    /** Su invitación sigue en pie (ausente en un API anterior: solo en revisión). */
+    vigente?: boolean
     /** `vencida`: la invitación pendiente pasó su plazo sin respuesta. */
     invitado: { nombre: string; estado: CoarrendatarioEstado; vencida?: boolean } | null
     /** Solo nombre y apellido: el correo y el WhatsApp del tercero no viajan. */

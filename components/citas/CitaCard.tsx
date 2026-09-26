@@ -26,6 +26,7 @@ import SlotSelector, {
   formatSlotHora,
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 interface CitaCardProps {
   cita: ICita
@@ -144,7 +145,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               href={`/expedientes/${expediente.id}`}
               className="text-xs font-mono text-primary-700 hover:underline"
             >
-              {expediente.numero}
+              Estudio {formatNumeroEstudio(expediente.numero)}
             </Link>
           ) : (
             <span className="text-xs text-gray-500">Sin estudio</span>

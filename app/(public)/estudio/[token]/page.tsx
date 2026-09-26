@@ -12,6 +12,7 @@ import { estudioPublicService } from '@/services/estudioService'
 import type { IEstudioPublicForm, ISubmitFormularioInput } from '@/types/estudio'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { IconRefresh } from '@/components/icons'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 // ============================================
 // Types
@@ -215,7 +216,7 @@ export default function EstudioFormularioPage() {
             Tu estudio
           </h2>
           <p className="text-sm text-primary-700">
-            Estudio: <strong>{formInfo.expediente_numero}</strong>
+            Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
             )}
@@ -316,7 +317,7 @@ export default function EstudioFormularioPage() {
             Completa tus datos para tu estudio
           </h2>
           <p className="text-sm text-primary-700">
-            Estudio: <strong>{formInfo.expediente_numero}</strong>
+            Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
             )}

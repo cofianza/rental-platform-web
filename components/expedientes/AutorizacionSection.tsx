@@ -12,7 +12,8 @@ import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriang
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
-import type { IAutorizacion } from '@/types/autorizacion'
+import type { IAutorizacion, IRevocarInput } from '@/types/autorizacion'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AutorizacionSectionProps {
@@ -39,6 +40,16 @@ function formatDate(dateStr: string | null | undefined): string {
   })
 }
 
+// Ley 1581 art. 8, Decreto 1377 art. 9 y 20: solo el titular revoca, ante Cofianza.
+const CANALES_REVOCACION: { value: IRevocarInput['canal']; label: string }[] = [
+  { value: 'correo', label: 'Correo electrónico' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'llamada', label: 'Llamada telefónica' },
+  { value: 'escrito', label: 'Escrito' },
+]
+
+const hoyBogota = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
+
 const METODO_LABELS: Record<string, string> = {
   canvas: 'Firma manuscrita digital',
   otp: 'Verificación por código OTP',
@@ -61,8 +72,14 @@ export function AutorizacionSection({
   const [faltaPagoGestor, setFaltaPagoGestor] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  // Revocar = registrar la solicitud que el TITULAR le hizo a Cofianza. Solo
+  // Cofianza (admin/operador); el gestor no revoca por él: cancela el estudio.
+  const { hasRole } = usePermissions()
+  const puedeRegistrarRevocacion = hasRole(['administrador', 'operador_analista'])
   const [showRevocar, setShowRevocar] = useState(false)
   const [revocarMotivo, setRevocarMotivo] = useState('')
+  const [revocarCanal, setRevocarCanal] = useState<IRevocarInput['canal'] | ''>('')
+  const [revocarFecha, setRevocarFecha] = useState('')
   const [revocando, setRevocando] = useState(false)
   // Detalle de la firma: evidencia legal y texto literal firmado (colapsables).
   const [showEvidencia, setShowEvidencia] = useState(false)
@@ -222,17 +239,29 @@ export function AutorizacionSection({
     </div>
   )
 
+  const cerrarRevocar = () => {
+    setShowRevocar(false)
+    setRevocarMotivo('')
+    setRevocarCanal('')
+    setRevocarFecha('')
+  }
+
+  const revocacionCompleta = !!revocarCanal && !!revocarFecha && revocarMotivo.trim().length >= 10
+
   const handleRevocar = async () => {
-    if (revocarMotivo.length < 10) {
-      toast.error('El motivo debe tener al menos 10 caracteres')
+    if (!revocarCanal || !revocarFecha || revocarMotivo.trim().length < 10) {
+      toast.error('Indica la fecha, el canal y el soporte de la solicitud (mín. 10 caracteres)')
       return
     }
     setRevocando(true)
     try {
-      await autorizacionService.revocar(expedienteId, { motivo: revocarMotivo })
-      toast.success('Autorización revocada')
-      setShowRevocar(false)
-      setRevocarMotivo('')
+      await autorizacionService.revocar(expedienteId, {
+        canal: revocarCanal,
+        fecha_solicitud: revocarFecha,
+        motivo: revocarMotivo.trim(),
+      })
+      toast.success('Revocación registrada')
+      cerrarRevocar()
       fetchStatus()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al revocar'
@@ -495,7 +524,7 @@ export function AutorizacionSection({
             </div>
           )}
 
-          {!soloLectura && (
+          {puedeRegistrarRevocacion && !showRevocar && (
             <button
               onClick={() => setShowRevocar(true)}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
@@ -505,28 +534,63 @@ export function AutorizacionSection({
             </button>
           )}
 
-          {/* Revocar dialog */}
-          {showRevocar && (
+          {/* Registrar la revocación que pidió el titular (Ley 1581 art. 8) */}
+          {puedeRegistrarRevocacion && showRevocar && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-medium text-red-800">Motivo de revocacion:</p>
-              <textarea
-                value={revocarMotivo}
-                onChange={(e) => setRevocarMotivo(e.target.value)}
-                placeholder="Ingresa el motivo de la revocación (mín. 10 caracteres)"
-                rows={3}
-                className="w-full rounded-lg border border-red-300 p-2 text-sm focus:ring-red-500 focus:border-red-500"
-              />
+              <div>
+                <p className="text-sm font-medium text-red-800">Registrar la revocación del titular</p>
+                <p className="text-xs text-red-700 mt-0.5">
+                  Solo el titular puede revocar su autorización, y lo hace ante Cofianza. Registra cuándo y por
+                  dónde la pidió y el soporte.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-xs font-medium text-red-800">
+                  Fecha de la solicitud
+                  <input
+                    type="date"
+                    value={revocarFecha}
+                    max={hoyBogota()}
+                    onChange={(e) => setRevocarFecha(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-red-300 bg-white p-2 text-sm text-gray-900 focus:ring-red-500 focus:border-red-500"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-red-800">
+                  Canal
+                  <select
+                    value={revocarCanal}
+                    onChange={(e) => setRevocarCanal(e.target.value as IRevocarInput['canal'] | '')}
+                    className="mt-1 w-full rounded-lg border border-red-300 bg-white p-2 text-sm text-gray-900 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">Elige el canal</option>
+                    {CANALES_REVOCACION.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="block text-xs font-medium text-red-800">
+                Soporte o nota
+                <textarea
+                  value={revocarMotivo}
+                  onChange={(e) => setRevocarMotivo(e.target.value)}
+                  placeholder="Radicado, asunto del correo o resumen de la llamada (mín. 10 caracteres)"
+                  rows={3}
+                  maxLength={1000}
+                  className="mt-1 w-full rounded-lg border border-red-300 bg-white p-2 text-sm text-gray-900 focus:ring-red-500 focus:border-red-500"
+                />
+              </label>
               <div className="flex gap-2">
                 <button
                   onClick={handleRevocar}
-                  disabled={revocando || revocarMotivo.length < 10}
+                  disabled={revocando || !revocacionCompleta}
                   className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
                   {revocando && <IconLoader size={14} className="animate-spin" />}
-                  Confirmar revocación
+                  Registrar revocación
                 </button>
                 <button
-                  onClick={() => { setShowRevocar(false); setRevocarMotivo('') }}
+                  onClick={cerrarRevocar}
                   className="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
@@ -545,10 +609,10 @@ export function AutorizacionSection({
             <div>
               <p className="text-sm font-medium text-red-800">Autorización revocada</p>
               {autorizacion?.motivo_revocacion && (
-                <p className="text-xs text-red-600 mt-1">Motivo: {autorizacion.motivo_revocacion}</p>
+                <p className="text-xs text-red-600 mt-1">{autorizacion.motivo_revocacion}</p>
               )}
               <p className="text-xs text-red-500 mt-1">
-                Revocada el {formatDate(autorizacion?.fecha_revocacion)}
+                Registrada el {formatDate(autorizacion?.fecha_revocacion)}
               </p>
             </div>
           </div>
@@ -627,6 +691,12 @@ export function AutorizacionSection({
               <div>
                 <dt className="text-xs text-gray-500">Situación laboral</dt>
                 <dd className="text-gray-900 font-medium capitalize">{perfil.situacion_laboral}</dd>
+              </div>
+            )}
+            {perfil.situacion_laboral === 'independiente' && perfil.tiene_rut != null && (
+              <div>
+                <dt className="text-xs text-gray-500">RUT activo</dt>
+                <dd className="text-gray-900 font-medium">{perfil.tiene_rut ? 'Sí' : 'No (informal)'}</dd>
               </div>
             )}
             {perfil.donde_labora && (

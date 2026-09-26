@@ -61,6 +61,7 @@ import type {
   Paso5,
 } from '@/types/contratoV3'
 import type { ParteFirma } from '@/components/contratos/v3/UbicarFirmas'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 // Mismo roleGuard que el GET del API; propietario y solicitante no llegan aquí.
 const ROLES_PERMITIDOS: UserRole[] = ['administrador', 'operador_analista', 'gerencia_consulta', 'inmobiliaria']
@@ -203,7 +204,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
       <PageHeader
         className="mb-0"
         title="Nuevo contrato de vivienda"
-        subtitle={resumen ? `Estudio ${resumen.expedienteNumero}` : undefined}
+        subtitle={resumen ? `Estudio ${formatNumeroEstudio(resumen.expedienteNumero)}` : undefined}
         actions={
           <div className="flex flex-col gap-1 sm:items-end">
             <Button
@@ -567,7 +568,7 @@ function Asistente({
       <PageHeader
         className="mb-0"
         title={`Contrato N° ${contrato.numero} · Borrador`}
-        subtitle={resumen ? `Estudio ${resumen.expedienteNumero}` : undefined}
+        subtitle={resumen ? `Estudio ${formatNumeroEstudio(resumen.expedienteNumero)}` : undefined}
         actions={
           editable && (
             <Button variante="secondary" onClick={() => setConfirmarCancelar(true)} disabled={ocupado}>

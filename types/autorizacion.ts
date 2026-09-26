@@ -49,6 +49,8 @@ export interface IPerfilProspecto {
   // gerencia_consulta). Para inmobiliaria y propietario estas claves NO vienen.
   identidad_reporte_detalle?: string | null
   situacion_laboral?: 'empleado' | 'independiente' | 'pensionado' | 'otro' | null
+  /** Solo del independiente: «¿Tienes RUT activo?» (Política Anexo A.3/A.4). */
+  tiene_rut?: boolean | null
   donde_labora?: string | null
   /** AUTORREPORTADO. Nunca es el ingreso del scorecard (Política V4.1 §4.2). */
   ingreso_declarado_cop?: number | null
@@ -136,7 +138,12 @@ export interface IFirmarResponse {
   pago_requerido?: boolean
 }
 
+/** Ley 1581 art. 8: Cofianza registra la solicitud de revocación que hizo el titular. */
 export interface IRevocarInput {
+  canal: 'correo' | 'whatsapp' | 'llamada' | 'escrito'
+  /** AAAA-MM-DD: cuándo la pidió el titular. */
+  fecha_solicitud: string
+  /** Soporte o nota (radicado, correo, resumen de la llamada…). */
   motivo: string
 }
 
@@ -159,6 +166,8 @@ export interface IVerificarOtpResponse {
 
 export interface IPerfilProspectoInput {
   situacion_laboral?: 'empleado' | 'independiente' | 'pensionado' | 'otro'
+  /** Solo si situacion_laboral = 'independiente'. */
+  tiene_rut?: boolean
   donde_labora?: string
   ingreso_declarado_cop?: number
   presentacion?: 'solo' | 'acompanado'

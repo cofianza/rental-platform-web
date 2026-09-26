@@ -12,6 +12,7 @@ import {
   IconAlertTriangle,
 } from '@/components/icons'
 import { visitaService, type IVisitaPublica, type IVisitaDia } from '@/services/visitaService'
+import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { cn } from '@/lib/utils'
 
 const TZ = 'America/Bogota'
@@ -227,7 +228,24 @@ export default function GestionarVisitaPage() {
             <div className="flex items-start gap-2">
               <IconMapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
               <span className="text-gray-700">
-                {visita.inmueble.direccion}, {visita.inmueble.ciudad}
+                {visita.inmueble.direccion ? (
+                  `${visita.inmueble.direccion}, ${visita.inmueble.ciudad}`
+                ) : (
+                  <>
+                    {[
+                      visita.inmueble.tipo
+                        ? TIPO_LABELS[visita.inmueble.tipo as keyof typeof TIPO_LABELS] ?? visita.inmueble.tipo
+                        : 'Inmueble',
+                      visita.inmueble.barrio ? `en ${visita.inmueble.barrio}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    , {visita.inmueble.ciudad}
+                    <span className="block text-xs text-gray-500">
+                      Te enviamos la dirección exacta cuando se confirme la visita.
+                    </span>
+                  </>
+                )}
               </span>
             </div>
           )}

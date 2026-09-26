@@ -17,6 +17,7 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { pagoService, type IReembolsoPendiente } from '@/services/pagoService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconAlertTriangle, IconCheck, IconClock, IconLoader, IconRefresh } from '@/components/icons'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 const ORIGEN: Record<string, string> = {
   manual: 'Pago registrado a mano: se devuelve por el mismo medio',
@@ -184,7 +185,7 @@ export function ReembolsosSection() {
                 </span>
                 {r.expediente ? (
                   <Link href={`/expedientes/${r.expediente.id}`} className="font-mono text-xs text-primary-700 hover:underline">
-                    {r.expediente.numero}
+                    {formatNumeroEstudio(r.expediente.numero)}
                   </Link>
                 ) : null}
                 <span className="text-xs text-gray-500">{formatDate(r.created_at)}</span>

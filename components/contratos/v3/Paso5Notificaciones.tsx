@@ -187,6 +187,8 @@ export function VistaPreviaContrato({
   const ocupado = v3.accion !== null
   // Las firmas ubicadas son de ESTE PDF: reemplazarlo las borra, así que se confirma.
   const [confirmarReemplazo, setConfirmarReemplazo] = useState(false)
+  // P10: número propio de la inmobiliaria; va en «Contrato asociado N°» del Anexo. Se guarda al cargar el PDF.
+  const [numeroPropio, setNumeroPropio] = useState(propio?.numeroContrato ?? '')
   const conFirmas = (propio?.firmas?.length ?? 0) > 0 || !!borradorFirmas?.length
 
   const cargarDocumento = async () => (await contratoService.descargarContrato(contrato.id, { inline: true })).url
@@ -216,7 +218,7 @@ export function VistaPreviaContrato({
       )
       return
     }
-    if (!(await v3.subirPropio(archivo))) return
+    if (!(await v3.subirPropio(archivo, numeroPropio.trim() || undefined))) return
     toast.success('Contrato de la inmobiliaria cargado: ahora ubica dónde firma cada parte.')
   }
 
@@ -334,6 +336,9 @@ export function VistaPreviaContrato({
                   {propio.paginas} {propio.paginas === 1 ? 'página' : 'páginas'} · {megas(propio.bytes)} · cargado el{' '}
                   {formatDateTime(propio.subidoEn)}
                 </p>
+                <p className="text-xs text-gray-500">
+                  Contrato asociado N° en el Anexo: {propio.numeroContrato || `${contrato.numero} (de Cofianza)`}
+                </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <Button variante="secondary" tamano="sm" onClick={() => void visor.abrir('propio', v3.propioUrl)}>
@@ -387,6 +392,16 @@ export function VistaPreviaContrato({
             </button>
           ) : (
             <p className="text-sm text-gray-500">Todavía no se ha cargado el contrato de la inmobiliaria.</p>
+          )}
+          {editable && (
+            <Campo
+              label="Número del contrato de la inmobiliaria (opcional)"
+              value={numeroPropio}
+              maxLength={40}
+              onChange={(e) => setNumeroPropio(e.target.value)}
+              placeholder={contrato.numero}
+              help={`El Anexo lo imprime en «Contrato asociado N°»; si lo dejas vacío, va el número de Cofianza (${contrato.numero}). Se guarda al ${propio ? 'reemplazar' : 'cargar'} el PDF.`}
+            />
           )}
           {errorPdf && (
             <Aviso tono="error">

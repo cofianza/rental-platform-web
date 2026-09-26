@@ -23,7 +23,7 @@ import type { IEstudio, IEstudioListItem, IEstudiosStats } from '@/types/estudio
 import { EstudioDetailModal } from '@/components/expedientes/EstudioDetailModal'
 import { AdquirirEstudiosCredito } from '@/components/estudios/AdquirirEstudiosCredito'
 import { fechaCorta } from '@/components/dashboard/secciones/_shared'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { IconSearch, IconPlus, IconLoader, IconShield, IconChevronRight } from '@/components/icons'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
@@ -31,7 +31,7 @@ import { IconSearch, IconPlus, IconLoader, IconShield, IconChevronRight } from '
 function prospecto(e: IEstudioListItem): string {
   const sol = e.expedientes?.solicitantes
   if (sol) return `${sol.nombre} ${sol.apellido}`.trim()
-  return e.expedientes?.numero ?? '—'
+  return e.expedientes?.numero ? `Estudio ${formatNumeroEstudio(e.expedientes.numero)}` : '—'
 }
 
 type BadgeKind = 'aprobado' | 'rechazado' | 'procesando' | 'esperando' | 'condicionado'
@@ -277,7 +277,7 @@ export function EstudiosInmobiliariaView({
                           {esCoa ? 'Co-arrendatario' : 'Individual'}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-gray-600">{e.expedientes?.numero ?? '—'}</td>
+                      <td className="px-6 py-3 text-gray-600">{formatNumeroEstudio(e.expedientes?.numero) || '—'}</td>
                       <td className="px-6 py-3">
                         <span
                           className={cn(

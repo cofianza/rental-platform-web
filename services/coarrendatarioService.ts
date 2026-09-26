@@ -42,6 +42,18 @@ export interface ICoarrendatario {
   estudio?: ICoarrendatarioEstudio | null
 }
 
+/**
+ * Si se puede invitar co-arrendatario ahora (Decisiones 2 y 4, 2026-09-25): con
+ * el estudio en revisión o aprobado antes del contrato, en el canal de
+ * inmobiliaria y sin otra invitación viva. `vigente`: la invitación ya enviada
+ * sigue en pie.
+ */
+export interface IVentanaCoarrendatario {
+  vigente: boolean
+  puede_invitar: boolean
+  motivo: string | null
+}
+
 export interface IInvitarCoarrendatarioInput {
   nombre: string
   apellido: string
@@ -112,6 +124,14 @@ export const coarrendatarioService = {
   async getDelExpediente(expedienteId: string): Promise<ICoarrendatario | null> {
     const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario`)) as unknown as {
       data: ICoarrendatario | null
+    }
+    return res.data
+  },
+
+  /** Si se puede invitar ahora y si la invitación enviada sigue en pie. */
+  async getVentana(expedienteId: string): Promise<IVentanaCoarrendatario> {
+    const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario/ventana`)) as unknown as {
+      data: IVentanaCoarrendatario
     }
     return res.data
   },

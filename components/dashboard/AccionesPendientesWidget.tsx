@@ -19,6 +19,7 @@ import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 /** Son acciones (confirmar, habilitar, generar): quien solo consulta no las ve. */
 export function AccionesPendientesWidget() {
@@ -177,7 +178,7 @@ function CitaItemRow({
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
-            <span className="font-mono text-primary-700">{expediente?.numero ?? '—'}</span>
+            <span className="font-mono text-primary-700">{expediente?.numero ? `Estudio ${formatNumeroEstudio(expediente.numero)}` : '—'}</span>
             {inmueble && (
               <span className="text-gray-600 truncate" title={inmueble.direccion}>
                 · {inmueble.direccion}
@@ -246,7 +247,7 @@ function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; 
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
-            <span className="font-mono text-primary-700">{expediente.numero_expediente ?? '—'}</span>
+            <span className="font-mono text-primary-700">{expediente.numero_expediente ? `Estudio ${formatNumeroEstudio(expediente.numero_expediente)}` : '—'}</span>
             {inmueble && (
               <span className="text-gray-600 truncate" title={inmueble.direccion}>
                 · {inmueble.direccion}

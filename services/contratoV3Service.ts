@@ -67,8 +67,10 @@ export const contratoV3Service = {
    * solo manda JSON, así que va con fetch, pero con la cookie de sesión y el mismo
    * mapeo de errores (422 PDF_PROPIO_INVALIDO trae el motivo en el mensaje).
    */
-  async subirPropio(expedienteId: string, archivo: File): Promise<EstadoAsistente> {
+  async subirPropio(expedienteId: string, archivo: File, numeroContrato?: string): Promise<EstadoAsistente> {
     const form = new FormData()
+    // Opcional (P10): el número que la inmobiliaria le puso a su contrato, para el Anexo.
+    if (numeroContrato) form.append('numero_contrato', numeroContrato)
     form.append('archivo', archivo)
     const token = useAuthStore.getState().accessToken
     let res: Response

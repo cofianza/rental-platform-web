@@ -186,11 +186,11 @@ export function useContratoV3(expedienteId: string) {
   // ── Entrega 5: Ruta B y firma ──
 
   const subirPropio = useCallback(
-    (archivo: File) => {
+    (archivo: File, numeroContrato?: string) => {
       setErrorPropio(null)
       return mutar('propio', async () => {
         try {
-          return await contratoV3Service.subirPropio(expedienteId, archivo)
+          return await contratoV3Service.subirPropio(expedienteId, archivo, numeroContrato)
         } catch (err) {
           setErrorPropio({ expedienteId, mensaje: err instanceof Error ? err.message : 'No pudimos cargar el PDF.' })
           throw err

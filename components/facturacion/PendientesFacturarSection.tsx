@@ -22,6 +22,7 @@ import { facturacionService, type IPagoPendienteFacturar } from '@/services/fact
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconLoader, IconCheck, IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 interface PendientesFacturarSectionProps {
   /** Callback cuando una factura se emite — el page la usa para refrescar
@@ -146,7 +147,7 @@ export function PendientesFacturarSection({
                     <span className="text-xs text-gray-600">{pago.cliente_nombre || '—'}</span>
                   ) : (
                     <span className="font-mono text-xs text-primary-700">
-                      {pago.expediente_numero || '—'}
+                      {formatNumeroEstudio(pago.expediente_numero) || '—'}
                     </span>
                   )}
                   {pago.factura_error && (

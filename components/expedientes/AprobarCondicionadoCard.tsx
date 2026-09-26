@@ -13,6 +13,10 @@
  *    regla dura suya, que no lo deja aprobar (ponderacion.ts del API).
  * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí): el
  * contrato se crea después desde el estudio.
+ * Canal del propietario directo (inmueble sin inmobiliaria, Decisión 4): no hay
+ * co-arrendatario hasta el Convenio, así que no se ofrece y, sin historial en
+ * ninguna central (Política §15, que lo exige), el caso no puede aprobarse:
+ * se cierra con motivo.
  */
 
 'use client'
@@ -34,6 +38,8 @@ interface AprobarCondicionadoCardProps {
   userRol?: string
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
+  /** Inmueble sin inmobiliaria: el co-arrendatario no existe en este canal (Decisión 4). */
+  canalPropietario?: boolean
   /** Estudio del titular: con él se ofrece consultar el otro buró aquí mismo. */
   estudioTitular?: IEstudio | null
   /** Documento del titular, para prellenar la consulta al otro buró. */
@@ -48,6 +54,7 @@ export function AprobarCondicionadoCard({
   expedienteEstado,
   userRol,
   sinInfoBuro,
+  canalPropietario,
   estudioTitular,
   persona,
   onAprobado,
@@ -113,6 +120,8 @@ export function AprobarCondicionadoCard({
 
   // Solo si el primer buró no tenía información (el API solo deja cambiar de buró en ese caso).
   const ofreceOtroBuro = !!sinInfoBuro && !!estudioTitular
+  // §15 exige co-arrendatario al que no tiene historial, y en este canal no lo hay.
+  const sinSalidaAprobable = !!canalPropietario && !!sinInfoBuro
 
   return (
     <>
@@ -131,7 +140,16 @@ export function AprobarCondicionadoCard({
 
           <ol className="mt-4 space-y-4">
             <Paso n={1} titulo={esCofianza ? 'Decides tú, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
-              {esCofianza ? (
+              {sinSalidaAprobable ? (
+                <p>
+                  Sin historial en ninguna central, la Política solo permite aprobarlo con un co-arrendatario, y en
+                  inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Si el otro buró
+                  tampoco tiene información, el caso no puede aprobarse y se cierra con el motivo
+                  {esCofianza
+                    ? ': usa «Cambiar estado», arriba.'
+                    : '. Lo cierra un analista de Cofianza y te avisamos por notificación y correo.'}
+                </p>
+              ) : esCofianza ? (
                 <>
                   <p>
                     Revisa el caso, los soportes y el co-arrendatario si lo hay. Si lo apruebas, el estudio pasa a
@@ -208,13 +226,15 @@ export function AprobarCondicionadoCard({
                   </Opcion>
                 )}
 
-                <Opcion titulo="Sumar un co-arrendatario (en el recuadro de abajo)">
-                  <p>
-                    Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
-                    los dos resultados. Si el co-arrendatario tiene un impedimento que no admite excepciones (por
-                    ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
-                  </p>
-                </Opcion>
+                {!canalPropietario && (
+                  <Opcion titulo="Sumar un co-arrendatario (en el recuadro de abajo)">
+                    <p>
+                      Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
+                      los dos resultados. Si el co-arrendatario tiene un impedimento que no admite excepciones (por
+                      ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
+                    </p>
+                  </Opcion>
+                )}
               </ul>
             </Paso>
 

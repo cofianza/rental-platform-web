@@ -29,6 +29,16 @@ export function rutaInterna(ruta?: string | null): string | null {
 }
 
 /**
+ * Flujo §13 (término único «estudio»): el número guardado es «EXP-2026-0005»
+ * (lo pone un trigger y NO cambia); a las personas se les muestra
+ * «N.° 2026-0005». Solo presentación: rutas, búsquedas y API siguen con el
+ * guardado. Donde el texto no dice ya «Estudio», se antepone. Idempotente.
+ */
+export function formatNumeroEstudio(numero: string | null | undefined): string {
+  return numero ? `N.° ${numero.replace(/^(?:EXP-|N\.° )/i, '')}` : ''
+}
+
+/**
  * Genera un ID único simple
  */
 export function generateId(): string {

@@ -10,6 +10,7 @@ import { IconFolderOpen, IconPlus, IconExternalLink, IconLoader } from '@/compon
 import { ExpedienteBadge } from '@/components/expedientes/ExpedienteBadges'
 import { formatDate } from '@/lib/constants'
 import type { IExpediente } from '@/types/expediente'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 interface ExpedientesSectionProps {
   expedientes: IExpediente[]
@@ -109,7 +110,7 @@ export function ExpedientesSection({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-primary-600 group-hover:text-primary-700">
-                    {expediente.numero_expediente}
+                    {formatNumeroEstudio(expediente.numero_expediente)}
                   </span>
                   <ExpedienteBadge
                     estado={expediente.estado}

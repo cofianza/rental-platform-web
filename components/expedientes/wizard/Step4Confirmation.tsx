@@ -25,7 +25,7 @@ import {
 import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 
 interface Step4ConfirmationProps {
@@ -95,7 +95,7 @@ export function Step4Confirmation({
                 href={`/expedientes/${existingExpediente.id}`}
                 className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
               >
-                Ver estudio{existingExpediente.numero ? ` ${existingExpediente.numero}` : ' existente'}
+                Ver estudio{existingExpediente.numero ? ` ${formatNumeroEstudio(existingExpediente.numero)}` : ' existente'}
                 <IconArrowRight size={14} />
               </Link>
             )}

@@ -28,6 +28,7 @@ import SlotSelector, {
   formatSlotHora,
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 type Variant = 'primary' | 'sticky'
 
@@ -267,7 +268,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         </Link>
         {variant === 'primary' && (
           <p className="text-xs text-gray-600">
-            Ya tienes un estudio activo ({expedienteActivo.numero}) sobre este inmueble.
+            Ya tienes un estudio activo ({formatNumeroEstudio(expedienteActivo.numero)}) sobre este inmueble.
           </p>
         )}
       </div>

@@ -92,7 +92,7 @@ export default function HomePage() {
                 <div className="flex justify-between items-center mb-5">
                   <div>
                     <div className="text-base font-bold text-white">Hola, María</div>
-                    <div className="text-xs text-white/35">EXP-2026-0014</div>
+                    <div className="text-xs text-white/35">Estudio N.° 2026-0014</div>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-primary-500/15 text-primary-400 text-[11px] font-semibold">
                     Activo

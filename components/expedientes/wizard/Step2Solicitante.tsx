@@ -36,7 +36,7 @@ import {
   NIVEL_EDUCATIVO_OPTIONS,
   DEPARTAMENTOS_COLOMBIA,
 } from './constants'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 
 interface Step2SolicitanteProps {
   data: WizardStep2Data
@@ -356,7 +356,7 @@ export function Step2Solicitante({
           </p>
           <p className={cn('mt-1 text-sm', reutilizable ? 'text-primary-800' : 'text-amber-800')}>
             {estudioVigente.expediente_numero
-              ? `Estudio ${estudioVigente.expediente_numero}. `
+              ? `Estudio ${formatNumeroEstudio(estudioVigente.expediente_numero)}. `
               : ''}
             Le quedan {estudioVigente.dias_restantes}{' '}
             {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia.{' '}

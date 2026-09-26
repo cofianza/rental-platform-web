@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui'
 import { IconLoader, IconFolderOpen, IconChevronRight } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente, EstadoExpediente } from '@/types/expediente'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 const ESTADOS_ACTIVOS: EstadoExpediente[] = [
   'borrador',
@@ -132,7 +133,7 @@ export function MisExpedientesActivosWidget() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-sm font-mono font-medium text-primary-700">
-                      {exp.numero_expediente ?? '—'}
+                      {formatNumeroEstudio(exp.numero_expediente) || '—'}
                     </span>
                     <Badge estado={exp.estado} />
                   </div>

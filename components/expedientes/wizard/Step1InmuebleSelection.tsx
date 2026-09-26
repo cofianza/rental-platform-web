@@ -27,7 +27,7 @@ import { TIPO_LABELS, esSeleccionable, motivoNoSeleccionable } from '@/component
 import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 
 interface Step1InmuebleSelectionProps {
   data: WizardStep1Data
@@ -518,7 +518,7 @@ export function Step1InmuebleSelection({
                     : 'Este inmueble ya tiene un estudio activo'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Estudio: <span className="font-medium">{activeExpedienteInfo.numero}</span> (estado: {activeExpedienteInfo.estado})
+                  Estudio <span className="font-medium">{formatNumeroEstudio(activeExpedienteInfo.numero)}</span> (estado: {activeExpedienteInfo.estado})
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Puedes iniciar otro; la propiedad se reserva únicamente cuando uno quede aprobado.

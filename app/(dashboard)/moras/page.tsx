@@ -38,6 +38,7 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { useAuthStore } from '@/stores/auth.store'
 import { ApiClientError } from '@/lib/api'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 interface ContratoSelectItem {
   id: string
@@ -212,7 +213,7 @@ export default function ReportarMoraPage() {
           const inquilino = sol ? `${sol.nombre ?? ''} ${sol.apellido ?? ''}`.trim() : ''
           return {
             id: c.id,
-            numero: c.expedientes?.inmuebles?.codigo || c.expedientes?.numero || c.id.slice(0, 8),
+            numero: c.expedientes?.inmuebles?.codigo || (c.expedientes?.numero ? `Estudio ${formatNumeroEstudio(c.expedientes.numero)}` : c.id.slice(0, 8)),
             inquilino: inquilino || '—',
             monto: c.valor_arriendo ?? 0,
           }

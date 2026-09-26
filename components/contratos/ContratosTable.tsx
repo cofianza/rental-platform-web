@@ -10,6 +10,7 @@ import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransi
 import { RegenerarContratoModal } from './RegenerarContratoModal'
 import { useAuth } from '@/hooks/useAuth'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
@@ -156,7 +157,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                           }}
                           className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline"
                         >
-                          {expediente.numero}
+                          {formatNumeroEstudio(expediente.numero)}
                         </button>
                       ) : (
                         <span className="text-sm text-gray-500">—</span>
@@ -260,7 +261,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                 </span>
               </div>
               {expediente && (
-                <p className="text-xs text-gray-500 mb-1">Expediente: {expediente.numero}</p>
+                <p className="text-xs text-gray-500 mb-1">Estudio {formatNumeroEstudio(expediente.numero)}</p>
               )}
               {inmueble && (
                 <p className="text-xs text-gray-500 mb-2">{inmueble.direccion}, {inmueble.ciudad}</p>

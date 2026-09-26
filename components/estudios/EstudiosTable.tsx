@@ -20,7 +20,7 @@ import {
   IconShield,
   IconExternalLink,
 } from '@/components/icons'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 import type { IEstudioListItem, IEstudioFilters, IEstudiosMeta } from '@/types/estudio'
 import { EstudioDetailModal } from '@/components/expedientes/EstudioDetailModal'
 import { estudioService } from '@/services/estudioService'
@@ -98,7 +98,7 @@ function getSolicitanteName(estudio: IEstudioListItem): string {
 }
 
 function getExpedienteNumero(estudio: IEstudioListItem): string {
-  return estudio.expedientes?.numero || '-'
+  return formatNumeroEstudio(estudio.expedientes?.numero) || '-'
 }
 
 // ============================================

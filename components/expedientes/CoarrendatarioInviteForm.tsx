@@ -1,6 +1,8 @@
 /**
  * CoarrendatarioInviteForm — formulario para invitar a un co-arrendatario
- * cuando el expediente está 'condicionado'. Compartido por:
+ * cuando el estudio está en revisión ('condicionado') o, desde la Decisión 2
+ * (2026-09-25), aprobado y todavía sin contrato: ahí baja la prima de
+ * vinculación del 20 % al 10 % del canon. Compartido por:
  *   - el SOLICITANTE (audience='solicitante'), desde CoarrendatarioCard y, sin
  *     cuenta, desde su enlace personal /cargar-documentos (P18).
  *   - el GESTOR (audience='gestor'): inmobiliaria / propietario / admin /
@@ -50,6 +52,8 @@ interface CoarrendatarioInviteFormProps {
    *  promesa se rompe y le toca teclear los mismos cuatro campos otra vez. */
   initial?: { nombre?: string; apellido?: string; email?: string; telefono?: string } | null
   onInvited?: () => void
+  /** Estudio ya aprobado (Decisión 2): el co-arrendatario es opcional y baja la prima. */
+  aprobado?: boolean
 }
 
 export function CoarrendatarioInviteForm({
@@ -57,6 +61,7 @@ export function CoarrendatarioInviteForm({
   audience,
   initial,
   onInvited,
+  aprobado = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
 
@@ -116,7 +121,16 @@ export function CoarrendatarioInviteForm({
             {esGestor ? 'Invita a un co-arrendatario' : 'Puedes sumar un co-arrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
-            {esGestor ? (
+            {aprobado ? (
+              <>
+                {esGestor
+                  ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
+                  : 'Tu estudio fue aprobado y puedes firmar solo. Si antes del contrato sumas como '}
+                <strong>co-arrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'vas a vivir'}, la prima de
+                vinculación baja del 20 % al 10 % del canon; su evaluación no tiene costo adicional.{' '}
+                <strong>No es fiador ni codeudor</strong> y no necesita finca raíz.
+              </>
+            ) : esGestor ? (
               <>
                 El estudio quedó condicionado. Puedes invitar a la persona con quien vivirá el
                 solicitante como <strong>co-arrendatario</strong>: se evalúa a ambos y los

@@ -59,6 +59,7 @@ import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
+import { coarrendatarioService } from '@/services/coarrendatarioService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { ResponsableMiembroCard } from '@/components/equipo/ResponsableMiembroCard'
@@ -69,6 +70,7 @@ import type {
   EstadoExpediente,
   IEvaluacionRevisionManual,
 } from '@/types/expediente'
+import { formatNumeroEstudio } from '@/lib/utils'
 
 export default function ExpedienteDetallePage() {
   const params = useParams()
@@ -195,6 +197,24 @@ export default function ExpedienteDetallePage() {
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
 
+  // Decisión 2: la invitación del co-arrendatario sigue en pie en revisión o
+  // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
+  // su evaluación fallida se reintenta. Sin leerla (cargando o error) manda
+  // «condicionado», la regla de antes. Solo quien puede reintentar la pide.
+  const ventanaCoaAplica =
+    puedeEditar && user?.rol !== 'solicitante' && (estadoExpediente === 'condicionado' || estadoExpediente === 'aprobado')
+  const [coaVigenteApi, setCoaVigenteApi] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (!ventanaCoaAplica) return
+    let cancel = false
+    coarrendatarioService.getVentana(id).then(
+      (v) => { if (!cancel) setCoaVigenteApi(v.vigente) },
+      () => { if (!cancel) setCoaVigenteApi(null) },
+    )
+    return () => { cancel = true }
+  }, [id, ventanaCoaAplica, estadoExpediente, actualizadoEn])
+  const coarrendatarioVigente = (ventanaCoaAplica ? coaVigenteApi : null) ?? estadoExpediente === 'condicionado'
+
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
   const [showAsignacionModal, setShowAsignacionModal] = useState(false)
@@ -253,7 +273,7 @@ export default function ExpedienteDetallePage() {
   // Pestaña con el número del estudio (varios estudios abiertos a la vez).
   const numeroExpediente = expediente?.numero_expediente
   useEffect(() => {
-    if (numeroExpediente) document.title = `Estudio ${numeroExpediente} — Cofianza`
+    if (numeroExpediente) document.title = `Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`
   }, [numeroExpediente])
 
   // Al firmar TODAS las partes, el expediente pasa a 'cerrado' en backend, pero
@@ -431,7 +451,7 @@ export default function ExpedienteDetallePage() {
             {/* Código y estado */}
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-gray-900">
-                {expediente.numero_expediente}
+                Estudio {formatNumeroEstudio(expediente.numero_expediente)}
               </h1>
               {isLoading && (
                 <span role="status" className="inline-flex items-center gap-1 text-xs text-gray-500">
@@ -741,6 +761,7 @@ export default function ExpedienteDetallePage() {
                         expedienteEstado={expediente.estado}
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
+                        canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                         estudioTitular={titularCondicionado}
                         persona={expediente.solicitante}
                         onAprobado={fetchExpediente}
@@ -780,7 +801,8 @@ export default function ExpedienteDetallePage() {
                     expediente.inmueble?.reservado_por_expediente_id !== id
                   }
                   reconsultaEnGuia={esCondicionado && puedeEditar}
-                  coarrendatarioEnRevision={esCondicionado}
+                  enRevision={esCondicionado}
+                  coarrendatarioVigente={coarrendatarioVigente}
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}
@@ -1042,7 +1064,8 @@ export default function ExpedienteDetallePage() {
               expedienteId={id}
               solicitante={expediente.solicitante}
               onEstudioActualizado={fetchExpediente}
-              coarrendatarioEnRevision={expediente.estado === 'condicionado'}
+              enRevision={expediente.estado === 'condicionado'}
+              coarrendatarioVigente={coarrendatarioVigente}
             />
 
             {/* Decisión sobre un estudio condicionado, también aquí y no solo en
@@ -1061,6 +1084,7 @@ export default function ExpedienteDetallePage() {
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
                     sinInfoBuro={condicionadoSinInfo}
+                    canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                     onAprobado={fetchExpediente}
                   />
                 )}

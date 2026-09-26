@@ -66,8 +66,14 @@ interface EstudioEstadoCardProps {
    * para no tener el mismo formulario dos veces en la pantalla.
    */
   reconsultaEnGuia?: boolean
-  /** P3: con el estudio ya resuelto no se reintenta la evaluación del co-arrendatario. */
-  coarrendatarioEnRevision?: boolean
+  /** Estudio en revisión manual (condicionado): solo ahí se consulta el otro buró (A1). */
+  enRevision?: boolean
+  /**
+   * P3 y Decisión 2: la evaluación fallida del co-arrendatario se reintenta
+   * mientras su invitación siga en pie (en revisión, o aprobado antes del
+   * contrato), según `vigente` de GET /expedientes/:id/coarrendatario/ventana.
+   */
+  coarrendatarioVigente?: boolean
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -298,7 +304,8 @@ export function EstudioEstadoCard({
   onReasignado,
   reasignable = true,
   reconsultaEnGuia,
-  coarrendatarioEnRevision = true,
+  enRevision = true,
+  coarrendatarioVigente = true,
 }: EstudioEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -373,9 +380,8 @@ export function EstudioEstadoCard({
           userRol={userRol}
           onRetried={fetchEstudios}
           // A1: el otro buró solo se consulta con el caso en revisión manual
-          // (la API lo niega fuera de 'condicionado'); `coarrendatarioEnRevision`
-          // es justamente «expediente condicionado».
-          ocultarReconsulta={reconsultaEnGuia || !coarrendatarioEnRevision}
+          // (la API lo niega fuera de 'condicionado').
+          ocultarReconsulta={reconsultaEnGuia || !enRevision}
           inmuebleActualId={inmuebleActualId}
           onReasignado={reasignable ? () => {
             fetchEstudios()
@@ -391,7 +397,8 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
-          sinReintento={!coarrendatarioEnRevision}
+          sinReintento={!coarrendatarioVigente}
+          ocultarReconsulta={!enRevision}
           // La reasignacion NO se ofrece desde el panel del co-arrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo

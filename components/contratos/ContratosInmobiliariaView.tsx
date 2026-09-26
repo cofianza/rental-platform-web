@@ -27,7 +27,7 @@ import {
   type EstadoContratoKey,
   rutaContrato,
 } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { ContratosFilters } from './ContratosFilters'
 import { IconLoader, IconAlertTriangle, IconFileText, IconChevronRight, IconArrowLeft, IconArrowRight } from '@/components/icons'
@@ -227,7 +227,7 @@ export function ContratosInmobiliariaView() {
   const sinContratoVisibles = searchAplicado
     ? sinContrato.filter((e) =>
         plegar(
-          [e.solicitante?.nombre, e.numero_expediente, e.inmueble?.codigo, e.inmueble?.direccion, e.inmueble?.ciudad]
+          [e.solicitante?.nombre, e.numero_expediente, formatNumeroEstudio(e.numero_expediente), e.inmueble?.codigo, e.inmueble?.direccion, e.inmueble?.ciudad]
             .filter(Boolean)
             .join(' '),
         ).includes(plegar(searchAplicado.trim())),

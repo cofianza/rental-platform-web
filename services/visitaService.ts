@@ -10,7 +10,8 @@ export interface IVisitaPublica {
   estado: string
   accionable: boolean
   fecha: string | null // ISO con offset -05:00
-  inmueble: { direccion: string; ciudad: string } | null
+  /** P9: dirección exacta solo con la visita confirmada (si no, null: tipo, barrio y ciudad). Cancelada: null. */
+  inmueble: { direccion: string | null; tipo: string | null; barrio: string | null; ciudad: string } | null
   nombre: string
   /** Solo en citas 'confirmada': true si el solicitante ya confirmó que asistirá. */
   confirmada_asistencia: boolean

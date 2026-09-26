@@ -258,8 +258,12 @@ export interface IEstudioHistorialItem extends IEstudio {
 export interface IEstudioHistorial {
   total_en_cadena: number
   puede_reevaluar: boolean
-  /** Pasaron más de 15 días hábiles desde que se completó la última evaluación (Política §8). */
+  /** Venció el plazo para apelar sin radicarla (Política §11: 15 días hábiles desde la notificación del no aprobado). */
   plazo_vencido?: boolean
+  /** 'AAAA-MM-DD': último día para radicar la apelación. */
+  apelar_hasta?: string | null
+  /** 'AAAA-MM-DD': ya radicada (primer soporte), último día para que Cofianza responda (10 días hábiles). */
+  responder_hasta?: string | null
   historial: IEstudioHistorialItem[]
 }
 
