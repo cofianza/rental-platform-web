@@ -310,11 +310,14 @@ export const estudioService = {
   async buscarVigentePorDocumento(
     tipoDocumento: string,
     numeroDocumento: string,
+    /** Propiedad del paso 1: decide si el estudio se puede reutilizar para ella. */
+    inmuebleId?: string,
   ): Promise<IEstudioVigente | null> {
     const params = new URLSearchParams({
       tipo_documento: tipoDocumento,
       numero_documento: numeroDocumento,
     })
+    if (inmuebleId) params.set('inmueble_id', inmuebleId)
     const res = await apiClient.get<{ estudio: IEstudioVigente | null }>(
       `/estudios/vigente?${params.toString()}`,
     )
@@ -331,6 +334,10 @@ export interface IEstudioVigente {
   fecha_completado: string | null
   vigente_hasta: string
   dias_restantes: number
+  /** Se puede reasignar a la propiedad elegida sin volver a cobrar (§4.3). */
+  reutilizable?: boolean
+  /** Por qué no sirve para esta propiedad, si no sirve. */
+  motivo_no_reutilizable?: string | null
 }
 
 // ============================================

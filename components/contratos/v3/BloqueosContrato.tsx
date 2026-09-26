@@ -9,9 +9,14 @@
 
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { IconAlertTriangle, IconArrowRight, IconInfo } from '@/components/icons'
+import { toast } from 'sonner'
+import { IconAlertTriangle, IconArrowRight, IconInfo, IconLoader } from '@/components/icons'
+import { Button } from '@/components/ui/Button'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
+import { estudioService } from '@/services/estudioService'
+import { useAuthStore } from '@/stores/auth.store'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 
 interface Props {
@@ -33,6 +38,8 @@ interface Props {
   conBorrador?: boolean
   /** Si llega, los ítems con paso muestran "Ir al paso N". */
   onIrPaso?: (paso: NumeroPaso) => void
+  /** Tras emitir o regenerar el CRC aquí mismo: recarga el estado del asistente. */
+  onCambio?: () => void
 }
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
@@ -43,8 +50,11 @@ const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primar
  */
 const CANON_PIDE_EVALUACION = ['CANON_FUERA_DE_TOLERANCIA', 'CANON_INGRESO_EXCEDE']
 
-/** Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo). */
-export const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO']
+/**
+ * Sin estos, la única salida es una evaluación nueva (los del canon también se resuelven bajándolo).
+ * CRC_SIN_MARGEN / CRC_VENCIDO: al certificado no le alcanza la vigencia para el proceso de firma.
+ */
+export const SOLO_NUEVA_EVALUACION = ['ESTUDIO_VENCIDO', 'CANON_SIN_EVALUADO', 'CRC_SIN_MARGEN', 'CRC_VENCIDO']
 
 /** Del certificado de la evaluación actual: la nueva emite el suyo sola, así que no son un punto aparte. */
 export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
@@ -72,13 +82,25 @@ function puntosDe(bloqueos: Bloqueo[]): Punto[] {
   const out: Punto[] = []
   bloqueos.forEach((b, i) => {
     if (!juntos.includes(b)) {
-      out.push({ key: `${b.codigo}-${i}`, texto: b.mensaje, razones: b.detalle, bloqueo: b, paso: b.paso })
+      out.push({
+        key: `${b.codigo}-${i}`,
+        texto: b.mensaje,
+        razones: b.detalle,
+        // Bajar el canon se hace en el paso 1; conservarlo pide evaluar de nuevo sobre el canon nuevo del inmueble.
+        nota: CANON_PIDE_EVALUACION.includes(b.codigo)
+          ? 'Si necesitas este canon, primero actualiza el canon del inmueble y luego crea el estudio nuevo.'
+          : undefined,
+        bloqueo: b,
+        paso: b.paso,
+      })
     } else if (b === juntos[0]) {
       out.push({
         key: 'nueva-evaluacion',
         texto: 'La evaluación crediticia actual ya no sirve para el contrato:',
         // El «Se requiere nueva evaluación.» de cada motivo sobra bajo este encabezado.
-        razones: evaluacion.map((e) => e.mensaje.replace(/\s*Se requiere nueva evaluación\.$/, '')),
+        razones: evaluacion.map((e) =>
+          e.mensaje.replace(/\s*(Se requiere (una )?nueva evaluación|Hay que renovar la evaluación)\.$/, ''),
+        ),
         nota:
           'La evaluación nueva se hace en un estudio nuevo, con su cobro' +
           (juntos.length > evaluacion.length ? '; al aprobarse emite sola su certificado de riesgo (CRC).' : '.'),
@@ -100,7 +122,9 @@ export function BloqueosContrato({
   puedeEditar,
   conBorrador,
   onIrPaso,
+  onCambio,
 }: Props) {
+  const rol = useAuthStore((s) => s.user?.rol)
   const puntos: Punto[] = [
     ...puntosDe(bloqueos),
     ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
@@ -124,21 +148,43 @@ export function BloqueosContrato({
         )
       }
       case 'estudio':
-        if (CANON_PIDE_EVALUACION.includes(b.codigo)) return null
+        if (CANON_PIDE_EVALUACION.includes(b.codigo)) {
+          return (
+            <>
+              {puedeEditar && inmuebleId && inmuebleAccesible && (
+                <Link href={`/inmuebles/${inmuebleId}/editar?returnTo=${volverAqui}`} className={enlace}>
+                  Editar el canon del inmueble <IconArrowRight size={12} />
+                </Link>
+              )}
+              {puedeEditar && <EvaluarEnEstudioNuevo expedienteId={expedienteId} conBorrador={conBorrador} />}
+            </>
+          )
+        }
+        // La evaluación sigue vigente y el API deja emitir el CRC desde aquí (la ficha del estudio no lo ofrece).
+        if (DEL_CRC.includes(b.codigo) && b.estudioId && puedeEditar && onCambio) {
+          return <EmitirCertificado estudioId={b.estudioId} regenerar={b.codigo === 'CRC_DESACTUALIZADO'} onCambio={onCambio} />
+        }
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>
             Ir al estudio <IconArrowRight size={12} />
           </Link>
         )
       case 'inmueble':
-        if (!inmuebleId || inmuebleAccesible === null) return null
-        if (!inmuebleAccesible) {
-          return <p className="text-xs text-gray-600">Pídele al titular o al responsable del inmueble que lo haga.</p>
+        // Hoy solo INMUEBLE_INACTIVO: reactivarlo es del administrador de Cofianza, en el detalle del
+        // inmueble (el formulario de edición no tiene el estado).
+        if (rol === 'administrador' && inmuebleId) {
+          return (
+            <Link href={`/inmuebles/${inmuebleId}`} className={enlace}>
+              Ir al inmueble para reactivarlo <IconArrowRight size={12} />
+            </Link>
+          )
         }
         return (
-          <Link href={`/inmuebles/${inmuebleId}/editar?returnTo=${volverAqui}`} className={enlace}>
-            Editar el inmueble <IconArrowRight size={12} />
-          </Link>
+          <p className="text-xs text-gray-600">
+            {rol === 'operador_analista'
+              ? 'Pídele a un administrador que reactive el inmueble.'
+              : 'Pídele a Cofianza que reactive el inmueble.'}
+          </p>
         )
       default:
         return null
@@ -206,6 +252,29 @@ export function BloqueosContrato({
         })}
       </ol>
     </div>
+  )
+}
+
+/** Emite (o regenera) el CRC de la evaluación vigente sin salir del contrato. */
+function EmitirCertificado({ estudioId, regenerar, onCambio }: { estudioId: string; regenerar: boolean; onCambio: () => void }) {
+  const [emitiendo, setEmitiendo] = useState(false)
+  const emitir = async () => {
+    setEmitiendo(true)
+    try {
+      await estudioService.generarCertificado(estudioId)
+      toast.success(regenerar ? 'Certificado regenerado' : 'Certificado emitido')
+      onCambio()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo emitir el certificado.')
+    } finally {
+      setEmitiendo(false)
+    }
+  }
+  return (
+    <Button tamano="sm" onClick={emitir} disabled={emitiendo}>
+      {emitiendo && <IconLoader size={14} className="animate-spin" />}
+      {regenerar ? 'Regenerar certificado' : 'Emitir certificado'}
+    </Button>
   )
 }
 

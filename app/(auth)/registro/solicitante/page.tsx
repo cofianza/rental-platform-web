@@ -195,7 +195,7 @@ function RegistroSolicitanteContent() {
       <main className="flex-1 max-w-lg mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Crear cuenta</h1>
         <p className="text-sm text-gray-500 mb-6">
-          {property ? 'Regístrate para continuar con tu solicitud' : 'Regístrate como solicitante'}
+          {property ? 'Regístrate para continuar con tu estudio' : 'Regístrate como solicitante'}
         </p>
 
         {/* Property context card */}

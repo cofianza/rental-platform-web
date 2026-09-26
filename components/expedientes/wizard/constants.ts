@@ -117,6 +117,11 @@ export const WIZARD_MESSAGES = {
   STEP4_SUBTITLE: 'Revisa los datos antes de enviarle la solicitud de autorización al prospecto',
   CONFIRM_CREATE: 'Enviar solicitud de autorización',
   CREATING: 'Enviando solicitud...',
+  // Opción B (Adenda 2 §7): primero paga la inmobiliaria en Mercado Pago; la
+  // solicitud le sale al prospecto solo cuando se confirma ese pago.
+  STEP4_SUBTITLE_PAGO: 'Revisa los datos. Al confirmar te llevamos a Mercado Pago; la solicitud de autorización le llega al prospecto cuando se confirme tu pago',
+  CONFIRM_CREATE_PAGO: 'Crear estudio e ir a pagar',
+  CREATING_PAGO: 'Creando estudio...',
   SUCCESS: 'Solicitud enviada al prospecto',
   ERROR: 'Error al enviar la solicitud de autorización',
 

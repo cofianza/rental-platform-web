@@ -552,6 +552,16 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             >
               Pagar yo con Mercado Pago
             </button>
+            {/* El API cierra el cobro fallido (su link seguía pagable) y descuenta el crédito. */}
+            {cancelarConCredito && hayCreditosUsables && (
+              <button
+                onClick={handleCancelarYLiberar}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Liberar con crédito
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -982,7 +992,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if ((estado as IEstadoConPagador).paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona tu solicitud está pagando la evaluación</p>
+        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona tu estudio está pagando la evaluación</p>
         <p className="text-sm text-blue-800">No tienes que pagar nada. Te avisaremos cuando la evaluación avance.</p>
       </div>
     )

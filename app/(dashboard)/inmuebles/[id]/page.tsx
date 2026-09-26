@@ -525,7 +525,7 @@ export default function InmuebleDetailPage() {
                 ? 'Reservado'
                 : ESTADO_LABELS[inmueble.estado]}
             </span>
-            <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+            <EstudiosActivosBadge count={inmueble.expedientes_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
           </div>
           <p className="text-gray-500 flex items-center gap-1">
             <IconMapPin size={14} />

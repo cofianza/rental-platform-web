@@ -318,7 +318,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
           >
             Prefiero no tomarme la foto
           </button>
-          . No estás obligado: tu solicitud sigue y la revisa una persona de nuestro equipo.
+          . No estás obligado: tu estudio sigue y lo revisa una persona de nuestro equipo.
         </p>
       )}
 

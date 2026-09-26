@@ -300,7 +300,7 @@ export default function HomePage() {
                   </svg>
                 ),
                 title: 'Encuentras el inmueble',
-                body: 'En nuestra vitrina o con una inmobiliaria aliada. Le das "me interesa", agendas la visita y si te gusta, inicias tu solicitud.',
+                body: 'En nuestra vitrina o con una inmobiliaria aliada. Le das "me interesa", agendas la visita y si te gusta, inicias tu estudio.',
               },
               {
                 n: '02',
@@ -350,7 +350,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
-            { val: '< 1 min', lbl: 'De solicitud a respuesta' },
+            { val: '< 1 min', lbl: 'Respuesta de tu estudio' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (

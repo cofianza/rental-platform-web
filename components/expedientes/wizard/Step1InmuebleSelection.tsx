@@ -197,6 +197,9 @@ export function Step1InmuebleSelection({
     }
   }, [])
 
+  // §4.2: estudios en curso = expedientes, no evaluaciones (el co-arrendatario no suma).
+  const enCurso = data.inmueble?.expedientes_activos ?? data.inmueble?.estudios_activos ?? 0
+
   const excedeElTope = (inmueble: IInmueble) =>
     topeCanon !== null && Number(inmueble.valor_arriendo ?? 0) > topeCanon
 
@@ -304,7 +307,7 @@ export function Step1InmuebleSelection({
                               {badge.label}
                             </span>
                             {/* §4.2: el indicador informa, no impide seleccionar. */}
-                            <EstudiosActivosBadge count={i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
+                            <EstudiosActivosBadge count={i.expedientes_activos ?? i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
                           </div>
                           <p className="text-xs text-gray-500 truncate">{i.ciudad}</p>
                           {seleccionable ? (
@@ -450,7 +453,7 @@ export function Step1InmuebleSelection({
                             <p className="text-sm font-semibold text-primary-600">
                               {formatCurrency(inmueble.valor_arriendo)}/mes
                             </p>
-                            <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+                            <EstudiosActivosBadge count={inmueble.expedientes_activos ?? inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
                           </div>
                           {!seleccionable && (
                             <p className="mt-1 text-xs text-gray-500">{motivoNoSeleccionable(inmueble)}</p>
@@ -508,8 +511,10 @@ export function Step1InmuebleSelection({
               <IconAlertTriangle size={20} className="text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-blue-800">
-                  {(data.inmueble?.estudios_activos ?? 0) > 0
-                    ? `Este inmueble ya tiene ${data.inmueble?.estudios_activos} ${(data.inmueble?.estudios_activos ?? 0) === 1 ? 'estudio' : 'estudios'} en curso.`
+                  {/* §4.2: se cuentan ESTUDIOS (expedientes), no evaluaciones: la del
+                      co-arrendatario es parte del mismo estudio y no suma otro. */}
+                  {enCurso > 0
+                    ? `Este inmueble ya tiene ${enCurso} ${enCurso === 1 ? 'estudio' : 'estudios'} en curso.`
                     : 'Este inmueble ya tiene un estudio activo'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
@@ -562,7 +567,7 @@ export function Step1InmuebleSelection({
                   <span className={cn('shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide', estadoBadge(data.inmueble).cls)}>
                     {estadoBadge(data.inmueble).label}
                   </span>
-                  <EstudiosActivosBadge count={data.inmueble.estudios_activos} reservado={data.inmueble.reservado} arrendado={data.inmueble.arrendado} />
+                  <EstudiosActivosBadge count={data.inmueble.expedientes_activos ?? data.inmueble.estudios_activos} reservado={data.inmueble.reservado} arrendado={data.inmueble.arrendado} />
                 </span>
                 <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full shrink-0">
                   {TIPO_LABELS[data.inmueble.tipo as keyof typeof TIPO_LABELS] || data.inmueble.tipo}

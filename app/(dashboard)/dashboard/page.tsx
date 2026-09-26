@@ -598,7 +598,7 @@ function SolicitanteDashboard() {
     <div className="space-y-6">
       <PageHeader
         title="Mi Panel de Arrendatario"
-        subtitle="Consulta el estado de tus solicitudes de arrendamiento"
+        subtitle="Consulta el estado de tus estudios de arrendamiento"
       />
 
       {/* Banners apilados: uno por expediente + estado de cita.
@@ -760,14 +760,14 @@ function SolicitanteDashboard() {
                     Esperando que el propietario habilite tu estudio
                   </h3>
                   <p className="text-sm text-amber-800">
-                    Tu visita ya se realizó. En cuanto el propietario habilite el siguiente paso, te llegará el enlace para autorizar la consulta y continuar con tu solicitud.
+                    Tu visita ya se realizó. En cuanto el propietario habilite el siguiente paso, te llegará el enlace para autorizar la consulta y continuar con tu estudio.
                   </p>
                 </div>
                 <Link
                   href={`/expedientes/${exp.id}`}
                   className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-50 shadow-sm transition-colors shrink-0"
                 >
-                  Ver mi solicitud
+                  Ver mi estudio
                 </Link>
               </div>
             </div>
@@ -830,7 +830,7 @@ function SolicitanteDashboard() {
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin estudios activos</h3>
-          <p className="text-sm text-gray-500 mb-4">Aún no tienes solicitudes de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
+          <p className="text-sm text-gray-500 mb-4">Aún no tienes estudios de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors">
             Explorar inmuebles
           </Link>

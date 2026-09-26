@@ -14,8 +14,9 @@
  * inmobiliaria) el card no abre el modal: lleva al asistente
  * /expedientes/:id/contrato, y si ya hay un borrador V3 ofrece "Continuar"
  * en vez de ocultarse. Sin el flag, todo queda como antes. Si la evaluación
- * ya no sirve (vencida o sin canon evaluado), en vez de "Crear contrato" (que
- * el asistente bloquearía) ofrece evaluar de nuevo en un estudio nuevo.
+ * ya no sirve (vencida, sin canon evaluado o sin margen de CRC para firmar), en
+ * vez de "Crear contrato" (que el asistente bloquearía) ofrece evaluar de nuevo
+ * en un estudio nuevo; en el flujo anterior, cuando el API lo dice al generar.
  */
 
 'use client'
@@ -29,10 +30,11 @@ import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPerso
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Bloqueo } from '@/types/contratoV3'
-import { buttonClasses } from '@/components/ui/Button'
-import { IconAlertTriangle, IconArrowRight, IconFileText, IconLoader } from '@/components/icons'
+import { Button, buttonClasses } from '@/components/ui/Button'
+import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconFileText, IconLoader } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
 import { GenerarContratoModal } from './GenerarContratoModal'
+import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AccionContratoPendienteCardProps {
@@ -67,6 +69,11 @@ export function AccionContratoPendienteCard({
   // Bloqueos del asistente que solo se resuelven evaluando de nuevo: el mismo
   // veredicto del API (no se recalcula aquí la vigencia, que es calibrable).
   const [evaluacionVencida, setEvaluacionVencida] = useState<Bloqueo[]>([])
+  // El contrato del estudio que reservó el inmueble ya se firmó (INMUEBLE_ARRENDADO): no se libera al cancelar.
+  const [arrendado, setArrendado] = useState<{ estudioId?: string; canonEvaluado: number | null; inmuebleId?: string } | null>(null)
+  const [reasignar, setReasignar] = useState(false)
+  // Flujo anterior: el API rechazó generar porque la evaluación ya no sirve.
+  const [vencidaAlGenerar, setVencidaAlGenerar] = useState<Bloqueo | null>(null)
   const user = useAuthStore((s) => s.user)
   const puedeEditar = usePuedeEditar() && !miembroDebeCompletarPerfil(user)
 
@@ -90,6 +97,16 @@ export function AccionContratoPendienteCard({
       setEvaluacionVencida(
         (estadoV3?.bloqueos ?? []).filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo)),
       )
+      const b = estadoV3?.bloqueos.find((x) => x.codigo === 'INMUEBLE_ARRENDADO')
+      setArrendado(
+        b
+          ? {
+              estudioId: b.estudioId,
+              canonEvaluado: estadoV3?.resumen?.canon.evaluadoCop ?? null,
+              inmuebleId: estadoV3?.resumen?.inmueble.id,
+            }
+          : null,
+      )
     } catch {
       setActivo(null)
     } finally {
@@ -107,6 +124,40 @@ export function AccionContratoPendienteCard({
   // El borrador V3 no oculta el card: es la puerta para retomarlo.
   const borradorV3 = contratosV3 && activo?.destinacion && activo.estado === 'borrador' ? activo : null
   if (activo && !(puedeCrearV3 && borradorV3)) return null
+
+  if (puedeCrearV3 && inmuebleReservadoPorOtro && !borradorV3 && arrendado) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+        <div className="flex items-start gap-3">
+          <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+          <div className="space-y-3">
+            <div>
+              <p className="mb-0.5 text-sm font-semibold text-amber-900">El inmueble ya está arrendado</p>
+              <p className="text-sm text-amber-800">
+                El contrato de otro estudio sobre este inmueble ya está firmado, así que aquí no se puede crear otro. Para
+                usar esta evaluación, reasígnala a otro inmueble.
+              </p>
+            </div>
+            {puedeEditar && arrendado.estudioId && (
+              <>
+                <Button tamano="sm" variante="secondary" onClick={() => setReasignar(true)}>
+                  <IconBuilding2 size={14} /> Reasignar a otra propiedad
+                </Button>
+                <ReasignarEstudioModal
+                  isOpen={reasignar}
+                  onClose={() => setReasignar(false)}
+                  estudioId={arrendado.estudioId}
+                  inmuebleActualId={arrendado.inmuebleId}
+                  canonEvaluado={arrendado.canonEvaluado}
+                  onReasignado={onGenerated}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (puedeCrearV3 && inmuebleReservadoPorOtro && !borradorV3) {
     return (
@@ -164,6 +215,17 @@ export function AccionContratoPendienteCard({
       userRol === 'propietario'
     )
 
+  if (puedeGenerar && vencidaAlGenerar) {
+    return (
+      <BloqueosContrato
+        bloqueos={[vencidaAlGenerar]}
+        para="generar el contrato"
+        expedienteId={expedienteId}
+        puedeEditar={puedeEditar}
+      />
+    )
+  }
+
   if (puedeGenerar) {
     return (
       <>
@@ -188,6 +250,10 @@ export function AccionContratoPendienteCard({
             setModalOpen(false)
             fetchContratos()
             onGenerated?.()
+          }}
+          onEvaluacionVencida={(b) => {
+            setModalOpen(false)
+            setVencidaAlGenerar(b)
           }}
         />
       </>

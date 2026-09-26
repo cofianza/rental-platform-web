@@ -92,6 +92,8 @@ export interface IFacturaFilters {
   page?: number
   limit?: number
   estado?: EstadoFactura
+  /** Emitidas cuyo pago se reembolsó o cuya compra de créditos se revirtió. */
+  nota_credito_pendiente?: boolean
   fecha_desde?: string
   fecha_hasta?: string
   busqueda?: string

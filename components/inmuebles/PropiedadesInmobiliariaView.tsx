@@ -358,7 +358,7 @@ export function PropiedadesInmobiliariaView() {
                         </button>
                         <span className="truncate text-xs font-medium text-gray-500">{TIPO_LABELS[i.tipo]}</span>
                         {/* Indicador §4.2: varios candidatos en paralelo sobre la misma propiedad. */}
-                        <EstudiosActivosBadge count={i.estudios_activos} reservado={i.reservado} arrendado={i.arrendado} />
+                        <EstudiosActivosBadge count={i.expedientes_activos} reservado={i.reservado} arrendado={i.arrendado} />
                       </div>
 
                       <h4 className="truncate text-base font-bold text-gray-900">{i.direccion}</h4>

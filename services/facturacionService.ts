@@ -158,6 +158,7 @@ class FacturacionService {
   async listFacturas(filters?: IFacturaFilters): Promise<IFacturaListResponse> {
     const params = new URLSearchParams()
     if (filters?.estado) params.set('estado', filters.estado)
+    if (filters?.nota_credito_pendiente) params.set('nota_credito_pendiente', 'true')
     if (filters?.page) params.set('page', String(filters.page))
     if (filters?.limit) params.set('limit', String(filters.limit))
 

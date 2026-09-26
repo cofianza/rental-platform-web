@@ -535,7 +535,7 @@ export function EstudioSolicitanteCard({
   // Resultado completado.
   if (estudio.estado === 'completado') {
     // Cerrado sin aprobarse (cancelado en revisión): la página ya muestra
-    // «Estudio cancelado», y «Estamos revisando tu solicitud» debajo lo contradecía.
+    // «Estudio cancelado», y «Estamos revisando tu estudio» debajo lo contradecía.
     if (estudio.decision_cofianza === 'sin_aprobar') return null
 
     // Flujo §10: cuando la API manda la ruta, ELLA manda. El titulo y el
@@ -685,7 +685,7 @@ export function EstudioSolicitanteCard({
               ) : (
                 <>
                   <p className="text-sm text-slate-700">
-                    Con la información disponible hoy no podemos respaldar esta solicitud. No es una decisión definitiva sobre ti.
+                    Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre ti.
                   </p>
                   <SinMotivo className="mt-1 text-sm text-slate-700" />
                 </>

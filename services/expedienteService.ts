@@ -539,7 +539,13 @@ class ExpedienteService {
    */
   async aprobarCondicionado(
     expedienteId: string,
-    revision: { fundamento: string; documentos_consultados: string[]; evaluacion: IEvaluacionRevisionManual },
+    revision: {
+      fundamento: string
+      documentos_consultados: string[]
+      evaluacion: IEvaluacionRevisionManual
+      /** Política §15: sin historial en ninguna central, el analista verificó una fuente de capacidad. */
+      fuente_capacidad_verificada?: boolean
+    },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estado: 'aprobado' }

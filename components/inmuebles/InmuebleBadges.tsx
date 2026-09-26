@@ -29,7 +29,7 @@ export function EstadoBadge({ estado }: EstadoBadgeProps) {
 }
 
 interface EstudiosActivosBadgeProps {
-  /** Estudios en curso sobre el inmueble (IInmueble.estudios_activos). */
+  /** Estudios (expedientes) en curso sobre el inmueble (IInmueble.expedientes_activos). */
   count?: number | null
   /** Reservado: un candidato aprobado ya tiene el contrato en proceso. */
   reservado?: boolean | null

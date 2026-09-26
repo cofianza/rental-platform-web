@@ -22,7 +22,7 @@ const CONCEPTOS = [
   { value: 'estudio', label: 'Evaluación crediticia' },
   { value: 'garantia', label: 'Prima de vinculación de la fianza' },
   { value: 'primer_canon', label: 'Primer canon de arrendamiento' },
-  { value: 'deposito', label: 'Depósito de garantía' },
+  // Sin 'deposito': en vivienda no se cobra (Ley 820 de 2003, art. 16) y la API lo rechaza.
   { value: 'otro', label: 'Otro' },
 ]
 

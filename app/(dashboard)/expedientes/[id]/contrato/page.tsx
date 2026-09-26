@@ -233,6 +233,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
         inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
         puedeEditar={editable}
+        onCambio={v3.recargar}
       />
       <AvisosContrato avisos={avisos} />
       {resumen && (
@@ -597,6 +598,7 @@ function Asistente({
         puedeEditar={editable}
         conBorrador
         onIrPaso={irA}
+        onCambio={v3.recargar}
       />
       <AvisosContrato avisos={avisos} />
       {/* Textos sin aprobar previstos con lo guardado; con el documento ya generado los muestra la vista previa. */}
@@ -609,6 +611,7 @@ function Asistente({
         onStepClick={(n) => irA(n as NumeroPaso)}
       />
 
+      {/* Los del canon (paso 1) también ofrecen evaluar de nuevo con otro canon del inmueble. */}
       <BloqueosContrato
         bloqueos={bloqueosDelPaso}
         faltantes={faltantesDelPaso}
@@ -616,6 +619,9 @@ function Asistente({
         inmuebleId={resumen?.inmueble.id}
         inmuebleAccesible={inmuebleAccesible}
         esTitular={esTitular}
+        puedeEditar={editable}
+        conBorrador
+        onCambio={v3.recargar}
       />
 
       <fieldset

@@ -1,7 +1,9 @@
 /**
  * Página pública de autorización de tratamiento de datos (habeas data).
  * Sin login: token-gated. Tarjeta centrada + header de marca + 4 pasos —
- *   Paso 1: §8.1 confirmación de identidad → finalidades + autorización legal
+ *   Paso 1: §8.1 confirmación de identidad (el prospecto ESCRIBE su número de
+ *           documento y la API lo compara con la ficha sin revelarlo; si no
+ *           coincide, el enlace se detiene) → finalidades + autorización legal
  *           + aceptación (obligatorio). El resto del paso NO se muestra hasta
  *           que el prospecto confirma quién es: confirmar antes de leer qué
  *           autoriza es el orden lógico del §8.1, y de paso deja de aterrizar
@@ -59,7 +61,9 @@ import {
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
 
-type PageState = 'loading' | 'form' | 'signed' | 'error' | 'reportado'
+// 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
+// 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
+type PageState = 'loading' | 'form' | 'signed' | 'error' | 'reportado' | 'inactivo' | 'no_coincide'
 type Paso = 1 | 2 | 3 | 'bio' | 4
 type ConsentKey = 'analitica' | 'comercial' | 'historial_referencia'
 type SituacionLaboral = 'empleado' | 'independiente' | 'pensionado' | 'otro'
@@ -181,9 +185,13 @@ export default function AutorizarPage() {
   // cotejo es condicional y, apagado el interruptor, el flujo es idéntico al
   // de siempre.
   const [paso, setPaso] = useState<Paso>(1)
-  // §8.1: gatea el resto del paso 1. Es un acto de UI (no premarcado) y viaja
-  // al backend como `identidad_confirmada: true`.
+  // §8.1: gatea el resto del paso 1. Solo se enciende cuando la API confirmó
+  // que el documento escrito es el de la ficha; el mismo número viaja con la
+  // firma, que lo vuelve a comparar.
   const [identidadOk, setIdentidadOk] = useState(false)
+  const [documento, setDocumento] = useState('')
+  const [verificandoDoc, setVerificandoDoc] = useState(false)
+  const [documentoError, setDocumentoError] = useState('')
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const [reporteMotivo, setReporteMotivo] = useState<'no_soy_yo' | 'datos_incorrectos'>('no_soy_yo')
   const [reporteDetalle, setReporteDetalle] = useState('')
@@ -252,6 +260,10 @@ export default function AutorizarPage() {
         if (code === 'AUTORIZACION_YA_FIRMADA') {
           setPageState('signed')
           void sincronizarPago(token)
+          return
+        }
+        if (code === 'ESTUDIO_NO_ACTIVO') {
+          setPageState('inactivo')
           return
         }
         const transitorio = esErrorTransitorio(err)
@@ -350,7 +362,6 @@ export default function AutorizarPage() {
     irAPaso(3)
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
     const perfil: IPerfilProspectoInput = {
-      identidad_confirmada: true,
       ...(situacion ? { situacion_laboral: situacion } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
@@ -366,10 +377,8 @@ export default function AutorizarPage() {
           }
         : {}),
     }
-    // UN reintento: de todo este POST lo único que pesa es la confirmación de
-    // identidad del §8.1 (la defensa del §12 contra el enlace reenviado), y un
-    // corte de datos móviles no debería perderla en silencio. Sigue sin
-    // bloquear: la firma vuelve a llevar `identidad_confirmada` por si acaso.
+    // UN reintento: un corte de datos móviles no debería perder en silencio lo
+    // que el prospecto acaba de contar. Sigue sin bloquear la firma.
     try {
       await autorizacionPublicService.guardarPerfil(token, perfil)
     } catch {
@@ -378,6 +387,39 @@ export default function AutorizarPage() {
       } catch {
         // Silencioso y deliberado: ver el comentario de arriba.
       }
+    }
+  }
+
+  // §8.1: "Se muestran el nombre y el documento registrados para que el
+  // prospecto los confirme o corrija." El número NO se muestra (ni los últimos
+  // dígitos: serían media respuesta para quien reciba el enlace reenviado); se
+  // escribe y la API lo compara. Un error de digitación en la ficha ya no
+  // termina consultando a un tercero: si no coincide, el enlace se detiene y
+  // el gestor corrige y reenvía (mismo camino que "los datos están mal").
+  async function handleConfirmarIdentidad(e: React.FormEvent) {
+    e.preventDefault()
+    if (verificandoDoc || !documento.trim()) return
+    setVerificandoDoc(true)
+    setDocumentoError('')
+    try {
+      const { coincide } = await autorizacionPublicService.confirmarIdentidad(token, documento.trim())
+      if (coincide) setIdentidadOk(true)
+      else setPageState('no_coincide')
+    } catch (err) {
+      const code = (err as { code?: string })?.code
+      if (code === 'ESTUDIO_NO_ACTIVO') {
+        setPageState('inactivo')
+        return
+      }
+      if (code === 'AUTORIZACION_EXPIRADA' || code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_NOT_FOUND') {
+        setErrorMessage('Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.')
+        setData(null)
+        setPageState('error')
+        return
+      }
+      setDocumentoError(mensajeParaProspecto(err, 'No pudimos revisar tu documento. Inténtalo otra vez.'))
+    } finally {
+      setVerificandoDoc(false)
     }
   }
 
@@ -411,6 +453,11 @@ export default function AutorizarPage() {
       // ya está muerto de todos modos; con cualquier otro el modal se queda
       // abierto y se puede reintentar.
       const code = (err as { code?: string })?.code
+      if (code === 'ESTUDIO_NO_ACTIVO') {
+        setReporteAbierto(false)
+        setPageState('inactivo')
+        return
+      }
       if (
         code === 'AUTORIZACION_EXPIRADA' ||
         code === 'AUTORIZACION_NO_VIGENTE' ||
@@ -435,9 +482,9 @@ export default function AutorizarPage() {
     try {
       const result = await autorizacionPublicService.firmar(token, {
         metodo_firma: 'casilla',
-        // §8.1: el paso 1 no se supera sin marcar "soy yo"; se reafirma aquí
-        // porque el POST /perfil que lo llevaba es best-effort.
-        identidad_confirmada: true,
+        // §8.1: el mismo documento que la API ya aceptó en el paso 1; la firma
+        // lo vuelve a comparar (un POST directo no se salta la confirmación).
+        numero_documento: documento.trim(),
         consentimientos_opcionales: consents,
       })
       setHashDocumento(result.hash_documento)
@@ -454,6 +501,14 @@ export default function AutorizarPage() {
       if (code === 'AUTORIZACION_YA_FIRMADA') {
         setPageState('signed')
         void sincronizarPago(token)
+        return
+      }
+      if (code === 'ESTUDIO_NO_ACTIVO') {
+        setPageState('inactivo')
+        return
+      }
+      if (code === 'DOCUMENTO_NO_COINCIDE') {
+        setPageState('no_coincide')
         return
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
@@ -562,6 +617,48 @@ export default function AutorizarPage() {
     )
   }
 
+  // Estudio cancelado o cerrado mientras el enlace seguía en el chat: nada que
+  // firmar. Neutro a propósito (§13: ni "rechazado" ni culpa).
+  if (pageState === 'inactivo') {
+    return (
+      <Card>
+        <div className="px-6 py-10 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+            <IconShield size={28} className="text-gray-500" />
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900">Este estudio ya no está activo</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+            No hay nada que autorizar con este enlace y no vamos a consultar tus datos con él. Si tienes dudas,
+            escríbele a quien te lo envió.
+          </p>
+          <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
+        </div>
+      </Card>
+    )
+  }
+
+  // §8.1: el documento escrito no es el registrado. Puede ser un error en la
+  // ficha o en lo que se escribió; en los dos casos se detiene, sin revelar
+  // cuál es el número registrado.
+  if (pageState === 'no_coincide') {
+    return (
+      <Card>
+        <div className="px-6 py-10 text-center" role="status">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <IconUserX size={28} className="text-amber-600" />
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900">El documento no coincide</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+            El número que escribiste no es el que tenemos registrado. Para no consultar los datos de otra
+            persona, <strong>detuvimos el proceso</strong> y le avisamos a quien te envió el enlace: revisará los
+            datos y te enviará uno nuevo.
+          </p>
+          <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
+        </div>
+      </Card>
+    )
+  }
+
   if (pageState === 'signed') {
     return (
       <Card>
@@ -632,8 +729,8 @@ export default function AutorizarPage() {
             </div>
           ) : (
             <p className="mt-4 text-sm text-gray-500">
-              No tienes que hacer nada más aquí: seguimos con tu estudio y quien te envió este enlace te contará
-              cómo avanza. Puedes cerrar esta página.
+              No tienes que hacer nada más aquí. Quien te envió este enlace te contará cómo avanza tu estudio.
+              Puedes cerrar esta página.
             </p>
           )}
         </div>
@@ -697,11 +794,10 @@ export default function AutorizarPage() {
               paso: confirmar quién eres antes de leer qué autorizas es el orden
               lógico, y así el prospecto no aterriza en un muro legal.
 
-              El documento va ENMASCARADO (últimos 4). §12: "el enlace es único
-              y personal [...] la confirmación de identidad y el registro del
-              documento aceptante son la defensa" contra un enlace reenviado a
-              un tercero — mostrar el número completo le regalaría la respuesta
-              al impostor.
+              El número NO se muestra: el prospecto lo escribe y la API lo
+              compara (handleConfirmarIdentidad). §12: "la confirmación de
+              identidad y el registro del documento aceptante son la defensa"
+              contra un enlace reenviado a un tercero.
             */}
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <div className="flex items-start gap-3">
@@ -711,17 +807,11 @@ export default function AutorizarPage() {
                 <div className="min-w-0 flex-1">
                   <h1 className="text-lg font-extrabold tracking-tight text-gray-900">¿Eres tú?</h1>
                   <p className="mt-0.5 text-xs text-gray-500">
-                    Estos son los datos con los que nos llegó tu solicitud.
+                    Estos son los datos registrados en tu estudio.
                   </p>
                   <p className="mt-2 truncate text-base font-bold text-gray-900">
                     {data.solicitante.nombre} {data.solicitante.apellido}
                   </p>
-                  {data.solicitante.numero_documento_masked && (
-                    <p className="text-sm font-medium text-gray-500">
-                      {(data.solicitante.tipo_documento || 'Documento').toUpperCase()}{' '}
-                      {data.solicitante.numero_documento_masked}
-                    </p>
-                  )}
                   <p className="mt-2 text-xs text-gray-500">
                     Inmueble: {data.expediente.inmueble.direccion}, {data.expediente.inmueble.ciudad}
                   </p>
@@ -733,13 +823,43 @@ export default function AutorizarPage() {
                   <IconUserCheck size={14} /> Confirmaste que eres tú
                 </p>
               ) : (
-                <div className="mt-4 space-y-2">
+                <form onSubmit={handleConfirmarIdentidad} className="mt-4 space-y-2" noValidate>
+                  <label htmlFor="numero-documento" className="block text-sm font-bold text-gray-900">
+                    Escribe tu número de {tipoDocumentoLabel(data.solicitante.tipo_documento)}
+                  </label>
+                  <input
+                    id="numero-documento"
+                    type="text"
+                    inputMode={data.solicitante.tipo_documento === 'pasaporte' ? 'text' : 'numeric'}
+                    autoComplete="off"
+                    value={documento}
+                    maxLength={30}
+                    onChange={(e) => {
+                      setDocumento(e.target.value)
+                      if (documentoError) setDocumentoError('')
+                    }}
+                    aria-describedby="numero-documento-ayuda"
+                    aria-invalid={!!documentoError}
+                    disabled={verificandoDoc}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 disabled:opacity-60"
+                    placeholder="Ej.: 1023456789"
+                  />
+                  <p id="numero-documento-ayuda" className="text-xs leading-relaxed text-gray-500">
+                    Lo comparamos con el que registró quien te envió este enlace; por tu seguridad no te lo
+                    mostramos. Si no coincide, detenemos el proceso para no consultar los datos de otra persona.
+                  </p>
+                  {documentoError && (
+                    <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      {documentoError}
+                    </p>
+                  )}
                   <button
-                    type="button"
-                    onClick={() => setIdentidadOk(true)}
-                    className="w-full rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
+                    type="submit"
+                    disabled={verificandoDoc || !documento.trim()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Sí, soy yo
+                    {verificandoDoc && <IconLoader size={18} className="animate-spin" />}
+                    {verificandoDoc ? 'Revisando…' : 'Sí, soy yo'}
                   </button>
                   <button
                     type="button"
@@ -748,7 +868,7 @@ export default function AutorizarPage() {
                   >
                     Estos datos no corresponden
                   </button>
-                </div>
+                </form>
               )}
             </div>
 
@@ -757,7 +877,7 @@ export default function AutorizarPage() {
             <div>
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Autoriza el uso de tus datos</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Para estudiar tu solicitud y actuar como tu fiador, {data.solicitante.nombre}, necesitamos tratar
+                Para hacer tu estudio y actuar como tu fiador, {data.solicitante.nombre}, necesitamos tratar
                 tus datos. Toca cada punto para ver el detalle:
               </p>
             </div>
@@ -1314,6 +1434,21 @@ function Toggle({
       />
     </button>
   )
+}
+
+// "Escribe tu número de …" del paso 1 (enum tipo_documento de la API).
+const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
+  cc: 'cédula de ciudadanía',
+  ce: 'cédula de extranjería',
+  ti: 'tarjeta de identidad',
+  pasaporte: 'pasaporte',
+  ppt: 'PPT',
+  pep: 'PEP',
+  nit: 'NIT',
+}
+
+function tipoDocumentoLabel(tipo: string | null | undefined): string {
+  return TIPO_DOCUMENTO_TEXTO[tipo ?? ''] ?? 'documento'
 }
 
 function Card({ children }: { children: React.ReactNode }) {

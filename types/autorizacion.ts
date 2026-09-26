@@ -64,12 +64,9 @@ export interface IAutorizacionPublicData {
     nombre: string
     apellido: string
     telefono_masked?: string | null
-    /** §8.1: el documento va ENMASCARADO (últimos 4). Enseñarlo completo al
-     *  portador del enlace le regalaría la respuesta a un impostor — §12
-     *  dice que la confirmación de identidad ES la defensa contra el enlace
-     *  reenviado a un tercero. */
+    /** §8.1: solo el TIPO. El número lo escribe el prospecto y la API lo
+     *  compara con la ficha sin devolverlo (confirmarIdentidad). */
     tipo_documento?: string | null
-    numero_documento_masked?: string | null
   }
   expediente: {
     numero_expediente: string
@@ -116,9 +113,9 @@ export interface IEnviarEnlaceResponse {
 
 export interface IFirmarInput {
   metodo_firma: MetodoFirma
-  /** §8.1: la confirmación de identidad viaja TAMBIÉN con la firma, por si el
-   *  POST /perfil (best-effort) se perdió. Sólo `true`, igual que en el perfil. */
-  identidad_confirmada?: true
+  /** §8.1: el documento que escribió el prospecto. La API lo vuelve a comparar
+   *  con la ficha; si no coincide, detiene el enlace (DOCUMENTO_NO_COINCIDE). */
+  numero_documento: string
   datos_firma?: string
   codigo_otp?: string
   consentimientos_opcionales?: {
@@ -161,8 +158,6 @@ export interface IVerificarOtpResponse {
 // ── PASO 5 (Flujo §8) — pantalla pública del prospecto ──────────────
 
 export interface IPerfilProspectoInput {
-  /** §8.1 — sólo `true`: el backend rechaza cualquier otra cosa. */
-  identidad_confirmada?: true
   situacion_laboral?: 'empleado' | 'independiente' | 'pensionado' | 'otro'
   donde_labora?: string
   ingreso_declarado_cop?: number

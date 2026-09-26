@@ -31,6 +31,8 @@ export interface ExpedienteProgressBarProps {
   citaOmitida?: boolean
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
+  /** Lo mira el propio solicitante: textos de su ruta (§10/§13), en segunda persona. */
+  esProspecto?: boolean
   className?: string
 }
 
@@ -40,6 +42,7 @@ export function ExpedienteProgressBar({
   estadoPreCancelacion,
   citaOmitida,
   sinInfoBuro,
+  esProspecto,
   className,
 }: ExpedienteProgressBarProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -102,11 +105,36 @@ export function ExpedienteProgressBar({
     ? Math.max(baseStep, contratoStep)
     : baseStep
 
+  // Al prospecto (§10/§13): nunca «no aprobado» ni «riesgo medio», ni culpar a
+  // la evaluación crediticia (P34). Los textos de su ruta en rutas-resultado.ts
+  // del API: 'no_aprobable' y 'en_revision'.
+  if (esProspecto && (isRejected || isConditioned)) {
+    return (
+      <div
+        className={cn(
+          'rounded-lg p-4 border',
+          isRejected ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-amber-50 border-amber-200 text-amber-700',
+          className,
+        )}
+      >
+        <p className="text-sm font-semibold">
+          {isRejected ? 'No aprobable por ahora' : 'Estamos revisando tu estudio'}
+        </p>
+        <p className="text-xs mt-0.5">
+          {isRejected
+            ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre ti.'
+            : 'Una persona de nuestro equipo está revisando tu caso. Te escribimos apenas tengamos la respuesta.'}
+        </p>
+      </div>
+    )
+  }
+
   if (isRejected) {
     return (
       <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
         <p className="text-sm font-semibold text-red-700">Estudio no aprobado</p>
-        <p className="text-xs text-red-600 mt-0.5">El estudio no resultó aprobable tras la evaluación crediticia.</p>
+        {/* Neutro (P34): pudo decidirlo un analista, no solo la evaluación crediticia. */}
+        <p className="text-xs text-red-600 mt-0.5">El estudio no quedó aprobable y termina sin contrato.</p>
       </div>
     )
   }

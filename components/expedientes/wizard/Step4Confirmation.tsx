@@ -33,7 +33,7 @@ interface Step4ConfirmationProps {
   isSubmitting: boolean
   submitError: string | null
   /** 3.1: si el solicitante ya tiene un expediente activo para este inmueble,
-   *  el backend lo devuelve para ofrecer "Ver expediente" en vez de un callejón. */
+   *  el backend lo devuelve para ofrecer "Ver estudio" en vez de un callejón. */
   existingExpediente?: { id: string; numero: string | null } | null
   onSubmit: () => void
   /** Volver a un paso del wizard para corregir datos (1=inmueble, 2=solicitante, 3=config). */
@@ -56,9 +56,12 @@ export function Step4Confirmation({
   // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
   const FORMA_PAGO_LABEL: Record<string, string> = {
     credito: 'Descontado del paquete de estudios (opción A)',
-    inmobiliaria: 'El costo queda a tu cargo, sin cobro en línea (opción B)',
+    // Adenda 2 §7: la B se paga en línea; la solicitud sale al confirmarse el pago.
+    inmobiliaria: 'Pagas tú ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago (opción B)',
     prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
   }
+  // Opción B: el botón no envía nada todavía, lleva al pago.
+  const pagaAhora = forma_pago === 'inmobiliaria'
 
   // Obtener datos del solicitante (existente o nuevo)
   const solicitanteData = solicitante || formData
@@ -72,7 +75,7 @@ export function Step4Confirmation({
           {WIZARD_MESSAGES.STEP4_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {WIZARD_MESSAGES.STEP4_SUBTITLE}
+          {pagaAhora ? WIZARD_MESSAGES.STEP4_SUBTITLE_PAGO : WIZARD_MESSAGES.STEP4_SUBTITLE}
         </p>
       </div>
 
@@ -92,7 +95,7 @@ export function Step4Confirmation({
                 href={`/expedientes/${existingExpediente.id}`}
                 className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
               >
-                Ver expediente{existingExpediente.numero ? ` ${existingExpediente.numero}` : ' existente'}
+                Ver estudio{existingExpediente.numero ? ` ${existingExpediente.numero}` : ' existente'}
                 <IconArrowRight size={14} />
               </Link>
             )}
@@ -311,12 +314,12 @@ export function Step4Confirmation({
           {isSubmitting ? (
             <>
               <IconLoader size={18} className="animate-spin" />
-              {WIZARD_MESSAGES.CREATING}
+              {pagaAhora ? WIZARD_MESSAGES.CREATING_PAGO : WIZARD_MESSAGES.CREATING}
             </>
           ) : (
             <>
-              <IconCheck size={18} />
-              {WIZARD_MESSAGES.CONFIRM_CREATE}
+              {pagaAhora ? <IconCreditCard size={18} /> : <IconCheck size={18} />}
+              {pagaAhora ? WIZARD_MESSAGES.CONFIRM_CREATE_PAGO : WIZARD_MESSAGES.CONFIRM_CREATE}
             </>
           )}
         </button>

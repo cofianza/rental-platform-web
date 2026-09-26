@@ -20,7 +20,7 @@
  * El estado en la base sigue siendo 'rechazado'; aquí solo cambia lo que lee la
  * persona. `motivo_rechazo` no se muestra al prospecto porque lo escribe el
  * motor con el mismo vocabulario ("la evaluación crediticia del titular fue
- * rechazado. La solicitud no procede.").
+ * rechazado. El estudio no procede.").
  */
 
 'use client'
@@ -65,7 +65,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-slate-900 mb-0.5">No aprobable por ahora</h3>
             <p className="text-sm text-slate-700">
-              Con la información disponible hoy no podemos respaldar esta solicitud. No es una
+              Con la información disponible hoy no podemos respaldar este estudio. No es una
               decisión definitiva sobre ti: tu perfil puede cambiar.
             </p>
             <p className="text-xs text-slate-600 mt-2">

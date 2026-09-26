@@ -255,7 +255,7 @@ export default function CargarDocumentosPage() {
           </form>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center text-sm text-gray-600">
-            Este enlace ya no admite cargar documentos (la solicitud cambió de estado). Si tienes dudas, contacta a la inmobiliaria.
+            Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tienes dudas, contacta a la inmobiliaria.
           </div>
         )}
 

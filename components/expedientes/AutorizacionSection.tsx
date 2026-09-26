@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
+import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
@@ -55,6 +56,9 @@ export function AutorizacionSection({
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
+  // Opción B (Adenda 2 §7): el pago es de la inmobiliaria y no se ha hecho. La
+  // solicitud le sale al prospecto cuando se confirme ese pago, no antes.
+  const [faltaPagoGestor, setFaltaPagoGestor] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showRevocar, setShowRevocar] = useState(false)
@@ -74,6 +78,11 @@ export function AutorizacionSection({
     try {
       const data = await autorizacionService.getStatus(expedienteId)
       setAutorizacion(data)
+      // Solo sin autorización enviada: es la única pantalla donde cambia el texto.
+      const pago = data ? null : await pagoEstudioService.getEstado(expedienteId).catch(() => null)
+      // `paga` lo manda la API (quienPaga) aunque el tipo del servicio aún no lo declare.
+      const paga = (pago as (IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }) | null)?.paga
+      setFaltaPagoGestor(!!pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido'))
     } catch {
       // silent — section just won't show data
     } finally {
@@ -299,7 +308,8 @@ export function AutorizacionSection({
             <p className="text-sm font-medium text-amber-800">
               {perfil.identidad_reporte === 'no_soy_yo'
                 ? 'Quien abrió el enlace dice que NO es el titular de estos datos'
-                : 'Quien abrió el enlace dice que los datos registrados están mal'}
+                : // También cuando el número de documento que escribió no coincidió con la ficha (§8.1).
+                  'Los datos registrados no coinciden con los de quien abrió el enlace'}
             </p>
             <p className="text-xs text-amber-700">
               Reportado el {formatDate(perfil.identidad_reporte_en)}. El enlace se detuvo y no se consultó
@@ -315,10 +325,23 @@ export function AutorizacionSection({
       {/* Sin autorizacion */}
       {!autorizacion && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
-            El prospecto debe autorizar la consulta en centrales de riesgo antes de que corra la evaluación.
-            Es el primer paso: el cobro se le pide después de que autorice.
-          </p>
+          {faltaPagoGestor ? (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">Falta el pago del estudio</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  Elegiste pagarlo tú en Mercado Pago y el pago aún no se confirma: complétalo en la sección de
+                  pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Sin «el cobro se le pide después»: eso solo es cierto en la opción C.
+            <p className="text-sm text-gray-500">
+              El prospecto debe autorizar la consulta en centrales de riesgo antes de que corra la evaluación.
+            </p>
+          )}
           {contactoDestino}
           {!soloLectura && (
             <button

@@ -16,7 +16,10 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { IconX, IconLoader, IconFileText } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
+import { ApiClientError } from '@/lib/api'
 import { hoyBogota } from '@/hooks/useContratoV3'
+import { SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
+import type { Bloqueo } from '@/types/contratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio } from '@/types/contrato'
 
@@ -39,6 +42,8 @@ interface GenerarContratoModalProps {
   conComision?: boolean
   onClose: () => void
   onGenerated: () => void
+  /** La evaluación ya no sirve (vencida o sin margen de CRC para firmar, según el API): la salida es un estudio nuevo. */
+  onEvaluacionVencida?: (bloqueo: Bloqueo) => void
 }
 
 export function GenerarContratoModal({
@@ -47,6 +52,7 @@ export function GenerarContratoModal({
   conComision = false,
   onClose,
   onGenerated,
+  onEvaluacionVencida,
 }: GenerarContratoModalProps) {
   const [fechaInicio, setFechaInicio] = useState('')
   const [duracionMeses, setDuracionMeses] = useState('12')
@@ -81,6 +87,10 @@ export function GenerarContratoModal({
       toast.success('Contrato generado correctamente')
       onGenerated()
     } catch (err) {
+      if (onEvaluacionVencida && err instanceof ApiClientError && SOLO_NUEVA_EVALUACION.includes(err.code ?? '')) {
+        onEvaluacionVencida({ codigo: err.code!, mensaje: err.message })
+        return
+      }
       toast.error(err instanceof Error ? err.message : 'Error al generar el contrato')
     } finally {
       setGenerating(false)

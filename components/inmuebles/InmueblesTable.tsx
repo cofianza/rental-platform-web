@@ -340,7 +340,7 @@ export function InmueblesTable({
                   {/* Indicador §4.2: cuantos candidatos se evaluan en paralelo. */}
                   <div className="flex flex-col items-center gap-1">
                     <EstadoBadge estado={inmueble.estado} />
-                    <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+                    <EstudiosActivosBadge count={inmueble.expedientes_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
                   </div>
                 </td>
                 {onToggleVitrina && (
@@ -404,7 +404,7 @@ export function InmueblesTable({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-primary-600">{inmueble.codigo}</span>
                   <EstadoBadge estado={inmueble.estado} />
-                  <EstudiosActivosBadge count={inmueble.estudios_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
+                  <EstudiosActivosBadge count={inmueble.expedientes_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
                 </div>
                 <div className="text-sm text-gray-900 truncate">{inmueble.direccion}</div>
                 <div className="text-xs text-gray-500">

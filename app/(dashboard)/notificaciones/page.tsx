@@ -258,7 +258,7 @@ export default function NotificacionesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-700">Sin notificaciones</p>
-            <p className="text-xs text-gray-500 mt-1">Aquí verás los avisos de tus solicitudes.</p>
+            <p className="text-xs text-gray-500 mt-1">Aquí verás los avisos de tus estudios.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">

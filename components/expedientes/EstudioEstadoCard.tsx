@@ -15,6 +15,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { IconBuilding2, IconCheck, IconClock } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
+import { autorizacionService } from '@/services/autorizacionService'
+import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { formatDate } from '@/lib/constants'
 import {
   ReintentarEstudioForm,
@@ -111,6 +113,54 @@ function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>): string
   }
   if (a.flags_revision.length > 0) return `sin reporte en OFAC/ONU, pero con flags de revision: ${a.flags_revision.join(', ')}`
   return 'sin reporte'
+}
+
+/**
+ * Lo que el estudio solo no dice y cambia de quién depende (revisión 2026-09-25):
+ *  - el enlace de autorización se DETUVO antes del plazo («No soy yo», el
+ *    documento escrito no coincidió, revocado): el prospecto ya no puede
+ *    firmar, le toca al gestor corregir y reenviar;
+ *  - opción B sin pagar: la solicitud no sale hasta que la inmobiliaria pague.
+ * Mismo criterio que list_expedientes_with_relations (migración 20261001000011).
+ */
+interface AccionGestor {
+  etiqueta: string
+  texto: string
+}
+
+/** Estados del estudio que esperan la autorización o el pago (sin ejecutar). */
+const ESTADOS_EN_ESPERA: EstadoEstudio[] = ['solicitado', 'pago_pendiente', 'formulario_enviado']
+
+async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Promise<AccionGestor | null> {
+  const [aut, pago] = await Promise.all([
+    // undefined = no se pudo leer: entonces no se afirma nada.
+    autorizacionService.getStatus(expedienteId).catch(() => undefined),
+    pagoEstudioService.getEstado(expedienteId).catch(() => null),
+  ])
+  if (aut && (aut.estado === 'revocado' || aut.estado === 'expirado')) {
+    // Vencido por el reloj lo cuenta ya `expiracion` (mensaje del §12); aquí
+    // solo lo detenido ANTES del plazo.
+    const vencio = !!aut.token_expiracion && Date.parse(aut.token_expiracion) <= Date.now()
+    if (aut.estado === 'revocado' || !vencio) {
+      return {
+        etiqueta: 'Autorización detenida',
+        texto: aut.perfil_prospecto?.identidad_reporte
+          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere tu acción: corrige los datos del solicitante y reenvíale la solicitud de autorización.'
+          : 'El enlace de autorización se detuvo y el prospecto ya no puede firmarlo. Requiere tu acción: corrige los datos si hace falta y reenvíale la solicitud.',
+      }
+    }
+  }
+  // `paga` lo manda la API (quienPaga) aunque el tipo del servicio aún no lo declare.
+  const paga = (pago as (IPagoEstudioEstado & { paga?: 'gestor' | 'arrendatario' | null }) | null)?.paga
+  if (aut === null && pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido')) {
+    return {
+      etiqueta: esCofianza ? 'Falta el pago de la inmobiliaria' : 'Falta tu pago',
+      texto: esCofianza
+        ? 'Falta el pago del estudio de la inmobiliaria (Mercado Pago). La solicitud de autorización le llega al prospecto cuando se confirme.'
+        : 'Falta tu pago del estudio (Mercado Pago): complétalo en la sección de pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.',
+    }
+  }
+  return null
 }
 
 const BURO_LABELS: Record<string, string> = {
@@ -260,7 +310,9 @@ export function EstudioEstadoCard({
   // titular sobre el score del coarrendatario y se confundian.
   const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
   const [estudioCoa, setEstudioCoa] = useState<IEstudio | null>(null)
+  const [accionGestor, setAccionGestor] = useState<AccionGestor | null>(null)
   const [loading, setLoading] = useState(true)
+  const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   const fetchEstudios = useCallback(async () => {
     try {
@@ -274,15 +326,23 @@ export function EstudioEstadoCard({
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
           ?? null
 
-      setEstudioTitular(masReciente(candidatos.filter((e) => e.tipo !== 'con_coarrendatario')))
+      const titular = masReciente(candidatos.filter((e) => e.tipo !== 'con_coarrendatario'))
+      // Solo mientras espera: dos lecturas más, no en cada estudio ya corrido.
+      setAccionGestor(
+        titular && ESTADOS_EN_ESPERA.includes(titular.estado)
+          ? await leerAccionGestor(expedienteId, esCofianza)
+          : null,
+      )
+      setEstudioTitular(titular)
       setEstudioCoa(masReciente(candidatos.filter((e) => e.tipo === 'con_coarrendatario')))
     } catch {
       setEstudioTitular(null)
       setEstudioCoa(null)
+      setAccionGestor(null)
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, esCofianza])
 
   useEffect(() => { fetchEstudios() }, [fetchEstudios, version])
 
@@ -308,6 +368,7 @@ export function EstudioEstadoCard({
           estudio={estudioTitular}
           etiqueta="Titular"
           persona={titularSolicitante}
+          accionGestor={accionGestor}
           expedienteId={expedienteId}
           onVerEstudios={onVerEstudios}
           userRol={userRol}
@@ -365,6 +426,8 @@ interface EstudioPanelProps {
   onReasignado?: () => void
   /** Co-arrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
   sinReintento?: boolean
+  /** Solo titular: enlace detenido u opción B sin pagar — le toca al gestor. */
+  accionGestor?: AccionGestor | null
 }
 
 function EstudioPanel({
@@ -379,6 +442,7 @@ function EstudioPanel({
   onReasignado,
   expedienteId,
   sinReintento,
+  accionGestor,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
@@ -414,9 +478,10 @@ function EstudioPanel({
   // al gestor sin saber por que no aparece.
   const puedeReasignar = esGestor && onReasignado != null && estudio.estado === 'completado'
 
-  const tone = getTone(estudio)
+  // Va antes que el «expirado» del reloj: un enlace detenido no espera plazo.
+  const tone = accionGestor ? 'warning' : getTone(estudio)
   const styles = TONE_STYLES[tone]
-  const estadoLabel = ESTADO_LABEL[estudio.estado] ?? estudio.estado
+  const estadoLabel = accionGestor?.etiqueta ?? ESTADO_LABEL[estudio.estado] ?? estudio.estado
   const resultadoLabel =
     estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
@@ -427,7 +492,7 @@ function EstudioPanel({
   const siguientePaso =
     sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista')
+      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista')
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
 
   return (
@@ -456,7 +521,7 @@ function EstudioPanel({
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
               {estadoLabel}
             </span>
-            {estudio.expiracion?.expirado && (
+            {estudio.expiracion?.expirado && !accionGestor && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
                 Expirado
               </span>

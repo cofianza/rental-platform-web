@@ -168,23 +168,30 @@ export default function ExpedienteDetallePage() {
   // medio". El banner y la tarjeta de decisión cambian el texto con esto.
   // El estudio del titular se guarda entero: la guía del condicionado ofrece
   // con él la consulta al otro buró.
-  const [titularCondicionado, setTitularCondicionado] = useState<IEstudio | null>(null)
+  // También da el "Reasignado desde …" del Flujo §11 (lo trae el listado de
+  // estudios, que la tarjeta del estudio ya pide: la petición se comparte).
+  const [titular, setTitular] = useState<(IEstudio & { reasignado_desde?: string | null }) | null>(null)
+  const [reasignadoDesde, setReasignadoDesde] = useState<string | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
   useEffect(() => {
-    if (estadoExpediente !== 'condicionado') return
+    if (!estadoExpediente) return
     let cancel = false
     estudioService
       .getEstudiosForExpediente(id, 1, 10)
       .then(({ data }) => {
-        const titular = data
+        const filas = data as Array<IEstudio & { reasignado_desde?: string | null }>
+        const vigente = filas
           .filter((e) => e.estado !== 'cancelado' && e.tipo !== 'con_coarrendatario')
           .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-        if (!cancel) setTitularCondicionado(titular ?? null)
+        if (cancel) return
+        setTitular(vigente ?? null)
+        setReasignadoDesde(filas.find((e) => e.reasignado_desde)?.reasignado_desde ?? null)
       })
-      .catch(() => { if (!cancel) setTitularCondicionado(null) })
+      .catch(() => { if (!cancel) setTitular(null) })
     return () => { cancel = true }
   }, [id, estadoExpediente, actualizadoEn])
+  const titularCondicionado = estadoExpediente === 'condicionado' ? titular : null
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
 
@@ -370,7 +377,7 @@ export default function ExpedienteDetallePage() {
           onClick={() => router.push(rutaListado)}
           className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
         >
-          {user?.rol === 'solicitante' ? 'Ver mis solicitudes' : 'Volver al listado'}
+          {user?.rol === 'solicitante' ? 'Ver mis estudios' : 'Volver al listado'}
         </button>
       </div>
     )
@@ -415,7 +422,7 @@ export default function ExpedienteDetallePage() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => router.push(rutaListado)}
-            aria-label={user?.rol === 'solicitante' ? 'Volver a mis solicitudes' : 'Volver al listado'}
+            aria-label={user?.rol === 'solicitante' ? 'Volver a mis estudios' : 'Volver al listado'}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
           >
             <IconArrowLeft size={20} className="text-gray-600" />
@@ -456,6 +463,12 @@ export default function ExpedienteDetallePage() {
                 <span>
                   <span className="text-gray-500">Inmueble:</span>{' '}
                   {expediente.inmueble.titulo || expediente.inmueble.direccion}
+                  {/* Flujo §11 "Reasignado": el estudio vino de otra propiedad (§4.3). */}
+                  {reasignadoDesde && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      Reasignado desde {reasignadoDesde}
+                    </span>
+                  )}
                 </span>
               )}
               {expediente.solicitante && (
@@ -531,6 +544,7 @@ export default function ExpedienteDetallePage() {
           estadoPreCancelacion={expediente.estado_pre_cancelacion}
           citaOmitida={expediente.cita_omitida}
           sinInfoBuro={condicionadoSinInfo}
+          esProspecto={user?.rol === 'solicitante'}
         />
       </div>
 

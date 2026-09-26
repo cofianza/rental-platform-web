@@ -28,6 +28,17 @@ export interface WizardStep2Data {
   solicitante: ISolicitante | null
   isNewSolicitante: boolean
   formData: ISolicitanteCreateData | null
+  /**
+   * Inmueble del paso 1 (lo copia updateStep1): el §5.2 mide contra él si un
+   * estudio vigente de esta persona se puede reutilizar.
+   */
+  inmuebleId?: string
+  /**
+   * El documento escrito ya tenía ficha con OTRO contacto: se cargó la ficha
+   * (el enlace va a su contacto) y esto es lo que se escribió, para ofrecer
+   * actualizarla. Mientras exista, «Siguiente» espera la decisión.
+   */
+  contactoPropuesto?: { email: string; telefono: string } | null
 }
 
 /** Flujo de Gerencia, modulo de estudios, §6: las tres formas de pago del estudio. */
@@ -147,6 +158,32 @@ export function solicitanteTieneContacto(
 
 export const MSG_SOLICITANTE_SIN_CONTACTO =
   'El solicitante necesita celular y correo para recibir la solicitud. Usa Editar para completarlos.'
+
+/** Celular comparable: solo dígitos y sin el 57 de Colombia delante. */
+const celularComparable = (t?: string | null) => (t ?? '').replace(/\D/g, '').replace(/^57(?=\d{10}$)/, '')
+
+/**
+ * §5.2 + §5.1: el documento escrito ya tiene ficha en esta cartera. Se usa la
+ * ficha (una persona, una ficha) y, si lo escrito trae otro contacto, se guarda
+ * para ofrecer actualizarla antes de confirmar: el enlace va al contacto de la
+ * ficha, no a lo que se tecleó.
+ */
+export function step2ConFicha(
+  ficha: ISolicitante,
+  escrito?: Pick<ISolicitanteCreateData, 'email' | 'telefono'> | null,
+): Partial<WizardStep2Data> {
+  const email = escrito?.email?.trim() ?? ''
+  const telefono = escrito?.telefono?.trim() ?? ''
+  const distinto =
+    (!!email && email.toLowerCase() !== (ficha.email ?? '').trim().toLowerCase()) ||
+    (!!telefono && celularComparable(telefono) !== celularComparable(ficha.telefono))
+  return {
+    solicitante: ficha,
+    isNewSolicitante: false,
+    formData: null,
+    contactoPropuesto: distinto ? { email, telefono } : null,
+  }
+}
 
 function validateStep1(data: WizardStep1Data): Record<string, string> {
   const errors: Record<string, string> = {}
@@ -306,7 +343,7 @@ export function useExpedienteWizard() {
     }
   }, [])
 
-  const nextStep = useCallback(() => {
+  const nextStep = useCallback(async () => {
     // Validar paso actual
     let stepErrors: Record<string, string> = {}
 
@@ -324,6 +361,21 @@ export function useExpedienteWizard() {
     // Si hay errores, no avanzar
     if (Object.keys(stepErrors).length > 0) {
       return false
+    }
+
+    // §5.2: «Crear solicitante» con un documento que ya tiene ficha. Antes se
+    // seguía y el API reutilizaba la ficha en silencio, con su contacto viejo.
+    // Si la búsqueda falla se sigue: el envío vuelve a mirarlo (submitExpediente).
+    if (currentStep === 2 && data.step2.isNewSolicitante && data.step2.formData) {
+      const form = data.step2.formData
+      const ficha = await solicitanteService
+        .searchByDocument(form.tipo_documento, form.numero_documento.trim())
+        .catch(() => null)
+      if (ficha) {
+        setData(prev => ({ ...prev, step2: { ...prev.step2, ...step2ConFicha(ficha, form) } }))
+        toast.info('Esta persona ya estaba registrada: usamos su ficha. Revisa su contacto antes de continuar.')
+        return false
+      }
     }
 
     // Avanzar
@@ -347,7 +399,12 @@ export function useExpedienteWizard() {
   const updateStep1 = useCallback((newData: Partial<WizardStep1Data>) => {
     setData(prev => ({
       ...prev,
-      step1: { ...prev.step1, ...newData }
+      step1: { ...prev.step1, ...newData },
+      // El paso 2 no recibe el paso 1: el §5.2 necesita saber qué propiedad es.
+      step2:
+        newData.inmueble !== undefined
+          ? { ...prev.step2, inmuebleId: newData.inmueble?.id }
+          : prev.step2,
     }))
     // Limpiar errores del campo actualizado
     if (newData.inmueble !== undefined) {
@@ -358,7 +415,12 @@ export function useExpedienteWizard() {
   const updateStep2 = useCallback((newData: Partial<WizardStep2Data>) => {
     setData(prev => ({
       ...prev,
-      step2: { ...prev.step2, ...newData }
+      step2: {
+        ...prev.step2,
+        // Otro solicitante (o ninguno): el contacto propuesto era del anterior.
+        ...(newData.solicitante !== undefined ? { contactoPropuesto: null } : {}),
+        ...newData,
+      },
     }))
   }, [])
 
@@ -421,8 +483,11 @@ export function useExpedienteWizard() {
       return !!data.step1.inmueble && !data.step1.excedeTope
     }
     if (currentStep === 2) {
-      // §5.1: un solicitante ya registrado también necesita celular y correo.
-      if (data.step2.solicitante) return solicitanteTieneContacto(data.step2.solicitante)
+      // §5.1: un solicitante ya registrado también necesita celular y correo,
+      // y si se escribió otro contacto hay que decidir cuál vale.
+      if (data.step2.solicitante) {
+        return !data.step2.contactoPropuesto && solicitanteTieneContacto(data.step2.solicitante)
+      }
       if (data.step2.isNewSolicitante && data.step2.formData) {
         const form = data.step2.formData
         return !!(
@@ -465,9 +530,18 @@ export function useExpedienteWizard() {
       if (data.step2.isNewSolicitante && data.step2.formData) {
         const newSolicitante = await solicitanteService.createSolicitante(data.step2.formData)
         solicitanteId = newSolicitante.id
+        // Carrera (la ficha apareció después de «Siguiente») con otro contacto:
+        // no se crea el estudio, porque el enlace saldría al contacto viejo.
+        const conFicha = newSolicitante.reutilizado ? step2ConFicha(newSolicitante, data.step2.formData) : null
+        if (conFicha?.contactoPropuesto) {
+          setData(prev => ({ ...prev, step2: { ...prev.step2, ...conFicha } }))
+          setCurrentStep(2)
+          toast.warning('Esta persona ya estaba registrada con otro contacto. Confirma cuál usar antes de enviar.', { duration: 8000 })
+          return null
+        }
         if (newSolicitante.reutilizado) {
           toast.warning(
-            'Esta persona ya estaba registrada; reutilizamos su ficha. Revisa sus datos y sus solicitudes previas por si esta es una nueva.',
+            'Esta persona ya estaba registrada; reutilizamos su ficha. Revisa sus datos y sus estudios previos por si este es uno nuevo.',
             { duration: 8000 },
           )
         }

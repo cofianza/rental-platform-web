@@ -1,5 +1,6 @@
 /**
- * Evaluación vencida (o sin canon evaluado): la nueva se hace en un ESTUDIO
+ * Evaluación que ya no sirve para el contrato (vencida, sin canon evaluado, sin
+ * margen de CRC para firmar, o para un canon mayor al tolerado): la nueva se hace en un ESTUDIO
  * NUEVO. Un estudio admite un solo pago de evaluación (índice
  * uq_pagos_estudio_activo) y su máquina de estados no vuelve de `aprobado` a
  * evaluación; además, mientras este siga activo el API no deja crear otro para
@@ -20,7 +21,7 @@ import { IconArrowRight } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 
 // Lo ven también el arrendatario y el dueño (motivo de la cancelación): neutro.
-const MOTIVO = 'La evaluación crediticia ya no está vigente para el contrato: se evalúa de nuevo en un estudio nuevo.'
+const MOTIVO = 'La evaluación crediticia ya no sirve para el contrato: se evalúa de nuevo en un estudio nuevo.'
 
 interface Props {
   expedienteId: string

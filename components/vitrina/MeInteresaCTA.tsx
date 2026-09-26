@@ -267,7 +267,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         </Link>
         {variant === 'primary' && (
           <p className="text-xs text-gray-600">
-            Ya tienes una solicitud activa ({expedienteActivo.numero}) sobre este inmueble.
+            Ya tienes un estudio activo ({expedienteActivo.numero}) sobre este inmueble.
           </p>
         )}
       </div>

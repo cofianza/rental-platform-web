@@ -88,8 +88,18 @@ export const autorizacionPublicService = {
     return res.data
   },
 
-  /** PASO 5 (§8.1 + §8.2 + §8.3). Una sola llamada, ANTES del paso de firma:
-   *  el OTP se dispara al entrar a firma y caduca a los 5 minutos. */
+  /** §8.1: el prospecto escribe su documento y la API lo compara con la ficha
+   *  sin revelarlo. `coincide: false` = el enlace quedó detenido y se avisó
+   *  al gestor (mismo camino que "los datos están mal"). */
+  async confirmarIdentidad(token: string, numeroDocumento: string): Promise<{ coincide: boolean }> {
+    const res = await publicClient.post<{ coincide: boolean }>(
+      `/public/autorizar/${token}/confirmar-identidad`,
+      { numero_documento: numeroDocumento }
+    )
+    return res.data
+  },
+
+  /** PASO 5 (§8.2 + §8.3). Una sola llamada, ANTES del paso de firma. */
   async guardarPerfil(token: string, input: IPerfilProspectoInput): Promise<{ guardado: boolean }> {
     const res = await publicClient.post<{ guardado: boolean }>(
       `/public/autorizar/${token}/perfil`,

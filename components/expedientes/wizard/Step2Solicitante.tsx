@@ -25,6 +25,7 @@ import { estudioService, type IEstudioVigente } from '@/services/estudioService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
 import {
   solicitanteTieneContacto,
+  step2ConFicha,
   MSG_SOLICITANTE_SIN_CONTACTO,
   type WizardStep2Data,
 } from '@/hooks/useExpedienteWizard'
@@ -86,12 +87,13 @@ export function Step2Solicitante({
 
   // §5.2 también al elegir del quick-pick, al seleccionar uno existente o al
   // volver de un borrador: la búsqueda por documento no es el único camino.
+  const inmuebleId = data.inmuebleId
   const consultarVigente = useCallback((tipo: string, numero: string) => {
     estudioService
-      .buscarVigentePorDocumento(tipo, numero)
+      .buscarVigentePorDocumento(tipo, numero, inmuebleId)
       .then(setEstudioVigente)
       .catch(() => setEstudioVigente(null))
-  }, [])
+  }, [inmuebleId])
   // Documento ya consultado, para no repetir la llamada que handleSearch
   // hace en paralelo cuando el solicitante existe.
   const vigenteDocRef = useRef<string | null>(null)
@@ -184,9 +186,14 @@ export function Step2Solicitante({
     }
   }
 
-  // Crear directo, sin tener que buscar primero. Si ya escribió tipo/número,
-  // los arrastra al formulario.
+  // Crear directo, sin tener que buscar primero. Con un número ya escrito se
+  // busca (§5.2): antes «Crear solicitante» se saltaba la consulta y el API
+  // reutilizaba la ficha existente con su contacto viejo.
   const handleStartCreate = () => {
+    if (searchTipoDoc && searchNumDoc.trim()) {
+      void handleSearch()
+      return
+    }
     onUpdate({
       solicitante: null,
       isNewSolicitante: true,
@@ -222,7 +229,7 @@ export function Step2Solicitante({
       const [solicitante, vigente] = await Promise.all([
         solicitanteService.searchByDocument(searchTipoDoc, searchNumDoc.trim()),
         estudioService
-          .buscarVigentePorDocumento(searchTipoDoc, searchNumDoc.trim())
+          .buscarVigentePorDocumento(searchTipoDoc, searchNumDoc.trim(), inmuebleId)
           .catch(() => null),
       ])
       setEstudioVigente(vigente)
@@ -257,7 +264,51 @@ export function Step2Solicitante({
     } finally {
       setIsSearching(false)
     }
-  }, [searchTipoDoc, searchNumDoc, onUpdate])
+  }, [searchTipoDoc, searchNumDoc, onUpdate, inmuebleId])
+
+  // §5.2 en el formulario de creación: al salir del documento se mira si esa
+  // persona ya tiene ficha (se carga, con su contacto real) y estudio vigente.
+  const docVerificadoRef = useRef<string | null>(null)
+  const verificarDocumentoEscrito = useCallback(async () => {
+    const form = data.formData
+    const numero = form?.numero_documento?.trim()
+    if (!form?.tipo_documento || !numero) return
+    const key = `${form.tipo_documento}:${numero}`
+    if (docVerificadoRef.current === key) return
+    docVerificadoRef.current = key
+    const [ficha, vigente] = await Promise.all([
+      solicitanteService.searchByDocument(form.tipo_documento, numero).catch(() => null),
+      estudioService.buscarVigentePorDocumento(form.tipo_documento, numero, inmuebleId).catch(() => null),
+    ])
+    setEstudioVigente(vigente)
+    if (ficha) {
+      // Ya consultado arriba: que el efecto de data.solicitante no lo repita.
+      vigenteDocRef.current = `${ficha.tipo_documento}:${ficha.numero_documento}`
+      onUpdate(step2ConFicha(ficha, form))
+      toast.info('Esta persona ya estaba registrada: usamos su ficha.')
+    }
+  }, [data.formData, inmuebleId, onUpdate])
+
+  // Ficha existente con otro contacto: actualizarla con lo que se escribió.
+  const [isActualizandoContacto, setIsActualizandoContacto] = useState(false)
+  const usarContactoEscrito = async () => {
+    const s = data.solicitante
+    const p = data.contactoPropuesto
+    if (!s || !p) return
+    setIsActualizandoContacto(true)
+    try {
+      const updated = await solicitanteService.updateSolicitante(s.id, {
+        ...(p.email ? { email: p.email } : {}),
+        ...(p.telefono ? { telefono: p.telefono } : {}),
+      })
+      onUpdate({ solicitante: updated })
+      toast.success('Contacto actualizado en la ficha')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el contacto')
+    } finally {
+      setIsActualizandoContacto(false)
+    }
+  }
 
   // Cancelar y volver a busqueda
   const handleCancelCreate = () => {
@@ -284,26 +335,42 @@ export function Step2Solicitante({
   // §5.2 — ya hay un estudio vigente para este documento. Se calcula ANTES de
   // los returns por rama: antes vivía solo en el modo búsqueda y nunca se
   // veía al elegir del quick-pick ni con el solicitante ya seleccionado.
+  // Solo se promete reutilizar "sin volver a cobrarlo" lo que la reasignación
+  // del §4.3 acepta para ESTA propiedad; si no, se dice que existe y por qué no sirve.
+  const reutilizable = estudioVigente?.reutilizable === true
   const bannerVigente = estudioVigente ? (
-    <div className="rounded-xl border border-primary-200 bg-primary-50/70 p-4">
+    <div
+      className={cn(
+        'rounded-xl border p-4',
+        reutilizable ? 'border-primary-200 bg-primary-50/70' : 'border-amber-200 bg-amber-50',
+      )}
+    >
       <div className="flex items-start gap-3">
-        <IconFileCheck size={18} className="mt-0.5 shrink-0 text-primary-600" />
+        <IconFileCheck
+          size={18}
+          className={cn('mt-0.5 shrink-0', reutilizable ? 'text-primary-600' : 'text-amber-600')}
+        />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-primary-900">
+          <p className={cn('text-sm font-semibold', reutilizable ? 'text-primary-900' : 'text-amber-900')}>
             Esta persona ya tiene un estudio vigente
           </p>
-          <p className="mt-1 text-sm text-primary-800">
+          <p className={cn('mt-1 text-sm', reutilizable ? 'text-primary-800' : 'text-amber-800')}>
             {estudioVigente.expediente_numero
               ? `Estudio ${estudioVigente.expediente_numero}. `
               : ''}
             Le quedan {estudioVigente.dias_restantes}{' '}
-            {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia. Puedes
-            reutilizarlo para esta propiedad sin volver a cobrarlo.
+            {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia.{' '}
+            {reutilizable
+              ? 'Puedes reutilizarlo para esta propiedad sin volver a cobrarlo: ábrelo y usa «Reasignar a otra propiedad».'
+              : estudioVigente.motivo_no_reutilizable ?? 'Ábrelo para revisar si sirve para esta propiedad.'}
           </p>
           {estudioVigente.expediente_id && (
             <Link
               href={`/expedientes/${estudioVigente.expediente_id}`}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:text-primary-800"
+              className={cn(
+                'mt-2 inline-flex items-center gap-1 text-sm font-semibold',
+                reutilizable ? 'text-primary-700 hover:text-primary-800' : 'text-amber-800 hover:text-amber-900',
+              )}
             >
               Ver estudio vigente
               <IconArrowRight size={14} />
@@ -397,6 +464,47 @@ export function Step2Solicitante({
           onEdit={() => handleEditExisting(data.solicitante!)}
         />
 
+        {/* §5.2/§5.1: el documento ya tenía ficha con otro contacto. El enlace
+            va al contacto de la ficha; aquí se decide cuál vale. */}
+        {data.contactoPropuesto && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+            <div className="flex items-start gap-2">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+              <div className="min-w-0 space-y-1">
+                <p className="font-semibold">Esta persona ya estaba registrada con otro contacto</p>
+                <p>
+                  Registrado: {data.solicitante.telefono || 'sin celular'} · {data.solicitante.email || 'sin correo'}
+                </p>
+                <p>
+                  Escribiste: {data.contactoPropuesto.telefono || '—'} · {data.contactoPropuesto.email || '—'}
+                </p>
+                <p className="text-amber-800">
+                  El enlace de autorización se envía al contacto de la ficha. Elige cuál vale para continuar.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={usarContactoEscrito}
+                disabled={isActualizandoContacto}
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              >
+                {isActualizandoContacto && <IconLoader size={14} className="animate-spin" />}
+                Actualizar la ficha con el que escribí
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate({ contactoPropuesto: null })}
+                disabled={isActualizandoContacto}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-50"
+              >
+                Mantener el registrado
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* §5.1: el enlace de autorización va por WhatsApp con copia al correo;
             una ficha vieja puede no tenerlos y "Siguiente" queda bloqueado. */}
         {!solicitanteTieneContacto(data.solicitante) && (
@@ -442,6 +550,7 @@ export function Step2Solicitante({
           formData={data.formData}
           errors={errors}
           onUpdateField={onUpdateField}
+          onDocumentoBlur={verificarDocumentoEscrito}
         />
       </div>
     )
@@ -651,10 +760,13 @@ function SolicitanteForm({
   formData,
   errors,
   onUpdateField,
+  onDocumentoBlur,
 }: {
   formData: ISolicitanteCreateData
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
+  /** Solo al crear: al salir del documento se busca la ficha y el estudio vigente (§5.2). */
+  onDocumentoBlur?: () => void
 }) {
   // Flujo de Gerencia, modulo de estudios, §5.1: los campos de este paso son
   // los MÍNIMOS para identificar y contactar al prospecto. Lo laboral y los
@@ -753,6 +865,7 @@ function SolicitanteForm({
             <select id="solicitante-formData-tipo_documento"
               value={formData.tipo_documento || ''}
               onChange={(e) => onUpdateField('tipo_documento', e.target.value)}
+              onBlur={onDocumentoBlur}
               className={selectClasses(!!errors.tipo_documento)}
             >
               <option value="">Seleccionar...</option>
@@ -776,6 +889,7 @@ function SolicitanteForm({
               type="text"
               value={formData.numero_documento || ''}
               onChange={(e) => onUpdateField('numero_documento', e.target.value)}
+              onBlur={onDocumentoBlur}
               placeholder={WIZARD_MESSAGES.PLACEHOLDER_DOCUMENTO}
               className={inputClasses(!!errors.numero_documento)}
             />

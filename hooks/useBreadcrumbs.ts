@@ -94,7 +94,7 @@ export function useBreadcrumbs(): Breadcrumb[] {
       // El arrendatario no tiene la bandeja /expedientes (es del equipo): su
       // lista de solicitudes es el inicio.
       if (rol === 'solicitante' && accumulatedPath === '/expedientes') {
-        crumbs.push({ label: 'Mis solicitudes', href: '/dashboard', isLast: index === segments.length - 1 })
+        crumbs.push({ label: 'Mis estudios', href: '/dashboard', isLast: index === segments.length - 1 })
         return
       }
 

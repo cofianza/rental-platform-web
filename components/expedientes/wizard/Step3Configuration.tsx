@@ -300,8 +300,8 @@ export function Step3Configuration({
       </fieldset>
 
       {/* Buró a consultar. La card de habilitar sí lo preguntaba, pero no
-          aparece si el asistente ya habilitó — y cambiarlo después obliga a
-          reintentar y a pagar otra consulta. */}
+          aparece si el asistente ya habilitó — y cambiarlo después es otra
+          consulta al buró (ejecutarEstudio no crea un cobro nuevo al cliente). */}
       <fieldset className="space-y-2">
         <legend className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <IconSearch size={16} className="text-gray-500" />
@@ -310,7 +310,8 @@ export function Step3Configuration({
         </legend>
         <p className="text-xs text-gray-500">
           Si no eliges, se consulta DataCrédito, la central principal de Cofianza (la API lo
-          aplica por defecto). Cambiarlo después obliga a repetir la consulta, y se cobra de nuevo.
+          aplica por defecto). Cambiarlo después significa una consulta adicional al buró; el estudio
+          no se vuelve a cobrar.
         </p>
         <div className="flex flex-wrap gap-2">
           {([

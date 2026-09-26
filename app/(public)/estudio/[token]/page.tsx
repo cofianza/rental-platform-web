@@ -294,7 +294,7 @@ export default function EstudioFormularioPage() {
 
           <p className="text-xs text-gray-500 pt-2">
             No tienes que volver a enviarlo. Si todavía no firmaste la autorización de consulta, búscala en tu
-            correo o WhatsApp: sin ella no podemos evaluar tu solicitud. Puedes cerrar esta ventana.
+            correo o WhatsApp: sin ella no podemos evaluar tu estudio. Puedes cerrar esta ventana.
           </p>
         </div>
       </div>

@@ -58,6 +58,8 @@ interface FacturasSectionProps {
 export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = {}) {
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.rol === 'administrador'
+  // La nota crédito la emite Cofianza en Factus: el filtro es de su equipo.
+  const puedeVerNotasCredito = isAdmin || user?.rol === 'operador_analista'
 
   // State
   const [facturas, setFacturas] = useState<IFactura[]>([])
@@ -71,7 +73,8 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
   const limit = 20
 
   // Filters
-  const [filterEstado, setFilterEstado] = useState<EstadoFactura | ''>('')
+  // 'nota_credito': emitidas cuyo pago se reembolsó o cuya compra de créditos se revirtió.
+  const [filterEstado, setFilterEstado] = useState<EstadoFactura | 'nota_credito' | ''>('')
   const [filterBusqueda, setFilterBusqueda] = useState('')
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
   const [filterFechaHasta, setFilterFechaHasta] = useState('')
@@ -85,7 +88,8 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
       const result = await facturacionService.listFacturas({
         page,
         limit,
-        estado: filterEstado || undefined,
+        estado: filterEstado && filterEstado !== 'nota_credito' ? filterEstado : undefined,
+        nota_credito_pendiente: filterEstado === 'nota_credito' || undefined,
         busqueda: filterBusqueda || undefined,
         fecha_desde: filterFechaDesde || undefined,
         fecha_hasta: filterFechaHasta || undefined,
@@ -199,13 +203,14 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           {/* Estado filter */}
           <select
             value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value as EstadoFactura | '')}
+            onChange={(e) => setFilterEstado(e.target.value as EstadoFactura | 'nota_credito' | '')}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos los estados</option>
             <option value="solicitada">Solicitada</option>
             <option value="emitida">Emitida</option>
             <option value="cancelada">Cancelada</option>
+            {puedeVerNotasCredito && <option value="nota_credito">Nota crédito pendiente</option>}
           </select>
 
           {/* Date range */}
@@ -247,6 +252,16 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           )}
         </div>
       </div>
+
+      {filterEstado === 'nota_credito' && facturas.length > 0 && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            Estas facturas siguen emitidas, pero su pago se reembolsó o su compra de créditos se revirtió.
+            Emite la nota crédito de cada una en Factus.
+          </p>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

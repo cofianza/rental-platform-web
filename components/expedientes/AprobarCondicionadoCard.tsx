@@ -63,6 +63,8 @@ export function AprobarCondicionadoCard({
   const [documentos, setDocumentos] = useState<string[]>([])
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
+  // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
+  const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
@@ -92,6 +94,7 @@ export function AprobarCondicionadoCard({
         fundamento: fundamento.trim(),
         documentos_consultados: documentos,
         evaluacion,
+        ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
       })
       setConfirmAprobarOpen(false)
       const p = res.puntaje_revision_manual
@@ -253,6 +256,28 @@ export function AprobarCondicionadoCard({
         </div>
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
+        {sinInfoBuro && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-700">
+            <p>
+              <strong>Sin historial en ninguna central</strong> (Política §15): para aprobarlo se exige un co-arrendatario
+              evaluado con puntaje de 80 o más, que el canon no pase del 30 % del ingreso y al menos una fuente de
+              capacidad de pago verificable.
+            </p>
+            <label className="mt-2 flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={fuenteCapacidad}
+                onChange={(e) => setFuenteCapacidad(e.target.checked)}
+                disabled={loading}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>
+                Verifiqué al menos una fuente de capacidad de pago del solicitante (certificado laboral, extractos
+                bancarios, declaración de renta u otra).
+              </span>
+            </label>
+          </div>
+        )}
         <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
           <button
             type="button"

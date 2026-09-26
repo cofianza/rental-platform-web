@@ -270,7 +270,7 @@ export default function TiemposPorEtapaPage() {
       {!loading && data && data.resumen.total_expedientes_analizados < 5 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
           <strong>Datos insuficientes:</strong> solo {data.resumen.total_expedientes_analizados}{' '}
-          expedientes analizados. Se recomiendan al menos 5 para resultados significativos.
+          estudios analizados. Se recomiendan al menos 5 para resultados significativos.
         </div>
       )}
 
