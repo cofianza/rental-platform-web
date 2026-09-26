@@ -256,9 +256,11 @@ export const estudioService = {
     return res.data
   },
 
-  /**
-   * Obtiene historial de re-evaluaciones
-   */
+  /** Política §11: día en que el prospecto apeló fuera de la plataforma (null lo borra). Solo admin/operador. */
+  async registrarRadicacionApelacion(estudioId: string, fecha: string | null): Promise<void> {
+    await apiClient.patch(`/estudios/${estudioId}/apelacion`, { fecha_radicacion_apelacion: fecha })
+  },
+
   // ── Adenda §5: tarifa del estudio ──
   async getTarifa(estudioId: string): Promise<ITarifaEstudio> {
     const res = await apiClient.get<ITarifaEstudio>(`/estudios/${estudioId}/tarifa`)

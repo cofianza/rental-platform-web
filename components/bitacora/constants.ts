@@ -80,6 +80,7 @@ export const ACTION_LABELS: Record<string, string> = {
   estudio_reasignado: 'Evaluación movida a otro inmueble',
   estudio_soporte_uploaded: 'Soporte de re-evaluación cargado',
   estudio_reevaluacion_solicitada: 'Re-evaluación solicitada',
+  estudio_apelacion_radicada: 'Fecha de apelación registrada',
   estudio_tarifa_override: 'Tarifa negociada de la evaluación',
   certificado_generated: 'Certificado generado',
 
@@ -308,6 +309,7 @@ export const ACTION_GROUPS: Array<{
       'estudio_resultado_registered',
       'estudio_reasignado',
       'estudio_reevaluacion_solicitada',
+      'estudio_apelacion_radicada',
       'estudio_cancelled',
       'certificado_generated',
     ].map(toOption),

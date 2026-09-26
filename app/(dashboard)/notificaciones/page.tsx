@@ -84,6 +84,8 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   // Adenda 1 contratos: reserva del inmueble vencida (respuesta 15) y canon sobre el tope escalado a la Gerencia (§2.4).
   'contrato.reserva_vencida': { icon: IconClock, badge: 'bg-amber-50 text-amber-600' },
   'contrato.tope_canon': { icon: IconTrendingUp, badge: 'bg-red-50 text-red-600' },
+  // Firma completa: la prima de vinculación queda causada (cuenta por cobrar).
+  'contrato.prima_por_cobrar': { icon: IconReceipt, badge: 'bg-amber-50 text-amber-600' },
   'firma.bloqueada': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'soporte.subido': { icon: IconPaperclip, badge: 'bg-slate-50 text-slate-600' },
   'expediente_asignado': { icon: IconFolderOpen, badge: 'bg-slate-50 text-slate-600' },

@@ -262,8 +262,10 @@ export interface IEstudioHistorial {
   plazo_vencido?: boolean
   /** 'AAAA-MM-DD': último día para radicar la apelación. */
   apelar_hasta?: string | null
-  /** 'AAAA-MM-DD': ya radicada (primer soporte), último día para que Cofianza responda (10 días hábiles). */
+  /** 'AAAA-MM-DD': ya radicada (fecha registrada o primer soporte), último día para que Cofianza responda (10 días hábiles). */
   responder_hasta?: string | null
+  /** 'AAAA-MM-DD': día en que el prospecto apeló por correo u otro canal, registrado por el analista. */
+  fecha_radicacion_apelacion?: string | null
   historial: IEstudioHistorialItem[]
 }
 

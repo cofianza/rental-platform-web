@@ -21,6 +21,8 @@ import {
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { estudioService } from '@/services/estudioService'
+import { usePermissions } from '@/hooks/usePermissions'
+import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudio, IDocumentoSoporte, PropositoSoporte, IEstudioHistorial } from '@/types/estudio'
 
 // ============================================
@@ -79,6 +81,10 @@ export function ReEvaluacionSection({
   const [showConfirm, setShowConfirm] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Política §11: la fecha la registra Cofianza; null = sin editar (se muestra la guardada).
+  const esAnalista = usePermissions().hasRole(['administrador', 'operador_analista'])
+  const [fechaEditada, setFechaEditada] = useState<string | null>(null)
+  const [guardandoFecha, setGuardandoFecha] = useState(false)
 
   // Todos los hooks van antes de la salida temprana: con el return null
   // primero, si isReevaluable cambiaba con la sección montada React veía
@@ -149,7 +155,8 @@ export function ReEvaluacionSection({
   ) ?? false
 
   // Política §11: 15 días hábiles desde la notificación del rechazo para
-  // radicar la apelación (el primer soporte); radicada a tiempo, Cofianza
+  // radicar la apelación (la fecha que registra el analista o, sin ella, el
+  // primer soporte); radicada a tiempo, Cofianza
   // responde en 10 aunque ya haya pasado el día 15. Fechas 'AAAA-MM-DD':
   // al mediodía local para que no se corran un día.
   const dia = (d: string) => formatDate(`${d}T12:00:00`)
@@ -158,7 +165,7 @@ export function ReEvaluacionSection({
   const avisoPlazo = hasChildReeval
     ? 'Puedes subir documentos adicionales para solicitar una reevaluación.'
     : plazoVencido
-      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilita una evaluación nueva.`
+      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilita una evaluación nueva.${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registra abajo la fecha en que lo hizo.' : ''}`
       : responderHasta
         ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(responderHasta)}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
         : apelarHasta
@@ -197,6 +204,23 @@ export function ReEvaluacionSection({
     }
   }
 
+  const fechaGuardada = historial?.fecha_radicacion_apelacion ?? ''
+  const fechaRadicacion = fechaEditada ?? fechaGuardada
+
+  const handleGuardarFecha = async () => {
+    setGuardandoFecha(true)
+    try {
+      await estudioService.registrarRadicacionApelacion(estudio.id, fechaRadicacion || null)
+      toast.success(fechaRadicacion ? 'Fecha de la apelación registrada' : 'Fecha de la apelación borrada')
+      setFechaEditada(null)
+      onDocumentoAdded()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo registrar la fecha de la apelación')
+    } finally {
+      setGuardandoFecha(false)
+    }
+  }
+
   const handleViewDoc = async (doc: IDocumentoSoporte) => {
     if (doc.archivo_url) {
       window.open(doc.archivo_url, '_blank')
@@ -218,6 +242,37 @@ export function ReEvaluacionSection({
           </p>
         </div>
       </div>
+
+      {/* Política §11: apelación radicada fuera de la plataforma (solo Cofianza). */}
+      {esAnalista && !hasChildReeval && (
+        <div className="space-y-2">
+          <label htmlFor="fecha-radicacion-apelacion" className="block text-sm font-medium text-gray-700">
+            Fecha en que el prospecto apeló (si fue por correo u otro canal)
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="fecha-radicacion-apelacion"
+              type="date"
+              value={fechaRadicacion}
+              max={hoyBogota()}
+              onChange={(e) => setFechaEditada(e.target.value)}
+              disabled={guardandoFecha}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+            />
+            <button
+              onClick={handleGuardarFecha}
+              disabled={guardandoFecha || fechaRadicacion === fechaGuardada}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            >
+              <IconCheck size={16} />
+              {guardandoFecha ? 'Guardando…' : 'Guardar fecha'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">
+            El plazo de 15 días hábiles se mide con esta fecha; sin ella cuenta el primer documento soporte subido.
+          </p>
+        </div>
+      )}
 
       {/* Documentos soporte lista */}
       {documentosSoporte.length > 0 && (
