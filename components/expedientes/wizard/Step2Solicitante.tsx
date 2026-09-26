@@ -35,6 +35,8 @@ import {
   TIPO_DOCUMENTO_OPTIONS,
   NIVEL_EDUCATIVO_OPTIONS,
   DEPARTAMENTOS_COLOMBIA,
+  MSG_PERSONA_JURIDICA,
+  esPersonaJuridica,
 } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 
@@ -463,6 +465,18 @@ export function Step2Solicitante({
           onClear={handleClearSelection}
           onEdit={() => handleEditExisting(data.solicitante!)}
         />
+
+        {/* Punto 3 (2026-09-25): ficha previa de persona jurídica o con NIT —
+            el asistente ya no las ofrece, pero una registrada antes sí llega. */}
+        {esPersonaJuridica(data.solicitante) && (
+          <div
+            className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            role="alert"
+          >
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>{MSG_PERSONA_JURIDICA}</span>
+          </div>
+        )}
 
         {/* §5.2/§5.1: el documento ya tenía ficha con otro contacto. El enlace
             va al contacto de la ficha; aquí se decide cuál vale. */}

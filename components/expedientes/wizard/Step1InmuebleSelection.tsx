@@ -23,10 +23,14 @@ import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
-import { TIPO_LABELS, esSeleccionable, motivoNoSeleccionable } from '@/components/inmuebles/constants'
+import {
+  TIPO_LABELS,
+  esSeleccionable as esSeleccionableBase,
+  motivoNoSeleccionable as motivoNoSeleccionableBase,
+} from '@/components/inmuebles/constants'
 import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
-import { WIZARD_MESSAGES } from './constants'
+import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 
 interface Step1InmuebleSelectionProps {
@@ -66,6 +70,14 @@ function estadoBadge(i: IInmueble) {
 // esSeleccionable / motivoNoSeleccionable viven en
 // components/inmuebles/constants porque la reasignacion del estudio (§4.3) usa
 // exactamente la misma regla — ver la nota alli.
+// Aquí además (punto 3, 2026-09-25) un inmueble comercial o mixto no se puede
+// elegir: el estudio no nacería (409 ESTUDIO_NO_AFIANZABLE). La reasignación
+// no cambia: ahí el estudio ya existe.
+const usoNoAfianzable = (i: IInmueble) => USOS_NO_AFIANZABLES.includes(i.uso)
+const esSeleccionable = (i: IInmueble) => esSeleccionableBase(i) && !usoNoAfianzable(i)
+const motivoNoSeleccionable = (i: IInmueble) =>
+  esSeleccionableBase(i) && usoNoAfianzable(i) ? MSG_USO_NO_AFIANZABLE : motivoNoSeleccionableBase(i)
+
 // Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
 // mas, los excedentes se encuentran via el buscador como antes.
 const MIS_INMUEBLES_LIMIT = 50

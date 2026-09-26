@@ -87,6 +87,10 @@ export function AccionHabilitarEstudioCard({
   const [motivoOmitir, setMotivoOmitir] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [proveedor, setProveedor] = useState<BuroEjecutable>('datacredito') // Adenda 1 §2: la central primaria
+  // Punto 3 (2026-09-25): comercial/mixto o arrendatario persona jurídica/NIT.
+  // La API lo frena antes del cobro (409 ESTUDIO_NO_AFIANZABLE); el motivo se
+  // queda en la tarjeta en vez de dejar reintentar.
+  const [noAfianzable, setNoAfianzable] = useState<string | null>(null)
 
   // Solo fetcha citas si hay chance de mostrar la card. Para los otros
   // casos (estudio ya decidido o usuario sin permiso) salimos sin gasto.
@@ -120,6 +124,8 @@ export function AccionHabilitarEstudioCard({
       if (errObj.code === 'ESTUDIO_YA_HABILITADO') {
         toast.message('El estudio ya estaba habilitado. Refrescando...')
         await onAction()
+      } else if (errObj.code === 'ESTUDIO_NO_AFIANZABLE') {
+        setNoAfianzable(errObj.message || 'Este estudio no se puede habilitar por la plataforma.')
       } else {
         toast.error(errObj.message || 'Error al habilitar la evaluación')
       }
@@ -293,10 +299,16 @@ export function AccionHabilitarEstudioCard({
                 ))}
               </div>
             </div>
+            {noAfianzable && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+                <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>{noAfianzable}</span>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleHabilitar}
-                disabled={submitting}
+                disabled={submitting || !!noAfianzable}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {submitting ? <IconLoader size={14} className="animate-spin" /> : <IconShieldCheck size={14} />}

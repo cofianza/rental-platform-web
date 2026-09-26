@@ -60,7 +60,7 @@ export interface IMoraDetalle extends IMoraTicket {
 }
 
 /** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =
- *  fuera del horario de cobranza de la Ley 2300 (o ya tuvo una gestión ese día):
+ *  fuera del horario de cobranza de la Ley 2300 (o sin 7 días desde el último WhatsApp de cobro):
  *  sale en `whatsapp_programado_para`. 'retenido' = igual, pero el envío
  *  automático está apagado y nada lo va a mandar solo. */
 export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono' | 'programado' | 'retenido'

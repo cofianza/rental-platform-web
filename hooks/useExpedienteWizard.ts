@@ -12,6 +12,7 @@ import type { ISolicitante, ISolicitanteCreateData } from '@/types/solicitante'
 import { solicitanteService } from '@/services/solicitanteService'
 import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
+import { esPersonaJuridica } from '@/components/expedientes/wizard/constants'
 
 // ============================================
 // Tipos del Wizard
@@ -486,7 +487,9 @@ export function useExpedienteWizard() {
       // §5.1: un solicitante ya registrado también necesita celular y correo,
       // y si se escribió otro contacto hay que decidir cuál vale.
       if (data.step2.solicitante) {
+        // Punto 3 (2026-09-25): persona jurídica/NIT no se estudia (409 en la API).
         return !data.step2.contactoPropuesto && solicitanteTieneContacto(data.step2.solicitante)
+          && !esPersonaJuridica(data.step2.solicitante)
       }
       if (data.step2.isNewSolicitante && data.step2.formData) {
         const form = data.step2.formData
@@ -499,7 +502,8 @@ export function useExpedienteWizard() {
           form.telefono?.trim() &&
           // Solo que haya correo: el formato lo valida validateStep2 al pulsar
           // «Siguiente» y lo dice bajo el campo (con el botón gris no había cómo).
-          form.email?.trim()
+          form.email?.trim() &&
+          !esPersonaJuridica(form)
         )
       }
       return false

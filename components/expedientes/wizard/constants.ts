@@ -19,9 +19,12 @@ export type WizardStepName = (typeof WIZARD_STEPS)[number]
 // Opciones de formulario
 // ============================================
 
+// Punto 3 (2026-09-25): mientras el contrato comercial y el de persona jurídica
+// no existan en la plataforma, el estudio no nace ni se cobra (la API responde
+// 409 ESTUDIO_NO_AFIANZABLE). Por eso el asistente no ofrece persona jurídica
+// ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos.
 export const TIPO_PERSONA_OPTIONS = [
   { value: 'natural', label: 'Persona Natural' },
-  { value: 'juridica', label: 'Persona Juridica' },
 ] as const
 
 export const TIPO_DOCUMENTO_OPTIONS = [
@@ -31,8 +34,19 @@ export const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'ppt', label: 'Permiso por Proteccion Temporal (PPT)' },
   { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
   { value: 'pasaporte', label: 'Pasaporte' },
-  { value: 'nit', label: 'NIT' },
 ] as const
+
+export const USOS_NO_AFIANZABLES: readonly string[] = ['comercial', 'local_comercial', 'mixto']
+
+export const MSG_USO_NO_AFIANZABLE =
+  'Uso comercial o mixto: por ahora Cofianza no afianza ese contrato por la plataforma. Escríbanos a hola@cofianza.co para revisar el caso.'
+
+export const MSG_PERSONA_JURIDICA =
+  'El arrendatario es una persona jurídica o se identifica con NIT: por ahora Cofianza no afianza ese contrato por la plataforma, así que no se cobra el estudio. Escríbanos a hola@cofianza.co para revisar el caso.'
+
+export function esPersonaJuridica(s: { tipo_persona?: string | null; tipo_documento?: string | null }): boolean {
+  return s.tipo_persona === 'juridica' || s.tipo_documento?.toLowerCase() === 'nit'
+}
 
 export const NIVEL_EDUCATIVO_OPTIONS = [
   { value: 'primaria', label: 'Primaria' },

@@ -94,14 +94,14 @@ const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado' | 'programado'>,
 function avisarResultado(accion: string, r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null }) {
   const estado = r.whatsapp_estado
   if (estado === 'programado') {
-    // Ley 2300: fuera del horario de cobranza (o con otra gestión ese día) el
-    // WhatsApp espera; no se pierde.
+    // Ley 2300: fuera del horario de cobranza (o antes de 7 días desde el último
+    // WhatsApp de cobro al inquilino) el WhatsApp espera; no se pierde.
     const cuando = r.whatsapp_programado_para
       ? `el ${new Date(r.whatsapp_programado_para).toLocaleString('es-CO', {
           timeZone: 'America/Bogota', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true,
         })}`
       : 'en el siguiente horario permitido'
-    toast.success(`${accion}. El WhatsApp al inquilino sale ${cuando}, dentro del horario de cobranza que permite la ley.`)
+    toast.success(`${accion}. El WhatsApp al inquilino sale ${cuando}: la ley pide el horario de cobranza y 7 días entre un WhatsApp de cobro y el siguiente.`)
   } else if (!estado || estado === 'aceptado') {
     toast.success(`${accion}. Se envió el WhatsApp al inquilino.`)
   } else {
@@ -289,7 +289,8 @@ export default function ReportarMoraPage() {
             <strong>Flujo de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
             al inquilino (Fase 1). Si no paga en 4 días, Cofianza lo pasa a Fase 2 (Urgencia) y a
             los 10 días a Fase 3 (Legal), donde toma el control del caso. Los WhatsApp salen en el
-            horario de cobranza que permite la ley (L-V 7 a. m.-7 p. m., sábados 8 a. m.-3 p. m.).
+            horario de cobranza que permite la ley (L-V 7 a. m.-7 p. m., sábados 8 a. m.-3 p. m.) y
+            con al menos 7 días entre uno y otro (el de Fase 2 sale hacia el día 7 y el de Fase 3, hacia el 14).
           </p>
         </div>
 
@@ -1090,7 +1091,7 @@ function MoraDetalleModal({
         isLoading={acting}
         variant="danger"
         title={`Escalar a ${mora?.estado === 'fase_1' ? 'Fase 2 (Urgencia)' : 'Fase 3 (Legal)'}`}
-        message="Al inquilino le llega el WhatsApp de escalación (fuera del horario de cobranza, en el siguiente horario permitido). No se puede deshacer."
+        message="Al inquilino le llega el WhatsApp de escalación cuando la ley lo permite: en el horario de cobranza y a los 7 días del anterior. No se puede deshacer."
         confirmLabel="Escalar"
       />
       <MotivoDialog
