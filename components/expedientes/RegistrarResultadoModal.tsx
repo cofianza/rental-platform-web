@@ -12,7 +12,11 @@ import { IconLoader, IconUpload, IconFileText, IconX, IconCheck } from '@/compon
 import { estudioService } from '@/services/estudioService'
 import { PROVEEDOR_LABELS } from '@/components/estudios/constants'
 import { formatCurrency } from '@/lib/constants'
-import type { IEstudio, IRegistrarResultadoInput } from '@/types/estudio'
+import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
+import { useMotivosDecision } from '@/hooks/useMotivosDecision'
+import { SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+
+const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
 
 interface RegistrarResultadoModalProps {
   isOpen: boolean
@@ -62,6 +66,11 @@ export function RegistrarResultadoModal({
   const [motivoRechazo, setMotivoRechazo] = useState('')
   const [fundamento, setFundamento] = useState('')
   const [condiciones, setCondiciones] = useState('')
+  // H58/H103: con el catálogo del API, rechazo y condiciones se eligen de una
+  // lista; sin él (API anterior), siguen los campos de texto.
+  const { catalogo } = useMotivosDecision()
+  const [motivos, setMotivos] = useState<IMotivosElegidos>(SIN_MOTIVOS)
+  const tipoLista = catalogo && resultado === 'rechazado' ? 'rechazar' : catalogo && resultado === 'condicionado' ? 'condicionar' : null
   const [archivo, setArchivo] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,6 +85,7 @@ export function RegistrarResultadoModal({
     setMotivoRechazo('')
     setFundamento('')
     setCondiciones('')
+    setMotivos(SIN_MOTIVOS)
     setArchivo(null)
     setUploadProgress(null)
     setIsSubmitting(false)
@@ -92,13 +102,16 @@ export function RegistrarResultadoModal({
   const validate = (): string | null => {
     if (!resultado) return 'Debe seleccionar un resultado'
     if (observaciones.trim().length < 10) return 'Las observaciones deben tener al menos 10 caracteres'
-    if (resultado === 'rechazado' && fundamento.trim().length < 10) {
+    if (tipoLista) {
+      const e = errorMotivos(tipoLista, motivos)
+      if (e) return e
+    } else if (resultado === 'rechazado' && fundamento.trim().length < 10) {
       return 'El fundamento interno debe tener al menos 10 caracteres'
     }
-    if (resultado === 'rechazado' && motivoRechazo.trim().length < 10) {
+    if (!tipoLista && resultado === 'rechazado' && motivoRechazo.trim().length < 10) {
       return 'El motivo para la inmobiliaria o el propietario debe tener al menos 10 caracteres'
     }
-    if (resultado === 'condicionado' && condiciones.trim().length < 10) {
+    if (!tipoLista && resultado === 'condicionado' && condiciones.trim().length < 10) {
       return 'Las condiciones deben tener al menos 10 caracteres'
     }
     if (score && (Number(score) < 0 || Number(score) > 999 || !Number.isInteger(Number(score)))) {
@@ -148,8 +161,14 @@ export function RegistrarResultadoModal({
         resultado,
         observaciones: observaciones.trim(),
         ...(score ? { score: Number(score) } : {}),
-        ...(resultado === 'rechazado' ? { motivo_rechazo: motivoRechazo.trim(), fundamento: fundamento.trim() } : {}),
-        ...(resultado === 'condicionado' ? { condiciones: condiciones.trim() } : {}),
+        // Con la lista, el API arma motivo_rechazo, fundamento y condiciones.
+        ...(tipoLista
+          ? motivosParaEnviar(motivos)
+          : resultado === 'rechazado'
+            ? { motivo_rechazo: motivoRechazo.trim(), fundamento: fundamento.trim() }
+            : resultado === 'condicionado'
+              ? { condiciones: condiciones.trim() }
+              : {}),
         ...(storageKey ? { certificado_storage_key: storageKey } : {}),
       }
 
@@ -281,8 +300,12 @@ export function RegistrarResultadoModal({
             </p>
           </div>
 
-          {/* Rechazo (P34): fundamento interno y motivo corto para el gestor */}
-          {resultado === 'rechazado' && (
+          {tipoLista && catalogo && (
+            <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isSubmitting} />
+          )}
+
+          {/* Rechazo (P34): fundamento interno y motivo corto para el gestor (API sin lista) */}
+          {!tipoLista && resultado === 'rechazado' && (
             <div className="space-y-4">
               <div>
                 <label htmlFor="registrar-resultado-modal-fundamento" className="block text-sm font-medium text-red-700 mb-1">
@@ -317,8 +340,8 @@ export function RegistrarResultadoModal({
             </div>
           )}
 
-          {/* Condiciones (conditional) */}
-          {resultado === 'condicionado' && (
+          {/* Condiciones (API sin lista) */}
+          {!tipoLista && resultado === 'condicionado' && (
             <div>
               <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-yellow-700 mb-1">
                 Condiciones <span className="text-red-500">*</span>

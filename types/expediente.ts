@@ -314,6 +314,9 @@ export interface IEjecutarTransicion {
   evaluacion?: IEvaluacionRevisionManual
   /** P34: obligatorio al rechazar; es lo que ve la inmobiliaria o el propietario. */
   motivo?: string
+  /** H58/H103: motivos de lista; el API arma con ellos motivo y comentario. */
+  motivos?: string[]
+  motivo_detalle?: string
 }
 
 /** Adenda 2 §4.3: V7 y V9 que puntúa el analista (códigos de OPCIONES_V7/V9 del API). */

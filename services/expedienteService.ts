@@ -242,6 +242,8 @@ class ExpedienteService {
         ...(data.documentos_consultados ? { documentos_consultados: data.documentos_consultados } : {}),
         ...(data.evaluacion ? { evaluacion: data.evaluacion } : {}),
         ...(data.motivo ? { motivo: data.motivo } : {}),
+        ...(data.motivos?.length ? { motivos: data.motivos } : {}),
+        ...(data.motivo_detalle ? { motivo_detalle: data.motivo_detalle } : {}),
       }
     )) as any
 
@@ -540,7 +542,10 @@ class ExpedienteService {
   async aprobarCondicionado(
     expedienteId: string,
     revision: {
-      fundamento: string
+      /** Sin lista de motivos (API anterior). Con `motivos`, el API arma el fundamento. */
+      fundamento?: string
+      motivos?: string[]
+      motivo_detalle?: string
       documentos_consultados: string[]
       evaluacion: IEvaluacionRevisionManual
       /** Política §15: sin historial en ninguna central, el analista verificó una fuente de capacidad. */

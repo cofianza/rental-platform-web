@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
 import type { Tab } from '@/components/ui/Tabs'
-import type { IEstudio } from '@/types/estudio'
+import type { IEstudio, IMotivosElegidos } from '@/types/estudio'
 import {
   IconArrowLeft,
   IconEdit,
@@ -295,6 +295,7 @@ export default function ExpedienteDetallePage() {
     documentosConsultados?: string[],
     evaluacion?: IEvaluacionRevisionManual,
     motivo?: string,
+    motivos?: IMotivosElegidos,
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -305,6 +306,7 @@ export default function ExpedienteDetallePage() {
         documentos_consultados: documentosConsultados,
         evaluacion,
         motivo,
+        ...motivos,
       })
       setExpediente(expedienteActualizado)
 

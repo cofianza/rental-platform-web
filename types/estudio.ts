@@ -169,6 +169,19 @@ export interface IRegistrarResultadoInput {
   fundamento?: string
   condiciones?: string
   certificado_storage_key?: string
+  /** H58/H103: códigos de la lista (el API llena motivo_rechazo/fundamento/condiciones con ellos). */
+  motivos?: string[]
+  motivo_detalle?: string
+}
+
+/** H58/H103: catálogo de motivos (GET /estudios/motivos-decision, solo Cofianza). */
+export type TipoDecision = 'aprobar' | 'rechazar' | 'condicionar'
+export type ICatalogoMotivos = Record<TipoDecision, Record<string, { visible: string; interno: string }>>
+
+/** Lo que se elige en SelectorMotivos y viaja al API. */
+export interface IMotivosElegidos {
+  motivos: string[]
+  motivo_detalle?: string
 }
 
 export interface ICertificadoPresignedUrlResponse {
