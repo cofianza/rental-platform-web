@@ -21,13 +21,20 @@
  * 2. NUNCA bloquea. Ni cuando no coincide, ni cuando Auco no responde, ni
  *    cuando el prospecto se niega. La Política no le da a esta fuente ningún
  *    rechazo (§2: "nunca rechaza por fallo técnico") — lo que hace un fallo es
- *    mandar el estudio a revisión manual. Un botón "Continuar" que desaparece
- *    convertiría eso en un portazo que nadie autorizó.
+ *    mandar el estudio a revisión manual. Antes del cotejo hay dos salidas
+ *    (verificar o negarse, que queda registrada); con un veredicto aparece
+ *    "Continuar". Un "Continuar" previo al cotejo saltaba el paso sin
+ *    registrar la negativa.
  *
- * 3. "Prefiero no tomarme la foto" está SIEMPRE visible, no escondido tras un
- *    fallo. La imagen del rostro es dato sensible (Ley 1581 art. 5) y el
- *    art. 6-a obliga a informar que no está obligado a autorizarlo. Un derecho
- *    que solo aparece cuando algo sale mal no es un derecho.
+ * 3. "Prefiero no tomarme la foto" es un botón a la vista desde el inicio, no
+ *    escondido tras un fallo. La imagen del rostro es dato sensible (Ley 1581
+ *    art. 5) y el art. 6-a obliga a informar que no está obligado a
+ *    autorizarlo. Un derecho que solo aparece cuando algo sale mal no es un
+ *    derecho.
+ *
+ * 4. Cada cotejo se cobra en Auco. Un reintento exige una selfie NUEVA (la
+ *    misma foto daría el mismo resultado) y el veredicto sube a la página
+ *    (`onResultado`) para que volver atrás no pida la foto otra vez.
  */
 
 'use client'
@@ -178,9 +185,11 @@ interface Props {
   /** Avanza al paso de firma. Se llama pase lo que pase con el cotejo. */
   onContinuar: () => void
   onVolver: () => void
+  /** El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. */
+  onResultado?: (estado: EstadoBiometria) => void
 }
 
-export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }: Props) {
+export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver, onResultado }: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -203,12 +212,16 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
         photo: selfie,
       })
       setResultado(r.estado)
+      onResultado?.(r.estado)
       setMensaje(r.motivo ?? '')
       if (r.estado === 'verificada') onContinuar()
+      // La misma selfie daría el mismo resultado (y otro cobro): se pide una nueva.
+      else setSelfie(null)
     } catch {
       // Ni siquiera un error de red puede dejarlo atrapado: se marca como no
-      // verificada (que es la verdad) y el botón de continuar sigue ahí.
+      // verificada (que es la verdad) y aparece «Continuar».
       setResultado('no_verificada')
+      onResultado?.('no_verificada')
       setMensaje('No pudimos completar la verificación en este momento. Puedes continuar: alguien de nuestro equipo revisará tu caso.')
     } finally {
       setEnviando(false)
@@ -219,6 +232,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
     setEnviando(true)
     try {
       await autorizacionPublicService.omitirBiometria(token)
+      onResultado?.('omitida')
     } catch {
       // El registro del "no autorizo" es best-effort: si falla, el estudio
       // igual llega sin biometría y termina en revisión manual.
@@ -285,40 +299,47 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver }
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando ? <IconLoader size={20} className="animate-spin" /> : resultado ? <IconRefresh size={18} /> : null}
-            {enviando ? 'Verificando…' : resultado ? 'Intentar de nuevo' : 'Verificar mi identidad'}
+            {enviando ? 'Verificando…' : resultado ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
           </button>
+          {resultado && !selfie && !enviando && (
+            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, toma otra selfie con mejor luz.</p>
+          )}
         </>
       )}
 
-      {/* Siempre visible: un fallo del cotejo no puede dejar a nadie atrapado
+      {/* Con un veredicto: un fallo del cotejo no deja a nadie atrapado
           (§2 "nunca rechaza por fallo técnico"). */}
-      <button
-        type="button"
-        onClick={onContinuar}
-        disabled={enviando}
-        className={cn(
-          'w-full rounded-lg px-6 py-3 text-sm font-bold transition-colors',
-          verificada
-            ? 'bg-primary-700 text-white hover:bg-primary-800'
-            : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
-        )}
-      >
-        <span className="inline-flex items-center gap-1.5">Continuar <IconArrowRight size={16} /></span>
-      </button>
+      {resultado && (
+        <button
+          type="button"
+          onClick={onContinuar}
+          disabled={enviando}
+          className={cn(
+            'min-h-11 w-full rounded-lg px-6 py-3 text-sm font-bold transition-colors',
+            verificada
+              ? 'bg-primary-700 text-white hover:bg-primary-800'
+              : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
+          )}
+        >
+          <span className="inline-flex items-center gap-1.5">Continuar <IconArrowRight size={16} /></span>
+        </button>
+      )}
+
+      {!resultado && (
+        <button
+          type="button"
+          onClick={omitir}
+          disabled={enviando}
+          className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Prefiero no tomarme la foto
+        </button>
+      )}
 
       {!verificada && (
         <p className="text-center text-xs text-gray-500">
           Tu foto solo se usa para confirmar tu identidad. No se guarda en Cofianza ni se comparte con la
-          inmobiliaria.{' '}
-          <button
-            type="button"
-            onClick={omitir}
-            disabled={enviando}
-            className="font-semibold text-gray-500 underline hover:text-gray-700"
-          >
-            Prefiero no tomarme la foto
-          </button>
-          . No estás obligado: tu estudio sigue y lo revisa una persona de nuestro equipo.
+          inmobiliaria. No estás obligado a tomarla: tu estudio sigue y lo revisa una persona de nuestro equipo.
         </p>
       )}
 

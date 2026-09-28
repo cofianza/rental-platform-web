@@ -1305,6 +1305,9 @@ export default function AutorizarPage() {
             estadoPrevio={data?.biometria?.estado ?? null}
             onContinuar={irAFirma}
             onVolver={volverPaso}
+            onResultado={(estado) =>
+              setData((d) => (d?.biometria ? { ...d, biometria: { ...d.biometria, estado } } : d))
+            }
           />
         )}
 
