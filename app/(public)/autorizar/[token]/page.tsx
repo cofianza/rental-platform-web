@@ -582,8 +582,9 @@ export default function AutorizarPage() {
   // ── Pantallas de estado ────────────────────────────────────
   if (pageState === 'loading') {
     return (
-      <div className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-primary-600" />
+      <div role="status" className="flex items-center justify-center py-20">
+        <IconLoader size={28} className="animate-spin text-primary-600" aria-hidden />
+        <span className="sr-only">Cargando tu autorización…</span>
       </div>
     )
   }
@@ -922,9 +923,9 @@ export default function AutorizarPage() {
                   <button
                     type="button"
                     onClick={() => setReporteAbierto(true)}
-                    className="w-full py-2 text-xs font-semibold text-gray-500 underline underline-offset-2 hover:text-gray-700"
+                    className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   >
-                    Estos datos no corresponden
+                    <IconUserX size={16} className="shrink-0" aria-hidden /> No soy yo o no reconozco esta solicitud
                   </button>
                 </form>
               )}
@@ -949,6 +950,8 @@ export default function AutorizarPage() {
                     <button
                       type="button"
                       onClick={() => setOpenFin(open ? null : i)}
+                      aria-expanded={open}
+                      aria-controls={`finalidad-${i}`}
                       className="flex w-full items-center gap-3 p-3.5 text-left"
                     >
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
@@ -964,7 +967,7 @@ export default function AutorizarPage() {
                       />
                     </button>
                     {open && (
-                      <ul className="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+                      <ul id={`finalidad-${i}`} className="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
                         {f.detalle.map((d) => (
                           <li key={d} className="flex gap-2">
                             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary-500" />
@@ -1066,6 +1069,7 @@ export default function AutorizarPage() {
                     <button
                       key={sit.key}
                       type="button"
+                      aria-pressed={on}
                       onClick={() => setSituacion(on ? null : sit.key)}
                       className={cn(
                         'rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
@@ -1179,6 +1183,7 @@ export default function AutorizarPage() {
                     <button
                       key={op.key}
                       type="button"
+                      aria-pressed={on}
                       onClick={() => setPresentacion(on ? null : op.key)}
                       className={cn(
                         'flex flex-col items-center gap-1.5 rounded-xl border px-3 py-4 text-sm font-semibold transition-colors',
@@ -1213,25 +1218,40 @@ export default function AutorizarPage() {
                     ya quedan guardados.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
+                    <div>
+                    <label htmlFor="coa-nombre" className="sr-only">Nombre de tu co-arrendatario</label>
                     <input
+                      id="coa-nombre"
                       type="text"
+                      autoComplete="off"
                       value={coaNombre}
                       maxLength={100}
                       onChange={(e) => setCoaNombre(e.target.value)}
                       placeholder="Nombre"
                       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     />
+                    </div>
+                    <div>
+                    <label htmlFor="coa-apellido" className="sr-only">Apellido de tu co-arrendatario</label>
                     <input
+                      id="coa-apellido"
                       type="text"
+                      autoComplete="off"
                       value={coaApellido}
                       maxLength={100}
                       onChange={(e) => setCoaApellido(e.target.value)}
                       placeholder="Apellido"
                       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     />
+                    </div>
                   </div>
+                  <label htmlFor="coa-email" className="sr-only">Correo de tu co-arrendatario</label>
                   <input
+                    id="coa-email"
                     type="email"
+                    autoComplete="off"
+                    aria-invalid={coaEmailError}
+                    aria-describedby={coaEmailError ? 'coa-email-error' : undefined}
                     value={coaEmail}
                     maxLength={120}
                     onChange={(e) => {
@@ -1245,14 +1265,17 @@ export default function AutorizarPage() {
                     )}
                   />
                   {coaEmailError && (
-                    <p className="text-xs text-red-600">
+                    <p id="coa-email-error" role="alert" className="text-xs text-red-600">
                       Revisa este correo: parece incompleto. También puedes borrarlo y dejarnos solo su
                       WhatsApp.
                     </p>
                   )}
+                  <label htmlFor="coa-telefono" className="sr-only">WhatsApp de tu co-arrendatario (opcional)</label>
                   <input
+                    id="coa-telefono"
                     type="tel"
                     inputMode="tel"
+                    autoComplete="off"
                     value={coaTelefono}
                     maxLength={20}
                     onChange={(e) => setCoaTelefono(e.target.value)}
@@ -1271,6 +1294,15 @@ export default function AutorizarPage() {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
             >
               Continuar <IconArrowRight size={16} />
+            </button>
+            {/* M13: salida explícita para quien no quiere contestar nada. No
+                guarda lo que haya escrito en este paso. */}
+            <button
+              type="button"
+              onClick={() => irAPaso(3)}
+              className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Saltar este paso
             </button>
             <button
               type="button"
@@ -1342,6 +1374,17 @@ export default function AutorizarPage() {
             >
               Continuar <IconArrowRight size={16} />
             </button>
+            {/* M13: saltar = seguir sin encender ningún permiso opcional. */}
+            <button
+              type="button"
+              onClick={() => {
+                setConsents({ analitica: false, comercial: false, historial_referencia: false })
+                salirDeBeneficios()
+              }}
+              className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Saltar este paso
+            </button>
             <button
               type="button"
               onClick={volverPaso}
@@ -1359,6 +1402,7 @@ export default function AutorizarPage() {
           <CapturaBiometrica
             token={token}
             estadoPrevio={data?.biometria?.estado ?? null}
+            documentoNombre={tipoDocumentoLabel(data?.solicitante.tipo_documento)}
             onContinuar={irAFirma}
             onVolver={volverPaso}
             onResultado={(estado) =>
@@ -1410,7 +1454,7 @@ export default function AutorizarPage() {
             </div>
 
             {errorMessage && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMessage}</div>
+              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMessage}</div>
             )}
 
             <button
@@ -1456,6 +1500,7 @@ export default function AutorizarPage() {
               <button
                 key={m.key}
                 type="button"
+                aria-pressed={on}
                 onClick={() => setReporteMotivo(m.key)}
                 className={cn(
                   'block w-full rounded-xl border p-3 text-left transition-colors',

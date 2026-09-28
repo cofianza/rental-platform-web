@@ -187,9 +187,18 @@ interface Props {
   onVolver: () => void
   /** El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. */
   onResultado?: (estado: EstadoBiometria) => void
+  /** Cómo se llama el documento del prospecto («cédula de ciudadanía», «pasaporte»…). */
+  documentoNombre?: string
 }
 
-export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver, onResultado }: Props) {
+export function CapturaBiometrica({
+  token,
+  estadoPrevio,
+  onContinuar,
+  onVolver,
+  onResultado,
+  documentoNombre = 'documento',
+}: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -250,7 +259,7 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver, 
         </div>
         <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirmemos que eres tú</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Toma una foto de tu cédula y una selfie. Comparamos las dos para proteger tu identidad: así nadie
+          Toma una foto de tu {documentoNombre} y una selfie. Comparamos las dos para proteger tu identidad: así nadie
           puede solicitar una fianza en tu nombre.
         </p>
       </div>
@@ -266,8 +275,12 @@ export function CapturaBiometrica({ token, estadoPrevio, onContinuar, onVolver, 
         <>
           <div className="space-y-3">
             <Ranura
-              titulo="Foto de tu cédula"
-              ayuda="El lado con tu foto, sobre una superficie plana"
+              titulo={`Foto de tu ${documentoNombre}`}
+              ayuda={
+                documentoNombre === 'pasaporte'
+                  ? 'La página con tu foto, sobre una superficie plana'
+                  : 'El lado con tu foto, sobre una superficie plana'
+              }
               icono={<IconId size={22} />}
               capture="environment"
               valor={documento}
