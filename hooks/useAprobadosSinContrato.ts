@@ -8,8 +8,7 @@
  * a 5. Este hook extrae ese cálculo SIN recorte para que la vista de Contratos
  * pueda listarlos completos.
  *
- * Se resuelve en 2 consultas (no 1 por expediente): se piden los aprobados y
- * luego, con sus ids, los contratos de todos ellos de una sola vez.
+ * El cálculo vive en cargarAprobadosSinContrato (también lo usa el widget).
  */
 
 'use client'
@@ -18,6 +17,32 @@ import { useCallback, useEffect, useState } from 'react'
 import { contratoService } from '@/services/contratoService'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente } from '@/types/expediente'
+
+/**
+ * Aprobados sin contrato activo (un contrato cancelado no cuenta). ÚNICA fuente
+ * de este cálculo (H23): la usan esta vista y el widget de acciones pendientes.
+ * Si el API marca `tiene_contrato_vivo` basta una consulta; si no, se piden los
+ * contratos de todos los candidatos de una vez.
+ */
+export async function cargarAprobadosSinContrato(limit: number): Promise<IExpediente[]> {
+  const { data: candidatos } = await expedienteService.getExpedientes({
+    estado: ['aprobado'],
+    page: 1,
+    limit,
+    sortBy: 'created_at',
+    sortOrder: 'desc',
+    con_contrato_vivo: true,
+  })
+  if (candidatos.length === 0) return []
+  if (candidatos[0].tiene_contrato_vivo !== undefined) return candidatos.filter((e) => !e.tiene_contrato_vivo)
+
+  const { data: contratos } = await contratoService.getAllContratos({
+    expediente_ids: candidatos.map((e) => e.id).join(','),
+    limit: 100,
+  })
+  const conContrato = new Set(contratos.filter((c) => c.estado !== 'cancelado').map((c) => c.expediente_id))
+  return candidatos.filter((e) => !conContrato.has(e.id))
+}
 
 export function useAprobadosSinContrato() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
@@ -28,28 +53,7 @@ export function useAprobadosSinContrato() {
     setIsLoading(true)
     setError(null)
     try {
-      const { data: candidatos } = await expedienteService.getExpedientes({
-        estado: ['aprobado'],
-        page: 1,
-        limit: 50,
-        sortBy: 'created_at',
-        sortOrder: 'desc',
-      })
-
-      if (candidatos.length === 0) {
-        setExpedientes([])
-        return
-      }
-
-      const { data: contratos } = await contratoService.getAllContratos({
-        expediente_ids: candidatos.map((e) => e.id).join(','),
-        limit: 100,
-      })
-      // Un contrato cancelado NO cuenta: ese estudio vuelve a necesitar contrato.
-      const conContrato = new Set(
-        contratos.filter((c) => c.estado !== 'cancelado').map((c) => c.expediente_id),
-      )
-      setExpedientes(candidatos.filter((e) => !conContrato.has(e.id)))
+      setExpedientes(await cargarAprobadosSinContrato(50))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar los estudios aprobados')
       setExpedientes([])

@@ -13,8 +13,8 @@
  * duración + fecha desde AccionContratoPendienteCard. Antes de este hook,
  * ese paso no se exponía en el dashboard y el propietario quedaba "ciego".
  *
- * Categoría 4 viene en la misma respuesta de expedientes (con_contrato_vivo);
- * si el API no trae el campo, se resuelve con GET /contratos?expediente_ids=….
+ * Categoría 4 la calcula cargarAprobadosSinContrato (useAprobadosSinContrato),
+ * la misma función que la vista de Contratos: un solo criterio (H23).
  *
  * TODO: si el dataset supera 50 en producción, paginar por categoría.
  */
@@ -23,8 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { citaService } from '@/services/citaService'
-import { contratoService } from '@/services/contratoService'
-import { expedienteService } from '@/services/expedienteService'
+import { cargarAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
 
@@ -60,14 +59,7 @@ export function useAccionesPendientes() {
         citaService.listMisCitas({ limit: 50 }),
         // Solo aprobados: un condicionado todavía no admite contrato (lo decide
         // Cofianza) y salía como «Estudio aprobado · Generar contrato».
-        expedienteService.getExpedientes({
-          estado: ['aprobado'],
-          page: 1,
-          limit: 20,
-          sortBy: 'created_at',
-          sortOrder: 'desc',
-          con_contrato_vivo: true,
-        }),
+        cargarAprobadosSinContrato(20),
       ])
 
       const today = new Date()
@@ -93,30 +85,9 @@ export function useAccionesPendientes() {
           .slice(0, 5)
       }
 
-      // ── Categoria contratos por generar ──────────────────
-      // Entran los que NO tienen contrato activo. Limitamos a 5 visibles
-      // (igual que las otras).
-      let porGenerarContrato: IExpediente[] = []
-      const candidatos = expedientesRes.status === 'fulfilled' ? expedientesRes.value.data : []
-      if (candidatos.length > 0 && candidatos[0].tiene_contrato_vivo !== undefined) {
-        // El API ya lo marcó en la misma respuesta: sin segunda petición.
-        porGenerarContrato = candidatos.filter((e) => !e.tiene_contrato_vivo).slice(0, 5)
-      } else if (candidatos.length > 0) {
-        // API sin el campo: una sola consulta con los ids candidatos.
-        try {
-          const { data: contratos } = await contratoService.getAllContratos({
-            expediente_ids: candidatos.map((e) => e.id).join(','),
-            limit: 100,
-          })
-          const conContrato = new Set(
-            contratos.filter((c) => c.estado !== 'cancelado').map((c) => c.expediente_id),
-          )
-          porGenerarContrato = candidatos.filter((e) => !conContrato.has(e.id)).slice(0, 5)
-        } catch {
-          // Si falla la consulta de contratos, omitimos la categoria (mejor
-          // que romper todo el widget).
-        }
-      }
+      // ── Categoria contratos por generar (5 visibles, como las otras) ──
+      const porGenerarContrato: IExpediente[] =
+        expedientesRes.status === 'fulfilled' ? expedientesRes.value.slice(0, 5) : []
 
       setData({
         porConfirmar,
