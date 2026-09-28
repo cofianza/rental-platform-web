@@ -172,6 +172,16 @@ export function BloqueosContrato({
         if (DEL_CRC.includes(b.codigo) && b.estudioId && puedeEditar && onCambio) {
           return <EmitirCertificado estudioId={b.estudioId} regenerar={b.codigo === 'CRC_DESACTUALIZADO'} onCambio={onCambio} />
         }
+        // Sin permiso (o sin la evaluación a mano) «Ir al estudio» no llevaba a ningún botón: se dice quién lo emite.
+        if (DEL_CRC.includes(b.codigo)) {
+          return (
+            <p className="text-xs text-gray-600">
+              {puedeEditar
+                ? 'Escríbenos para emitir el certificado de esta evaluación.'
+                : 'Lo emite quien puede editar este estudio (el titular de la inmobiliaria o un miembro con permiso).'}
+            </p>
+          )
+        }
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>
             Ir al estudio <IconArrowRight size={12} />
