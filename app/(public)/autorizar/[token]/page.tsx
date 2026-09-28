@@ -195,6 +195,9 @@ export default function AutorizarPage() {
   const [documento, setDocumento] = useState('')
   const [verificandoDoc, setVerificandoDoc] = useState(false)
   const [documentoError, setDocumentoError] = useState('')
+  // A3: un dedazo en el número detiene el enlace (la API no da otro intento),
+  // así que antes de enviarlo se le muestra lo que escribió para que lo revise.
+  const [repasoDoc, setRepasoDoc] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const [reporteMotivo, setReporteMotivo] = useState<'no_soy_yo' | 'datos_incorrectos'>('no_soy_yo')
   const [reporteDetalle, setReporteDetalle] = useState('')
@@ -402,8 +405,19 @@ export default function AutorizarPage() {
   // escribe y la API lo compara. Un error de digitación en la ficha ya no
   // termina consultando a un tercero: si no coincide, el enlace se detiene y
   // el gestor corrige y reenvía (mismo camino que "los datos están mal").
-  async function handleConfirmarIdentidad(e: React.FormEvent) {
+  function handleRepasarDocumento(e: React.FormEvent) {
     e.preventDefault()
+    if (verificandoDoc || !documento.trim()) return
+    setRepasoDoc(true)
+  }
+
+  function corregirDocumento() {
+    setRepasoDoc(false)
+    // Al volver, el cursor queda en el campo para corregir sin buscarlo.
+    requestAnimationFrame(() => document.getElementById('numero-documento')?.focus())
+  }
+
+  async function handleConfirmarIdentidad() {
     if (verificandoDoc || !documento.trim()) return
     setVerificandoDoc(true)
     setDocumentoError('')
@@ -424,6 +438,7 @@ export default function AutorizarPage() {
         return
       }
       setDocumentoError(mensajeParaProspecto(err, 'No pudimos revisar tu documento. Inténtalo otra vez.'))
+      setRepasoDoc(false)
     } finally {
       setVerificandoDoc(false)
     }
@@ -835,8 +850,39 @@ export default function AutorizarPage() {
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-primary-700">
                   <IconUserCheck size={14} /> Confirmaste que eres tú
                 </p>
+              ) : repasoDoc ? (
+                <div className="mt-4 space-y-3" role="group" aria-labelledby="repaso-doc-titulo">
+                  <p id="repaso-doc-titulo" className="text-sm text-gray-700">
+                    Escribiste este número de {tipoDocumentoLabel(data.solicitante.tipo_documento)}:
+                  </p>
+                  <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-center font-mono text-2xl font-bold tracking-wide text-gray-900">
+                    {formatearDocumento(documento, data.solicitante.tipo_documento)}
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">¿Es correcto?</p>
+                  <p className="text-xs leading-relaxed text-gray-500">
+                    Revísalo bien: si no coincide con el registrado, detenemos el proceso y necesitarás un enlace
+                    nuevo.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConfirmarIdentidad}
+                    disabled={verificandoDoc}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {verificandoDoc && <IconLoader size={18} className="animate-spin" />}
+                    {verificandoDoc ? 'Revisando…' : 'Sí, continuar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={corregirDocumento}
+                    disabled={verificandoDoc}
+                    className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Corregir
+                  </button>
+                </div>
               ) : (
-                <form onSubmit={handleConfirmarIdentidad} className="mt-4 space-y-2" noValidate>
+                <form onSubmit={handleRepasarDocumento} className="mt-4 space-y-2" noValidate>
                   <label htmlFor="numero-documento" className="block text-sm font-bold text-gray-900">
                     Escribe tu número de {tipoDocumentoLabel(data.solicitante.tipo_documento)}
                   </label>
@@ -871,8 +917,7 @@ export default function AutorizarPage() {
                     disabled={verificandoDoc || !documento.trim()}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {verificandoDoc && <IconLoader size={18} className="animate-spin" />}
-                    {verificandoDoc ? 'Revisando…' : 'Sí, soy yo'}
+                    Sí, soy yo
                   </button>
                   <button
                     type="button"
@@ -1509,6 +1554,23 @@ const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
 
 function tipoDocumentoLabel(tipo: string | null | undefined): string {
   return TIPO_DOCUMENTO_TEXTO[tipo ?? ''] ?? 'documento'
+}
+
+// Pantalla de repaso (A3): el número como se lee en el documento físico.
+// Solo muestra; a la API viaja lo que se escribió, sin tocar.
+//   cc / ce / ti: 1.023.456.789 · NIT: 900.123.456-7 · pasaporte: en mayúsculas
+//   PPT, PEP y cualquier otro: tal cual (no se escriben con puntos).
+function formatearDocumento(valor: string, tipo: string | null | undefined): string {
+  const v = valor.trim().replace(/\s+/g, '')
+  const puntos = (d: string) => d.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const limpio = v.replace(/\./g, '')
+  if ((tipo === 'cc' || tipo === 'ce' || tipo === 'ti') && /^\d+$/.test(limpio)) return puntos(limpio)
+  if (tipo === 'nit') {
+    const m = limpio.match(/^(\d+)-?(\d)?$/)
+    if (m) return m[2] ? `${puntos(m[1])}-${m[2]}` : puntos(m[1])
+  }
+  if (tipo === 'pasaporte') return v.toUpperCase()
+  return v
 }
 
 function Card({ children }: { children: React.ReactNode }) {
