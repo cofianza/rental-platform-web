@@ -88,6 +88,10 @@ export interface IAutorizacionPublicData {
     requerida: boolean
     estado: EstadoBiometria | null
   }
+  /** A1: nombre de la inmobiliaria o «El propietario del inmueble». Ausente en APIs viejas. */
+  solicitado_por?: string | null
+  /** A2: si al prospecto le toca pagar el estudio y cuánto. Ausente en APIs viejas. */
+  pago?: { requerido: boolean; monto_formateado: string | null } | null
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
