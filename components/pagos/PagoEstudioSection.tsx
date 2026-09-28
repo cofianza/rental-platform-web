@@ -94,7 +94,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   useEffect(() => { fetchSaldo() }, [fetchSaldo, version])
 
   // Polling automático mientras esperamos pago. Cuando el solicitante paga
-  // por Stripe, el webhook tarda 1-3 seg en marcar el pago como 'completado'
+  // por Mercado Pago, el webhook tarda 1-3 seg en marcar el pago como 'completado'
   // — sin esto el panel queda mostrando "pendiente" hasta que el usuario
   // refresque a mano. Polling cada 12 seg, solo en estados donde tiene sentido.
   // Cuando detectamos que ya no está pendiente, llamamos onPagoCompletado
@@ -257,7 +257,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
 
   // ── Vista solicitante ─────────────────────────────────────────────────
   // El solicitante no puede "pagar por el gestor" ni "enviar link". Solo paga si hay
-  // link de Stripe generado, o espera a que definan la forma de pago.
+  // link de Mercado Pago generado, o espera a que definan la forma de pago.
   if (userRole === 'solicitante') {
     if (hideIfNoAction && (estado.estado === 'sin_definir' || estado.estado === 'cancelado' || estado.estado === 'esperando_autorizacion')) {
       return null
@@ -1077,7 +1077,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     )
   }
 
-  // Pendiente con link de Stripe → CTA grande "Pagar ahora".
+  // Pendiente con link de Mercado Pago → CTA grande "Pagar ahora".
   if (estado.estado === 'pendiente' && linkPago) {
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">

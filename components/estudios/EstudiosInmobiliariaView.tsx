@@ -337,7 +337,7 @@ export function EstudiosInmobiliariaView({
         )}
       </div>
 
-      {/* Compra de paquetes (ya existente, flujo Stripe) — solo inmobiliaria */}
+      {/* Compra de paquetes (ya existente, checkout de Mercado Pago) — solo inmobiliaria */}
       {showPaquetes && <AdquirirEstudiosCredito />}
 
       {/* Detalle del estudio (modal reutilizado) */}

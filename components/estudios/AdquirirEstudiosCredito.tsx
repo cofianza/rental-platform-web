@@ -1,7 +1,7 @@
 /**
  * Sección "Adquirir estudios de crédito" para el tab Estudios de la
  * inmobiliaria (mockup 13_v2). Reutiliza la funcionalidad real ya existente:
- * creditosEstudiosService (listPaquetes / getMiSaldo / comprarPaquete → Stripe
+ * creditosEstudiosService (listPaquetes / getMiSaldo / comprarPaquete → Mercado Pago
  * Checkout). Los paquetes y precios vienen del API (no del mock).
  */
 
@@ -54,7 +54,7 @@ function AdquirirEstudiosCreditoContenido() {
     }
   }, [])
 
-  // Toast al volver de Stripe (?status=success|cancelled).
+  // Toast al volver de Mercado Pago (?status=success|cancelled).
   useEffect(() => {
     if (status === 'success') {
       toast.success('Pago confirmado — los créditos se acreditarán en unos segundos.')

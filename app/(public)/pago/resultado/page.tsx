@@ -1,7 +1,7 @@
 /**
  * Pagina publica de resultado del pago - HP-353
  * Accesible sin autenticacion (el arrendatario no tiene cuenta)
- * Muestra resultado del pago tras redireccion de Stripe
+ * Muestra resultado del pago tras la redireccion de Mercado Pago
  */
 
 'use client'
@@ -74,7 +74,7 @@ function PagoResultadoContent() {
       .finally(() => setReconcileDone(true))
   }, [status, paymentId])
 
-  // Auto-cierre tras pago exitoso. Stripe se abrio en una pestaña nueva
+  // Auto-cierre tras pago exitoso. Mercado Pago se abrio en una pestaña nueva
   // (target="_blank" rel="noopener noreferrer" desde el CTA "Pagar ahora"), asi que `window.close()`
   // nos devuelve a la pestaña original donde el usuario tenia su expediente.
   // Si el browser bloquea el close (politica de seguridad cuando no podemos

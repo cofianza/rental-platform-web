@@ -1,6 +1,6 @@
 /**
  * Servicio: creditos de estudios para inmobiliarias.
- * Permite comprar paquetes (Stripe Checkout), consultar saldo y
+ * Permite comprar paquetes (checkout de Mercado Pago), consultar saldo y
  * liberar estudios consumiendo creditos pre-comprados.
  */
 

@@ -1,8 +1,10 @@
 /**
- * Creditos de estudios — pantalla de inmobiliaria/propietario.
+ * Creditos de estudios — pantalla de la inmobiliaria (y del administrador).
+ * El propietario individual paga cada evaluación con Mercado Pago (decisión
+ * H2, 2026-09-28): no usa créditos y el API le responde 403.
  *
- * Muestra saldo, paquetes disponibles para comprar (Stripe Checkout)
- * y el historial de movimientos.
+ * Muestra saldo, paquetes disponibles para comprar (checkout de la pasarela de
+ * pagos: Mercado Pago en producción) y el historial de movimientos.
  */
 
 'use client'

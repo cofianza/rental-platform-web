@@ -488,7 +488,7 @@ function formatCitaFecha(iso: string | null): string {
 /** Info del pago del estudio por expediente (cuando ya aplica). */
 interface PagoEstudioInfo {
   estado: string // 'sin_definir' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
-  linkPago: string | null // payment_link_url de Stripe si existe
+  linkPago: string | null // payment_link_url de Mercado Pago si existe
 }
 
 function SolicitanteDashboard() {
