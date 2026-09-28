@@ -104,7 +104,7 @@ const CON_BIOMETRIA =
 const FINALIDADES = [
   {
     Icon: IconActivity,
-    titulo: 'Evaluamos tu estudio en segundos',
+    titulo: 'Evaluamos tu estudio',
     sub: 'Riesgo, capacidad de pago y aprobación',
     detalle: [
       'Analizamos tu perfil de riesgo y tu comportamiento de pago para definir si podemos respaldarte y en qué condiciones.',
@@ -200,6 +200,9 @@ export default function AutorizarPage() {
   const [repasoDoc, setRepasoDoc] = useState(false)
   const [reporteAbierto, setReporteAbierto] = useState(false)
   const [reporteMotivo, setReporteMotivo] = useState<'no_soy_yo' | 'datos_incorrectos'>('no_soy_yo')
+  // M11: la pantalla «Detuvimos el proceso» dice qué sigue según el motivo.
+  // null = se llegó sin reportar en esta sesión (enlace ya detenido).
+  const [motivoReportado, setMotivoReportado] = useState<'no_soy_yo' | 'datos_incorrectos' | null>(null)
   const [reporteDetalle, setReporteDetalle] = useState('')
   const [reportando, setReportando] = useState(false)
   // §12: el error del reporte se muestra DENTRO del modal. La pantalla
@@ -349,8 +352,8 @@ export default function AutorizarPage() {
   // índice traduce el paso 'bio' a su posición para poder compararlo.
   const conBiometria = !!data?.biometria?.requerida
   const pasosBarra = conBiometria
-    ? ['Autorización', 'Sobre ti', 'Permisos', 'Identidad', 'Confirmar']
-    : ['Autorización', 'Sobre ti', 'Permisos', 'Confirmar']
+    ? ['Autorización', 'Sobre ti', 'Beneficios', 'Identidad', 'Confirmar']
+    : ['Autorización', 'Sobre ti', 'Beneficios', 'Confirmar']
   const pasoIndice = paso === 'bio' ? 4 : paso === 4 && conBiometria ? 5 : paso
 
   // PASO 5 → backend. Una sola llamada al salir de "Sobre ti", con la
@@ -479,6 +482,7 @@ export default function AutorizarPage() {
         ...(reporteDetalle.trim() ? { detalle: reporteDetalle.trim() } : {}),
       })
       setReporteAbierto(false)
+      setMotivoReportado(reporteMotivo)
       setPageState('reportado')
     } catch (err) {
       // ÚNICO punto de esta pantalla donde el silencio es inaceptable: la
@@ -502,6 +506,7 @@ export default function AutorizarPage() {
         code === 'AUTORIZACION_NOT_FOUND'
       ) {
         setReporteAbierto(false)
+        setMotivoReportado(reporteMotivo)
         setPageState('reportado')
         return
       }
@@ -648,7 +653,12 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">Detuvimos el proceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
             Gracias por avisarnos. Este enlace ya no sirve y <strong>nadie va a consultar tus datos</strong> con
-            él. El equipo de Cofianza ya fue notificado y revisará el caso.
+            él.
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+            {motivoReportado === 'datos_incorrectos'
+              ? 'Quien tramita tu estudio corregirá tus datos y te enviará un enlace nuevo. No tienes que hacer nada más.'
+              : 'El equipo de Cofianza ya fue notificado y revisará el caso. Si este enlace no era para ti, no tienes que hacer nada más.'}
           </p>
           <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
         </div>
@@ -1365,10 +1375,11 @@ export default function AutorizarPage() {
             <div>
               {/* "Tu cuenta" hacía dudar al prospecto: llegó por un enlace de
                   WhatsApp y no tiene ninguna cuenta creada. */}
-              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Permisos opcionales a tu favor</h2>
+              {/* M12: «Beneficios», el mismo nombre que usa el texto legal para este paso. */}
+              <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Beneficios opcionales</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {BENEFICIOS.length === 3 ? 'Tres' : BENEFICIOS.length} permisos opcionales que trabajan a tu favor. Tú eliges cuáles encender — y los cambias cuando
-                quieras. Tu fianza funciona igual, los actives o no.
+                {BENEFICIOS.length === 3 ? 'Tres' : BENEFICIOS.length} autorizaciones opcionales. Tú eliges cuáles
+                encender y las cambias cuando quieras. Tu fianza funciona igual, las actives o no.
               </p>
             </div>
 
