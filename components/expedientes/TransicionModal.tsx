@@ -14,7 +14,7 @@ import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
 import type { IMotivosElegidos } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -244,6 +244,7 @@ export function TransicionModal({
         {/* Campo de comentario (con la lista, el API lo arma de los motivos) */}
         {!tipoLista && (
         <div>
+          {cancelaCofianza && <LoVeLaInmobiliaria />}
           <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">
             {pideMotivoGestor
               ? 'Fundamento interno'
@@ -275,6 +276,7 @@ export function TransicionModal({
 
         {pideMotivoGestor && (
           <div>
+            <LoVeLaInmobiliaria />
             <label htmlFor="transicion-modal-motivo-gestor" className="block text-sm font-medium text-gray-700 mb-2">
               Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
             </label>

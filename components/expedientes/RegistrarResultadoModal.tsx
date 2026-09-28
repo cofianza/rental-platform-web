@@ -14,7 +14,7 @@ import { PROVEEDOR_LABELS } from '@/components/estudios/constants'
 import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 
 const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
 
@@ -283,6 +283,7 @@ export function RegistrarResultadoModal({
 
           {/* Observaciones */}
           <div>
+            <LoVeLaInmobiliaria />
             <label htmlFor="registrar-resultado-modal-observaciones-min-10-caracteres" className="block text-sm font-medium text-gray-700 mb-1">
               Observaciones <span className="text-red-500">*</span>
               <span className="text-gray-500 font-normal"> (min. 10 caracteres)</span>
@@ -322,6 +323,7 @@ export function RegistrarResultadoModal({
                 <p className="text-xs text-gray-500 mt-1">Solo lo ve Cofianza: queda en el historial del estudio.</p>
               </div>
               <div>
+                <LoVeLaInmobiliaria />
                 <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-red-700 mb-1">
                   Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
                 </label>
@@ -343,6 +345,7 @@ export function RegistrarResultadoModal({
           {/* Condiciones (API sin lista) */}
           {!tipoLista && resultado === 'condicionado' && (
             <div>
+              <LoVeLaInmobiliaria />
               <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-yellow-700 mb-1">
                 Condiciones <span className="text-red-500">*</span>
               </label>

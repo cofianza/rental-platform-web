@@ -27,6 +27,11 @@ export function motivosParaEnviar(v: IMotivosElegidos): IMotivosElegidos {
   return { motivos: v.motivos, ...(detalle ? { motivo_detalle: detalle } : {}) }
 }
 
+/** Arriba de todo texto libre que llega a la inmobiliaria o al propietario (decisión 2026-09-28). */
+export function LoVeLaInmobiliaria() {
+  return <p className="mb-1 text-xs font-semibold text-amber-700">Este texto lo ve la inmobiliaria</p>
+}
+
 const TITULO: Record<TipoDecision, string> = {
   aprobar: 'Motivo de la aprobación',
   rechazar: 'Motivo del rechazo',
@@ -91,6 +96,7 @@ export function SelectorMotivos({
         ))}
       </ul>
       <div>
+        {tipo === 'condicionar' && <LoVeLaInmobiliaria />}
         <label htmlFor={`${idBase}-detalle`} className="mb-1 block text-sm font-medium text-gray-700">
           {conOtro ? (
             <>
