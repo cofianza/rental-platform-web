@@ -158,19 +158,20 @@ const BENEFICIOS: Array<{ key: ConsentKey; Icon: typeof IconBarChart3; titulo: s
     key: 'analitica',
     Icon: IconBarChart3,
     titulo: 'Analítica de tu perfil',
-    desc: 'Cofianza analiza tu perfil para ofrecerte productos y condiciones según tu caso. Incluye analítica avanzada, segmentación y perfilamiento comercial.',
+    // B8: cada texto repite la finalidad del texto legal §5.2 (i)/(ii)/(iii), sin agregar ni recortar.
+    desc: 'Cofianza hace analítica avanzada, segmentación y perfilamiento comercial con tus datos.',
   },
   {
     key: 'comercial',
     Icon: IconDollarSign,
     titulo: 'Comunicaciones comerciales',
-    desc: 'Cofianza y sus aliados te envían ofertas, oportunidades de arriendo y mercadeo por los medios de contacto que registraste.',
+    desc: 'Cofianza te envía comunicaciones comerciales, ofertas y mercadeo.',
   },
   {
     key: 'historial_referencia',
     Icon: IconUsers,
     titulo: 'Tu historial como referencia',
-    desc: 'Cofianza comparte tu historial de buen pago como referencia con inmobiliarias, afianzadoras y arrendadores que evalúen una solicitud tuya.',
+    desc: 'Cofianza comparte tu historial de buen pago como referencia ante terceros del ecosistema, como inmobiliarias, afianzadoras y arrendadores.',
   },
 ]
 
