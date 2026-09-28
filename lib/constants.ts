@@ -829,3 +829,14 @@ export const PUBLIC_AUTH_ROUTES = [
   '/recuperar-contrasena',
   '/restablecer-contrasena',
 ] as const
+
+/**
+ * Contacto de Cofianza para las páginas públicas (enlaces que abre un
+ * prospecto sin cuenta). Espejo de configuracion_sistema.empresa (phone,
+ * email) y de COMPANY en el API: si cambian allá, cambiar aquí.
+ */
+export const CONTACTO_COFIANZA = {
+  whatsapp: '573169724813',
+  whatsappVisible: '+57 316 972 4813',
+  email: 'hola@cofianza.co',
+} as const

@@ -38,8 +38,11 @@ import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { IAutorizacionPublicData, IPagoProspecto, IPerfilProspectoInput } from '@/types/autorizacion'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
+import { CONTACTO_COFIANZA } from '@/lib/constants'
 import {
   IconShieldCheck,
+  IconWhatsapp,
+  IconMail,
   IconLock,
   IconActivity,
   IconSearch,
@@ -276,8 +279,8 @@ export default function AutorizarPage() {
             : code === 'AUTORIZACION_EXPIRADA' ||
                 code === 'AUTORIZACION_ESTADO_INVALIDO' ||
                 code === 'AUTORIZACION_NOT_FOUND'
-              ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.'
-              : 'No pudimos abrir tu autorización. Pídele un enlace nuevo a quien te lo envió.',
+              ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.'
+              : 'No pudimos abrir tu autorización. Pídele un enlace nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.',
         )
         setPageState('error')
       })
@@ -415,7 +418,7 @@ export default function AutorizarPage() {
         return
       }
       if (code === 'AUTORIZACION_EXPIRADA' || code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_NOT_FOUND') {
-        setErrorMessage('Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió.')
+        setErrorMessage('Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.')
         setData(null)
         setPageState('error')
         return
@@ -632,7 +635,7 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">Este estudio ya no está activo</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
             No hay nada que autorizar con este enlace y no vamos a consultar tus datos con él. Si tienes dudas,
-            escríbele a quien te lo envió.
+            escríbele a quien te lo envió o a nosotros (abajo están nuestros datos).
           </p>
           <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
         </div>
@@ -967,8 +970,16 @@ export default function AutorizarPage() {
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span className="text-sm text-gray-700">
-                <strong>He leído, comprendido y acepto</strong> la autorización de tratamiento de datos y la
-                Política de Privacidad de Cofianza S.A.S.
+                <strong>He leído, comprendido y acepto</strong> la autorización de tratamiento de datos y la{' '}
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary-700 underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Política de Privacidad de Cofianza S.A.S.
+                </a>
               </span>
             </label>
 
@@ -1504,6 +1515,35 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-lg">
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">{children}</div>
+      <ContactoCofianza />
+    </div>
+  )
+}
+
+/**
+ * En TODOS los estados (también vencido, inactivo, error): quien abre el
+ * enlace sin contexto necesita un canal de Cofianza, no solo «quien te lo envió».
+ */
+function ContactoCofianza() {
+  return (
+    <div className="mt-4 text-center text-sm text-gray-600">
+      <p>¿Dudas sobre este mensaje? Escríbenos:</p>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+        <a
+          href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 font-medium text-primary-700 hover:bg-gray-50"
+        >
+          <IconWhatsapp size={16} /> WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
+        </a>
+        <a
+          href={`mailto:${CONTACTO_COFIANZA.email}`}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 font-medium text-primary-700 hover:bg-gray-50"
+        >
+          <IconMail size={16} /> {CONTACTO_COFIANZA.email}
+        </a>
+      </div>
     </div>
   )
 }
