@@ -219,6 +219,9 @@ export default function AutorizarPage() {
   // Se enciende al intentar continuar, no al teclear: nadie quiere ver
   // "revisa el correo" cuando lleva escrita una sola letra.
   const [coaEmailError, setCoaEmailError] = useState(false)
+  // M9: qué le falta al co-arrendatario para poder guardarlo. Antes, con datos
+  // a medias, se descartaban en silencio y el prospecto creía haberlos dejado.
+  const [coaFaltan, setCoaFaltan] = useState<string[]>([])
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
   // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
@@ -361,12 +364,26 @@ export default function AutorizarPage() {
   // la identidad, lo laboral y el ingreso. Ahora hay dos defensas: este chequeo
   // en el campo (el prospecto ve el dedazo y lo corrige) y `.catch(undefined)`
   // por campo en perfilProspectoSchema (un campo malo se cae solo).
-  async function guardarPerfilYSeguir() {
-    if (presentacion === 'acompanado' && coaEmail.trim() && !EMAIL_RE.test(coaEmail.trim())) {
+  async function guardarPerfilYSeguir(sinCoarrendatario = false) {
+    if (presentacion === 'acompanado' && coaEmail.trim() && !EMAIL_RE.test(coaEmail.trim()) && !sinCoarrendatario) {
       setCoaEmailError(true)
       return
     }
     setCoaEmailError(false)
+    // M9: datos a medias → se avisa qué falta; nunca se descartan sin decirlo.
+    if (presentacion === 'acompanado' && !sinCoarrendatario) {
+      const algo = [coaNombre, coaApellido, coaEmail, coaTelefono].some((v) => v.trim())
+      const faltan = [
+        !coaNombre.trim() && 'su nombre',
+        !coaApellido.trim() && 'su apellido',
+        !coaEmail.trim() && !coaTelefono.trim() && 'su correo o su WhatsApp',
+      ].filter(Boolean) as string[]
+      if (algo && faltan.length) {
+        setCoaFaltan(faltan)
+        return
+      }
+    }
+    setCoaFaltan([])
     irAPaso(3)
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
     const perfil: IPerfilProspectoInput = {
@@ -375,7 +392,7 @@ export default function AutorizarPage() {
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
       ...(presentacion ? { presentacion } : {}),
-      ...(presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
+      ...(!sinCoarrendatario && presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
         ? {
             coarrendatario: {
               nombre: coaNombre.trim(),
@@ -1226,7 +1243,10 @@ export default function AutorizarPage() {
                       autoComplete="off"
                       value={coaNombre}
                       maxLength={100}
-                      onChange={(e) => setCoaNombre(e.target.value)}
+                      onChange={(e) => {
+                        setCoaNombre(e.target.value)
+                        if (coaFaltan.length) setCoaFaltan([])
+                      }}
                       placeholder="Nombre"
                       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     />
@@ -1239,7 +1259,10 @@ export default function AutorizarPage() {
                       autoComplete="off"
                       value={coaApellido}
                       maxLength={100}
-                      onChange={(e) => setCoaApellido(e.target.value)}
+                      onChange={(e) => {
+                        setCoaApellido(e.target.value)
+                        if (coaFaltan.length) setCoaFaltan([])
+                      }}
                       placeholder="Apellido"
                       className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     />
@@ -1257,6 +1280,7 @@ export default function AutorizarPage() {
                     onChange={(e) => {
                       setCoaEmail(e.target.value)
                       if (coaEmailError) setCoaEmailError(false)
+                      if (coaFaltan.length) setCoaFaltan([])
                     }}
                     placeholder="Su correo"
                     className={cn(
@@ -1278,10 +1302,28 @@ export default function AutorizarPage() {
                     autoComplete="off"
                     value={coaTelefono}
                     maxLength={20}
-                    onChange={(e) => setCoaTelefono(e.target.value)}
+                    onChange={(e) => {
+                        setCoaTelefono(e.target.value)
+                        if (coaFaltan.length) setCoaFaltan([])
+                      }}
                     placeholder="Su WhatsApp (opcional)"
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   />
+                  {coaFaltan.length > 0 && (
+                    <div role="alert" className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                      <p className="text-sm text-amber-900">
+                        Para guardar a tu co-arrendatario {coaFaltan.length > 1 ? 'faltan' : 'falta'} {unirConY(coaFaltan)}. Complétalo o sigue sin sus
+                        datos; nos los puedes dar después.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => guardarPerfilYSeguir(true)}
+                        className="min-h-11 w-full rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                      >
+                        Seguir sin sus datos
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1290,7 +1332,7 @@ export default function AutorizarPage() {
                 más gente abandona. Todo aquí es opcional. */}
             <button
               type="button"
-              onClick={guardarPerfilYSeguir}
+              onClick={() => guardarPerfilYSeguir()}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
             >
               Continuar <IconArrowRight size={16} />
@@ -1595,6 +1637,11 @@ const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
   ppt: 'PPT',
   pep: 'PEP',
   nit: 'NIT',
+}
+
+// «su nombre, su apellido y su correo o su WhatsApp»
+function unirConY(partes: string[]): string {
+  return partes.length < 2 ? (partes[0] ?? '') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
 }
 
 function tipoDocumentoLabel(tipo: string | null | undefined): string {
