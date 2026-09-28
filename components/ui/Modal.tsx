@@ -191,7 +191,7 @@ export function Modal({
                   type="button"
                   data-modal-close
                   onClick={onClose}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                  className="-m-2 flex h-11 w-11 items-center justify-center rounded hover:bg-gray-100 transition-colors"
                   aria-label="Cerrar"
                 >
                   <IconX size={20} className="text-gray-500" />

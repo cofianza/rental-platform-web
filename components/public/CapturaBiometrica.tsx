@@ -42,6 +42,7 @@
 import { useRef, useState } from 'react'
 import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { EstadoBiometria } from '@/types/autorizacion'
+import { buttonClasses } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import {
   IconCheck,
@@ -309,7 +310,7 @@ export function CapturaBiometrica({
             type="button"
             onClick={verificar}
             disabled={!listo || enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className={buttonClasses('primary', 'lg', 'w-full')}
           >
             {enviando ? <IconLoader size={20} className="animate-spin" /> : resultado ? <IconRefresh size={18} /> : null}
             {enviando ? 'Verificando…' : resultado ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
@@ -343,7 +344,7 @@ export function CapturaBiometrica({
           type="button"
           onClick={omitir}
           disabled={enviando}
-          className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClasses('secondary', 'lg', 'w-full')}
         >
           Prefiero no tomarme la foto
         </button>

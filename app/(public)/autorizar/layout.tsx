@@ -1,5 +1,16 @@
+import type { Metadata } from 'next'
+
 // Título de la pestaña: la página es client component y no puede exportar metadata.
-export const metadata = { title: 'Autorizar consulta — Cofianza' }
+// B3: enlace personal con token → nunca en buscadores; y una vista previa propia
+// cuando se comparte por WhatsApp (la imagen es opengraph-image.tsx).
+const descripcion = 'Revisa y autoriza la consulta de tu información para tu estudio de arriendo con Cofianza S.A.S.'
+
+export const metadata: Metadata = {
+  title: 'Autorizar consulta — Cofianza',
+  description: descripcion,
+  robots: { index: false, follow: false },
+  openGraph: { title: 'Autorización de tu estudio de arriendo', description: descripcion, siteName: 'Cofianza' },
+}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children

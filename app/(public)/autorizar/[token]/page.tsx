@@ -63,6 +63,7 @@ import {
   IconUser, IconArrowLeft, IconArrowRight, IconRefresh } from '@/components/icons'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import { Modal } from '@/components/ui/Modal'
+import { buttonClasses } from '@/components/ui/Button'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -156,20 +157,20 @@ const BENEFICIOS: Array<{ key: ConsentKey; Icon: typeof IconBarChart3; titulo: s
   {
     key: 'analitica',
     Icon: IconBarChart3,
-    titulo: 'Tu perfil, a tu medida',
-    desc: 'Deja que Cofianza analice tu perfil para ofrecerte productos y condiciones pensados para ti, no genéricos. Incluye analítica, segmentación y perfilamiento comercial.',
+    titulo: 'Analítica de tu perfil',
+    desc: 'Cofianza analiza tu perfil para ofrecerte productos y condiciones según tu caso. Incluye analítica avanzada, segmentación y perfilamiento comercial.',
   },
   {
     key: 'comercial',
     Icon: IconDollarSign,
-    titulo: 'Ofertas que sí te sirven',
-    desc: 'Oportunidades de arriendo, descuentos para tu hogar y beneficios de aliados. Comunicaciones comerciales de Cofianza y sus aliados, por el medio que prefieras.',
+    titulo: 'Comunicaciones comerciales',
+    desc: 'Cofianza y sus aliados te envían ofertas, oportunidades de arriendo y mercadeo por los medios de contacto que registraste.',
   },
   {
     key: 'historial_referencia',
     Icon: IconUsers,
-    titulo: 'Tu historial te abre puertas',
-    desc: 'Autoriza a Cofianza a compartir tu historial de buen pago como referencia con inmobiliarias, afianzadoras y arrendadores del ecosistema que evalúen tu solicitud.',
+    titulo: 'Tu historial como referencia',
+    desc: 'Cofianza comparte tu historial de buen pago como referencia con inmobiliarias, afianzadoras y arrendadores que evalúen una solicitud tuya.',
   },
 ]
 
@@ -754,7 +755,8 @@ export default function AutorizarPage() {
                     Pagar {pago.monto_formateado ?? 'el estudio'} ahora
                   </a>
                   <p className="mt-2 text-xs text-gray-500">
-                    También te lo enviamos por correo y WhatsApp por si prefieres pagarlo después.
+                    El pago se hace en Mercado Pago. También te enviamos el enlace por correo y WhatsApp por si
+                    prefieres pagarlo después.
                   </p>
                 </>
               ) : pago?.estado === 'completado' ? (
@@ -813,7 +815,7 @@ export default function AutorizarPage() {
           </span>
           <div className="leading-tight">
             <p className="text-sm font-bold text-gray-900">Autorización de datos</p>
-            <p className="text-[11px] text-gray-500">Cofianza S.A.S. · NIT 902.038.122</p>
+            <p className="text-[11px] text-gray-500">Cofianza S.A.S. · NIT 902.038.122-7</p>
           </div>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-700">
@@ -824,7 +826,14 @@ export default function AutorizarPage() {
       {/* Progreso. El paso de identidad solo existe si el backend lo pide, así
           que la barra tiene 4 o 5 tramos según el interruptor — pintar cinco
           siempre le prometería al prospecto un paso que no va a ver. */}
-      <div className={cn('grid gap-1.5 px-5 pt-4', pasosBarra.length === 5 ? 'grid-cols-5' : 'grid-cols-4')}>
+      {/* B11: el lector de pantalla oye «Paso 2 de 4: Sobre ti»; las barras son decorado. */}
+      <p className="sr-only" aria-live="polite">
+        Paso {pasoIndice} de {pasosBarra.length}: {pasosBarra[pasoIndice - 1]}
+      </p>
+      <div
+        aria-hidden
+        className={cn('grid gap-1.5 px-5 pt-4', pasosBarra.length === 5 ? 'grid-cols-5' : 'grid-cols-4')}
+      >
         {pasosBarra.map((label, i) => {
           const on = pasoIndice >= i + 1
           return (
@@ -865,7 +874,7 @@ export default function AutorizarPage() {
                   <p className="mt-0.5 text-xs text-gray-500">
                     Estos son los datos registrados en tu estudio.
                   </p>
-                  <p className="mt-2 truncate text-base font-bold text-gray-900">
+                  <p className="mt-2 break-words text-base font-bold text-gray-900">
                     {data.solicitante.nombre} {data.solicitante.apellido}
                   </p>
                   <p className="mt-2 text-xs text-gray-500">
@@ -895,7 +904,7 @@ export default function AutorizarPage() {
                     type="button"
                     onClick={handleConfirmarIdentidad}
                     disabled={verificandoDoc}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={buttonClasses('primary', 'lg', 'w-full')}
                   >
                     {verificandoDoc && <IconLoader size={18} className="animate-spin" />}
                     {verificandoDoc ? 'Revisando…' : 'Sí, continuar'}
@@ -904,7 +913,7 @@ export default function AutorizarPage() {
                     type="button"
                     onClick={corregirDocumento}
                     disabled={verificandoDoc}
-                    className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    className={buttonClasses('secondary', 'lg', 'w-full')}
                   >
                     Corregir
                   </button>
@@ -943,7 +952,7 @@ export default function AutorizarPage() {
                   <button
                     type="submit"
                     disabled={verificandoDoc || !documento.trim()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={buttonClasses('primary', 'lg', 'w-full')}
                   >
                     Sí, soy yo
                   </button>
@@ -1062,7 +1071,7 @@ export default function AutorizarPage() {
               type="button"
               onClick={() => irAPaso(2)}
               disabled={!acepta}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className={buttonClasses('primary', 'lg', 'w-full')}
             >
               Acepto y continúo <IconArrowRight size={16} />
             </button>
@@ -1343,7 +1352,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => guardarPerfilYSeguir()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
+              className={buttonClasses('primary', 'lg', 'w-full')}
             >
               Continuar <IconArrowRight size={16} />
             </button>
@@ -1352,7 +1361,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => irAPaso(3)}
-              className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              className={buttonClasses('secondary', 'lg', 'w-full')}
             >
               Saltar este paso
             </button>
@@ -1385,7 +1394,7 @@ export default function AutorizarPage() {
 
             <div className="flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs font-medium text-primary-800">
               <IconCheck size={14} className="shrink-0 text-primary-600" />
-              Nada se activa sin tu permiso. Enciende solo lo que te sirva.
+              Nada se activa sin tu permiso.
             </div>
 
             <div className="space-y-3">
@@ -1423,7 +1432,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={salirDeBeneficios}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800"
+              className={buttonClasses('primary', 'lg', 'w-full')}
             >
               Continuar <IconArrowRight size={16} />
             </button>
@@ -1434,7 +1443,7 @@ export default function AutorizarPage() {
                 setConsents({ analitica: false, comercial: false, historial_referencia: false })
                 salirDeBeneficios()
               }}
-              className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              className={buttonClasses('secondary', 'lg', 'w-full')}
             >
               Saltar este paso
             </button>
@@ -1491,15 +1500,18 @@ export default function AutorizarPage() {
               <ul className="space-y-2">
                 {resumen.map((r) => (
                   <li key={r.txt} className="flex items-center gap-2 text-sm">
-                    <span
-                      className={cn(
-                        'flex h-4 w-4 shrink-0 items-center justify-center rounded',
-                        r.on ? 'bg-primary-700 text-white' : 'border border-gray-300 text-transparent',
-                      )}
-                    >
-                      <IconCheck size={11} />
+                    {/* B7: marca de solo lectura (no una casilla que invite a tocarla). */}
+                    {r.on ? (
+                      <IconCheck size={16} className="shrink-0 text-primary-700" aria-hidden />
+                    ) : (
+                      <span className="w-4 shrink-0 text-center text-gray-400" aria-hidden>
+                        —
+                      </span>
+                    )}
+                    <span className="flex-1 text-gray-700">
+                      {r.txt}
+                      <span className="sr-only">{r.on ? ': sí' : ': no'}</span>
                     </span>
-                    <span className="flex-1 text-gray-700">{r.txt}</span>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{r.lock}</span>
                   </li>
                 ))}
@@ -1514,7 +1526,7 @@ export default function AutorizarPage() {
               type="button"
               onClick={handleConfirmarYFirmar}
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className={buttonClasses('primary', 'lg', 'w-full')}
             >
               {submitting && <IconLoader size={20} className="animate-spin" />}
               {submitting ? 'Registrando…' : 'Confirmar y autorizar'}
@@ -1541,6 +1553,7 @@ export default function AutorizarPage() {
         onClose={() => !reportando && setReporteAbierto(false)}
         title="¿Qué pasa con estos datos?"
         size="sm"
+        closeOnBackdrop={false}
       >
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
@@ -1585,7 +1598,7 @@ export default function AutorizarPage() {
             type="button"
             onClick={handleReportar}
             disabled={reportando}
-            className="w-full rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:opacity-50"
+            className={buttonClasses('primary', 'lg', 'w-full')}
           >
             {reportando ? 'Enviando…' : 'Detener y avisar a Cofianza'}
           </button>
@@ -1617,6 +1630,7 @@ function Toggle({
   describedBy?: string
 }) {
   return (
+    // B5: el botón mide 44×56 px (área táctil); la pista visible sigue de 24×44.
     <button
       type="button"
       role="switch"
@@ -1624,17 +1638,21 @@ function Toggle({
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
       onClick={onClick}
-      className={cn(
-        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-        on ? 'bg-primary-600' : 'bg-gray-300',
-      )}
+      className="group -my-2.5 -mr-1.5 inline-flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-hidden"
     >
       <span
         className={cn(
-          'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
-          on ? 'translate-x-6' : 'translate-x-1',
+          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors group-focus-visible:ring-2 group-focus-visible:ring-primary-500 group-focus-visible:ring-offset-2',
+          on ? 'bg-primary-600' : 'bg-gray-300',
         )}
-      />
+      >
+        <span
+          className={cn(
+            'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
+            on ? 'translate-x-6' : 'translate-x-1',
+          )}
+        />
+      </span>
     </button>
   )
 }

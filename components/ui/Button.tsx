@@ -10,7 +10,7 @@
 import { cn } from '@/lib/utils'
 
 type Variante = 'primary' | 'accent' | 'secondary' | 'danger'
-type Tamano = 'sm' | 'md'
+type Tamano = 'sm' | 'md' | 'lg'
 
 const VARIANTES: Record<Variante, string> = {
   // Contraste AA (P29): el blanco va sobre verde 700 (5,5:1; sobre 600 da 3,8:1)
@@ -25,6 +25,8 @@ const VARIANTES: Record<Variante, string> = {
 const TAMANOS: Record<Tamano, string> = {
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
+  // Acción principal de pantallas públicas en el celular (≥44 px de alto).
+  lg: 'min-h-11 px-6 py-3 text-base',
 }
 
 export function buttonClasses(variante: Variante = 'primary', tamano: Tamano = 'md', className?: string) {
