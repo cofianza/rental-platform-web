@@ -77,9 +77,9 @@ export function DeleteUserDialog({ isOpen, user, onDelete, onClose }: DeleteUser
         <p className="self-center text-sm text-gray-600 text-center mb-4">
           {tieneBlockers ? (
             <>
-              <strong>{userName}</strong> tiene datos asociados. Si continúas, se intentará
-              borrar; lo que no se pueda borrar impedirá la eliminación. Si solo quieres quitarle
-              el acceso, desactívalo.
+              <strong>{userName}</strong> tiene datos asociados. Si continúa, se intentará
+              borrar; lo que no se pueda borrar impedirá la eliminación. Si solo desea quitarle
+              el acceso, desactívelo.
             </>
           ) : (
             <>

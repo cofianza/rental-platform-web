@@ -152,7 +152,7 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
                 className={`mt-1 ${inputClass(errores['administracion.aCargoDe'])}`}
               >
                 <option value="" disabled>
-                  Elige…
+                  Elija…
                 </option>
                 <option value="arrendador">Arrendador</option>
                 <option value="arrendatario">Arrendatario</option>

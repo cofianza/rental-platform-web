@@ -373,7 +373,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         types: ['heading', 'paragraph'],
       }),
       Placeholder.configure({
-        placeholder: placeholder || 'Escribe el contenido de la plantilla aqui...',
+        placeholder: placeholder || 'Escriba el contenido de la plantilla aqui...',
       }),
     ],
     content,

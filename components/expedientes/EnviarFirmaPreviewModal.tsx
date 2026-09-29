@@ -62,7 +62,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
   async function guardarTelefono(f: IFirmantePreview) {
     const nuevo = editValue.trim()
     if (!nuevo) {
-      toast.error('Ingresa un número de WhatsApp')
+      toast.error('Ingrese un número de WhatsApp')
       return
     }
     setSavingRol(f.rol_firmante)
@@ -102,7 +102,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
       <div className="p-6 space-y-4 overflow-y-auto">
         <p className="text-sm text-gray-600">
           Cada parte recibe <strong>su propio</strong> código de firma por WhatsApp en el número indicado.
-          Verifica a quién le llega cada uno antes de enviar.
+          Verifique a quién le llega cada uno antes de enviar.
         </p>
         {biometria && (
           <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
@@ -116,8 +116,8 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
             <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
             <span>
               No se puede enviar todavía: hay firmantes con el <strong>mismo número</strong> o con datos
-              faltantes. Cada parte necesita un número de WhatsApp distinto. Corrige el teléfono con el
-              botón de editar de cada firmante y vuelve a intentar.
+              faltantes. Cada parte necesita un número de WhatsApp distinto. Corrija el teléfono con el
+              botón de editar de cada firmante y vuelva a intentar.
             </span>
           </div>
         )}
@@ -212,7 +212,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                       <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-600">
                         <IconAlertTriangle size={12} className="mt-0.5 shrink-0" />
                         <span>
-                          Este es el WhatsApp de recaudo de la inmobiliaria: se usa en todos tus
+                          Este es el WhatsApp de recaudo de la inmobiliaria: se usa en todos sus
                           contratos y avisos, no solo en esta firma.
                         </span>
                       </p>
@@ -237,7 +237,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
           onClick={onConfirm}
           disabled={submitting || !puedeEnviar}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-          title={!puedeEnviar ? 'Corrige los números repetidos o faltantes antes de enviar' : undefined}
+          title={!puedeEnviar ? 'Corrija los números repetidos o faltantes antes de enviar' : undefined}
         >
           {submitting && <IconLoader size={16} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Confirmar y enviar'}

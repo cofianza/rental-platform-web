@@ -37,7 +37,7 @@ const EMPTY: Gastos = { admin: '', predial: '', otros: '', valor: '' }
 export function RentabilidadPropietarioSection() {
   const [inmuebles, setInmuebles] = useState<MiInmueble[]>([])
   const [loading, setLoading] = useState(true)
-  // Si falla la carga no se puede decir «Aún no tienes inmuebles registrados».
+  // Si falla la carga no se puede decir «Aún no tiene inmuebles registrados».
   const [fallo, setFallo] = useState(false)
   const [intento, setIntento] = useState(0)
   const [gastos, setGastos] = useState<Record<string, Gastos>>({})
@@ -113,7 +113,7 @@ export function RentabilidadPropietarioSection() {
       <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800">
         <IconInfo size={14} className="mt-0.5 shrink-0" />
         <span>
-          El canon de cada inmueble es real. Los gastos y el valor del inmueble son estimaciones tuyas para
+          El canon de cada inmueble es real. Los gastos y el valor del inmueble son estimaciones suyas para
           calcular la rentabilidad — <strong>no se guardan</strong>.
         </span>
       </div>
@@ -122,8 +122,8 @@ export function RentabilidadPropietarioSection() {
       <Panel title="Rentabilidad por inmueble" dot="bg-primary-600">
         {fallo ? (
           <div className="px-6 py-8 text-center">
-            <p className="text-sm font-semibold text-amber-900">No se pudieron cargar tus inmuebles</p>
-            <p className="mt-1 text-sm text-amber-800">Esto no significa que no tengas inmuebles registrados.</p>
+            <p className="text-sm font-semibold text-amber-900">No se pudieron cargar sus inmuebles</p>
+            <p className="mt-1 text-sm text-amber-800">Esto no significa que no tenga inmuebles registrados.</p>
             <button
               type="button"
               onClick={() => {
@@ -137,7 +137,7 @@ export function RentabilidadPropietarioSection() {
           </div>
         ) : inmuebles.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-gray-500">
-            Aún no tienes inmuebles registrados.
+            Aún no tiene inmuebles registrados.
           </p>
         ) : (
           <div className="space-y-4 p-5">
@@ -215,7 +215,7 @@ export function RentabilidadPropietarioSection() {
 
       {/* Resumen total de cartera (sin datos no se pinta un $0 que no es cierto) */}
       {!fallo && (
-      <Panel title="Resumen de tu cartera" dot="bg-primary-600">
+      <Panel title="Resumen de su cartera" dot="bg-primary-600">
         <div className="grid grid-cols-2 gap-4 p-5 lg:grid-cols-4">
           <Stat label="Ingresos brutos" value={money(cartera.brutos)} sub="mensual" Icon={IconDollarSign} color="text-blue-600" />
           <Stat label="Gastos" value={money(cartera.gastosMes)} sub="mensual" Icon={IconBarChart3} color="text-coral-700" />
@@ -247,10 +247,10 @@ export function RentabilidadPropietarioSection() {
       <div className="rounded-xl border border-primary-500 bg-primary-50 p-5">
         <h3 className="flex items-center gap-2 text-base font-bold text-primary-800">
           <IconHome size={18} />
-          ¿Cuánto te da cada peso invertido?
+          ¿Cuánto le da cada peso invertido?
         </h3>
         <p className="mt-0.5 text-sm text-primary-700">
-          Ingresa el valor de un inmueble y su canon para calcular la rentabilidad anual.
+          Ingrese el valor de un inmueble y su canon para calcular la rentabilidad anual.
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <CalcInput label="Valor del inmueble" value={calc.valor} onChange={(v) => setCalc((c) => ({ ...c, valor: onlyDigits(v) }))} placeholder="Ej: 200000000" />

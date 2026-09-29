@@ -237,7 +237,7 @@ export function InquilinosSection() {
                 icon: IconUsers,
                 titulo: filtroActivo ? 'Sin inquilinos con estos filtros' : 'Sin inquilinos activos',
                 descripcion: filtroActivo
-                  ? 'Ajusta o limpia los filtros para ver más resultados.'
+                  ? 'Ajuste o limpie los filtros para ver más resultados.'
                   : 'Aún no hay contratos activos con inquilinos para mostrar.',
                 action: filtroActivo ? (
                   <button

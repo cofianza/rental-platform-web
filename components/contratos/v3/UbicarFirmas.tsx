@@ -171,7 +171,7 @@ export function UbicarFirmas({
     )
     if (repetida) return
     if (marcas.length >= MAX_MARCAS) {
-      toast.error(`Máximo ${MAX_MARCAS} firmas sobre el contrato. Quita alguna para ubicar otra.`)
+      toast.error(`Máximo ${MAX_MARCAS} firmas sobre el contrato. Quite alguna para ubicar otra.`)
       return
     }
     onCambiar([...marcas, nueva])
@@ -189,14 +189,14 @@ export function UbicarFirmas({
     <div className="space-y-3 border-t border-gray-200 pt-4">
       <div className="flex items-center gap-2">
         <IconMapPin size={18} className="text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900">Ubica las firmas</h4>
+        <h4 className="text-sm font-semibold text-gray-900">Ubique las firmas</h4>
       </div>
       <p className="text-sm text-gray-600">
         {editable
-          ? 'Elige una parte y haz clic sobre la raya donde firma. El recuadro es el espacio que ocupará su firma; puedes ubicar varias por parte (por ejemplo, firma e iniciales en cada página). Tu PDF no se modifica.'
+          ? 'Elija una parte y haga clic sobre la raya donde firma. El recuadro es el espacio que ocupará su firma; puede ubicar varias por parte (por ejemplo, firma e iniciales en cada página). Su PDF no se modifica.'
           : 'Dónde firma cada parte sobre el contrato de la inmobiliaria.'}
       </p>
-      {editable && <p className="text-xs text-gray-500 sm:hidden">Para ubicar las firmas con precisión, usa un computador.</p>}
+      {editable && <p className="text-xs text-gray-500 sm:hidden">Para ubicar las firmas con precisión, use un computador.</p>}
 
       <div role="group" aria-label="Parte que firma" className="flex flex-wrap gap-2">
         {partes.map((p) => {

@@ -40,7 +40,7 @@ import {
 function motivoExcluido(e: IngresoExcluidoRow): string {
   if (e.motivo === 'inicia_despues') return `empieza el ${fechaCorta(e.fechaInicio)}`
   if (e.motivo === 'sin_estudio') return 'sin estudio completado: no se sabe su tarifa'
-  return 'no se pudo leer su tarifa; vuelve a cargar más tarde'
+  return 'no se pudo leer su tarifa; vuelva a cargar más tarde'
 }
 
 // Etiqueta del periodo actual ("mayo 2026"), capitalizada.

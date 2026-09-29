@@ -542,7 +542,7 @@ function DocumentUploadCard({
                   <>
                     <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
                     <p className="text-sm font-medium text-gray-900">
-                      Arrastra un archivo o haz clic para seleccionar
+                      Arrastre un archivo o haga clic para seleccionar
                     </p>
                   </>
                 )}
@@ -937,7 +937,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
             Documentos del Estudio
           </h3>
           <p className="text-sm text-gray-500">
-            {puedeSubir ? 'Carga los documentos requeridos para el estudio' : 'Documentos cargados para el estudio'}
+            {puedeSubir ? 'Cargue los documentos requeridos para el estudio' : 'Documentos cargados para el estudio'}
           </p>
         </div>
         <div className="flex items-center gap-4">

@@ -138,7 +138,7 @@ export function EstudiosTable({
       setSelectedEstudio(detail)
     } catch {
       // La fila entera es clicable: sin aviso, el clic simplemente no hace nada.
-      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
+      toast.error('No se pudo abrir el detalle de la evaluación. Intente de nuevo.')
     } finally {
       setLoadingDetail(false)
     }

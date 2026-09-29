@@ -288,7 +288,7 @@ export function GestionPerfilesPage({ rol }: Props) {
                 titulo: hayFiltro ? 'Sin resultados' : `Aún no hay ${titulo.toLowerCase()}`,
                 descripcion: hayFiltro
                   ? 'Ningún registro coincide con los filtros aplicados.'
-                  : `Crea ${esInmobiliaria ? 'la primera inmobiliaria' : 'el primer propietario'} para empezar a gestionar su portafolio.`,
+                  : `Cree ${esInmobiliaria ? 'la primera inmobiliaria' : 'el primer propietario'} para empezar a gestionar su portafolio.`,
                 action: hayFiltro ? undefined : nuevoBtn,
               }
             : false

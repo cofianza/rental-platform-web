@@ -37,9 +37,9 @@ function getDocumentoErrorMessage(error: unknown): string {
         }
         return 'Documento no encontrado.'
       case 403:
-        return 'No tienes permiso para ver este documento.'
+        return 'No tiene permiso para ver este documento.'
       case 0:
-        return 'Error de conexion. Verifica tu conexion a internet.'
+        return 'Error de conexion. Verifique su conexion a internet.'
       default:
         return error.message || 'Error al obtener el documento.'
     }

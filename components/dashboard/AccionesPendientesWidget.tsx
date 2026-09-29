@@ -61,7 +61,7 @@ function AccionesPendientes() {
         <EmptyState
           icon={IconCalendar}
           title="Todo al día"
-          description="No tienes acciones pendientes en este momento."
+          description="No tiene acciones pendientes en este momento."
         />
       </div>
     )
@@ -70,7 +70,7 @@ function AccionesPendientes() {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Tus próximas acciones</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Sus próximas acciones</h2>
         <Link
           href="/citas"
           className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"

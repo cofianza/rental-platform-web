@@ -151,18 +151,18 @@ async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Prom
       return {
         etiqueta: 'Autorización detenida',
         texto: aut.perfil_prospecto?.identidad_reporte
-          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere tu acción: corrige los datos del solicitante y reenvíale la solicitud de autorización.'
-          : 'El enlace de autorización se detuvo y el prospecto ya no puede firmarlo. Requiere tu acción: corrige los datos si hace falta y reenvíale la solicitud.',
+          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere su acción: corrija los datos del solicitante y reenvíele la solicitud de autorización.'
+          : 'El enlace de autorización se detuvo y el prospecto ya no puede firmarlo. Requiere su acción: corrija los datos si hace falta y reenvíele la solicitud.',
       }
     }
   }
   const paga = pago?.paga
   if (aut === null && pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido')) {
     return {
-      etiqueta: esCofianza ? 'Falta el pago de la inmobiliaria' : 'Falta tu pago',
+      etiqueta: esCofianza ? 'Falta el pago de la inmobiliaria' : 'Falta su pago',
       texto: esCofianza
         ? 'Falta el pago del estudio de la inmobiliaria (Mercado Pago). La solicitud de autorización le llega al prospecto cuando se confirme.'
-        : 'Falta tu pago del estudio (Mercado Pago): complétalo en la sección de pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.',
+        : 'Falta su pago del estudio (Mercado Pago): complételo en la sección de pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.',
     }
   }
   return null
@@ -185,7 +185,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
   // El reenvío es la tarjeta "Autorización" (AutorizacionSection), que vive en
   // el mismo tab Resumen: un segundo botón aquí sería el mismo envío dos veces.
   if (estudio.expiracion?.expirado) {
-    return 'El prospecto no autorizó dentro del plazo — puedes reenviarle la solicitud.'
+    return 'El prospecto no autorizó dentro del plazo — puede reenviarle la solicitud.'
   }
 
   if (estudio.estado === 'completado') {
@@ -201,14 +201,14 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
     if (estudio.resultado === 'condicionado') {
       return esCofianza
-        ? 'Estudio condicionado. Revisa las observaciones y decide si proceder.'
+        ? 'Estudio condicionado. Revise las observaciones y decida si proceder.'
         : 'Estudio condicionado. Lo revisa un analista de Cofianza.'
     }
     if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
-    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelve a intentarla — puedes cambiar de buró en el reintento.`
+    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla — puede cambiar de buró en el reintento.`
   }
   if (estudio.estado === 'cancelado') {
     return 'Estudio cancelado.'
@@ -240,7 +240,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
-    return `Listo para consultar a ${buro}. Si la consulta no arrancó sola, ejecútala desde aquí.`
+    return `Listo para consultar a ${buro}. Si la consulta no arrancó sola, ejecútela desde aquí.`
   }
   return ''
 }

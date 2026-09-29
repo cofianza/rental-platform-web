@@ -213,7 +213,7 @@ export function Paso1Confirmacion({
 
   return (
     <div className="space-y-6">
-      <EncabezadoPaso titulo="Confirmación" subtitulo="Revisa las partes y la fianza, y pacta el canon y la modalidad." />
+      <EncabezadoPaso titulo="Confirmación" subtitulo="Revise las partes y la fianza, y pacte el canon y la modalidad." />
 
       {resumen ? (
         <ResumenContrato
@@ -242,7 +242,7 @@ export function Paso1Confirmacion({
           checked={value.ruta === 'B'}
           onSelect={() => onChange({ ...value, ruta: 'B' })}
           titulo="Ruta B — contrato propio de la inmobiliaria"
-          descripcion="Cargas tu contrato en PDF: va primero y sin modificaciones, seguido de una página divisoria y del Anexo de condiciones de la fianza. En el paso 5 ubicas dónde firma cada parte sobre tu contrato."
+          descripcion="Carga su contrato en PDF: va primero y sin modificaciones, seguido de una página divisoria y del Anexo de condiciones de la fianza. En el paso 5 ubica dónde firma cada parte sobre su contrato."
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
@@ -274,8 +274,8 @@ export function Paso1Confirmacion({
         {modalidadConvenio && (
           <p className="text-xs text-gray-500">
             {value.modalidad === modalidadConvenio
-              ? 'Viene preseleccionada según el convenio de tu inmobiliaria con Cofianza; la puedes cambiar para este contrato.'
-              : `El convenio de tu inmobiliaria con Cofianza indica la modalidad ${modalidadConvenio === 'trasladada' ? 'Trasladada' : 'Tradicional'}.`}
+              ? 'Viene preseleccionada según el convenio de su inmobiliaria con Cofianza; la puede cambiar para este contrato.'
+              : `El convenio de su inmobiliaria con Cofianza indica la modalidad ${modalidadConvenio === 'trasladada' ? 'Trasladada' : 'Tradicional'}.`}
           </p>
         )}
         {value.modalidad && <Aviso>La cuota de administración no está cubierta por la fianza.</Aviso>}

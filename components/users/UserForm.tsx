@@ -236,7 +236,7 @@ export function UserForm({
                 errors.rol ? 'border-red-300' : 'border-gray-300'
               }`}
             >
-              <option value="">Selecciona un rol…</option>
+              <option value="">Seleccione un rol…</option>
               {roleOptionsFiltered.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -244,7 +244,7 @@ export function UserForm({
               ))}
             </select>
             {errors.rol && <p className="mt-1 text-xs text-red-600">{errors.rol}</p>}
-            {esPropio && <p className="mt-1 text-xs text-gray-500">No puedes cambiar tu propio rol</p>}
+            {esPropio && <p className="mt-1 text-xs text-gray-500">No puede cambiar su propio rol</p>}
           </div>
         )}
 

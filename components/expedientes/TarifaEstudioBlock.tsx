@@ -197,7 +197,7 @@ function TarifaOverrideModal({
     }
     const pcts = [input.tarifa_mensual_pct, input.prima_vinculacion_pct, input.cashback_pct]
     if (pcts.every((p) => p === undefined)) {
-      toast.error('Indica al menos un porcentaje')
+      toast.error('Indique al menos un porcentaje')
       return
     }
     if (pcts.some((p) => p !== undefined && (!Number.isFinite(p) || p < 0 || p > 100))) {
@@ -230,7 +230,7 @@ function TarifaOverrideModal({
     <Modal isOpen onClose={onClose} title="Condiciones especiales (Adenda §5)" size="sm">
       <div className="space-y-3">
         <p className="text-xs text-gray-600">
-          Sobrescribe la tabla estándar para este estudio. Lo que dejes vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.
+          Sobrescriba la tabla estándar para este estudio. Lo que deje vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.
         </p>
         {campos.map(([label, placeholder, valor, setValor]) => (
           <label key={label} className="block text-xs font-medium text-gray-700">

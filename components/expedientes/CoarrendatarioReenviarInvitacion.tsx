@@ -53,7 +53,7 @@ export function CoarrendatarioReenviarInvitacion({
   const handleReenviar = async () => {
     const emailNorm = email.trim().toLowerCase()
     if (!emailNorm || !/.+@.+\..+/.test(emailNorm)) {
-      toast.error('Ingresa un correo válido para reenviar la invitación')
+      toast.error('Ingrese un correo válido para reenviar la invitación')
       return
     }
     if (!nombre.trim() || !apellido.trim() || !numDoc.trim()) {
@@ -90,7 +90,7 @@ export function CoarrendatarioReenviarInvitacion({
   const handleCancelar = async () => {
     try {
       await coarrendatarioService.cancelar(expedienteId)
-      toast.success('Invitación cancelada. Ya puedes invitar a otra persona.')
+      toast.success('Invitación cancelada. Ya puede invitar a otra persona.')
       onCambio?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo cancelar la invitación')
@@ -100,7 +100,7 @@ export function CoarrendatarioReenviarInvitacion({
   return (
     <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
-        ¿No le llegó o algún dato está mal? Corrígelo y reenvía la invitación, o cancélala para invitar a otra persona
+        ¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación, o cancélela para invitar a otra persona
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
@@ -187,7 +187,7 @@ export function CoarrendatarioReenviarInvitacion({
         onClose={() => setConfirmandoCancelar(false)}
         onConfirm={handleCancelar}
         title="¿Cancelar la invitación?"
-        message={`El enlace que recibió ${coa.nombre} deja de funcionar. Después puedes invitar a otra persona.`}
+        message={`El enlace que recibió ${coa.nombre} deja de funcionar. Después puede invitar a otra persona.`}
         confirmLabel="Sí, cancelarla"
         cancelLabel="Volver"
         variant="danger"

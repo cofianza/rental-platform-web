@@ -538,7 +538,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
             ) : (
               <>
                 <p className="text-sm font-medium text-gray-700">
-                  Arrastra fotos aquí o haz clic para seleccionar
+                  Arrastre fotos aquí o haga clic para seleccionar
                 </p>
                 <p className="text-xs text-gray-500">
                   JPEG, PNG o WebP. Máximo 5MB por archivo. {fotos.length}/{FOTO_LIMITS.MAX_FOTOS_PER_INMUEBLE} fotos
@@ -558,7 +558,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
               Guardando orden...
             </span>
           ) : (
-            'Arrastra las fotos para reordenarlas'
+            'Arrastre las fotos para reordenarlas'
           )}
         </p>
       )}
@@ -611,7 +611,7 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
           <p className="text-gray-600">No hay fotos del inmueble</p>
           {canEdit && (
             <p className="text-sm text-gray-500 mt-1">
-              Arrastra fotos arriba o haz clic para agregarlas
+              Arrastre fotos arriba o haga clic para agregarlas
             </p>
           )}
         </div>
@@ -714,8 +714,8 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
         title="Eliminar foto"
         message={
           deletingFoto?.es_fachada
-            ? 'Esta es la foto de fachada. Al eliminarla, deberás seleccionar otra foto como fachada. ¿Continuar?'
-            : '¿Estás seguro de que deseas eliminar esta foto? Esta acción no se puede deshacer.'
+            ? 'Esta es la foto de fachada. Al eliminarla, deberá seleccionar otra foto como fachada. ¿Continuar?'
+            : '¿Está seguro de que desea eliminar esta foto? Esta acción no se puede deshacer.'
         }
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"

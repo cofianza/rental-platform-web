@@ -169,7 +169,7 @@ export function CoarrendatarioPropietarioCard({
       setShowDetail(true)
     } catch {
       // Aqui no habia ni catch: el error subia y el boton quedaba girando.
-      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
+      toast.error('No se pudo abrir el detalle de la evaluación. Intente de nuevo.')
     } finally {
       setLoadingDetail(false)
     }
@@ -272,7 +272,7 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       ? {
           color: 'bg-amber-50 border-amber-200 text-amber-900',
           label: 'Invitación vencida',
-          mensaje: `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíala para que le llegue uno nuevo.`,
+          mensaje: `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíela para que le llegue uno nuevo.`,
         }
       : {
           color: 'bg-blue-50 border-blue-200 text-blue-900',
@@ -286,9 +286,9 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       mensaje: fallida
         ? sinEfecto
           ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
-          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtala en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
+          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
-          ? 'Estamos consultando su historial en las centrales de riesgo. Te avisaremos cuando termine.'
+          ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
           : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {

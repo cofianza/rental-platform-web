@@ -199,7 +199,7 @@ export function PropietarioSelector({
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {search.length < 2 ? (
             <div className="px-4 py-3 text-sm text-gray-500">
-              Escribe al menos 2 caracteres para buscar...
+              Escriba al menos 2 caracteres para buscar...
             </div>
           ) : isLoading ? (
             <div className="px-4 py-3 flex items-center gap-2 text-sm text-gray-500">

@@ -107,7 +107,7 @@ export function RegistrarResultadoModal({
   const validate = (): string | null => {
     if (!resultado) return 'Debe seleccionar un resultado'
     if (observaciones.trim().length < 10) return 'Las observaciones deben tener al menos 10 caracteres'
-    if (esperaLista) return 'Espera a que carguen los motivos.'
+    if (esperaLista) return 'Espere a que carguen los motivos.'
     if (tipoLista) {
       const e = catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
       if (e) return e
@@ -348,7 +348,7 @@ export function RegistrarResultadoModal({
                   className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Lo verán en el estudio. Escríbelo corto, sin cifras del buró ni datos del co-arrendatario.
+                  Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del co-arrendatario.
                 </p>
               </div>
             </div>
@@ -366,7 +366,7 @@ export function RegistrarResultadoModal({
                 onChange={(e) => setCondiciones(e.target.value)}
                 rows={3}
                 maxLength={2000}
-                placeholder="Especifica las condiciones para la aprobación..."
+                placeholder="Especifique las condiciones para la aprobación..."
                 className="w-full px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
               />
             </div>

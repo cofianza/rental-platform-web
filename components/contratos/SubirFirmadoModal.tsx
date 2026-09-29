@@ -137,7 +137,7 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
             <>
               <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
               <p className="text-sm font-medium text-gray-900">
-                Arrastra el PDF firmado o haz clic para seleccionar
+                Arrastre el PDF firmado o haga clic para seleccionar
               </p>
               <p className="text-xs text-gray-500 mt-1">Solo PDF, máximo 20 MB</p>
             </>

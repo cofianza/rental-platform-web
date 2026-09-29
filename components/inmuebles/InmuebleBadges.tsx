@@ -68,7 +68,7 @@ export function EstudiosActivosBadge({ count, reservado, arrendado }: EstudiosAc
     ? 'La propiedad ya está arrendada: no admite estudios nuevos.'
     : reservado
       ? 'Reservada para un candidato aprobado con contrato en proceso: no admite estudios nuevos.'
-      : 'Puedes iniciar otro estudio. La propiedad solo se reserva cuando uno queda aprobado.'
+      : 'Puede iniciar otro estudio. La propiedad solo se reserva cuando uno queda aprobado.'
   return (
     <span
       title={title}

@@ -60,7 +60,7 @@ export function ListaHallazgos({
       )}
       {avisos.length > 0 && (
         <Aviso tono="aviso">
-          <p className="font-medium">Revisa:</p>
+          <p className="font-medium">Revise:</p>
           <Items lista={avisos} />
         </Aviso>
       )}
@@ -156,8 +156,8 @@ function Formulario({
 
   const t = titulo.trim()
   const x = texto.trim()
-  const errTitulo = intentado && t.length < 3 ? 'Escribe un título de al menos 3 caracteres.' : undefined
-  const errTexto = intentado && x.length < 20 ? 'Escribe un texto de al menos 20 caracteres.' : undefined
+  const errTitulo = intentado && t.length < 3 ? 'Escriba un título de al menos 3 caracteres.' : undefined
+  const errTexto = intentado && x.length < 20 ? 'Escriba un texto de al menos 20 caracteres.' : undefined
 
   const guardar = async (e: FormEvent) => {
     e.preventDefault()
@@ -211,12 +211,12 @@ function Formulario({
         <div id={`${idTexto}-ayuda`} className="mt-1 flex items-start justify-between gap-3 text-xs text-gray-500">
           <div className="space-y-1">
             <p>
-              Se imprime como un solo párrafo, con el título en mayúsculas. Nombra otras cláusulas por su título, no
+              Se imprime como un solo párrafo, con el título en mayúsculas. Nombre otras cláusulas por su título, no
               por su número.
             </p>
             {biblioteca && (
               <p>
-                Escribe [[nombre del dato]] donde la inmobiliaria deba completar un dato (máximo 10). Ejemplo: [[número
+                Escriba [[nombre del dato]] donde la inmobiliaria deba completar un dato (máximo 10). Ejemplo: [[número
                 del parqueadero]].
               </p>
             )}
@@ -230,7 +230,7 @@ function Formulario({
 
       {fallo?.revisionNoDisponible && (
         <Aviso tono="error">
-          No pudimos completar la revisión automática. Tu texto sigue aquí; intenta de nuevo en unos minutos.
+          No pudimos completar la revisión automática. Su texto sigue aquí; intente de nuevo en unos minutos.
         </Aviso>
       )}
       {fallo && <ListaHallazgos hallazgos={fallo.hallazgos} avisos={fallo.avisos} />}
@@ -238,7 +238,7 @@ function Formulario({
       {pidiendoSalir && (
         <Aviso tono="aviso">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span>Tienes cambios sin guardar. ¿Los descartas?</span>
+            <span>Tiene cambios sin guardar. ¿Los descarta?</span>
             <div className="flex gap-2">
               <Button variante="secondary" tamano="sm" onClick={onSeguir}>
                 Seguir editando

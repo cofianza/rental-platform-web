@@ -142,8 +142,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const bloqueoAcuse =
     incompleta && rol === 'inmobiliaria' && e.acuseDisponible && !acuse
       ? e.aviso
-        ? 'Primero lee y acepta el aviso de firma incompleta.'
-        : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrás aceptarlo aquí.'
+        ? 'Primero lea y acepte el aviso de firma incompleta.'
+        : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrá aceptarlo aquí.'
       : null
 
   const docs: DocVisor[] = [
@@ -154,7 +154,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         const r = await contratoService.descargarContrato(e.id, { inline: true })
         // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
         if (firmado && r.firmado === false)
-          throw new Error('La versión firmada todavía se está archivando desde Auco. Intenta de nuevo en unos minutos.')
+          throw new Error('La versión firmada todavía se está archivando desde Auco. Intente de nuevo en unos minutos.')
         return r.url
       },
     },
@@ -248,10 +248,10 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             <p className="font-semibold text-amber-900">Falta el acta de entrega e inventario</p>
             <p className="text-sm text-amber-800">
               {cargaActa
-                ? 'Cárgala firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.'
+                ? 'Cárguela firmada en «Acta de entrega e inventario», más abajo. Sin ella no se puede cerrar el estudio.'
                 : 'La inmobiliaria debe cargarla firmada. Sin ella no se puede cerrar el estudio.'}
               {editable && rol === 'administrador' &&
-                ' Si no la va a cargar, puedes cerrar el estudio sin acta, con motivo, desde su página («Cambiar estado»).'}
+                ' Si no la va a cargar, puede cerrar el estudio sin acta, con motivo, desde su página («Cambiar estado»).'}
             </p>
           </div>
         </div>
@@ -413,8 +413,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
         {editable && (enFirma || incompleta) && firmantes.length > 0 && (
           <p className="text-xs text-gray-500">
-            ¿Un celular o un correo está mal? Cancela el contrato y créalo de nuevo desde el estudio: el asistente trae lo que
-            ya llenaste, corriges el dato y lo vuelves a enviar.
+            ¿Un celular o un correo está mal? Cancele el contrato y créelo de nuevo desde el estudio: el asistente trae lo que
+            ya llenó, corrija el dato y vuélvalo a enviar.
           </p>
         )}
       </section>
@@ -425,11 +425,11 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
             <p className="mt-1 text-sm text-gray-500">
               {e.acta.archivos.length > 0
-                ? `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puedes ver en «Documentos».`
+                ? `Cargada el ${formatDateTime(e.acta.archivos[0].subidoEn)}. La puede ver en «Documentos».`
                 : sinActa
                   ? 'No se cargó: el estudio se cerró sin acta de entrega.'
                   : cargaActa
-                    ? 'Levántala con estos datos, hazla firmar y cárgala aquí. Queda en «Documentos».'
+                    ? 'Levántela con estos datos, hágala firmar y cárguela aquí. Queda en «Documentos».'
                     : 'Todavía no se ha cargado.'}
             </p>
           </div>
@@ -437,7 +437,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             // §12.2: con el acta cargada ya se puede cerrar el estudio; es lo que sigue.
             <Aviso tono="exito">
               <p>
-                Siguiente paso: cierra el estudio desde su página, con «Cambiar estado».
+                Siguiente paso: cierre el estudio desde su página, con «Cambiar estado».
               </p>
               <Link
                 href={`/expedientes/${expedienteId}`}

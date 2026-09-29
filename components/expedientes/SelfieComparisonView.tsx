@@ -88,7 +88,7 @@ function ImagePanel({ documento, title, icon, emptyMessage, zoom }: ImagePanelPr
 
   const metadatos = documento?.metadatos
   const metodoCapturaLabel = metadatos?.metodo_captura === 'camara'
-    ? 'Captura con camara'
+    ? 'Capture con camara'
     : metadatos?.metodo_captura === 'archivo'
       ? 'Subida de archivo'
       : null
@@ -248,7 +248,7 @@ export function SelfieComparisonView({
             Comparacion de Identidad
           </h2>
           <p className="text-xs md:text-sm text-gray-400">
-            Verifica que la persona del selfie coincida con la identificacion
+            Verifique que la persona del selfie coincida con la identificacion
           </p>
         </div>
         <button
@@ -318,7 +318,7 @@ export function SelfieComparisonView({
             <textarea id="selfie-comparison-view-motivo-del-rechazo"
               value={rejectMotivo}
               onChange={(e) => setRejectMotivo(e.target.value)}
-              placeholder="Describe por que rechazas el selfie..."
+              placeholder="Describa por que rechazas el selfie..."
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={2}
             />

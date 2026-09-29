@@ -64,7 +64,7 @@ export function EvaluacionRevisionManual({
         disabled={disabled}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
       >
-        <option value="">Elige una opción</option>
+        <option value="">Elija una opción</option>
         {opciones.map(([codigo, pts, etiqueta]) => (
           <option key={codigo} value={codigo}>
             {etiqueta} ({puntos(pts)} pts)

@@ -69,7 +69,7 @@ export function AsignacionResponsableModal({
 
   const handleConfirmar = async () => {
     if (!analistaSeleccionado) {
-      setError('Selecciona un responsable')
+      setError('Seleccione un responsable')
       return
     }
 

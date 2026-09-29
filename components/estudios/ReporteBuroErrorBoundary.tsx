@@ -48,8 +48,8 @@ export class ReporteBuroErrorBoundary extends Component<
             </p>
             <p className="text-[10px] text-amber-800 mt-1">
               La respuesta del proveedor llegó con un formato inesperado. El resto del estudio (puntaje,
-              resultado y observaciones) sigue siendo válido; para revisar el detalle, vuelve a consultar el
-              buró o solicita el reporte al proveedor.
+              resultado y observaciones) sigue siendo válido; para revisar el detalle, vuelva a consultar el
+              buró o solicite el reporte al proveedor.
             </p>
           </div>
         </div>

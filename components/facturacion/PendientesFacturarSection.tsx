@@ -77,7 +77,7 @@ export function PendientesFacturarSection({
         toast.error(`Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. Debe completarlos en Configuración › Datos para contrato.`)
       } else if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS') {
         const faltantes = errObj.details?.faltantes?.join(', ') ?? 'algunos campos'
-        toast.error(`Faltan datos fiscales: ${faltantes}. Completa tus datos para continuar.`)
+        toast.error(`Faltan datos fiscales: ${faltantes}. Complete sus datos para continuar.`)
         onDatosFiscalesIncompletos?.()
       } else {
         toast.error(errObj.message || 'No pudimos emitir la factura')
@@ -99,7 +99,7 @@ export function PendientesFacturarSection({
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconCheck size={32} className="mx-auto text-green-500 mb-3" />
-        <h3 className="text-base font-semibold text-gray-900 mb-1">No tienes pagos pendientes de facturar</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">No tiene pagos pendientes de facturar</h3>
         <p className="text-sm text-gray-500">
           Cada vez que completes un pago, aparecerá aquí con su botón para emitir la factura electrónica.
         </p>

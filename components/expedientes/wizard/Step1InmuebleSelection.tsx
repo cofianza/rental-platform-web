@@ -285,11 +285,11 @@ export function Step1InmuebleSelection({
               </p>
               {isLoadingMios ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <IconLoader size={16} className="animate-spin" /> Cargando tus inmuebles...
+                  <IconLoader size={16} className="animate-spin" /> Cargando sus inmuebles...
                 </div>
               ) : misInmuebles.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No tienes inmuebles. Usa el buscador de abajo para ver el catálogo completo, o{' '}
+                  No tiene inmuebles. Use el buscador de abajo para ver el catálogo completo, o{' '}
                   <Link href="/inmuebles/nuevo" className="font-semibold text-primary-700 hover:text-primary-800">
                     crea uno ahora
                   </Link>
@@ -361,7 +361,7 @@ export function Step1InmuebleSelection({
                 </button>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                Puedes evaluar varios candidatos para la misma propiedad al tiempo. Solo se reserva cuando uno queda aprobado. ¿No la encuentras? Usa el buscador.
+                Puede evaluar varios candidatos para la misma propiedad al tiempo. Solo se reserva cuando uno queda aprobado. ¿No la encuentra? Use el buscador.
               </p>
             </div>
           )}
@@ -530,7 +530,7 @@ export function Step1InmuebleSelection({
                   Estudio <span className="font-medium">{formatNumeroEstudio(activeExpedienteInfo.numero)}</span> (estado: {activeExpedienteInfo.estado})
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Puedes iniciar otro; la propiedad se reserva únicamente cuando uno quede aprobado.
+                  Puede iniciar otro; la propiedad se reserva únicamente cuando uno quede aprobado.
                 </p>
               </div>
             </div>

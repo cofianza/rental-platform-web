@@ -75,7 +75,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                     El PDF aún no ha sido generado.
                   </p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Cierra este modal y pulsa el botón <strong>Regenerar</strong> en la fila del
+                    Cierre este modal y pulse el botón <strong>Regenerar</strong> en la fila del
                     contrato para producir el PDF con la plantilla activa.
                   </p>
                 </div>

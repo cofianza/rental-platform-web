@@ -27,7 +27,7 @@ function detalleCofianza(v: IVerificacionIdentidad): { texto: string; tono: 'ok'
   if (v.revision === 'confirmada') return { texto: `Identidad confirmada por un analista: ${v.revision_nota ?? ''}`, tono: 'ok' }
   if (v.requiere_analista) {
     const causa = v.estado === 'omitida' ? 'Prefirió que un analista verifique su identidad por otro medio.' : v.motivo ?? 'Sin cotejo biométrico.'
-    return { texto: `${causa} Verifica su identidad por otro medio y registra el resultado.`, tono: 'alerta' }
+    return { texto: `${causa} Verifique su identidad por otro medio y registre el resultado.`, tono: 'alerta' }
   }
   return { texto: `Identidad verificada con foto${v.similitud != null ? ` (similitud ${v.similitud} %)` : ''}.`, tono: 'ok' }
 }
@@ -135,7 +135,7 @@ export function VerificacionIdentidadFirma({
               )}
               {!hayFirmantes && v.estado !== 'pendiente' && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
-                  <IconAlertTriangle size={11} /> El contrato no salió a firma en Auco. Vuelve a enviarlo.
+                  <IconAlertTriangle size={11} /> El contrato no salió a firma en Auco. Vuelva a enviarlo.
                 </p>
               )}
               {esAnalista && v.requiere_analista && !v.revision && (

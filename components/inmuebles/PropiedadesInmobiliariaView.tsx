@@ -204,7 +204,7 @@ export function PropiedadesInmobiliariaView() {
       {/* Encabezado: intro + saldo + agregar propiedad */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-medium text-gray-500">
-          Gestiona tus propiedades · Publica en cofianza.co · Recibe solicitudes de visita
+          Gestione sus propiedades · Publique en cofianza.co · Reciba solicitudes de visita
         </p>
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
@@ -259,7 +259,7 @@ export function PropiedadesInmobiliariaView() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-5">
           <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
-            Tus propiedades
+            Sus propiedades
           </h3>
           <div className="flex flex-wrap items-center gap-2">
             {CHIPS.map((c) => (
@@ -296,7 +296,7 @@ export function PropiedadesInmobiliariaView() {
               <IconBuilding2 size={44} className="mx-auto mb-3 text-gray-300" />
               <p className="text-sm font-medium text-gray-900">No hay propiedades para este filtro</p>
               <p className="mt-1 text-sm text-gray-500">
-                Agrega una con el botón “Agregar propiedad”.
+                Agregue una con el botón “Agregar propiedad”.
               </p>
             </div>
           ) : (

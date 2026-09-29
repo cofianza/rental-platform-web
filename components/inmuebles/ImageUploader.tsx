@@ -198,7 +198,7 @@ export function ImageUploader({
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
-                  <span className="text-primary-600">Haz clic para subir</span> o arrastra una
+                  <span className="text-primary-600">Haga clic para subir</span> o arrastre una
                   imagen
                 </p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG o WebP (máx. 5MB)</p>

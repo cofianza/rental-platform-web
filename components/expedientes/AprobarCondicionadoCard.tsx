@@ -146,21 +146,21 @@ export function AprobarCondicionadoCard({
           </p>
 
           <ol className="mt-4 space-y-4">
-            <Paso n={1} titulo={esCofianza ? 'Decides tú, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
+            <Paso n={1} titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
               {sinSalidaAprobable ? (
                 <p>
                   Sin historial en ninguna central, la Política solo permite aprobarlo con un co-arrendatario, y en
                   inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Si el otro buró
                   tampoco tiene información, el caso no puede aprobarse y se cierra con el motivo
                   {esCofianza
-                    ? ': usa «Cambiar estado», arriba.'
-                    : '. Lo cierra un analista de Cofianza y te avisamos por notificación y correo.'}
+                    ? ': use «Cambiar estado», arriba.'
+                    : '. Lo cierra un analista de Cofianza y le avisamos por notificación y correo.'}
                 </p>
               ) : esCofianza ? (
                 <>
                   <p>
-                    Revisa el caso, los soportes y el co-arrendatario si lo hay. Si lo apruebas, el estudio pasa a
-                    Aprobado y se puede crear el contrato. Para no aprobarlo, usa «Cambiar estado», arriba.
+                    Revise el caso, los soportes y el co-arrendatario si lo hay. Si lo aprueba, el estudio pasa a
+                    Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
                   <button
                     onClick={() => setConfirmAprobarOpen(true)}
@@ -172,7 +172,7 @@ export function AprobarCondicionadoCard({
                 </>
               ) : (
                 <p>
-                  Revisa el caso y lo aprueba o no. No tienes que hacer nada para que avance: te avisamos por
+                  Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
                   notificación y correo cuando decida.
                 </p>
               )}
@@ -180,7 +180,7 @@ export function AprobarCondicionadoCard({
 
             <Paso
               n={2}
-              titulo={esCofianza ? 'La inmobiliaria o el propietario pueden reforzar el caso' : 'Mientras tanto, puedes reforzar el caso (opcional)'}
+              titulo={esCofianza ? 'La inmobiliaria o el propietario pueden reforzar el caso' : 'Mientras tanto, puede reforzar el caso (opcional)'}
             >
               <ul className="space-y-3">
                 <Opcion titulo="Pedir soportes al solicitante">
@@ -264,8 +264,8 @@ export function AprobarCondicionadoCard({
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Tu decisión queda
-          registrada con tu usuario, la fecha, el fundamento y los documentos que consultaste.
+          El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Su decisión queda
+          registrada con su usuario, la fecha, el fundamento y los documentos que consultó.
         </p>
         {cargandoMotivos ? (
           <CargandoMotivos />

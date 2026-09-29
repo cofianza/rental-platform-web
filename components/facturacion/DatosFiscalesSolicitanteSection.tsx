@@ -102,7 +102,7 @@ export function DatosFiscalesSolicitanteSection() {
         })
       })
       .catch((err) => {
-        toast.error(err instanceof Error ? err.message : 'Error al cargar tus datos fiscales')
+        toast.error(err instanceof Error ? err.message : 'Error al cargar sus datos fiscales')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -139,7 +139,7 @@ export function DatosFiscalesSolicitanteSection() {
     // Validaciones cliente — el backend tambien valida y bloquea.
     if (form.tipo_persona === 'juridica') {
       if (!form.razon_social.trim()) {
-        toast.error('Ingresa la razón social de la empresa')
+        toast.error('Ingrese la razón social de la empresa')
         return
       }
       if (form.tipo_documento !== 'nit') {
@@ -147,12 +147,12 @@ export function DatosFiscalesSolicitanteSection() {
         return
       }
       if (!/^\d$/.test(form.digito_verificacion)) {
-        toast.error('Ingresa el dígito de verificación del NIT (1 dígito)')
+        toast.error('Ingrese el dígito de verificación del NIT (1 dígito)')
         return
       }
     } else {
       if (!form.tipo_documento || form.tipo_documento === 'nit') {
-        toast.error('Selecciona un tipo de documento válido (CC, CE o TI)')
+        toast.error('Seleccione un tipo de documento válido (CC, CE o TI)')
         return
       }
     }
@@ -162,7 +162,7 @@ export function DatosFiscalesSolicitanteSection() {
       return
     }
     if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      toast.error('Ingresa un correo electrónico válido')
+      toast.error('Ingrese un correo electrónico válido')
       return
     }
 
@@ -184,7 +184,7 @@ export function DatosFiscalesSolicitanteSection() {
       setDirty(false)
       toast.success('Datos fiscales guardados')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No pudimos guardar tus datos fiscales')
+      toast.error(err instanceof Error ? err.message : 'No pudimos guardar sus datos fiscales')
     } finally {
       setSaving(false)
     }
@@ -218,14 +218,14 @@ export function DatosFiscalesSolicitanteSection() {
           <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-900">
-              Completa tus datos fiscales antes de emitir tu primera factura
+              Complete sus datos fiscales antes de emitir su primera factura
             </p>
             <p className="text-sm text-amber-800 mt-1">
-              Te falta:{' '}
+              Le falta:{' '}
               {faltantes
                 .map((f) => FALTANTE_LABEL[f] ?? f)
                 .join(', ')}
-              . Sin estos datos no podremos generar tu factura electrónica.
+              . Sin estos datos no podremos generar su factura electrónica.
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export function DatosFiscalesSolicitanteSection() {
         <div className="px-4 py-3 bg-green-50 border border-green-300 rounded-lg flex items-start gap-3">
           <IconCheck size={20} className="text-green-600 mt-0.5 shrink-0" />
           <p className="text-sm text-green-900">
-            Tus datos fiscales están completos. Puedes emitir tu factura cuando lo necesites.
+            Sus datos fiscales están completos. Puede emitir su factura cuando lo necesite.
           </p>
         </div>
       )}
@@ -241,7 +241,7 @@ export function DatosFiscalesSolicitanteSection() {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Datos del receptor</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Estos datos aparecerán en las facturas electrónicas que Cofianza emita a tu nombre.
+          Estos datos aparecerán en las facturas electrónicas que Cofianza emita a su nombre.
         </p>
 
         {/* Toggle Persona Natural / Jurídica */}
@@ -275,7 +275,7 @@ export function DatosFiscalesSolicitanteSection() {
           </div>
           <p className="text-xs text-gray-500 mt-1.5">
             {form.tipo_persona === 'natural'
-              ? 'La factura saldrá a tu nombre con tu Cédula de Ciudadanía.'
+              ? 'La factura saldrá a su nombre con su Cédula de Ciudadanía.'
               : 'La factura saldrá a nombre de la empresa con su NIT y dígito de verificación.'}
           </p>
         </div>
@@ -292,7 +292,7 @@ export function DatosFiscalesSolicitanteSection() {
                 className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-700"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Para cambiar tu nombre, contacta soporte.
+                Para cambiar su nombre, comuníquese con soporte.
               </p>
             </div>
           ) : (
@@ -325,7 +325,7 @@ export function DatosFiscalesSolicitanteSection() {
               disabled={form.tipo_persona === 'juridica'}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-700"
             >
-              <option value="">— Selecciona —</option>
+              <option value="">— Seleccione —</option>
               {tipoDocOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -335,7 +335,7 @@ export function DatosFiscalesSolicitanteSection() {
             <p className="text-xs text-gray-500 mt-1">
               {form.tipo_persona === 'juridica'
                 ? 'Las empresas en Colombia facturan con NIT.'
-                : 'Si en el registro pusiste pasaporte, eligelo aquí como CC, CE o TI — son los únicos válidos para facturas DIAN de persona natural.'}
+                : 'Si en el registro puso pasaporte, elíjalo aquí como CC, CE o TI — son los únicos válidos para facturas DIAN de persona natural.'}
             </p>
           </div>
 

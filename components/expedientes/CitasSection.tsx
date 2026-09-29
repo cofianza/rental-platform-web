@@ -137,7 +137,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
     setActionLoading(cita.id)
     try {
       await citaService.acusarReprogramacion(cita.id)
-      toast.success('Aceptaste el nuevo horario. El propietario sera notificado.')
+      toast.success('Aceptó el nuevo horario. El propietario sera notificado.')
       fetchCitas()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al aceptar el horario'
@@ -153,7 +153,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
       await citaService.cancelarCita(cita.id, {
         motivo_cancelacion: 'El solicitante rechazo la fecha reprogramada por el propietario.',
       })
-      toast.success('Cita cancelada. Puedes solicitar otra fecha.')
+      toast.success('Cita cancelada. Puede solicitar otra fecha.')
       fetchCitas()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al rechazar el horario'
@@ -275,12 +275,12 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
 
             <div className="flex-1 min-w-0">
               <h4 className="text-base font-bold text-gray-900 mb-1">
-                {canManageCitas ? 'Agenda una visita al inmueble' : 'Agenda tu visita al inmueble'}
+                {canManageCitas ? 'Agende una visita al inmueble' : 'Agende su visita al inmueble'}
               </h4>
               <p className="text-sm text-gray-600">
                 {canManageCitas
-                  ? 'Programa una visita confirmada con el solicitante. Recibirá una notificación por correo y WhatsApp.'
-                  : 'Antes de continuar con la evaluación crediticia, necesitas conocer el inmueble. Solicita una cita y el propietario la confirmará.'}
+                  ? 'Programe una visita confirmada con el solicitante. Recibirá una notificación por correo y WhatsApp.'
+                  : 'Antes de continuar con la evaluación crediticia, necesita conocer el inmueble. Solicite una cita y el propietario la confirmará.'}
               </p>
             </div>
 
@@ -327,7 +327,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
             if (c) await handleRealizar(c)
           }}
           title="Marcar la visita como realizada"
-          message="Confirma que la visita al inmueble se realizó. Con esto se habilita la evaluación crediticia del solicitante."
+          message="Confirme que la visita al inmueble se realizó. Con esto se habilita la evaluación crediticia del solicitante."
           confirmLabel="Sí, se realizó"
         />
         <ConfirmDialog
@@ -496,8 +496,8 @@ function CitaCard({
           {showAcuseBanner && (
             <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
               <p className="text-sm text-amber-900">
-                <strong>El propietario propuso un horario diferente.</strong> Confirma si te
-                sirve la nueva fecha o rechazala para coordinar otra.
+                <strong>El propietario propuso un horario diferente.</strong> Confirme si le
+                sirve la nueva fecha o rechácela para coordinar otra.
               </p>
               <div className="flex gap-2">
                 <button
@@ -651,11 +651,11 @@ function CrearCitaModal({
 
   const handleSubmit = async () => {
     if (!slot) {
-      toast.error('Selecciona un horario disponible')
+      toast.error('Seleccione un horario disponible')
       return
     }
     if (faltaTelefono && !telefonoValido) {
-      toast.error('Ingresa el teléfono (WhatsApp) del solicitante para enviarle la confirmación')
+      toast.error('Ingrese el teléfono (WhatsApp) del solicitante para enviarle la confirmación')
       return
     }
 
@@ -705,8 +705,8 @@ function CrearCitaModal({
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
           {isOwnerOrAgency
-            ? 'Programa una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo y WhatsApp.'
-            : 'Elige un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
+            ? 'Programe una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo y WhatsApp.'
+            : 'Elija un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
         </p>
 
         {/* Captura del teléfono del solicitante si no lo tiene — necesario para
@@ -721,7 +721,7 @@ function CrearCitaModal({
               placeholder="300 123 4567"
             />
             <p className="mt-1.5 text-xs text-amber-700">
-              Este solicitante aún no tiene teléfono. Agrégalo para enviarle la confirmacion de la visita por WhatsApp.
+              Este solicitante aún no tiene teléfono. Agréguelo para enviarle la confirmacion de la visita por WhatsApp.
             </p>
           </div>
         )}
@@ -741,7 +741,7 @@ function CrearCitaModal({
           </>
         ) : (
           <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-            No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.
+            No pudimos cargar la disponibilidad del propietario. Recargue la pagina e intente de nuevo.
           </div>
         )}
 
@@ -834,8 +834,8 @@ function ConfirmarCitaModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Cita">
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Confirma la cita en la fecha y hora propuesta por el solicitante. Si necesitas
-          cambiar el horario, usa el boton <strong>Reprogramar</strong>.
+          Confirme la cita en la fecha y hora propuesta por el solicitante. Si necesita
+          cambiar el horario, use el boton <strong>Reprogramar</strong>.
         </p>
 
         {cita.fecha_propuesta && (
@@ -915,7 +915,7 @@ function ReprogramarCitaModal({
 
   const handleSubmit = async () => {
     if (!slot) {
-      toast.error('Selecciona un horario disponible')
+      toast.error('Seleccione un horario disponible')
       return
     }
     setIsSubmitting(true)
@@ -946,12 +946,12 @@ function ReprogramarCitaModal({
 
   // Texto y placeholders adaptados al actor.
   const descripcion = isSolicitante
-    ? 'Elige un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmacion del propietario.'
-    : 'Elige un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo, WhatsApp y notificacion in-app.'
+    ? 'Elija un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmacion del propietario.'
+    : 'Elija un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo, WhatsApp y notificacion in-app.'
 
   const notasPlaceholder = isSolicitante
-    ? 'Cuentale al propietario por que necesitas cambiar el horario.'
-    : 'Cuentale al solicitante por que cambias el horario.'
+    ? 'Cuéntele al propietario por qué necesita cambiar el horario.'
+    : 'Cuéntele al solicitante por qué cambia el horario.'
 
   const ctaLabel = isSolicitante ? 'Enviar propuesta' : 'Enviar nueva propuesta'
 
@@ -984,7 +984,7 @@ function ReprogramarCitaModal({
           </>
         ) : (
           <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-            No pudimos cargar la disponibilidad del propietario. Recarga la pagina e intenta de nuevo.
+            No pudimos cargar la disponibilidad del propietario. Recargue la pagina e intente de nuevo.
           </div>
         )}
 
@@ -1049,7 +1049,7 @@ function CancelarCitaModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!motivo.trim()) { toast.error('Ingresa un motivo'); return }
+    if (!motivo.trim()) { toast.error('Ingrese un motivo'); return }
 
     setIsSubmitting(true)
     try {
@@ -1066,7 +1066,7 @@ function CancelarCitaModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Cancelar Cita">
       <div className="space-y-4">
-        <p className="text-sm text-gray-500">Indica el motivo de la cancelación.</p>
+        <p className="text-sm text-gray-500">Indique el motivo de la cancelación.</p>
 
         <div>
           <label htmlFor="citas-section-motivo" className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>

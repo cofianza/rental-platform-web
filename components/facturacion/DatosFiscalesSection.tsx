@@ -40,7 +40,7 @@ export function DatosFiscalesSection() {
     try {
       setPerfil(await perfilArrendadorService.getMe())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudieron cargar tus datos de facturación')
+      setError(err instanceof Error ? err.message : 'No se pudieron cargar sus datos de facturación')
     } finally {
       setLoading(false)
     }
@@ -58,7 +58,7 @@ export function DatosFiscalesSection() {
     return (
       <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white p-10 text-sm text-gray-500">
         <IconLoader size={18} className="animate-spin" />
-        Cargando tus datos de facturación...
+        Cargando sus datos de facturación...
       </div>
     )
   }
@@ -87,9 +87,9 @@ export function DatosFiscalesSection() {
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-gray-900">Con estos datos te factura Cofianza</h3>
+      <h3 className="text-lg font-semibold text-gray-900">Con estos datos le factura Cofianza</h3>
       <p className="mt-1 text-xs text-gray-500">
-        Los tomamos de tu perfil; no hace falta que los escribas otra vez.
+        Los tomamos de su perfil; no hace falta que los escriba otra vez.
       </p>
 
       <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">

@@ -211,7 +211,7 @@ export function ReasignarEstudioModal({
       // la propiedad anterior mientras el QR ya muestra la nueva.
       if (res.certificado === 'desactualizado') {
         toast.warning(
-          'El certificado emitido quedó describiendo la propiedad anterior. Regenéralo desde el estudio antes de entregarlo.',
+          'El certificado emitido quedó describiendo la propiedad anterior. Regenérelo desde el estudio antes de entregarlo.',
           { duration: 10000 },
         )
       } else if (res.certificado === 'regenerado') {

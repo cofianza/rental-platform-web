@@ -225,7 +225,7 @@ export function EstudiosSection({
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'No se pudo descontar el crédito.'
-          toast.warning(`Evaluación solicitada, pero sin pagar: ${msg} Cóbrala desde la sección de pagos.`)
+          toast.warning(`Evaluación solicitada, pero sin pagar: ${msg} Cóbrela desde la sección de pagos.`)
         }
       }
       trasCambio()
@@ -259,7 +259,7 @@ export function EstudiosSection({
     if (!sendLinkTarget) return
     const email = sendLinkEmail.trim().toLowerCase()
     if (!email || !/.+@.+\..+/.test(email)) {
-      toast.error('Ingresa un correo válido para enviar el enlace')
+      toast.error('Ingrese un correo válido para enviar el enlace')
       return
     }
     setActionLoading(true)
@@ -590,7 +590,7 @@ export function EstudiosSection({
         onClose={() => setCancelTarget(null)}
         onConfirm={handleCancel}
         title="Cancelar evaluación"
-        message="¿Seguro que quieres cancelar esta evaluación? No se puede deshacer."
+        message="¿Seguro que desea cancelar esta evaluación? No se puede deshacer."
         confirmLabel="Cancelar evaluación"
         variant="danger"
         isLoading={actionLoading}
@@ -606,8 +606,8 @@ export function EstudiosSection({
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            El solicitante recibirá un enlace para completar su formulario del estudio. Verifica o
-            corrige el correo antes de enviar.
+            El solicitante recibirá un enlace para completar su formulario del estudio. Verifique o
+            corrija el correo antes de enviar.
           </p>
           <div>
             <label htmlFor="estudios-section-correo-destino" className="block text-xs font-medium text-gray-700 mb-1">Correo destino</label>
@@ -622,7 +622,7 @@ export function EstudiosSection({
             <p className="mt-1 text-xs text-gray-500">
               {sendLinkTarget?.tipo === 'con_coarrendatario'
                 ? 'El enlace lo recibe el titular del estudio. Una corrección aquí solo cambia el destino de este envío.'
-                : 'Si lo corriges, también se actualiza en los datos del solicitante.'}
+                : 'Si lo corrige, también se actualiza en los datos del solicitante.'}
             </p>
           </div>
           <div className="flex justify-end gap-2">

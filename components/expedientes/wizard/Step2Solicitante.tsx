@@ -214,7 +214,7 @@ export function Step2Solicitante({
   // Buscar solicitante por documento
   const handleSearch = useCallback(async () => {
     if (!searchTipoDoc || !searchNumDoc.trim()) {
-      setSearchError('Ingresa tipo y número de documento')
+      setSearchError('Ingrese tipo y número de documento')
       return
     }
 
@@ -363,7 +363,7 @@ export function Step2Solicitante({
             Le quedan {estudioVigente.dias_restantes}{' '}
             {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia.{' '}
             {reutilizable
-              ? 'Puedes reutilizarlo para esta propiedad sin volver a cobrarlo: ábrelo y usa «Reasignar a otra propiedad».'
+              ? 'Puede reutilizarlo para esta propiedad sin volver a cobrarlo: ábralo y use «Reasignar a otra propiedad».'
               : estudioVigente.motivo_no_reutilizable ?? 'Ábrelo para revisar si sirve para esta propiedad.'}
           </p>
           {estudioVigente.expediente_id && (
@@ -393,7 +393,7 @@ export function Step2Solicitante({
               <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
               Editar solicitante
             </h2>
-            <p className="mt-1 text-sm text-gray-500">Actualiza los datos y guarda los cambios.</p>
+            <p className="mt-1 text-sm text-gray-500">Actualice los datos y guarde los cambios.</p>
           </div>
           <button type="button" onClick={handleCancelEdit} className="text-sm text-gray-500 hover:text-gray-700">
             Cancelar
@@ -436,7 +436,7 @@ export function Step2Solicitante({
               de dos líneas ni un segundo botón "Guardar cambios". */}
           {isEditDirty && (
             <p className="text-sm text-amber-700 sm:ml-2" role="status">
-              Guarda o cancela los cambios para poder continuar.
+              Guarde o cancele los cambios para poder continuar.
             </p>
           )}
         </div>
@@ -490,10 +490,10 @@ export function Step2Solicitante({
                   Registrado: {data.solicitante.telefono || 'sin celular'} · {data.solicitante.email || 'sin correo'}
                 </p>
                 <p>
-                  Escribiste: {data.contactoPropuesto.telefono || '—'} · {data.contactoPropuesto.email || '—'}
+                  Escribió: {data.contactoPropuesto.telefono || '—'} · {data.contactoPropuesto.email || '—'}
                 </p>
                 <p className="text-amber-800">
-                  El enlace de autorización se envía al contacto de la ficha. Elige cuál vale para continuar.
+                  El enlace de autorización se envía al contacto de la ficha. Elija cuál vale para continuar.
                 </p>
               </div>
             </div>
@@ -592,7 +592,7 @@ export function Step2Solicitante({
           <div>
             <h3 className="text-base font-semibold text-gray-900">Buscar solicitante</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Escribe el documento. Si no existe, abrimos el formulario para crearlo al instante.
+              Escriba el documento. Si no existe, abrimos el formulario para crearlo al instante.
             </p>
           </div>
         </div>
@@ -664,7 +664,7 @@ export function Step2Solicitante({
       {recientes.length > 0 && (
         <div>
           <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-500">
-            O elige uno que ya registraste
+            O elija uno que ya registró
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {recientes.map((s) => {

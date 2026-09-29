@@ -140,7 +140,7 @@ export function AutorizacionSection({
     if (editContacto) {
       const emailNuevo = emailEdit.trim().toLowerCase()
       if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
-        toast.error('Ingresa un correo válido para enviar el enlace')
+        toast.error('Ingrese un correo válido para enviar el enlace')
         return
       }
       const telDigits = telEdit.replace(/\D/g, '').replace(/^57/, '')
@@ -155,7 +155,7 @@ export function AutorizacionSection({
     if (sinDocumento) {
       const numero = numDocEdit.trim()
       if (numero.length < 5) {
-        toast.error('Ingresa el número de documento del prospecto')
+        toast.error('Ingrese el número de documento del prospecto')
         return
       }
       contacto = { ...contacto, tipo_documento: tipoDocEdit, numero_documento: numero }
@@ -193,7 +193,7 @@ export function AutorizacionSection({
   const documentoFaltante = sinDocumento && !soloLectura && (
     <div className="mb-3 space-y-2">
       <p className="text-xs text-amber-700">
-        El prospecto se registró sin documento. Escríbelo para enviarle la solicitud: se guarda en sus datos.
+        El prospecto se registró sin documento. Escríbalo para enviarle la solicitud: se guarda en sus datos.
       </p>
       <div className="grid grid-cols-5 gap-2">
         <div className="col-span-2">
@@ -302,7 +302,7 @@ export function AutorizacionSection({
 
   const handleRevocar = async () => {
     if (!revocarCanal || !revocarFecha || revocarMotivo.trim().length < 10) {
-      toast.error('Indica la fecha, el canal y el soporte de la solicitud (mín. 10 caracteres)')
+      toast.error('Indique la fecha, el canal y el soporte de la solicitud (mín. 10 caracteres)')
       return
     }
     setRevocando(true)
@@ -393,7 +393,7 @@ export function AutorizacionSection({
             </p>
             <p className="text-xs text-amber-700">
               Reportado el {formatDate(perfil.identidad_reporte_en)}. El enlace se detuvo y no se consultó
-              ninguna central de riesgo. Corrige los datos del solicitante y envía un enlace nuevo.
+              ninguna central de riesgo. Corrija los datos del solicitante y envíe un enlace nuevo.
             </p>
             {perfil.identidad_reporte_detalle && (
               <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>
@@ -411,7 +411,7 @@ export function AutorizacionSection({
               <div>
                 <p className="text-sm font-medium text-amber-800">Falta el pago del estudio</p>
                 <p className="mt-1 text-xs text-amber-700">
-                  Elegiste pagarlo tú en Mercado Pago y el pago aún no se confirma: complétalo en la sección de
+                  Eligió pagarlo usted en Mercado Pago y el pago aún no se confirma: complételo en la sección de
                   pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.
                 </p>
               </div>
@@ -592,7 +592,7 @@ export function AutorizacionSection({
               <div>
                 <p className="text-sm font-medium text-red-800">Registrar la revocación del titular</p>
                 <p className="text-xs text-red-700 mt-0.5">
-                  Solo el titular puede revocar su autorización, y lo hace ante Cofianza. Registra cuándo y por
+                  Solo el titular puede revocar su autorización, y lo hace ante Cofianza. Registre cuándo y por
                   dónde la pidió y el soporte.
                 </p>
               </div>
@@ -614,7 +614,7 @@ export function AutorizacionSection({
                     onChange={(e) => setRevocarCanal(e.target.value as IRevocarInput['canal'] | '')}
                     className="mt-1 w-full rounded-lg border border-red-300 bg-white p-2 text-sm text-gray-900 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">Elige el canal</option>
+                    <option value="">Elija el canal</option>
                     {CANALES_REVOCACION.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}

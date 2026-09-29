@@ -84,7 +84,7 @@ export default function SlotSelector({
       })
       .catch(() => {
         if (cancelled) return
-        setError('No se pudieron cargar los horarios. Intenta de nuevo.')
+        setError('No se pudieron cargar los horarios. Intente de nuevo.')
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false)
@@ -123,7 +123,7 @@ export default function SlotSelector({
         >
           <IconChevronLeft size={18} />
         </button>
-        <span className="text-sm font-medium text-gray-700">Selecciona fecha y hora</span>
+        <span className="text-sm font-medium text-gray-700">Seleccione fecha y hora</span>
         <button
           type="button"
           onClick={handleAvanzar}
@@ -138,7 +138,7 @@ export default function SlotSelector({
       {/* Banner: semana vacía (informativo, grid sigue visible) */}
       {semanaSinSlots && (
         <div className="px-3 py-2 bg-amber-50 border-l-4 border-amber-400 text-sm text-amber-800">
-          Sin horarios disponibles esta semana. Prueba semanas siguientes con la flecha ›.
+          Sin horarios disponibles esta semana. Pruebe semanas siguientes con la flecha ›.
         </div>
       )}
 
@@ -234,7 +234,7 @@ export function EditarHorariosHint({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50/70 px-3 py-2">
       <span className="text-xs text-gray-500">
-        ¿No ves el horario que necesitas? Ajusta tu disponibilidad de visitas.
+        ¿No ve el horario que necesita? Ajuste su disponibilidad de visitas.
       </span>
       <div className="flex items-center gap-3">
         <button

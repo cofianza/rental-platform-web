@@ -101,17 +101,17 @@ export const DEPARTAMENTOS_COLOMBIA = [
 export const WIZARD_MESSAGES = {
   // Paso 1
   STEP1_TITLE: 'Seleccionar Inmueble',
-  STEP1_SUBTITLE: 'Busca y selecciona el inmueble para el estudio',
+  STEP1_SUBTITLE: 'Busque y seleccione el inmueble para el estudio',
   SEARCH_INMUEBLE_PLACEHOLDER: 'Buscar por código, dirección o ciudad...',
   INMUEBLE_REQUIRED: 'Debe seleccionar un inmueble',
   INMUEBLE_HAS_ACTIVE_EXPEDIENTE: 'Este inmueble ya tiene un estudio activo',
   NO_INMUEBLES_FOUND: 'No se encontraron inmuebles',
-  MIN_SEARCH_CHARS: 'Ingresa al menos 2 caracteres para buscar',
+  MIN_SEARCH_CHARS: 'Ingrese al menos 2 caracteres para buscar',
 
   // Paso 2
   STEP2_TITLE: 'Datos del Solicitante',
-  STEP2_SUBTITLE: 'Busca un solicitante existente o crea uno nuevo',
-  SEARCH_SOLICITANTE_PLACEHOLDER: 'Ingresa número de documento',
+  STEP2_SUBTITLE: 'Busque un solicitante existente o cree uno nuevo',
+  SEARCH_SOLICITANTE_PLACEHOLDER: 'Ingrese número de documento',
   SOLICITANTE_NOT_FOUND: 'No se encontró solicitante con ese documento',
   CREATE_NEW_SOLICITANTE: 'Crear nuevo solicitante',
   USE_EXISTING_SOLICITANTE: 'Buscar solicitante existente',
@@ -119,7 +119,7 @@ export const WIZARD_MESSAGES = {
 
   // Paso 3
   STEP3_TITLE: 'Configuración',
-  STEP3_SUBTITLE: 'Define cómo se paga el estudio de este prospecto',
+  STEP3_SUBTITLE: 'Defina cómo se paga el estudio de este prospecto',
   NOTAS_LABEL: 'Notas internas',
   NOTAS_PLACEHOLDER: 'Notas internas sobre el estudio (opcional)...',
   NOTAS_MAX_LENGTH: 'Las notas no deben exceder 5000 caracteres',
@@ -129,12 +129,12 @@ export const WIZARD_MESSAGES = {
 
   // Paso 4
   STEP4_TITLE: 'Confirmación',
-  STEP4_SUBTITLE: 'Revisa los datos antes de enviarle la solicitud de autorización al prospecto',
+  STEP4_SUBTITLE: 'Revise los datos antes de enviarle la solicitud de autorización al prospecto',
   CONFIRM_CREATE: 'Enviar solicitud de autorización',
   CREATING: 'Enviando solicitud...',
   // Opción B (Adenda 2 §7): primero paga la inmobiliaria en Mercado Pago; la
   // solicitud le sale al prospecto solo cuando se confirma ese pago.
-  STEP4_SUBTITLE_PAGO: 'Revisa los datos. Al confirmar te llevamos a Mercado Pago; la solicitud de autorización le llega al prospecto cuando se confirme tu pago',
+  STEP4_SUBTITLE_PAGO: 'Revise los datos. Al confirmar lo llevamos a Mercado Pago; la solicitud de autorización le llega al prospecto cuando se confirme su pago',
   CONFIRM_CREATE_PAGO: 'Crear estudio e ir a pagar',
   CREATING_PAGO: 'Creando estudio...',
   SUCCESS: 'Solicitud enviada al prospecto',
@@ -172,9 +172,9 @@ export const WIZARD_MESSAGES = {
   LABEL_HABITARA_INMUEBLE: 'Habitará el inmueble',
 
   // Placeholders
-  PLACEHOLDER_NOMBRE: 'Ingresa nombre(s)',
-  PLACEHOLDER_APELLIDO: 'Ingresa apellido(s)',
-  PLACEHOLDER_DOCUMENTO: 'Ingresa número',
+  PLACEHOLDER_NOMBRE: 'Ingrese nombre(s)',
+  PLACEHOLDER_APELLIDO: 'Ingrese apellido(s)',
+  PLACEHOLDER_DOCUMENTO: 'Ingrese número',
   PLACEHOLDER_EMAIL: 'correo@ejemplo.com',
   PLACEHOLDER_TELEFONO: '+57 3001234567',
   PLACEHOLDER_DIRECCION: 'Dirección completa',

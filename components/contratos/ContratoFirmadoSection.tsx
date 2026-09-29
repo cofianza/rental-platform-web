@@ -165,7 +165,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
                     La descarga entrega el contrato generado, sin firmas.
-                    {puedeSubir && ' Sube el escaneado firmado para guardarlo aquí.'}
+                    {puedeSubir && ' Suba el escaneado firmado para guardarlo aquí.'}
                   </p>
                 </div>
               </div>

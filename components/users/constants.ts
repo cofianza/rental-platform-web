@@ -102,6 +102,6 @@ export const USER_MESSAGES = {
   DEACTIVATE_ERROR: 'Error al desactivar usuario',
   FETCH_ERROR: 'Error al cargar usuarios',
   NO_RESULTS: 'No se encontraron usuarios',
-  CONFIRM_DEACTIVATE: '¿Estás seguro de que deseas desactivar este usuario?',
-  CONFIRM_ACTIVATE: '¿Estás seguro de que deseas activar este usuario?',
+  CONFIRM_DEACTIVATE: '¿Está seguro de que desea desactivar este usuario?',
+  CONFIRM_ACTIVATE: '¿Está seguro de que desea activar este usuario?',
 }

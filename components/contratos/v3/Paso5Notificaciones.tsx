@@ -214,7 +214,7 @@ export function VistaPreviaContrato({
     }
     if (archivo.size > MAX_BYTES_PROPIO) {
       setErrorArchivo(
-        `«${archivo.name}» pesa ${megas(archivo.size)}: el máximo es 6 MB. Redúcelo (por ejemplo, imprimiéndolo de nuevo a PDF) y súbelo otra vez.`,
+        `«${archivo.name}» pesa ${megas(archivo.size)}: el máximo es 6 MB. Redúzcalo (por ejemplo, imprimiéndolo de nuevo a PDF) y súbalo otra vez.`,
       )
       return
     }
@@ -235,18 +235,18 @@ export function VistaPreviaContrato({
     motivoNoGenerar ??
     (!documento
       ? rutaB
-        ? 'Genera el Anexo y revísalo antes de enviar a firma.'
-        : 'Genera la vista previa y revísala antes de enviar a firma.'
+        ? 'Genere el Anexo y revíselo antes de enviar a firma.'
+        : 'Genere la vista previa y revísela antes de enviar a firma.'
       : documento.desactualizado
-        ? `Hay cambios desde que se generó ${rutaB ? 'el Anexo: vuelve a generarlo' : 'la vista previa: vuelve a generarla'} antes de enviar.`
+        ? `Hay cambios desde que se generó ${rutaB ? 'el Anexo: vuelva a generarlo' : 'la vista previa: vuelva a generarla'} antes de enviar.`
         : documento.pendientes.length > 0
           ? 'El documento tiene textos pendientes de aprobación de Cofianza: todavía no se puede enviar a firma.'
           : rutaB && !propio
-            ? 'Carga el contrato de la inmobiliaria en PDF para enviarlo a firma.'
+            ? 'Cargue el contrato de la inmobiliaria en PDF para enviarlo a firma.'
             : rutaB && borradorFirmas
-              ? 'Guarda la ubicación de las firmas antes de enviar a firma.'
+              ? 'Guarde la ubicación de las firmas antes de enviar a firma.'
               : rutaB && propio && !propio.firmasCompletas
-                ? `Ubica en el contrato de la inmobiliaria dónde firma: ${(propio.partesSinFirma ?? []).join(', ')}.`
+                ? `Ubique en el contrato de la inmobiliaria dónde firma: ${(propio.partesSinFirma ?? []).join(', ')}.`
                 : rutaB && contrato.rutaBFirmaHabilitada === false
                   ? RUTA_B_FIRMA_NO_HABILITADA
                   : null)
@@ -260,10 +260,10 @@ export function VistaPreviaContrato({
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             {rutaB
-              ? 'Carga el contrato de la inmobiliaria y genera el Anexo de condiciones para revisarlos antes de enviarlos a firma.'
+              ? 'Cargue el contrato de la inmobiliaria y genere el Anexo de condiciones para revisarlos antes de enviarlos a firma.'
               : documento
                 ? 'Documento de revisión: todavía no es el contrato para firmar.'
-                : 'Genera el documento para revisarlo antes de enviarlo a firma.'}
+                : 'Genere el documento para revisarlo antes de enviarlo a firma.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -292,7 +292,7 @@ export function VistaPreviaContrato({
 
       {v3.fallasEnvio.length > 0 && (
         <Aviso tono="error">
-          <p className="font-medium">Auco no acepta estos datos de firma. Corrígelos y vuelve a intentarlo:</p>
+          <p className="font-medium">Auco no acepta estos datos de firma. Corríjalos y vuelva a intentarlo:</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             {v3.fallasEnvio.map((f, i) => (
               <li key={i}>
@@ -310,8 +310,8 @@ export function VistaPreviaContrato({
         // texto nuevo o aprobado de la plantilla de Cofianza.
         <Aviso tono="aviso">
           {rutaB
-            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelve a generarlo.'
-            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelve a generarla.'}
+            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarlo.'
+            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarla.'}
         </Aviso>
       )}
 
@@ -384,10 +384,10 @@ export function VistaPreviaContrato({
                 <IconUpload size={28} className="text-gray-500" />
               )}
               <span className="text-sm font-medium text-gray-900">
-                {v3.accion === 'propio' ? 'Cargando…' : 'Arrastra el PDF aquí o haz clic para elegirlo'}
+                {v3.accion === 'propio' ? 'Cargando…' : 'Arrastre el PDF aquí o haga clic para elegirlo'}
               </span>
               <span className="text-xs text-gray-500">
-                Solo PDF, máximo 6 MB y 60 páginas. Se firma tal como lo cargues, sin modificaciones.
+                Solo PDF, máximo 6 MB y 60 páginas. Se firma tal como lo cargue, sin modificaciones.
               </span>
             </button>
           ) : (
@@ -400,7 +400,7 @@ export function VistaPreviaContrato({
               maxLength={40}
               onChange={(e) => setNumeroPropio(e.target.value)}
               placeholder={contrato.numero}
-              help={`El Anexo lo imprime en «Contrato asociado N°»; si lo dejas vacío, va el número de Cofianza (${contrato.numero}). Se guarda al ${propio ? 'reemplazar' : 'cargar'} el PDF.`}
+              help={`El Anexo lo imprime en «Contrato asociado N°»; si lo deja vacío, va el número de Cofianza (${contrato.numero}). Se guarda al ${propio ? 'reemplazar' : 'cargar'} el PDF.`}
             />
           )}
           {errorPdf && (
@@ -453,7 +453,7 @@ export function VistaPreviaContrato({
         // En el mismo clic: Safari de iOS solo abre el selector de archivos dentro de un gesto del usuario.
         onConfirm={() => archivoRef.current?.click()}
         title="¿Reemplazar el contrato de la inmobiliaria?"
-        message="Las firmas que ubicaste son de este PDF: con el nuevo tendrás que ubicarlas otra vez."
+        message="Las firmas que ubicó son de este PDF: con el nuevo tendrá que ubicarlas otra vez."
         confirmLabel="Elegir otro PDF"
         cancelLabel="Volver"
       />

@@ -117,7 +117,7 @@ export function EstudiosExpedientesFusion() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-gray-900">Estudios</h1>
           <p className="text-sm font-medium text-gray-500">
-            Tus estudios y el estado de su evaluación crediticia, en un solo lugar.
+            Sus estudios y el estado de su evaluación crediticia, en un solo lugar.
           </p>
         </div>
         <div className="flex items-center gap-2.5">

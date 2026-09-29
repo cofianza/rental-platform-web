@@ -288,7 +288,7 @@ export function ContratosInmobiliariaView() {
       {estadoSinPanel && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
           Los contratos {ESTADOS_CONTRATO[estadoFiltro as EstadoContratoKey]?.label.toLowerCase() ?? estadoFiltro} no
-          se listan en esta vista. Quita el filtro de estado o consúltalos desde el estudio.
+          se listan en esta vista. Quite el filtro de estado o consúltelos desde el estudio.
         </p>
       )}
 
@@ -320,7 +320,7 @@ export function ContratosInmobiliariaView() {
       <Panel
         title="Estudios aprobados sin contrato"
         dot="bg-coral-500"
-        subtitle="Genera el contrato desde el estudio"
+        subtitle="Genere el contrato desde el estudio"
       >
         {loadingSinContrato ? (
           <div className="px-6 py-8 text-center text-sm text-gray-500" role="status" aria-live="polite">
@@ -540,7 +540,7 @@ function ResumenTope({ meta }: { meta: IContratoMeta }) {
   if (meta.total <= meta.limit || meta.limit === 0) return null
   return (
     <p className="border-t border-gray-200 px-6 py-3 text-xs text-gray-500">
-      Mostrando {meta.limit} de {meta.total}. Usa la búsqueda o los filtros para acotar la lista.
+      Mostrando {meta.limit} de {meta.total}. Use la búsqueda o los filtros para acotar la lista.
     </p>
   )
 }

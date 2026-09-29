@@ -57,7 +57,7 @@ export function Step4Confirmation({
   const FORMA_PAGO_LABEL: Record<string, string> = {
     credito: 'Descontado del paquete de estudios (opción A)',
     // Adenda 2 §7: la B se paga en línea; la solicitud sale al confirmarse el pago.
-    inmobiliaria: 'Pagas tú ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago (opción B)',
+    inmobiliaria: 'Usted paga ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago (opción B)',
     prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
   }
   // Opción B: el botón no envía nada todavía, lleva al pago.
@@ -258,7 +258,7 @@ export function Step4Confirmation({
                 {FORMA_PAGO_LABEL[forma_pago]}
               </p>
             ) : (
-              <p className="text-sm text-red-600">Sin elegir — vuelve al paso 3</p>
+              <p className="text-sm text-red-600">Sin elegir — vuelva al paso 3</p>
             )}
           </div>
 

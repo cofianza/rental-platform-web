@@ -83,7 +83,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     // backend usa la propuesta). Reprogramar: usa endpoint dedicado que
     // valida disponibilidad y dispara aviso 'reprogramada' al solicitante.
     if (confirmMode === 'reprogramar' && !slotElegido) {
-      toast.error('Selecciona un horario alternativo')
+      toast.error('Seleccione un horario alternativo')
       return
     }
     return runAction(
@@ -129,7 +129,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       () => expedienteService.habilitarEstudio(expediente.id),
       userRol === 'propietario'
         ? 'Evaluación habilitada. Al solicitante le llega el enlace para autorizar la consulta'
-        : 'Evaluación habilitada. Define el pago desde el estudio',
+        : 'Evaluación habilitada. Defina el pago desde el estudio',
     )
   }
 
@@ -362,7 +362,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           {confirmMode === 'reprogramar' && inmueble?.id && (
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                Elige un horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha.
+                Elija un horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha.
               </p>
               <SlotSelector
                 inmuebleId={inmueble.id}
@@ -392,7 +392,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder={
                 confirmMode === 'reprogramar'
-                  ? 'Cuentale por que cambias el horario.'
+                  ? 'Cuéntele por qué cambia el horario.'
                   : 'Instrucciones, punto de encuentro, etc.'
               }
             />
@@ -468,7 +468,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleRealizar}
         title="Marcar cita como realizada"
-        message="Confirma que la visita al inmueble se realizó. Tras esto, podrás habilitar la evaluación crediticia desde la columna de realizadas."
+        message="Confirme que la visita al inmueble se realizó. Tras esto, podrá habilitar la evaluación crediticia desde la columna de realizadas."
         confirmLabel="Marcar realizada"
         isLoading={isLoading}
       />
@@ -479,7 +479,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleNoAsistio}
         title="Marcar no asistió"
-        message="El solicitante no se presentó a la visita. El estudio quedará registrado y podrás agendar una nueva cita si lo deseas."
+        message="El solicitante no se presentó a la visita. El estudio quedará registrado y podrá agendar una nueva cita si lo desea."
         confirmLabel="Marcar no asistió"
         variant="danger"
         isLoading={isLoading}

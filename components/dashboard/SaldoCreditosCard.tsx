@@ -75,7 +75,7 @@ export function SaldoCreditosCard() {
               )}
               {sinSaldo && (
                 <p className="text-xs text-amber-700 mt-1">
-                  Compra un paquete para liberar estudios a tus solicitantes.
+                  Compre un paquete para liberar estudios a sus solicitantes.
                 </p>
               )}
             </>
@@ -98,7 +98,7 @@ export function SaldoCreditosCard() {
           </Link>
         ) : (
           <p className="text-xs text-gray-500">
-            Para comprar más estudios, pídeselo al titular de la cuenta.
+            Para comprar más estudios, pídaselo al titular de la cuenta.
           </p>
         )}
         {!sinSaldo && (

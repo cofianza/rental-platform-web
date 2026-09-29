@@ -114,18 +114,18 @@ export function TransicionModal({
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
-      setError('Selecciona un estado destino')
+      setError('Seleccione un estado destino')
       return
     }
 
     if (esperaLista) return
     if (!motivoValido) {
-      setError(errorLista ?? `Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
+      setError(errorLista ?? `Escriba el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
     if (!motivoGestorValido) {
-      setError(`Escribe el motivo para la inmobiliaria o el propietario (mínimo ${MIN_MOTIVO} caracteres).`)
+      setError(`Escriba el motivo para la inmobiliaria o el propietario (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
@@ -273,18 +273,18 @@ export function TransicionModal({
           <textarea id="transicion-modal-comentario-motivo"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
-            placeholder="Describe el motivo del cambio de estado..."
+            placeholder="Describa el motivo del cambio de estado..."
             rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
           />
           <p className="mt-1 text-xs text-gray-500">
             {pideMotivoGestor
-              ? 'Solo lo ve Cofianza: queda en el historial del estudio con tu usuario y la fecha.'
+              ? 'Solo lo ve Cofianza: queda en el historial del estudio con su usuario y la fecha.'
               : cancelaCofianza
-                ? 'No incluyas datos del buró ni el fundamento interno.'
+                ? 'No incluya datos del buró ni el fundamento interno.'
                 : esRevisionManual
-                  ? 'Es el fundamento de tu decisión de revisión manual: queda registrado con tu usuario y la fecha.'
+                  ? 'Es el fundamento de su decisión de revisión manual: queda registrado con su usuario y la fecha.'
                   : 'Este comentario quedará registrado en el historial del estudio.'}
             {!motivoValido && ` Mínimo ${MIN_MOTIVO} caracteres (${comentario.trim().length}/${MIN_MOTIVO}).`}
           </p>
@@ -307,7 +307,7 @@ export function TransicionModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Lo verán en el estudio. Escríbelo corto, sin cifras del buró ni datos del co-arrendatario.
+              Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del co-arrendatario.
               {!motivoGestorValido && ` Mínimo ${MIN_MOTIVO} caracteres (${motivoGestor.trim().length}/${MIN_MOTIVO}).`}
             </p>
           </div>

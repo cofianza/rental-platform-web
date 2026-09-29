@@ -91,7 +91,7 @@ interface EstudiosViewProps {
 }
 
 export function EstudiosInmobiliariaView({
-  intro = 'Inicia evaluaciones · Respuesta en segundos · Notificación inmediata a las partes',
+  intro = 'Inicie evaluaciones · Respuesta en segundos · Notificación inmediata a las partes',
   showSaldo = true,
   showPaquetes = true,
 }: EstudiosViewProps = {}) {
@@ -147,7 +147,7 @@ export function EstudiosInmobiliariaView({
     try {
       setDetalle(await estudioService.getEstudioById(id))
     } catch {
-      toast.error('No se pudo abrir el detalle de la evaluación. Intenta de nuevo.')
+      toast.error('No se pudo abrir el detalle de la evaluación. Intente de nuevo.')
     } finally {
       setCargandoDetalle(false)
     }
@@ -243,7 +243,7 @@ export function EstudiosInmobiliariaView({
               <IconShield size={44} className="mx-auto mb-3 text-gray-300" />
               <p className="text-sm font-medium text-gray-900">No hay estudios para este filtro</p>
               <p className="mt-1 text-sm text-gray-500">
-                Inicia uno con el botón “Nuevo estudio”.
+                Inicie uno con el botón “Nuevo estudio”.
               </p>
             </div>
           ) : (

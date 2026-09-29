@@ -135,7 +135,7 @@ export function AccionContratoPendienteCard({
               <p className="mb-0.5 text-sm font-semibold text-amber-900">El inmueble ya está arrendado</p>
               <p className="text-sm text-amber-800">
                 El contrato de otro estudio sobre este inmueble ya está firmado, así que aquí no se puede crear otro. Para
-                usar esta evaluación, reasígnala a otro inmueble.
+                usar esta evaluación, reasígnela a otro inmueble.
               </p>
             </div>
             {puedeEditar && arrendado.estudioId && (
@@ -168,7 +168,7 @@ export function AccionContratoPendienteCard({
             <p className="mb-0.5 text-sm font-semibold text-amber-900">El inmueble está reservado para otro estudio</p>
             <p className="text-sm text-amber-800">
               Otro estudio ya inició el contrato de este inmueble. Si ese contrato se cancela, el inmueble vuelve a quedar
-              disponible y podrás crear el de este estudio.
+              disponible y podrá crear el de este estudio.
             </p>
           </div>
         </div>
@@ -195,8 +195,8 @@ export function AccionContratoPendienteCard({
         titulo={borradorV3 ? `Contrato ${borradorV3.numero ?? ''} en borrador` : 'Acción requerida: crear el contrato'}
         texto={
           borradorV3
-            ? 'Continúa el asistente para completar los datos y generar la vista previa del contrato.'
-            : 'El estudio está aprobado. Crea el contrato de vivienda con el asistente.'
+            ? 'Continúe el asistente para completar los datos y generar la vista previa del contrato.'
+            : 'El estudio está aprobado. Cree el contrato de vivienda con el asistente.'
         }
       >
         <Link href={`/expedientes/${expedienteId}/contrato`} className={buttonClasses('primary', 'md', 'shadow-sm')}>
@@ -231,7 +231,7 @@ export function AccionContratoPendienteCard({
       <>
         <CardAccion
           titulo="Acción requerida: generar contrato"
-          texto="El estudio está aprobado. Genera el contrato definiendo la fecha de inicio, la duración, la modalidad de fianza y quién paga los servicios públicos."
+          texto="El estudio está aprobado. Genere el contrato definiendo la fecha de inicio, la duración, la modalidad de fianza y quién paga los servicios públicos."
         >
           <button
             onClick={() => setModalOpen(true)}
@@ -268,7 +268,7 @@ export function AccionContratoPendienteCard({
         <div>
           <p className="text-sm font-semibold text-blue-900 mb-0.5">Esperando generación del contrato</p>
           <p className="text-sm text-blue-800">
-            El estudio del solicitante fue aprobado. La inmobiliaria o el operador de Cofianza están preparando el contrato — recibirás una notificación cuando esté listo.
+            El estudio del solicitante fue aprobado. La inmobiliaria o el operador de Cofianza están preparando el contrato — recibirá una notificación cuando esté listo.
           </p>
         </div>
       </div>

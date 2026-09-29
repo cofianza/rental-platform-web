@@ -73,7 +73,7 @@ export function MotivoDialog({
           />
         </label>
         {!valido && motivo.length > 0 && (
-          <p className="text-xs text-gray-500">Escribe al menos {minLength} caracteres.</p>
+          <p className="text-xs text-gray-500">Escriba al menos {minLength} caracteres.</p>
         )}
         <div className="flex justify-end gap-2 pt-1">
           <button

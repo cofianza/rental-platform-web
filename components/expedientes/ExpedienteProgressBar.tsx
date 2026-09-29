@@ -118,12 +118,12 @@ export function ExpedienteProgressBar({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : 'Estamos revisando tu estudio'}
+          {isRejected ? 'No aprobable por ahora' : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
-            ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre ti.'
-            : 'Una persona de nuestro equipo está revisando tu caso. Te escribimos apenas tengamos la respuesta.'}
+            ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
+            : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
     )
@@ -146,7 +146,7 @@ export function ExpedienteProgressBar({
         <p className="text-xs text-amber-600 mt-0.5">
           {/* Adenda 2 §5: decide solo un analista de Cofianza. */}
           {sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
-          Lo decide un analista de Cofianza. En «Resumen» ves qué sigue y qué se puede hacer mientras tanto.
+          Lo decide un analista de Cofianza. En «Resumen» ve qué sigue y qué se puede hacer mientras tanto.
         </p>
       </div>
     )
