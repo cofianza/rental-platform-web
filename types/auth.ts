@@ -50,6 +50,7 @@ export interface IUserProfile {
   rol_miembro?: RolMiembro | null // Solo /auth/me; null si no es miembro de una org
   es_gerencia_general?: boolean // Solo /auth/me; administrador en GERENCIA_GENERAL_EMAILS
   perfil_completo?: boolean // Solo /auth/me; datos personales mínimos completos
+  documento_pendiente?: boolean // Solo /auth/me y solo solicitante; sin tipo/número de documento (H43)
   activo?: boolean
   estado?: 'activo' | 'inactivo'
   created_at: string
@@ -68,6 +69,8 @@ export interface IUser {
   /** Tarifa negociada y exceso de cláusulas: solo la Gerencia General (el API da 403 al resto). */
   es_gerencia_general?: boolean
   perfil_completo?: boolean
+  /** Solo solicitante: el registro liviano (H43) no pide documento. */
+  documento_pendiente?: boolean
   activo?: boolean
 }
 
