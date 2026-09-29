@@ -197,9 +197,10 @@ function PagoResultadoContent() {
           {resultado?.monto_formateado && (
             <div className="flex justify-between py-2.5 border-b border-gray-100">
               <span className="text-sm text-gray-500">Monto</span>
-              {/* monto_formateado ya trae el signo: antes salía "$$150.000 COP". */}
+              {/* monto_formateado ya trae el signo: antes salía "$$150.000 COP".
+                  Y, si el cobro lleva IVA, «(IVA incluido)» (Adenda de precios §1.2). */}
               <span className="text-sm font-semibold text-gray-900">
-                {resultado.monto_formateado} COP
+                {resultado.monto_formateado.replace(/^(\$[\d.]+)/, '$1 COP')}
               </span>
             </div>
           )}

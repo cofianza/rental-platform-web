@@ -12,7 +12,12 @@ export interface IPaqueteCreditos {
   nombre: string
   descripcion: string | null
   cantidad_estudios: number
+  /** Base sin IVA (Adenda de precios §1.1). */
   precio_cop: number
+  /** TARIFA_IVA vigente y el total a cobrar (base + IVA), calculados por el API. */
+  tarifa_iva?: number
+  iva_cop?: number
+  total_cop?: number
   vence_en_dias: number | null
   activo: boolean
   orden: number
@@ -64,6 +69,8 @@ export interface ICompraCredito {
   paquete_id: string
   cantidad_estudios: number
   precio_cop: number
+  /** Lo cobrado con IVA; null en compras anteriores a la Adenda de precios. */
+  total_cop?: number | null
   vence_en_dias: number | null
   estado: 'pendiente' | 'completado' | 'fallido' | 'cancelado'
   stripe_session_id: string | null
