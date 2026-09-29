@@ -2,11 +2,12 @@
  * SelectorMotivos — H58/H103 (decisión 2026-09-28): el motivo de aprobar,
  * rechazar o condicionar se elige de una lista (uno o varios) y se puede sumar
  * un texto. «Otro» exige el texto. Cada motivo muestra el texto interno y,
- * debajo, lo que verá la inmobiliaria.
+ * debajo, lo que verán la inmobiliaria o el propietario.
  */
 
 'use client'
 
+import { IconLoader } from '@/components/icons'
 import type { ICatalogoMotivos, IMotivosElegidos, TipoDecision } from '@/types/estudio'
 
 const OTRO: Record<TipoDecision, string> = { aprobar: 'A9', rechazar: 'R9', condicionar: 'C6' }
@@ -40,7 +41,19 @@ export function motivosParaEnviar(tipo: TipoDecision, v: IMotivosElegidos, catal
 
 /** Arriba de todo texto libre que llega a la inmobiliaria o al propietario (decisión 2026-09-28). */
 export function LoVeLaInmobiliaria() {
-  return <p className="mb-1 text-xs font-semibold text-amber-700">Este texto lo ve la inmobiliaria</p>
+  return <p className="mb-1 text-xs font-semibold text-amber-700">Este texto lo ve la inmobiliaria o el propietario</p>
+}
+
+/**
+ * B14: mientras llega el catálogo no se pintan los campos de texto (lo escrito
+ * ahí se ocultaba y no viajaba al llegar la lista).
+ */
+export function CargandoMotivos() {
+  return (
+    <p role="status" className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-500">
+      <IconLoader size={16} className="animate-spin" aria-hidden /> Cargando los motivos…
+    </p>
+  )
 }
 
 const TITULO: Record<TipoDecision, string> = {

@@ -33,6 +33,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  // B9: las URLs de og:image (p. ej. /autorizar) salen absolutas al dominio
+  // canónico, no al de Vercel ni al de la vista previa.
+  metadataBase: new URL("https://www.cofianza.co"),
   title: "Cofianza",
   description: "Plataforma de gestión de arrendamientos en Colombia",
   keywords: "arrendamiento, inmuebles, propiedades, colombia, gestión",

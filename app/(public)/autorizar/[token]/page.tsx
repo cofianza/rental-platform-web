@@ -159,6 +159,7 @@ const BENEFICIOS: Array<{ key: ConsentKey; Icon: typeof IconBarChart3; titulo: s
     Icon: IconBarChart3,
     titulo: 'Analítica de tu perfil',
     // B8: cada texto repite la finalidad del texto legal §5.2 (i)/(ii)/(iii), sin agregar ni recortar.
+    // El resumen del paso 4 usa estos mismos títulos.
     desc: 'Cofianza hace analítica avanzada, segmentación y perfilamiento comercial con tus datos.',
   },
   {
@@ -171,7 +172,7 @@ const BENEFICIOS: Array<{ key: ConsentKey; Icon: typeof IconBarChart3; titulo: s
     key: 'historial_referencia',
     Icon: IconUsers,
     titulo: 'Tu historial como referencia',
-    desc: 'Cofianza comparte tu historial de buen pago como referencia ante terceros del ecosistema, como inmobiliarias, afianzadoras y arrendadores.',
+    desc: 'Cofianza comparte tu historial de buen pago como referencia ante terceros del ecosistema.',
   },
 ]
 
@@ -185,6 +186,10 @@ export default function AutorizarPage() {
   // Un corte de datos no es un enlace muerto: con error transitorio la
   // pantalla ofrece "Reintentar" en vez de "pide otro enlace".
   const [reintentable, setReintentable] = useState(false)
+  // B7: quién pide el estudio, aparte de `data` porque las pantallas terminales
+  // hacen setData(null) y sus textos lo siguen nombrando.
+  const [solicitadoPor, setSolicitadoPor] = useState<string | null>(null)
+  const quien = quienTramita(solicitadoPor)
 
   // 'bio' no es un número para no renumerar los cuatro pasos existentes: el
   // cotejo es condicional y, apagado el interruptor, el flujo es idéntico al
@@ -265,6 +270,7 @@ export default function AutorizarPage() {
       .getData(token)
       .then((result) => {
         setData(result)
+        setSolicitadoPor(result.solicitado_por ?? null)
         setPageState('form')
       })
       .catch((err) => {
@@ -290,8 +296,8 @@ export default function AutorizarPage() {
             : code === 'AUTORIZACION_EXPIRADA' ||
                 code === 'AUTORIZACION_ESTADO_INVALIDO' ||
                 code === 'AUTORIZACION_NOT_FOUND'
-              ? 'Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.'
-              : 'No pudimos abrir tu autorización. Pídele un enlace nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.',
+              ? enlaceNoActivo(quienTramita(null))
+              : `No pudimos abrir tu autorización. ${quienTramita(null)} te puede enviar un enlace nuevo; si tienes dudas, escríbenos: abajo están nuestros datos.`,
         )
         setPageState('error')
       })
@@ -343,7 +349,8 @@ export default function AutorizarPage() {
   // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
   // antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
-    if (data?.biometria?.requerida && data.biometria.estado !== 'verificada') {
+    // B4: quien ya se negó ('omitida') tampoco vuelve al paso; ahí vería «reintentar».
+    if (data?.biometria?.requerida && data.biometria.estado !== 'verificada' && data.biometria.estado !== 'omitida') {
       irAPaso('bio')
       return
     }
@@ -454,7 +461,7 @@ export default function AutorizarPage() {
         return
       }
       if (code === 'AUTORIZACION_EXPIRADA' || code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_NOT_FOUND') {
-        setErrorMessage('Este enlace ya no está activo. Pídele uno nuevo a quien te lo envió o escríbenos: abajo están nuestros datos.')
+        setErrorMessage(enlaceNoActivo(quien))
         setData(null)
         setPageState('error')
         return
@@ -563,7 +570,7 @@ export default function AutorizarPage() {
         return
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
-        setErrorMessage('Este enlace ya no está vigente. Pide que te reenvíen uno nuevo desde el estudio.')
+        setErrorMessage(enlaceNoActivo(quien))
         setData(null) // pantalla terminal: sin datos no se vuelve a pintar el paso 4 con su boton
         setPageState('error')
         return
@@ -665,7 +672,7 @@ export default function AutorizarPage() {
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
             {motivoReportado === 'datos_incorrectos'
-              ? 'Quien tramita tu estudio corregirá tus datos y te enviará un enlace nuevo. No tienes que hacer nada más.'
+              ? `${quien} corregirá tus datos y te enviará un enlace nuevo. No tienes que hacer nada más.`
               : 'El equipo de Cofianza ya fue notificado y revisará el caso. Si este enlace no era para ti, no tienes que hacer nada más.'}
           </p>
           <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
@@ -686,7 +693,7 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">Este estudio ya no está activo</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
             No hay nada que autorizar con este enlace y no vamos a consultar tus datos con él. Si tienes dudas,
-            escríbele a quien te lo envió o a nosotros (abajo están nuestros datos).
+            {quien} te puede ayudar, o escríbenos: abajo están nuestros datos.
           </p>
           <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
         </div>
@@ -707,8 +714,8 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">El documento no coincide</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
             El número que escribiste no es el que tenemos registrado. Para no consultar los datos de otra
-            persona, <strong>detuvimos el proceso</strong> y le avisamos a quien te envió el enlace: revisará los
-            datos y te enviará uno nuevo.
+            persona, <strong>detuvimos el proceso</strong>. {quien} ya recibió el aviso: revisará los datos y te
+            enviará un enlace nuevo.
           </p>
           <p className="mt-4 text-sm text-gray-500">Puedes cerrar esta página.</p>
         </div>
@@ -731,8 +738,8 @@ export default function AutorizarPage() {
           </p>
           <p className="mt-1 text-xs text-gray-500">
             Si quieres revocarla, escríbenos a{' '}
-            <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
-              hola@cofianza.co
+            <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium text-primary-700 underline">
+              {CONTACTO_COFIANZA.email}
             </a>
             .
           </p>
@@ -779,8 +786,8 @@ export default function AutorizarPage() {
                 </p>
               ) : pago?.estado === 'sin_enlace' ? (
                 <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-900">
-                  El enlace para pagar el estudio no se generó automáticamente. Pídeselo a quien te envió este
-                  enlace: cuando lo genere te llegará por correo y WhatsApp. No tienes que volver a autorizar.
+                  El enlace para pagar el estudio no se generó automáticamente. {quien} puede generarlo: pídeselo
+                  y te llegará por correo y WhatsApp. No tienes que volver a autorizar.
                 </p>
               ) : esperaAgotada ? (
                 <p className="text-sm text-gray-600">
@@ -796,7 +803,7 @@ export default function AutorizarPage() {
             </div>
           ) : (
             <p className="mt-4 text-sm text-gray-500">
-              No tienes que hacer nada más aquí. Quien te envió este enlace te contará cómo avanza tu estudio.
+              No tienes que hacer nada más aquí. {quien} te contará cómo avanza tu estudio.
               Puedes cerrar esta página.
             </p>
           )}
@@ -809,9 +816,8 @@ export default function AutorizarPage() {
     { txt: 'Tratamiento de datos personales', lock: 'Obligatorio', on: true },
     { txt: 'Consulta y reporte a centrales de riesgo', lock: 'Obligatorio', on: true },
     { txt: 'Historial de comportamiento de pago', lock: 'Obligatorio', on: true },
-    { txt: 'Analítica y personalización', lock: 'Opcional', on: consents.analitica },
-    { txt: 'Ofertas y comunicaciones comerciales', lock: 'Opcional', on: consents.comercial },
-    { txt: 'Historial como referencia ante terceros', lock: 'Opcional', on: consents.historial_referencia },
+    // B6: los opcionales con los mismos títulos del paso 3 (texto legal §5.2).
+    ...BENEFICIOS.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
   ]
 
   return (
@@ -887,7 +893,7 @@ export default function AutorizarPage() {
                       documento; sin eso la página se parecía a un phishing. Sin
                       `solicitado_por` (API vieja) cae a un sujeto genérico. */}
                   <p className="mt-2 text-sm leading-relaxed text-gray-700">
-                    <strong>{data.solicitado_por || 'Quien tramita tu arriendo'}</strong> está haciendo tu estudio
+                    <strong>{quien}</strong> está haciendo tu estudio
                     para arrendar el inmueble en {data.expediente.inmueble.direccion}
                     {data.expediente.inmueble.ciudad ? `, ${data.expediente.inmueble.ciudad}` : ''}. Cofianza es la
                     empresa que respalda ese arriendo como fiadora.
@@ -902,7 +908,7 @@ export default function AutorizarPage() {
                   {/* Sin dato del cobro (la API no pudo saberlo): ni «hay costo» ni «no hay costo». */}
                   {data.pago == null && (
                     <p className="mt-2 text-sm leading-relaxed text-gray-700">
-                      Quien tramita tu estudio te indicará si tiene costo.
+                      {quien} te indicará si tiene costo.
                     </p>
                   )}
                   {/* B2: lo de Mercado Pago solo a quien le toca pagar. */}
@@ -972,7 +978,7 @@ export default function AutorizarPage() {
                     placeholder="Ej.: 1023456789"
                   />
                   <p id="numero-documento-ayuda" className="text-xs leading-relaxed text-gray-500">
-                    Lo comparamos con el que registró quien te envió este enlace; por tu seguridad no te lo
+                    Lo comparamos con el que está registrado en tu estudio; por tu seguridad no te lo
                     mostramos. Si no coincide, detenemos el proceso para no consultar los datos de otra persona.
                   </p>
                   {documentoError && (
@@ -1070,8 +1076,8 @@ export default function AutorizarPage() {
             {/* Ley 1581 art. 8 + Decreto 1377 art. 9: el titular revoca ante Cofianza, por este canal. */}
             <p className="text-xs leading-relaxed text-gray-500">
               Puedes revocar esta autorización cuando quieras escribiéndonos a{' '}
-              <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
-                hola@cofianza.co
+              <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium text-primary-700 underline">
+                {CONTACTO_COFIANZA.email}
               </a>
               . La revocación la haces tú, ante Cofianza.
             </p>
@@ -1388,13 +1394,15 @@ export default function AutorizarPage() {
               Continuar <IconArrowRight size={16} />
             </button>
             {/* M13: salida explícita para quien no quiere contestar nada. No
-                guarda lo que haya escrito en este paso. */}
+                guarda lo que haya escrito en este paso, y B5: si escribió algo, lo dice. */}
             <button
               type="button"
               onClick={() => irAPaso(3)}
               className={buttonClasses('secondary', 'lg', 'w-full')}
             >
-              Saltar este paso
+              {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim()].some(Boolean)
+                ? 'Saltar sin guardar lo que escribiste'
+                : 'Saltar este paso'}
             </button>
             <button
               type="button"
@@ -1518,7 +1526,7 @@ export default function AutorizarPage() {
                       data.pago.monto_formateado ? ` (${data.pago.monto_formateado})` : ''
                     } en Mercado Pago; tu evaluación empieza cuando se confirme el pago.`
                   : data?.pago == null
-                    ? 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información. Quien tramita tu estudio te indicará si tiene costo.'
+                    ? `Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información. ${quien} te indicará si tiene costo.`
                     : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
               </p>
             </div>
@@ -1711,6 +1719,16 @@ function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, espe
   if (pago?.estado === 'procesando') return 'Tu pago está en proceso'
   if (pago?.payment_link_url || !esperaAgotada) return 'Falta un paso: paga tu estudio'
   return '¡Autorización firmada!'
+}
+
+// B7: la inmobiliaria o «El propietario del inmueble» (API), o un sujeto neutro.
+// Siempre va al inicio de la frase: así el nombre no choca con «a»/«al».
+function quienTramita(solicitadoPor: string | null): string {
+  return solicitadoPor?.trim() || 'Quien tramita tu arriendo'
+}
+
+function enlaceNoActivo(quien: string): string {
+  return `Este enlace ya no está activo. ${quien} te puede enviar uno nuevo; si tienes dudas, escríbenos: abajo están nuestros datos.`
 }
 
 // «su nombre, su apellido y su correo o su WhatsApp»

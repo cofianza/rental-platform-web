@@ -15,7 +15,7 @@ import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { useAuthStore } from '@/stores/auth.store'
-import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 
 const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
 
@@ -71,8 +71,10 @@ export function RegistrarResultadoModal({
   // lista; sin él (API anterior), siguen los campos de texto.
   // B11: solo Cofianza decide; a los demás roles el API les responde 403.
   const rol = useAuthStore((s) => s.user?.rol)
-  const { catalogo } = useMotivosDecision(rol === 'administrador' || rol === 'operador_analista')
+  const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(rol === 'administrador' || rol === 'operador_analista')
   const [motivos, setMotivos] = useState<IMotivosElegidos>(SIN_MOTIVOS)
+  // B14: rechazo y condicionado irán con lista, pero el catálogo aún no llega.
+  const esperaLista = cargandoMotivos && (resultado === 'rechazado' || resultado === 'condicionado')
   const tipoLista = catalogo && resultado === 'rechazado' ? 'rechazar' : catalogo && resultado === 'condicionado' ? 'condicionar' : null
   const [archivo, setArchivo] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
@@ -105,6 +107,7 @@ export function RegistrarResultadoModal({
   const validate = (): string | null => {
     if (!resultado) return 'Debe seleccionar un resultado'
     if (observaciones.trim().length < 10) return 'Las observaciones deben tener al menos 10 caracteres'
+    if (esperaLista) return 'Espera a que carguen los motivos.'
     if (tipoLista) {
       const e = catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
       if (e) return e
@@ -308,12 +311,14 @@ export function RegistrarResultadoModal({
             </p>
           </div>
 
+          {esperaLista && <CargandoMotivos />}
+
           {tipoLista && catalogo && (
             <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isSubmitting} />
           )}
 
           {/* Rechazo (P34): fundamento interno y motivo corto para el gestor (API sin lista) */}
-          {!tipoLista && resultado === 'rechazado' && (
+          {!tipoLista && !esperaLista && resultado === 'rechazado' && (
             <div className="space-y-4">
               <div>
                 <label htmlFor="registrar-resultado-modal-fundamento" className="block text-sm font-medium text-red-700 mb-1">
@@ -350,7 +355,7 @@ export function RegistrarResultadoModal({
           )}
 
           {/* Condiciones (API sin lista) */}
-          {!tipoLista && resultado === 'condicionado' && (
+          {!tipoLista && !esperaLista && resultado === 'condicionado' && (
             <div>
               <LoVeLaInmobiliaria />
               <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-yellow-700 mb-1">
@@ -432,7 +437,7 @@ export function RegistrarResultadoModal({
             </button>
             <button
               onClick={handlePreSubmit}
-              disabled={isSubmitting || !resultado}
+              disabled={isSubmitting || !resultado || esperaLista}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
             >
               {isSubmitting ? (
