@@ -129,6 +129,31 @@ export async function adminActualizarConvenio(
   return res.data
 }
 
+/** Adenda de precios §4.3: beneficio del 50 % acumulado sin liquidar (solo lectura). */
+export interface BeneficioIntermediacion {
+  id: string
+  expediente_id: string
+  expediente_numero: string | null
+  contrato_numero: string | null
+  base_cop: number
+  pct: number
+  valor_cop: number
+  origen: 'credito' | 'directo'
+  compra_contracargada: boolean
+  causado_en: string
+  liquidado_en: string | null
+}
+
+export interface BeneficiosResponse {
+  totales: Array<{ inmobiliaria_id: string; inmobiliaria_nombre: string | null; cantidad: number; total_cop: number }>
+  detalle: BeneficioIntermediacion[]
+}
+
+export async function adminListBeneficios(orgId: string): Promise<BeneficiosResponse> {
+  const res = await apiClient.get<BeneficiosResponse>(`/admin/beneficios-intermediacion?inmobiliaria_id=${orgId}`)
+  return res.data
+}
+
 export async function adminListMiembros(orgId: string): Promise<AdminMiembrosResponse> {
   const res = await apiClient.get<AdminMiembrosResponse>(`/admin/inmobiliarias/${orgId}/miembros`)
   return res.data

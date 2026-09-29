@@ -66,6 +66,9 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   DIAS_EXPIRACION_FIRMA: 'Días para firmar en Auco antes de «firma incompleta»',
   // Adenda 1 contratos, respuesta 15: sin envío a firma, el borrador se cancela y el inmueble se libera.
   DIAS_RESERVA_INMUEBLE: 'Días hábiles de reserva del inmueble mientras se elabora el contrato',
+  // Adenda de precios §9.10-9.11.
+  PORCENTAJE_BENEFICIO_TRADICIONAL: 'Beneficio de la inmobiliaria en modalidad Tradicional (%)',
+  ALERTA_MEZCLA_TRADICIONAL_PAQUETE_25: 'Alerta de mezcla: % de contratos Tradicional con paquete de 25',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
