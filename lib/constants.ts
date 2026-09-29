@@ -122,7 +122,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Citas',
     href: '/citas',
     icon: 'Calendar',
-    description: 'Gestiona visitas a tus inmuebles',
+    description: 'Gestione las visitas a sus inmuebles',
     resource: 'citas',
     requiredRoles: ['administrador', 'operador_analista', 'propietario', 'inmobiliaria', 'gerencia_consulta'],
     group: 'Operación',
@@ -188,7 +188,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Mis pagos y facturas',
     href: '/facturacion',
     icon: 'Receipt',
-    description: 'El pago de tu evaluación y tus facturas',
+    description: 'El pago de su evaluación y sus facturas',
     resource: 'facturas',
     requiredRoles: ['solicitante'],
     group: 'Financiero',
@@ -198,7 +198,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Analítica',
     href: '/reportes',
     icon: 'BarChart3',
-    description: 'Reportes y analítica de tu operación',
+    description: 'Reportes y analítica de su operación',
     resource: 'reportes',
     group: 'Financiero',
   },
@@ -763,11 +763,11 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
  * Mensajes de error comunes
  */
 export const ERROR_MESSAGES = {
-  NETWORK_ERROR: 'Error de conexión. Por favor, verifica tu conexión a internet.',
-  UNAUTHORIZED: 'No tienes autorización para realizar esta acción.',
+  NETWORK_ERROR: 'Error de conexión. Por favor, verifique su conexión a internet.',
+  UNAUTHORIZED: 'No tiene autorización para realizar esta acción.',
   NOT_FOUND: 'El recurso solicitado no fue encontrado.',
-  SERVER_ERROR: 'Error en el servidor. Por favor, intenta de nuevo más tarde.',
-  VALIDATION_ERROR: 'Error de validación. Verifica los datos ingresados.',
+  SERVER_ERROR: 'Error en el servidor. Por favor, intente de nuevo más tarde.',
+  VALIDATION_ERROR: 'Error de validación. Verifique los datos ingresados.',
 } as const
 
 // ============================================
@@ -778,12 +778,12 @@ export const ERROR_MESSAGES = {
  * Mensajes de error de autenticación
  */
 export const AUTH_MESSAGES = {
-  INVALID_CREDENTIALS: 'Credenciales inválidas. Verifica tu correo y contraseña.',
-  INACTIVE_ACCOUNT: 'Tu cuenta está inactiva. Contacta al administrador.',
-  EMAIL_NOT_CONFIRMED: 'Aún no has verificado tu correo. Revisa tu bandeja de entrada (y la carpeta de spam).',
-  SESSION_EXPIRED: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-  NETWORK_ERROR: 'Error de conexión. Por favor, verifica tu conexión a internet.',
-  SERVER_ERROR: 'Error en el servidor. Por favor, intenta de nuevo más tarde.',
+  INVALID_CREDENTIALS: 'Credenciales inválidas. Verifique su correo y contraseña.',
+  INACTIVE_ACCOUNT: 'Su cuenta está inactiva. Contacte al administrador.',
+  EMAIL_NOT_CONFIRMED: 'Aún no ha verificado su correo. Revise su bandeja de entrada (y la carpeta de spam).',
+  SESSION_EXPIRED: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
+  NETWORK_ERROR: 'Error de conexión. Por favor, verifique su conexión a internet.',
+  SERVER_ERROR: 'Error en el servidor. Por favor, intente de nuevo más tarde.',
 } as const
 
 /**

@@ -23,11 +23,11 @@ export function validateNitModulo11(nit: string): boolean {
 export function problemaNit(nit: string): string | null {
   const s = nit.replace(/[.\s]/g, '')
   const m = /^(\d{1,15})(?:-(\d))?$/.exec(s)
-  if (!m) return 'NIT: escríbelo con números y el dígito de verificación (ej. 900123456-8)'
+  if (!m) return 'NIT: escríbalo con números y el dígito de verificación (ej. 900123456-8)'
   const dv = digitoVerificacionNit(m[1])
-  if (m[2] === undefined) return `NIT: falta el dígito de verificación (con ese número sería ${dv}; confírmalo en el RUT)`
+  if (m[2] === undefined) return `NIT: falta el dígito de verificación (con ese número sería ${dv}; confírmelo en el RUT)`
   // Puede estar mal el número y no el dígito: se pide revisar ambos, no copiar el dígito.
   return Number(m[2]) === dv
     ? null
-    : `NIT: el dígito de verificación no corresponde al número (con ese número sería ${dv}); revisa ambos en el RUT`
+    : `NIT: el dígito de verificación no corresponde al número (con ese número sería ${dv}); revise ambos en el RUT`
 }

@@ -122,7 +122,7 @@ function validarHorarios(horarios: IHorarioDia[], duracion: number): Map<number,
     // Hora vacía (el usuario borró el <input type="time">): comparar cadenas
     // vacías da falsos negativos, así que se marca explícitamente.
     if (!h.hora_inicio || !h.hora_fin) {
-      errores.set(h.dia_semana, 'Completa las horas de inicio y fin.')
+      errores.set(h.dia_semana, 'Complete las horas de inicio y fin.')
       continue
     }
     if (h.hora_fin <= h.hora_inicio) {
@@ -212,7 +212,7 @@ export default function DisponibilidadPage() {
       })
       .catch(() => {
         if (cancelled) return
-        toast.error('No se pudieron cargar tus horarios.')
+        toast.error('No se pudieron cargar sus horarios.')
         // Sembrar `initial` con el estado por defecto que se está mostrando:
         // sin esto `initial` queda '' y isDirty sería siempre true, mostrando la
         // barra de "cambios sin guardar" con Guardar habilitado — y guardar
@@ -319,7 +319,7 @@ export default function DisponibilidadPage() {
   function agregarFechaBloqueada() {
     if (!nuevaFecha) return
     if (nuevaFecha < hoyBogotaISO()) {
-      toast.error('No puedes bloquear una fecha pasada.')
+      toast.error('No puede bloquear una fecha pasada.')
       return
     }
     if (bloqueadas.some((b) => b.fecha === nuevaFecha)) {
@@ -379,7 +379,7 @@ export default function DisponibilidadPage() {
       <div className="space-y-6">
         <PageHeader
           title="Disponibilidad"
-          subtitle="Configura cuándo puedes recibir visitas de arrendatarios interesados"
+          subtitle="Configure cuándo puede recibir visitas de arrendatarios interesados"
         />
         <div className="max-w-3xl space-y-3">
           <div className="h-20 bg-gray-100 rounded animate-pulse" />
@@ -396,13 +396,13 @@ export default function DisponibilidadPage() {
     <div className={'space-y-6' + (isDirty ? ' pb-28' : '')}>
       <PageHeader
         title="Disponibilidad"
-        subtitle="Configura cuándo puedes recibir visitas de arrendatarios interesados"
+        subtitle="Configure cuándo puede recibir visitas de arrendatarios interesados"
       />
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-3xl">
         {!puedeEditar && (
           <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-            Esta es la agenda de visitas de tu inmobiliaria: una sola para todos sus inmuebles. Solo
+            Esta es la agenda de visitas de su inmobiliaria: una sola para todos sus inmuebles. Solo
             los titulares la pueden cambiar.
           </div>
         )}
@@ -415,8 +415,8 @@ export default function DisponibilidadPage() {
           <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
             <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
             <p className="text-sm text-amber-800">
-              No pudimos cargar tu configuración guardada; se muestran los valores por defecto.
-              Recarga la página para reintentar antes de guardar.
+              No pudimos cargar su configuración guardada; se muestran los valores por defecto.
+              Recargue la página para reintentar antes de guardar.
             </p>
           </div>
         )}
@@ -473,7 +473,7 @@ export default function DisponibilidadPage() {
             ))}
           </div>
           <p className="text-xs text-gray-600 mt-1">
-            Con cuánta antelación debe agendar el arrendatario. Elige{' '}
+            Con cuánta antelación debe agendar el arrendatario. Elija{' '}
             <strong>Mismo día</strong> para permitir visitas el mismo día.
           </p>
         </div>
@@ -508,7 +508,7 @@ export default function DisponibilidadPage() {
             </label>
           </div>
           <p className="text-xs text-gray-600 mt-1">
-            Máximo de visitas que aceptas en un mismo día (sumando todas tus propiedades). Activa{' '}
+            Máximo de visitas que acepta en un mismo día (sumando todas sus propiedades). Active{' '}
             <strong>Sin límite</strong> para no poner tope.
           </p>
         </div>
@@ -625,7 +625,7 @@ export default function DisponibilidadPage() {
             Fechas bloqueadas
           </label>
           <p className="text-xs text-gray-600 mb-3">
-            Días puntuales en los que no recibirás visitas (feriados, vacaciones), aunque ese día de
+            Días puntuales en los que no recibirá visitas (feriados, vacaciones), aunque ese día de
             la semana esté habilitado.
           </p>
 
@@ -652,7 +652,7 @@ export default function DisponibilidadPage() {
               type="button"
               onClick={agregarFechaBloqueada}
               disabled={!nuevaFecha}
-              title={!nuevaFecha ? 'Selecciona una fecha primero' : undefined}
+              title={!nuevaFecha ? 'Seleccione una fecha primero' : undefined}
               className="px-4 py-1.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
               <IconPlus size={16} />
@@ -707,10 +707,10 @@ export default function DisponibilidadPage() {
       <div className="max-w-3xl p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-900">
           <strong>Cómo funciona:</strong> Los arrendatarios solo podrán agendar visitas en los
-          horarios que marques como disponibles, con una anticipación mínima de{' '}
-          <strong>{antelacionLabel(antelacion)}</strong>. Si no configuras nada, se aplican
-          horarios por defecto Lunes a Viernes de 9:00 a 17:00. Si desactivas todos los días,
-          no recibirás solicitudes de visita.
+          horarios que marque como disponibles, con una anticipación mínima de{' '}
+          <strong>{antelacionLabel(antelacion)}</strong>. Si no configura nada, se aplican
+          horarios por defecto Lunes a Viernes de 9:00 a 17:00. Si desactiva todos los días,
+          no recibirá solicitudes de visita.
           {deInmobiliaria &&
             ' Es una sola agenda para todos los inmuebles de la inmobiliaria, los registre quien los registre.'}
         </p>
@@ -739,12 +739,12 @@ export default function DisponibilidadPage() {
                     (hayErrores ? 'text-red-800' : 'text-amber-900')
                   }
                 >
-                  {hayErrores ? 'Corrige los horarios en rojo' : 'Tienes cambios sin guardar'}
+                  {hayErrores ? 'Corrija los horarios en rojo' : 'Tiene cambios sin guardar'}
                 </p>
                 <p className={'text-xs ' + (hayErrores ? 'text-red-700' : 'text-amber-800')}>
                   {hayErrores
-                    ? 'Hay días con horarios inválidos. Corrígelos para poder guardar.'
-                    : 'Guárdalos para que apliquen a tus visitas. Si sales sin guardar, se perderán.'}
+                    ? 'Hay días con horarios inválidos. Corríjalos para poder guardar.'
+                    : 'Guárdelos para que apliquen a sus visitas. Si sale sin guardar, se perderán.'}
                 </p>
               </div>
             </div>

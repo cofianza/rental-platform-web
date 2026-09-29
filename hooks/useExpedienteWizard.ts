@@ -158,7 +158,7 @@ export function solicitanteTieneContacto(
 }
 
 export const MSG_SOLICITANTE_SIN_CONTACTO =
-  'El solicitante necesita celular y correo para recibir la solicitud. Usa Editar para completarlos.'
+  'El solicitante necesita celular y correo para recibir la solicitud. Use Editar para completarlos.'
 
 /** Celular comparable: solo dígitos y sin el 57 de Colombia delante. */
 const celularComparable = (t?: string | null) => (t ?? '').replace(/\D/g, '').replace(/^57(?=\d{10}$)/, '')
@@ -253,7 +253,7 @@ function validateStep3(data: WizardStep3Data): Record<string, string> {
   const errors: Record<string, string> = {}
 
   if (!data.forma_pago) {
-    errors.forma_pago = 'Elige cómo se paga el estudio'
+    errors.forma_pago = 'Elija cómo se paga el estudio'
   }
 
   if (data.notas && data.notas.length > 5000) {
@@ -374,7 +374,7 @@ export function useExpedienteWizard() {
         .catch(() => null)
       if (ficha) {
         setData(prev => ({ ...prev, step2: { ...prev.step2, ...step2ConFicha(ficha, form) } }))
-        toast.info('Esta persona ya estaba registrada: usamos su ficha. Revisa su contacto antes de continuar.')
+        toast.info('Esta persona ya estaba registrada: usamos su ficha. Revise su contacto antes de continuar.')
         return false
       }
     }
@@ -541,12 +541,12 @@ export function useExpedienteWizard() {
         if (conFicha?.contactoPropuesto) {
           setData(prev => ({ ...prev, step2: { ...prev.step2, ...conFicha } }))
           setCurrentStep(2)
-          toast.warning('Esta persona ya estaba registrada con otro contacto. Confirma cuál usar antes de enviar.', { duration: 8000 })
+          toast.warning('Esta persona ya estaba registrada con otro contacto. Confirme cuál usar antes de enviar.', { duration: 8000 })
           return null
         }
         if (newSolicitante.reutilizado) {
           toast.warning(
-            'Esta persona ya estaba registrada; reutilizamos su ficha. Revisa sus datos y sus estudios previos por si este es uno nuevo.',
+            'Esta persona ya estaba registrada; reutilizamos su ficha. Revise sus datos y sus estudios previos por si este es uno nuevo.',
             { duration: 8000 },
           )
         }
@@ -583,7 +583,7 @@ export function useExpedienteWizard() {
         // /pago/resultado concilia el pago y lo trae de vuelta al estudio.
         if (inicio.payment_link_url) {
           clearDraft()
-          toast.success('Estudio creado. Te llevamos a Mercado Pago para pagarlo.')
+          toast.success('Estudio creado. Lo llevamos a Mercado Pago para pagarlo.')
           window.location.assign(inicio.payment_link_url)
           return expediente.id
         }
@@ -591,11 +591,11 @@ export function useExpedienteWizard() {
         // cita_omitida }) no confirma ninguna entrega — ni WhatsApp/correo ni
         // el enlace de pago de la opción C: la API los manda fire-and-forget.
         // No se afirma lo que no se sabe.
-        toast.success('Estudio creado. Te avisamos cuando el prospecto autorice.')
+        toast.success('Estudio creado. Le avisamos cuando el prospecto autorice.')
       } catch (inicioErr) {
         const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
         toast.warning(
-          `Creamos el estudio, pero no se pudo iniciar el estudio: ${detalle}. Elige la forma de pago desde el estudio.`,
+          `Creamos el estudio, pero no se pudo iniciar el estudio: ${detalle}. Elija la forma de pago desde el estudio.`,
           { duration: 10000 },
         )
       }
@@ -617,7 +617,7 @@ export function useExpedienteWizard() {
           // evalúan en paralelo sobre la misma propiedad. Lo que sí sigue
           // bloqueando es duplicar el MISMO solicitante sobre el MISMO
           // inmueble, que es lo que este error protege.
-          message = 'Este solicitante ya tiene un estudio activo para este inmueble. Abre el existente en vez de crear otro.'
+          message = 'Este solicitante ya tiene un estudio activo para este inmueble. Abra el existente en vez de crear otro.'
         } else if (err.code === 'INMUEBLE_RESERVADO' || err.code === 'INMUEBLE_YA_RESERVADO') {
           // La propiedad se comprometió con un candidato aprobado que ya va
           // camino al contrato: es el único bloqueo por inmueble que queda.

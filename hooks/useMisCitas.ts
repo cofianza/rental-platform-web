@@ -30,7 +30,7 @@ export function useMisCitas() {
       const { data, meta } = await citaService.listMisCitas(filters)
       setCitas(data, meta)
     } catch (err) {
-      setError(mensajeParaProspecto(err, 'Inténtalo de nuevo.'))
+      setError(mensajeParaProspecto(err, 'Inténtelo de nuevo.'))
     } finally {
       setLoading(false)
     }

@@ -154,7 +154,7 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
   const banner = bloqueadoPorPerfil ? (
     <PerfilPersonalIncompletoBanner user={user} />
   ) : !puedeEditar ? (
-    <Aviso>Tu acceso es de solo lectura.</Aviso>
+    <Aviso>Su acceso es de solo lectura.</Aviso>
   ) : null
 
   const comun = { estado, expedienteId, editable, esTitular, inmuebleAccesible, banner, v3 }
@@ -253,7 +253,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
           if (await v3.iniciar()) toast.success('Contrato iniciado')
         }}
         title="¿Iniciar el contrato?"
-        message="Se asignará el número de contrato, el inmueble quedará reservado para este estudio y saldrá de la vitrina, y los demás candidatos con estudios en curso sobre este inmueble recibirán un aviso. Si cancelas el borrador, el número queda anulado y el inmueble se libera."
+        message="Se asignará el número de contrato, el inmueble quedará reservado para este estudio y saldrá de la vitrina, y los demás candidatos con estudios en curso sobre este inmueble recibirán un aviso. Si cancela el borrador, el número queda anulado y el inmueble se libera."
         confirmLabel="Iniciar contrato"
         isLoading={iniciando}
       />
@@ -446,7 +446,7 @@ function Asistente({
     const { body, errs } = armar()
     setErrores(errs)
     if (Object.keys(errs).length > 0) {
-      toast.error('Revisa los campos marcados.')
+      toast.error('Revise los campos marcados.')
       enfocarPrimerError()
       return
     }
@@ -456,7 +456,7 @@ function Asistente({
     setSucios(pendientesOtros)
     // Guardado, pero bloqueado en este mismo paso (p. ej. el canon): se queda aquí, con el bloqueo a la vista.
     if (nuevo.bloqueos.some((b) => b.paso === body.paso)) {
-      toast.warning('Se guardó, pero este paso tiene un bloqueo: resuélvelo antes de seguir.')
+      toast.warning('Se guardó, pero este paso tiene un bloqueo: resuélvalo antes de seguir.')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -472,7 +472,7 @@ function Asistente({
       return
     }
     if (await v3.generar()) {
-      toast.success(rutaB ? 'Datos guardados y Anexo generado: revísalo abajo.' : 'Datos guardados y vista previa generada: revísala abajo.')
+      toast.success(rutaB ? 'Datos guardados y Anexo generado: revíselo abajo.' : 'Datos guardados y vista previa generada: revísela abajo.')
       document.getElementById('vista-previa')?.scrollIntoView({ behavior: 'smooth' })
     }
   }
@@ -531,17 +531,17 @@ function Asistente({
   // bloquea igual y es ese intento el que envía el caso a la Gerencia General.
   const bloqueosQueFrenan = bloqueos.filter((b) => b.codigo !== 'CANON_EXCEDE_TOPE')
   const motivoNoGenerar = !editable
-    ? 'Tu acceso es de solo lectura.'
+    ? 'Su acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
-      ? `Tienes cambios sin guardar en ${listaPasos(pendientesSinGuardar)}.`
+      ? `Tiene cambios sin guardar en ${listaPasos(pendientesSinGuardar)}.`
       : // El paso 5 llega prellenado: sin tocar nada parece listo, pero falta guardarlo
         // (su faltante no se pinta mientras se llena).
         !guardados[5]
-        ? `Guarda el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
+        ? `Guarde el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
         : bloqueosQueFrenan.length > 0
           ? `Resuelve ${bloqueosQueFrenan.length === 1 ? 'el punto pendiente' : 'los puntos pendientes'} de arriba antes de generar ${documentoTexto}.`
           : pasosIncompletos.length > 0
-            ? `Completa ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
+            ? `Complete ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
             : null
 
   // Los bloqueos con paso se pintan arriba de su paso; los demás (y los de
@@ -584,8 +584,8 @@ function Asistente({
         <Aviso>
           El inmueble está reservado hasta el {reservadoHasta}
           {contrato.reservaDiasHabiles ? ` (${contrato.reservaDiasHabiles} días hábiles desde que se inició el contrato)` : ''}.
-          Si el contrato no se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenaste
-          se conserva para cuando lo vuelvas a iniciar.
+          Si el contrato no se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenó
+          se conserva para cuando lo vuelva a iniciar.
         </Aviso>
       )}
 
@@ -658,7 +658,7 @@ function Asistente({
           <div className="space-y-6">
             <EncabezadoPaso titulo="Cláusulas adicionales" />
             <Aviso>
-              En la Ruta B no hay cláusulas adicionales: se firma el contrato de la inmobiliaria tal como lo cargues,
+              En la Ruta B no hay cláusulas adicionales: se firma el contrato de la inmobiliaria tal como lo cargue,
               seguido de una página divisoria y del Anexo de condiciones de Cofianza.
             </Aviso>
           </div>
@@ -751,7 +751,7 @@ function Asistente({
             <p>
               {crc ? `Se adjunta el CRC N° ${crc.codigo}.` : 'Se adjunta el CRC.'}
               {rutaB &&
-                ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones. Cada parte firma donde ubicaste su firma en tu contrato y sobre su línea en el Anexo.'}
+                ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones. Cada parte firma donde usted ubicó su firma en el contrato de la inmobiliaria y sobre su línea en el Anexo.'}
             </p>
             <p className="font-medium text-gray-900">
               Después de enviarlo, el contrato no se puede editar. Cada envío consume un crédito de firma.
@@ -784,7 +784,7 @@ function Asistente({
           if (destino) router.push(destino)
         }}
         title="¿Salir sin guardar?"
-        message="Tienes cambios sin guardar en el contrato. Si sales ahora se pierden."
+        message="Tiene cambios sin guardar en el contrato. Si sale ahora se pierden."
         confirmLabel="Salir sin guardar"
         cancelLabel="Seguir aquí"
         variant="danger"

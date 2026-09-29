@@ -114,7 +114,7 @@ export default function FacturaDetallePage() {
   // Handle anular
   const handleAnular = async () => {
     if (!anularMotivo.trim()) {
-      toast.error('Ingresa un motivo de anulacion')
+      toast.error('Ingrese un motivo de anulación')
       return
     }
 
@@ -193,7 +193,7 @@ export default function FacturaDetallePage() {
         <IconFileText size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Factura no encontrada</h3>
         <p className="text-sm text-gray-500 mb-4">
-          La factura que buscas no existe o fue eliminada.
+          La factura que busca no existe o fue eliminada.
         </p>
         <Link
           href="/facturacion"
@@ -443,7 +443,7 @@ export default function FacturaDetallePage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            ¿Estas seguro de anular la factura <strong>{factura.numero}</strong>?
+            ¿Está seguro de anular la factura <strong>{factura.numero}</strong>?
             Esta accion no se puede deshacer.
           </p>
           <div>

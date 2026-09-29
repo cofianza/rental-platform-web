@@ -360,9 +360,9 @@ const MARCADOR = /[Xx]{3,}|_{3,}|▢|⟦|[{}]|NO APLICA|\b(undefined|null|NaN)\b
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const FECHA = /^\d{4}-\d{2}-\d{2}$/
 const MSG_OBLIGATORIO = 'Campo obligatorio'
-const MSG_SI_NO = 'Elige Sí o No'
+const MSG_SI_NO = 'Elija Sí o No'
 const MSG_NO_IMPRIMIBLE =
-  'Este texto no se puede imprimir en el contrato: quita XXX, ___, llaves, «NO APLICA», «null» o la palabra «coarrendatario».'
+  'Este texto no se puede imprimir en el contrato: quite XXX, ___, llaves, «NO APLICA», «null» o la palabra «coarrendatario».'
 
 /** Fecha de hoy en Bogotá (AAAA-MM-DD), mismo corrimiento de −5 h que fechaBogota del API. */
 export function hoyBogota(): string {
@@ -427,8 +427,8 @@ function limpiar(errores: Record<string, string | null>): ErroresPaso {
 
 export function validarPaso1(d: Borrador<Paso1>): ErroresPaso {
   return limpiar({
-    ruta: d.ruta === 'A' || d.ruta === 'B' ? null : 'Elige la ruta del contrato',
-    modalidad: d.modalidad === 'trasladada' || d.modalidad === 'tradicional' ? null : 'Elige la modalidad de la fianza',
+    ruta: d.ruta === 'A' || d.ruta === 'B' ? null : 'Elija la ruta del contrato',
+    modalidad: d.modalidad === 'trasladada' || d.modalidad === 'tradicional' ? null : 'Elija la modalidad de la fianza',
     canonCop: entero(d.canonCop, 1, 100_000_000),
   })
 }
@@ -461,10 +461,10 @@ export function validarPaso3(
     comisionPct: porcentaje(d.comisionPct),
     administracion:
       ctx.propiedadHorizontal && !a
-        ? 'Con propiedad horizontal completa la cuota de administración; sin ella, quítala.'
+        ? 'Con propiedad horizontal complete la cuota de administración; sin ella, quítela.'
         : null,
     'administracion.aCargoDe':
-      a && a.aCargoDe !== 'arrendador' && a.aCargoDe !== 'arrendatario' ? 'Elige quién la paga' : null,
+      a && a.aCargoDe !== 'arrendador' && a.aCargoDe !== 'arrendatario' ? 'Elija quién la paga' : null,
     'administracion.valorCop': a ? entero(a.valorCop, 0, 100_000_000) : null,
     'administracion.incluidaEnCanon': a && typeof a.incluidaEnCanon !== 'boolean' ? MSG_SI_NO : null,
   })
@@ -524,7 +524,7 @@ export function validarPaso4(
     acepto:
       d.acepto || !requiereAceptacion(d)
         ? null
-        : 'Acepta el aviso de responsabilidad de tus cláusulas propias y de los datos que completaste para continuar',
+        : 'Acepte el aviso de responsabilidad de sus cláusulas propias y de los datos que completó para continuar',
   })
   d.elegidas.forEach((e, i) => {
     for (const campo of ctx.campos[e.clausulaId] ?? []) {

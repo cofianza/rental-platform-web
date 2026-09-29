@@ -214,11 +214,11 @@ export default function CreditosEstudiosPage() {
           <IconAlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
           <div className="text-sm text-red-800">
             <p className="font-semibold">
-              Tienes {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'crédito' : 'créditos'} en contra
+              Tiene {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'crédito' : 'créditos'} en contra
             </p>
             <p className="mt-0.5">
-              Se usaron créditos de una compra que se reversó con el banco. Se restan de tu saldo y se descuentan de tu
-              próxima compra; si no te queda saldo, paga las evaluaciones de inmediato o con el enlace al prospecto.
+              Se usaron créditos de una compra que se reversó con el banco. Se restan de su saldo y se descuentan de su
+              próxima compra; si no le queda saldo, pague las evaluaciones de inmediato o con el enlace al prospecto.
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ export default function CreditosEstudiosPage() {
       {/* Detalle por paquete — Adenda de precios §3.8 */}
       {detallePaquetes.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Tus paquetes</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Sus paquetes</h2>
           <p className="text-sm text-gray-500 mb-4">
             Los estudios se descuentan primero del paquete que vence antes. El cupo queda reservado al habilitar el
             estudio y solo se consume cuando la consulta a centrales da resultado; si no lo da, vuelve al paquete. Los
@@ -450,10 +450,10 @@ export default function CreditosEstudiosPage() {
         {comprasPendientes.length > 0 && (
           <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
             <p className="text-sm font-semibold text-amber-900">
-              {comprasPendientes.length === 1 ? 'Tienes una compra en proceso' : `Tienes ${comprasPendientes.length} compras en proceso`}
+              {comprasPendientes.length === 1 ? 'Tiene una compra en proceso' : `Tiene ${comprasPendientes.length} compras en proceso`}
             </p>
             <p className="mt-1 text-xs text-amber-800">
-              Si ya pagaste, los créditos entran en unos minutos. No vuelvas a comprar.
+              Si ya pagó, los créditos entran en unos minutos. No vuelva a comprar.
             </p>
             <ul className="mt-3 space-y-2">
               {comprasPendientes.map((c) => (
@@ -630,8 +630,8 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
   return (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
-        Necesitamos completar tus datos fiscales para emitir la factura electrónica ante la DIAN.
-        Estos datos se aplican solo a esta factura — para que queden guardados en tu perfil ve a{' '}
+        Necesitamos completar sus datos fiscales para emitir la factura electrónica ante la DIAN.
+        Estos datos se aplican solo a esta factura — para que queden guardados en su perfil vaya a{' '}
         <Link href="/configuracion/datos-contrato" className="underline font-medium">
           Datos para contrato
         </Link>

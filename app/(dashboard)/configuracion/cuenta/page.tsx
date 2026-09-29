@@ -84,7 +84,7 @@ export default function MiCuentaPage() {
         setForm(profileToForm(data))
       })
       .catch((err) =>
-        toast.error(err instanceof Error ? err.message : 'Error al cargar tu cuenta'),
+        toast.error(err instanceof Error ? err.message : 'Error al cargar su cuenta'),
       )
       .finally(() => setLoading(false))
   }, [])
@@ -97,18 +97,18 @@ export default function MiCuentaPage() {
     if (!perfil) return
 
     if (form.nombre.trim().length < 2) {
-      toast.error('Ingresa tu nombre')
+      toast.error('Ingrese su nombre')
       return
     }
     if (form.apellido.trim().length < 2) {
-      toast.error('Ingresa tu apellido')
+      toast.error('Ingrese su apellido')
       return
     }
 
     // PhoneInput emite "+57 3001234567"; el backend espera sin espacios.
     const telefonoLimpio = form.telefono.replace(/\s+/g, '').trim()
     if (!telefonoLimpio) {
-      toast.error('Ingresa tu teléfono de WhatsApp: ahí recibes los avisos y es el respaldo para firmar contratos.')
+      toast.error('Ingrese su teléfono de WhatsApp: ahí recibe los avisos y es el respaldo para firmar contratos.')
       return
     }
     if (!/^\+?\d{7,15}$/.test(telefonoLimpio)) {
@@ -121,11 +121,11 @@ export default function MiCuentaPage() {
     // bloqueado por perfil incompleto).
     if (isInmobiliaria) {
       if (!form.tipo_documento) {
-        toast.error('Selecciona tu tipo de documento')
+        toast.error('Seleccione su tipo de documento')
         return
       }
       if (form.numero_documento.trim().length < 3) {
-        toast.error('Ingresa tu número de documento')
+        toast.error('Ingrese su número de documento')
         return
       }
     }
@@ -158,7 +158,7 @@ export default function MiCuentaPage() {
       if (err instanceof ApiClientError) {
         if (err.code === 'DOCUMENTO_BLOQUEADO_POR_ESTUDIO') {
           toast.error(err.message, {
-            description: 'Tu documento ya fue consultado en una evaluación crediticia.',
+            description: 'Su documento ya fue consultado en una evaluación crediticia.',
             duration: 8000,
           })
           return
@@ -181,8 +181,8 @@ export default function MiCuentaPage() {
     setEnviandoEnlace(true)
     try {
       await authService.forgotPassword(perfil.email)
-      toast.success('Te enviamos un enlace a tu correo para cambiar la contraseña', {
-        description: `Revisa ${perfil.email}. El enlace vence en una hora.`,
+      toast.success('Le enviamos un enlace a su correo para cambiar la contraseña', {
+        description: `Revise ${perfil.email}. El enlace vence en una hora.`,
       })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No pudimos enviar el enlace')
@@ -200,14 +200,14 @@ export default function MiCuentaPage() {
   }
 
   if (!perfil) {
-    return <div className="text-gray-500">No se pudo cargar tu cuenta.</div>
+    return <div className="text-gray-500">No se pudo cargar su cuenta.</div>
   }
 
   return (
     <div className="space-y-6 max-w-3xl">
       <PageHeader
         title="Mi cuenta"
-        subtitle="Edita tus datos personales. El email no es editable; contacta soporte si necesitas cambiarlo."
+        subtitle="Edite sus datos personales. El email no es editable; contacte a soporte si necesita cambiarlo."
       />
 
       {/* Datos personales */}
@@ -257,7 +257,7 @@ export default function MiCuentaPage() {
             required
           />
           <p className="mt-1 text-xs text-gray-500">
-            Tu WhatsApp de contacto: aquí te llegan los avisos del sistema y es el respaldo para la firma de contratos. Con código de país (ej. +57…).
+            Su WhatsApp de contacto: aquí le llegan los avisos del sistema y es el respaldo para la firma de contratos. Con código de país (ej. +57…).
           </p>
         </div>
       </div>
@@ -303,8 +303,8 @@ export default function MiCuentaPage() {
 
         {isSolicitante && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-            Una vez que tu documento haya sido consultado en una evaluación crediticia, no podrás
-            modificarlo desde aquí. Si necesitas corregirlo, contacta soporte.
+            Una vez que su documento haya sido consultado en una evaluación crediticia, no podrá
+            modificarlo desde aquí. Si necesita corregirlo, contacte a soporte.
           </p>
         )}
       </div>
@@ -329,8 +329,8 @@ export default function MiCuentaPage() {
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
         <h3 className="text-base font-semibold text-gray-900">Contraseña</h3>
         <p className="text-sm text-gray-600">
-          Te enviamos a tu correo un enlace para elegir una contraseña nueva. Úsalo también si
-          recibiste una contraseña temporal.
+          Le enviamos a su correo un enlace para elegir una contraseña nueva. Úselo también si
+          recibió una contraseña temporal.
         </p>
         <button
           type="button"

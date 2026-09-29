@@ -221,9 +221,9 @@ export default function EquipoPage() {
       solo_lectura: 'Solo podrá consultar la cartera; no podrá crear ni modificar nada.',
     }
     setConfirm({
-      title: m.es_yo ? 'Cambiar tu propio rol' : `Cambiar el rol a ${ROL_LABEL[nuevoRol]}`,
+      title: m.es_yo ? 'Cambiar su propio rol' : `Cambiar el rol a ${ROL_LABEL[nuevoRol]}`,
       message: m.es_yo
-        ? `Vas a pasar a ${ROL_LABEL[nuevoRol]}. ${efecto[nuevoRol]} Si dejas de ser titular, no podrás deshacerlo tú: tendrá que hacerlo otro titular.`
+        ? `Va a pasar a ${ROL_LABEL[nuevoRol]}. ${efecto[nuevoRol]} Si deja de ser titular, no podrá deshacerlo usted: tendrá que hacerlo otro titular.`
         : `${quien} pasará a ${ROL_LABEL[nuevoRol]}. ${efecto[nuevoRol]}`,
       confirmLabel: 'Cambiar rol',
       variant: m.es_yo && nuevoRol !== 'owner' ? 'danger' : 'default',
@@ -237,7 +237,7 @@ export default function EquipoPage() {
       const res = await salirDeMiInmobiliaria()
       // Sin equipo, la sesión ya no trae rol en la inmobiliaria.
       await authService.checkSession().catch(() => {})
-      toast.success(res.message || 'Saliste de la inmobiliaria')
+      toast.success(res.message || 'Salió de la inmobiliaria')
       router.push('/dashboard')
     } catch (err: unknown) {
       toast.error((err as { message?: string }).message || 'No se pudo procesar la salida')
@@ -257,7 +257,7 @@ export default function EquipoPage() {
     }
     setConfirm({
       title: 'Salir de la inmobiliaria',
-      message: 'Perderás el acceso a su cartera (inmuebles, estudios, etc.). ¿Continuar?',
+      message: 'Perderá el acceso a su cartera (inmuebles, estudios, etc.). ¿Continuar?',
       confirmLabel: 'Salir',
       variant: 'danger',
       onConfirm: doSalir,
@@ -268,7 +268,7 @@ export default function EquipoPage() {
     <div className="max-w-3xl mx-auto">
       <PageHeader
         title="Equipo"
-        subtitle="Invita a tu equipo a gestionar la cartera de la inmobiliaria en conjunto."
+        subtitle="Invite a su equipo a gestionar la cartera de la inmobiliaria en conjunto."
       />
 
       {loading ? (
@@ -293,7 +293,7 @@ export default function EquipoPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
           <IconUsers size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-600">
-            Aún no tienes una organización configurada. Si crees que es un error, contacta a soporte.
+            Aún no tiene una organización configurada. Si cree que es un error, contacte a soporte.
           </p>
         </div>
       ) : (
@@ -314,7 +314,7 @@ export default function EquipoPage() {
                   <input
                     type="email"
                     required
-                    aria-label="Correo de la persona que invitas"
+                    aria-label="Correo de la persona que invita"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="correo@ejemplo.com"
@@ -343,7 +343,7 @@ export default function EquipoPage() {
               <p className="text-xs text-gray-500 mt-3">
                 El miembro recibirá un enlace para unirse. Un <strong>miembro</strong> puede crear y
                 editar datos de la cartera; uno de <strong>sólo lectura</strong> solo puede
-                consultarlos. Podrás cambiar su rol o promoverlo a titular más adelante.
+                consultarlos. Podrá cambiar su rol o promoverlo a titular más adelante.
               </p>
             </div>
           )}
@@ -398,7 +398,7 @@ export default function EquipoPage() {
                         {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}
                       </p>
                       <RolBadge rol={m.rol_miembro} />
-                      {m.es_yo && <span className="text-xs text-gray-500">(tú)</span>}
+                      {m.es_yo && <span className="text-xs text-gray-500">(usted)</span>}
                     </div>
                     {m.nombre && m.email && (
                       <p className="text-xs text-gray-500 break-all">{m.email}</p>

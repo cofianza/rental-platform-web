@@ -47,7 +47,7 @@ function EstudiosContent() {
   if (userRol === 'propietario') {
     return (
       <div className="space-y-6">
-        <PageHeader title="Evaluar candidato" subtitle="Envía a un prospecto a evaluación crediticia y consulta tus evaluaciones." />
+        <PageHeader title="Evaluar candidato" subtitle="Envíe a un prospecto a evaluación crediticia y consulte sus evaluaciones." />
         <EstudiosPropietarioView />
       </div>
     )

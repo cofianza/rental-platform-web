@@ -391,7 +391,7 @@ class AuthService {
       if (error.statusCode === 429) {
         return {
           code: 'RATE_LIMIT_EXCEEDED',
-          message: 'Demasiados intentos de ingreso. Espera un minuto e inténtalo de nuevo.',
+          message: 'Demasiados intentos de ingreso. Espere un minuto e inténtelo de nuevo.',
         }
       }
     }

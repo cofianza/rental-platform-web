@@ -149,7 +149,7 @@ export default function PlantillasContratoPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Plantillas de Contrato</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Gestiona las plantillas HTML para contratos de arrendamiento
+            Gestione las plantillas HTML para contratos de arrendamiento
           </p>
         </div>
         {canCreate && (
@@ -218,7 +218,7 @@ export default function PlantillasContratoPage() {
       <ConfirmDialog
         isOpen={deactivateDialog.isOpen}
         title="Desactivar plantilla"
-        message={`¿Estas seguro de desactivar la plantilla "${deactivateDialog.plantilla?.nombre}"? No se podra usar para nuevos contratos.`}
+        message={`¿Está seguro de desactivar la plantilla "${deactivateDialog.plantilla?.nombre}"? No se podrá usar para nuevos contratos.`}
         confirmText="Desactivar"
         isLoading={isDeactivating}
         onConfirm={handleConfirmDeactivate}

@@ -159,7 +159,7 @@ function EmptyChart() {
         No hay datos de volumen para el periodo seleccionado.
       </p>
       <p className="text-gray-500 text-xs mt-1">
-        Intenta ajustar los filtros de fecha o estado.
+        Intente ajustar los filtros de fecha o estado.
       </p>
     </div>
   )

@@ -83,7 +83,7 @@ export default function EmpresaPage() {
     <div className="max-w-2xl mx-auto">
       <PageHeader
         title="Datos de la empresa (Cofianza)"
-        subtitle="Identidad institucional de COFIANZA, no tus datos personales. Cofianza firma como tercero en cada contrato: a este WhatsApp/email le llega su enlace de firma, y estos datos salen en los certificados de estudio."
+        subtitle="Identidad institucional de COFIANZA, no sus datos personales. Cofianza firma como tercero en cada contrato: a este WhatsApp/email le llega su enlace de firma, y estos datos salen en los certificados de estudio."
       />
 
       {loading ? (
