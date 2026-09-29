@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconBarChart3, IconDollarSign, IconClock, IconCheckCircle, IconArrowRight } from '@/components/icons'
+import { IconBarChart3, IconDollarSign, IconClock, IconCheckCircle, IconArrowRight, IconCalendar } from '@/components/icons'
 import { CarteraAnaliticaSection } from '@/components/dashboard/CarteraAnaliticaSection'
 import { RentabilidadPropietarioSection } from '@/components/dashboard/RentabilidadPropietarioSection'
 import { useAuthStore } from '@/stores/auth.store'
@@ -47,6 +47,16 @@ const REPORTES = [
     // la tarjeta lo llevaba a un 403. Y peor que el 403: con data null las
     // tarjetas del reporte pintan "Total Ingresos $0" por el `?? 0`, o sea un
     // numero falso y creible.
+    roles: ['administrador', 'gerencia_consulta'],
+  },
+  {
+    // Adenda de precios §3.9: registro contable de los cupos que vencieron sin usarse.
+    id: 'cupos-vencidos',
+    titulo: 'Cupos vencidos',
+    descripcion: 'Cupos de paquetes prepagados que vencieron sin usarse en el mes, por inmobiliaria y compra, con descarga CSV.',
+    icon: IconCalendar,
+    color: 'bg-amber-100 text-amber-600',
+    href: '/reportes/cupos-vencidos',
     roles: ['administrador', 'gerencia_consulta'],
   },
   {
