@@ -208,7 +208,7 @@ export function AutorizacionSection({
             <option value="ce">Cédula de Extranjería</option>
             <option value="ppt">PPT</option>
             <option value="pep">PEP</option>
-            <option value="nit">NIT</option>
+            {/* Sin NIT: Adenda de precios §6.1, no se estudian arrendatarios con NIT. */}
           </select>
         </div>
         <div className="col-span-3">
