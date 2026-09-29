@@ -31,6 +31,8 @@ export interface IDetallePaquete {
   fecha_compra: string
   comprados: number
   consumidos: number
+  /** Adenda de precios §2: cupos reservados por estudios que aún no tienen resultado. Opcional: la API vieja no lo manda. */
+  reservados?: number
   disponibles: number
   vence_en: string | null
   estado: 'vigente' | 'agotado' | 'vencido'
@@ -56,12 +58,14 @@ export interface ISaldoCreditos {
   /** P22: lo que se puede gastar (saldo_total menos creditos_en_contra). Opcional: la API vieja
    *  no lo manda (y no tiene saldo en contra): ahí vale saldo_total. */
   saldo_efectivo?: number
+  /** Adenda de precios §2: cupos reservados (ya fuera del saldo); vuelven si la consulta no da resultado. */
+  saldo_reservado?: number
   lotes: ILoteCredito[]
 }
 
 export interface IMovimientoCredito {
   id: string
-  tipo: 'compra' | 'consumo' | 'expiracion' | 'ajuste'
+  tipo: 'compra' | 'reserva' | 'consumo' | 'liberacion' | 'expiracion' | 'ajuste'
   cantidad: number
   saldo_resultante: number
   expediente_id: string | null
