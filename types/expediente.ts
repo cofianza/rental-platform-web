@@ -279,6 +279,21 @@ export interface IExpedienteDetalle extends Omit<IExpediente, 'inmueble' | 'soli
   solicitante: IExpedienteSolicitanteDetalle | null
   /** Adenda 1 contratos, respuesta 21: un administrador lo cerró sin acta de entrega (quién, cuándo y por qué). */
   cierre_sin_acta?: ICierreSinActa | null
+  /** Adenda de precios §7: canon, tope y excepción de la Gerencia General. Solo roles de Cofianza. */
+  tope_canon?: ITopeCanonDetalle | null
+}
+
+export interface ITopeCanonDetalle {
+  canon_cop: number | null
+  tope_cop: number
+  /** Por encima del tope y sin excepción: aprobar es solo de la Gerencia General. */
+  requiere_gerencia: boolean
+  excepcion: {
+    canon_autorizado_cop: number
+    por_nombre: string | null
+    en: string | null
+    motivo: string | null
+  } | null
 }
 
 export interface ICierreSinActa {
