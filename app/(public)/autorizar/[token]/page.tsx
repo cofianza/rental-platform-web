@@ -899,6 +899,12 @@ export default function AutorizarPage() {
                       Lo pagas al final, después de autorizar.
                     </p>
                   )}
+                  {/* Sin dato del cobro (la API no pudo saberlo): ni «hay costo» ni «no hay costo». */}
+                  {data.pago == null && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                      Quien tramita tu estudio te indicará si tiene costo.
+                    </p>
+                  )}
                   {/* B2: lo de Mercado Pago solo a quien le toca pagar. */}
                   <p className="mt-2 text-xs text-gray-500">
                     Nunca te pediremos contraseñas.
@@ -1511,7 +1517,9 @@ export default function AutorizarPage() {
                   ? `Revisa el resumen y confirma. Después te mostramos el enlace para pagar el estudio${
                       data.pago.monto_formateado ? ` (${data.pago.monto_formateado})` : ''
                     } en Mercado Pago; tu evaluación empieza cuando se confirme el pago.`
-                  : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
+                  : data?.pago == null
+                    ? 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información. Quien tramita tu estudio te indicará si tiene costo.'
+                    : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
               </p>
             </div>
 
