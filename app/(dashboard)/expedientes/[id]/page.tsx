@@ -829,6 +829,7 @@ export default function ExpedienteDetallePage() {
                     expedienteId={id}
                     solicitanteEmail={expediente.solicitante?.email}
                     solicitanteTelefono={expediente.solicitante?.telefono}
+                    solicitanteDocumento={expediente.solicitante ? expediente.solicitante.numero_documento ?? '' : undefined}
                     onContactoActualizado={fetchExpediente}
                     soloLectura={!puedeEditar}
                   />

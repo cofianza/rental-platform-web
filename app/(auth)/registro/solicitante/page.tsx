@@ -17,15 +17,9 @@ import { getPublicPropertyById, type PublicProperty } from '@/services/publicPro
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
 
-// Sin tarjeta de identidad (solo mayores de edad) ni pasaporte: los burós
-// colombianos no lo consultan, y con el teclado numérico ni se podía escribir.
-const TIPO_DOC_OPTIONS = [
-  { value: 'cc', label: 'Cédula de Ciudadanía' },
-  { value: 'ce', label: 'Cédula de Extranjería' },
-  { value: 'ppt', label: 'Permiso por Protección Temporal (PPT)' },
-  { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
-  { value: 'nit', label: 'NIT' },
-]
+// Registro liviano (H43, 2026-09-28): solo nombre, correo, celular y
+// contraseña. El documento se pide antes de la autorización del estudio
+// (la API no deja enviarla sin él) o en «Mi cuenta».
 
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', casa: 'Casa', oficina: 'Oficina', local: 'Local', bodega: 'Bodega',
@@ -37,9 +31,7 @@ interface FormErrors {
   apellido?: string
   email?: string
   telefono?: string
-  numero_documento?: string
   password?: string
-  confirm_password?: string
   accept_terms?: string
   accept_data_treatment?: string
   general?: string
@@ -66,10 +58,7 @@ function RegistroSolicitanteContent() {
   const [apellido, setApellido] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
-  const [tipoDocumento, setTipoDocumento] = useState('cc')
-  const [numeroDocumento, setNumeroDocumento] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptData, setAcceptData] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -91,17 +80,15 @@ function RegistroSolicitanteContent() {
     if (!apellido.trim()) e.apellido = 'Requerido'
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido'
     if (!telefono.trim()) {
-      e.telefono = 'Teléfono requerido'
+      e.telefono = 'Celular requerido'
     } else {
       // PhoneInput emite el formato "+<dial> <local>". El numero local debe
       // tener exactamente 10 digitos sin espacios.
       const localDigits = telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-      if (localDigits.length !== 10) e.telefono = 'El teléfono debe tener 10 dígitos'
+      if (localDigits.length !== 10) e.telefono = 'El celular debe tener 10 dígitos'
     }
-    if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
     if (password.length < 8) e.password = 'Mínimo 8 caracteres'
     else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) e.password = 'Debe tener al menos una mayúscula, una minúscula y un número'
-    if (password !== confirmPassword) e.confirm_password = 'No coinciden'
     if (!acceptTerms) e.accept_terms = 'Debe aceptar los términos'
     if (!acceptData) e.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
     setErrors(e)
@@ -127,9 +114,8 @@ function RegistroSolicitanteContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre, apellido, email, telefono,
-          tipo_documento: tipoDocumento,
-          numero_documento: numeroDocumento,
-          password, confirm_password: confirmPassword,
+          // Sin campo de confirmación (el ojo deja revisarla); la API la sigue pidiendo.
+          password, confirm_password: password,
           accept_terms: true, accept_data_treatment: true,
           property_interest_id: propertyId || undefined,
           from_invitation: invitacionToken ? true : undefined,
@@ -243,32 +229,13 @@ function RegistroSolicitanteContent() {
 
           <FormField label="Email" type="email" autoComplete="email" inputMode="email" value={email} onChange={setEmail} error={errors.email} />
           <PhoneInput
-            label="Teléfono"
+            label="Celular"
             value={telefono}
             onChange={setTelefono}
             error={errors.telefono}
           />
 
-          <div className="grid grid-cols-5 gap-3">
-            <div className="col-span-2">
-              <label htmlFor="solicitante-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo doc.</label>
-              <select id="solicitante-tipo-doc"
-                value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {TIPO_DOC_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-3">
-              <FormField label="Número de documento" inputMode="numeric" autoComplete="off" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
-            </div>
-          </div>
-
           <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número" />
-          <FormField label="Confirmar contraseña" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
 
           {/* Checkboxes */}
           <div className="space-y-3">
