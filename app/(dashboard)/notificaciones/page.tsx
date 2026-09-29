@@ -247,7 +247,7 @@ export default function NotificacionesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-amber-300 mb-3" />
             <p className="text-sm font-medium text-amber-900">No se pudieron cargar</p>
-            <p className="text-xs text-amber-800 mt-1">Esto no significa que no tengas avisos.</p>
+            <p className="text-xs text-amber-800 mt-1">Esto no significa que no tenga avisos.</p>
             <button
               type="button"
               onClick={cargar}
@@ -260,7 +260,7 @@ export default function NotificacionesPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <IconBell size={36} className="text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-700">Sin notificaciones</p>
-            <p className="text-xs text-gray-500 mt-1">Aquí verás los avisos de tus estudios.</p>
+            <p className="text-xs text-gray-500 mt-1">Aquí verá los avisos de sus estudios.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">

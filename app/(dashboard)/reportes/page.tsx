@@ -79,7 +79,7 @@ export default function ReportesPage() {
       <div className="space-y-6">
         <PageHeader
           title="Mi rentabilidad"
-          subtitle="Analiza el rendimiento de cada inmueble. Edita gastos para ver el impacto en tu rentabilidad."
+          subtitle="Analice el rendimiento de cada inmueble. Edite los gastos para ver el impacto en su rentabilidad."
         />
         <RentabilidadPropietarioSection />
       </div>
@@ -94,7 +94,7 @@ export default function ReportesPage() {
       <div className="space-y-6">
         <PageHeader
           title="Analítica de mi cartera"
-          subtitle="Métricas de tus propiedades, estudios y recaudo."
+          subtitle="Métricas de sus propiedades, estudios y recaudo."
         />
         <CarteraAnaliticaSection />
       </div>

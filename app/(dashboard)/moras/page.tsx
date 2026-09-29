@@ -83,12 +83,12 @@ const FASE_CONFIG: Record<MoraEstado, { label: string; chip: string; chipText: s
 // El toast decía «se notificó al inquilino vía WhatsApp» aunque no tuviera
 // teléfono o Meta rechazara el envío: se dice lo que pasó de verdad.
 const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado' | 'programado'>, string> = {
-  sin_telefono: 'no se pudo avisar al inquilino por WhatsApp porque no tiene teléfono registrado. Avísale por otro medio.',
-  fallido: 'el WhatsApp al inquilino falló. Avísale por otro medio.',
+  sin_telefono: 'no se pudo avisar al inquilino por WhatsApp porque no tiene teléfono registrado. Avísele por otro medio.',
+  fallido: 'el WhatsApp al inquilino falló. Avísele por otro medio.',
   mock: 'el WhatsApp está en modo de prueba y no se envió al inquilino.',
   // Ley 2300 con el envío automático apagado: no se promete hora.
   retenido:
-    'el WhatsApp al inquilino quedó en espera por el horario de cobranza y el envío automático está apagado: no sale hasta que lo enciendan. Si es urgente, avísale por otro medio dentro del horario.',
+    'el WhatsApp al inquilino quedó en espera por el horario de cobranza y el envío automático está apagado: no sale hasta que lo enciendan. Si es urgente, avísele por otro medio dentro del horario.',
 }
 
 function avisarResultado(accion: string, r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null }) {
@@ -245,7 +245,7 @@ export default function ReportarMoraPage() {
   async function handleReportar(e: React.FormEvent) {
     e.preventDefault()
     if (!contratoId) {
-      toast.error('Selecciona un contrato')
+      toast.error('Seleccione un contrato')
       return
     }
     const montoNum = Number(monto.replace(/\D/g, ''))
@@ -315,7 +315,7 @@ export default function ReportarMoraPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               required
             >
-              <option value="">— Selecciona contrato —</option>
+              <option value="">— Seleccione contrato —</option>
               {contratosFiltrados.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.numero}
@@ -325,7 +325,7 @@ export default function ReportarMoraPage() {
             </select>
             {falloContratos ? (
               <p className="text-xs text-amber-600 mt-1">
-                No se pudo cargar la lista de contratos. Recarga la página para reintentar.
+                No se pudo cargar la lista de contratos. Recargue la página para reintentar.
               </p>
             ) : contratos.length === 0 ? (
               <p className="text-xs text-amber-600 mt-1">
@@ -334,7 +334,7 @@ export default function ReportarMoraPage() {
             ) : (
               <p className="text-xs text-gray-500 mt-1">
                 {contratosFiltrados.length} contrato{contratosFiltrados.length === 1 ? '' : 's'}
-                {totalContratos > contratos.length && ' · solo se listan los primeros 100; usa el filtro'}
+                {totalContratos > contratos.length && ' · solo se listan los primeros 100; use el filtro'}
               </p>
             )}
           </div>
@@ -436,7 +436,7 @@ export default function ReportarMoraPage() {
             Seguimiento de moras
           </h3>
           <p className="mt-0.5 text-xs text-gray-500">
-            Haz clic en una fila o en el ticket para ver el detalle y el historial del caso.
+            Haga clic en una fila o en el ticket para ver el detalle y el historial del caso.
             {esInterno && ' Ordenadas de más antigua a más reciente.'}
             {!loading && totalMoras > moras.length && ` Mostrando ${moras.length} de ${totalMoras}.`}
           </p>
@@ -480,7 +480,7 @@ export default function ReportarMoraPage() {
       ) : moras.length === 0 ? (
         <div className="p-8 text-center text-gray-500 text-sm">
           {filtro === 'todas'
-            ? 'Aún no hay moras reportadas. Cuando reportes una aparecerá aquí.'
+            ? 'Aún no hay moras reportadas. Cuando reporte una aparecerá aquí.'
             : filtro === 'activas'
               ? 'No hay moras en gestión.'
               : 'Sin resultados para este filtro.'}
@@ -618,7 +618,7 @@ export default function ReportarMoraPage() {
         subtitle={
           esInterno
             ? 'Cola de moras reportadas por propietarios e inmobiliarias. Cada caso pasa a Fase 2 a los 4 días y a Fase 3 a los 10; la columna “Escala en” marca los que ya toca escalar.'
-            : 'Avisa a Cofianza cuando un inquilino se atrasa. Cofianza gestiona el caso en 3 fases (Recordatorio → Urgencia → Legal).'
+            : 'Avise a Cofianza cuando un inquilino se atrase. Cofianza gestiona el caso en 3 fases (Recordatorio → Urgencia → Legal).'
         }
       />
 
@@ -747,7 +747,7 @@ function MoraDetalleModal({
       const pago = reportaPago && mora?.estado === 'fase_3'
       await morasService.agregarMensaje(moraId, mensaje.trim(), pago)
       if (mora?.estado === 'fase_3' && !esInterno) {
-        toast.success(pago ? 'Le avisamos a Cofianza del pago para que lo revise.' : 'Le avisamos a Cofianza de tu nota.')
+        toast.success(pago ? 'Le avisamos a Cofianza del pago para que lo revise.' : 'Le avisamos a Cofianza de su nota.')
       }
       setMensaje('')
       setReportaPago(false)
@@ -840,11 +840,11 @@ function MoraDetalleModal({
     esInterno || !mora
       ? null
       : mora.estado === 'fase_3'
-        ? 'Cofianza gestiona el caso. Si el inquilino te pagó, anótalo en el historial del caso.'
+        ? 'Cofianza gestiona el caso. Si el inquilino le pagó, anótelo en el historial del caso.'
         : mora.estado === 'fase_2'
           ? 'El paso a Fase 3 lo decide Cofianza.'
           : !puedeEscalar && fase2Desde
-            ? `Podrás escalar a Fase 2 desde el ${fase2Desde.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}.`
+            ? `Podrá escalar a Fase 2 desde el ${fase2Desde.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}.`
             : null
 
   return (
@@ -976,7 +976,7 @@ function MoraDetalleModal({
                   <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                     <p className="mr-auto">
                       El WhatsApp de Fase 3 está en pausa: el dueño reportó un pago.
-                      {esInterno && ' Si lo confirmas, marca la mora pagada; si no, reanúdalo.'}
+                      {esInterno && ' Si lo confirma, marque la mora pagada; si no, reanúdelo.'}
                     </p>
                     {esInterno && puedeEditar && (
                       <button
@@ -1003,7 +1003,7 @@ function MoraDetalleModal({
                           handleEnviarMensaje()
                         }
                       }}
-                      placeholder="Escribe una nota interna…"
+                      placeholder="Escriba una nota interna…"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                     />
                     <button

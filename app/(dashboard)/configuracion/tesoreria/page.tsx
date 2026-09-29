@@ -94,7 +94,7 @@ export default function TesoreriaPage() {
     <div className="space-y-6 max-w-2xl">
       <PageHeader
         title="Tesorería"
-        subtitle="Configura el capital de Cofianza para el cálculo de exposición y capital libre."
+        subtitle="Configure el capital de Cofianza para el cálculo de exposición y capital libre."
       />
 
       {loading ? (

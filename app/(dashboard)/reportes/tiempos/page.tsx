@@ -139,7 +139,7 @@ function EmptyState() {
         No hay datos de tiempos para el periodo seleccionado.
       </p>
       <p className="text-gray-500 text-xs mt-1">
-        Intenta ajustar los filtros de fecha.
+        Intente ajustar los filtros de fecha.
       </p>
     </div>
   )

@@ -504,7 +504,7 @@ export default function ContratoDetallePage() {
             <button
               onClick={handleEnviarAFirma}
               disabled={enviandoFirma || !contrato.storage_key}
-              title={!contrato.storage_key ? 'Genera el PDF antes de enviar a firma' : 'Llevar a firma y notificar al arrendatario por WhatsApp'}
+              title={!contrato.storage_key ? 'Genere el PDF antes de enviar a firma' : 'Llevar a firma y notificar al arrendatario por WhatsApp'}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-500/40"
             >
               {enviandoFirma ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}

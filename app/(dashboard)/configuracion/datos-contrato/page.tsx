@@ -104,7 +104,7 @@ export default function DatosContratoPage() {
     const waRecaudo = (form.whatsapp_recaudo ?? '').replace(/\s+/g, '').trim()
     const lista: string[] = []
     if (!waRecaudo || !/^\+?\d{7,15}$/.test(waRecaudo)) {
-      lista.push('WhatsApp del arrendador (válido): es donde recibes el enlace para firmar el contrato')
+      lista.push('WhatsApp del arrendador (válido): es donde recibe el enlace para firmar el contrato')
     }
     // Todos estos datos salen impresos en el contrato. Si falta cualquiera, el
     // PDF queda con campos en blanco, asi que son obligatorios al guardar.
@@ -202,7 +202,7 @@ export default function DatosContratoPage() {
 
   const handleLogoDelete = () => {
     toast('¿Eliminar el logo?', {
-      description: 'Los próximos contratos saldrán sin logo hasta que subas uno nuevo.',
+      description: 'Los próximos contratos saldrán sin logo hasta que suba uno nuevo.',
       duration: 10000,
       action: {
         label: 'Eliminar',
@@ -234,7 +234,7 @@ export default function DatosContratoPage() {
   if (!perfil || errorCarga) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm text-red-700 mb-3">No pudimos cargar tus datos para contrato. Puede ser un problema de conexión.</p>
+        <p className="text-sm text-red-700 mb-3">No pudimos cargar sus datos para contrato. Puede ser un problema de conexión.</p>
         <button
           type="button"
           onClick={() => setRecarga((n) => n + 1)}
@@ -252,7 +252,7 @@ export default function DatosContratoPage() {
     <div className="space-y-6 max-w-4xl">
       <PageHeader
         title="Datos para contrato"
-        subtitle={`Estos datos aparecen en los contratos de arrendamiento que se generan a tu nombre como ${rolLabel.toLowerCase()}.`}
+        subtitle={`Estos datos aparecen en los contratos de arrendamiento que se generan a su nombre como ${rolLabel.toLowerCase()}.`}
       />
 
       {soloLectura && (
@@ -260,7 +260,7 @@ export default function DatosContratoPage() {
           <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-800">
             Estos datos los gestiona <strong>el titular</strong> de la inmobiliaria y son los mismos
-            para todo el equipo. Los ves en <strong>modo lectura</strong>.
+            para todo el equipo. Los ve en <strong>modo lectura</strong>.
           </p>
         </div>
       )}
@@ -328,7 +328,7 @@ export default function DatosContratoPage() {
                 {uploadingLogo ? 'Subiendo…' : 'Subir logo'}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Click o arrastra una imagen aquí (PNG, JPG o WebP, máx 2 MB)
+                Haga clic o arrastre una imagen aquí (PNG, JPG o WebP, máx 2 MB)
               </p>
             </button>
           )}
@@ -437,7 +437,7 @@ export default function DatosContratoPage() {
             onChange={(m) => setForm((prev) => ({ ...prev, municipio_codigo: m?.codigo ?? null, municipio_nombre: m?.nombre ?? null }))}
           />
           <p className="mt-1 text-xs text-gray-500">
-            Con él, la factura de los estudios que pagas con Mercado Pago sale sola a tu nombre.
+            Con él, la factura de los estudios que paga con Mercado Pago sale sola a su nombre.
           </p>
         </div>
 
@@ -531,8 +531,8 @@ export default function DatosContratoPage() {
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">WhatsApp del arrendador (firma y pagos)</h3>
         <p className="text-sm text-gray-500 -mt-2">
-          A este WhatsApp <strong>te llega el enlace para firmar el contrato</strong> como arrendador.
-          También es el canal donde el arrendatario te avisa de los pagos y que aparece impreso en el contrato.
+          A este WhatsApp <strong>le llega el enlace para firmar el contrato</strong> como arrendador.
+          También es el canal donde el arrendatario le avisa de los pagos y que aparece impreso en el contrato.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -545,7 +545,7 @@ export default function DatosContratoPage() {
               placeholder="300 123 4567"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Obligatorio. Aquí recibes el enlace de firma del contrato. Debe ser un WhatsApp real.
+              Obligatorio. Aquí recibe el enlace de firma del contrato. Debe ser un WhatsApp real.
             </p>
           </div>
           <Field
@@ -563,7 +563,7 @@ export default function DatosContratoPage() {
       {/* Botón guardar — solo el titular (los miembros ven en modo lectura) */}
       {!soloLectura && problemas.length > 0 && (
         <div ref={problemasRef} role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-800">Para guardar, completa o corrige:</p>
+          <p className="text-sm font-semibold text-red-800">Para guardar, complete o corrija:</p>
           <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-red-700">
             {problemas.map((p) => (
               <li key={p}>{p}</li>

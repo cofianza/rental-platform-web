@@ -394,7 +394,7 @@ export default function ExpedienteDetallePage() {
           Estudio no encontrado
         </h2>
         <p className="text-gray-500 mb-6">
-          El estudio que buscas no existe o fue eliminado.
+          El estudio que busca no existe o fue eliminado.
         </p>
         <button
           onClick={() => router.push(rutaListado)}
@@ -581,7 +581,7 @@ export default function ExpedienteDetallePage() {
       {user?.rol === 'inmobiliaria' && (
         <ResponsableMiembroCard
           titulo="Responsable del estudio"
-          ayuda='Si desactivaste "los miembros ven todo", el responsable verá este estudio aunque el inmueble no sea suyo.'
+          ayuda='Si desactivó "los miembros ven todo", el responsable verá este estudio aunque el inmueble no sea suyo.'
           miembroResponsableId={expediente.miembro_responsable_id}
           onAssign={async (miembroId) => {
             await expedienteService.asignarMiembroResponsable(id, miembroId)
@@ -1163,7 +1163,7 @@ export default function ExpedienteDetallePage() {
         onClose={() => setPedirCierreSinActa(false)}
         onConfirm={handleCerrarSinActa}
         title="¿Cerrar el estudio sin acta de entrega?"
-        descripcion="El contrato no tiene el acta de entrega e inventario, y Cofianza no la carga en nombre de la inmobiliaria. Puedes cerrar el estudio sin ella: el motivo queda registrado con tu usuario y la fecha, y el riesgo de no tener acta es de la inmobiliaria. No se puede deshacer."
+        descripcion="El contrato no tiene el acta de entrega e inventario, y Cofianza no la carga en nombre de la inmobiliaria. Puede cerrar el estudio sin ella: el motivo queda registrado con su usuario y la fecha, y el riesgo de no tener acta es de la inmobiliaria. No se puede deshacer."
         label="Motivo del cierre sin acta"
         minLength={10}
         confirmLabel="Cerrar sin acta"

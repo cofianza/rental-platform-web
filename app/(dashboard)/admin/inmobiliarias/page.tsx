@@ -369,7 +369,7 @@ export default function AdminInmobiliariasPage() {
     <div className="max-w-4xl mx-auto">
       <PageHeader
         title="Equipos de inmobiliarias"
-        subtitle="Gestiona el convenio, los miembros y los titulares de cada organización aliada."
+        subtitle="Gestione el convenio, los miembros y los titulares de cada organización aliada."
       />
 
       {loading ? (

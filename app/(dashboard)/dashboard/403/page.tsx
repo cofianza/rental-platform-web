@@ -40,8 +40,8 @@ export default function ForbiddenPage() {
       </h1>
 
       <p className="text-gray-600 mb-6 max-w-md">
-        Tu rol actual ({rolDisplay}) no tiene permisos para acceder a esta
-        seccion. Contacta al administrador si necesitas acceso.
+        Su rol actual ({rolDisplay}) no tiene permisos para acceder a esta
+        seccion. Contacte al administrador si necesita acceso.
       </p>
 
       <Link

@@ -176,7 +176,7 @@ export default function CitasPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Citas de visita" subtitle="Gestiona las visitas a tus inmuebles" />
+      <PageHeader title="Citas de visita" subtitle="Gestione las visitas a sus inmuebles" />
 
       {/* Filtros */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -261,11 +261,11 @@ export default function CitasPage() {
       {!isLoading && !error && totalCitas === 0 && (
         <EmptyState
           icon={IconCalendar}
-          title={hasActiveFilters ? 'Sin resultados' : 'Aún no tienes citas'}
+          title={hasActiveFilters ? 'Sin resultados' : 'Aún no tiene citas'}
           description={
             hasActiveFilters
-              ? 'Ajusta los filtros para ver otras citas.'
-              : 'Cuando un solicitante pida una visita a uno de tus inmuebles, aparecerá aquí.'
+              ? 'Ajuste los filtros para ver otras citas.'
+              : 'Cuando un solicitante pida una visita a uno de sus inmuebles, aparecerá aquí.'
           }
           action={
             !hasActiveFilters
@@ -282,7 +282,7 @@ export default function CitasPage() {
           desaparecían del tablero sin aviso. */}
       {!isLoading && meta && meta.total > totalCitas && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
-          Mostrando las {totalCitas} citas más recientes de {meta.total}. Usa los filtros de fecha o de
+          Mostrando las {totalCitas} citas más recientes de {meta.total}. Use los filtros de fecha o de
           inmueble para ver las anteriores.
         </p>
       )}

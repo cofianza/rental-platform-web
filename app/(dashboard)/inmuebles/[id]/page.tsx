@@ -339,7 +339,7 @@ export default function InmuebleDetailPage() {
             {error || 'Inmueble no encontrado'}
           </h2>
           <p className="text-gray-600 mb-6">
-            El inmueble que buscas no existe o no tienes permisos para verlo.
+            El inmueble que busca no existe o no tiene permisos para verlo.
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
@@ -593,7 +593,7 @@ export default function InmuebleDetailPage() {
                   {isInmobiliaria && (
                     <ResponsableMiembroCard
                       titulo="Responsable del inmueble"
-                      ayuda='Si desactivaste "los miembros ven todo", el responsable verá este inmueble y sus estudios.'
+                      ayuda='Si desactivó "los miembros ven todo", el responsable verá este inmueble y sus estudios.'
                       miembroResponsableId={inmueble.miembro_responsable_id}
                       onAssign={async (miembroId) => {
                         await inmuebleService.asignarResponsable(inmueble.id, miembroId)
@@ -891,7 +891,7 @@ export default function InmuebleDetailPage() {
               <p className="text-xs text-gray-500 mt-2">
                 {inmueble.estado !== 'disponible'
                   ? inmueble.visible_vitrina
-                    ? 'Este inmueble conserva una marca de vitrina antigua; usa el interruptor para retirarla. Podrá publicarse de nuevo cuando esté libre.'
+                    ? 'Este inmueble conserva una marca de vitrina antigua; use el interruptor para retirarla. Podrá publicarse de nuevo cuando esté libre.'
                     : 'Solo los inmuebles disponibles pueden publicarse en la vitrina. Se podrá cuando el inmueble esté libre.'
                   : inmueble.visible_vitrina
                     ? 'El inmueble es visible para el público en la vitrina.'
@@ -923,7 +923,7 @@ export default function InmuebleDetailPage() {
         onClose={() => setShowDeactivateDialog(false)}
         onConfirm={handleDeactivate}
         title="Desactivar Inmueble"
-        message={`¿Estás seguro de que deseas desactivar el inmueble ${inmueble.codigo}? Esta acción lo marcará como inactivo y no aparecerá en el listado.`}
+        message={`¿Está seguro de que desea desactivar el inmueble ${inmueble.codigo}? Esta acción lo marcará como inactivo y no aparecerá en el listado.`}
         confirmLabel="Desactivar"
         cancelLabel="Cancelar"
         variant="danger"

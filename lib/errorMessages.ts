@@ -18,13 +18,13 @@ import { ApiClientError } from '@/lib/api'
 export function mensajeParaProspecto(err: unknown, fallback: string): string {
   if (err instanceof ApiClientError) {
     if (err.code === 'RATE_LIMIT_EXCEEDED' || err.statusCode === 429) {
-      return 'Demasiados intentos desde tu red. Espera un minuto e inténtalo de nuevo.'
+      return 'Demasiados intentos desde su red. Espere un minuto e inténtelo de nuevo.'
     }
     if (err.code === 'NETWORK_ERROR' || err.statusCode === 0) {
-      return 'Sin conexión. Revisa tu internet e inténtalo de nuevo.'
+      return 'Sin conexión. Revise su internet e inténtelo de nuevo.'
     }
     if (err.statusCode >= 500) {
-      return 'Tuvimos un problema de nuestro lado. Inténtalo en unos minutos.'
+      return 'Tuvimos un problema de nuestro lado. Inténtelo en unos minutos.'
     }
     // Zod: el detalle por campo dice que corregir; el mensaje generico no.
     if (err.code === 'VALIDATION_ERROR') {
@@ -36,7 +36,7 @@ export function mensajeParaProspecto(err: unknown, fallback: string): string {
 
   // fetch caido antes de llegar al cliente (offline, DNS, CORS).
   if (err instanceof TypeError) {
-    return 'Sin conexión. Revisa tu internet e inténtalo de nuevo.'
+    return 'Sin conexión. Revise su internet e inténtelo de nuevo.'
   }
 
   return fallback

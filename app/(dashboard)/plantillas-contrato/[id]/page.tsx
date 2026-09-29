@@ -290,7 +290,7 @@ export default function PlantillaDetallePage() {
       <ConfirmDialog
         isOpen={deactivateOpen}
         title="Desactivar plantilla"
-        message={`¿Estas seguro de desactivar "${plantilla.nombre}"? No se podra usar para nuevos contratos.`}
+        message={`¿Está seguro de desactivar "${plantilla.nombre}"? No se podrá usar para nuevos contratos.`}
         confirmText="Desactivar"
         isLoading={isDeactivating}
         onConfirm={handleDeactivate}

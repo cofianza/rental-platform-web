@@ -360,7 +360,7 @@ export default function DashboardPage() {
               <IconCheck size={40} className="mx-auto text-green-300 mb-3" />
               <p className="text-sm text-gray-500">
                 {alcance === 'mios'
-                  ? 'No tienes estudios pendientes'
+                  ? 'No tiene estudios pendientes'
                   : alcance === 'sin_asignar'
                     ? 'No hay estudios sin responsable'
                     : 'No hay estudios pendientes'}
@@ -414,8 +414,8 @@ export default function DashboardPage() {
 // ── Solicitante Dashboard ────────────────────────────────────
 
 const PROCESS_STEPS = [
-  { id: 'expediente', label: 'Estudio', description: 'Tu estudio está registrado' },
-  { id: 'cita', label: 'Visita', description: 'Agenda una visita al inmueble' },
+  { id: 'expediente', label: 'Estudio', description: 'Su estudio está registrado' },
+  { id: 'cita', label: 'Visita', description: 'Agende una visita al inmueble' },
   { id: 'estudio', label: 'Evaluación', description: 'Evaluación crediticia en proceso' },
   { id: 'aprobado', label: 'Resultado', description: 'Resultado de la evaluación' },
   { id: 'contrato', label: 'Contrato', description: 'Generación y revisión del contrato' },
@@ -603,16 +603,16 @@ function SolicitanteDashboard() {
     <div className="space-y-6">
       <PageHeader
         title="Mi Panel de Arrendatario"
-        subtitle="Consulta el estado de tus estudios de arrendamiento"
+        subtitle="Consulte el estado de sus estudios de arrendamiento"
       />
 
       {documentoPendiente && (
         <div className="flex items-start gap-3 p-5 bg-amber-50 border border-amber-200 rounded-lg">
           <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-900">Completa tu documento</p>
+            <p className="text-sm font-semibold text-amber-900">Complete su documento</p>
             <p className="text-xs text-amber-800 mt-1">
-              Agrega tu tipo y número de documento de identidad. Lo necesitamos para que autorices la consulta de tu estudio.
+              Agregue su tipo y número de documento de identidad. Lo necesitamos para que autorice la consulta de su estudio.
             </p>
             <Link
               href="/configuracion/cuenta?returnTo=%2Fdashboard"
@@ -645,9 +645,9 @@ function SolicitanteDashboard() {
                   <IconCalendar size={28} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold mb-1">Tienes una visita pendiente por agendar</h3>
+                  <h3 className="text-lg font-bold mb-1">Tiene una visita pendiente por agendar</h3>
                   <p className="text-sm text-white/90">
-                    Antes de continuar con tu evaluación crediticia, agenda una visita al inmueble. El propietario debera confirmar la fecha.
+                    Antes de continuar con su evaluación crediticia, agende una visita al inmueble. El propietario deberá confirmar la fecha.
                   </p>
                 </div>
                 <Link
@@ -678,7 +678,7 @@ function SolicitanteDashboard() {
                       Solicitud de visita enviada
                     </h3>
                     <p className="text-sm text-blue-800">
-                      El propietario revisará tu fecha propuesta. Te notificaremos cuando la confirme.
+                      El propietario revisará su fecha propuesta. Le notificaremos cuando la confirme.
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
                       Fecha propuesta: <strong>{formatCitaFecha(cita.fecha)}</strong>
@@ -706,11 +706,11 @@ function SolicitanteDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-semibold text-amber-900 mb-0.5">
-                    Firma tu autorización para continuar
+                    Firme su autorización para continuar
                   </h3>
                   <p className="text-sm text-amber-800">
-                    Te enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
-                    Apenas lo firmes te llega el enlace de pago del estudio.
+                    Le enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
+                    Apenas lo firme le llega el enlace de pago del estudio.
                   </p>
                 </div>
                 <Link
@@ -739,12 +739,12 @@ function SolicitanteDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold mb-1">
-                      {esFallido ? 'No pudimos procesar tu pago' : 'Paga tu evaluación crediticia'}
+                      {esFallido ? 'No pudimos procesar su pago' : 'Pague su evaluación crediticia'}
                     </h3>
                     <p className="text-sm text-white/90">
                       {esFallido
-                        ? 'Hubo un problema con el pago anterior. Intenta de nuevo para continuar con tu estudio.'
-                        : 'Ya autorizaste la consulta. Realiza el pago para que ejecutemos tu estudio y avancemos a la aprobación.'}
+                        ? 'Hubo un problema con el pago anterior. Intente de nuevo para continuar con su estudio.'
+                        : 'Ya autorizó la consulta. Realice el pago para que ejecutemos su estudio y avancemos a la aprobación.'}
                     </p>
                   </div>
                   {pago?.linkPago ? (
@@ -781,10 +781,10 @@ function SolicitanteDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-semibold text-amber-900 mb-0.5">
-                    Esperando que el propietario habilite tu estudio
+                    Esperando que el propietario habilite su estudio
                   </h3>
                   <p className="text-sm text-amber-800">
-                    Tu visita ya se realizó. En cuanto el propietario habilite el siguiente paso, te llegará el enlace para autorizar la consulta y continuar con tu estudio.
+                    Su visita ya se realizó. En cuanto el propietario habilite el siguiente paso, le llegará el enlace para autorizar la consulta y continuar con su estudio.
                   </p>
                 </div>
                 <Link
@@ -811,7 +811,7 @@ function SolicitanteDashboard() {
                       ¡Cita confirmada!
                     </h3>
                     <p className="text-sm text-green-800">
-                      Te esperamos el <strong>{formatCitaFecha(cita.fecha)}</strong>.
+                      Lo esperamos el <strong>{formatCitaFecha(cita.fecha)}</strong>.
                     </p>
                   </div>
                   <Link
@@ -836,7 +836,7 @@ function SolicitanteDashboard() {
         </div>
       ) : expError ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-sm text-red-800 mb-3">No pudimos cargar tus estudios. Puede ser un problema de conexión.</p>
+          <p className="text-sm text-red-800 mb-3">No pudimos cargar sus estudios. Puede ser un problema de conexión.</p>
           <button
             type="button"
             onClick={() => {
@@ -854,7 +854,7 @@ function SolicitanteDashboard() {
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin estudios activos</h3>
-          <p className="text-sm text-gray-500 mb-4">Aún no tienes estudios de arrendamiento. Explora la vitrina para encontrar tu próximo hogar.</p>
+          <p className="text-sm text-gray-500 mb-4">Aún no tiene estudios de arrendamiento. Explore la vitrina para encontrar su próximo hogar.</p>
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors">
             Explorar inmuebles
           </Link>
@@ -912,13 +912,13 @@ function SolicitanteDashboard() {
                 {isRejected ? (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                     <p className="text-sm text-slate-900 font-medium">No aprobable por ahora</p>
-                    <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre ti: puedes volver a solicitarlo más adelante o escribirnos para revisar tu caso.</p>
+                    <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre usted: puede volver a solicitarlo más adelante o escribirnos para revisar su caso.</p>
                     <NotaApelacion className="mt-1.5" />
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <p className="text-sm text-amber-700 font-medium">Estudio condicionado</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Invita a un co-arrendatario para que los respaldemos juntos.</p>
+                    <p className="text-xs text-amber-600 mt-0.5">Invite a un co-arrendatario para que los respaldemos juntos.</p>
                   </div>
                 ) : (
                   <>
@@ -990,7 +990,7 @@ function SolicitanteDashboard() {
           <IconReceipt size={20} className="text-primary-600" />
           <div>
             <p className="text-sm font-medium text-gray-900">Mis pagos y facturas</p>
-            <p className="text-xs text-gray-500">El pago de tu evaluación y tus facturas</p>
+            <p className="text-xs text-gray-500">El pago de su evaluación y sus facturas</p>
           </div>
         </Link>
         <Link href="/vitrina" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">

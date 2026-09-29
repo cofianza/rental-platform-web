@@ -39,7 +39,7 @@ export async function guardarClausula(
 ): Promise<ResultadoGuardado> {
   try {
     const { avisos = [], ...clausula } = await llamada()
-    if (avisos.length) toast.warning(`Cláusula guardada. Revisa: ${avisos.map((a) => a.mensaje).join(' ')}`)
+    if (avisos.length) toast.warning(`Cláusula guardada. Revise: ${avisos.map((a) => a.mensaje).join(' ')}`)
     else toast.success('Cláusula guardada.')
     return { ok: true, clausula, avisos }
   } catch (err) {

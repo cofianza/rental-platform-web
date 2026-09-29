@@ -268,7 +268,7 @@ class InmuebleService {
 
     if (!res.ok) {
       const err = await res.json().catch(() => null)
-      throw new Error(err?.message || 'Error al subir la imagen. Por favor, intenta de nuevo.')
+      throw new Error(err?.message || 'Error al subir la imagen. Por favor, intente de nuevo.')
     }
 
     const json = await res.json()

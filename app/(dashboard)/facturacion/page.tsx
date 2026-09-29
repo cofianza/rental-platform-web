@@ -80,8 +80,8 @@ export default function FacturacionPage() {
         title={isSolicitante ? 'Mis pagos y facturas' : 'Facturación'}
         subtitle={
           isSolicitante
-            ? 'Completa tus datos fiscales, factura tus pagos pendientes y consulta tu historial.'
-            : 'Gestiona tus datos fiscales, factura pagos pendientes y consulta tu historial.'
+            ? 'Complete sus datos fiscales, facture sus pagos pendientes y consulte su historial.'
+            : 'Gestione sus datos fiscales, facture pagos pendientes y consulte su historial.'
         }
       />
 

@@ -89,7 +89,7 @@ const TIPOS: TipoConfig[] = [
   {
     tipo: 'contrato_marco',
     titulo: 'Contrato Marco con Cofianza',
-    descripcion: 'Contrato firmado entre tu inmobiliaria/propietario y Cofianza. Lo gestiona nuestro equipo.',
+    descripcion: 'Contrato firmado entre su inmobiliaria/propietario y Cofianza. Lo gestiona nuestro equipo.',
     obligatorio: true,
     icon: IconFileText,
     soloInmobiliaria: true,
@@ -201,7 +201,7 @@ export default function MiInmobiliariaPage() {
         subtitle={
           isInmobiliaria
             ? 'Documentos requeridos para operar con Cofianza. La validación la hace nuestro equipo después de cargar cada documento.'
-            : 'Documentos legales de tu perfil como propietario.'
+            : 'Documentos legales de su perfil como propietario.'
         }
       />
 
@@ -210,7 +210,7 @@ export default function MiInmobiliariaPage() {
           <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-800">
             Los documentos de la inmobiliaria los gestiona <strong>el titular</strong> y son los mismos
-            para todo el equipo. Puedes verlos y descargarlos, pero no editarlos.
+            para todo el equipo. Puede verlos y descargarlos, pero no editarlos.
           </p>
         </div>
       )}
@@ -222,7 +222,7 @@ export default function MiInmobiliariaPage() {
           <div>
             <h3 className="text-sm font-bold text-gray-900 mb-1">Contacto y notificaciones</h3>
             <p className="text-sm text-gray-600">
-              Las notificaciones de Cofianza (estudios, contratos, pagos) te llegan a:
+              Las notificaciones de Cofianza (estudios, contratos, pagos) le llegan a:
             </p>
             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
               <span className="text-gray-700">
@@ -231,7 +231,7 @@ export default function MiInmobiliariaPage() {
               <span className="text-gray-700">
                 WhatsApp/Tel: <span className="font-semibold text-gray-900">{telefonoContacto || 'sin registrar'}</span>
                 {!telefonoContacto && (
-                  <span className="ml-1.5 text-xs text-amber-700 font-medium">agrega tu número para recibir avisos por WhatsApp</span>
+                  <span className="ml-1.5 text-xs text-amber-700 font-medium">agregue su número para recibir avisos por WhatsApp</span>
                 )}
               </span>
             </div>
@@ -268,7 +268,7 @@ export default function MiInmobiliariaPage() {
               {cargadosObligatorios} de {tiposObligatorios.length} documentos cargados.
             </strong>{' '}
             {pendientes === 0
-              ? '¡Listo! Tu perfil legal está completo.'
+              ? '¡Listo! Su perfil legal está completo.'
               : `Faltan ${pendientes} ${pendientes === 1 ? 'documento obligatorio' : 'documentos obligatorios'}.`}
           </p>
         </div>
@@ -278,7 +278,7 @@ export default function MiInmobiliariaPage() {
       {perfil && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h3 className="text-sm font-bold text-gray-900 mb-4">
-            Identidad de {isInmobiliaria ? 'la inmobiliaria' : 'tu perfil'}
+            Identidad de {isInmobiliaria ? 'la inmobiliaria' : 'su perfil'}
           </h3>
           <div className="flex flex-col sm:flex-row gap-5">
             <div className="shrink-0">

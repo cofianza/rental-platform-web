@@ -108,7 +108,7 @@ function Biblioteca() {
       <Tabla
         datos={datos}
         biblioteca
-        vacio="Aún no hay modelos sugeridos. Agrega el primero."
+        vacio="Aún no hay modelos sugeridos. Agregue el primero."
         onEditar={(c) => setEditor({ clausula: c })}
       />
       <EditorClausula

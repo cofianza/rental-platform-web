@@ -105,7 +105,7 @@ export default function InteresadosPage() {
   const [cargandoMas, setCargandoMas] = useState(false)
   const queryFiltro = filtro === 'todos' ? {} : { estado: filtro }
 
-  // El aviso se iba con el toast y quedaba "Aún no tienes interesados", que es
+  // El aviso se iba con el toast y quedaba "Aún no tiene interesados", que es
   // perfectamente creible: el usuario concluye que su vitrina no funciona.
   // Ademas, al cambiar de chip de filtro, si fallaba quedaban los resultados
   // del filtro anterior — por eso se limpia `items`.
@@ -167,7 +167,7 @@ export default function InteresadosPage() {
     <div className="space-y-6 max-w-4xl">
       <PageHeader
         title="Interesados"
-        subtitle="Personas que mostraron interés en tus inmuebles desde la vitrina. Escríbeles por WhatsApp o correo para coordinar la visita."
+        subtitle="Personas que mostraron interés en sus inmuebles desde la vitrina. Escríbales por WhatsApp o correo para coordinar la visita."
       />
 
       {/* Filtros por estado */}
@@ -196,7 +196,7 @@ export default function InteresadosPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-12 text-center">
           <p className="font-semibold text-amber-900">No se pudo cargar la lista</p>
           <p className="text-sm text-amber-800 mt-1">
-            Esto no significa que no tengas interesados.
+            Esto no significa que no tenga interesados.
           </p>
           <button
             type="button"
@@ -209,9 +209,9 @@ export default function InteresadosPage() {
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-12 text-center">
           <IconUser size={40} className="mx-auto text-gray-300 mb-3" />
-          <p className="font-semibold text-gray-900">Aún no tienes interesados</p>
+          <p className="font-semibold text-gray-900">Aún no tiene interesados</p>
           <p className="text-sm text-gray-500 mt-1">
-            Cuando alguien dé “Me interesa este inmueble” en tu vitrina, aparecerá aquí con sus datos
+            Cuando alguien dé “Me interesa este inmueble” en su vitrina, aparecerá aquí con sus datos
             de contacto.
           </p>
         </div>

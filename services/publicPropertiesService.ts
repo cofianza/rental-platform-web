@@ -124,7 +124,7 @@ export async function registrarInteresPublico(
     body: JSON.stringify(input),
   })
   if (!res.ok) {
-    let msg = 'No se pudo enviar tu interés. Intenta de nuevo.'
+    let msg = 'No se pudo enviar su interés. Intente de nuevo.'
     try {
       const json = await res.json()
       msg = json?.message || msg

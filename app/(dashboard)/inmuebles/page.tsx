@@ -274,7 +274,7 @@ function InmueblesGestion() {
         onClose={closeDeleteDialog}
         onConfirm={handleConfirmDelete}
         title="Desactivar inmueble"
-        message={`¿Estás seguro de que deseas eliminar el inmueble ${deleteDialog.inmueble?.codigo}? Esta acción marcará el inmueble como inactivo.`}
+        message={`¿Está seguro de que desea eliminar el inmueble ${deleteDialog.inmueble?.codigo}? Esta acción marcará el inmueble como inactivo.`}
         confirmLabel="Desactivar"
         variant="danger"
         isLoading={isDeleteLoading}

@@ -239,7 +239,7 @@ function NuevoExpedienteContent() {
             Nuevo Estudio
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Completa los pasos para crear un nuevo estudio de arrendamiento
+            Complete los pasos para crear un nuevo estudio de arrendamiento
           </p>
         </div>
 
@@ -249,9 +249,9 @@ function NuevoExpedienteContent() {
             <div className="flex items-start gap-3">
               <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
               <div>
-                <p className="text-sm font-semibold text-amber-900">Tenías un estudio a medias</p>
+                <p className="text-sm font-semibold text-amber-900">Tenía un estudio a medias</p>
                 <p className="text-sm text-amber-800">
-                  Guardamos lo que habías diligenciado en esta pestaña.
+                  Guardamos lo que había diligenciado en esta pestaña.
                 </p>
               </div>
             </div>
@@ -310,7 +310,7 @@ function NuevoExpedienteContent() {
             onNext={nextStep}
             onCancel={handleCancel}
             blockedReason={
-              step2EditDirty ? 'Guarda o cancela la edición del solicitante para continuar' : undefined
+              step2EditDirty ? 'Guarde o cancele la edición del solicitante para continuar' : undefined
             }
           />
         )}
@@ -340,7 +340,7 @@ function NuevoExpedienteContent() {
           onClose={() => setConfirmCancel(false)}
           onConfirm={salirSinGuardar}
           title="¿Salir sin crear el estudio?"
-          message="Se perderá lo que llevas diligenciado."
+          message="Se perderá lo que lleva diligenciado."
           confirmLabel="Salir"
           variant="danger"
         />

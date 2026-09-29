@@ -169,7 +169,7 @@ export default function AdminPaquetesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Paquetes de créditos de estudios"
-        subtitle="Configura los paquetes que las inmobiliarias compran para liberar estudios"
+        subtitle="Configure los paquetes que las inmobiliarias compran para liberar estudios"
         actions={
           esGerencia ? (
             <button

@@ -102,7 +102,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
   function pedirConfirmacion() {
     const n = Number(valor)
     if (valor.trim() === '' || !Number.isFinite(n)) {
-      setError('Escribe un número.')
+      setError('Escriba un número.')
       return
     }
     if (n < p.min || n > p.max) {
@@ -321,7 +321,7 @@ export default function AdminCalibracionPage() {
             {/* Decía "debe correrse scripts/check-decision-adenda.ts", algo que
                 Gerencia no puede hacer desde aquí: el aviso ahora pide lo que
                 sí está en su mano. */}
-            Adenda §11: antes de cambiar un parámetro en producción, pide a Tecnología que valide la matriz de
+            Adenda §11: antes de cambiar un parámetro en producción, pida a Tecnología que valide la matriz de
             casos de prueba y confirme que ningún caso crítico cambia de resultado.
           </div>
 
@@ -408,7 +408,7 @@ export default function AdminCalibracionPage() {
                 <IconLock size={14} className="mt-0.5 shrink-0" />
                 <span>
                   Los parámetros de riesgo (topes de canon, umbrales de score, vigencia del certificado, entre otros)
-                  solo los cambia la Gerencia General. Tú puedes cambiar los operativos, y cada cambio queda en el
+                  solo los cambia la Gerencia General. Usted puede cambiar los operativos, y cada cambio queda en el
                   historial.
                 </span>
               </p>
