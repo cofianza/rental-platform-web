@@ -12,19 +12,30 @@ import type { ICatalogoMotivos, IMotivosElegidos, TipoDecision } from '@/types/e
 const OTRO: Record<TipoDecision, string> = { aprobar: 'A9', rechazar: 'R9', condicionar: 'C6' }
 const MIN_DETALLE = 10
 
+/**
+ * M2/M3 (revisión 2026-09-28): solo cuentan los códigos de ESTA decisión. Si el
+ * analista marcó motivos en otra (p. ej. Aprobar) y cambió a Rechazar, esos
+ * códigos no se ven en pantalla y el API los rechazaría con un 400.
+ */
+function delTipo(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): string[] {
+  const validos = catalogo[tipo] ?? {}
+  return v.motivos.filter((c) => c in validos)
+}
+
 /** null si está completo; si no, qué falta. */
-export function errorMotivos(tipo: TipoDecision, v: IMotivosElegidos): string | null {
-  if (v.motivos.length === 0) return 'Elige al menos un motivo.'
-  if (v.motivos.includes(OTRO[tipo]) && (v.motivo_detalle ?? '').trim().length < MIN_DETALLE) {
+export function errorMotivos(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): string | null {
+  const motivos = delTipo(tipo, v, catalogo)
+  if (motivos.length === 0) return 'Elige al menos un motivo.'
+  if (motivos.includes(OTRO[tipo]) && (v.motivo_detalle ?? '').trim().length < MIN_DETALLE) {
     return `Con «Otro», escribe el motivo (mínimo ${MIN_DETALLE} caracteres).`
   }
   return null
 }
 
-/** Para enviar al API: sin detalle vacío. */
-export function motivosParaEnviar(v: IMotivosElegidos): IMotivosElegidos {
+/** Para enviar al API: solo los códigos de esta decisión y sin detalle vacío. */
+export function motivosParaEnviar(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): IMotivosElegidos {
   const detalle = (v.motivo_detalle ?? '').trim()
-  return { motivos: v.motivos, ...(detalle ? { motivo_detalle: detalle } : {}) }
+  return { motivos: delTipo(tipo, v, catalogo), ...(detalle ? { motivo_detalle: detalle } : {}) }
 }
 
 /** Arriba de todo texto libre que llega a la inmobiliaria o al propietario (decisión 2026-09-28). */

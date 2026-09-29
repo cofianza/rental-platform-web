@@ -72,7 +72,7 @@ export function AprobarCondicionadoCard({
   // H58: con el catálogo del API, el motivo se elige de la lista (+ texto opcional).
   const { catalogo } = useMotivosDecision(userRol === 'administrador' || userRol === 'operador_analista')
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
-  const motivoListo = catalogo ? !errorMotivos('aprobar', motivos) : fundamento.trim().length >= 10
+  const motivoListo = catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
@@ -104,7 +104,7 @@ export function AprobarCondicionadoCard({
     try {
       // Sin datos de contrato: solo aprueba. El contrato se crea después desde el estudio.
       const res = await expedienteService.aprobarCondicionado(expedienteId, {
-        ...(catalogo ? motivosParaEnviar(motivos) : { fundamento: fundamento.trim() }),
+        ...(catalogo ? motivosParaEnviar('aprobar', motivos, catalogo) : { fundamento: fundamento.trim() }),
         documentos_consultados: documentos,
         evaluacion,
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
