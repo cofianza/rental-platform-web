@@ -47,7 +47,7 @@ export default function AuthLayout({
         <div className="relative z-10 flex-1 flex flex-col justify-center mt-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 pl-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-white/60 w-fit mb-6">
             <span className="w-[7px] h-[7px] rounded-full bg-primary-400 animate-pulse" />
-            Tu aliado para arrendar sin riesgo
+            Su aliado para arrendar sin riesgo
           </div>
 
           {/* Titular y beneficios: del propietario, o del arrendatario en su registro */}

@@ -20,9 +20,9 @@ function SuccessContent() {
 
     try {
       await authService.resendVerification(email)
-      setResendMessage('Correo de verificación reenviado. Revisa tu bandeja de entrada.')
+      setResendMessage('Correo de verificación reenviado. Revise su bandeja de entrada.')
     } catch {
-      setResendMessage('No se pudo reenviar el correo. Intenta de nuevo más tarde.')
+      setResendMessage('No se pudo reenviar el correo. Intente de nuevo más tarde.')
     } finally {
       setResending(false)
     }
@@ -48,8 +48,8 @@ function SuccessContent() {
         </div>
 
         <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
-          <p>Revisa tu <span className="font-medium">bandeja de entrada</span> y la carpeta de <span className="font-medium">spam</span>.</p>
-          <p>Cuando confirmes tu correo, tu cuenta queda activa y ya puedes iniciar sesión. El enlace vence en 24 horas.</p>
+          <p>Revise su <span className="font-medium">bandeja de entrada</span> y la carpeta de <span className="font-medium">spam</span>.</p>
+          <p>Cuando confirme su correo, su cuenta queda activa y ya puede iniciar sesión. El enlace vence en 24 horas.</p>
         </div>
 
         {resendMessage && (

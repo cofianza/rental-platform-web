@@ -55,7 +55,7 @@ export default function RegisterTypeSelectorPage() {
         Bienvenido
       </p>
       <h2 className="text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Crea tu cuenta
+        Cree su cuenta
       </h2>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
         En menos de un minuto. Sin papeles, sin filas.
@@ -108,9 +108,9 @@ export default function RegisterTypeSelectorPage() {
       </div>
 
       <p className="text-[13px] text-slate-500 text-center leading-[1.6]">
-        ¿Ya tienes cuenta?{' '}
+        ¿Ya tiene cuenta?{' '}
         <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
-          Inicia sesión
+          Inicie sesión
         </Link>
       </p>
     </div>

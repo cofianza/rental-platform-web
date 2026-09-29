@@ -100,7 +100,7 @@ function ResetPasswordForm() {
     }
 
     if (!confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Confirma tu contraseña'
+      newErrors.confirmPassword = 'Confirme su contraseña'
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden'
     }
@@ -125,7 +125,7 @@ function ResetPasswordForm() {
     } catch (err) {
       setServerError(
         esErrorTransitorio(err)
-          ? mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtalo de nuevo.')
+          ? mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtelo de nuevo.')
           : 'Ocurrió un error al restablecer la contraseña. El enlace puede haber expirado.',
       )
     } finally {
@@ -183,7 +183,7 @@ function ResetPasswordForm() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Enlace inválido</h2>
           <p className="text-gray-500 mb-8">
-            El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo para restablecer tu contraseña.
+            El enlace de recuperación es inválido o ha expirado. Solicite uno nuevo para restablecer su contraseña.
           </p>
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
@@ -221,10 +221,10 @@ function ResetPasswordForm() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Contraseña restablecida</h2>
           <p className="text-gray-500 mb-2">
-            Tu contraseña ha sido actualizada exitosamente.
+            Su contraseña ha sido actualizada exitosamente.
           </p>
           <p className="text-sm text-gray-500 mb-8">
-            Serás redirigido al inicio de sesión en unos segundos...
+            Será redirigido al inicio de sesión en unos segundos...
           </p>
           <Link
             href={AUTH_ROUTES.LOGIN}
@@ -249,7 +249,7 @@ function ResetPasswordForm() {
       {/* Título */}
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Nueva contraseña</h2>
-        <p className="text-gray-500 mt-1">Ingresa tu nueva contraseña</p>
+        <p className="text-gray-500 mt-1">Ingrese su nueva contraseña</p>
       </div>
 
       {/* Error del servidor */}

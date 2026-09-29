@@ -24,7 +24,7 @@ function VerifyEmailContent() {
   const verify = useCallback(async () => {
     if (!token) {
       setState('error')
-      setErrorMessage('El enlace de verificación está incompleto. Ábrelo de nuevo desde el correo.')
+      setErrorMessage('El enlace de verificación está incompleto. Ábralo de nuevo desde el correo.')
       return
     }
 
@@ -35,7 +35,7 @@ function VerifyEmailContent() {
     } catch (err) {
       if (esErrorTransitorio(err)) {
         setState('sin_verificar')
-        setErrorMessage(mensajeParaProspecto(err, 'No pudimos verificar tu correo en este momento.'))
+        setErrorMessage(mensajeParaProspecto(err, 'No pudimos verificar su correo en este momento.'))
         return
       }
       setState('error')
@@ -54,9 +54,9 @@ function VerifyEmailContent() {
 
     try {
       await authService.resendVerification(resendEmail)
-      setResendMessage('Si el email está registrado, recibirás un nuevo enlace de verificación.')
+      setResendMessage('Si el email está registrado, recibirá un nuevo enlace de verificación.')
     } catch (err) {
-      setResendMessage(mensajeParaProspecto(err, 'No se pudo enviar el correo. Intenta de nuevo más tarde.'))
+      setResendMessage(mensajeParaProspecto(err, 'No se pudo enviar el correo. Intente de nuevo más tarde.'))
     } finally {
       setResending(false)
     }
@@ -71,7 +71,7 @@ function VerifyEmailContent() {
           <div className="flex justify-center">
             <IconLoader size={40} className="animate-spin text-primary-600" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">Verificando tu email...</h1>
+          <h1 className="text-xl font-bold text-gray-900">Verificando su email...</h1>
           <p className="text-sm text-gray-500">Esto solo tomará un momento.</p>
         </div>
       )}
@@ -88,35 +88,35 @@ function VerifyEmailContent() {
               ¡Bienvenido a Cofianza!
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Verificamos tu correo y tu cuenta ya está activa. Cofianza reemplaza la
+              Verificamos su correo y su cuenta ya está activa. Cofianza reemplaza la
               fianza tradicional: <span className="font-semibold text-gray-800">nosotros
               respaldamos el contrato como fiador</span> y, si hay mora, pagamos y
-              gestionamos el cobro — tú te enfocas en arrendar.
+              gestionamos el cobro — usted se enfoca en arrendar.
             </p>
           </div>
 
           {/* Explicación breve de cómo funciona (onboarding inmobiliaria/propietario) */}
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">
-              Cómo funciona tu Oficina Virtual
+              Cómo funciona su Oficina Virtual
             </p>
             <ul className="space-y-3">
               {[
                 {
-                  titulo: 'Publicas tus inmuebles',
-                  detalle: 'Los subes a la vitrina de Cofianza sin costo y recibes interesados por la web y por WhatsApp.',
+                  titulo: 'Publica sus inmuebles',
+                  detalle: 'Los sube a la vitrina de Cofianza sin costo y recibe interesados por la web y por WhatsApp.',
                 },
                 {
-                  titulo: 'Estudias al candidato',
-                  detalle: 'El candidato paga su estudio de crédito y recibes el resultado (aprobado, condicionado o no aprobable por ahora) casi al instante.',
+                  titulo: 'Estudia al candidato',
+                  detalle: 'El candidato paga su estudio de crédito y recibe el resultado (aprobado, condicionado o no aprobable por ahora) casi al instante.',
                 },
                 {
-                  titulo: 'Generas y firman el contrato',
-                  detalle: 'Se genera automático con tus datos y Cofianza como fiador; la firma es 100% digital con validez legal (Ley 527 de 1999).',
+                  titulo: 'Genera y firman el contrato',
+                  detalle: 'Se genera automático con sus datos y Cofianza como fiador; la firma es 100% digital con validez legal (Ley 527 de 1999).',
                 },
                 {
-                  titulo: 'Quedas respaldado ante la mora',
-                  detalle: 'Si el inquilino se atrasa, reportas la mora y Cofianza cubre el canon y gestiona el cobro por ti.',
+                  titulo: 'Queda respaldado ante la mora',
+                  detalle: 'Si el inquilino se atrasa, reporta la mora y Cofianza cubre el canon y gestiona el cobro por usted.',
                 },
               ].map((paso, i) => (
                 <li key={i} className="flex items-start gap-2.5">
@@ -135,13 +135,13 @@ function VerifyEmailContent() {
           {/* Primeros pasos concretos al entrar por primera vez */}
           <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-4 text-left">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-primary-700">
-              Tus primeros pasos
+              Sus primeros pasos
             </p>
             <ul className="space-y-2.5">
               {[
-                'Completa los datos para el contrato en Configuración (NIT, representante y cuenta de pago).',
-                'Publica tu primer inmueble en la vitrina.',
-                'Cuando tengas un interesado, crea su estudio y solicita la evaluación.',
+                'Complete los datos para el contrato en Configuración (NIT, representante y cuenta de pago).',
+                'Publique su primer inmueble en la vitrina.',
+                'Cuando tenga un interesado, cree su estudio y solicite la evaluación.',
               ].map((paso, i) => (
                 <li key={i} className="flex items-start gap-2.5">
                   <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-600" />
@@ -159,7 +159,7 @@ function VerifyEmailContent() {
               Iniciar sesión y empezar
             </Link>
             <p className="text-xs text-gray-500">
-              ¿Dudas? Escríbenos a{' '}
+              ¿Dudas? Escríbanos a{' '}
               <a href="mailto:hola@cofianza.co" className="font-medium text-primary-600 hover:text-primary-700">
                 hola@cofianza.co
               </a>
@@ -175,7 +175,7 @@ function VerifyEmailContent() {
               <IconAlertTriangle size={32} className="text-amber-600" />
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900">No pudimos verificar tu correo</h1>
+          <h1 className="text-xl font-bold text-gray-900">No pudimos verificar su correo</h1>
           <p className="text-sm text-gray-600">{errorMessage}</p>
           <button
             type="button"
@@ -198,7 +198,7 @@ function VerifyEmailContent() {
           <p className="text-sm text-gray-600">{errorMessage}</p>
 
           <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <p className="text-sm text-gray-600">Ingresa tu email para solicitar un nuevo enlace:</p>
+            <p className="text-sm text-gray-600">Ingrese su email para solicitar un nuevo enlace:</p>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -207,7 +207,7 @@ function VerifyEmailContent() {
                   value={resendEmail}
                   onChange={(e) => { setResendEmail(e.target.value); setResendMessage(null) }}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-base focus:outline-hidden focus:ring-2 focus:ring-primary-500"
-                  placeholder="tu@email.com"
+                  placeholder="nombre@correo.com"
                 />
               </div>
               <button

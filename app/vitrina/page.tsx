@@ -14,7 +14,7 @@ import { PublicFooter } from '@/components/vitrina/PublicFooter'
 export const metadata: Metadata = {
   title: 'Vitrina de inmuebles — Cofianza',
   description:
-    'Explora apartamentos, casas y oficinas disponibles para arrendar con respaldo de Cofianza — sin codeudor, 100% digital.',
+    'Explore apartamentos, casas y oficinas disponibles para arrendar con respaldo de Cofianza — sin codeudor, 100% digital.',
 }
 
 export default function VitrinaPage() {
@@ -31,11 +31,11 @@ export default function VitrinaPage() {
               Inmuebles disponibles en toda Colombia
             </span>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-3">
-              Encuentra tu próximo hogar.
+              Encuentre su próximo hogar.
             </h1>
             <p className="text-lg text-white/60 leading-relaxed">
-              Apartamentos, casas y oficinas con respaldo de Cofianza. Cuando encuentres
-              uno que te guste, agenda la visita y nosotros firmamos como tu fiador — sin
+              Apartamentos, casas y oficinas con respaldo de Cofianza. Cuando encuentre
+              uno que le guste, agende la visita y nosotros firmamos como su fiador — sin
               codeudor, sin filas, sin papeleo.
             </p>
           </div>

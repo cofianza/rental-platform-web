@@ -100,7 +100,7 @@ export default function InvitacionMiembroPage() {
     sessionStorage.removeItem('invitacion_miembro_token')
     // La sesión trae el rol en el equipo nuevo antes de entrar al panel.
     await authService.checkSession().catch(() => {})
-    toast.success(res.message || 'Te uniste a la inmobiliaria')
+    toast.success(res.message || 'Se unió a la inmobiliaria')
     router.push(res.redirect || '/dashboard')
   }
 
@@ -114,7 +114,7 @@ export default function InvitacionMiembroPage() {
           ? (err.details as unknown as { puede_cerrar?: boolean; inmobiliaria?: string } | undefined)
           : undefined
       if (err instanceof ApiClientError && err.code === 'TITULAR_DE_OTRA_INMOBILIARIA' && detalles?.puede_cerrar) {
-        setCierre({ nombre: detalles.inmobiliaria || 'tu inmobiliaria', mensaje: err.message })
+        setCierre({ nombre: detalles.inmobiliaria || 'su inmobiliaria', mensaje: err.message })
       } else {
         toast.error((err as { message?: string }).message || 'No se pudo aceptar la invitación')
       }
@@ -127,7 +127,7 @@ export default function InvitacionMiembroPage() {
     try {
       await salirDeMiInmobiliaria()
     } catch (err: unknown) {
-      toast.error((err as { message?: string }).message || 'No se pudo cerrar tu inmobiliaria')
+      toast.error((err as { message?: string }).message || 'No se pudo cerrar su inmobiliaria')
       return
     }
     // Ya cerrada: si aceptar falla, queda el botón de aceptar para reintentar.
@@ -146,7 +146,7 @@ export default function InvitacionMiembroPage() {
     // sin espacios.
     const tel = telefono.replace(/\s+/g, '').trim()
     if (!tel || !/^\+?\d{7,15}$/.test(tel)) {
-      toast.error('Ingresa un teléfono válido (con código de país, ej. +57…). Es tu WhatsApp de contacto.')
+      toast.error('Ingrese un teléfono válido (con código de país, ej. +57…). Es su WhatsApp de contacto.')
       return
     }
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
@@ -218,9 +218,9 @@ export default function InvitacionMiembroPage() {
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
           <IconCheck size={32} className="text-green-600" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo! Te uniste a {info.organizacion}</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo! Se unió a {info.organizacion}</h1>
         <p className="text-sm text-gray-600 mb-6">
-          Tu cuenta fue creada con el correo <strong>{info.email}</strong>. Inicia sesión para
+          Su cuenta fue creada con el correo <strong>{info.email}</strong>. Inicie sesión para
           empezar a gestionar la cartera de la inmobiliaria.
         </p>
         <button
@@ -247,7 +247,7 @@ export default function InvitacionMiembroPage() {
         <h1 className="text-2xl font-bold text-gray-900">Invitación a un equipo</h1>
       </div>
       <p className="text-sm text-gray-600 mb-6">
-        {info.invitador ? <strong>{info.invitador}</strong> : 'Una inmobiliaria'} te invitó a unirte a{' '}
+        {info.invitador ? <strong>{info.invitador}</strong> : 'Una inmobiliaria'} lo invitó a unirse a{' '}
         <strong>{info.organizacion}</strong> en Cofianza para gestionar inmuebles y estudios en
         equipo.
       </p>
@@ -262,7 +262,7 @@ export default function InvitacionMiembroPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
             Ese correo ya tiene una cuenta en Cofianza que no es de inmobiliaria y no puede unirse a un
-            equipo. Pídele a {info.invitador ? <strong>{info.invitador}</strong> : 'quien te invitó'} que te
+            equipo. Pídale a {info.invitador ? <strong>{info.invitador}</strong> : 'quien lo invitó'} que le
             envíe la invitación a otro correo.
           </p>
         </div>
@@ -272,7 +272,7 @@ export default function InvitacionMiembroPage() {
       {!info.cuenta_otro_rol && !isAuthenticated && info.tiene_cuenta && (
         <div className="space-y-3">
           <p className="text-sm text-gray-700">
-            Ya tienes una cuenta con este correo. Inicia sesión y vuelve a este enlace para aceptar.
+            Ya tiene una cuenta con este correo. Inicie sesión y vuelva a este enlace para aceptar.
           </p>
           <button
             onClick={() => saveTokenAndGo('/login')}
@@ -286,7 +286,7 @@ export default function InvitacionMiembroPage() {
       {/* No autenticado + sin cuenta -> registro inline */}
       {!info.cuenta_otro_rol && !isAuthenticated && !info.tiene_cuenta && (
         <form onSubmit={handleRegistrar} className="space-y-4">
-          <p className="text-sm text-gray-700 font-medium">Crea tu cuenta para unirte</p>
+          <p className="text-sm text-gray-700 font-medium">Cree su cuenta para unirse</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="token-nombre" className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
@@ -318,7 +318,7 @@ export default function InvitacionMiembroPage() {
               required
             />
             <p className="mt-1 text-xs text-gray-500">
-              Tu WhatsApp de contacto y respaldo para la firma de contratos. Con código de país (ej. +57…).
+              Su WhatsApp de contacto y respaldo para la firma de contratos. Con código de país (ej. +57…).
             </p>
           </div>
           <div>
@@ -342,7 +342,7 @@ export default function InvitacionMiembroPage() {
             Crear cuenta y unirme
           </button>
           <p className="text-xs text-gray-500">
-            Tu cuenta usará el correo <strong>{info.email}</strong> de la invitación.
+            Su cuenta usará el correo <strong>{info.email}</strong> de la invitación.
           </p>
         </form>
       )}
@@ -351,8 +351,8 @@ export default function InvitacionMiembroPage() {
       {!info.cuenta_otro_rol && isAuthenticated && wrongRole && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Tienes abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
-            invitación es para unirse como inmobiliaria: cierra sesión e ingresa con el correo invitado.
+            Tiene abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
+            invitación es para unirse como inmobiliaria: cierre sesión e ingrese con el correo invitado.
           </p>
           <button
             onClick={handleLogout}
@@ -367,8 +367,8 @@ export default function InvitacionMiembroPage() {
       {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && !emailMatch && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Tu cuenta está asociada al email <strong>{user?.email}</strong>, pero esta invitación fue
-            enviada a <strong>{info.email}</strong>. Inicia sesión con el email invitado.
+            Su cuenta está asociada al email <strong>{user?.email}</strong>, pero esta invitación fue
+            enviada a <strong>{info.email}</strong>. Inicie sesión con el email invitado.
           </p>
           <button
             onClick={handleLogout}
@@ -399,7 +399,7 @@ export default function InvitacionMiembroPage() {
             <div className="flex items-start gap-3">
               <IconCheck size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-green-900">
-                Tu cuenta coincide con la invitación. Al aceptar, tendrás acceso a la cartera de{' '}
+                Su cuenta coincide con la invitación. Al aceptar, tendrá acceso a la cartera de{' '}
                 {info.organizacion}.
               </p>
             </div>

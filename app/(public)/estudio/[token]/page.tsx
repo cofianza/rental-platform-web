@@ -84,12 +84,12 @@ export default function EstudioFormularioPage() {
       const e = err as { statusCode?: number; code?: string; message?: string }
       const transitorio = esErrorTransitorio(err)
       const msg = transitorio
-        ? mensajeParaProspecto(err, 'No pudimos abrir tu estudio en este momento.')
+        ? mensajeParaProspecto(err, 'No pudimos abrir su estudio en este momento.')
         : e.statusCode === 404 || e.code === 'NOT_FOUND'
-          ? 'Este enlace no existe o ya fue usado. Pide que te lo reenvíen.'
+          ? 'Este enlace no existe o ya fue usado. Pida que se lo reenvíen.'
           : e.statusCode === 410 || /expir|vencid/i.test(e.code ?? '') || /expir|vencid/i.test(e.message ?? '')
-            ? 'Este enlace venció. Pide que te envíen uno nuevo.'
-            : 'No pudimos abrir tu estudio. Pide que te reenvíen el enlace.'
+            ? 'Este enlace venció. Pida que le envíen uno nuevo.'
+            : 'No pudimos abrir su estudio. Pida que le reenvíen el enlace.'
       setReintentable(transitorio)
       setErrorMessage(msg)
       setPageState('error')
@@ -106,12 +106,12 @@ export default function EstudioFormularioPage() {
     setFormError(null)
 
     if (!nombre.trim() || !numDoc.trim() || !email.trim() || !telefono.trim()) {
-      setFormError('Completa los campos obligatorios')
+      setFormError('Complete los campos obligatorios')
       return
     }
 
     if (!acepta) {
-      setFormError('Debes aceptar los términos y condiciones')
+      setFormError('Debe aceptar los términos y condiciones')
       return
     }
 
@@ -132,7 +132,7 @@ export default function EstudioFormularioPage() {
       await estudioPublicService.submitFormulario(token, data)
       setPageState('submitted')
     } catch (err) {
-      setFormError(mensajeParaProspecto(err, 'No pudimos enviar el formulario. Inténtalo de nuevo.'))
+      setFormError(mensajeParaProspecto(err, 'No pudimos enviar el formulario. Inténtelo de nuevo.'))
     } finally {
       setSubmitting(false)
     }
@@ -175,7 +175,7 @@ export default function EstudioFormularioPage() {
           </button>
         ) : (
           <p className="text-sm text-gray-500 mt-4">
-            Si necesitas un nuevo enlace, contacta a tu agente inmobiliario.
+            Si necesita un nuevo enlace, contacte a su agente inmobiliario.
           </p>
         )}
       </div>
@@ -192,11 +192,11 @@ export default function EstudioFormularioPage() {
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
         <p className="text-gray-500">
-          Gracias, recibimos tus datos. Tu evaluación arranca cuando firmes la autorización de consulta,
-          que te llega en otro enlace por correo o WhatsApp. Si ya la firmaste, no tienes que hacer nada más.
+          Gracias, recibimos sus datos. Su evaluación arranca cuando firme la autorización de consulta,
+          que le llega en otro enlace por correo o WhatsApp. Si ya la firmó, no tiene que hacer nada más.
         </p>
         <p className="text-sm text-gray-500 mt-4">
-          Puedes cerrar esta ventana.
+          Puede cerrar esta ventana.
         </p>
       </div>
     )
@@ -213,7 +213,7 @@ export default function EstudioFormularioPage() {
         {/* Info banner */}
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
-            Tu estudio
+            Su estudio
           </h2>
           <p className="text-sm text-primary-700">
             Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
@@ -234,8 +234,8 @@ export default function EstudioFormularioPage() {
               <h3 className="text-lg font-semibold text-gray-900">Formulario completado</h3>
               <p className="text-sm text-gray-500">
                 {Object.keys(datos).length > 0
-                  ? 'Tu información fue enviada exitosamente. A continuación un resumen de los datos registrados.'
-                  : 'Ya recibimos tu información.'}
+                  ? 'Su información fue enviada exitosamente. A continuación un resumen de los datos registrados.'
+                  : 'Ya recibimos su información.'}
               </p>
             </div>
           </div>
@@ -294,8 +294,8 @@ export default function EstudioFormularioPage() {
           </div>
 
           <p className="text-xs text-gray-500 pt-2">
-            No tienes que volver a enviarlo. Si todavía no firmaste la autorización de consulta, búscala en tu
-            correo o WhatsApp: sin ella no podemos evaluar tu estudio. Puedes cerrar esta ventana.
+            No tiene que volver a enviarlo. Si todavía no firmó la autorización de consulta, búsquela en su
+            correo o WhatsApp: sin ella no podemos evaluar su estudio. Puede cerrar esta ventana.
           </p>
         </div>
       </div>
@@ -314,7 +314,7 @@ export default function EstudioFormularioPage() {
           {/* "Estudio de Riesgo Crediticio" suena a juicio sobre la persona;
               esto es un tramite y asi se nombra. */}
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
-            Completa tus datos para tu estudio
+            Complete sus datos para su estudio
           </h2>
           <p className="text-sm text-primary-700">
             Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
@@ -327,7 +327,7 @@ export default function EstudioFormularioPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
-        <h3 className="text-lg font-semibold text-gray-900">Confirma tus datos</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Confirme sus datos</h3>
 
         {/* Nombre */}
         <div>
@@ -340,7 +340,7 @@ export default function EstudioFormularioPage() {
             onChange={(e) => setNombre(e.target.value)}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder="Tu nombre completo"
+            placeholder="Su nombre completo"
           />
         </div>
 
@@ -357,7 +357,7 @@ export default function EstudioFormularioPage() {
             >
               {/* Vacio cuando el tipo guardado no se puede consultar: obliga a
                   elegir en vez de asumir CC por el prospecto. */}
-              <option value="" disabled>Selecciona…</option>
+              <option value="" disabled>Seleccione…</option>
               <option value="CC">Cédula de Ciudadanía</option>
               <option value="CE">Cédula de Extranjería</option>
               <option value="PPT">Permiso por Protección Temporal (PPT)</option>
@@ -365,7 +365,7 @@ export default function EstudioFormularioPage() {
               <option value="NIT">NIT</option>
             </select>
             <p className="text-xs text-amber-700 mt-1">
-              Solo aceptamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería, PPT o PEP.
+              Solo aceptamos documentos colombianos. Si es extranjero residente, use su Cédula de Extranjería, PPT o PEP.
             </p>
           </div>
           <div className="sm:col-span-2">
@@ -378,7 +378,7 @@ export default function EstudioFormularioPage() {
               onChange={(e) => setNumDoc(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Ingresa tu número de documento"
+              placeholder="Ingrese su número de documento"
               inputMode="numeric"
             />
           </div>
@@ -453,7 +453,7 @@ export default function EstudioFormularioPage() {
         {/* Empresa */}
         <div>
           <label htmlFor="estudio-empresa" className="block text-sm font-medium text-gray-700 mb-1">
-            Empresa donde trabajas <span className="text-gray-500">(opcional)</span>
+            Empresa donde trabaja <span className="text-gray-500">(opcional)</span>
           </label>
           <input id="estudio-empresa"
             type="text"
@@ -507,7 +507,7 @@ export default function EstudioFormularioPage() {
         </div>
         <p className="text-xs text-gray-500 -mt-1">
           Enviar este formulario no autoriza la consulta en centrales de riesgo. Esa autorización se
-          firma aparte, en el enlace de autorización que te enviamos: allí verás el texto completo
+          firma aparte, en el enlace de autorización que le enviamos: allí verá el texto completo
           antes de aceptarlo.
         </p>
 

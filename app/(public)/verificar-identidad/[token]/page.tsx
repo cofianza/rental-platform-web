@@ -66,7 +66,7 @@ export default function VerificarIdentidadPage() {
       await fn()
     } catch (e) {
       if ((e as { code?: string }).code === 'VERIFICACION_COMPLETADA') setPaso('listo')
-      else setAviso(e instanceof Error ? e.message : 'Algo falló. Intenta de nuevo.')
+      else setAviso(e instanceof Error ? e.message : 'Algo falló. Intente de nuevo.')
     } finally {
       setEnviando(false)
     }
@@ -118,8 +118,8 @@ export default function VerificarIdentidadPage() {
         </div>
         <h1 className="text-xl font-extrabold tracking-tight text-gray-900">Listo, {data.nombre.split(' ')[0]}</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
-          En unos minutos te llega por WhatsApp el enlace para firmar el contrato. Si hace falta confirmar tu
-          identidad por otro medio, un analista de Cofianza se comunicará contigo; tu trámite sigue igual.
+          En unos minutos le llega por WhatsApp el enlace para firmar el contrato. Si hace falta confirmar su
+          identidad por otro medio, un analista de Cofianza se comunicará con usted; su trámite sigue igual.
         </p>
       </div>
     )
@@ -132,7 +132,7 @@ export default function VerificarIdentidadPage() {
           <IconShieldCheck size={28} />
         </div>
         <h1 className="text-xl font-extrabold tracking-tight text-gray-900">
-          {paso === 'consentimiento' ? 'Antes de firmar, confirmemos que eres tú' : 'Toma las dos fotos'}
+          {paso === 'consentimiento' ? 'Antes de firmar, confirmemos que es usted' : 'Tome las dos fotos'}
         </h1>
         {data.inmueble && <p className="mt-1 text-sm text-gray-500">Contrato de arrendamiento · {data.inmueble}</p>}
       </div>
@@ -147,7 +147,7 @@ export default function VerificarIdentidadPage() {
 
           {/* §9.3: dos casillas separadas y excluyentes; ninguna viene marcada. */}
           <fieldset className="space-y-2">
-            <legend className="sr-only">Elige una opción</legend>
+            <legend className="sr-only">Elija una opción</legend>
             {(['autoriza', 'analista'] as const).map((k) => (
               <label
                 key={k}
@@ -183,8 +183,8 @@ export default function VerificarIdentidadPage() {
         <>
           <div className="space-y-3">
             <Ranura
-              titulo="Foto de tu cédula"
-              ayuda="El lado con tu foto, sobre una superficie plana"
+              titulo="Foto de su cédula"
+              ayuda="El lado con su foto, sobre una superficie plana"
               icono={<IconId size={22} />}
               capture="environment"
               valor={documento}
@@ -225,7 +225,7 @@ export default function VerificarIdentidadPage() {
             Continuar sin la verificación con foto
           </button>
           <p className="text-center text-xs text-gray-500">
-            Si continúas sin la foto, un analista de Cofianza verificará tu identidad por otro medio. Tu trámite
+            Si continúa sin la foto, un analista de Cofianza verificará su identidad por otro medio. Su trámite
             sigue igual.
           </p>
         </>

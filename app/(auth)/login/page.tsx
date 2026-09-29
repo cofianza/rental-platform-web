@@ -52,11 +52,11 @@ function LoginForm() {
     setIsResending(true)
     try {
       await authService.resendVerification(email)
-      toast.success('Enviamos un nuevo correo de verificación. Revisa tu bandeja.')
+      toast.success('Enviamos un nuevo correo de verificación. Revise su bandeja.')
       clearError()
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : 'No pudimos reenviar el correo. Intenta en un momento.'
+        err instanceof Error ? err.message : 'No pudimos reenviar el correo. Intente en un momento.'
       toast.error(msg)
     } finally {
       setIsResending(false)
@@ -121,7 +121,7 @@ function LoginForm() {
     if (!email.trim()) {
       newErrors.email = 'El correo electrónico es requerido'
     } else if (!isValidEmail(email)) {
-      newErrors.email = 'Ingresa un correo electrónico válido'
+      newErrors.email = 'Ingrese un correo electrónico válido'
     }
 
     if (!password.trim()) {
@@ -160,10 +160,10 @@ function LoginForm() {
         Bienvenido
       </p>
       <h2 className="text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Inicia sesión
+        Inicie sesión
       </h2>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
-        Accede a tu oficina virtual.
+        Acceda a su oficina virtual.
       </p>
 
       {/* Tabs Iniciar sesión / Crear cuenta. El segundo es un Link a /registro
@@ -218,7 +218,7 @@ function LoginForm() {
               setEmail(e.target.value)
               if (errors.email) setErrors({ ...errors, email: undefined })
             }}
-            placeholder="tu@correo.com"
+            placeholder="nombre@correo.com"
             disabled={isLoading}
             autoComplete="email"
             className={cn(
@@ -278,7 +278,7 @@ function LoginForm() {
             href={AUTH_ROUTES.FORGOT_PASSWORD}
             className="text-primary-600 font-semibold hover:underline"
           >
-            ¿Olvidaste tu contraseña?
+            ¿Olvidó su contraseña?
           </Link>
         </div>
 
@@ -309,17 +309,17 @@ function LoginForm() {
 
       {/* Enlace mágico (H44): el arrendatario invitado que entró sin contraseña */}
       <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
-        ¿Te invitaron a un estudio?{' '}
+        ¿Lo invitaron a un estudio?{' '}
         <Link href="/auth/confirmar" className="text-primary-600 font-semibold hover:underline">
-          Entra con un enlace a tu correo
+          Entre con un enlace a su correo
         </Link>
       </p>
 
       {/* Footer */}
       <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-2">
-        ¿No tienes cuenta?{' '}
+        ¿No tiene cuenta?{' '}
         <Link href={registroHref} className="text-primary-600 font-semibold hover:underline">
-          Crea una en segundos
+          Cree una en segundos
         </Link>
       </p>
     </div>

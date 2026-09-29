@@ -94,7 +94,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           <IconX size={32} className="text-red-600" />
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de Verificación</h1>
-        <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intenta nuevamente.</p>
+        <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intente nuevamente.</p>
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           El código <span className="font-mono font-medium">{codigo}</span> no corresponde a ningún certificado emitido.
         </p>
         <p className="text-xs text-gray-500">
-          Si crees que esto es un error, contacta a {data.empresa}.
+          Si crees que esto es un error, contacte a {data.empresa}.
         </p>
       </div>
     )
@@ -184,7 +184,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
       {/* Disclaimer */}
       <p className="text-xs text-gray-500 text-center mt-6 px-4">
         Este certificado fue generado electrónicamente. La información mostrada ha sido parcialmente
-        enmascarada por privacidad. Para más información, contacta a {data.empresa}.
+        enmascarada por privacidad. Para más información, contacte a {data.empresa}.
       </p>
     </div>
   )

@@ -146,9 +146,9 @@ function PagoResultadoContent() {
   // antes de que el arrendatario firme la autorización.
   const esArrendatario = !isAuthenticated || rol === 'solicitante'
   const textoExito = !esEstudio
-    ? `Tu pago (${conceptoLabel.toLowerCase()}) quedó registrado.`
+    ? `Su pago (${conceptoLabel.toLowerCase()}) quedó registrado.`
     : esArrendatario
-      ? 'Tu pago del estudio quedó registrado y tu evaluación ya está en marcha.'
+      ? 'Su pago del estudio quedó registrado y su evaluación ya está en marcha.'
       : 'El pago del estudio quedó registrado. La evaluación arranca en cuanto el arrendatario firme la autorización de consulta; si ya la firmó, ya está en marcha.'
 
   return (
@@ -177,10 +177,10 @@ function PagoResultadoContent() {
           {isSuccess
             ? textoExito
             : isPending
-              ? 'Tu pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Te avisaremos cuando se confirme — no necesitas volver a pagar.'
+              ? 'Su pago está siendo procesado por el medio de pago (puede tardar desde minutos hasta horas según el método). Le avisaremos cuando se confirme — no necesita volver a pagar.'
               : isCancelled
-                ? `Has cancelado el proceso de pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Puedes volver a intentarlo usando el enlace que recibiste por correo.'}`
-                : `Hubo un problema al procesar tu pago. ${retryHref ? 'Puedes volver a intentarlo con el botón de abajo.' : 'Por favor intenta nuevamente usando el enlace que recibiste por correo.'}`}
+                ? `Usted canceló el proceso de pago. ${retryHref ? 'Puede volver a intentarlo con el botón de abajo.' : 'Puede volver a intentarlo usando el enlace que recibió por correo.'}`
+                : `Hubo un problema al procesar su pago. ${retryHref ? 'Puede volver a intentarlo con el botón de abajo.' : 'Por favor intente nuevamente usando el enlace que recibió por correo.'}`}
         </p>
       </div>
 
@@ -241,15 +241,15 @@ function PagoResultadoContent() {
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-sm text-green-800">
               {esEstudio
-                ? 'Ya puedes regresar a tu panel para ver el avance de la evaluación.'
-                : 'Ya puedes regresar a tu panel.'}
+                ? 'Ya puede regresar a su panel para ver el avance de la evaluación.'
+                : 'Ya puede regresar a su panel.'}
             </p>
           </div>
         )
       ) : (
         <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-800">
-            Si tienes dudas o necesitas ayuda, comunícate con quien te envió el enlace de pago.
+            Si tiene dudas o necesita ayuda, comuníquese con quien le envió el enlace de pago.
           </p>
         </div>
       )}
@@ -285,11 +285,11 @@ function PagoResultadoContent() {
               {esEstudio ? (
                 <ol className="list-decimal space-y-1 pl-4">
                   <li>Cofianza consulta las centrales de riesgo (suele tardar unos minutos).</li>
-                  <li>Te avisamos por correo y WhatsApp con el resultado.</li>
-                  <li>Si tienes dudas, escríbele a quien te envió el enlace.</li>
+                  <li>Le avisamos por correo y WhatsApp con el resultado.</li>
+                  <li>Si tiene dudas, escríbale a quien le envió el enlace.</li>
                 </ol>
               ) : (
-                <p>No tienes que hacer nada más. Si tienes dudas sobre este pago, escríbele a quien te envió el enlace.</p>
+                <p>No tiene que hacer nada más. Si tiene dudas sobre este pago, escríbale a quien le envió el enlace.</p>
               )}
               <Link href="/" className="mt-3 inline-block font-medium text-primary-700 hover:underline">
                 Ir a cofianza.co
@@ -334,8 +334,8 @@ function PagoResultadoContent() {
       {!isSuccess && (
         <p className="text-xs text-gray-500 text-center mt-8">
           {isAuthInitialized && isAuthenticated
-            ? 'También puedes cerrar esta ventana — el estado quedó guardado.'
-            : 'Puedes cerrar esta ventana de forma segura.'}
+            ? 'También puede cerrar esta ventana — el estado quedó guardado.'
+            : 'Puede cerrar esta ventana de forma segura.'}
         </p>
       )}
     </div>

@@ -17,9 +17,9 @@ import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
 import { IconCheck, IconX, IconArrowRight } from '@/components/icons'
 
 export const metadata: Metadata = {
-  title: 'Cofianza — ¿Te pidieron fiador? Soy yo. Llámanos.',
+  title: 'Cofianza — ¿Le pidieron fiador? Soy yo. Llámenos.',
   description:
-    'Afianzadora digital en Colombia. Respaldamos tu contrato de arrendamiento para que no tengas que buscar codeudor. Estudio en segundos, firma por WhatsApp, cashback 30%.',
+    'Afianzadora digital en Colombia. Respaldamos su contrato de arrendamiento para que no tenga que buscar codeudor. Estudio en segundos, firma por WhatsApp, cashback 30%.',
 }
 
 export default function HomePage() {
@@ -49,12 +49,12 @@ export default function HomePage() {
               </h1>
 
               <p className="font-script italic text-2xl sm:text-3xl lg:text-[38px] leading-tight text-white/55 mb-5">
-                ¿Te pidieron fiador? <strong className="text-coral-500 not-italic font-normal">Soy yo.</strong>{' '}
-                Llámanos.
+                ¿Le pidieron fiador? <strong className="text-coral-500 not-italic font-normal">Soy yo.</strong>{' '}
+                Llámenos.
               </p>
 
               <p className="text-base text-white/45 leading-relaxed max-w-lg mb-9">
-                Evaluamos tu perfil en segundos y firmamos como tu fiador en el contrato de
+                Evaluamos su perfil en segundos y firmamos como su fiador en el contrato de
                 arrendamiento. Sin codeudor humano. Sin deberle el favor a nadie.
               </p>
 
@@ -63,7 +63,7 @@ export default function HomePage() {
                   href="/vitrina"
                   className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
                 >
-                  Encuentra tu inmueble <IconArrowRight size={18} />
+                  Encuentre su inmueble <IconArrowRight size={18} />
                 </Link>
                 <Link
                   href="/registro"
@@ -214,26 +214,26 @@ export default function HomePage() {
             {[
               {
                 tag: 'Antes',
-                title: 'Llamar a alguien para pedirle que responda por ti.',
-                body: 'Un familiar, un amigo, alguien que ponga su patrimonio en riesgo por ti. Un favor incómodo que no todos pueden pedir ni todos pueden dar.',
+                title: 'Llamar a alguien para pedirle que responda por usted.',
+                body: 'Un familiar, un amigo, alguien que ponga su patrimonio en riesgo por usted. Un favor incómodo que no todos pueden pedir ni todos pueden dar.',
                 variant: 'plain',
               },
               {
                 tag: 'Con Cofianza',
-                title: 'Nosotros respondemos. Tú no le debes el favor a nadie.',
-                body: 'Evaluamos tu perfil, firmamos en tu contrato como fiador solidario, y tú te mudas con la dignidad intacta.',
+                title: 'Nosotros respondemos. Usted no le debe el favor a nadie.',
+                body: 'Evaluamos su perfil, firmamos en su contrato como fiador solidario, y usted se muda con la dignidad intacta.',
                 variant: 'green',
               },
               {
                 tag: 'Reporte positivo',
-                title: 'Pagando a tiempo construyes tu historial crediticio.',
-                body: 'Cofianza reporta tu buen comportamiento a centrales de riesgo. Cada mes que pagas a tiempo mejora tu score y te abre puertas.',
+                title: 'Pagando a tiempo construye su historial crediticio.',
+                body: 'Cofianza reporta su buen comportamiento a centrales de riesgo. Cada mes que paga a tiempo mejora su score y le abre puertas.',
                 variant: 'plain',
               },
               {
                 tag: 'Cashback',
-                title: 'Recupera el 30% de tus tarifas mensuales.',
-                body: 'Al terminar tu contrato te devolvemos el 30% de las tarifas mensuales de la fianza que pagaste. Solo lo pierdes si tuvimos que pagar por ti o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza.',
+                title: 'Recupere el 30% de sus tarifas mensuales.',
+                body: 'Al terminar su contrato le devolvemos el 30% de las tarifas mensuales de la fianza que pagó. Solo lo pierde si tuvimos que pagar por usted o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza.',
                 variant: 'orange',
               },
             ].map((c) => (
@@ -283,7 +283,7 @@ export default function HomePage() {
             Así funciona
           </div>
           <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
-            En 3 pasos tienes las llaves.
+            En 3 pasos tiene las llaves.
           </h2>
           <p className="text-lg text-gray-500 max-w-xl leading-relaxed">
             Sin filas. Sin codeudor. Sin papeleo.
@@ -299,8 +299,8 @@ export default function HomePage() {
                     <path d="m21 21-4.35-4.35" />
                   </svg>
                 ),
-                title: 'Encuentras el inmueble',
-                body: 'En nuestra vitrina o con una inmobiliaria aliada. Le das "me interesa", agendas la visita y si te gusta, inicias tu estudio.',
+                title: 'Encuentra el inmueble',
+                body: 'En nuestra vitrina o con una inmobiliaria aliada. Le da "me interesa", agenda la visita y si le gusta, inicia su estudio.',
               },
               {
                 n: '02',
@@ -310,8 +310,8 @@ export default function HomePage() {
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                   </svg>
                 ),
-                title: 'Te evaluamos en segundos',
-                body: 'Pagas el estudio de crédito. Lo consultamos en múltiples bases de datos. Si apruebas, firmamos como tu fiador. Sin papeles, sin filas, sin codeudor.',
+                title: 'Lo evaluamos en segundos',
+                body: 'Paga el estudio de crédito. Lo consultamos en múltiples bases de datos. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor.',
               },
               {
                 n: '03',
@@ -321,8 +321,8 @@ export default function HomePage() {
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
                 ),
-                title: 'Firmamos y te mudas',
-                body: 'El link de firma llega por WhatsApp. Contrato en tu celular en minutos. Cofianza firma como fiador. Tú con las llaves en la mano.',
+                title: 'Firmamos y usted se muda',
+                body: 'El link de firma llega por WhatsApp. Contrato en su celular en minutos. Cofianza firma como fiador. Usted con las llaves en la mano.',
               },
             ].map((c) => (
               <div
@@ -350,7 +350,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
-            { val: '< 1 min', lbl: 'Respuesta de tu estudio' },
+            { val: '< 1 min', lbl: 'Respuesta de su estudio' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
@@ -389,40 +389,40 @@ export default function HomePage() {
             {[
               {
                 tag: 'Para arrendatarios',
-                title: '¿Buscas dónde vivir?',
-                body: '¿Te pidieron fiador? Nosotros firmamos. Paga el estudio y firma desde tu celular.',
+                title: '¿Busca dónde vivir?',
+                body: '¿Le pidieron fiador? Nosotros firmamos. Pague el estudio y firme desde su celular.',
                 items: [
                   'Sin codeudor ni fiador humano',
                   'Respuesta en segundos',
                   'Firma por WhatsApp',
-                  'Cashback del 30% si cumples',
+                  'Cashback del 30% si cumple',
                   'Reporte positivo a centrales de riesgo',
                 ],
-                cta: 'Encuentra tu inmueble',
+                cta: 'Encuentre su inmueble',
                 href: '/vitrina',
                 featured: true,
               },
               {
                 tag: 'Para propietarios',
-                title: '¿Tienes un inmueble?',
-                body: 'Publica en nuestra vitrina o recibe arrendatarios respaldados. Tu contrato viene con fiador firmado.',
+                title: '¿Tiene un inmueble?',
+                body: 'Publique en nuestra vitrina o reciba arrendatarios respaldados. Su contrato viene con fiador firmado.',
                 items: [
                   'Fiador solidario sin beneficio de excusión',
                   'Pago garantizado desde día 20 de mora',
                   'Proceso de restitución coordinado',
                   'Sin tramitar cobros directamente',
                 ],
-                cta: 'Registra tu inmueble',
+                cta: 'Registre su inmueble',
                 href: '/registro',
               },
               {
                 tag: 'Para inmobiliarias',
-                title: '¿Gestionas cartera?',
-                body: 'Usa Cofianza como fiador. Panel de gestión, estudios en lote y gana por cada estudio que gestiones.',
+                title: '¿Gestiona cartera?',
+                body: 'Use Cofianza como fiador. Panel de gestión, estudios en lote y gane por cada estudio que gestione.',
                 items: [
-                  'Gana por cada estudio que gestiones',
+                  'Gane por cada estudio que gestione',
                   'Panel de estudios en tiempo real',
-                  'Cofianza firma en tus contratos',
+                  'Cofianza firma en sus contratos',
                   'Protocolo de cobro profesional incluido',
                 ],
                 cta: 'Aliarme con Cofianza',
@@ -527,9 +527,9 @@ export default function HomePage() {
               <ul className="space-y-2">
                 {[
                   'Nosotros firmamos. Sin pedirle a nadie.',
-                  'Solo tu cédula y un estudio automático',
+                  'Solo su cédula y un estudio automático',
                   'Respuesta en segundos',
-                  'Todo desde tu celular',
+                  'Todo desde su celular',
                   'Firma electrónica legal por WhatsApp',
                   'Reporte positivo a centrales de riesgo',
                   'Cashback del 30% al cumplir el contrato',
@@ -557,34 +557,34 @@ export default function HomePage() {
             Preguntas frecuentes
           </div>
           <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
-            Todo lo que quieres saber.
+            Todo lo que quiere saber.
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4 mt-14">
             {[
               {
                 q: '¿Qué significa que Cofianza sea mi fiador?',
-                a: 'Cofianza firma en tu contrato de arrendamiento como fiador solidario — igual que antes lo hacía un familiar o amigo. La diferencia es que detrás de Cofianza hay un respaldo profesional y una promesa que siempre se cumple. Tú no le debes el favor a nadie.',
+                a: 'Cofianza firma en su contrato de arrendamiento como fiador solidario — igual que antes lo hacía un familiar o amigo. La diferencia es que detrás de Cofianza hay un respaldo profesional y una promesa que siempre se cumple. Usted no le debe el favor a nadie.',
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'La evaluación crediticia tiene un costo único al inicio. Si apruebas, pagas una sola vez la prima de vinculación: 20% de un canon si firmas solo o 10% si tienes un co-arrendatario aprobado, más IVA. Luego pagas una tarifa mensual más IVA. Al terminar el contrato recuperas el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por ti o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un co-arrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
-                a: 'Si tu perfil necesita un respaldo adicional, puedes aplicar con un co-titular — puede ser tu pareja, un familiar o alguien que vaya a vivir contigo. Si en este momento no es posible, puedes volver a aplicar cuando tu situación financiera mejore.',
+                a: 'Si su perfil necesita un respaldo adicional, puede aplicar con un co-titular — puede ser su pareja, un familiar o alguien que vaya a vivir con usted. Si en este momento no es posible, puede volver a aplicar cuando su situación financiera mejore.',
               },
               {
                 q: '¿Cómo funciona el cashback del 30%?',
-                a: 'Al terminar tu contrato te devolvemos el 30% de todas las tarifas mensuales de la fianza que pagaste (no aplica sobre la prima de vinculación). Solo lo pierdes si tuvimos que pagar alguna suma por ti, aunque sea una sola vez y de pocos pesos, o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza. Es nuestra manera de reconocer a los buenos arrendatarios.',
+                a: 'Al terminar su contrato le devolvemos el 30% de todas las tarifas mensuales de la fianza que pagó (no aplica sobre la prima de vinculación). Solo lo pierde si tuvimos que pagar alguna suma por usted, aunque sea una sola vez y de pocos pesos, o si la inmobiliaria o el propietario no cumplió a tiempo sus reportes a Cofianza. Es nuestra manera de reconocer a los buenos arrendatarios.',
               },
               {
                 q: '¿Necesito registrarme para ver inmuebles?',
-                a: 'No. La vitrina es pública. Puedes explorar todos los inmuebles disponibles sin crear cuenta. Cuando encuentres uno que te guste, solo dejas tu nombre y celular para que el propietario o inmobiliaria te contacte y agendes la visita.',
+                a: 'No. La vitrina es pública. Puede explorar todos los inmuebles disponibles sin crear cuenta. Cuando encuentre uno que le guste, solo deja su nombre y celular para que el propietario o inmobiliaria lo contacte y agende la visita.',
               },
               {
                 q: '¿Qué pasa si me atraso en el pago?',
-                a: 'Desde el día 6 de mora Cofianza activa su protocolo de cobro. El día 9 te notificamos formalmente que en 20 días reportaremos a centrales de riesgo. El día 20 pagamos al propietario y el cobro es directamente contra ti.',
+                a: 'Desde el día 6 de mora Cofianza activa su protocolo de cobro. El día 9 le notificamos formalmente que en 20 días reportaremos a centrales de riesgo. El día 20 pagamos al propietario y el cobro es directamente contra usted.',
               },
             ].map((f) => (
               <div
@@ -606,20 +606,20 @@ export default function HomePage() {
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white">
-            ¿Te pidieron fiador?
+            ¿Le pidieron fiador?
             <br />
-            <span className="text-coral-500">Soy yo.</span> Llámanos.
+            <span className="text-coral-500">Soy yo.</span> Llámenos.
           </h2>
           <p className="text-lg text-white/45 mb-10">
             <strong className="text-white">Sin codeudor humano. Sin deberle el favor a nadie.</strong>{' '}
-            Tu fiador profesional en segundos.
+            Su fiador profesional en segundos.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               href="/vitrina"
               className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
             >
-              Encuentra tu inmueble <IconArrowRight size={18} />
+              Encuentre su inmueble <IconArrowRight size={18} />
             </Link>
             <Link
               href="/registro"

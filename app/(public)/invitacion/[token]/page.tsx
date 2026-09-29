@@ -91,7 +91,7 @@ export default function InvitacionPage() {
     try {
       const result = await canjearInvitacion(token)
       sessionStorage.removeItem('invitacion_token')
-      toast.success('Tu estudio está listo. El siguiente paso es autorizar la consulta en centrales')
+      toast.success('Su estudio está listo. El siguiente paso es autorizar la consulta en centrales')
       router.push(result.redirect)
     } catch (err: unknown) {
       toast.error(mensajeParaProspecto(err, 'No se pudo canjear la invitación'))
@@ -125,7 +125,7 @@ export default function InvitacionPage() {
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">Esta invitación ya se usó</h1>
         <p className="text-sm text-gray-600 mb-6">
-          Si fuiste tú, tu estudio ya está en tu cuenta: ingresa para ver cómo va.
+          Si fue usted, su estudio ya está en su cuenta: ingrese para ver cómo va.
         </p>
         <Link
           href={isAuthenticated ? '/dashboard' : '/login'}
@@ -181,9 +181,9 @@ export default function InvitacionPage() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Tienes una invitación</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Tiene una invitación</h1>
       <p className="text-sm text-gray-600 mb-6">
-        <strong>{info.propietario_invitante.nombre_publico}</strong> te invitó a iniciar tu
+        <strong>{info.propietario_invitante.nombre_publico}</strong> lo invitó a iniciar su
         estudio de arrendamiento para el siguiente inmueble:
       </p>
 
@@ -217,7 +217,7 @@ export default function InvitacionPage() {
       {!isAuthenticated && (
         <div className="space-y-3">
           <p className="text-sm text-gray-700 font-medium">
-            Para continuar, inicia sesión o crea una cuenta.
+            Para continuar, inicie sesión o cree una cuenta.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -248,8 +248,8 @@ export default function InvitacionPage() {
       {isAuthenticated && wrongRole && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Tienes abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
-            invitación se acepta con una cuenta de arrendatario: cierra sesión e ingresa (o crea tu
+            Tiene abierta la sesión de {CUENTA_ABIERTA[user?.rol ?? ''] ?? 'otra cuenta'}. Esta
+            invitación se acepta con una cuenta de arrendatario: cierre sesión e ingrese (o cree su
             cuenta) con el correo al que llegó la invitación.
           </p>
           <button
@@ -264,8 +264,8 @@ export default function InvitacionPage() {
       {isAuthenticated && !wrongRole && !emailMatch && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-900">
-            Tu cuenta está asociada al email <strong>{user?.email}</strong>, pero esta
-            invitación fue enviada a <strong>{emailInvitacion}</strong>. Debes iniciar sesión
+            Su cuenta está asociada al email <strong>{user?.email}</strong>, pero esta
+            invitación fue enviada a <strong>{emailInvitacion}</strong>. Debe iniciar sesión
             con el email al que se envió la invitación.
           </p>
           <button
@@ -283,9 +283,9 @@ export default function InvitacionPage() {
             <div className="flex items-start gap-3">
               <IconCheck size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
               <p className="text-sm text-green-900">
-                Tu cuenta coincide con la invitación. Al canjear, se vinculará este estudio
-                a tu perfil y podrás autorizar la consulta en centrales de riesgo (el cobro del
-                estudio llega después de que autorices).
+                Su cuenta coincide con la invitación. Al canjear, se vinculará este estudio
+                a su perfil y podrá autorizar la consulta en centrales de riesgo (el cobro del
+                estudio llega después de que autorice).
               </p>
             </div>
           </div>
