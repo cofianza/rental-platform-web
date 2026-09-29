@@ -204,8 +204,10 @@ export function CapturaBiometrica({
   const [selfie, setSelfie] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [resultado, setResultado] = useState<EstadoBiometria | null>(
-    // 'desactivada' no es un veredicto que valga la pena mostrar.
-    estadoPrevio && estadoPrevio !== 'desactivada' ? estadoPrevio : null,
+    // 'desactivada' no es un veredicto que valga la pena mostrar. B4: 'omitida'
+    // tampoco: quien se negó y vuelve (con «Volver») ve el paso de cero, con
+    // «Prefiero no tomarme la foto» a la vista, no «reintentar».
+    estadoPrevio && estadoPrevio !== 'desactivada' && estadoPrevio !== 'omitida' ? estadoPrevio : null,
   )
   const [mensaje, setMensaje] = useState('')
 

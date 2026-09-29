@@ -65,6 +65,9 @@ export function ExpedientesListado() {
   const elegirBandeja = (bandeja: Parameters<typeof setActiveBandeja>[0]) => {
     setActiveBandeja(bandeja)
     if (requiereAccionActivo) setFilters({ estudio_filtro: 'todos', page: 1 })
+    // Adenda de precios §8.2: la cola del analista va por prioridad (la ordena
+    // la API) y luego por antigüedad: lo más antiguo primero.
+    if (bandeja === 'condicionado' && puedeAsignar) setFilters({ sortBy: 'created_at', sortOrder: 'asc', page: 1 })
   }
   const verRequiereAccion = () => {
     setActiveBandeja(null)

@@ -28,7 +28,7 @@ import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IEstudio, IMotivosElegidos } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -70,9 +70,10 @@ export function AprobarCondicionadoCard({
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
   // H58: con el catálogo del API, el motivo se elige de la lista (+ texto opcional).
-  const { catalogo } = useMotivosDecision(userRol === 'administrador' || userRol === 'operador_analista')
+  const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(userRol === 'administrador' || userRol === 'operador_analista')
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
-  const motivoListo = catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
+  // B14: sin catálogo todavía no se decide el modo (lista o texto).
+  const motivoListo = cargandoMotivos ? false : catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
@@ -266,7 +267,9 @@ export function AprobarCondicionadoCard({
           El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Tu decisión queda
           registrada con tu usuario, la fecha, el fundamento y los documentos que consultaste.
         </p>
-        {catalogo ? (
+        {cargandoMotivos ? (
+          <CargandoMotivos />
+        ) : catalogo ? (
           <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} />
         ) : (
         <div>

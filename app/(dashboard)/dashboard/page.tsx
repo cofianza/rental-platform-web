@@ -12,6 +12,7 @@ import { PageHeader, KPICard, Badge } from '@/components/ui'
 import {
   IconFolderOpen, IconCheck, IconClock, IconDollarSign,
   IconChevronRight, IconRefresh, IconCalendar, IconReceipt, IconX,
+  IconAlertTriangle, IconArrowRight,
 } from '@/components/icons'
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
@@ -501,6 +502,9 @@ function SolicitanteDashboard() {
   const [loadingBanners, setLoadingBanners] = useState(true)
   const [expError, setExpError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  // H43: el registro ya no pide documento. Solo `true` muestra el aviso
+  // (undefined = aún no llegó el dato → no se muestra).
+  const documentoPendiente = useAuthStore((s) => s.user?.documento_pendiente === true)
 
   useEffect(() => {
     // 20 y no 5: esta lista ES "mis solicitudes" del arrendatario (el listado
@@ -601,6 +605,25 @@ function SolicitanteDashboard() {
         title="Mi Panel de Arrendatario"
         subtitle="Consulta el estado de tus estudios de arrendamiento"
       />
+
+      {documentoPendiente && (
+        <div className="flex items-start gap-3 p-5 bg-amber-50 border border-amber-200 rounded-lg">
+          <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">Completa tu documento</p>
+            <p className="text-xs text-amber-800 mt-1">
+              Agrega tu tipo y número de documento de identidad. Lo necesitamos para que autorices la consulta de tu estudio.
+            </p>
+            <Link
+              href="/configuracion/cuenta?returnTo=%2Fdashboard"
+              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
+            >
+              Completar en Mi cuenta
+              <IconArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Banners apilados: uno por expediente + estado de cita.
           Naranja/gradient: sin cita → CTA "Agendar cita".

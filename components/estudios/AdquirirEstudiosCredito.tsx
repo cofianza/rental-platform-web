@@ -144,17 +144,24 @@ function AdquirirEstudiosCreditoContenido() {
                   {p.cantidad_estudios}
                   <span className="text-sm font-normal text-gray-500"> estudios</span>
                 </div>
-                <div className="mt-2 text-xl font-bold text-gray-900">{formatCOP(p.precio_cop)}</div>
+                <div className="mt-2 text-xl font-bold text-gray-900">
+                  {formatCOP(p.precio_cop)}
+                  <span className="text-sm font-normal text-gray-500"> + IVA</span>
+                </div>
+                {/* Adenda de precios §1.1: se cobra base + TARIFA_IVA (la calcula el API). */}
+                {p.total_cop != null && (
+                  <div className="text-xs text-gray-600">
+                    {formatCOP(p.precio_cop)} + IVA = <span className="font-semibold text-gray-900">{formatCOP(p.total_cop)}</span>
+                  </div>
+                )}
                 <div className="text-xs text-gray-500">
-                  {formatCOP(unit)} c/u
+                  {formatCOP(unit)} + IVA c/u
                   {ahorro > 0 && <span className="ml-1 font-semibold text-primary-700">· Ahorro {ahorro}%</span>}
                 </div>
-                {p.vence_en_dias ? (
+                {p.vigencia_meses != null && (
                   <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600">
-                    <IconClock size={12} /> Vence en {p.vence_en_dias} días
+                    <IconClock size={12} /> Vigencia: {p.vigencia_meses} meses desde el pago
                   </div>
-                ) : (
-                  <div className="mt-1 text-[11px] text-green-600">Sin vencimiento</div>
                 )}
                 <button
                   type="button"

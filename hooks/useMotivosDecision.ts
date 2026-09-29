@@ -17,7 +17,9 @@ let enCurso: Promise<ICatalogoMotivos | null> | null = null
 /** `habilitado=false` para roles que no deciden (el API responde 403 a los de fuera de Cofianza). */
 export function useMotivosDecision(habilitado = true) {
   const [catalogo, setCatalogo] = useState<ICatalogoMotivos | null>(cache)
-  const [cargando, setCargando] = useState(!cache && habilitado)
+  // B14: `cargando` se deriva: si `habilitado` pasa a true después (el rol llega
+  // tarde), también cuenta como carga en curso.
+  const [terminado, setTerminado] = useState(false)
 
   useEffect(() => {
     if (cache || !habilitado) return
@@ -32,12 +34,12 @@ export function useMotivosDecision(habilitado = true) {
     enCurso.then((c) => {
       if (!vivo) return
       setCatalogo(c)
-      setCargando(false)
+      setTerminado(true)
     })
     return () => {
       vivo = false
     }
   }, [habilitado])
 
-  return { catalogo: habilitado ? catalogo : null, cargando }
+  return { catalogo: habilitado ? catalogo : null, cargando: habilitado && !catalogo && !terminado }
 }

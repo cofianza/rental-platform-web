@@ -14,7 +14,7 @@ import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
 import type { IMotivosElegidos } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -65,7 +65,7 @@ export function TransicionModal({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
   const { userRole } = usePermissions()
-  const { catalogo } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
+  const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
   const [error, setError] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   // Doble clic: el segundo llega antes de que el padre pinte isLoading.
@@ -97,10 +97,12 @@ export function TransicionModal({
   // (si el API la tiene); el API arma con ella el comentario y el motivo.
   const tipoLista = !catalogo ? null : estadoSeleccionado === 'rechazado' ? 'rechazar' : pideEvaluacion ? 'aprobar' : null
   const errorLista = tipoLista && catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
-  const motivoValido = tipoLista ? !errorLista : comentario.trim().length >= MIN_MOTIVO
+  // B14: esta decisión irá con lista, pero el catálogo aún no llega.
+  const esperaLista = cargandoMotivos && (estadoSeleccionado === 'rechazado' || pideEvaluacion)
+  const motivoValido = esperaLista ? false : tipoLista ? !errorLista : comentario.trim().length >= MIN_MOTIVO
   // P34: al rechazar, el comentario es el fundamento interno y aparte va un
   // motivo corto para la inmobiliaria o el propietario (el API lo exige).
-  const pideMotivoGestor = estadoSeleccionado === 'rechazado' && !tipoLista
+  const pideMotivoGestor = estadoSeleccionado === 'rechazado' && !tipoLista && !esperaLista
   const motivoGestorValido = !pideMotivoGestor || motivoGestor.trim().length >= MIN_MOTIVO
   // Al cancelar, este texto se guarda como motivo de la cancelación, que ven la
   // inmobiliaria o el propietario y el solicitante en el estudio. No hay otro
@@ -116,6 +118,7 @@ export function TransicionModal({
       return
     }
 
+    if (esperaLista) return
     if (!motivoValido) {
       setError(errorLista ?? `Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
       return
@@ -253,8 +256,10 @@ export function TransicionModal({
           <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isLoading} />
         )}
 
+        {esperaLista && <CargandoMotivos />}
+
         {/* Campo de comentario (con la lista, el API lo arma de los motivos) */}
-        {!tipoLista && (
+        {!tipoLista && !esperaLista && (
         <div>
           {cancelaCofianza && <LoVeLaInmobiliaria />}
           <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">

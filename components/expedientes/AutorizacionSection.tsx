@@ -23,6 +23,9 @@ interface AutorizacionSectionProps {
    *  donde el padre aún no los tiene. */
   solicitanteEmail?: string | null
   solicitanteTelefono?: string | null
+  /** Documento de la ficha. Vacío = auto-registro liviano (H43): se pide aquí
+   *  porque la API no emite la autorización sin él. */
+  solicitanteDocumento?: string | null
   /** Refresca el expediente padre cuando el contacto del solicitante cambió. */
   onContactoActualizado?: () => void
   /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
@@ -61,6 +64,7 @@ export function AutorizacionSection({
   expedienteId,
   solicitanteEmail,
   solicitanteTelefono,
+  solicitanteDocumento,
   onContactoActualizado,
   soloLectura = false,
 }: AutorizacionSectionProps) {
@@ -90,6 +94,10 @@ export function AutorizacionSection({
   const [editContacto, setEditContacto] = useState(false)
   const [emailEdit, setEmailEdit] = useState('')
   const [telEdit, setTelEdit] = useState('')
+  // undefined = el padre no lo pasó: no se asume que falte.
+  const sinDocumento = solicitanteDocumento !== undefined && !solicitanteDocumento?.trim()
+  const [tipoDocEdit, setTipoDocEdit] = useState('cc')
+  const [numDocEdit, setNumDocEdit] = useState('')
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -128,7 +136,7 @@ export function AutorizacionSection({
 
   const handleEnviarEnlace = async () => {
     // Overrides de contacto (solo si el gestor está corrigiendo y difieren).
-    let contacto: { email?: string; telefono?: string } | undefined
+    let contacto: { email?: string; telefono?: string; tipo_documento?: string; numero_documento?: string } | undefined
     if (editContacto) {
       const emailNuevo = emailEdit.trim().toLowerCase()
       if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
@@ -143,6 +151,14 @@ export function AutorizacionSection({
           : {}),
       }
       if (!contacto.email && !contacto.telefono) contacto = undefined
+    }
+    if (sinDocumento) {
+      const numero = numDocEdit.trim()
+      if (numero.length < 5) {
+        toast.error('Ingresa el número de documento del prospecto')
+        return
+      }
+      contacto = { ...contacto, tipo_documento: tipoDocEdit, numero_documento: numero }
     }
     setSending(true)
     try {
@@ -174,8 +190,44 @@ export function AutorizacionSection({
 
   // Bloque compartido "a dónde se envía" + corrección — visible en todos los
   // estados que ofrecen (re)enviar el enlace.
+  const documentoFaltante = sinDocumento && !soloLectura && (
+    <div className="mb-3 space-y-2">
+      <p className="text-xs text-amber-700">
+        El prospecto se registró sin documento. Escríbelo para enviarle la solicitud: se guarda en sus datos.
+      </p>
+      <div className="grid grid-cols-5 gap-2">
+        <div className="col-span-2">
+          <label htmlFor="autorizacion-section-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo doc.</label>
+          <select id="autorizacion-section-tipo-doc"
+            value={tipoDocEdit}
+            onChange={(e) => setTipoDocEdit(e.target.value)}
+            disabled={sending}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          >
+            <option value="cc">Cédula de Ciudadanía</option>
+            <option value="ce">Cédula de Extranjería</option>
+            <option value="ppt">PPT</option>
+            <option value="pep">PEP</option>
+            {/* Sin NIT: Adenda de precios §6.1, no se estudian arrendatarios con NIT. */}
+          </select>
+        </div>
+        <div className="col-span-3">
+          <label htmlFor="autorizacion-section-num-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Número de documento</label>
+          <input id="autorizacion-section-num-doc"
+            inputMode="numeric"
+            value={numDocEdit}
+            onChange={(e) => setNumDocEdit(e.target.value)}
+            disabled={sending}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          />
+        </div>
+      </div>
+    </div>
+  )
+
   const contactoDestino = (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+      {documentoFaltante}
       {!editContacto ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-gray-600">

@@ -26,7 +26,13 @@ export interface IPagoEstudioEstado {
    *  que autorice" de "autorizado, falta cobrar" — sin esto no se puede
    *  decidir si mostrarle al prospecto el CTA de pago. */
   autorizado: boolean
+  /** Total cobrado (base + IVA). */
   monto: number
+  /** Adenda de precios §1.2: desglose para el gestor. Sin IVA (cobro anterior), iva = 0. */
+  base: number
+  iva: number
+  /** TARIFA_IVA (%) del cobro; 0 si no lleva IVA. */
+  tarifa_iva: number
   moneda: string
   monto_formateado: string
   /** A10: quién paga el cobro según el API (quienPaga) — 'gestor' en la opción B

@@ -18,6 +18,8 @@ import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudio
 import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
+import { CONTACTO_COFIANZA } from '@/lib/constants'
+import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 
 interface Props {
@@ -132,7 +134,8 @@ export function BloqueosContrato({
   onIrPaso,
   onCambio,
 }: Props) {
-  const rol = useAuthStore((s) => s.user?.rol)
+  const user = useAuthStore((s) => s.user)
+  const rol = user?.rol
   const puntos: Punto[] = [
     ...puntosDe(bloqueos),
     ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
@@ -173,14 +176,31 @@ export function BloqueosContrato({
           return <EmitirCertificado estudioId={b.estudioId} regenerar={b.codigo === 'CRC_DESACTUALIZADO'} onCambio={onCambio} />
         }
         // Sin permiso (o sin la evaluación a mano) «Ir al estudio» no llevaba a ningún botón: se dice quién lo emite.
+        // B12: con el canal concreto, y al miembro frenado solo por su perfil se le dice eso.
         if (DEL_CRC.includes(b.codigo)) {
-          return (
-            <p className="text-xs text-gray-600">
-              {puedeEditar
-                ? 'Escríbenos para emitir el certificado de esta evaluación.'
-                : 'Lo emite quien puede editar este estudio (el titular de la inmobiliaria o un miembro con permiso).'}
-            </p>
-          )
+          if (miembroDebeCompletarPerfil(user)) {
+            return (
+              <Link href={`/configuracion/cuenta?returnTo=${volverAqui}`} className={enlace}>
+                Completa tu perfil para emitirlo <IconArrowRight size={12} />
+              </Link>
+            )
+          }
+          if (puedeEditar) {
+            return (
+              <p className="text-xs text-gray-600">
+                Escríbenos para emitir el certificado de esta evaluación: por{' '}
+                <a href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary-700 hover:underline">
+                  WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
+                </a>{' '}
+                o a{' '}
+                <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-semibold text-primary-700 hover:underline">
+                  {CONTACTO_COFIANZA.email}
+                </a>
+                .
+              </p>
+            )
+          }
+          return <p className="text-xs text-gray-600">Lo emite quien administra este estudio.</p>
         }
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>

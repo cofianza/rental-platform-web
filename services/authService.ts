@@ -43,6 +43,7 @@ function perfilAUsuario(profile: IMeResponse): IUser {
     rol_miembro: profile.rol_miembro ?? null,
     es_gerencia_general: profile.es_gerencia_general === true,
     perfil_completo: profile.perfil_completo,
+    documento_pendiente: profile.documento_pendiente,
     activo: profile.activo,
   }
 }

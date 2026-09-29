@@ -125,7 +125,7 @@ export function AccionHabilitarEstudioCard({
         toast.message('El estudio ya estaba habilitado. Refrescando...')
         await onAction()
       } else if (errObj.code === 'ESTUDIO_NO_AFIANZABLE') {
-        setNoAfianzable(errObj.message || 'Este estudio no se puede habilitar por la plataforma.')
+        setNoAfianzable(errObj.message || 'Este estudio está en desarrollo y todavía no se puede solicitar por la plataforma. No se generó ningún cobro.')
       } else {
         toast.error(errObj.message || 'Error al habilitar la evaluación')
       }
