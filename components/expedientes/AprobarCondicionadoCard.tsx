@@ -26,7 +26,9 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
-import type { IEstudio } from '@/types/estudio'
+import type { IEstudio, IMotivosElegidos } from '@/types/estudio'
+import { useMotivosDecision } from '@/hooks/useMotivosDecision'
+import { SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -67,6 +69,10 @@ export function AprobarCondicionadoCard({
   const [otroBuroAbierto, setOtroBuroAbierto] = useState(false)
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
+  // H58: con el catálogo del API, el motivo se elige de la lista (+ texto opcional).
+  const { catalogo } = useMotivosDecision(userRol === 'administrador' || userRol === 'operador_analista')
+  const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
+  const motivoListo = catalogo ? !errorMotivos('aprobar', motivos) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
@@ -92,13 +98,13 @@ export function AprobarCondicionadoCard({
 
   const handleAprobar = async () => {
     // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
-    if (aprobando.current || !evaluacionCompleta(evaluacion)) return
+    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo) return
     aprobando.current = true
     setLoading(true)
     try {
       // Sin datos de contrato: solo aprueba. El contrato se crea después desde el estudio.
       const res = await expedienteService.aprobarCondicionado(expedienteId, {
-        fundamento: fundamento.trim(),
+        ...(catalogo ? motivosParaEnviar(motivos) : { fundamento: fundamento.trim() }),
         documentos_consultados: documentos,
         evaluacion,
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
@@ -260,6 +266,9 @@ export function AprobarCondicionadoCard({
           El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Tu decisión queda
           registrada con tu usuario, la fecha, el fundamento y los documentos que consultaste.
         </p>
+        {catalogo ? (
+          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} />
+        ) : (
         <div>
           <label htmlFor="fundamento-revision" className="block text-sm font-medium text-gray-700 mb-1">
             Fundamento de la decisión <span className="text-red-500">*</span>
@@ -274,6 +283,7 @@ export function AprobarCondicionadoCard({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
           />
         </div>
+        )}
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         {sinInfoBuro && (
@@ -310,7 +320,7 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || fundamento.trim().length < 10 || !evaluacionCompleta(evaluacion)}
+            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion)}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}

@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/Badge'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
+import type { IMotivosElegidos } from '@/types/estudio'
+import { useMotivosDecision } from '@/hooks/useMotivosDecision'
+import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -32,6 +35,8 @@ export interface TransicionModalProps {
     evaluacion?: IEvaluacionRevisionManual,
     /** P34: al rechazar, el motivo corto que verá la inmobiliaria o el propietario. */
     motivo?: string,
+    /** H58/H103: motivos de lista (rechazar, o aprobar una revisión manual). */
+    motivos?: IMotivosElegidos,
   ) => Promise<void>
   isLoading?: boolean
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
@@ -58,6 +63,9 @@ export function TransicionModal({
   const [motivoGestor, setMotivoGestor] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
+  const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
+  const { userRole } = usePermissions()
+  const { catalogo } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
   const [error, setError] = useState<string | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   // Doble clic: el segundo llega antes de que el padre pinte isLoading.
@@ -72,6 +80,7 @@ export function TransicionModal({
     setMotivoGestor('')
     setDocumentos([])
     setEvaluacion({})
+    setMotivos({ motivos: [] })
     setError(null)
     onClose()
   }
@@ -84,15 +93,18 @@ export function TransicionModal({
   const pideEvaluacion = esRevisionManual && estadoSeleccionado === 'aprobado'
   // Mismo mínimo que transitionBodySchema en el API: sin esto se pasaba por la
   // confirmación roja y el 400 llegaba después.
-  const motivoValido = comentario.trim().length >= MIN_MOTIVO
+  // H58/H103: rechazar y aprobar una revisión manual se motivan con la lista
+  // (si el API la tiene); el API arma con ella el comentario y el motivo.
+  const tipoLista = !catalogo ? null : estadoSeleccionado === 'rechazado' ? 'rechazar' : pideEvaluacion ? 'aprobar' : null
+  const errorLista = tipoLista ? errorMotivos(tipoLista, motivos) : null
+  const motivoValido = tipoLista ? !errorLista : comentario.trim().length >= MIN_MOTIVO
   // P34: al rechazar, el comentario es el fundamento interno y aparte va un
   // motivo corto para la inmobiliaria o el propietario (el API lo exige).
-  const pideMotivoGestor = estadoSeleccionado === 'rechazado'
+  const pideMotivoGestor = estadoSeleccionado === 'rechazado' && !tipoLista
   const motivoGestorValido = !pideMotivoGestor || motivoGestor.trim().length >= MIN_MOTIVO
   // Al cancelar, este texto se guarda como motivo de la cancelación, que ven la
   // inmobiliaria o el propietario y el solicitante en el estudio. No hay otro
   // campo: quien cancela desde Cofianza tiene que saberlo al escribirlo.
-  const { userRole } = usePermissions()
   const cancelaCofianza =
     estadoSeleccionado === 'cerrado' &&
     !!transicionSeleccionada?.etiqueta.startsWith('Cancelar') &&
@@ -105,7 +117,7 @@ export function TransicionModal({
     }
 
     if (!motivoValido) {
-      setError(`Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
+      setError(errorLista ?? `Escribe el motivo (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
@@ -135,6 +147,7 @@ export function TransicionModal({
         esRevisionManual ? documentos : undefined,
         pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
         pideMotivoGestor ? motivoGestor.trim() : undefined,
+        tipoLista ? motivosParaEnviar(motivos) : undefined,
       )
     } finally {
       enviando.current = false
@@ -224,8 +237,14 @@ export function TransicionModal({
           </div>
         )}
 
-        {/* Campo de comentario */}
+        {tipoLista && catalogo && (
+          <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isLoading} />
+        )}
+
+        {/* Campo de comentario (con la lista, el API lo arma de los motivos) */}
+        {!tipoLista && (
         <div>
+          {cancelaCofianza && <LoVeLaInmobiliaria />}
           <label htmlFor="transicion-modal-comentario-motivo" className="block text-sm font-medium text-gray-700 mb-2">
             {pideMotivoGestor
               ? 'Fundamento interno'
@@ -253,9 +272,11 @@ export function TransicionModal({
             {!motivoValido && ` Mínimo ${MIN_MOTIVO} caracteres (${comentario.trim().length}/${MIN_MOTIVO}).`}
           </p>
         </div>
+        )}
 
         {pideMotivoGestor && (
           <div>
+            <LoVeLaInmobiliaria />
             <label htmlFor="transicion-modal-motivo-gestor" className="block text-sm font-medium text-gray-700 mb-2">
               Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
             </label>

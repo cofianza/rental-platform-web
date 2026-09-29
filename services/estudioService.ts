@@ -27,6 +27,7 @@ import type {
   IVerificacionCertificado,
   IEstudiosStats,
   IReasignacionEstudio,
+  ICatalogoMotivos,
 } from '@/types/estudio'
 
 // ============================================
@@ -60,6 +61,12 @@ export const estudioService = {
    * Stats globales para los KPI cards del listado.
    */
   /** Flujo §4.4: tope de canon vigente, para validar en el paso 1 del asistente. */
+  /** H58/H103: motivos de lista para aprobar, rechazar y condicionar (solo Cofianza). */
+  async getMotivosDecision(): Promise<ICatalogoMotivos> {
+    const res = await apiClient.get<ICatalogoMotivos>('/estudios/motivos-decision')
+    return res.data
+  },
+
   async getTopeCanon(): Promise<number> {
     const res = await apiClient.get<{ tope_cop: number }>('/estudios/tope-canon')
     return res.data.tope_cop
