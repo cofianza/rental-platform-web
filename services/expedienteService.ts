@@ -261,6 +261,15 @@ class ExpedienteService {
   }
 
   /**
+   * Adenda de precios §7.3-7.4: la Gerencia General autoriza el canon por
+   * encima del tope (techo del contrato), con motivo. El API responde 403
+   * SOLO_GERENCIA_GENERAL a otros roles.
+   */
+  async autorizarExcepcionTope(id: string, canonAutorizadoCop: number, motivo: string): Promise<void> {
+    await apiClient.post(`/expedientes/${id}/excepcion-tope`, { canon_autorizado_cop: canonAutorizadoCop, motivo })
+  }
+
+  /**
    * Asigna o reasigna el responsable del expediente (HP-285)
    */
   async asignarResponsable(

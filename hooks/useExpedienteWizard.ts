@@ -21,7 +21,7 @@ import { esPersonaJuridica } from '@/components/expedientes/wizard/constants'
 export interface WizardStep1Data {
   inmueble: IInmueble | null
   hasActiveExpediente: boolean
-  /** Flujo §4.4: el canon supera el tope que Cofianza puede afianzar hoy. */
+  /** El canon supera el tope: solo avisa (Adenda de precios §7.1; antes bloqueaba, Flujo §4.4). */
   excedeTope?: boolean
 }
 
@@ -481,7 +481,8 @@ export function useExpedienteWizard() {
       // §4.4: el flujo se detiene aqui, antes de capturar al prospecto y de
       // crear nada. Antes se validaba solo al enviar: el gestor recorria los
       // cuatro pasos para chocar al final con un expediente ya creado.
-      return !!data.step1.inmueble && !data.step1.excedeTope
+      // Adenda de precios §7.1: el canon sobre el tope ya no detiene el paso 1 (solo avisa).
+      return !!data.step1.inmueble
     }
     if (currentStep === 2) {
       // §5.1: un solicitante ya registrado también necesita celular y correo,

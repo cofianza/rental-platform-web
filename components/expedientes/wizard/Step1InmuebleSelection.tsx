@@ -497,21 +497,18 @@ export function Step1InmuebleSelection({
             </div>
           )}
 
-          {/* §4.4: canon por encima del tope — bloquea el avance aqui mismo. */}
+          {/* Adenda de precios §7.1: el canon sobre el tope ya no bloquea; pasa a revisión. */}
           {data.excedeTope && data.inmueble && topeCanon !== null && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <IconAlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-red-800">
-                  El canon de este inmueble excede el máximo que Cofianza puede afianzar hoy
+                <p className="text-sm font-medium text-amber-800">
+                  El canon supera el tope; el estudio pasará a revisión y la aprobación requiere autorización de la Gerencia General
                 </p>
-                <p className="text-xs text-red-700 mt-1">
+                <p className="text-xs text-amber-700 mt-1">
                   Canon: <span className="font-medium">{formatCurrency(Number(data.inmueble.valor_arriendo ?? 0))}</span>
-                  {' · '}Máximo sin acuerdo de coafianzamiento:{' '}
+                  {' · '}Tope sin acuerdo de coafianzamiento:{' '}
                   <span className="font-medium">{formatCurrency(topeCanon)}</span>
-                </p>
-                <p className="text-xs text-red-700 mt-1">
-                  Elige otro inmueble dentro del tope, o escríbenos para revisar el caso. No se ha creado ni cobrado nada.
                 </p>
               </div>
             </div>
