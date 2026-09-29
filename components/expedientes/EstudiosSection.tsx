@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
+import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
 import { EstudioDetailModal } from './EstudioDetailModal'
@@ -205,11 +206,28 @@ export function EstudiosSection({
   // Devuelve true/false para que el modal solo se cierre (y resetee sus
   // campos) cuando el POST fue exitoso — si falla, el usuario conserva lo
   // que escribió y puede corregir y reintentar.
-  const handleCreate = async (data: ICreateEstudioInput): Promise<boolean> => {
+  const handleCreate = async (
+    data: ICreateEstudioInput,
+    { usarCredito }: { usarCredito: boolean },
+  ): Promise<boolean> => {
     setActionLoading(true)
     try {
       await estudioService.createEstudio(expedienteId, data)
-      toast.success('Evaluación solicitada exitosamente')
+      if (!usarCredito) {
+        toast.success('Evaluación solicitada exitosamente')
+      } else {
+        // H99: la evaluación ya existe; el crédito se descuenta después. Si
+        // falla, queda solicitada sin pagar y se cobra desde Pagos.
+        try {
+          const r = await creditosEstudiosService.liberarEstudio(expedienteId)
+          toast.success(
+            `Evaluación solicitada y pagada con un crédito de la inmobiliaria (le quedan ${r.saldo_restante})`,
+          )
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'No se pudo descontar el crédito.'
+          toast.warning(`Evaluación solicitada, pero sin pagar: ${msg} Cóbrala desde la sección de pagos.`)
+        }
+      }
       trasCambio()
       return true
     } catch (err) {
@@ -545,6 +563,7 @@ export function EstudiosSection({
         onClose={() => setShowSolicitar(false)}
         onConfirmar={handleCreate}
         isLoading={actionLoading}
+        expedienteId={expedienteId}
       />
 
       <EstudioDetailModal

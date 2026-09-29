@@ -83,6 +83,16 @@ export interface ILiberarEstudioResponse {
   lote_id: string
 }
 
+export interface ISaldoInmobiliariaExpediente {
+  /** false: el inmueble es de un propietario individual (sin créditos, H2). */
+  con_inmobiliaria: boolean
+  /** P22: lo que se puede gastar (lo en contra ya restado). */
+  saldo_efectivo: number
+  creditos_en_contra: number
+  /** Ya hay un cobro de la evaluación completado o en curso: no se ofrece el crédito. */
+  pago_estudio_existente: boolean
+}
+
 export interface IDatosFiscalesFactura {
   razon_social?: string
   nit?: string
@@ -151,6 +161,18 @@ class CreditosEstudiosService {
     const res = (await apiClient.post(`/expedientes/${expedienteId}/liberar-estudio-credito`, {
       notas,
     })) as unknown as { data: ILiberarEstudioResponse }
+    return res.data
+  }
+
+  /**
+   * H99 (solo admin/operador): saldo usable de la inmobiliaria dueña del
+   * estudio, para ofrecer su crédito en el modal interno «Nueva evaluación».
+   * `liberarEstudio` sirve igual para ellos: la API gasta el crédito de esa org.
+   */
+  async getSaldoInmobiliariaDeExpediente(expedienteId: string): Promise<ISaldoInmobiliariaExpediente> {
+    const res = await apiClient.get<ISaldoInmobiliariaExpediente>(
+      `/expedientes/${expedienteId}/liberar-estudio-credito/saldo`,
+    )
     return res.data
   }
 
