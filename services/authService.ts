@@ -250,6 +250,33 @@ class AuthService {
   }
 
   // ============================================
+  // ENLACE MÁGICO (H44): el arrendatario invitado entra sin contraseña
+  // ============================================
+
+  /**
+   * Pide el enlace. La respuesta es la misma exista o no la cuenta. `datos`
+   * solo se usa si el invitado aún no tiene cuenta (se le crea sin contraseña).
+   */
+  async solicitarEnlaceMagico(email: string, datos?: Record<string, unknown>): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/enlace-magico', { email, datos })
+    return response.data
+  }
+
+  /**
+   * Canjea el enlace (un solo uso) y deja la sesión abierta como el login.
+   * Devuelve a dónde seguir (la invitación pendiente, si hay).
+   */
+  async verificarEnlaceMagico(tokenHash: string): Promise<string> {
+    const response = await apiClient.post<ILoginResponse & { redirect?: string }>(
+      '/auth/enlace-magico/verificar',
+      { token_hash: tokenHash },
+    )
+    const { user, session, redirect } = response.data
+    this.adoptarSesion({ id: user.id, email: user.email, rol: user.rol }, session)
+    return redirect || '/dashboard'
+  }
+
+  // ============================================
   // REGISTRO PUBLICO
   // ============================================
 
