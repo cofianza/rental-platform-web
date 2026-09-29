@@ -96,6 +96,23 @@ function Actividad({ expediente }: { expediente: IExpediente }) {
   )
 }
 
+/**
+ * Adenda de precios §8.2: el caso R2 entra a la cola del analista con
+ * prioridad baja. Discreto y solo para Cofianza: es orden interno de la cola.
+ */
+function PrioridadBaja({ expediente, rol }: { expediente: IExpediente; rol?: string }) {
+  const interno = rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
+  if (!interno || expediente.estado !== 'condicionado' || expediente.prioridad_revision !== 'baja') return null
+  return (
+    <span
+      title="Caso R2 (Adenda de precios §8): la banda de score 450-599 prevalece; va al final de la cola"
+      className="mt-1 inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
+    >
+      Prioridad baja
+    </span>
+  )
+}
+
 export interface ExpedientesTableProps {
   expedientes: IExpediente[]
   meta: IExpedientesMeta | null
@@ -318,6 +335,7 @@ export function ExpedientesTable({
                       estadoPreCancelacion={expediente.estado_pre_cancelacion}
                     />
                     <EstadoExpedienteFila expediente={expediente} />
+                    <PrioridadBaja expediente={expediente} rol={rol} />
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -424,6 +442,7 @@ export function ExpedientesTable({
                   estadoPreCancelacion={expediente.estado_pre_cancelacion}
                 />
                 <EstadoExpedienteFila expediente={expediente} />
+                <PrioridadBaja expediente={expediente} rol={rol} />
                 <EstudioResultadoBadge
                   estado={expediente.estudio_vigente?.estado}
                   resultado={expediente.estudio_vigente?.resultado}

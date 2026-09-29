@@ -1523,7 +1523,7 @@ export default function AutorizarPage() {
               <p className="mt-1 text-sm text-gray-500">
                 {data?.pago?.requerido
                   ? `Revisa el resumen y confirma. Después te mostramos el enlace para pagar el estudio${
-                      data.pago.monto_formateado ? ` (${data.pago.monto_formateado})` : ''
+                      data.pago.monto_formateado ? ` por ${data.pago.monto_formateado}` : ''
                     } en Mercado Pago; tu evaluación empieza cuando se confirme el pago.`
                   : data?.pago == null
                     ? `Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información. ${quien} te indicará si tiene costo.`

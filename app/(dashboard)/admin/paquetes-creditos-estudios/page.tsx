@@ -245,7 +245,15 @@ export default function AdminPaquetesPage() {
                       {p.cantidad_estudios}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">
-                      {formatCOP(p.precio_cop)}
+                      {/* Adenda de precios §1.1: el precio es la base; se cobra con TARIFA_IVA. */}
+                      {p.total_cop != null ? (
+                        <>
+                          <div>{formatCOP(p.precio_cop)} + IVA</div>
+                          <div className="text-xs font-normal text-gray-500">= {formatCOP(p.total_cop)}</div>
+                        </>
+                      ) : (
+                        formatCOP(p.precio_cop)
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-500">
                       {formatCOP(porEstudio)}
@@ -342,7 +350,7 @@ export default function AdminPaquetesPage() {
             </div>
             <div>
               <label htmlFor="paquetes-creditos-estudios-precio-cop" className="block text-sm font-medium text-gray-700 mb-1">
-                Precio (COP) <span className="text-red-500">*</span>
+                Precio base sin IVA (COP) <span className="text-red-500">*</span>
               </label>
               <input id="paquetes-creditos-estudios-precio-cop"
                 type="number"

@@ -135,8 +135,8 @@ function NuevoExpedienteContent() {
             },
           })
         }
-        // Con el canon por encima del tope nos quedamos en el paso 1: el banner
-        // rojo de Step1 es lo que tiene que ver el gestor, no el paso 2.
+        // Con el canon por encima del tope nos quedamos en el paso 1 para que el
+        // gestor vea el aviso (Adenda de precios §7.1: ya no bloquea, avanza él).
         if (!excedeTope) goToStep(2)
       } catch (err) {
         toast.error(

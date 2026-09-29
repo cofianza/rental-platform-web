@@ -25,6 +25,18 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 
+const fmtCOP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
+
+/** Adenda de precios §1.2: al gestor, «base + IVA = total». */
+function montoGestor(e: IPagoEstudioEstado): string {
+  return e.iva > 0 ? `${fmtCOP(e.base)} + IVA ${fmtCOP(e.iva)} = ${e.monto_formateado} COP` : `${e.monto_formateado} COP`
+}
+
+/** Adenda de precios §1.2 (Ley 1480 art. 26): al prospecto, el total con el IVA incluido. */
+function montoProspecto(e: IPagoEstudioEstado): string {
+  return `${e.monto_formateado} COP${e.iva > 0 ? ' (IVA incluido)' : ''}`
+}
+
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void
@@ -57,8 +69,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
   const puedeUsarCreditos = userRole === 'inmobiliaria'
   // Opción B (Adenda 2 §7): el gestor paga él mismo por Mercado Pago. Ya no
-  // existe "el costo queda a mi cargo" (a cuenta): no se aprobó.
-  const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + 2
+  // existe "el costo queda a mi cargo" (a cuenta): no se aprobó. Adenda de
+  // precios §1.4: la inmobiliaria no paga estudios sueltos (paquete o prospecto).
+  const puedePagarSuelto = userRole !== 'inmobiliaria'
+  const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (puedePagarSuelto ? 1 : 0) + 1
   // El checkout pendiente es de la agencia (opción B), no un enlace enviado al
   // prospecto: se ofrece reabrirlo en vez de "reenviar correo". Lo dice el API
   // (`paga`), no el correo de quien mira: otro miembro de la agencia veía el
@@ -285,7 +299,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
                 La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elijas una de
-                estas opciones. Monto: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>.
+                estas opciones. Monto: <span className="font-semibold text-gray-900">{montoGestor(estado)}</span>.
               </p>
             </div>
           </div>
@@ -336,6 +350,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   </Link>
                 )
               )}
+              {puedePagarSuelto && (
               <button
                 onClick={() => { void handlePagar() }}
                 disabled={isSubmitting}
@@ -346,6 +361,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 <span className="text-xs text-gray-500">Tarjeta o PSE</span>
                 <span className="text-[11px] text-gray-500 leading-snug">El estudio sigue cuando se confirma el pago.</span>
               </button>
+              )}
               <button
                 onClick={() => setShowLinkModal(true)}
                 disabled={isSubmitting}
@@ -369,7 +385,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           <div className="flex items-center gap-3 mb-3">
             <IconClock size={20} className="text-amber-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800">Cobro al prospecto: {estado.monto_formateado} COP</p>
+              <p className="text-sm font-medium text-amber-800">Cobro al prospecto: {montoGestor(estado)}</p>
               <p className="text-xs text-amber-600">
                 Le llega apenas autorice la consulta, y la evaluación corre cuando el pago se confirme.
               </p>
@@ -399,6 +415,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               </button>
               </>
             )}
+            {puedePagarSuelto && (
             <button
               onClick={() => { void handlePagar() }}
               disabled={isSubmitting}
@@ -406,6 +423,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             >
               Pagar yo con Mercado Pago
             </button>
+            )}
           </div>
         </div>
       )}
@@ -569,6 +587,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 {/* Opción B: el cobro fallido es de la agencia. Lo principal es
                     reintentarlo; pasárselo al arrendatario es otra decisión (la C)
                     y se confirma aparte. */}
+                {puedePagarSuelto && (
                 <button
                   onClick={() => { void handlePagar() }}
                   disabled={isSubmitting}
@@ -576,6 +595,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 >
                   Pagar de nuevo
                 </button>
+                )}
                 <button
                   onClick={() => setConfirmPasarArrendatario(true)}
                   disabled={isSubmitting}
@@ -603,6 +623,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 >
                   Reenviar link
                 </button>
+                {puedePagarSuelto && (
                 <button
                   onClick={() => { void handlePagar() }}
                   disabled={isSubmitting}
@@ -610,6 +631,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 >
                   Pagar yo con Mercado Pago
                 </button>
+                )}
               </>
             )}
             {/* El API cierra el cobro fallido (su link seguía pagable) y descuenta el crédito. */}
@@ -631,7 +653,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         isOpen={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         expedienteId={expedienteId}
-        montoFormateado={estado.monto_formateado}
+        montoFormateado={montoGestor(estado)}
         defaultNombre={solicitanteNombre}
         defaultEmail={solicitanteEmail}
         defaultTelefono={solicitanteTelefono}
@@ -741,7 +763,7 @@ function EnviarLinkModal({
             <span className="font-medium">Concepto:</span> Estudio de arrendamiento
           </p>
           <p className="text-sm text-primary-800">
-            <span className="font-medium">Monto:</span> {montoFormateado} COP
+            <span className="font-medium">Monto:</span> {montoFormateado}
           </p>
         </div>
 
@@ -1088,7 +1110,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu evaluación crediticia</h3>
             <p className="text-sm text-gray-600 mb-1">
-              Monto a pagar: <span className="font-semibold text-gray-900">{estado.monto_formateado} COP</span>
+              Monto a pagar: <span className="font-semibold text-gray-900">{montoProspecto(estado)}</span>
             </p>
             <p className="text-xs text-gray-500 mb-4">
               Ya firmaste tu autorización. Serás redirigido a la pasarela de pago segura y, al confirmarse el pago,
@@ -1127,7 +1149,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-sm font-medium text-red-800 mb-1">No pudimos procesar tu pago</p>
         <p className="text-xs text-red-600 mb-3">
-          Monto: {estado.monto_formateado} COP. Puedes intentarlo de nuevo.
+          Monto: {montoProspecto(estado)}. Puedes intentarlo de nuevo.
         </p>
         {linkPago && (
           <a
@@ -1174,7 +1196,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         <p className="text-sm font-medium text-blue-800">Firma primero tu autorización</p>
         <p className="text-xs text-blue-600 mt-1">
           Te enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
-          Apenas lo firmes te llega el enlace de pago ({estado.monto_formateado} COP).
+          Apenas lo firmes te llega el enlace de pago por {montoProspecto(estado)}.
         </p>
       </div>
     )

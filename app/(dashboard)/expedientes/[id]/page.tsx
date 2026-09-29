@@ -8,6 +8,7 @@
 
 import { Button } from '@/components/ui/Button'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
+import { ExcepcionTopeBlock } from '@/components/expedientes/ExcepcionTopeBlock'
 import { ApiClientError } from '@/lib/api'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -569,6 +570,11 @@ export default function ExpedienteDetallePage() {
           esProspecto={user?.rol === 'solicitante'}
         />
       </div>
+
+      {/* Adenda de precios §7: canon sobre el tope — aviso al analista y excepción de la Gerencia General. */}
+      {isInternalRole && expediente.tope_canon && (
+        <ExcepcionTopeBlock expedienteId={id} tope={expediente.tope_canon} onAutorizada={fetchExpediente} />
+      )}
 
       {/* Responsable del expediente (miembro) — SIEMPRE visible (en cualquier
           tab), solo inmobiliaria (Fase 3.1). El analista interno va en el header. */}

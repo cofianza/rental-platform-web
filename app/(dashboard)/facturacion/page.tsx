@@ -14,6 +14,7 @@ import { FacturasSection } from '@/components/facturacion/FacturasSection'
 import { PendientesFacturarSection } from '@/components/facturacion/PendientesFacturarSection'
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { ReembolsosSection } from '@/components/facturacion/ReembolsosSection'
+import { PrimasPorRemitirSection } from '@/components/facturacion/PrimasPorRemitirSection'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
@@ -54,6 +55,8 @@ export default function FacturacionPage() {
         { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
         ...(canReembolsar ? [{ id: 'reembolsos', label: 'Reembolsos' }] : []),
+        // Adenda de precios §5.1: lo que las inmobiliarias remiten a Cofianza.
+        ...(canSeeTarifasIva ? [{ id: 'primas', label: 'Primas por remitir' }] : []),
       ]
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales.
@@ -110,6 +113,7 @@ export default function FacturacionPage() {
           />
         )}
         {activeTab === 'reembolsos' && canReembolsar && <ReembolsosSection />}
+        {activeTab === 'primas' && canSeeTarifasIva && <PrimasPorRemitirSection />}
       </div>
     </div>
   )
