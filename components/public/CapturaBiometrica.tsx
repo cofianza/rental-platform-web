@@ -232,6 +232,8 @@ export function CapturaBiometrica({
       // verificada (que es la verdad) y aparece «Continuar».
       setResultado('no_verificada')
       onResultado?.('no_verificada')
+      // B3: sin veredicto no se sabe si Auco cobró el cotejo: reintentar exige otra selfie.
+      setSelfie(null)
       setMensaje('No pudimos completar la verificación en este momento. Puedes continuar: alguien de nuestro equipo revisará tu caso.')
     } finally {
       setEnviando(false)

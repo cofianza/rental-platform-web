@@ -502,14 +502,20 @@ export default function AutorizarPage() {
         setPageState('inactivo')
         return
       }
+      // M1: con estos códigos el reporte NO se guardó (el API ya responde éxito
+      // al reintento de un reporte que sí entró). Nada de «detuvimos el proceso»
+      // ni «te enviarán un enlace nuevo»: puede que el enlace ya esté firmado.
       if (
         code === 'AUTORIZACION_EXPIRADA' ||
         code === 'AUTORIZACION_NO_VIGENTE' ||
         code === 'AUTORIZACION_NOT_FOUND'
       ) {
         setReporteAbierto(false)
-        setMotivoReportado(reporteMotivo)
-        setPageState('reportado')
+        setErrorMessage(
+          'Este enlace ya no está activo, así que no pudimos registrar tu reporte. Si necesitas algo, escríbenos: abajo están nuestros datos.',
+        )
+        setData(null)
+        setPageState('error')
         return
       }
       setReporteError('No pudimos registrar tu reporte. Revisa tu conexión e inténtalo otra vez.')
@@ -718,7 +724,7 @@ export default function AutorizarPage() {
             <IconCheck size={30} className="text-primary-700" />
           </div>
           <h2 className="text-xl font-extrabold text-gray-900">
-            {pagoRequerido && pago?.estado !== 'completado' ? 'Falta un paso: paga tu estudio' : '¡Autorización firmada!'}
+            {tituloFirmado(pagoRequerido, pago, esperaAgotada)}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             Tu autorización quedó registrada con firma electrónica (Ley 527/1999).
@@ -893,8 +899,16 @@ export default function AutorizarPage() {
                       Lo pagas al final, después de autorizar.
                     </p>
                   )}
+                  {/* Sin dato del cobro (la API no pudo saberlo): ni «hay costo» ni «no hay costo». */}
+                  {data.pago == null && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                      Quien tramita tu estudio te indicará si tiene costo.
+                    </p>
+                  )}
+                  {/* B2: lo de Mercado Pago solo a quien le toca pagar. */}
                   <p className="mt-2 text-xs text-gray-500">
-                    Nunca te pediremos contraseñas. El pago del estudio se hace solo en Mercado Pago.
+                    Nunca te pediremos contraseñas.
+                    {data.pago?.requerido ? ' El pago del estudio se hace solo en Mercado Pago.' : ''}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">Estudio {data.expediente.numero_expediente}</p>
                 </div>
@@ -1503,7 +1517,9 @@ export default function AutorizarPage() {
                   ? `Revisa el resumen y confirma. Después te mostramos el enlace para pagar el estudio${
                       data.pago.monto_formateado ? ` (${data.pago.monto_formateado})` : ''
                     } en Mercado Pago; tu evaluación empieza cuando se confirme el pago.`
-                  : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
+                  : data?.pago == null
+                    ? 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información. Quien tramita tu estudio te indicará si tiene costo.'
+                    : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
               </p>
             </div>
 
@@ -1687,6 +1703,14 @@ const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
   ppt: 'PPT',
   pep: 'PEP',
   nit: 'NIT',
+}
+
+// B1: el título dice lo mismo que el cuerpo de la pantalla de «ya firmaste».
+function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, esperaAgotada: boolean): string {
+  if (!pagoRequerido || pago?.estado === 'completado' || pago?.estado === 'sin_enlace') return '¡Autorización firmada!'
+  if (pago?.estado === 'procesando') return 'Tu pago está en proceso'
+  if (pago?.payment_link_url || !esperaAgotada) return 'Falta un paso: paga tu estudio'
+  return '¡Autorización firmada!'
 }
 
 // «su nombre, su apellido y su correo o su WhatsApp»
