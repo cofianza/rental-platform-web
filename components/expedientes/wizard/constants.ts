@@ -23,6 +23,7 @@ export type WizardStepName = (typeof WIZARD_STEPS)[number]
 // no existan en la plataforma, el estudio no nace ni se cobra (la API responde
 // 409 ESTUDIO_NO_AFIANZABLE). Por eso el asistente no ofrece persona jurídica
 // ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos.
+// Adenda de precios §6.4: el mensaje dice «en desarrollo», no «rechazado».
 export const TIPO_PERSONA_OPTIONS = [
   { value: 'natural', label: 'Persona Natural' },
 ] as const
@@ -39,10 +40,10 @@ export const TIPO_DOCUMENTO_OPTIONS = [
 export const USOS_NO_AFIANZABLES: readonly string[] = ['comercial', 'local_comercial', 'mixto']
 
 export const MSG_USO_NO_AFIANZABLE =
-  'Uso comercial o mixto: por ahora Cofianza no afianza ese contrato por la plataforma. Escríbanos a hola@cofianza.co para revisar el caso.'
+  'Uso comercial o mixto: los estudios de estos inmuebles están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
 
 export const MSG_PERSONA_JURIDICA =
-  'El arrendatario es una persona jurídica o se identifica con NIT: por ahora Cofianza no afianza ese contrato por la plataforma, así que no se cobra el estudio. Escríbanos a hola@cofianza.co para revisar el caso.'
+  'El arrendatario es una persona jurídica o se identifica con NIT: estos estudios están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
 
 export function esPersonaJuridica(s: { tipo_persona?: string | null; tipo_documento?: string | null }): boolean {
   return s.tipo_persona === 'juridica' || s.tipo_documento?.toLowerCase() === 'nit'
