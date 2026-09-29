@@ -396,6 +396,31 @@ class FacturacionService {
     }
     return response.data
   }
+
+  // ── Adenda de precios §5.1: primas Trasladada por remitir (solo Cofianza) ──
+
+  async listPrimasPorRemitir(): Promise<IPrimaPorRemitir[]> {
+    const response = (await apiClient.get('/facturas/primas-por-remitir')) as unknown as { data: IPrimaPorRemitir[] }
+    return response.data || []
+  }
+
+  async marcarPrimaRemitida(id: string, notas: string): Promise<void> {
+    await apiClient.patch(`/facturas/primas-por-remitir/${id}/remitida`, { notas })
+  }
+}
+
+export interface IPrimaPorRemitir {
+  id: string
+  contrato_id: string
+  monto_cop: number
+  /** AAAA-MM-DD: día 10 en que la inmobiliaria debe remitirla. */
+  vence_en: string
+  estado: 'pendiente' | 'remitida' | 'anulada'
+  remitida_en: string | null
+  notas: string | null
+  reporte_enviado_en: string | null
+  inmobiliarias: { nombre: string } | null
+  contratos: { numero: string; expediente_id: string; direccion: string | null } | null
 }
 
 export interface ITarifaIva {
