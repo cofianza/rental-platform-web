@@ -438,7 +438,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     const faltan = validateForm()
     if (faltan.length > 0) {
       const etiquetas = faltan.map((k) => FIELD_LABELS[k] ?? k)
-      toast.error(`Revisa: ${etiquetas.slice(0, 4).join(', ')}${etiquetas.length > 4 ? ` y ${etiquetas.length - 4} más` : ''}`)
+      toast.error(`Revise: ${etiquetas.slice(0, 4).join(', ')}${etiquetas.length > 4 ? ` y ${etiquetas.length - 4} más` : ''}`)
       scrollToFirstError(formRef.current)
       return
     }
@@ -503,7 +503,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           }
           if (fallidas > 0) {
             toast.warning(
-              `No se ${fallidas > 1 ? 'subieron' : 'subió'} ${fallidas} foto${fallidas > 1 ? 's' : ''}; agrégala${fallidas > 1 ? 's' : ''} desde la pestaña Galería del inmueble`,
+              `No se ${fallidas > 1 ? 'subieron' : 'subió'} ${fallidas} foto${fallidas > 1 ? 's' : ''}; agréguela${fallidas > 1 ? 's' : ''} desde la pestaña Galería del inmueble`,
             )
           }
         }
@@ -512,8 +512,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         // desde la tarjeta, porque el listado no lo explica.
         toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS, {
           description: formData.visible_vitrina
-            ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puedes pausarlo o evaluar un candidato.'
-            : 'No está en la vitrina: actívalo desde la tarjeta cuando quieras publicarlo.',
+            ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puede pausarlo o evaluar un candidato.'
+            : 'No está en la vitrina: actívelo desde la tarjeta cuando desee publicarlo.',
         })
       } else if (inmueble) {
         const updateData: IInmuebleUpdateData = {
@@ -617,7 +617,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
   const title = mode === 'create' ? 'Nuevo Inmueble' : 'Editar Inmueble'
   const subtitle =
     mode === 'create'
-      ? 'Completa los datos para registrar un nuevo inmueble'
+      ? 'Complete los datos para registrar un nuevo inmueble'
       : `Editando inmueble ${inmueble?.codigo || ''}`
 
   return (
@@ -649,7 +649,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Galeria de Fotos</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Sube, reordena, marca la foto de fachada y agrega descripciones a cada imagen.
+              Suba, reordene, marque la foto de fachada y agregue descripciones a cada imagen.
             </p>
             <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
           </div>
@@ -674,7 +674,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                Agrega fotos del interior. La primera foto sera la de fachada. Puedes reordenar y editar descripciones despues desde el detalle.
+                Agregue fotos del interior. La primera foto sera la de fachada. Puede reordenar y editar descripciones despues desde el detalle.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -861,8 +861,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 ) : (
                   <p className="mt-1.5 text-xs text-primary-700">
                     {isPropietarioUser
-                      ? 'Lo generamos por ti; cámbialo si quieres. Debe ser único dentro de tus inmuebles.'
-                      : 'Identificador interno que usas para tus reportes. Letras, números, guiones, máx 30 caracteres. Debe ser único dentro de tus inmuebles.'}
+                      ? 'Lo generamos por usted; cámbielo si desea. Debe ser único dentro de sus inmuebles.'
+                      : 'Identificador interno que usa para sus reportes. Letras, números, guiones, máx 30 caracteres. Debe ser único dentro de sus inmuebles.'}
                   </p>
                 )}
               </div>
@@ -1101,12 +1101,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
             </div>
             <div>
               <p className="text-sm font-medium text-green-800">
-                {isPropietarioUser ? 'Propietario: Tu cuenta' : 'Administrado por: Tu inmobiliaria'}
+                {isPropietarioUser ? 'Propietario: Su cuenta' : 'Administrado por: Su inmobiliaria'}
               </p>
               <p className="text-xs text-green-600">
                 {isPropietarioUser
-                  ? 'El inmueble se registrará a tu nombre automáticamente'
-                  : 'El inmueble quedará vinculado a tu inmobiliaria'}
+                  ? 'El inmueble se registrará a su nombre automáticamente'
+                  : 'El inmueble quedará vinculado a su inmobiliaria'}
               </p>
             </div>
           </div>
@@ -1222,7 +1222,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 ))}
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Si no lo sabes, lo deducimos: si el inmueble paga administración, asumimos que es propiedad horizontal.</p>
+                Si no lo sabe, lo deducimos: si el inmueble paga administración, asumimos que es propiedad horizontal.</p>
             </div>
 
             {/* Cuarto útil */}

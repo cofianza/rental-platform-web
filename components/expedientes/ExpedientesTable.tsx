@@ -354,7 +354,7 @@ export function ExpedientesTable({
                       }`}
                     >
                       {expediente.depende_de === 'gestor'
-                        ? 'Te toca a ti'
+                        ? 'Su turno'
                         : expediente.depende_de === 'prospecto'
                           ? 'Esperando al prospecto'
                           : 'Cofianza procesando'}

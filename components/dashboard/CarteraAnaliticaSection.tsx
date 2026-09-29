@@ -63,7 +63,7 @@ export function CarteraAnaliticaSection() {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
         <p className="font-semibold text-amber-900">No se pudo cargar la analítica</p>
-        <p className="mt-1 text-sm text-amber-800">Esto no significa que tu cartera esté vacía.</p>
+        <p className="mt-1 text-sm text-amber-800">Esto no significa que su cartera esté vacía.</p>
         <button
           type="button"
           onClick={() => {
@@ -83,8 +83,8 @@ export function CarteraAnaliticaSection() {
 
   return (
     <div className="space-y-6">
-      {/* Salud de tu cartera */}
-      <Panel title="Salud de tu cartera">
+      {/* Salud de su cartera */}
+      <Panel title="Salud de su cartera">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             label="Contratos activos"
@@ -113,8 +113,8 @@ export function CarteraAnaliticaSection() {
         </div>
       </Panel>
 
-      {/* Desempeño de tus estudios */}
-      <Panel title="Desempeño de tus estudios">
+      {/* Desempeño de sus estudios */}
+      <Panel title="Desempeño de sus estudios">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             label="Estudios aprobados"

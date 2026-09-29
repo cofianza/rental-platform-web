@@ -37,8 +37,8 @@ const SIGUIENTE_PASO: Record<string, { label: string; tone: 'gray' | 'amber' | '
   borrador: { label: 'Cita previa pendiente', tone: 'gray' },
   en_revision: { label: 'Evaluación crediticia en curso', tone: 'amber' },
   informacion_incompleta: { label: 'Solicitante completando documentacion', tone: 'amber' },
-  aprobado: { label: 'Genera el contrato para continuar', tone: 'primary' },
-  condicionado: { label: 'Revisa documentos del coarrendatario', tone: 'primary' },
+  aprobado: { label: 'Genere el contrato para continuar', tone: 'primary' },
+  condicionado: { label: 'Revise documentos del coarrendatario', tone: 'primary' },
 }
 
 const TONE_CLASSES: Record<string, string> = {
@@ -69,7 +69,7 @@ export function MisExpedientesActivosWidget() {
       })
       .catch((err) => {
         if (cancelled) return
-        const msg = err instanceof Error ? err.message : 'Error al cargar tus estudios'
+        const msg = err instanceof Error ? err.message : 'Error al cargar sus estudios'
         setError(msg)
       })
       .finally(() => {

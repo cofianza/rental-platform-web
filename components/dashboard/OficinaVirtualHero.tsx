@@ -47,8 +47,8 @@ export function OficinaVirtualHero() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const titulo = 'Tu Oficina Virtual'
-  const subtitulo = 'Gestiona propiedades, inquilinos y recaudos con seguridad y control total.'
+  const titulo = 'Su Oficina Virtual'
+  const subtitulo = 'Gestione propiedades, inquilinos y recaudos con seguridad y control total.'
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary-700 to-primary-800 text-white">
@@ -85,7 +85,7 @@ export function OficinaVirtualHero() {
 
         {fallo && !loading && (
           <p className="mt-3 text-sm text-white/90">
-            No se pudieron cargar tus cifras.{' '}
+            No se pudieron cargar sus cifras.{' '}
             <button
               type="button"
               onClick={cargar}

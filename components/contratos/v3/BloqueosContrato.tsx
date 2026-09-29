@@ -98,7 +98,7 @@ function puntosDe(bloqueos: Bloqueo[]): Punto[] {
         razones: b.detalle,
         // Bajar el canon se hace en el paso 1; conservarlo pide evaluar de nuevo sobre el canon nuevo del inmueble.
         nota: CANON_PIDE_EVALUACION.includes(b.codigo)
-          ? 'Si necesitas este canon, primero actualiza el canon del inmueble y luego crea el estudio nuevo.'
+          ? 'Si necesita este canon, primero actualice el canon del inmueble y luego cree el estudio nuevo.'
           : undefined,
         bloqueo: b,
         paso: b.paso,
@@ -149,7 +149,7 @@ export function BloqueosContrato({
       case 'datos_contrato': {
         if (!esTitular) {
           return (
-            <p className="text-xs text-gray-600">Pídele al titular de la inmobiliaria que complete los Datos para contrato.</p>
+            <p className="text-xs text-gray-600">Pídale al titular de la inmobiliaria que complete los Datos para contrato.</p>
           )
         }
         return (
@@ -181,14 +181,14 @@ export function BloqueosContrato({
           if (miembroDebeCompletarPerfil(user)) {
             return (
               <Link href={`/configuracion/cuenta?returnTo=${volverAqui}`} className={enlace}>
-                Completa tu perfil para emitirlo <IconArrowRight size={12} />
+                Complete su perfil para emitirlo <IconArrowRight size={12} />
               </Link>
             )
           }
           if (puedeEditar) {
             return (
               <p className="text-xs text-gray-600">
-                Escríbenos para emitir el certificado de esta evaluación: por{' '}
+                Escríbanos para emitir el certificado de esta evaluación: por{' '}
                 <a href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary-700 hover:underline">
                   WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
                 </a>{' '}
@@ -220,8 +220,8 @@ export function BloqueosContrato({
         return (
           <p className="text-xs text-gray-600">
             {rol === 'operador_analista'
-              ? 'Pídele a un administrador que reactive el inmueble.'
-              : 'Pídele a Cofianza que reactive el inmueble.'}
+              ? 'Pídale a un administrador que reactive el inmueble.'
+              : 'Pídale a Cofianza que reactive el inmueble.'}
           </p>
         )
       default:

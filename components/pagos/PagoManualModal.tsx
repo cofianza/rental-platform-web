@@ -117,10 +117,10 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
     // Validations
     const montoNum = parseInt(monto, 10)
-    if (!concepto) { setError('Selecciona un concepto'); return }
-    if (!monto || montoNum <= 0 || isNaN(montoNum)) { setError('Ingresa un monto valido mayor a 0'); return }
-    if (!metodo) { setError('Selecciona un metodo de pago'); return }
-    if (!fechaPago) { setError('Selecciona la fecha de pago'); return }
+    if (!concepto) { setError('Seleccione un concepto'); return }
+    if (!monto || montoNum <= 0 || isNaN(montoNum)) { setError('Ingrese un monto valido mayor a 0'); return }
+    if (!metodo) { setError('Seleccione un metodo de pago'); return }
+    if (!fechaPago) { setError('Seleccione la fecha de pago'); return }
 
     const today = hoyBogota()
     if (fechaPago > today) { setError('La fecha de pago no puede ser futura'); return }
@@ -278,7 +278,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             >
               <IconUpload size={40} className="mx-auto text-gray-500" />
               <p className="mt-2 text-sm text-gray-600">
-                Haz clic para seleccionar archivo
+                Haga clic para seleccionar archivo
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 PDF, JPG o PNG (max 5MB)

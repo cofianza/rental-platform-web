@@ -117,7 +117,7 @@ export function AccionHabilitarEstudioCard({
     try {
       await expedienteService.habilitarEstudio(expedienteId, proveedor)
       const buroLabel = BUROS.find((b) => b.value === proveedor)?.label ?? proveedor
-      toast.success(`Evaluación habilitada con ${buroLabel}. Define el pago desde el estudio; al solicitante le llega primero la autorización`)
+      toast.success(`Evaluación habilitada con ${buroLabel}. Defina el pago desde el estudio; al solicitante le llega primero la autorización`)
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -138,7 +138,7 @@ export function AccionHabilitarEstudioCard({
     setSubmitting(true)
     try {
       await expedienteService.omitirCita(expedienteId, motivoOmitir.trim() || undefined)
-      toast.success('Cita omitida. Ya puedes habilitar la evaluación.')
+      toast.success('Cita omitida. Ya puede habilitar la evaluación.')
       setShowOmitir(false)
       setMotivoOmitir('')
       await onAction()
@@ -192,8 +192,8 @@ export function AccionHabilitarEstudioCard({
                 Primero, la visita al inmueble
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Agenda la visita desde la sección de citas de este estudio. Cuando se realice,
-                aquí podrás habilitar la evaluación crediticia.
+                Agende la visita desde la sección de citas de este estudio. Cuando se realice,
+                aquí podrá habilitar la evaluación crediticia.
               </p>
               <p className="text-sm text-gray-500 mb-2">¿La visita ya se hizo por fuera (WhatsApp u otro medio)?</p>
               <button
@@ -216,8 +216,8 @@ export function AccionHabilitarEstudioCard({
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Confirmas que la visita ya se coordinó por fuera y quieres continuar sin
-              agendar una cita en el sistema. Podrás habilitar la evaluación enseguida.
+              Confirme que la visita ya se coordinó por fuera y quiere continuar sin
+              agendar una cita en el sistema. Podrá habilitar la evaluación enseguida.
             </p>
             <div>
               <label htmlFor="accion-habilitar-estudio-card-motivo-nota-opcional" className="block text-sm font-medium text-gray-700 mb-1">
@@ -269,8 +269,8 @@ export function AccionHabilitarEstudioCard({
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {citaOmitida
-                ? 'Marcaste la visita como ya realizada. Decide si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
-                : 'La cita de visita se realizó. Decide si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
+                ? 'Marcó la visita como ya realizada. Decida si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
+                : 'La cita de visita se realizó. Decida si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
             </p>
             {/* Selección de buró. Va ANTES del botón porque la decisión se
                 toma al habilitar: el estudio se crea con ese proveedor y
@@ -336,7 +336,7 @@ export function AccionHabilitarEstudioCard({
           <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
             <p className="text-sm text-amber-800">
-              Al confirmar, el solicitante recibirá un aviso por correo de que decidiste no continuar con el proceso. Esta acción es irreversible.
+              Al confirmar, el solicitante recibirá un aviso por correo de que decidió no continuar con el proceso. Esta acción es irreversible.
             </p>
           </div>
 

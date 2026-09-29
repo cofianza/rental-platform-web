@@ -129,7 +129,7 @@ export function PlantillaFormModal({
               <IconAlertTriangle size={18} className="mt-0.5 shrink-0" />
               <p>
                 Esta plantilla es un documento HTML con formato de impresión y los espacios de firma, así que su contenido no se edita desde aquí.
-                Puedes cambiar el nombre, la descripción y si está activa.
+                Puede cambiar el nombre, la descripción y si está activa.
               </p>
             </div>
           ) : (
@@ -137,10 +137,10 @@ export function PlantillaFormModal({
               <RichTextEditor
                 content={contenido}
                 onChange={setContenido}
-                placeholder="Escribe el contenido del contrato aqui. Usa el boton 'Variable' para insertar datos dinamicos..."
+                placeholder="Escriba el contenido del contrato aqui. Use el botón 'Variable' para insertar datos dinamicos..."
               />
               <p className="text-xs text-gray-500 mt-1">
-                Usa el boton <strong>+ Variable</strong> en la barra de herramientas para insertar datos dinamicos como nombres, documentos, fechas, etc.
+                Use el botón <strong>+ Variable</strong> en la barra de herramientas para insertar datos dinamicos como nombres, documentos, fechas, etc.
               </p>
             </>
           )}

@@ -78,7 +78,7 @@ export function CoarrendatarioInviteForm({
 
   const handleInvitar = async () => {
     if (!nombre.trim() || !apellido.trim() || !numDoc.trim() || !email.trim()) {
-      toast.error('Llena todos los campos requeridos.')
+      toast.error('Llene todos los campos requeridos.')
       return
     }
     if (!esNombreValido(nombre.trim()) || !esNombreValido(apellido.trim())) {
@@ -118,28 +118,28 @@ export function CoarrendatarioInviteForm({
         </div>
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-            {esGestor ? 'Invita a un co-arrendatario' : 'Puedes sumar un co-arrendatario (opcional)'}
+            {esGestor ? 'Invite a un co-arrendatario' : 'Puede sumar un co-arrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
             {aprobado ? (
               <>
                 {esGestor
                   ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
-                  : 'Tu estudio fue aprobado y puedes firmar solo. Si antes del contrato sumas como '}
-                <strong>co-arrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'vas a vivir'}, la prima de
+                  : 'Su estudio fue aprobado y puede firmar solo. Si antes del contrato suma como '}
+                <strong>co-arrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
                 vinculación baja del 20 % al 10 % del canon; su evaluación no tiene costo adicional.{' '}
                 <strong>No es fiador ni codeudor</strong> y no necesita finca raíz.
               </>
             ) : esGestor ? (
               <>
-                El estudio quedó condicionado. Puedes invitar a la persona con quien vivirá el
+                El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
                 solicitante como <strong>co-arrendatario</strong>: se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador ni codeudor.</strong>
               </>
             ) : (
               <>
-                Tu estudio quedó condicionado y lo revisa un analista de Cofianza; no tienes que hacer
-                nada para que avance. Si quieres reforzar tu caso, invita a la persona con quien vas a
+                Su estudio quedó condicionado y lo revisa un analista de Cofianza; no tiene que hacer
+                nada para que avance. Si quiere reforzar su caso, invite a la persona con quien va a
                 vivir como <strong>co-arrendatario</strong>: los dos toman el arriendo y los respaldamos
                 juntos como un solo arrendatario. <strong>No es un fiador ni codeudor</strong>.
               </>
@@ -160,10 +160,10 @@ export function CoarrendatarioInviteForm({
         <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">
           <p className="text-sm text-gray-700">
             {initial?.nombre
-              ? `Ya nos contaste de ${initial.nombre}: completa sus datos y envíale la invitación.`
+              ? `Ya nos contó de ${initial.nombre}: complete sus datos y envíele la invitación.`
               : esGestor
-                ? 'Captura los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
-                : 'Captura los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
+                ? 'Capture los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
+                : 'Capture los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
           </p>
 
           <div className="grid grid-cols-2 gap-3">

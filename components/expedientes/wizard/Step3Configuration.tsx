@@ -57,9 +57,9 @@ const OPCIONES_PAGO: {
   {
     valor: 'credito',
     letra: 'A',
-    titulo: 'Descontar de tu paquete',
+    titulo: 'Descontar de su paquete',
     descripcion:
-      'Usa un crédito de estudios del paquete que ya compraste. Es la vía más ágil: el estudio arranca de inmediato.',
+      'Use un crédito de estudios del paquete que ya compró. Es la vía más ágil: el estudio arranca de inmediato.',
     Icono: IconCreditCard,
   },
   {
@@ -68,7 +68,7 @@ const OPCIONES_PAGO: {
     // Adenda 2 §7: la opción B se paga en línea; "a cuenta" no se aprobó.
     titulo: 'Pagar ahora con Mercado Pago',
     descripcion:
-      'Pagas tú el estudio en línea (tarjeta o PSE). Al terminar el asistente te llevamos al pago; el estudio sigue cuando se confirme.',
+      'Usted paga el estudio en línea (tarjeta o PSE). Al terminar el asistente lo llevamos al pago; el estudio sigue cuando se confirme.',
     Icono: IconBank,
   },
   {
@@ -256,13 +256,13 @@ export function Step3Configuration({
                     <span className="mt-2 block text-xs font-medium">
                       {saldoError ? (
                         <span className="text-amber-600">
-                          No pudimos consultar tu saldo de estudios.
+                          No pudimos consultar su saldo de estudios.
                         </span>
                       ) : saldo === null ? (
                         <span className="text-gray-500">Consultando saldo…</span>
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
-                          No te quedan estudios en el paquete.{' '}
+                          No le quedan estudios en el paquete.{' '}
                           {esInmobiliaria ? (
                             <>
                               {/* La compra NO vive en "Pagos a Cofianza": está en
@@ -275,18 +275,18 @@ export function Step3Configuration({
                                 className="font-semibold underline"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                Compra un paquete
+                                Compre un paquete
                               </Link>{' '}
-                              (se abre en otra pestaña; al volver actualizamos tu saldo) o elige otra opción.
+                              (se abre en otra pestaña; al volver actualizamos su saldo) o elija otra opción.
                             </>
                           ) : (
-                            'Elige otra opción.'
+                            'Elija otra opción.'
                           )}
                         </span>
                       ) : (
                         <span className="text-gray-600">
                           Saldo actual: <strong>{saldo}</strong> · después de este estudio
-                          te quedarían <strong>{saldo - 1}</strong>
+                          le quedarían <strong>{saldo - 1}</strong>
                         </span>
                       )}
                     </span>
@@ -311,7 +311,7 @@ export function Step3Configuration({
           <span className="font-normal text-gray-500">(opcional)</span>
         </legend>
         <p className="text-xs text-gray-500">
-          Si no eliges, se consulta DataCrédito, la central principal de Cofianza (la API lo
+          Si no elige, se consulta DataCrédito, la central principal de Cofianza (la API lo
           aplica por defecto). Cambiarlo después significa una consulta adicional al buró; el estudio
           no se vuelve a cobrar.
         </p>
@@ -394,7 +394,7 @@ export function Step3Configuration({
             <div>
               <p className="text-sm text-amber-800">{analistasError}</p>
               <p className="text-xs text-amber-600 mt-1">
-                Puedes continuar sin asignar responsable
+                Puede continuar sin asignar responsable
               </p>
             </div>
           </div>

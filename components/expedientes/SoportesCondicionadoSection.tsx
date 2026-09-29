@@ -105,7 +105,7 @@ export function SoportesCondicionadoSection({
 
   const handleUpload = async () => {
     if (!file) {
-      toast.error('Selecciona un archivo.')
+      toast.error('Seleccione un archivo.')
       return
     }
     setUploading(true)
@@ -155,7 +155,7 @@ export function SoportesCondicionadoSection({
       ) : soportes.length === 0 ? (
         <p className="text-sm text-gray-600 italic">
           {permitirSubir
-            ? 'Aún no has subido documentos adicionales.'
+            ? 'Aún no ha subido documentos adicionales.'
             : 'El solicitante aún no ha subido documentos adicionales.'}
         </p>
       ) : (

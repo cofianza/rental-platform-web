@@ -154,7 +154,7 @@ export function TipoDocumentoForm({
     }
 
     if (formData.formatos_aceptados.length === 0) {
-      newErrors.formatos_aceptados = 'Selecciona al menos un formato'
+      newErrors.formatos_aceptados = 'Seleccione al menos un formato'
     }
 
     if (!formData.tamano_maximo_mb || formData.tamano_maximo_mb < 1) {

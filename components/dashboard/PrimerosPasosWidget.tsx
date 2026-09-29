@@ -49,7 +49,7 @@ export function PrimerosPasosWidget() {
 
   const pasos = [
     {
-      titulo: 'Completa tus datos para contrato',
+      titulo: 'Complete sus datos para contrato',
       detalle: perfilCompleto
         ? 'Listo'
         : faltantes
@@ -60,15 +60,15 @@ export function PrimerosPasosWidget() {
       bloqueado: false,
     },
     {
-      titulo: 'Agrega tu primera propiedad',
+      titulo: 'Agregue su primera propiedad',
       detalle: tienePropiedad ? 'Listo' : perfilCompleto ? 'Dirección, canon y fotos' : 'Primero el paso 1',
       href: '/inmuebles/nuevo',
       hecho: tienePropiedad,
       bloqueado: !perfilCompleto,
     },
     {
-      titulo: 'Crea tu primer estudio',
-      detalle: tienePropiedad ? 'Evalúa a un candidato en minutos' : 'Primero el paso 2',
+      titulo: 'Cree su primer estudio',
+      detalle: tienePropiedad ? 'Evalúe a un candidato en minutos' : 'Primero el paso 2',
       href: '/expedientes/nuevo',
       hecho: false,
       bloqueado: !tienePropiedad,
@@ -78,7 +78,7 @@ export function PrimerosPasosWidget() {
   return (
     <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-5">
       <h2 className="text-sm font-bold uppercase tracking-wide text-primary-800">Primeros pasos</h2>
-      <p className="mt-0.5 text-sm text-gray-600">Tres pasos para dejar tu cuenta lista.</p>
+      <p className="mt-0.5 text-sm text-gray-600">Tres pasos para dejar su cuenta lista.</p>
       <ol className="mt-3 space-y-2">
         {pasos.map((p, i) => {
           const contenido = (

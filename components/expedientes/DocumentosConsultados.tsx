@@ -45,7 +45,7 @@ export function DocumentosConsultados({ expedienteId, value, onChange, disabled 
 
   return (
     <fieldset>
-      <legend className="block text-sm font-medium text-gray-700 mb-2">Documentos que consultaste</legend>
+      <legend className="block text-sm font-medium text-gray-700 mb-2">Documentos que consultó</legend>
       <div className="max-h-44 overflow-y-auto space-y-1.5 rounded-lg border border-gray-200 p-3">
         {opciones.map((nombre) => (
           <label key={nombre} className="flex items-start gap-2 text-sm text-gray-700">

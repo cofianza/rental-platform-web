@@ -26,9 +26,9 @@ function delTipo(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMot
 /** null si está completo; si no, qué falta. */
 export function errorMotivos(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): string | null {
   const motivos = delTipo(tipo, v, catalogo)
-  if (motivos.length === 0) return 'Elige al menos un motivo.'
+  if (motivos.length === 0) return 'Elija al menos un motivo.'
   if (motivos.includes(OTRO[tipo]) && (v.motivo_detalle ?? '').trim().length < MIN_DETALLE) {
-    return `Con «Otro», escribe el motivo (mínimo ${MIN_DETALLE} caracteres).`
+    return `Con «Otro», escriba el motivo (mínimo ${MIN_DETALLE} caracteres).`
   }
   return null
 }
@@ -65,7 +65,7 @@ const TITULO: Record<TipoDecision, string> = {
 const AYUDA_DETALLE: Record<TipoDecision, string> = {
   aprobar: 'Queda en el fundamento interno de la decisión.',
   rechazar: 'Solo lo ve Cofianza: queda en el fundamento interno.',
-  condicionar: 'La inmobiliaria o el propietario lo ven junto a las condiciones: escribe qué deben aportar.',
+  condicionar: 'La inmobiliaria o el propietario lo ven junto a las condiciones: escriba qué deben aportar.',
 }
 
 export function SelectorMotivos({
@@ -124,7 +124,7 @@ export function SelectorMotivos({
         <label htmlFor={`${idBase}-detalle`} className="mb-1 block text-sm font-medium text-gray-700">
           {conOtro ? (
             <>
-              Escribe el motivo <span className="text-red-500">*</span>
+              Escriba el motivo <span className="text-red-500">*</span>
             </>
           ) : (
             'Detalle (opcional)'

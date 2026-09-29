@@ -2,7 +2,7 @@
  * ContratoSolicitanteCard — estado del contrato visto desde el solicitante.
  *
  * Estados visibles:
- *   - borrador / en_revision / aprobado → "Preparando tu contrato..." (no accionable)
+ *   - borrador / en_revision / aprobado → "Preparando su contrato..." (no accionable)
  *   - pendiente_firma → CTA revisar PDF + aviso "te enviamos el link de firma por WhatsApp"
  *   - firma_incompleta (V3) → la firma venció o alguien la rechazó; la inmobiliaria la reenvía
  *   - firmado (por ambas partes, pendiente activación) → "Contrato firmado, esperando activación"
@@ -123,7 +123,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     if (toAlternativeEmail) {
       const email = resendEmail.trim()
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        toast.error('Ingresa un correo válido.')
+        toast.error('Ingrese un correo válido.')
         return
       }
     }
@@ -135,7 +135,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
       toast.success(
         toAlternativeEmail
           ? `Link de firma reenviado a ${resendEmail.trim()}`
-          : 'Link de firma reenviado a tu WhatsApp/correo registrado.',
+          : 'Link de firma reenviado a su WhatsApp/correo registrado.',
       )
       setShowResendForm(false)
       setResendEmail('')
@@ -158,7 +158,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         return res?.url
       })
       if (!abierto) {
-        toast.error('No pudimos generar el link de descarga. Intenta de nuevo.')
+        toast.error('No pudimos generar el link de descarga. Intente de nuevo.')
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No pudimos descargar el contrato.'
@@ -189,9 +189,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
               <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
             </svg>
             <div>
-              <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando tu contrato</p>
+              <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando su contrato</p>
               <p className="text-sm text-blue-800">
-                ¡Tu estudio fue aprobado! La inmobiliaria está generando el contrato de arrendamiento — te llegará por WhatsApp en cuanto esté listo para firmar.
+                ¡Su estudio fue aprobado! La inmobiliaria está generando el contrato de arrendamiento — le llegará por WhatsApp en cuanto esté listo para firmar.
               </p>
             </div>
           </div>
@@ -211,9 +211,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando tu contrato</p>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando su contrato</p>
             <p className="text-sm text-blue-800">
-              La inmobiliaria está generando y revisando tu contrato de arrendamiento. Te avisaremos por WhatsApp cuando esté listo para firmar.
+              La inmobiliaria está generando y revisando su contrato de arrendamiento. Le avisaremos por WhatsApp cuando esté listo para firmar.
             </p>
           </div>
         </div>
@@ -226,9 +226,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     const tienePdf = Boolean(contrato.contenido_pdf_url || contrato.storage_key)
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-1">Tu contrato está listo para firmar</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Su contrato está listo para firmar</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Revisa el contrato antes de firmar. Te enviamos un mensaje por WhatsApp con el link seguro para firmar — ábrelo y sigue las instrucciones.
+          Revise el contrato antes de firmar. Le enviamos un mensaje por WhatsApp con el link seguro para firmar — ábralo y siga las instrucciones.
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">
@@ -272,7 +272,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
             <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.76-2.93L13.76 4a2 2 0 00-3.52 0L3.17 16.07A2 2 0 004.93 19z" />
             </svg>
-            <span>El PDF del contrato aún no está disponible. La inmobiliaria lo adjuntará en breve — te avisaremos por WhatsApp.</span>
+            <span>El PDF del contrato aún no está disponible. La inmobiliaria lo adjuntará en breve — le avisaremos por WhatsApp.</span>
           </div>
         )}
 
@@ -285,8 +285,8 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                     quién es y leerlo aquí solo genera desconfianza. */}
                 <p className="text-xs text-gray-500">
                   {esMultiparte
-                    ? '¿No te llegó el WhatsApp de firma? Pídelo de nuevo. Si tu número o correo cambió, pide a la inmobiliaria o al propietario que lo actualice.'
-                    : '¿No recibiste el WhatsApp de firma? Pídelo de nuevo: te llega por WhatsApp y correo, o redirígelo a otra dirección.'}
+                    ? '¿No le llegó el WhatsApp de firma? Pídalo de nuevo. Si su número o correo cambió, pida a la inmobiliaria o al propietario que lo actualice.'
+                    : '¿No recibió el WhatsApp de firma? Pídalo de nuevo: le llega por WhatsApp y correo, o rediríjalo a otra dirección.'}
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   <button
@@ -344,7 +344,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
                   </button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Te enviaremos un nuevo enlace de firma a esta dirección.
+                  Le enviaremos un nuevo enlace de firma a esta dirección.
                 </p>
               </div>
             )}
@@ -361,7 +361,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         <p className="text-sm font-semibold text-amber-900 mb-1">La firma del contrato quedó incompleta</p>
         <p className="text-sm text-amber-800">
           El proceso de firma terminó sin la firma de todas las partes (venció el plazo o alguien la rechazó). La
-          inmobiliaria puede enviarlo de nuevo a firma: si lo hace, te llegará otra vez el mensaje por WhatsApp.
+          inmobiliaria puede enviarlo de nuevo a firma: si lo hace, le llegará otra vez el mensaje por WhatsApp.
         </p>
       </div>
     )
@@ -378,7 +378,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-green-900 mb-0.5">¡Contrato firmado!</p>
             <p className="text-sm text-green-800 mb-3">
-              Ambas partes firmaron. La inmobiliaria está activando el contrato — te notificaremos cuando entre en vigencia.
+              Ambas partes firmaron. La inmobiliaria está activando el contrato — le notificaremos cuando entre en vigencia.
             </p>
             <button
               onClick={() => handleDescargar(true)}
@@ -406,7 +406,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-green-900 mb-1">¡Contrato activo!</h3>
             <p className="text-sm text-green-800 mb-3">
-              Tu arrendamiento está vigente. Ya puedes disfrutar de tu nuevo hogar.
+              Su arrendamiento está vigente. Ya puede disfrutar de su nuevo hogar.
             </p>
             <button
               onClick={() => handleDescargar(true)}
@@ -432,7 +432,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         <p className="text-sm text-red-800">
           {contrato.motivo_cancelacion
             ? `Motivo: ${contrato.motivo_cancelacion}`
-            : 'La inmobiliaria canceló este contrato. Contactalos para más detalles.'}
+            : 'La inmobiliaria canceló este contrato. Contáctelos para más detalles.'}
         </p>
       </div>
     )
@@ -444,7 +444,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
       <div className="border border-gray-200 bg-gray-50 rounded-lg p-5">
         <p className="text-sm font-semibold text-gray-900 mb-1">Contrato finalizado</p>
         <p className="text-sm text-gray-600">
-          Este contrato ya no está vigente. Puedes descargarlo para tus registros.
+          Este contrato ya no está vigente. Puede descargarlo para sus registros.
         </p>
         <button
           onClick={() => handleDescargar(true)}

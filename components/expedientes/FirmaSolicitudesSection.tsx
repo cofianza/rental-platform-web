@@ -71,7 +71,7 @@ export function FirmaSolicitudesSection({
     if (!reenviarTarget) return
     const emailNuevo = reenviarEmail.trim().toLowerCase()
     if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
-      toast.error('Ingresa un correo válido para reenviar')
+      toast.error('Ingrese un correo válido para reenviar')
       return
     }
     const id = reenviarTarget.id
@@ -140,7 +140,7 @@ export function FirmaSolicitudesSection({
           <p className="text-sm text-gray-500">No hay solicitudes de firma</p>
           {canSendFirma && (
             <p className="text-xs text-gray-500 mt-1">
-              Envía un enlace seguro al firmante para que revise y firme el contrato
+              Envíe un enlace seguro al firmante para que revise y firme el contrato
             </p>
           )}
         </div>
@@ -254,7 +254,7 @@ export function FirmaSolicitudesSection({
             <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
             <div>
               <label htmlFor="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e" className="block text-[11px] font-medium text-gray-500 mb-1">
-                Correo destino (corrígelo si estaba mal escrito)
+                Correo destino (corríjalo si estaba mal escrito)
               </label>
               <input id="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e"
                 type="email"

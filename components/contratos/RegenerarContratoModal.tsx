@@ -121,7 +121,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
 
       <div className="p-6 space-y-5 overflow-y-auto">
         <p className="text-sm text-gray-600">
-          Ajusta los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
+          Ajuste los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
           La identidad del arrendatario no es editable.
         </p>
 
@@ -164,7 +164,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Si no lo cambias, se conserva el canon actual del contrato. Un canon nuevo no puede
+            Si no lo cambia, se conserva el canon actual del contrato. Un canon nuevo no puede
             superar el <strong>10%</strong> sobre el valor del inmueble.
           </p>
         </div>

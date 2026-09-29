@@ -48,11 +48,11 @@ export function PerfilPersonalIncompletoBanner({ user }: Props) {
       <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900">
-          Completa tus datos personales para administrar este estudio
+          Complete sus datos personales para administrar este estudio
         </p>
         <p className="text-xs text-amber-800 mt-1">
-          Como miembro del equipo necesitas tener tu nombre, apellido, teléfono y
-          documento en tu perfil antes de poder gestionar los estudios que te
+          Como miembro del equipo necesita tener su nombre, apellido, teléfono y
+          documento en su perfil antes de poder gestionar los estudios que le
           asignen. Mientras tanto las acciones están deshabilitadas.
         </p>
         <Link

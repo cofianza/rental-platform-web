@@ -109,35 +109,35 @@ export function GenerarLinkPagoModal({
 
     // Validations
     if (!concepto) {
-      setError('Selecciona un concepto')
+      setError('Seleccione un concepto')
       return
     }
 
     const montoNum = parseInt(monto, 10)
     if (!monto || montoNum <= 0 || isNaN(montoNum)) {
-      setError('Ingresa un monto valido mayor a 0')
+      setError('Ingrese un monto valido mayor a 0')
       return
     }
 
     if (!descripcion.trim()) {
-      setError('Ingresa una descripcion')
+      setError('Ingrese una descripcion')
       return
     }
 
     if (!emailPagador.trim()) {
-      setError('Ingresa el email del pagador')
+      setError('Ingrese el email del pagador')
       return
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(emailPagador)) {
-      setError('Ingresa un email valido')
+      setError('Ingrese un email valido')
       return
     }
 
     if (!nombrePagador.trim()) {
-      setError('Ingresa el nombre del pagador')
+      setError('Ingrese el nombre del pagador')
       return
     }
 

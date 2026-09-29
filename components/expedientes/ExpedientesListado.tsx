@@ -173,7 +173,7 @@ export function ExpedientesListado() {
                     setTomandoId(id)
                     try {
                       await expedienteService.asignarResponsable(id, user!.id, true)
-                      toast.success('Estudio asignado a ti')
+                      toast.success('Estudio asignado a usted')
                       await fetchExpedientes()
                     } catch (e) {
                       toast.error(e instanceof Error ? e.message : 'No se pudo asignar')

@@ -175,7 +175,7 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
                   <span>
                     Falta el acta de entrega e inventario: la carga la inmobiliaria.
                     {rol === 'administrador'
-                      ? ' Si no la va a cargar, puedes cerrar el estudio sin acta desde «Cambiar estado».'
+                      ? ' Si no la va a cargar, puede cerrar el estudio sin acta desde «Cambiar estado».'
                       : ' Sin ella no se puede cerrar el estudio.'}
                   </span>
                 )}

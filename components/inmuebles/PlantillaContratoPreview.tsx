@@ -65,7 +65,7 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Vista previa del contrato</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Asi se vería el contrato con los datos actuales del inmueble y tu perfil.
+            Asi se vería el contrato con los datos actuales del inmueble y su perfil.
             Los datos del arrendatario aparecen como placeholders <code>[…]</code>.
           </p>
         </div>
@@ -92,7 +92,7 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
             {/* El destino no habilitado no se arregla desde el perfil */}
             {errorCode !== 'DESTINACION_NO_HABILITADA' && (
               <p className="text-xs text-red-700 mt-1">
-                Verifica que tu perfil tenga los datos para contrato completos en
+                Verifique que su perfil tenga los datos para contrato completos en
                 Configuración → Datos para contrato.
               </p>
             )}

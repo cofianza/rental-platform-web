@@ -162,7 +162,7 @@ export function Paso4Clausulas(p: Props) {
         prioridad: 'media',
       })
       setSolicitada(true)
-      toast.success('Solicitud enviada a Cofianza. Te avisaremos en tus notificaciones cuando la revisemos.')
+      toast.success('Solicitud enviada a Cofianza. Le avisaremos en sus notificaciones cuando la revisemos.')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No pudimos enviar la solicitud.')
     } finally {
@@ -191,12 +191,12 @@ export function Paso4Clausulas(p: Props) {
           </span>
         </div>
         {errores.elegidas && <p className="text-xs text-red-600">{errores.elegidas}</p>}
-        <ListaHallazgos hallazgos={sueltos} titulo="Revisa las cláusulas:" />
+        <ListaHallazgos hallazgos={sueltos} titulo="Revise las cláusulas:" />
 
         {n === 0 ? (
           <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
             {incorpora
-              ? 'Este contrato no lleva cláusulas adicionales. Agrégalas desde los modelos sugeridos por Cofianza o desde tus cláusulas, o continúa sin ellas.'
+              ? 'Este contrato no lleva cláusulas adicionales. Agréguelas desde los modelos sugeridos por Cofianza o desde sus cláusulas, o continúe sin ellas.'
               : 'Este contrato no lleva cláusulas adicionales. Solo la inmobiliaria del contrato puede incorporarlas.'}
           </p>
         ) : (
@@ -291,7 +291,7 @@ export function Paso4Clausulas(p: Props) {
 
         {incorpora && excede && !sinCambios && (
           <Aviso tono="aviso">
-            Superas el máximo de {adicionales.maximo} cláusulas adicionales. Puedes guardar, pero el contrato quedará
+            Supera el máximo de {adicionales.maximo} cláusulas adicionales. Puede guardar, pero el contrato quedará
             bloqueado hasta que Cofianza revise y autorice este conjunto.
           </Aviso>
         )}

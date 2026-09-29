@@ -143,20 +143,20 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
   const handleLeadSubmit = async () => {
     if (leadNombre.trim().length < 2) {
-      toast.error('Ingresa tu nombre')
+      toast.error('Ingrese su nombre')
       return
     }
     const tel = leadTelefono.replace(/\s+/g, '').trim()
     if (!/^\+?\d{7,15}$/.test(tel)) {
-      toast.error('Ingresa un WhatsApp válido, con código de país (ej. +57…).')
+      toast.error('Ingrese un WhatsApp válido, con código de país (ej. +57…).')
       return
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(leadEmail.trim())) {
-      toast.error('Ingresa un correo válido')
+      toast.error('Ingrese un correo válido')
       return
     }
     if (!leadAcepta) {
-      toast.error('Debes autorizar el tratamiento de tus datos para continuar')
+      toast.error('Debe autorizar el tratamiento de sus datos para continuar')
       return
     }
 
@@ -170,9 +170,9 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         acepta: true,
       })
       setLeadEnviado(true)
-      toast.success('¡Listo! Le avisamos al anunciante; te contactará pronto.')
+      toast.success('¡Listo! Le avisamos al anunciante; lo contactará pronto.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar tu interés. Intenta de nuevo.')
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar su interés. Intente de nuevo.')
     } finally {
       setLeadSubmitting(false)
     }
@@ -187,7 +187,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
 
   const handleSubmit = async () => {
     if (!fechaPropuesta) {
-      toast.error('Selecciona una fecha y hora para la visita')
+      toast.error('Seleccione una fecha y hora para la visita')
       return
     }
 
@@ -207,7 +207,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
           notas_solicitante: notas.trim() || undefined,
         })
 
-        toast.success('Solicitud enviada. El propietario revisará tu cita.')
+        toast.success('Solicitud enviada. El propietario revisará su cita.')
         router.push(`/expedientes/${expedienteId}`)
       } catch (citaError) {
         // Expediente creado pero cita falló: no rollback. Auditoría en console
@@ -217,14 +217,14 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
           error: citaError,
         })
         toast.message(
-          'Estudio creado. No se pudo agendar la cita — agéndala desde tu panel.',
+          'Estudio creado. No se pudo agendar la cita — agéndela desde su panel.',
         )
         router.push(`/expedientes/${expedienteId}`)
       }
     } catch (interesError: unknown) {
       const errObj = interesError as { code?: string; statusCode?: number; message?: string }
       if (errObj.code === 'EXPEDIENTE_ALREADY_EXISTS' || errObj.statusCode === 409) {
-        toast.error('Ya tienes un estudio activo sobre este inmueble.')
+        toast.error('Ya tiene un estudio activo sobre este inmueble.')
         // Refrescar el check para que la card se re-renderize en modo "Ver mi estudio".
         const refreshed = await expedienteService
           .miExpedientePorInmueble(inmuebleId)
@@ -232,7 +232,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         setExpedienteActivo(refreshed.expediente)
         setShowModal(false)
       } else {
-        toast.error(errObj.message || 'No se pudo registrar tu interés. Intenta de nuevo.')
+        toast.error(errObj.message || 'No se pudo registrar su interés. Intente de nuevo.')
       }
     } finally {
       setSubmitting(false)
@@ -268,7 +268,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         </Link>
         {variant === 'primary' && (
           <p className="text-xs text-gray-600">
-            Ya tienes un estudio activo ({formatNumeroEstudio(expedienteActivo.numero)}) sobre este inmueble.
+            Ya tiene un estudio activo ({formatNumeroEstudio(expedienteActivo.numero)}) sobre este inmueble.
           </p>
         )}
       </div>
@@ -280,7 +280,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Esta cuenta es de {user?.rol === 'inmobiliaria' ? 'inmobiliaria' : user?.rol === 'propietario' ? 'propietario' : 'gestión'}.
-        Para postularte a este inmueble entra con una cuenta de arrendatario.
+        Para postularse a este inmueble ingrese con una cuenta de arrendatario.
       </div>
     )
   }
@@ -311,7 +311,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Elige un horario disponible. El propietario confirmará o ajustará la fecha.
+            Elija un horario disponible. El propietario confirmará o ajustará la fecha.
           </p>
 
           <SlotSelector
@@ -330,7 +330,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               </p>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">Selecciona un horario arriba.</p>
+            <p className="text-sm text-gray-500 italic">Seleccione un horario arriba.</p>
           )}
 
           <div>
@@ -342,7 +342,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               onChange={(e) => setNotas(e.target.value)}
               rows={3}
               maxLength={500}
-              placeholder="Cuéntale por qué te interesa, o deja alguna observación para la visita."
+              placeholder="Cuéntele por qué le interesa, o deje alguna observación para la visita."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <p className="text-xs text-gray-500 mt-1 text-right">{notas.length}/500</p>
@@ -367,7 +367,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               </button>
             </div>
             {!fechaPropuesta && (
-              <p className="text-xs text-gray-500">Selecciona fecha y hora para continuar.</p>
+              <p className="text-xs text-gray-500">Seleccione fecha y hora para continuar.</p>
             )}
           </div>
         </div>
@@ -386,9 +386,9 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
               <IconCheck size={24} />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">¡Gracias por tu interés!</p>
+              <p className="font-semibold text-gray-900">¡Gracias por su interés!</p>
               <p className="text-sm text-gray-600 mt-1">
-                Le avisamos al anunciante con tus datos. Te contactará por WhatsApp o correo para
+                Le avisamos al anunciante con sus datos. Lo contactará por WhatsApp o correo para
                 coordinar la visita.
               </p>
             </div>
@@ -402,8 +402,8 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Déjanos tus datos y el anunciante te contactará para coordinar una visita. Por ahora
-              no pedimos datos personales (cédula, ingresos) — eso solo se pide si decides avanzar.
+              Déjenos sus datos y el anunciante lo contactará para coordinar una visita. Por ahora
+              no pedimos datos personales (cédula, ingresos) — eso solo se pide si decide avanzar.
             </p>
 
             <div>
@@ -414,7 +414,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 type="text"
                 value={leadNombre}
                 onChange={(e) => setLeadNombre(e.target.value)}
-                placeholder="Tu nombre"
+                placeholder="Su nombre"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -435,7 +435,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
                 type="email"
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
-                placeholder="tu@correo.com"
+                placeholder="su@correo.com"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

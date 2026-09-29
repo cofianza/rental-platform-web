@@ -349,11 +349,11 @@ export function ContratosSection({
             </p>
           ) : canCreate && contratosV3 ? (
             <p className="text-sm text-gray-500">
-              Pulsa «Crear contrato» para abrir el asistente.
+              Pulse «Crear contrato» para abrir el asistente.
             </p>
           ) : canCreate ? (
             <p className="text-sm text-gray-500">
-              Pulsa &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
+              Pulse &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
             </p>
           ) : (
             <p className="text-sm text-gray-500">

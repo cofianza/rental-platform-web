@@ -329,7 +329,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
         <textarea
           value={nuevoComentario}
           onChange={(e) => setNuevoComentario(e.target.value)}
-          placeholder="Escribe un comentario interno..."
+          placeholder="Escriba un comentario interno..."
           rows={3}
           disabled={isSending}
           className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"

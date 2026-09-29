@@ -3,7 +3,7 @@
  *
  * Flujo:
  *   - formulario_completado  → formulario "Confirma tu cédula y envía".
- *   - en_proceso             → "Consultando tu historial...".
+ *   - en_proceso             → "Consultando su historial...".
  *   - completado + aprobado  → banner verde.
  *   - completado + condicionado → banner ámbar.
  *   - completado + rechazado → banner "No aprobable por ahora" (§10: nunca
@@ -56,7 +56,7 @@ type TipoDoc = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
  * una sola vez el banner del estudio, en esta misma pantalla.
  */
 function SinMotivo({ className }: { className: string }) {
-  return <p className={className}>Escríbenos y revisamos tu caso.</p>
+  return <p className={className}>Escríbanos y revisamos su caso.</p>
 }
 
 export function EstudioSolicitanteCard({
@@ -262,7 +262,7 @@ export function EstudioSolicitanteCard({
     if (!estudio) return
     const numero = numeroDoc.trim()
     if (!numero) {
-      toast.error('Ingresa tu número de cédula para continuar')
+      toast.error('Ingrese su número de cédula para continuar')
       return
     }
     setSubmitting(true)
@@ -283,7 +283,7 @@ export function EstudioSolicitanteCard({
         numero_documento: numero,
       })
       clearTimeout(safetyTimer)
-      toast.success('Estudio enviado. Te avisaremos cuando tengamos el resultado.')
+      toast.success('Estudio enviado. Le avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
       onEjecutado?.()
     } catch (err) {
@@ -291,7 +291,7 @@ export function EstudioSolicitanteCard({
       // Aunque haya error, refrescamos: el backend puede haber procesado
       // y el error venir del HTTP layer. Si el estado ya cambió, es éxito.
       await fetchEstudio()
-      const msg = err instanceof Error ? err.message : 'No pudimos ejecutar el estudio. Intenta de nuevo.'
+      const msg = err instanceof Error ? err.message : 'No pudimos ejecutar el estudio. Intente de nuevo.'
       toast.error(msg)
     } finally {
       clearTimeout(safetyTimer)
@@ -308,7 +308,7 @@ export function EstudioSolicitanteCard({
     try {
       await abrirEnPestana(async () => (await estudioService.descargarCertificado(estudio.id)).url)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No pudimos descargar el certificado. Intenta de nuevo.')
+      toast.error(err instanceof Error ? err.message : 'No pudimos descargar el certificado. Intente de nuevo.')
     } finally {
       setDescargandoCert(false)
     }
@@ -339,20 +339,20 @@ export function EstudioSolicitanteCard({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
         <div>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Firma tu autorización para continuar</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">Firme su autorización para continuar</h3>
           <p className="text-sm text-gray-700 mb-2">
-            Te enviamos un enlace a tu {solicitanteTelefono
+            Le enviamos un enlace a su {solicitanteTelefono
               ? <strong>WhatsApp y correo</strong>
               : <strong>correo</strong>} para autorizar el tratamiento
-            de tus datos y la consulta a las centrales de riesgo. Ábrelo y fírmalo: es el primer paso,
+            de sus datos y la consulta a las centrales de riesgo. Ábralo y fírmelo: es el primer paso,
             {/* Solo en la opción C paga el prospecto; en A/B ya lo cubrió la agencia. */}
             {estudio.pago_por === 'arrendatario'
-              ? ' y apenas autorices te llega el enlace para pagar el estudio.'
-              : ' y apenas autorices empezamos tu estudio.'}
+              ? ' y apenas autorice le llega el enlace para pagar el estudio.'
+              : ' y apenas autorice empezamos su estudio.'}
           </p>
           <p className="text-xs text-gray-500">
-            El enlace es personal y {venceTexto}. ¿No te llegó? Revisa tu correo (incluido spam)
-            o pide al propietario o a tu asesor que te lo reenvíe.
+            El enlace es personal y {venceTexto}. ¿No le llegó? Revise su correo (incluido spam)
+            o pida al propietario o a su asesor que se lo reenvíe.
           </p>
         </div>
       </div>
@@ -370,9 +370,9 @@ export function EstudioSolicitanteCard({
           <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
         </svg>
         <div>
-          <p className="text-sm font-semibold text-blue-900 mb-0.5">¡Autorización firmada! Iniciando tu estudio…</p>
+          <p className="text-sm font-semibold text-blue-900 mb-0.5">¡Autorización firmada! Iniciando su estudio…</p>
           <p className="text-sm text-blue-800">
-            Recibimos tu autorización y estamos iniciando la consulta de tu historial. Esto toma unos segundos.
+            Recibimos su autorización y estamos iniciando la consulta de su historial. Esto toma unos segundos.
           </p>
         </div>
       </div>
@@ -397,10 +397,10 @@ export function EstudioSolicitanteCard({
       ) {
         return (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm font-semibold text-amber-900 mb-0.5">Tu enlace de autorización ya no está vigente</p>
+            <p className="text-sm font-semibold text-amber-900 mb-0.5">Su enlace de autorización ya no está vigente</p>
             <p className="text-sm text-amber-800">
               El enlace para autorizar la consulta a centrales de riesgo venció o fue reemplazado sin firmarse.
-              Pide al propietario o a tu asesor que te lo reenvíe desde el estudio.
+              Pida al propietario o a su asesor que se lo reenvíe desde el estudio.
             </p>
           </div>
         )
@@ -413,8 +413,8 @@ export function EstudioSolicitanteCard({
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Autorización recibida</p>
             <p className="text-sm text-blue-800">
-              Recibimos tu autorización. Tu estudio se está preparando — si no avanza en unos
-              minutos, contacta al propietario o a tu asesor para iniciarlo.
+              Recibimos su autorización. Su estudio se está preparando — si no avanza en unos
+              minutos, contacte al propietario o a su asesor para iniciarlo.
             </p>
           </div>
         )
@@ -453,15 +453,15 @@ export function EstudioSolicitanteCard({
             <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior falló</p>
             <p className="text-sm text-red-800">
               {estudio.observaciones
-                || 'Verifica que tu tipo y número de documento sean correctos. Cofianza solo consulta documentos colombianos (CC, CE, TI, NIT).'}
+                || 'Verifique que su tipo y número de documento sean correctos. Cofianza solo consulta documentos colombianos (CC, CE, TI, NIT).'}
             </p>
           </div>
         )}
         <h3 className="text-base font-semibold text-gray-900 mb-1">
-          {esReintento ? 'Corrige tus datos y reintenta' : 'Confirma tus datos para la evaluación crediticia'}
+          {esReintento ? 'Corrija sus datos y reintente' : 'Confirme sus datos para la evaluación crediticia'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Al hacer click en <strong>Enviar</strong>, consultaremos tu historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
+          Al hacer click en <strong>Enviar</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 mb-4">
@@ -492,7 +492,7 @@ export function EstudioSolicitanteCard({
               inputMode="numeric"
               value={numeroDoc}
               onChange={(e) => setNumeroDoc(e.target.value.replace(/[^\w]/g, ''))}
-              placeholder="Ingresa tu número de cédula"
+              placeholder="Ingrese su número de cédula"
               disabled={submitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
               maxLength={20}
@@ -502,10 +502,10 @@ export function EstudioSolicitanteCard({
 
         <div className="text-xs text-gray-500 mb-4 space-y-1">
           <p>
-            Verifica que tu número de documento sea correcto antes de enviar — es el que consultaremos en las centrales de riesgo.
+            Verifique que su número de documento sea correcto antes de enviar — es el que consultaremos en las centrales de riesgo.
           </p>
           <p className="text-amber-700">
-            <strong>Importante:</strong> solo consultamos documentos colombianos. Si eres extranjero residente, usa tu Cédula de Extranjería (CE), PPT o PEP.
+            <strong>Importante:</strong> solo consultamos documentos colombianos. Si es extranjero residente, use su Cédula de Extranjería (CE), PPT o PEP.
           </p>
         </div>
 
@@ -538,9 +538,9 @@ export function EstudioSolicitanteCard({
             <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando tu historial...</p>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando su historial...</p>
             <p className="text-sm text-blue-800">
-              Estamos evaluando tu historial crediticio. Esto suele tardar menos de un minuto — te avisaremos por correo cuando termine.
+              Estamos evaluando su historial crediticio. Esto suele tardar menos de un minuto — le avisaremos por correo cuando termine.
             </p>
           </div>
         </div>
@@ -626,7 +626,7 @@ export function EstudioSolicitanteCard({
               {r.coarrendatarioAbarataPrima && puedeSumarCoa && (
                 <div className="mt-3">
                   <p className={`text-sm ${tono.texto}`}>
-                    Si antes del contrato sumas como co-arrendatario a la persona con quien vas a vivir, la prima de
+                    Si antes del contrato suma como co-arrendatario a la persona con quien va a vivir, la prima de
                     vinculación baja del 20 % al 10 % del canon. No necesita finca raíz.
                   </p>
                   <a
@@ -655,7 +655,7 @@ export function EstudioSolicitanteCard({
             <div>
               <p className="text-sm font-semibold text-green-900 mb-0.5">¡Estudio aprobado!</p>
               <p className="text-sm text-green-800">
-                Pronto el propietario te liberará el contrato para firmar. Te avisaremos en cuanto esté listo.
+                Pronto el propietario le liberará el contrato para firmar. Le avisaremos en cuanto esté listo.
               </p>
               {botonCertificado}
             </div>
@@ -675,7 +675,7 @@ export function EstudioSolicitanteCard({
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">
-                Tu evaluación necesita una revisión adicional. Te avisaremos en cuanto haya una decisión.
+                Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.
               </p>
               {botonCertificado}
             </div>
@@ -712,7 +712,7 @@ export function EstudioSolicitanteCard({
               ) : (
                 <>
                   <p className="text-sm text-slate-700">
-                    Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre ti.
+                    Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.
                   </p>
                   <SinMotivo className="mt-1 text-sm text-slate-700" />
                 </>

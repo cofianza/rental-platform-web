@@ -170,7 +170,7 @@ export function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disable
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-bold text-gray-900">{titulo}</span>
           <span className="block text-xs text-gray-500">
-            {error ? <span className="text-red-600">{error}</span> : valor ? 'Listo · toca para repetir' : ayuda}
+            {error ? <span className="text-red-600">{error}</span> : valor ? 'Listo · toque para repetir' : ayuda}
           </span>
         </span>
         {valor && !cargando && <IconCheck size={18} className="shrink-0 text-primary-600" />}
@@ -236,7 +236,7 @@ export function CapturaBiometrica({
       onResultado?.('no_verificada')
       // B3: sin veredicto no se sabe si Auco cobró el cotejo: reintentar exige otra selfie.
       setSelfie(null)
-      setMensaje('No pudimos completar la verificación en este momento. Puedes continuar: alguien de nuestro equipo revisará tu caso.')
+      setMensaje('No pudimos completar la verificación en este momento. Puede continuar: alguien de nuestro equipo revisará su caso.')
     } finally {
       setEnviando(false)
     }
@@ -262,10 +262,10 @@ export function CapturaBiometrica({
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700">
           <IconShieldCheck size={28} />
         </div>
-        <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirmemos que eres tú</h2>
+        <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirmemos que es usted</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Toma una foto de tu {documentoNombre} y una selfie. Comparamos las dos para proteger tu identidad: así nadie
-          puede solicitar una fianza en tu nombre.
+          Tome una foto de su {documentoNombre} y una selfie. Comparamos las dos para proteger su identidad: así nadie
+          puede solicitar una fianza a su nombre.
         </p>
       </div>
 
@@ -273,18 +273,18 @@ export function CapturaBiometrica({
         <div className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 p-3">
           <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
           <p className="text-sm font-semibold text-primary-900">
-            Listo, confirmamos tu identidad.
+            Listo, confirmamos su identidad.
           </p>
         </div>
       ) : (
         <>
           <div className="space-y-3">
             <Ranura
-              titulo={`Foto de tu ${documentoNombre}`}
+              titulo={`Foto de su ${documentoNombre}`}
               ayuda={
                 documentoNombre === 'pasaporte'
-                  ? 'La página con tu foto, sobre una superficie plana'
-                  : 'El lado con tu foto, sobre una superficie plana'
+                  ? 'La página con su foto, sobre una superficie plana'
+                  : 'El lado con su foto, sobre una superficie plana'
               }
               icono={<IconId size={22} />}
               capture="environment"
@@ -320,7 +320,7 @@ export function CapturaBiometrica({
             {enviando ? 'Verificando…' : resultado ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
           </button>
           {resultado && !selfie && !enviando && (
-            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, toma otra selfie con mejor luz.</p>
+            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie con mejor luz.</p>
           )}
         </>
       )}
@@ -356,8 +356,8 @@ export function CapturaBiometrica({
 
       {!verificada && (
         <p className="text-center text-xs text-gray-500">
-          Tu foto solo se usa para confirmar tu identidad. No se guarda en Cofianza ni se comparte con la
-          inmobiliaria. No estás obligado a tomarla: tu estudio sigue y lo revisa una persona de nuestro equipo.
+          Su foto solo se usa para confirmar su identidad. No se guarda en Cofianza ni se comparte con la
+          inmobiliaria. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.
         </p>
       )}
 

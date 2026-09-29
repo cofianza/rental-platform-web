@@ -60,7 +60,7 @@ export function Paso2Inmueble({ value, onChange, errores }: Props) {
             </div>
           )
         })}
-        <p className="text-xs text-gray-500">Los usos que marques como No quedan en el contrato como no incluidos.</p>
+        <p className="text-xs text-gray-500">Los usos que marque como No quedan en el contrato como no incluidos.</p>
       </div>
 
       <SiNo

@@ -232,7 +232,7 @@ export function FirmantesContratoSection({
                 onClick={handleRecordatorio}
                 disabled={enviandoRecordatorio || recordatoriosAgotados}
                 className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:opacity-50"
-                title={recordatoriosAgotados ? 'Alcanzaste el máximo de recordatorios (5)' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
+                title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios (5)' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
               >
                 {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
                 Recordatorio
@@ -390,7 +390,7 @@ export function FirmantesContratoSection({
 
       {pendientes && !isLoading && !sinProceso && (
         <p className="mt-3 text-xs text-gray-500">
-          Se actualiza solo cuando cada parte firma. También puedes refrescar con ↻.
+          Se actualiza solo cuando cada parte firma. También puede refrescar con ↻.
         </p>
       )}
     </div>

@@ -58,7 +58,7 @@ export function RechazoModal({
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
           Rechazar <span className="font-medium text-gray-900">{documentoNombre}</span>.
-          Indica el motivo del rechazo. Le avisaremos a quien gestiona el estudio para que suba uno nuevo.
+          Indique el motivo del rechazo. Le avisaremos a quien gestiona el estudio para que suba uno nuevo.
         </p>
 
         {/* Sugerencias rapidas */}
@@ -84,7 +84,7 @@ export function RechazoModal({
           <textarea
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Describe el motivo del rechazo (mín. 10 caracteres)..."
+            placeholder="Describa el motivo del rechazo (mín. 10 caracteres)..."
             maxLength={MAX_CHARS}
             rows={4}
             disabled={isLoading}

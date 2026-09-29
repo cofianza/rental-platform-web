@@ -39,7 +39,7 @@ export function PlantillasTable({
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg font-medium">No se encontraron plantillas</p>
-        <p className="text-sm mt-1">Ajusta los filtros o crea una nueva plantilla</p>
+        <p className="text-sm mt-1">Ajuste los filtros o cree una nueva plantilla</p>
       </div>
     )
   }

@@ -6,7 +6,7 @@ export function avisoCierreInmobiliaria(nombre: string): { title: string; messag
   return {
     title: `Cerrar ${nombre}`,
     message:
-      `Tu inmobiliaria ${nombre} se cierra: tus invitaciones pendientes quedan sin efecto y dejas de ser su ` +
-      'titular. No se borra nada, pero tu cuenta queda sin inmobiliaria hasta que aceptes la invitación de otra.',
+      `Su inmobiliaria ${nombre} se cierra: sus invitaciones pendientes quedan sin efecto y usted deja de ser su ` +
+      'titular. No se borra nada, pero su cuenta queda sin inmobiliaria hasta que acepte la invitación de otra.',
   }
 }

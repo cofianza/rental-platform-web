@@ -163,14 +163,14 @@ export function ReEvaluacionSection({
   const apelarHasta = historial?.apelar_hasta
   const responderHasta = historial?.responder_hasta
   const avisoPlazo = hasChildReeval
-    ? 'Puedes subir documentos adicionales para solicitar una reevaluación.'
+    ? 'Puede subir documentos adicionales para solicitar una reevaluación.'
     : plazoVencido
-      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilita una evaluación nueva.${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registra abajo la fecha en que lo hizo.' : ''}`
+      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilite una evaluación nueva.${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registre abajo la fecha en que lo hizo.' : ''}`
       : responderHasta
         ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(responderHasta)}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
         : apelarHasta
-          ? `El solicitante puede apelar hasta el ${dia(apelarHasta)} (15 días hábiles desde la notificación del rechazo). Sube los documentos soporte para radicar la apelación.`
-          : 'Puedes subir documentos adicionales para solicitar una reevaluación.'
+          ? `El solicitante puede apelar hasta el ${dia(apelarHasta)} (15 días hábiles desde la notificación del rechazo). Suba los documentos soporte para radicar la apelación.`
+          : 'Puede subir documentos adicionales para solicitar una reevaluación.'
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -226,7 +226,7 @@ export function ReEvaluacionSection({
       window.open(doc.archivo_url, '_blank')
       return
     }
-    toast.info('URL no disponible. Recarga la página.')
+    toast.info('URL no disponible. Recargue la página.')
   }
 
   return (
@@ -409,7 +409,7 @@ export function ReEvaluacionSection({
           </button>
           {documentosSoporte.length === 0 && (
             <p className="text-xs text-gray-500 mt-1">
-              Debes subir al menos un documento soporte antes de solicitar la reevaluación.
+              Debe subir al menos un documento soporte antes de solicitar la reevaluación.
             </p>
           )}
         </div>

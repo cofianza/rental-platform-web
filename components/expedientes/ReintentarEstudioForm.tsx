@@ -177,7 +177,7 @@ export function ReintentarEstudioForm({
   const handleReintentar = async () => {
     const numero = numeroDoc.trim()
     if (!numero) {
-      toast.error('Ingresa el número de documento para reintentar')
+      toast.error('Ingrese el número de documento para reintentar')
       return
     }
     const apellido = primerApellido.trim()
@@ -187,7 +187,7 @@ export function ReintentarEstudioForm({
     }
     if (esReconsulta && proveedor === normalizeProveedorReintento(proveedorActual)) {
       toast.error(
-        `${PROVEEDOR_REINTENTO_LABELS[proveedor]} ya respondió que no tiene información de esta persona. Elige el otro buró.`,
+        `${PROVEEDOR_REINTENTO_LABELS[proveedor]} ya respondió que no tiene información de esta persona. Elija el otro buró.`,
       )
       return
     }
@@ -250,10 +250,10 @@ export function ReintentarEstudioForm({
     <div className="rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
         {esReconsulta
-          ? `${PROVEEDOR_REINTENTO_LABELS[normalizeProveedorReintento(proveedorActual)]} no tiene información de esta persona. Puedes consultar el otro buró.`
+          ? `${PROVEEDOR_REINTENTO_LABELS[normalizeProveedorReintento(proveedorActual)]} no tiene información de esta persona. Puede consultar el otro buró.`
           : esPrimeraEjecucion
-            ? 'Verifica el documento y el buró antes de ejecutar la consulta'
-            : 'Verifica el documento y el buró antes de reintentar'}
+            ? 'Verifique el documento y el buró antes de ejecutar la consulta'
+            : 'Verifique el documento y el buró antes de reintentar'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-40">

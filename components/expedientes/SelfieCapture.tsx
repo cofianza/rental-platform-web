@@ -59,7 +59,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
           Captura de Selfie con Identificación
         </h3>
         <p className="text-gray-400 text-sm mb-8">
-          Sigue las instrucciones para completar la verificación de identidad
+          Siga las instrucciones para completar la verificación de identidad
         </p>
 
         {/* Instructions list */}
@@ -69,7 +69,7 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
               1
             </div>
             <div>
-              <p className="text-white font-medium">Ten a la mano tu documento</p>
+              <p className="text-white font-medium">Tenga a la mano su documento</p>
               <p className="text-gray-400 text-sm">Cédula de ciudadanía o documento de identidad vigente</p>
             </div>
           </div>
@@ -79,8 +79,8 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
               2
             </div>
             <div>
-              <p className="text-white font-medium">Busca buena iluminación</p>
-              <p className="text-gray-400 text-sm">Asegúrate de estar en un lugar bien iluminado</p>
+              <p className="text-white font-medium">Busque buena iluminación</p>
+              <p className="text-gray-400 text-sm">Asegúrese de estar en un lugar bien iluminado</p>
             </div>
           </div>
 
@@ -89,8 +89,8 @@ function InstructionsScreen({ onContinue, onCancel }: InstructionsScreenProps) {
               3
             </div>
             <div>
-              <p className="text-white font-medium">Sostén el documento junto a tu rostro</p>
-              <p className="text-gray-400 text-sm">Coloca tu documento visible al lado de tu cara</p>
+              <p className="text-white font-medium">Sostenga el documento junto a su rostro</p>
+              <p className="text-gray-400 text-sm">Coloque su documento visible al lado de su cara</p>
             </div>
           </div>
         </div>
@@ -415,7 +415,7 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
                       />
                       {/* Labels */}
                       <text x="130" y="290" textAnchor="middle" fill="white" fontSize="12" fontWeight="500">
-                        Tu rostro
+                        Su rostro
                       </text>
                       <text x="300" y="210" textAnchor="middle" fill="#60a5fa" fontSize="12" fontWeight="500">
                         Documento ID
@@ -434,7 +434,7 @@ export function SelfieCapture({ onCapture, onCancel, isUploading = false }: Self
                   {/* Instructions */}
                   <div className="absolute bottom-28 left-0 right-0 text-center px-4">
                     <p className="text-white text-sm bg-black/60 inline-block px-4 py-2 rounded-full">
-                      Centra tu rostro y sostén el documento visible
+                      Centre su rostro y sostenga el documento visible
                     </p>
                   </div>
                 </div>

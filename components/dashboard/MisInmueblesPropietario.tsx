@@ -418,7 +418,7 @@ export function MisInmueblesPropietario() {
       <PrimerosPasosWidget />
       <SeccionHeader
         title="Mis inmuebles"
-        subtitle="Gestiona tus propiedades, agrégalas a la vitrina comercial de Cofianza y administra inquilinos."
+        subtitle="Gestione sus propiedades, agréguelas a la vitrina comercial de Cofianza y administre inquilinos."
       />
 
       {/* 4 KPIs, no 5: con 1-2 inmuebles "Total" es redundante con la lista de
@@ -430,7 +430,7 @@ export function MisInmueblesPropietario() {
         <Kpi label="En vitrina" value={r?.enVitrina ?? 0} tone="blue" Icon={IconBuilding2} />
         <Kpi
           label="Canon contratado / mes"
-          sub="Suma de los cánones de tus contratos vigentes"
+          sub="Suma de los cánones de sus contratos vigentes"
           value={moneyCompact(r?.ingresoMes ?? 0)}
           tone="green"
           Icon={IconDollarSign}
@@ -450,8 +450,8 @@ export function MisInmueblesPropietario() {
           !loading && inmuebles.length === 0
             ? {
                 icon: IconHome,
-                titulo: 'Aún no tienes inmuebles',
-                descripcion: 'Agrega tu primera propiedad para gestionarla con Cofianza.',
+                titulo: 'Aún no tiene inmuebles',
+                descripcion: 'Agregue su primera propiedad para gestionarla con Cofianza.',
                 action: agregarBtn,
               }
             : false

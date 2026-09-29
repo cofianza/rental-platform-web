@@ -39,14 +39,14 @@ export function PerfilIncompletoBanner({ completitud, compact = false }: Props) 
       <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900">
-          Completa tus Datos para contrato antes de publicar inmuebles
+          Complete sus Datos para contrato antes de publicar inmuebles
         </p>
         <p className="text-xs text-amber-800 mt-1">
-          Sin estos datos los contratos de arrendamiento que se generen para tus inmuebles van a salir con campos en blanco.
+          Sin estos datos los contratos de arrendamiento que se generen para sus inmuebles van a salir con campos en blanco.
         </p>
         {completitud.faltantes.length > 0 && (
           <div className="mt-2">
-            <p className="text-xs font-medium text-amber-900">Te faltan:</p>
+            <p className="text-xs font-medium text-amber-900">Le faltan:</p>
             <ul className="text-xs text-amber-800 mt-1 list-disc list-inside">
               {completitud.faltantes.slice(0, 6).map((f) => (
                 <li key={f.campo}>{f.etiqueta}</li>

@@ -178,30 +178,30 @@ function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEf
       ? {
           color: 'bg-gray-50 border-gray-200 text-gray-900',
           label: 'Invitación sin efecto',
-          mensaje: 'Tu estudio ya se resolvió, así que esta invitación ya no se puede aceptar.',
+          mensaje: 'Su estudio ya se resolvió, así que esta invitación ya no se puede aceptar.',
         }
       : invitacionVencida(coa)
       ? {
           color: 'bg-amber-50 border-amber-200 text-amber-900',
           label: 'Invitación vencida',
-          mensaje: `Venció el ${new Date(coa.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })} sin respuesta y el enlace ya no sirve. Reenvíala abajo para que le llegue uno nuevo.`,
+          mensaje: `Venció el ${new Date(coa.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })} sin respuesta y el enlace ya no sirve. Reenvíela abajo para que le llegue uno nuevo.`,
         }
       : {
           color: 'bg-blue-50 border-blue-200 text-blue-900',
           label: 'Esperando respuesta',
-          mensaje: 'Le enviamos la invitación por correo. Te avisaremos cuando responda.',
+          mensaje: 'Le enviamos la invitación por correo. Le avisaremos cuando responda.',
         },
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
       mensaje: aprobado
-        ? 'Estamos procesando su evaluación crediticia. Si queda vinculado, la prima de vinculación baja al 10 % del canon; te avisamos por correo.'
-        : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide tu caso con los dos resultados y te avisamos.',
+        ? 'Estamos procesando su evaluación crediticia. Si queda vinculado, la prima de vinculación baja al 10 % del canon; le avisamos por correo.'
+        : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide su caso con los dos resultados y le avisamos.',
     },
     rechazado_invitacion: {
       color: 'bg-red-50 border-red-200 text-red-900',
       label: 'Declinó la invitación',
-      mensaje: 'La persona declinó. Puedes invitar a alguien más.',
+      mensaje: 'La persona declinó. Puede invitar a alguien más.',
     },
     estudio_completado: {
       color: 'bg-green-50 border-green-200 text-green-900',
@@ -210,8 +210,8 @@ function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEf
       // Sobre un aprobado (Decisión 2) su resultado no es del titular (Ley 1266):
       // solo si quedó vinculado, y eso va por correo.
       mensaje: aprobado
-        ? 'La evaluación de tu co-arrendatario terminó y tu estudio sigue aprobado. Te contamos por correo si quedó vinculado y qué prima pagas.'
-        : 'La evaluación de tu co-arrendatario terminó. Un analista de Cofianza decide tu caso con los resultados de los dos; te avisamos por notificación y correo.',
+        ? 'La evaluación de su co-arrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+        : 'La evaluación de su co-arrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
     },
   }
   const c = cfg[coa.estado]

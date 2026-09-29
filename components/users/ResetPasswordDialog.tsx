@@ -104,7 +104,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
       <form onSubmit={handleSubmit}>
         <div className="px-6 py-4 space-y-4">
           <p className="text-sm text-gray-700">
-            Vas a establecer una nueva contraseña para{' '}
+            Va a establecer una nueva contraseña para{' '}
             <strong className="text-gray-900">{fullName}</strong> (
             <span className="text-gray-600">{user.email}</span>).
           </p>
@@ -112,7 +112,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
           <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
             <p className="text-xs text-amber-800 leading-relaxed">
               Se cerrarán todas sus sesiones abiertas y tendrá que ingresar con esta contraseña.
-              Compártesela por un canal seguro; después puede elegir una propia desde «¿Olvidaste tu
+              Compártasela por un canal seguro; después puede elegir una propia desde «¿Olvidó su
               contraseña?».
             </p>
           </div>
@@ -163,7 +163,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
               type={showPwd ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repite la contraseña"
+              placeholder="Repita la contraseña"
               disabled={loading}
               className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-1 focus:outline-none ${
                 matchError

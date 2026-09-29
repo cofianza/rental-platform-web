@@ -161,7 +161,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     setError(null)
     try {
       const pago = await pagoEstudioService.pagar(expedienteId, reemplazarPendiente)
-      if (!pago.payment_link_url) throw new Error('La pasarela no devolvió el enlace de pago. Intenta de nuevo.')
+      if (!pago.payment_link_url) throw new Error('La pasarela no devolvió el enlace de pago. Intente de nuevo.')
       window.location.assign(pago.payment_link_url)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo abrir el pago')
@@ -202,7 +202,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const handleReenviar = async () => {
     const emailNuevo = reenviarEmail?.trim().toLowerCase()
     if (reenviarEmail !== null && (!emailNuevo || !/.+@.+\..+/.test(emailNuevo))) {
-      setError('Ingresa un correo válido para reenviar el link')
+      setError('Ingrese un correo válido para reenviar el link')
       return
     }
     setIsSubmitting(true)
@@ -318,7 +318,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de tu saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
                     confirmLabel="Descontar 1 crédito"
                   />
                   <button
@@ -344,8 +344,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     </span>
                     <span className="text-[11px] text-gray-500 leading-snug">
                       {creditosEnContra > 0
-                        ? 'Una compra se reversó con el banco: lo usado se descuenta de tu próxima compra.'
-                        : 'Compra créditos con descuento por volumen.'}
+                        ? 'Una compra se reversó con el banco: lo usado se descuenta de su próxima compra.'
+                        : 'Compre créditos con descuento por volumen.'}
                     </span>
                   </Link>
                 )
@@ -403,7 +403,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de tu saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
+                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
                     confirmLabel="Descontar 1 crédito"
                   />
                   <button
@@ -562,7 +562,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               {/* Sin "cancelar": el PSE o el recibo de efectivo ya salió y
                   cancelarlo cobraría el estudio dos veces (el API responde 409). */}
               <p className="text-xs text-blue-600">
-                Si el pago vence, podrás {cancelarConCredito ? 'liberarlo con crédito' : 'pagarlo tú'}.
+                Si el pago vence, podrá {cancelarConCredito ? 'liberarlo con crédito' : 'pagarlo usted'}.
               </p>
             </div>
           </div>
@@ -913,12 +913,12 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       // Adenda 2 §7, opción B: el estudio lo pagó la inmobiliaria (o el
       // propietario). La factura va a su nombre y no la emite el solicitante.
       if (preview.a_nombre_de_quien_pago || !preview.datos_actuales) {
-        toast.message('Este estudio lo pagó quien te arrienda: la factura sale a su nombre.')
+        toast.message('Este estudio lo pagó quien le arrienda: la factura sale a nombre de quien pagó.')
         return
       }
       if (preview.faltantes.length > 0) {
         toast.error(
-          'Completa tus datos fiscales en Facturación → Datos Fiscales antes de emitir la factura.',
+          'Complete sus datos fiscales en Facturación → Datos Fiscales antes de emitir la factura.',
         )
         // Damos un beat para que el toast se vea antes de navegar.
         setTimeout(() => {
@@ -991,7 +991,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
                     : 'Costo de la evaluación cubierto'}
               </p>
               <p className="text-xs text-green-600">
-                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos tu pago correctamente.' : 'El costo de la evaluación ya está cubierto.'}
+                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos su pago correctamente.' : 'El costo de la evaluación ya está cubierto.'}
               </p>
             </div>
           </div>
@@ -1001,8 +1001,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             <div className="mt-3 pt-3 border-t border-green-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-xs text-green-700">
                 {facturaIdEmitida || facturaExistente
-                  ? '¿Necesitas tu factura electrónica?'
-                  : '¿Necesitas factura electrónica de este pago?'}
+                  ? '¿Necesita su factura electrónica?'
+                  : '¿Necesita factura electrónica de este pago?'}
               </p>
               {facturaIdEmitida || facturaExistente ? (
                 <Link
@@ -1032,7 +1032,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         <Modal
           isOpen={!!facturaModal}
           onClose={() => !facturando && setFacturaModal(null)}
-          title="Datos fiscales para tu factura"
+          title="Datos fiscales para su factura"
           size="md"
         >
           {facturaModal && (
@@ -1051,7 +1051,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         <Modal
           isOpen={!!confirmModal}
           onClose={() => !facturando && setConfirmModal(null)}
-          title="Confirma los datos de tu factura"
+          title="Confirme los datos de su factura"
           size="md"
         >
           {confirmModal && (
@@ -1074,8 +1074,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona tu estudio está pagando la evaluación</p>
-        <p className="text-sm text-blue-800">No tienes que pagar nada. Te avisaremos cuando la evaluación avance.</p>
+        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona su estudio está pagando la evaluación</p>
+        <p className="text-sm text-blue-800">No tiene que pagar nada. Le avisaremos cuando la evaluación avance.</p>
       </div>
     )
   }
@@ -1088,10 +1088,10 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
         <div className="flex items-start gap-3">
           <IconLoader size={20} className="text-blue-700 shrink-0 animate-spin mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-blue-900 mb-0.5">Tu pago está en proceso</p>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Su pago está en proceso</p>
             <p className="text-sm text-blue-800">
-              El medio de pago está procesando tu transacción (PSE/efectivo puede tardar desde minutos hasta horas).
-              Te avisaremos cuando se confirme — no necesitas volver a pagar.
+              El medio de pago está procesando su transacción (PSE/efectivo puede tardar desde minutos hasta horas).
+              Le avisaremos cuando se confirme — no necesita volver a pagar.
             </p>
           </div>
         </div>
@@ -1108,12 +1108,12 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             <IconCreditCard size={24} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Paga tu evaluación crediticia</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Pague su evaluación crediticia</h3>
             <p className="text-sm text-gray-600 mb-1">
               Monto a pagar: <span className="font-semibold text-gray-900">{montoProspecto(estado)}</span>
             </p>
             <p className="text-xs text-gray-500 mb-4">
-              Ya firmaste tu autorización. Serás redirigido a la pasarela de pago segura y, al confirmarse el pago,
+              Ya firmó su autorización. Será redirigido a la pasarela de pago segura y, al confirmarse el pago,
               ejecutamos la consulta en centrales de riesgo.
             </p>
             <a
@@ -1135,9 +1135,9 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.estado === 'pendiente') {
     return (
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-        <p className="text-sm font-medium text-amber-800">Preparando tu link de pago</p>
+        <p className="text-sm font-medium text-amber-800">Preparando su link de pago</p>
         <p className="text-xs text-amber-600 mt-1">
-          El link llegará a tu correo en unos momentos. También aparecerá aquí en tu panel.
+          El link llegará a su correo en unos momentos. También aparecerá aquí en su panel.
         </p>
       </div>
     )
@@ -1147,9 +1147,9 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.estado === 'fallido') {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-sm font-medium text-red-800 mb-1">No pudimos procesar tu pago</p>
+        <p className="text-sm font-medium text-red-800 mb-1">No pudimos procesar su pago</p>
         <p className="text-xs text-red-600 mb-3">
-          Monto: {montoProspecto(estado)}. Puedes intentarlo de nuevo.
+          Monto: {montoProspecto(estado)}. Puede intentarlo de nuevo.
         </p>
         {linkPago && (
           <a
@@ -1181,7 +1181,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
         <p className="text-sm font-medium text-gray-800">El pago fue cancelado</p>
         <p className="text-xs text-gray-500 mt-1">
-          Contacta al propietario o a la inmobiliaria para retomar el proceso.
+          Comuníquese con el propietario o con la inmobiliaria para retomar el proceso.
         </p>
       </div>
     )
@@ -1193,10 +1193,10 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.estado === 'esperando_autorizacion') {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-medium text-blue-800">Firma primero tu autorización</p>
+        <p className="text-sm font-medium text-blue-800">Firme primero su autorización</p>
         <p className="text-xs text-blue-600 mt-1">
-          Te enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
-          Apenas lo firmes te llega el enlace de pago por {montoProspecto(estado)}.
+          Le enviamos por correo y WhatsApp el enlace para autorizar la consulta en centrales de riesgo.
+          Apenas lo firme le llega el enlace de pago por {montoProspecto(estado)}.
         </p>
       </div>
     )
@@ -1207,7 +1207,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
       <p className="text-sm font-medium text-blue-800">Esperando que definan la forma de pago</p>
       <p className="text-xs text-blue-600 mt-1">
-        Tu estudio ya fue habilitado. Te avisaremos por correo cuando esté listo el link de pago.
+        Su estudio ya fue habilitado. Le avisaremos por correo cuando esté listo el link de pago.
       </p>
     </div>
   )
@@ -1248,8 +1248,8 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
   return (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
-        Necesitamos completar tus datos para emitir la factura electrónica ante la DIAN. Solo se
-        usan en esta factura — no se guardan en tu perfil.
+        Necesitamos completar sus datos para emitir la factura electrónica ante la DIAN. Solo se
+        usan en esta factura — no se guardan en su perfil.
       </div>
 
       {faltantes.includes('numero_documento') && (
@@ -1293,7 +1293,7 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
               value={datos.email || ''}
               onChange={(e) => set('email', e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="tu@correo.com"
+              placeholder="nombre@correo.com"
             />
           </div>
         )}
@@ -1396,8 +1396,8 @@ function ConfirmFacturaModal({
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
-        Vamos a emitir tu factura electrónica con los datos de tu registro.
-        Verifica que sean correctos — la factura no puede modificarse después de emitirse.
+        Vamos a emitir su factura electrónica con los datos de su registro.
+        Verifique que sean correctos — la factura no puede modificarse después de emitirse.
       </p>
 
       {formattedMonto && (

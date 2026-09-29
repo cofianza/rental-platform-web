@@ -270,7 +270,7 @@ export function SoporteSection() {
               ? {
                   icon: IconInbox,
                   titulo: 'Sin tickets de soporte',
-                  descripcion: 'Aún no hay solicitudes registradas. Crea el primer ticket para darle seguimiento con SLA.',
+                  descripcion: 'Aún no hay solicitudes registradas. Cree el primer ticket para darle seguimiento con SLA.',
                   action: (
                     <button
                       onClick={() => setCreateOpen(true)}
@@ -283,7 +283,7 @@ export function SoporteSection() {
               : {
                   icon: IconInbox,
                   titulo: 'Ningún ticket coincide',
-                  descripcion: 'Ajusta o limpia los filtros para ver más resultados.',
+                  descripcion: 'Ajuste o limpie los filtros para ver más resultados.',
                   action: (
                     <button
                       onClick={limpiarFiltros}

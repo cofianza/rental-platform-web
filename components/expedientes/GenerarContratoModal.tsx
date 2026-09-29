@@ -164,7 +164,7 @@ export function GenerarContratoModal({
             />
             <p className={`text-xs mt-1 ${comisionInvalida ? 'text-red-600' : 'text-gray-500'}`}>
               {comisionInvalida
-                ? 'Escribe un porcentaje entre 0 y 100.'
+                ? 'Escriba un porcentaje entre 0 y 100.'
                 : 'La que cobra la inmobiliaria al arrendatario, más IVA, una sola vez al inicio. En 0 o vacía, el contrato no lleva esa cláusula.'}
             </p>
           </div>

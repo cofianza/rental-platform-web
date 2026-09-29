@@ -299,7 +299,7 @@ export function PropertyGrid() {
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <IconAlertTriangle size={48} className="mx-auto text-amber-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No pudimos cargar los inmuebles</h3>
-          <p className="text-sm text-gray-500 mb-4">Tuvimos un problema al buscar. Inténtalo de nuevo en un momento.</p>
+          <p className="text-sm text-gray-500 mb-4">Tuvimos un problema al buscar. Inténtelo de nuevo en un momento.</p>
           <button
             onClick={fetchProperties}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
@@ -313,7 +313,7 @@ export function PropertyGrid() {
           <IconHome size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay resultados</h3>
           <p className="text-sm text-gray-500 mb-4">
-            No encontramos inmuebles con los filtros actuales. Intenta ampliar tu búsqueda.
+            No encontramos inmuebles con los filtros actuales. Intente ampliar su búsqueda.
           </p>
           {hasActiveFilters && (
             <button

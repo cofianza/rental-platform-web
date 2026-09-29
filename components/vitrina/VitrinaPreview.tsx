@@ -68,13 +68,13 @@ export function VitrinaPreview() {
           Inmuebles disponibles
         </div>
         <h2 className="font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-tight mb-4">
-          Encuentra tu próximo hogar.
+          Encuentre su próximo hogar.
           <br />
           Sin codeudor.
         </h2>
         <p className="text-base md:text-lg text-gray-500 max-w-xl leading-relaxed mb-12">
-          Inmuebles publicados por propietarios e inmobiliarias aliadas. Te interesa uno, solicitas
-          visita, y si te gusta, Cofianza firma como tu fiador.
+          Inmuebles publicados por propietarios e inmobiliarias aliadas. Si le interesa uno, solicite
+          visita, y si le gusta, Cofianza firma como su fiador.
         </p>
 
         {loading ? (

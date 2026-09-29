@@ -58,7 +58,7 @@ export function ContratoTransicionModal({
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
-      setError('Selecciona un estado destino')
+      setError('Seleccione un estado destino')
       return
     }
 
@@ -104,7 +104,7 @@ export function ContratoTransicionModal({
             <span>
               Este contrato tiene <strong>{morasActivas} mora{morasActivas > 1 ? 's' : ''} activa{morasActivas > 1 ? 's' : ''}</strong>.
               Terminar o cancelar el contrato <strong>no cierra</strong> la mora: el cobro sigue su curso.
-              Si ya se saldó o quieres detenerla, márcala como pagada o cancélala en <em>Reportar Mora</em>.
+              Si ya se saldó o quiere detenerla, márquela como pagada o cancélela en <em>Reportar Mora</em>.
             </span>
           </div>
         )}
@@ -190,7 +190,7 @@ export function ContratoTransicionModal({
           <textarea id="contrato-transicion-modal-comentario"
             value={comentario}
             onChange={(e) => setComentario(e.target.value)}
-            placeholder="Describe el motivo del cambio de estado..."
+            placeholder="Describa el motivo del cambio de estado..."
             rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"

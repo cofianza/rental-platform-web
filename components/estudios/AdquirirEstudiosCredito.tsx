@@ -105,7 +105,7 @@ function AdquirirEstudiosCreditoContenido() {
         </span>
       </div>
       <p className="mb-5 text-sm text-gray-500">
-        Cada estudio consume un crédito de tu saldo. Los créditos se acreditan tras confirmar el pago con tarjeta.
+        Cada estudio consume un crédito de su saldo. Los créditos se acreditan tras confirmar el pago con tarjeta.
       </p>
 
       {loading ? (
@@ -116,7 +116,7 @@ function AdquirirEstudiosCreditoContenido() {
         </div>
       ) : paquetes.length === 0 ? (
         <div className="py-8 text-center text-sm text-gray-500">
-          No hay paquetes disponibles por ahora. Contacta al administrador.
+          No hay paquetes disponibles por ahora. Comuníquese con el administrador.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

@@ -124,9 +124,9 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
       <div role="tabpanel" id="panel-biblioteca" aria-labelledby="tab-biblioteca" hidden={pestana !== 'biblioteca'} className="space-y-3 pt-4">
         {/* Adenda 1 del módulo de contratos, respuesta 13: sin cambios son texto de Cofianza. */}
         <p className="text-sm text-gray-500">
-          Si los incorporas sin cambios, su texto es de Cofianza y no queda cubierto por la indemnidad de la
-          inmobiliaria; los datos que completes en ellos sí son de tu responsabilidad. Si necesitas cambiar uno,
-          redacta tu versión en «Mis cláusulas»: será una cláusula propia, de tu responsabilidad.
+          Si las incorpora sin cambios, su texto es de Cofianza y no queda cubierto por la indemnidad de la
+          inmobiliaria; los datos que complete en ellos sí son de su responsabilidad. Si necesita cambiar uno,
+          redacte su versión en «Mis cláusulas»: será una cláusula propia, de su responsabilidad.
         </p>
         <SearchInput
           placeholder="Buscar por título o texto"
@@ -150,7 +150,7 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
         {lista(
           catalogo.propias,
           q.propias,
-          'Aún no has guardado cláusulas propias. Redacta una para reutilizarla en tus contratos.',
+          'Aún no ha guardado cláusulas propias. Redacte una para reutilizarla en sus contratos.',
           (c) => (
             <>
               {/* El API solo edita cláusulas activas (una inhabilitada solo se elimina). */}

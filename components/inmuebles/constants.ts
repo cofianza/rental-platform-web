@@ -110,11 +110,11 @@ export const INMUEBLE_MESSAGES = {
   FETCH_ERROR: 'Error al cargar los inmuebles',
 
   // Confirmación
-  CONFIRM_DELETE: '¿Estás seguro de que deseas eliminar este inmueble? Esta acción marcará el inmueble como inactivo.',
+  CONFIRM_DELETE: '¿Está seguro de que desea eliminar este inmueble? Esta acción marcará el inmueble como inactivo.',
 
   // Estados vacíos
   NO_RESULTS: 'No se encontraron inmuebles con los filtros seleccionados.',
-  EMPTY_STATE: 'No hay inmuebles registrados. ¡Crea el primero!',
+  EMPTY_STATE: 'No hay inmuebles registrados. ¡Cree el primero!',
 
   // Validaciones
   FOTO_REQUIRED: 'La foto de fachada es obligatoria',
@@ -162,7 +162,7 @@ export function esSeleccionable(i: IInmueble): boolean {
 }
 
 export function motivoNoSeleccionable(i: IInmueble): string {
-  if (i.estado === 'inactivo') return 'Inactivo: reactívalo desde el detalle del inmueble'
+  if (i.estado === 'inactivo') return 'Inactivo: reactívelo desde el detalle del inmueble'
   if (i.reservado && !i.arrendado) {
     return 'Reservado: hay un candidato aprobado y el contrato está en proceso.'
   }

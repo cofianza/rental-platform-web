@@ -44,7 +44,7 @@ const MOTIVO_FALLBACK = 'El estudio no quedó aprobable y termina sin contrato.'
 export function NotaApelacion({ className = '' }: { className?: string }) {
   return (
     <p className={`text-xs text-slate-600 ${className}`}>
-      Puedes presentar una apelación escribiendo a{' '}
+      Puede presentar una apelación escribiendo a{' '}
       <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
         hola@cofianza.co
       </a>{' '}
@@ -66,10 +66,10 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
             <h3 className="text-lg font-bold text-slate-900 mb-0.5">No aprobable por ahora</h3>
             <p className="text-sm text-slate-700">
               Con la información disponible hoy no podemos respaldar este estudio. No es una
-              decisión definitiva sobre ti: tu perfil puede cambiar.
+              decisión definitiva sobre usted: su perfil puede cambiar.
             </p>
             <p className="text-xs text-slate-600 mt-2">
-              Puedes volver a intentarlo más adelante o escribirnos si quieres entender qué pesó en
+              Puede volver a intentarlo más adelante o escribirnos si desea entender qué pesó en
               la evaluación.
             </p>
             <NotaApelacion className="mt-2" />
@@ -89,7 +89,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
           <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio no aprobable</h3>
           <p className="text-sm text-red-800">{motivo || MOTIVO_FALLBACK}</p>
           <p className="text-xs text-red-700 mt-2">
-            El flujo termina aquí. Si tienes dudas sobre esta decisión, escríbenos.
+            El flujo termina aquí. Si tiene dudas sobre esta decisión, escríbanos.
           </p>
         </div>
       </div>
