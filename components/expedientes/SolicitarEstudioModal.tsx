@@ -5,9 +5,10 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
+import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import type { ICreateEstudioInput, TipoEstudio, ProveedorEstudio, PagoPor } from '@/types/estudio'
 
 interface SolicitarEstudioModalProps {
@@ -15,9 +16,15 @@ interface SolicitarEstudioModalProps {
   onClose: () => void
   /** Devuelve true si el estudio se creó — solo entonces el modal se cierra
    *  y resetea. En fallo permanece abierto con lo escrito para corregir. */
-  onConfirmar: (data: ICreateEstudioInput) => Promise<boolean>
+  onConfirmar: (data: ICreateEstudioInput, opciones: { usarCredito: boolean }) => Promise<boolean>
   isLoading?: boolean
+  /** H99: con él se consulta el saldo de la inmobiliaria dueña y, si tiene
+   *  créditos usables, se ofrece pagar la evaluación con uno. */
+  expedienteId?: string
 }
+
+// H99: 'credito' = la paga la inmobiliaria con un crédito de su paquete.
+type OpcionPago = PagoPor | 'credito'
 
 const TIPOS_ESTUDIO: { value: TipoEstudio; label: string }[] = [
   { value: 'individual', label: 'Individual' },
@@ -42,11 +49,35 @@ export function SolicitarEstudioModal({
   onClose,
   onConfirmar,
   isLoading = false,
+  expedienteId,
 }: SolicitarEstudioModalProps) {
   const [tipo, setTipo] = useState<TipoEstudio>('individual')
   const [proveedor, setProveedor] = useState<ProveedorEstudio>('manual')
   const [duracion, setDuracion] = useState(12)
-  const [pagoPor, setPagoPor] = useState<PagoPor>('inmobiliaria')
+  const [pagoPor, setPagoPor] = useState<OpcionPago>('inmobiliaria')
+  // Créditos usables de la inmobiliaria dueña (0 = no se ofrece: sin
+  // inmobiliaria, sin saldo, saldo en contra o cobro ya en curso).
+  const [creditos, setCreditos] = useState(0)
+
+  useEffect(() => {
+    if (!isOpen || !expedienteId) return
+    let cancel = false
+    creditosEstudiosService
+      .getSaldoInmobiliariaDeExpediente(expedienteId)
+      .then((s) => {
+        if (cancel) return
+        const usables = s.con_inmobiliaria && !s.pago_estudio_existente ? s.saldo_efectivo : 0
+        setCreditos(usables)
+        if (usables === 0) setPagoPor((p) => (p === 'credito' ? 'inmobiliaria' : p))
+      })
+      .catch(() => {
+        // Sin saldo legible no se ofrece el crédito; las otras opciones siguen.
+        if (!cancel) setCreditos(0)
+      })
+    return () => {
+      cancel = true
+    }
+  }, [isOpen, expedienteId])
   const [observaciones, setObservaciones] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -69,13 +100,17 @@ export function SolicitarEstudioModal({
       return
     }
     setError(null)
-    const ok = await onConfirmar({
-      tipo,
-      proveedor,
-      duracion_contrato_meses: duracion,
-      pago_por: pagoPor,
-      observaciones: observaciones.trim() || undefined,
-    })
+    const usarCredito = pagoPor === 'credito'
+    const ok = await onConfirmar(
+      {
+        tipo,
+        proveedor,
+        duracion_contrato_meses: duracion,
+        pago_por: usarCredito ? 'inmobiliaria' : pagoPor,
+        observaciones: observaciones.trim() || undefined,
+      },
+      { usarCredito },
+    )
     // Solo cerrar (y resetear los campos) si el POST fue exitoso — antes un
     // fallo cerraba el modal igual y se perdía todo lo escrito.
     if (ok) handleClose()
@@ -144,13 +179,23 @@ export function SolicitarEstudioModal({
           </label>
           <select id="solicitar-estudio-modal-quien-paga-el-estudio"
             value={pagoPor}
-            onChange={(e) => setPagoPor(e.target.value as PagoPor)}
+            onChange={(e) => setPagoPor(e.target.value as OpcionPago)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             {PAGO_OPTIONS.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
+            {creditos > 0 && (
+              <option value="credito">
+                Inmobiliaria, con un crédito de su paquete ({creditos} disponibles)
+              </option>
+            )}
           </select>
+          {pagoPor === 'credito' && (
+            <p className="mt-1 text-xs text-gray-500">
+              Al solicitar se descuenta 1 crédito del saldo de la inmobiliaria y la evaluación queda pagada. No se puede deshacer.
+            </p>
+          )}
         </div>
 
         {/* Observaciones */}
