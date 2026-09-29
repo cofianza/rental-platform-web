@@ -55,10 +55,10 @@ export default function CoarrendatarioPublicPage() {
       // Si ya respondió antes, saltamos a la pantalla correspondiente.
       if (data.estado === 'aceptado') {
         setPhase('aceptado')
-        setResultMsg('Ya habías aceptado esta invitación. Estamos procesando tu evaluación.')
+        setResultMsg('Ya había aceptado esta invitación. Estamos procesando su evaluación.')
       } else if (data.estado === 'estudio_completado') {
         setPhase('aceptado')
-        setResultMsg('Ya habías aceptado esta invitación y tu evaluación terminó.')
+        setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
       } else if (data.estado === 'rechazado_invitacion') {
         setPhase('rechazado')
       } else {
@@ -79,11 +79,11 @@ export default function CoarrendatarioPublicPage() {
   const handleAceptar = async () => {
     if (!token) return
     if (direccion.trim().length < 5 || municipio.trim().length < 2) {
-      setErrorMsg('Escribe tu dirección de residencia y tu municipio.')
+      setErrorMsg('Escriba su dirección de residencia y su municipio.')
       return
     }
     if (!acceptTerms || !acceptData) {
-      setErrorMsg('Debes aceptar los términos y la política de tratamiento de datos.')
+      setErrorMsg('Debe aceptar los términos y la política de tratamiento de datos.')
       return
     }
     setErrorMsg(null)
@@ -93,7 +93,7 @@ export default function CoarrendatarioPublicPage() {
       setResultMsg(r.mensaje)
       setPhase('aceptado')
     } catch (err) {
-      setErrorMsg(mensajeParaProspecto(err, 'No se pudo registrar tu aceptación.'))
+      setErrorMsg(mensajeParaProspecto(err, 'No se pudo registrar su aceptación.'))
       setPhase('lista')
     }
   }
@@ -106,7 +106,7 @@ export default function CoarrendatarioPublicPage() {
       await coarrendatarioService.rechazar(token)
       setPhase('rechazado')
     } catch (err) {
-      setErrorMsg(mensajeParaProspecto(err, 'No pudimos registrar tu respuesta. Intenta de nuevo.'))
+      setErrorMsg(mensajeParaProspecto(err, 'No pudimos registrar su respuesta. Intente de nuevo.'))
       setPhase('lista')
     }
   }
@@ -124,7 +124,7 @@ export default function CoarrendatarioPublicPage() {
   if (phase === 'error') {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
-        <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir tu invitación</h1>
+        <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir su invitación</h1>
         <p className="text-sm text-gray-600">{errorMsg}</p>
         {reintentable && (
           <button
@@ -136,7 +136,7 @@ export default function CoarrendatarioPublicPage() {
           </button>
         )}
         <p className="text-xs text-gray-500 mt-4">
-          Si crees que es un error, escribe a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
+          Si cree que es un error, escriba a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
         </p>
       </div>
     )
@@ -147,9 +147,9 @@ export default function CoarrendatarioPublicPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
         <p className="text-sm text-gray-600 mb-4">
-          Le avisamos a {view?.expediente.titular_nombre} que no continuarás como co-arrendatario.
+          Le avisamos a {view?.expediente.titular_nombre} que no continuará como co-arrendatario.
         </p>
-        <p className="text-xs text-gray-500">Puedes cerrar esta página.</p>
+        <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
       </div>
     )
   }
@@ -162,12 +162,12 @@ export default function CoarrendatarioPublicPage() {
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
         <p className="text-sm text-gray-700">
-          {resultMsg || 'Aceptación registrada. Estamos procesando tu evaluación.'}
+          {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
         <p className="text-xs text-gray-500 mt-4">
           {view?.estado === 'estudio_completado'
-            ? `Te enviamos el resultado a ${view.email}.`
-            : `Te enviaremos a ${view?.email} el resultado de tu evaluación cuando esté listo.`}
+            ? `Le enviamos el resultado a ${view.email}.`
+            : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
         </p>
       </div>
     )
@@ -181,7 +181,7 @@ export default function CoarrendatarioPublicPage() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6">
-          <h1 className="text-xl font-bold mb-1">{titular} te invita a co-arrendar</h1>
+          <h1 className="text-xl font-bold mb-1">{titular} lo invita a co-arrendar</h1>
           <p className="text-primary-100 text-sm">
             {inmueble}
           </p>
@@ -193,22 +193,22 @@ export default function CoarrendatarioPublicPage() {
             {/* P4: si el documento no es el suyo, que decline en vez de autorizar una consulta ajena. */}
             {view?.documento && (
               <p className="text-xs text-gray-500 mb-2">
-                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el tuyo, declina la invitación.
+                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el suyo, decline la invitación.
               </p>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">
-              En Cofianza <strong>rentamos sin fiador</strong>. {titular} te invita a ser su co-arrendatario para que
+              En Cofianza <strong>rentamos sin fiador</strong>. {titular} lo invita a ser su co-arrendatario para que
               tomen el arriendo juntos: los dos firman como un solo arrendatario y nosotros los respaldamos.
             </p>
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900 leading-relaxed">
-            <p className="font-semibold mb-1">¿Qué pasa si aceptas?</p>
+            <p className="font-semibold mb-1">¿Qué pasa si acepta?</p>
             <ul className="list-disc pl-5 space-y-1 text-amber-800">
-              <li>Realizaremos una evaluación crediticia rápida a tu nombre.</li>
-              <li>Tu información se trata conforme a la <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">política de tratamiento de datos</Link>.</li>
+              <li>Realizaremos una evaluación crediticia rápida a su nombre.</li>
+              <li>Su información se trata conforme a la <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">política de tratamiento de datos</Link>.</li>
               <li>Si juntos cumplen el perfil, los respaldamos como arrendatarios.</li>
-              <li>No tienes que crear cuenta ni firmar nada extra ahora — solo aceptar.</li>
+              <li>No tiene que crear cuenta ni firmar nada extra ahora — solo aceptar.</li>
             </ul>
           </div>
 
@@ -226,7 +226,7 @@ export default function CoarrendatarioPublicPage() {
               <div className="border-b border-gray-100 px-4 py-3">
                 <h3 className="text-sm font-semibold text-gray-900">Autorización de tratamiento de datos</h3>
                 <p className="mt-0.5 text-[11px] text-gray-500">
-                  Este es el texto íntegro que estás aceptando. Versión {view.version_terminos}.
+                  Este es el texto íntegro que está aceptando. Versión {view.version_terminos}.
                 </p>
               </div>
               <div className="whitespace-pre-wrap bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
@@ -238,7 +238,7 @@ export default function CoarrendatarioPublicPage() {
           {/* Datos de notificación: el contrato los imprime en la cláusula de
               notificaciones y producen efectos legales. */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-gray-900">Tus datos de contacto para el contrato</p>
+            <p className="text-sm font-semibold text-gray-900">Sus datos de contacto para el contrato</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <label htmlFor="coa-direccion" className="mb-1 block text-xs font-medium text-gray-700">
@@ -274,7 +274,7 @@ export default function CoarrendatarioPublicPage() {
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              A esta dirección, a tu correo y a tu celular llegarán las notificaciones del contrato.
+              A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.
             </p>
           </div>
 
@@ -338,7 +338,7 @@ export default function CoarrendatarioPublicPage() {
           onClose={() => setConfirmandoRechazo(false)}
           onConfirm={handleRechazar}
           title="¿Declinar la invitación?"
-          message="Si declinas, el estudio sigue sin ti y quien te invitó tendrá que volver a empezar contigo desde cero. No puedes deshacerlo desde aquí."
+          message="Si declina, el estudio sigue sin usted y quien lo invitó tendrá que volver a empezar con usted desde cero. No puede deshacerlo desde aquí."
           confirmLabel="Sí, declinar"
           cancelLabel="Volver"
           variant="danger"

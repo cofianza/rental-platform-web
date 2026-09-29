@@ -126,7 +126,7 @@ function RegistroSolicitanteContent() {
         })
         setEnlaceEnviado(true)
       } catch (err) {
-        const msg = mensajeParaProspecto(err, 'No pudimos enviar el enlace. Inténtalo de nuevo en un momento.')
+        const msg = mensajeParaProspecto(err, 'No pudimos enviar el enlace. Inténtelo de nuevo en un momento.')
         setErrors({ general: msg })
         toast.error(msg)
       } finally {
@@ -192,7 +192,7 @@ function RegistroSolicitanteContent() {
     } catch (err) {
       // Mismo traductor que los flujos publicos: sin conexion, demasiados
       // intentos y caidas del servidor dejan de llegar como texto crudo.
-      const msg = mensajeParaProspecto(err, 'No pudimos crear tu cuenta. Inténtalo de nuevo en un momento.')
+      const msg = mensajeParaProspecto(err, 'No pudimos crear su cuenta. Inténtelo de nuevo en un momento.')
       setErrors({ general: msg })
       toast.error(msg)
     } finally {
@@ -207,13 +207,13 @@ function RegistroSolicitanteContent() {
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
             <IconCheck size={32} className="text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Revisa tu correo</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h1>
           <p className="text-gray-500 mb-4">
-            Si <strong>{email.trim()}</strong> es el correo al que llegó tu invitación, te enviamos un enlace para
+            Si <strong>{email.trim()}</strong> es el correo al que llegó su invitación, le enviamos un enlace para
             entrar. Vence en una hora y sirve una sola vez.
           </p>
           <p className="text-sm text-gray-500">
-            Revisa también tu carpeta de spam. Si ya tenías cuenta de arrendatario con ese correo, el enlace te lleva a ella.
+            Revise también su carpeta de spam. Si ya tenía cuenta de arrendatario con ese correo, el enlace lo lleva a ella.
           </p>
         </div>
       </div>
@@ -234,7 +234,7 @@ function RegistroSolicitanteContent() {
       <main className="flex-1 max-w-lg mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Crear cuenta</h1>
         <p className="text-sm text-gray-500 mb-6">
-          {property ? 'Regístrate para continuar con tu estudio' : 'Regístrate como solicitante'}
+          {property ? 'Regístrese para continuar con su estudio' : 'Regístrese como solicitante'}
         </p>
 
         {/* Property context card */}
@@ -293,7 +293,7 @@ function RegistroSolicitanteContent() {
               <input type="checkbox" checked={sinContrasena} onChange={(e) => setSinContrasena(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-sm text-primary-900">
                 Prefiero no crear contraseña: envíenme un enlace a mi correo para entrar.
-                <span className="block text-xs text-primary-700 mt-0.5">Usa el correo al que te llegó la invitación.</span>
+                <span className="block text-xs text-primary-700 mt-0.5">Use el correo al que le llegó la invitación.</span>
               </span>
             </label>
           )}
@@ -356,12 +356,12 @@ function RegistroSolicitanteContent() {
 
         {/* Login link */}
         <p className="text-center text-sm text-gray-500 mt-6">
-          ¿Ya tienes cuenta?{' '}
+          ¿Ya tiene cuenta?{' '}
           <Link
             href={`/login${propertyId ? `?property_id=${propertyId}&intent=interest` : ''}`}
             className="text-primary-600 font-medium hover:text-primary-700"
           >
-            Inicia sesión
+            Inicie sesión
           </Link>
         </p>
       </main>

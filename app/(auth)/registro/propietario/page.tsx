@@ -106,7 +106,7 @@ export default function RegisterPropietarioPage() {
 
     if (!formData.nombre.trim()) newErrors.nombre = 'Nombre requerido'
     if (!formData.apellido.trim()) newErrors.apellido = 'Apellido requerido'
-    if (!formData.tipo_documento) newErrors.tipo_documento = 'Selecciona un tipo de documento'
+    if (!formData.tipo_documento) newErrors.tipo_documento = 'Seleccione un tipo de documento'
     if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Número de documento requerido'
     if (!formData.telefono.trim()) {
       newErrors.telefono = 'Teléfono requerido'
@@ -127,13 +127,13 @@ export default function RegisterPropietarioPage() {
       newErrors.password = 'La contraseña no cumple los requisitos'
     }
     if (!formData.confirm_password) {
-      newErrors.confirm_password = 'Confirma tu contraseña'
+      newErrors.confirm_password = 'Confirme su contraseña'
     } else if (formData.password !== formData.confirm_password) {
       newErrors.confirm_password = 'Las contraseñas no coinciden'
     }
 
-    if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
-    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
+    if (!formData.accept_terms) newErrors.accept_terms = 'Debe aceptar los términos y condiciones'
+    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -171,7 +171,7 @@ export default function RegisterPropietarioPage() {
           setServerError(error.message)
         }
       } else {
-        setServerError('Error en el servidor. Intenta de nuevo mas tarde.')
+        setServerError('Error en el servidor. Intente de nuevo más tarde.')
       }
     } finally {
       setIsLoading(false)
@@ -214,7 +214,7 @@ export default function RegisterPropietarioPage() {
         Registro · Propietario
       </p>
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Crea tu cuenta como Propietario
+        Cree su cuenta como Propietario
       </h1>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
         Persona natural que administra sus propiedades.{' '}
@@ -235,7 +235,7 @@ export default function RegisterPropietarioPage() {
         <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
           <p className="text-sm text-red-700">
-            Faltan datos o hay campos con error. Revisa los marcados en rojo abajo.
+            Faltan datos o hay campos con error. Revise los marcados en rojo abajo.
           </p>
         </div>
       )}
@@ -260,7 +260,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
-                  placeholder="Tu nombre"
+                  placeholder="Su nombre"
                   autoComplete="given-name"
                   aria-invalid={!!errors.nombre}
                 />
@@ -275,7 +275,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
                   className={inputCls(!!errors.apellido)}
-                  placeholder="Tu apellido"
+                  placeholder="Su apellido"
                   autoComplete="family-name"
                   aria-invalid={!!errors.apellido}
                 />
@@ -335,7 +335,7 @@ export default function RegisterPropietarioPage() {
                 type="text" value={formData.direccion}
                 onChange={(e) => updateField('direccion', e.target.value)}
                 className={inputCls(!!errors.direccion)}
-                placeholder="Tu dirección"
+                placeholder="Su dirección"
                 autoComplete="street-address"
                 aria-invalid={!!errors.direccion}
               />
@@ -354,7 +354,7 @@ export default function RegisterPropietarioPage() {
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
-                placeholder="tu@email.com"
+                placeholder="nombre@correo.com"
                 autoComplete="email"
                 inputMode="email"
                 aria-invalid={!!errors.email}
@@ -394,7 +394,7 @@ export default function RegisterPropietarioPage() {
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Repite tu contraseña"
+                placeholder="Repita su contraseña"
                 autoComplete="new-password"
                 aria-invalid={!!errors.confirm_password}
               />
@@ -448,7 +448,7 @@ export default function RegisterPropietarioPage() {
 
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
             <IconShield size={16} className="text-blue-500 shrink-0" />
-            <span>Tus datos estan protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
+            <span>Sus datos están protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
           </div>
         </FormSection>
 

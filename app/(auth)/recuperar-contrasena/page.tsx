@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
     if (!email.trim()) {
       newErrors.email = 'El correo electrónico es requerido'
     } else if (!isValidEmail(email)) {
-      newErrors.email = 'Ingresa un correo electrónico válido'
+      newErrors.email = 'Ingrese un correo electrónico válido'
     }
 
     setErrors(newErrors)
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       setIsSubmitted(true)
     } catch (err) {
       // 429 (3 por hora por correo): el API ya lo redacta; sin conexión, igual.
-      setServerError(mensajeParaProspecto(err, 'Ocurrió un error. Por favor, intenta de nuevo más tarde.'))
+      setServerError(mensajeParaProspecto(err, 'Ocurrió un error. Por favor, intente de nuevo más tarde.'))
     } finally {
       setIsLoading(false)
     }
@@ -62,12 +62,12 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
             <IconCheck size={32} className="text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Revisa tu correo</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h2>
           <p className="text-gray-500 mb-6">
-            Si el email existe en nuestro sistema, recibirás un enlace de recuperación en los próximos minutos.
+            Si el email existe en nuestro sistema, recibirá un enlace de recuperación en los próximos minutos.
           </p>
           <p className="text-sm text-gray-500 mb-8">
-            Revisa también tu carpeta de spam si no ves el correo en tu bandeja de entrada.
+            Revise también su carpeta de spam si no ve el correo en su bandeja de entrada.
           </p>
           <Link
             href={AUTH_ROUTES.LOGIN}
@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Recuperar contraseña</h2>
         <p className="text-gray-500 mt-1">
-          Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+          Ingrese su correo electrónico y le enviaremos un enlace para restablecer su contraseña
         </p>
       </div>
 

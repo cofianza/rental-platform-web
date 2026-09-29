@@ -34,23 +34,23 @@ function textoInvitado(
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
-      ? 'Tu estudio se cerró, así que esta invitación quedó sin efecto.'
-      : 'Tu estudio se cerró, así que tu co-arrendatario ya no sigue en el proceso.'
+      ? 'Su estudio se cerró, así que esta invitación quedó sin efecto.'
+      : 'Su estudio se cerró, así que su co-arrendatario ya no sigue en el proceso.'
   }
   if (!vigente) {
     return invitado.estado === 'pendiente_aceptacion'
-      ? 'Tu estudio ya se resolvió, así que esta invitación quedó sin efecto.'
-      : 'Tu estudio ya se resolvió; te escribimos por correo con la decisión.'
+      ? 'Su estudio ya se resolvió, así que esta invitación quedó sin efecto.'
+      : 'Su estudio ya se resolvió; le escribimos por correo con la decisión.'
   }
   if (invitado.estado === 'pendiente_aceptacion') {
     return invitado.vencida
-      ? 'La invitación venció sin respuesta. Pídele a quien te pidió el estudio (tu inmobiliaria o el propietario) que la reenvíe.'
+      ? 'La invitación venció sin respuesta. Pídale a quien le pidió el estudio (su inmobiliaria o el propietario) que la reenvíe.'
       : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
   }
   if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
   return estadoEstudio === 'aprobado'
-    ? 'Su evaluación terminó y tu estudio sigue aprobado. Te contamos por correo si quedó vinculado y qué prima pagas.'
-    : 'Su evaluación terminó. Un analista de Cofianza decide tu caso con los resultados de los dos y te avisamos por correo.'
+    ? 'La evaluación de su co-arrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+    : 'La evaluación de su co-arrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
 }
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
@@ -107,11 +107,11 @@ export default function CargarDocumentosPage() {
     e.preventDefault()
     const form = e.currentTarget
     if (!file) {
-      toast.error('Selecciona un archivo')
+      toast.error('Seleccione un archivo')
       return
     }
     if (!MIME_OK.includes(file.type)) {
-      toast.error('Formato no permitido. Usa PDF, JPG o PNG.')
+      toast.error('Formato no permitido. Use PDF, JPG o PNG.')
       return
     }
     if (file.size > MAX_BYTES) {
@@ -160,7 +160,7 @@ export default function CargarDocumentosPage() {
           <h1 className="text-lg font-semibold text-gray-900 mb-2">
             {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
           </h1>
-          <p className="text-sm text-gray-600">{error || 'El enlace no es válido o expiró. Pide uno nuevo a la inmobiliaria.'}</p>
+          <p className="text-sm text-gray-600">{error || 'El enlace no es válido o expiró. Pida uno nuevo a la inmobiliaria.'}</p>
           {reintentable && (
             <button
               type="button"
@@ -185,19 +185,19 @@ export default function CargarDocumentosPage() {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {soloCoarrendatario ? 'Tu co-arrendatario' : 'Carga de documentos'}
+            {soloCoarrendatario ? 'Su co-arrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
             {soloCoarrendatario ? (
               <>
-                Hola {ctx.solicitante}, tu estudio de arriendo
+                Hola {ctx.solicitante}, su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} fue aprobado.
               </>
             ) : (
               <>
-                Hola {ctx.solicitante}, sube los documentos para tu estudio de arriendo
+                Hola {ctx.solicitante}, suba los documentos para su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-                {ctx.coarrendatario?.puede_invitar ? ' o invita a tu co-arrendatario' : ''}.
+                {ctx.coarrendatario?.puede_invitar ? ' o invite a su co-arrendatario' : ''}.
               </>
             )}
           </p>
@@ -217,7 +217,7 @@ export default function CargarDocumentosPage() {
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
-              <p className="font-semibold text-gray-900">Invitaste a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
+              <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
               <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente)}</p>
             </div>
           </div>
@@ -227,13 +227,13 @@ export default function CargarDocumentosPage() {
           <div className="rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-900">
             <p className="font-semibold">¿Qué subir?</p>
             <p className="mt-1 text-primary-800">
-              Lo que respalde tus ingresos: certificación laboral si eres empleado; extractos bancarios o
-              declaración de renta si eres independiente. Si te pidieron algo puntual, súbelo como
-              «Otros soportes». Sube un archivo a la vez.
+              Lo que respalde sus ingresos: certificación laboral si es empleado; extractos bancarios o
+              declaración de renta si es independiente. Si le pidieron algo puntual, súbalo como
+              «Otros soportes». Suba un archivo a la vez.
             </p>
             <p className="mt-2 text-primary-800">
-              Cada documento le llega a quien gestiona tu arriendo. Cuando termines no tienes que hacer nada
-              más: te contactarán si falta algo.
+              Cada documento le llega a quien gestiona su arriendo. Cuando termine no tiene que hacer nada
+              más: lo contactarán si falta algo.
             </p>
           </div>
         )}
@@ -278,7 +278,7 @@ export default function CargarDocumentosPage() {
           </form>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center text-sm text-gray-600">
-            Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tienes dudas, contacta a la inmobiliaria.
+            Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tiene dudas, contacte a la inmobiliaria.
           </div>
         )}
 
@@ -288,7 +288,7 @@ export default function CargarDocumentosPage() {
               <h2 className="text-sm font-semibold text-gray-900">Documentos cargados ({ctx.soportes.length})</h2>
             </div>
             {ctx.soportes.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-gray-500 text-center">Aún no has subido documentos.</p>
+              <p className="px-5 py-6 text-sm text-gray-500 text-center">Aún no ha subido documentos.</p>
             ) : (
               <ul className="divide-y divide-gray-100">
                 {ctx.soportes.map((s) => (

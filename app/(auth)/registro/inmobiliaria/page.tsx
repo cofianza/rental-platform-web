@@ -159,12 +159,12 @@ export default function RegisterInmobiliariaPage() {
       newErrors.password = 'La contraseña no cumple los requisitos'
     }
     if (!formData.confirm_password) {
-      newErrors.confirm_password = 'Confirma tu contraseña'
+      newErrors.confirm_password = 'Confirme su contraseña'
     } else if (formData.password !== formData.confirm_password) {
       newErrors.confirm_password = 'Las contraseñas no coinciden'
     }
-    if (!formData.accept_terms) newErrors.accept_terms = 'Debes aceptar los términos y condiciones'
-    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debes autorizar el tratamiento de datos'
+    if (!formData.accept_terms) newErrors.accept_terms = 'Debe aceptar los términos y condiciones'
+    if (!formData.accept_data_treatment) newErrors.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -218,7 +218,7 @@ export default function RegisterInmobiliariaPage() {
           setServerError(error.message)
         }
       } else {
-        setServerError('Error en el servidor. Intenta de nuevo mas tarde.')
+        setServerError('Error en el servidor. Intente de nuevo más tarde.')
       }
     } finally {
       setIsLoading(false)
@@ -269,7 +269,7 @@ export default function RegisterInmobiliariaPage() {
         Registro · Inmobiliaria
       </p>
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Crea tu cuenta como Inmobiliaria
+        Cree su cuenta como Inmobiliaria
       </h1>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-6">
         Empresa o agencia que administra propiedades.{' '}
@@ -282,9 +282,9 @@ export default function RegisterInmobiliariaPage() {
       <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg mb-7">
         <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
         <span>
-          <strong className="font-semibold">Registro empresarial:</strong> una vez creada tu cuenta, te
+          <strong className="font-semibold">Registro empresarial:</strong> una vez creada su cuenta, lo
           contactaremos para firmar el <strong>contrato marco</strong> de vinculación y activar el panel
-          de gestión. Hasta entonces tu cuenta queda pre-activa.
+          de gestión. Hasta entonces su cuenta queda pre-activa.
         </span>
       </div>
 
@@ -300,7 +300,7 @@ export default function RegisterInmobiliariaPage() {
         <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
           <p className="text-sm text-red-700">
-            Faltan datos o hay campos con error. Revisa los marcados en rojo abajo.
+            Faltan datos o hay campos con error. Revise los marcados en rojo abajo.
           </p>
         </div>
       )}
@@ -558,7 +558,7 @@ export default function RegisterInmobiliariaPage() {
                 value={formData.confirm_password}
                 onChange={(e) => updateField('confirm_password', e.target.value)}
                 className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Repite tu contraseña"
+                placeholder="Repita su contraseña"
                 autoComplete="new-password"
                 aria-invalid={!!errors.confirm_password}
               />

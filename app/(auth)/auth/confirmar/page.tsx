@@ -47,18 +47,18 @@ export default function ConfirmarEnlacePage() {
     } catch (err) {
       setEntrando(false)
       if (err instanceof ApiClientError && (err.statusCode === 401 || err.statusCode === 400)) {
-        setError('Este enlace ya se usó o venció. Pide uno nuevo con tu correo.')
+        setError('Este enlace ya se usó o venció. Pida uno nuevo con su correo.')
         setVista('pedir')
         return
       }
-      setError(mensajeParaProspecto(err, 'No pudimos abrir tu sesión. Inténtalo de nuevo.'))
+      setError(mensajeParaProspecto(err, 'No pudimos abrir su sesión. Inténtelo de nuevo.'))
     }
   }
 
   const pedir = async (e: FormEvent) => {
     e.preventDefault()
     if (!isValidEmail(email)) {
-      setError('Ingresa un correo electrónico válido')
+      setError('Ingrese un correo electrónico válido')
       return
     }
     setEnviando(true)
@@ -67,7 +67,7 @@ export default function ConfirmarEnlacePage() {
       await authService.solicitarEnlaceMagico(email.trim())
       setVista('enviado')
     } catch (err) {
-      setError(mensajeParaProspecto(err, 'Ocurrió un error. Por favor, intenta de nuevo más tarde.'))
+      setError(mensajeParaProspecto(err, 'Ocurrió un error. Por favor, intente de nuevo más tarde.'))
     } finally {
       setEnviando(false)
     }
@@ -87,14 +87,14 @@ export default function ConfirmarEnlacePage() {
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
           <IconCheck size={32} className="text-green-600" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Revisa tu correo</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h2>
         <p className="text-gray-500 mb-6">
-          Si tu correo tiene una invitación a un estudio, recibirás un enlace para entrar en los próximos minutos.
+          Si su correo tiene una invitación a un estudio, recibirá un enlace para entrar en los próximos minutos.
           Vence en una hora y sirve una sola vez.
         </p>
         <p className="text-sm text-gray-500">
-          Revisa también tu carpeta de spam. Si es la primera vez que entras, abre el enlace de la invitación que te
-          llegó y elige «Entrar con un enlace a mi correo».
+          Revise también su carpeta de spam. Si es la primera vez que entra, abra el enlace de la invitación que le
+          llegó y elija «Entrar con un enlace a mi correo».
         </p>
       </div>
     )
@@ -103,8 +103,8 @@ export default function ConfirmarEnlacePage() {
   if (vista === 'entrar') {
     return (
       <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Entra a tu estudio</h2>
-        <p className="text-gray-500 mb-6">Toca el botón para abrir tu sesión. No necesitas contraseña.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Entre a su estudio</h2>
+        <p className="text-gray-500 mb-6">Toque el botón para abrir su sesión. No necesita contraseña.</p>
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
             <p className="text-sm text-red-600">{error}</p>
@@ -139,9 +139,9 @@ export default function ConfirmarEnlacePage() {
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 w-full">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Entra sin contraseña</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Entre sin contraseña</h2>
         <p className="text-gray-500 mt-1">
-          Si te invitaron a un estudio, te enviamos un enlace a tu correo para entrar.
+          Si lo invitaron a un estudio, le enviamos un enlace a su correo para entrar.
         </p>
       </div>
 

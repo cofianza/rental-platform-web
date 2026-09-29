@@ -13,8 +13,8 @@ import { IconCheckCircle, IconClock, IconDollarSign, IconHome, IconPhone, IconSh
 type Beneficio = { icon: React.ReactNode; title: string; desc: string }
 
 const PROPIETARIO = {
-  titulo: 'Tu inmueble, nuestro respaldo.',
-  subtitulo: 'Cofianza firma como fiador en tus contratos.',
+  titulo: 'Su inmueble, nuestro respaldo.',
+  subtitulo: 'Cofianza firma como fiador en sus contratos.',
   beneficios: [
     {
       icon: <IconCheckCircle size={16} />,
@@ -24,7 +24,7 @@ const PROPIETARIO = {
     {
       icon: <IconClock size={16} />,
       title: 'Evaluación crediticia en segundos',
-      desc: 'Tu candidato paga el estudio, nosotros lo evaluamos al instante.',
+      desc: 'Su candidato paga el estudio, nosotros lo evaluamos al instante.',
     },
     {
       icon: <IconDollarSign size={16} />,
@@ -34,29 +34,29 @@ const PROPIETARIO = {
     {
       icon: <IconHome size={16} />,
       title: 'Vitrina + prospectos gratis',
-      desc: 'Publica tus inmuebles disponibles y recibe interesados sin costo.',
+      desc: 'Publique sus inmuebles disponibles y reciba interesados sin costo.',
     },
   ] as Beneficio[],
 }
 
 const ARRENDATARIO = {
-  titulo: 'Arrienda sin codeudor.',
-  subtitulo: 'Cofianza firma como tu fiador en el contrato.',
+  titulo: 'Arriende sin codeudor.',
+  subtitulo: 'Cofianza firma como su fiador en el contrato.',
   beneficios: [
     {
       icon: <IconCheckCircle size={16} />,
       title: 'Sin codeudor ni finca raíz',
-      desc: 'Cofianza respalda tu contrato como fiador, así no tienes que pedirle el favor a nadie.',
+      desc: 'Cofianza respalda su contrato como fiador, así no tiene que pedirle el favor a nadie.',
     },
     {
       icon: <IconPhone size={16} />,
-      title: 'Tu estudio, desde el celular',
-      desc: 'Autorizas la consulta en línea y sigues el avance de tu estudio en tu cuenta.',
+      title: 'Su estudio, desde el celular',
+      desc: 'Autoriza la consulta en línea y sigue el avance de su estudio en su cuenta.',
     },
     {
       icon: <IconShieldCheck size={16} />,
-      title: 'Tus datos, protegidos',
-      desc: 'Solo consultamos tu información con tu autorización, según la Ley 1581 de 2012.',
+      title: 'Sus datos, protegidos',
+      desc: 'Solo consultamos su información con su autorización, según la Ley 1581 de 2012.',
     },
   ] as Beneficio[],
 }
@@ -73,7 +73,7 @@ export function AuthPromo() {
         {p.titulo}
       </h1>
       <p className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(18px,2.2vw,26px)] tracking-[-0.5px] text-white/55 leading-[1.3] mb-8">
-        {p.subtitulo} <strong className="text-coral-500 font-normal">Tú arriendas tranquilo.</strong>
+        {p.subtitulo} <strong className="text-coral-500 font-normal">Usted arrienda tranquilo.</strong>
       </p>
 
       <ul className="list-none space-y-0">

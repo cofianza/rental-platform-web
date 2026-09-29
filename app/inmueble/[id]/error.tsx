@@ -24,7 +24,7 @@ export default function InmuebleError({ reset }: { error: Error & { digest?: str
         <h1 className="font-display text-2xl font-semibold text-gray-900 mb-2">
           No pudimos cargar el inmueble
         </h1>
-        <p className="text-gray-600 mb-6">Puede ser una falla pasajera. Intenta de nuevo en un momento.</p>
+        <p className="text-gray-600 mb-6">Puede ser una falla pasajera. Intente de nuevo en un momento.</p>
         <div className="flex flex-wrap justify-center gap-3">
           <button
             type="button"
