@@ -24,6 +24,7 @@ import {
   type IMovimientoCredito,
   type IDatosFiscalesFactura,
   type ICompraCredito,
+  type IDetallePaquete,
 } from '@/services/creditosEstudiosService'
 import {
   IconLoader,
@@ -44,6 +45,12 @@ const TIPO_LABELS: Record<string, string> = {
 
 const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`
 
+const ESTADO_PAQUETE: Record<IDetallePaquete['estado'], { label: string; clase: string }> = {
+  vigente: { label: 'Vigente', clase: 'bg-green-100 text-green-800' },
+  agotado: { label: 'Agotado', clase: 'bg-gray-100 text-gray-700' },
+  vencido: { label: 'Vencido', clase: 'bg-red-100 text-red-700' },
+}
+
 export default function CreditosEstudiosPage() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
@@ -56,6 +63,7 @@ export default function CreditosEstudiosPage() {
   const [paquetes, setPaquetes] = useState<IPaqueteCreditos[]>([])
   const [movimientos, setMovimientos] = useState<IMovimientoCredito[]>([])
   const [comprasPendientes, setComprasPendientes] = useState<ICompraCredito[]>([])
+  const [detallePaquetes, setDetallePaquetes] = useState<IDetallePaquete[]>([])
   const [loading, setLoading] = useState(true)
   const [comprando, setComprando] = useState<string | null>(null)
 
@@ -69,7 +77,7 @@ export default function CreditosEstudiosPage() {
 
   const fetchAll = async () => {
     try {
-      const [s, p, m, c] = await Promise.all([
+      const [s, p, m, c, d] = await Promise.all([
         creditosEstudiosService.getMiSaldo(),
         creditosEstudiosService.listPaquetes(),
         creditosEstudiosService.getMisMovimientos({ limit: 20 }),
@@ -77,11 +85,14 @@ export default function CreditosEstudiosPage() {
         // pagada cuyo webhook aun no habia llegado quedaba invisible, y el
         // riesgo real es que el usuario vuelva a comprar en esa ventana.
         creditosEstudiosService.getMisCompras().catch(() => [] as ICompraCredito[]),
+        // Adenda de precios §3.8. Si falla, el resto de la pantalla sigue.
+        creditosEstudiosService.getMisPaquetes().catch(() => [] as IDetallePaquete[]),
       ])
       setSaldo(s)
       setPaquetes(p)
       setMovimientos(m.movimientos)
       setComprasPendientes(c.filter((x) => x.estado === 'pendiente'))
+      setDetallePaquetes(d)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error cargando créditos')
     } finally {
@@ -259,6 +270,52 @@ export default function CreditosEstudiosPage() {
         </div>
       </div>
 
+      {/* Detalle por paquete — Adenda de precios §3.8 */}
+      {detallePaquetes.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Tus paquetes</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Los estudios se descuentan primero del paquete que vence antes. Los cupos no usados se extinguen al
+            vencer el paquete.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compra</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Comprados</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Consumidos</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Disponibles</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vence</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {detallePaquetes.map((d) => (
+                  <tr key={d.lote_id}>
+                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      {new Date(d.fecha_compra).toLocaleDateString('es-CO')}
+                      {d.origen !== 'compra' && <span className="ml-1 text-xs text-gray-500">(ajuste)</span>}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">{d.comprados}</td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-700">{d.consumidos}</td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{d.disponibles}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      {d.vence_en ? new Date(d.vence_en).toLocaleDateString('es-CO') : 'Sin vencimiento'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_PAQUETE[d.estado].clase}`}>
+                        {ESTADO_PAQUETE[d.estado].label}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Paquetes */}
       {isInmobiliaria && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -339,14 +396,11 @@ export default function CreditosEstudiosPage() {
                           </span>
                         )}
                       </p>
-                      {p.vence_en_dias && (
+                      {p.vigencia_meses != null && (
                         <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                           <IconClock size={14} />
-                          Vence en {p.vence_en_dias} días
+                          Vigencia: {p.vigencia_meses} meses desde el pago
                         </p>
-                      )}
-                      {!p.vence_en_dias && (
-                        <p className="text-xs text-green-600 mt-2">Sin vencimiento</p>
                       )}
                       {p.descripcion && (
                         <p className="text-xs text-gray-500 mt-2">{p.descripcion}</p>

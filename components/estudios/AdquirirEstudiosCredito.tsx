@@ -158,12 +158,10 @@ function AdquirirEstudiosCreditoContenido() {
                   {formatCOP(unit)} + IVA c/u
                   {ahorro > 0 && <span className="ml-1 font-semibold text-primary-700">· Ahorro {ahorro}%</span>}
                 </div>
-                {p.vence_en_dias ? (
+                {p.vigencia_meses != null && (
                   <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600">
-                    <IconClock size={12} /> Vence en {p.vence_en_dias} días
+                    <IconClock size={12} /> Vigencia: {p.vigencia_meses} meses desde el pago
                   </div>
-                ) : (
-                  <div className="mt-1 text-[11px] text-green-600">Sin vencimiento</div>
                 )}
                 <button
                   type="button"
