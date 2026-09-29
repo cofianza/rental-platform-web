@@ -43,6 +43,7 @@ function perfilAUsuario(profile: IMeResponse): IUser {
     rol_miembro: profile.rol_miembro ?? null,
     es_gerencia_general: profile.es_gerencia_general === true,
     perfil_completo: profile.perfil_completo,
+    documento_pendiente: profile.documento_pendiente,
     activo: profile.activo,
   }
 }
@@ -246,6 +247,33 @@ class AuthService {
   async resetPassword(token: string, password: string): Promise<{ message: string }> {
     const response = await apiClient.post<{ message: string }>('/auth/reset-password', { token, password })
     return response.data
+  }
+
+  // ============================================
+  // ENLACE MÁGICO (H44): el arrendatario invitado entra sin contraseña
+  // ============================================
+
+  /**
+   * Pide el enlace. La respuesta es la misma exista o no la cuenta. `datos`
+   * solo se usa si el invitado aún no tiene cuenta (se le crea sin contraseña).
+   */
+  async solicitarEnlaceMagico(email: string, datos?: Record<string, unknown>): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/enlace-magico', { email, datos })
+    return response.data
+  }
+
+  /**
+   * Canjea el enlace (un solo uso) y deja la sesión abierta como el login.
+   * Devuelve a dónde seguir (la invitación pendiente, si hay).
+   */
+  async verificarEnlaceMagico(tokenHash: string): Promise<string> {
+    const response = await apiClient.post<ILoginResponse & { redirect?: string }>(
+      '/auth/enlace-magico/verificar',
+      { token_hash: tokenHash },
+    )
+    const { user, session, redirect } = response.data
+    this.adoptarSesion({ id: user.id, email: user.email, rol: user.rol }, session)
+    return redirect || '/dashboard'
   }
 
   // ============================================

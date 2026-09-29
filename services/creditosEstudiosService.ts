@@ -12,7 +12,12 @@ export interface IPaqueteCreditos {
   nombre: string
   descripcion: string | null
   cantidad_estudios: number
+  /** Base sin IVA (Adenda de precios §1.1). */
   precio_cop: number
+  /** TARIFA_IVA vigente y el total a cobrar (base + IVA), calculados por el API. */
+  tarifa_iva?: number
+  iva_cop?: number
+  total_cop?: number
   /** Legado: la vigencia ya no es del paquete (Adenda de precios §9.6). */
   vence_en_dias: number | null
   /** Meses de vigencia con que se acredita al comprarlo (VIGENCIA_PAQUETE_MESES). Solo en /creditos-estudios/paquetes. */
@@ -84,6 +89,8 @@ export interface ICompraCredito {
   paquete_id: string
   cantidad_estudios: number
   precio_cop: number
+  /** Lo cobrado con IVA; null en compras anteriores a la Adenda de precios. */
+  total_cop?: number | null
   vence_en_dias: number | null
   estado: 'pendiente' | 'completado' | 'fallido' | 'cancelado'
   stripe_session_id: string | null
@@ -101,6 +108,16 @@ export interface ILiberarEstudioResponse {
   pago_id: string
   saldo_restante: number
   lote_id: string
+}
+
+export interface ISaldoInmobiliariaExpediente {
+  /** false: el inmueble es de un propietario individual (sin créditos, H2). */
+  con_inmobiliaria: boolean
+  /** P22: lo que se puede gastar (lo en contra ya restado). */
+  saldo_efectivo: number
+  creditos_en_contra: number
+  /** Ya hay un cobro de la evaluación completado o en curso: no se ofrece el crédito. */
+  pago_estudio_existente: boolean
 }
 
 export interface IDatosFiscalesFactura {
@@ -176,6 +193,18 @@ class CreditosEstudiosService {
     const res = (await apiClient.post(`/expedientes/${expedienteId}/liberar-estudio-credito`, {
       notas,
     })) as unknown as { data: ILiberarEstudioResponse }
+    return res.data
+  }
+
+  /**
+   * H99 (solo admin/operador): saldo usable de la inmobiliaria dueña del
+   * estudio, para ofrecer su crédito en el modal interno «Nueva evaluación».
+   * `liberarEstudio` sirve igual para ellos: la API gasta el crédito de esa org.
+   */
+  async getSaldoInmobiliariaDeExpediente(expedienteId: string): Promise<ISaldoInmobiliariaExpediente> {
+    const res = await apiClient.get<ISaldoInmobiliariaExpediente>(
+      `/expedientes/${expedienteId}/liberar-estudio-credito/saldo`,
+    )
     return res.data
   }
 

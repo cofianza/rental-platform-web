@@ -17,15 +17,9 @@ import { getPublicPropertyById, type PublicProperty } from '@/services/publicPro
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
 
-// Sin tarjeta de identidad (solo mayores de edad) ni pasaporte: los burós
-// colombianos no lo consultan, y con el teclado numérico ni se podía escribir.
-const TIPO_DOC_OPTIONS = [
-  { value: 'cc', label: 'Cédula de Ciudadanía' },
-  { value: 'ce', label: 'Cédula de Extranjería' },
-  { value: 'ppt', label: 'Permiso por Protección Temporal (PPT)' },
-  { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
-  { value: 'nit', label: 'NIT' },
-]
+// Registro liviano (H43, 2026-09-28): solo nombre, correo, celular y
+// contraseña. El documento se pide antes de la autorización del estudio
+// (la API no deja enviarla sin él) o en «Mi cuenta».
 
 const TIPO_LABELS: Record<string, string> = {
   apartamento: 'Apartamento', casa: 'Casa', oficina: 'Oficina', local: 'Local', bodega: 'Bodega',
@@ -37,9 +31,7 @@ interface FormErrors {
   apellido?: string
   email?: string
   telefono?: string
-  numero_documento?: string
   password?: string
-  confirm_password?: string
   accept_terms?: string
   accept_data_treatment?: string
   general?: string
@@ -66,14 +58,24 @@ function RegistroSolicitanteContent() {
   const [apellido, setApellido] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
-  const [tipoDocumento, setTipoDocumento] = useState('cc')
-  const [numeroDocumento, setNumeroDocumento] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptData, setAcceptData] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitting, setSubmitting] = useState(false)
+  // H44: el invitado a un estudio puede crear la cuenta sin contraseña y
+  // entrar con un enlace a su correo.
+  const [vieneDeInvitacion, setVieneDeInvitacion] = useState(false)
+  const [sinContrasena, setSinContrasena] = useState(searchParams.get('enlace') === '1')
+  const [enlaceEnviado, setEnlaceEnviado] = useState(false)
+  useEffect(() => {
+    try {
+      setVieneDeInvitacion(!!sessionStorage.getItem('invitacion_token'))
+    } catch {
+      // sin sessionStorage: solo el registro con contraseña
+    }
+  }, [])
+  const modoEnlace = sinContrasena && vieneDeInvitacion
 
   // Fetch property for context card
   useEffect(() => {
@@ -91,17 +93,18 @@ function RegistroSolicitanteContent() {
     if (!apellido.trim()) e.apellido = 'Requerido'
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido'
     if (!telefono.trim()) {
-      e.telefono = 'Teléfono requerido'
+      e.telefono = 'Celular requerido'
     } else {
       // PhoneInput emite el formato "+<dial> <local>". El numero local debe
       // tener exactamente 10 digitos sin espacios.
       const localDigits = telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-      if (localDigits.length !== 10) e.telefono = 'El teléfono debe tener 10 dígitos'
+      if (localDigits.length !== 10) e.telefono = 'El celular debe tener 10 dígitos'
     }
-    if (!numeroDocumento.trim()) e.numero_documento = 'Requerido'
-    if (password.length < 8) e.password = 'Mínimo 8 caracteres'
-    else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) e.password = 'Debe tener al menos una mayúscula, una minúscula y un número'
-    if (password !== confirmPassword) e.confirm_password = 'No coinciden'
+    // Sin contraseña (enlace mágico, H44) no hay nada que validar en ella.
+    if (!modoEnlace) {
+      if (password.length < 8) e.password = 'Mínimo 8 caracteres'
+      else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) e.password = 'Debe tener al menos una mayúscula, una minúscula y un número'
+    }
     if (!acceptTerms) e.accept_terms = 'Debe aceptar los términos'
     if (!acceptData) e.accept_data_treatment = 'Debe autorizar el tratamiento de datos'
     setErrors(e)
@@ -115,6 +118,23 @@ function RegistroSolicitanteContent() {
     setSubmitting(true)
     setErrors({})
 
+    if (modoEnlace) {
+      try {
+        await authService.solicitarEnlaceMagico(email.trim(), {
+          nombre, apellido, telefono,
+          accept_terms: true, accept_data_treatment: true,
+        })
+        setEnlaceEnviado(true)
+      } catch (err) {
+        const msg = mensajeParaProspecto(err, 'No pudimos enviar el enlace. Inténtalo de nuevo en un momento.')
+        setErrors({ general: msg })
+        toast.error(msg)
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     // Si el usuario viene del flujo de invitación externa, preservamos el token
     // para: (a) marcar registration_source='invitacion_externa' en backend y
     // (b) redirigir al canje post-auto-login.
@@ -127,9 +147,8 @@ function RegistroSolicitanteContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre, apellido, email, telefono,
-          tipo_documento: tipoDocumento,
-          numero_documento: numeroDocumento,
-          password, confirm_password: confirmPassword,
+          // Sin campo de confirmación (el ojo deja revisarla); la API la sigue pidiendo.
+          password, confirm_password: password,
           accept_terms: true, accept_data_treatment: true,
           property_interest_id: propertyId || undefined,
           from_invitation: invitacionToken ? true : undefined,
@@ -179,6 +198,26 @@ function RegistroSolicitanteContent() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (enlaceEnviado) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg text-center">
+          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <IconCheck size={32} className="text-green-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Revisa tu correo</h1>
+          <p className="text-gray-500 mb-4">
+            Si <strong>{email.trim()}</strong> es el correo al que llegó tu invitación, te enviamos un enlace para
+            entrar. Vence en una hora y sirve una sola vez.
+          </p>
+          <p className="text-sm text-gray-500">
+            Revisa también tu carpeta de spam. Si ya tenías cuenta de arrendatario con ese correo, el enlace te lleva a ella.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -243,32 +282,25 @@ function RegistroSolicitanteContent() {
 
           <FormField label="Email" type="email" autoComplete="email" inputMode="email" value={email} onChange={setEmail} error={errors.email} />
           <PhoneInput
-            label="Teléfono"
+            label="Celular"
             value={telefono}
             onChange={setTelefono}
             error={errors.telefono}
           />
 
-          <div className="grid grid-cols-5 gap-3">
-            <div className="col-span-2">
-              <label htmlFor="solicitante-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo doc.</label>
-              <select id="solicitante-tipo-doc"
-                value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {TIPO_DOC_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-3">
-              <FormField label="Número de documento" inputMode="numeric" autoComplete="off" value={numeroDocumento} onChange={setNumeroDocumento} error={errors.numero_documento} />
-            </div>
-          </div>
+          {vieneDeInvitacion && (
+            <label className="flex items-start gap-2 cursor-pointer bg-primary-50 border border-primary-200 rounded-lg p-3">
+              <input type="checkbox" checked={sinContrasena} onChange={(e) => setSinContrasena(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <span className="text-sm text-primary-900">
+                Prefiero no crear contraseña: envíenme un enlace a mi correo para entrar.
+                <span className="block text-xs text-primary-700 mt-0.5">Usa el correo al que te llegó la invitación.</span>
+              </span>
+            </label>
+          )}
 
-          <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número" />
-          <FormField label="Confirmar contraseña" type="password" autoComplete="new-password" value={confirmPassword} onChange={setConfirmPassword} error={errors.confirm_password} />
+          {!modoEnlace && (
+            <FormField label="Contraseña" type="password" autoComplete="new-password" value={password} onChange={setPassword} error={errors.password} placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número" />
+          )}
 
           {/* Checkboxes */}
           <div className="space-y-3">
@@ -315,9 +347,9 @@ function RegistroSolicitanteContent() {
             className="w-full py-3.5 bg-coral-500 text-ink-900 font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
           >
             {submitting ? (
-              <><IconLoader size={18} className="animate-spin" /> Registrando...</>
+              <><IconLoader size={18} className="animate-spin" /> {modoEnlace ? 'Enviando...' : 'Registrando...'}</>
             ) : (
-              <>Crear mi cuenta y continuar</>
+              <>{modoEnlace ? 'Enviarme el enlace' : 'Crear mi cuenta y continuar'}</>
             )}
           </button>
         </form>

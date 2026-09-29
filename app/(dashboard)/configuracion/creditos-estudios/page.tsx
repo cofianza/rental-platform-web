@@ -390,9 +390,16 @@ export default function CreditosEstudiosPage() {
                       </p>
                       <p className="text-2xl font-semibold text-gray-900 mt-3">
                         {formatCOP(p.precio_cop)}
+                        <span className="text-sm font-normal text-gray-500"> + IVA</span>
                       </p>
+                      {/* Adenda de precios §1.1-1.3: base + IVA (TARIFA_IVA del API, no un 19 fijo). */}
+                      {p.total_cop != null && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {formatCOP(p.precio_cop)} + IVA = <span className="font-semibold text-gray-900">{formatCOP(p.total_cop)}</span>
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500 mt-1">
-                        {formatCOP(precioPorEstudio)} c/u
+                        {formatCOP(precioPorEstudio)} + IVA c/u
                         {ahorroPct > 0 && (
                           <span className="ml-1 font-semibold text-primary-700">
                             · Ahorro {ahorroPct}%
@@ -452,7 +459,7 @@ export default function CreditosEstudiosPage() {
               {comprasPendientes.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
                   <span>
-                    {c.cantidad_estudios} estudios · {formatCOP(c.precio_cop)}
+                    {c.cantidad_estudios} estudios · {formatCOP(Number(c.total_cop ?? c.precio_cop))}
                   </span>
                   {c.payment_link_url && (
                     <a

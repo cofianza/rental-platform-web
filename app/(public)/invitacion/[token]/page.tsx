@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconHome, IconX, IconCheck, IconRefresh } from '@/components/icons'
+import { IconLoader, IconHome, IconX, IconCheck, IconRefresh, IconMail } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/hooks/useAuth'
 import { formatCurrency } from '@/lib/constants'
@@ -233,6 +233,15 @@ export default function InvitacionPage() {
               Crear cuenta
             </button>
           </div>
+          {/* H44: sin contraseña. Si ya tiene cuenta de arrendatario basta el
+              correo; si no, el registro pide los datos y la crea sin contraseña. */}
+          <button
+            onClick={() => saveTokenAndGo('/registro/solicitante?enlace=1')}
+            className="w-full inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-700 hover:bg-primary-50 rounded-lg"
+          >
+            <IconMail size={16} />
+            Entrar con un enlace a mi correo (sin contraseña)
+          </button>
         </div>
       )}
 

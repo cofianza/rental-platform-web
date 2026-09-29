@@ -23,16 +23,19 @@ import {
 } from '@/components/icons'
 import {
   adminActualizarConvenio,
+  adminListBeneficios,
   adminListInmobiliarias,
   adminListMiembros,
   adminCambiarRolMiembro,
   adminRevocarMiembro,
   type InmobiliariaAdmin,
   type AdminMiembrosResponse,
+  type BeneficiosResponse,
   type Miembro,
   type ModalidadFianza,
   type RolMiembro,
 } from '@/services/miembrosService'
+import { formatCurrency, formatDate } from '@/lib/constants'
 
 const MODALIDAD_LABEL: Record<ModalidadFianza, string> = {
   trasladada: 'Trasladada (la paga el arrendatario)',
@@ -93,6 +96,64 @@ function ConvenioPanel({ org, onGuardado }: { org: InmobiliariaAdmin; onGuardado
           Guardar
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Adenda de precios §4.3: beneficio del 50 % en modalidad Tradicional,
+ * acumulado sin liquidar hasta que la Gerencia General defina la forma de pago.
+ * Solo lectura; la inmobiliaria no lo ve.
+ */
+function BeneficioPanel({ orgId }: { orgId: string }) {
+  const [data, setData] = useState<BeneficiosResponse | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    adminListBeneficios(orgId)
+      .then(setData)
+      .catch(() => setError(true))
+  }, [orgId])
+
+  if (error) return <p className="px-5 py-3 text-xs text-red-700 border-b border-gray-100">No se pudo cargar el beneficio acumulado.</p>
+  if (!data) return null
+  const total = data.totales[0]?.total_cop ?? 0
+
+  return (
+    <div className="px-5 py-4 border-b border-gray-100">
+      <p className="text-sm font-medium text-gray-900">Beneficio Tradicional acumulado: {formatCurrency(total)}</p>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Porcentaje de calibración sobre lo pagado por cada estudio, sin IVA, cuando el contrato en modalidad Tradicional queda vigente. Sin liquidar: la forma de pago está pendiente.
+      </p>
+      {data.detalle.length > 0 && (
+        <div className="mt-2 overflow-x-auto">
+          <table className="min-w-full text-xs">
+            <thead className="text-left text-gray-500">
+              <tr>
+                <th className="py-1 pr-3 font-medium">Estudio</th>
+                <th className="py-1 pr-3 font-medium">Contrato</th>
+                <th className="py-1 pr-3 font-medium">Base</th>
+                <th className="py-1 pr-3 font-medium">Beneficio</th>
+                <th className="py-1 pr-3 font-medium">Causado</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700">
+              {data.detalle.map((b) => (
+                <tr key={b.id} className="border-t border-gray-100">
+                  <td className="py-1 pr-3">{b.expediente_numero ?? '—'}</td>
+                  <td className="py-1 pr-3">{b.contrato_numero ?? '—'}</td>
+                  <td className="py-1 pr-3">
+                    {formatCurrency(b.base_cop)} {b.origen === 'credito' ? '(paquete)' : '(pago directo)'}
+                    {b.compra_contracargada && <span className="ml-1 text-amber-700">· compra contracargada</span>}
+                  </td>
+                  <td className="py-1 pr-3">{formatCurrency(b.valor_cop)}</td>
+                  <td className="py-1 pr-3">{formatDate(b.causado_en)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -376,6 +437,7 @@ export default function AdminInmobiliariasPage() {
                         setOrgs((xs) => xs.map((x) => (x.id === o.id ? { ...x, modalidad_fianza_defecto: m } : x)))
                       }
                     />
+                    <BeneficioPanel orgId={o.id} />
                     <MiembrosPanel orgId={o.id} />
                   </div>
                 )}

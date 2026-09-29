@@ -11,31 +11,8 @@
 
 import Link from 'next/link'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
-import { IconArrowLeft, IconCheckCircle, IconClock, IconDollarSign, IconHome } from '@/components/icons'
-
-// Beneficios del panel izquierdo — alineados al mockup htmls/02_*.
-const BENEFITS: Array<{ icon: React.ReactNode; title: string; desc: string }> = [
-  {
-    icon: <IconCheckCircle size={16} />,
-    title: 'Fiador solidario en cada contrato',
-    desc: 'Un codeudor profesional que siempre cumple. Sin excusas, sin demoras.',
-  },
-  {
-    icon: <IconClock size={16} />,
-    title: 'Evaluación crediticia en segundos',
-    desc: 'Tu candidato paga el estudio, nosotros lo evaluamos al instante.',
-  },
-  {
-    icon: <IconDollarSign size={16} />,
-    title: 'Pago garantizado desde día 20',
-    desc: 'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
-  },
-  {
-    icon: <IconHome size={16} />,
-    title: 'Vitrina + prospectos gratis',
-    desc: 'Publica tus inmuebles disponibles y recibe interesados sin costo.',
-  },
-]
+import { IconArrowLeft } from '@/components/icons'
+import { AuthPromo } from '@/components/auth/AuthPromo'
 
 export default function AuthLayout({
   children,
@@ -73,32 +50,8 @@ export default function AuthLayout({
             Tu aliado para arrendar sin riesgo
           </div>
 
-          <h1 className="font-black leading-[1.05] tracking-[-2.5px] text-[clamp(36px,4.5vw,56px)] mb-3.5">
-            Tu inmueble, nuestro respaldo.
-          </h1>
-          <p
-            className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(18px,2.2vw,26px)] tracking-[-0.5px] text-white/55 leading-[1.3] mb-8"
-          >
-            Cofianza firma como fiador en tus contratos.{' '}
-            <strong className="text-coral-500 font-normal">Tú arriendas tranquilo.</strong>
-          </p>
-
-          <ul className="list-none space-y-0">
-            {BENEFITS.map((b, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-3.5 py-3.5 border-b border-white/[0.06] last:border-b-0 text-sm text-white/75 leading-[1.5]"
-              >
-                <div className="w-8 h-8 rounded-lg bg-primary-500/[0.12] flex items-center justify-center shrink-0 text-primary-400">
-                  <span className="w-4 h-4 inline-block">{b.icon}</span>
-                </div>
-                <div>
-                  <strong className="text-white font-semibold block text-sm mb-0.5">{b.title}</strong>
-                  {b.desc}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* Titular y beneficios: del propietario, o del arrendatario en su registro */}
+          <AuthPromo />
         </div>
 
         <p className="relative z-10 text-[13px] text-white/30 mt-auto pt-8">

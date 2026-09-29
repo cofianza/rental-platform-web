@@ -279,7 +279,11 @@ export default function MiCuentaPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             >
               <option value="">Seleccionar…</option>
-              {Object.entries(TIPO_DOCUMENTO_LABELS).map(([k, label]) => (
+              {/* Solicitante sin NIT (Adenda de precios §6.1; la API lo rechaza).
+                  Se deja si ya lo tenía, para no mostrar el select vacío. */}
+              {Object.entries(TIPO_DOCUMENTO_LABELS)
+                .filter(([k]) => !(isSolicitante && k === 'nit' && form.tipo_documento !== 'nit'))
+                .map(([k, label]) => (
                 <option key={k} value={k}>
                   {label}
                 </option>
