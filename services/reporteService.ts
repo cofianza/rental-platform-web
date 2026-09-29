@@ -21,6 +21,25 @@ export interface VolumenData {
   totales: { total_creados: number; total_cerrados: number; total_neto: number }
 }
 
+/** Adenda de precios §3.9: una fila por organización y compra; valores en pesos sin IVA. */
+export interface CupoVencidoFila {
+  perfil_id: string
+  organizacion: string
+  /** null = cupos de un ajuste manual, sin compra ni valor. */
+  compra_id: string | null
+  fecha_compra: string | null
+  cupos_paquete: number | null
+  cupos_vencidos: number
+  valor_unitario: number
+  valor_total: number
+}
+
+export interface CuposVencidosData {
+  mes: string
+  filas: CupoVencidoFila[]
+  totales: { cupos_vencidos: number; valor_total: number }
+}
+
 export interface VolumenFilters {
   dateFrom?: string
   dateTo?: string
@@ -155,6 +174,15 @@ class ReporteService {
     const res = await apiClient.get<IngresosData>(
       `/reportes/ingresos${qs ? `?${qs}` : ''}`
     )
+    return res.data
+  }
+
+  /**
+   * Adenda de precios §3.9: cupos de paquetes prepagados que vencieron sin
+   * usarse en el mes ('YYYY-MM'), por organización y compra.
+   */
+  async getCuposVencidos(mes: string): Promise<CuposVencidosData> {
+    const res = await apiClient.get<CuposVencidosData>(`/reportes/cupos-vencidos?mes=${encodeURIComponent(mes)}`)
     return res.data
   }
 
