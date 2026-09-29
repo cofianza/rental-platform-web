@@ -1,12 +1,15 @@
 /**
  * Admin: CRUD de paquetes de creditos de estudios.
- * Solo accesible por administrador. Permite editar precios, cantidades,
- * vencimiento y orden de los paquetes que las inmobiliarias compran.
+ * La ve cualquier administrador; crear, editar y desactivar paquetes (precio
+ * y cantidad) solo la Gerencia General (Adenda de precios §9.14; el API
+ * responde 403 al resto). La vigencia ya no es del paquete: es el parámetro
+ * VIGENCIA_PAQUETE_MESES de /admin/calibracion (§9.6).
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
@@ -31,7 +34,6 @@ interface PaqueteFormState {
   descripcion: string
   cantidad_estudios: string
   precio_cop: string
-  vence_en_dias: string // '' = perpetuo
   activo: boolean
   orden: string
 }
@@ -41,13 +43,13 @@ const EMPTY_FORM: PaqueteFormState = {
   descripcion: '',
   cantidad_estudios: '',
   precio_cop: '',
-  vence_en_dias: '',
   activo: true,
   orden: '0',
 }
 
 export default function AdminPaquetesPage() {
   const { user } = useAuth()
+  const esGerencia = user?.es_gerencia_general === true
   const [paquetes, setPaquetes] = useState<IPaqueteCreditos[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -98,7 +100,6 @@ export default function AdminPaquetesPage() {
       descripcion: p.descripcion || '',
       cantidad_estudios: String(p.cantidad_estudios),
       precio_cop: String(p.precio_cop),
-      vence_en_dias: p.vence_en_dias != null ? String(p.vence_en_dias) : '',
       activo: p.activo,
       orden: String(p.orden),
     })
@@ -115,7 +116,6 @@ export default function AdminPaquetesPage() {
       descripcion: form.descripcion.trim(), // vacía = quitarla (la API la guarda como null)
       cantidad_estudios: parseInt(form.cantidad_estudios, 10),
       precio_cop: parseInt(form.precio_cop, 10),
-      vence_en_dias: form.vence_en_dias ? parseInt(form.vence_en_dias, 10) : null,
       activo: form.activo,
       orden: parseInt(form.orden, 10) || 0,
     }
@@ -171,15 +171,29 @@ export default function AdminPaquetesPage() {
         title="Paquetes de créditos de estudios"
         subtitle="Configura los paquetes que las inmobiliarias compran para liberar estudios"
         actions={
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 transition"
-          >
-            <IconPlus size={16} />
-            Nuevo paquete
-          </button>
+          esGerencia ? (
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 transition"
+            >
+              <IconPlus size={16} />
+              Nuevo paquete
+            </button>
+          ) : undefined
         }
       />
+
+      <p className="flex items-start gap-1.5 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+        <IconLock size={14} className="mt-0.5 shrink-0" />
+        <span>
+          Los precios y cantidades de los paquetes solo los cambia la Gerencia General, y cada cambio queda en la
+          auditoría. La vigencia de los paquetes se fija en{' '}
+          <Link href="/admin/calibracion" className="font-medium text-primary-700 hover:underline">
+            Calibración
+          </Link>{' '}
+          (vigencia del paquete, en meses).
+        </span>
+      </p>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -201,9 +215,6 @@ export default function AdminPaquetesPage() {
                 Por estudio
               </th>
               <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                Vencimiento
-              </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                 Estado
               </th>
               <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
@@ -214,7 +225,7 @@ export default function AdminPaquetesPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {paquetes.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500 text-sm">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">
                   No hay paquetes configurados
                 </td>
               </tr>
@@ -239,9 +250,6 @@ export default function AdminPaquetesPage() {
                     <td className="px-4 py-3 text-sm text-right text-gray-500">
                       {formatCOP(porEstudio)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {p.vence_en_dias ? `${p.vence_en_dias} días` : 'Sin vencimiento'}
-                    </td>
                     <td className="px-4 py-3 text-sm">
                       {p.activo ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -254,24 +262,31 @@ export default function AdminPaquetesPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-1">
-                        <button
-                          onClick={() => openEdit(p)}
-                          className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition"
-                          title="Editar"
-                        >
-                          <IconEdit size={16} />
-                        </button>
-                        {p.activo && (
+                      {esGerencia ? (
+                        <div className="inline-flex gap-1">
                           <button
-                            onClick={() => handleDelete(p)}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition"
-                            title="Desactivar"
+                            onClick={() => openEdit(p)}
+                            className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition"
+                            title="Editar"
                           >
-                            <IconTrash size={16} />
+                            <IconEdit size={16} />
                           </button>
-                        )}
-                      </div>
+                          {p.activo && (
+                            <button
+                              onClick={() => handleDelete(p)}
+                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition"
+                              title="Desactivar"
+                            >
+                              <IconTrash size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <IconLock size={14} />
+                          Solo Gerencia General
+                        </span>
+                      )}
                     </td>
                   </tr>
                 )
@@ -338,24 +353,6 @@ export default function AdminPaquetesPage() {
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="paquetes-creditos-estudios-vencimiento-dias" className="block text-sm font-medium text-gray-700 mb-1">
-              Vencimiento (días)
-            </label>
-            <input id="paquetes-creditos-estudios-vencimiento-dias"
-              type="number"
-              min={1}
-              value={form.vence_en_dias}
-              onChange={(e) => setForm({ ...form, vence_en_dias: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Vacío = sin vencimiento (perpetuo)"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Días que tarda en expirar cada lote desde la compra. Dejar vacío para créditos
-              perpetuos.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

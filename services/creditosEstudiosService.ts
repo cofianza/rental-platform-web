@@ -13,11 +13,27 @@ export interface IPaqueteCreditos {
   descripcion: string | null
   cantidad_estudios: number
   precio_cop: number
+  /** Legado: la vigencia ya no es del paquete (Adenda de precios §9.6). */
   vence_en_dias: number | null
+  /** Meses de vigencia con que se acredita al comprarlo (VIGENCIA_PAQUETE_MESES). Solo en /creditos-estudios/paquetes. */
+  vigencia_meses?: number
   activo: boolean
   orden: number
   created_at: string
   updated_at: string
+}
+
+/** Adenda de precios §3.8: un paquete (lote) de la organización. */
+export interface IDetallePaquete {
+  lote_id: string
+  compra_id: string | null
+  origen: string
+  fecha_compra: string
+  comprados: number
+  consumidos: number
+  disponibles: number
+  vence_en: string | null
+  estado: 'vigente' | 'agotado' | 'vencido'
 }
 
 export interface ILoteCredito {
@@ -101,7 +117,6 @@ export interface ICreatePaqueteInput {
   descripcion?: string
   cantidad_estudios: number
   precio_cop: number
-  vence_en_dias?: number | null
   activo?: boolean
   orden?: number
 }
@@ -138,6 +153,12 @@ class CreditosEstudiosService {
       pagination: { page: number; limit: number; total: number; totalPages: number }
     }
     return { movimientos: res.data, pagination: res.pagination }
+  }
+
+  /** Detalle por paquete de la organización (Adenda de precios §3.8). */
+  async getMisPaquetes(): Promise<IDetallePaquete[]> {
+    const res = await apiClient.get<IDetallePaquete[]>('/creditos-estudios/me/paquetes')
+    return res.data
   }
 
   async comprarPaquete(paqueteId: string): Promise<IComprarPaqueteResponse> {
