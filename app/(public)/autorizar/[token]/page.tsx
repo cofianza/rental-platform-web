@@ -717,7 +717,9 @@ export default function AutorizarPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100">
             <IconCheck size={30} className="text-primary-700" />
           </div>
-          <h2 className="text-xl font-extrabold text-gray-900">¡Autorización firmada!</h2>
+          <h2 className="text-xl font-extrabold text-gray-900">
+            {pagoRequerido && pago?.estado !== 'completado' ? 'Falta un paso: paga tu estudio' : '¡Autorización firmada!'}
+          </h2>
           <p className="mt-1 text-sm text-gray-500">
             Tu autorización quedó registrada con firma electrónica (Ley 527/1999).
           </p>
@@ -872,15 +874,29 @@ export default function AutorizarPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <h1 className="text-lg font-extrabold tracking-tight text-gray-900">¿Eres tú?</h1>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    Estos son los datos registrados en tu estudio.
-                  </p>
                   <p className="mt-2 break-words text-base font-bold text-gray-900">
                     {data.solicitante.nombre} {data.solicitante.apellido}
                   </p>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Inmueble: {data.expediente.inmueble.direccion}, {data.expediente.inmueble.ciudad}
+                  {/* A1: quién pide el estudio y qué es Cofianza ANTES de pedir el
+                      documento; sin eso la página se parecía a un phishing. Sin
+                      `solicitado_por` (API vieja) cae a un sujeto genérico. */}
+                  <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                    <strong>{data.solicitado_por || 'Quien tramita tu arriendo'}</strong> está haciendo tu estudio
+                    para arrendar el inmueble en {data.expediente.inmueble.direccion}
+                    {data.expediente.inmueble.ciudad ? `, ${data.expediente.inmueble.ciudad}` : ''}. Cofianza es la
+                    empresa que respalda ese arriendo como fiadora.
                   </p>
+                  {/* A2: el cobro se dice aquí, no después de firmar. */}
+                  {data.pago?.requerido && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                      El estudio tiene un costo{data.pago.monto_formateado ? ` de ${data.pago.monto_formateado}` : ''}.
+                      Lo pagas al final, después de autorizar.
+                    </p>
+                  )}
+                  <p className="mt-2 text-xs text-gray-500">
+                    Nunca te pediremos contraseñas. El pago del estudio se hace solo en Mercado Pago.
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">Estudio {data.expediente.numero_expediente}</p>
                 </div>
               </div>
 
@@ -1483,7 +1499,11 @@ export default function AutorizarPage() {
               </div>
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirma tu autorización</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Revisa el resumen y confirma. Con eso queda autorizada la consulta y arranca tu estudio.
+                {data?.pago?.requerido
+                  ? `Revisa el resumen y confirma. Después te mostramos el enlace para pagar el estudio${
+                      data.pago.monto_formateado ? ` (${data.pago.monto_formateado})` : ''
+                    } en Mercado Pago; tu evaluación empieza cuando se confirme el pago.`
+                  : 'Revisa el resumen y confirma. Con eso queda autorizada la consulta de tu información.'}
               </p>
             </div>
 
