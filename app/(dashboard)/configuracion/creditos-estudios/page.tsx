@@ -38,7 +38,9 @@ import {
 
 const TIPO_LABELS: Record<string, string> = {
   compra: 'Compra',
+  reserva: 'Reserva',
   consumo: 'Consumo',
+  liberacion: 'Liberación',
   expiracion: 'Vencimiento',
   ajuste: 'Ajuste',
 }
@@ -230,6 +232,11 @@ export default function CreditosEstudiosPage() {
               <p className="text-sm text-gray-500">Saldo total</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">{saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0}</p>
               <p className="text-xs text-gray-500 mt-1">créditos disponibles</p>
+              {!!saldo?.saldo_reservado && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {saldo.saldo_reservado} {saldo.saldo_reservado === 1 ? 'reservado' : 'reservados'} en estudios sin resultado
+                </p>
+              )}
             </div>
             <div className="p-3 rounded-full bg-primary-100 text-primary-600">
               <IconCheckCircle size={28} />
@@ -275,8 +282,9 @@ export default function CreditosEstudiosPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Tus paquetes</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Los estudios se descuentan primero del paquete que vence antes. Los cupos no usados se extinguen al
-            vencer el paquete.
+            Los estudios se descuentan primero del paquete que vence antes. El cupo queda reservado al habilitar el
+            estudio y solo se consume cuando la consulta a centrales da resultado; si no lo da, vuelve al paquete. Los
+            cupos no usados se extinguen al vencer el paquete.
           </p>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -285,6 +293,7 @@ export default function CreditosEstudiosPage() {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Compra</th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Comprados</th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Consumidos</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Reservados</th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Disponibles</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vence</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
@@ -299,6 +308,7 @@ export default function CreditosEstudiosPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">{d.comprados}</td>
                     <td className="px-4 py-3 text-sm text-right text-gray-700">{d.consumidos}</td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-700">{d.reservados ?? 0}</td>
                     <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{d.disponibles}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {d.vence_en ? new Date(d.vence_en).toLocaleDateString('es-CO') : 'Sin vencimiento'}
@@ -507,7 +517,7 @@ export default function CreditosEstudiosPage() {
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                           m.tipo === 'compra'
                             ? 'bg-green-100 text-green-700'
-                            : m.tipo === 'consumo'
+                            : m.tipo === 'consumo' || m.tipo === 'reserva'
                             ? 'bg-blue-100 text-blue-700'
                             : m.tipo === 'expiracion'
                             ? 'bg-red-100 text-red-700'
@@ -519,11 +529,11 @@ export default function CreditosEstudiosPage() {
                     </td>
                     <td
                       className={`px-4 py-3 text-sm text-right font-medium whitespace-nowrap ${
-                        m.cantidad > 0 ? 'text-green-700' : 'text-red-700'
+                        m.cantidad > 0 ? 'text-green-700' : m.cantidad < 0 ? 'text-red-700' : 'text-gray-500'
                       }`}
                     >
-                      {m.cantidad > 0 ? '+' : ''}
-                      {m.cantidad}
+                      {/* Adenda §2: el consumo confirma una reserva (ya descontada) y la liberación de un paquete vencido no devuelve nada. */}
+                      {m.cantidad === 0 ? '—' : `${m.cantidad > 0 ? '+' : ''}${m.cantidad}`}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-700 whitespace-nowrap">
                       {m.saldo_resultante}
