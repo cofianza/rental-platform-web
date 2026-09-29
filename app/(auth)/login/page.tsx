@@ -307,8 +307,16 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Footer */}
+      {/* Enlace mágico (H44): el arrendatario invitado que entró sin contraseña */}
       <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
+        ¿Te invitaron a un estudio?{' '}
+        <Link href="/auth/confirmar" className="text-primary-600 font-semibold hover:underline">
+          Entra con un enlace a tu correo
+        </Link>
+      </p>
+
+      {/* Footer */}
+      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-2">
         ¿No tienes cuenta?{' '}
         <Link href={registroHref} className="text-primary-600 font-semibold hover:underline">
           Crea una en segundos
