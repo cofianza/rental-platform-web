@@ -210,7 +210,9 @@ export function Step3Configuration({
           ¿Cómo se paga el estudio?
         </legend>
         <div className="space-y-2.5">
-          {OPCIONES_PAGO.map(({ valor, letra, titulo, descripcion, Icono }) => {
+          {/* Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
+              (paquete o prospecto); el API responde 403. */}
+          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria')).map(({ valor, letra, titulo, descripcion, Icono }) => {
             const seleccionada = data.forma_pago === valor
             const sinSaldo = valor === 'credito' && (saldoError || saldo === 0)
             return (
