@@ -14,6 +14,7 @@ import { PROVEEDOR_LABELS } from '@/components/estudios/constants'
 import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
+import { useAuthStore } from '@/stores/auth.store'
 import { LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 
 const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
@@ -68,7 +69,9 @@ export function RegistrarResultadoModal({
   const [condiciones, setCondiciones] = useState('')
   // H58/H103: con el catálogo del API, rechazo y condiciones se eligen de una
   // lista; sin él (API anterior), siguen los campos de texto.
-  const { catalogo } = useMotivosDecision()
+  // B11: solo Cofianza decide; a los demás roles el API les responde 403.
+  const rol = useAuthStore((s) => s.user?.rol)
+  const { catalogo } = useMotivosDecision(rol === 'administrador' || rol === 'operador_analista')
   const [motivos, setMotivos] = useState<IMotivosElegidos>(SIN_MOTIVOS)
   const tipoLista = catalogo && resultado === 'rechazado' ? 'rechazar' : catalogo && resultado === 'condicionado' ? 'condicionar' : null
   const [archivo, setArchivo] = useState<File | null>(null)
@@ -103,7 +106,7 @@ export function RegistrarResultadoModal({
     if (!resultado) return 'Debe seleccionar un resultado'
     if (observaciones.trim().length < 10) return 'Las observaciones deben tener al menos 10 caracteres'
     if (tipoLista) {
-      const e = errorMotivos(tipoLista, motivos)
+      const e = catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
       if (e) return e
     } else if (resultado === 'rechazado' && fundamento.trim().length < 10) {
       return 'El fundamento interno debe tener al menos 10 caracteres'
@@ -162,8 +165,8 @@ export function RegistrarResultadoModal({
         observaciones: observaciones.trim(),
         ...(score ? { score: Number(score) } : {}),
         // Con la lista, el API arma motivo_rechazo, fundamento y condiciones.
-        ...(tipoLista
-          ? motivosParaEnviar(motivos)
+        ...(tipoLista && catalogo
+          ? motivosParaEnviar(tipoLista, motivos, catalogo)
           : resultado === 'rechazado'
             ? { motivo_rechazo: motivoRechazo.trim(), fundamento: fundamento.trim() }
             : resultado === 'condicionado'
@@ -252,7 +255,11 @@ export function RegistrarResultadoModal({
                 <button
                   key={r.value}
                   type="button"
-                  onClick={() => setResultado(r.value)}
+                  onClick={() => {
+                    // M3: los motivos de rechazo no pasan a condicionado (ni al revés).
+                    if (r.value !== resultado) setMotivos(SIN_MOTIVOS)
+                    setResultado(r.value)
+                  }}
                   className={`p-3 rounded-lg border-2 text-center font-medium text-sm transition-all ${
                     resultado === r.value
                       ? `${r.bg} ${r.border} ${r.color} ring-2`

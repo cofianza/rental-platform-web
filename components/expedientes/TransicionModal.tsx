@@ -96,7 +96,7 @@ export function TransicionModal({
   // H58/H103: rechazar y aprobar una revisión manual se motivan con la lista
   // (si el API la tiene); el API arma con ella el comentario y el motivo.
   const tipoLista = !catalogo ? null : estadoSeleccionado === 'rechazado' ? 'rechazar' : pideEvaluacion ? 'aprobar' : null
-  const errorLista = tipoLista ? errorMotivos(tipoLista, motivos) : null
+  const errorLista = tipoLista && catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
   const motivoValido = tipoLista ? !errorLista : comentario.trim().length >= MIN_MOTIVO
   // P34: al rechazar, el comentario es el fundamento interno y aparte va un
   // motivo corto para la inmobiliaria o el propietario (el API lo exige).
@@ -142,12 +142,14 @@ export function TransicionModal({
     try {
       await onConfirmar(
         estadoSeleccionado,
-        comentario.trim(),
+        // M4: con lista, el API arma el comentario con los motivos; lo escrito
+        // para otra transición (textarea oculto) no viaja.
+        tipoLista ? '' : comentario.trim(),
         transicionSeleccionada?.etiqueta,
         esRevisionManual ? documentos : undefined,
         pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
         pideMotivoGestor ? motivoGestor.trim() : undefined,
-        tipoLista ? motivosParaEnviar(motivos) : undefined,
+        tipoLista && catalogo ? motivosParaEnviar(tipoLista, motivos, catalogo) : undefined,
       )
     } finally {
       enviando.current = false
@@ -200,7 +202,17 @@ export function TransicionModal({
                 <button
                   key={`${transicion.estado_destino}-${transicion.etiqueta}`}
                   type="button"
-                  onClick={() => setLabelSeleccionado(transicion.etiqueta)}
+                  onClick={() => {
+                    // M2/M4: lo escrito o marcado para otra transición no se arrastra.
+                    if (transicion.etiqueta !== labelSeleccionado) {
+                      setComentario('')
+                      setMotivoGestor('')
+                      setMotivos({ motivos: [] })
+                      setEvaluacion({})
+                      setError(null)
+                    }
+                    setLabelSeleccionado(transicion.etiqueta)
+                  }}
                   disabled={isLoading}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 text-left transition-all ${
                     isSelected
