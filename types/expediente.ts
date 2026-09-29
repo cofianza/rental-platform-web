@@ -88,6 +88,8 @@ export interface IExpediente {
   requiere_accion?: boolean
   /** De quién depende ahora mismo el estudio. */
   depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
+  /** Adenda de precios §8.2: prioridad en la cola del analista (el caso R2 va 'baja'). */
+  prioridad_revision?: 'baja' | 'normal' | 'alta'
   /** Solo si se pidió con_contrato_vivo: ya tiene un contrato no cancelado. */
   tiene_contrato_vivo?: boolean
   /** Flag del workflow paso 3: el propietario habilito el estudio crediticio. */
