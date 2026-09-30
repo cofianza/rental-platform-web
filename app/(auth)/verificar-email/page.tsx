@@ -160,8 +160,8 @@ function VerifyEmailContent() {
             </Link>
             <p className="text-xs text-gray-500">
               ¿Dudas? Escríbanos a{' '}
-              <a href="mailto:hola@cofianza.co" className="font-medium text-primary-600 hover:text-primary-700">
-                hola@cofianza.co
+              <a href="mailto:gerencia@cofianza.co" className="font-medium text-primary-600 hover:text-primary-700">
+                gerencia@cofianza.co
               </a>
             </p>
           </div>

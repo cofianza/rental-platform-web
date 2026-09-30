@@ -136,7 +136,7 @@ export default function CoarrendatarioPublicPage() {
           </button>
         )}
         <p className="text-xs text-gray-500 mt-4">
-          Si cree que es un error, escriba a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
+          Si cree que es un error, escriba a <a href="mailto:gerencia@cofianza.co" className="text-primary-600 underline">gerencia@cofianza.co</a>.
         </p>
       </div>
     )

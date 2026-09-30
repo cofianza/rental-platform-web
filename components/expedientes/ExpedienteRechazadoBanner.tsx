@@ -45,8 +45,8 @@ export function NotaApelacion({ className = '' }: { className?: string }) {
   return (
     <p className={`text-xs text-slate-600 ${className}`}>
       Puede presentar una apelación escribiendo a{' '}
-      <a href="mailto:hola@cofianza.co" className="font-medium text-primary-700 underline">
-        hola@cofianza.co
+      <a href="mailto:gerencia@cofianza.co" className="font-medium text-primary-700 underline">
+        gerencia@cofianza.co
       </a>{' '}
       dentro de los 15 días hábiles siguientes a esta notificación. Cofianza responde en máximo
       10 días hábiles. La apelación no detiene el proceso de arrendamiento.
