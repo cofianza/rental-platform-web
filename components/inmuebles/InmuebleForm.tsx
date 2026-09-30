@@ -569,7 +569,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       }
       const errorCode = apiError?.code || apiError?.response?.data?.errorCode
       if (errorCode === 'CODIGO_DUPLICADO') {
-        const msg = apiError?.message || apiError?.response?.data?.message || 'Ese código ya está en uso para otro inmueble tuyo.'
+        const msg = apiError?.message || apiError?.response?.data?.message || 'Ese código ya está en uso en otro de sus inmuebles.'
         setErrors((prev) => ({ ...prev, codigo: msg }))
         toast.error(msg)
         return
