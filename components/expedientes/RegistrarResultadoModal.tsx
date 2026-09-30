@@ -121,7 +121,7 @@ export function RegistrarResultadoModal({
       return 'Las condiciones deben tener al menos 10 caracteres'
     }
     if (score && (Number(score) < 0 || Number(score) > 999 || !Number.isInteger(Number(score)))) {
-      return 'El score debe ser un numero entero entre 0 y 999'
+      return 'El score debe ser un número entero entre 0 y 999'
     }
     return null
   }
@@ -303,7 +303,7 @@ export function RegistrarResultadoModal({
               onChange={(e) => setObservaciones(e.target.value)}
               rows={3}
               maxLength={3000}
-              placeholder="Resumen del analisis y hallazgos relevantes..."
+              placeholder="Resumen del análisis y hallazgos relevantes..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
             />
             <p className="text-xs text-gray-500 mt-1">

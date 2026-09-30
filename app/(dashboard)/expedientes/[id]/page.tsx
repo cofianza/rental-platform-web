@@ -72,6 +72,7 @@ import type {
   IEvaluacionRevisionManual,
 } from '@/types/expediente'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { textoVisible, esRolInterno } from '@/components/expedientes/textoVisible'
 
 export default function ExpedienteDetallePage() {
   const params = useParams()
@@ -620,7 +621,7 @@ export default function ExpedienteDetallePage() {
               // cerrado" de abajo le decía "rechazado" y le mostraba el motivo
               // interno del motor.
               <ExpedienteRechazadoBanner
-                motivo={expediente.motivo_rechazo}
+                motivo={textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                 esProspecto={user?.rol === 'solicitante'}
               />
             ) : expediente.estado === 'cerrado' && expediente.cancelado_at ? (
@@ -657,9 +658,10 @@ export default function ExpedienteDetallePage() {
                     <p className="text-sm text-gray-700">
                       El estudio no fue aprobable y el caso quedó cerrado.
                     </p>
-                    {expediente.motivo_rechazo && (
+                    {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) }) && (
                       <p className="text-sm text-gray-600 mt-2">
-                        <span className="font-semibold">Motivo:</span> {expediente.motivo_rechazo}
+                        <span className="font-semibold">Motivo:</span>{' '}
+                        {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                       </p>
                     )}
                   </div>
@@ -811,6 +813,7 @@ export default function ExpedienteDetallePage() {
                   reconsultaEnGuia={esCondicionado && puedeEditar}
                   enRevision={esCondicionado}
                   coarrendatarioVigente={coarrendatarioVigente}
+                  expedienteEstado={expediente.estado}
                 />
 
                 {/* ── Acciones requeridas (arriba) ── */}

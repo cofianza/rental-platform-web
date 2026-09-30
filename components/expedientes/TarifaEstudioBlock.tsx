@@ -161,7 +161,7 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
         onConfirm={quitar}
         isLoading={quitando}
         title="Volver a la tabla estándar"
-        message="Se quitan las condiciones especiales y el CRC se regenera con la tarifa estándar de la Adenda. Queda registro de quién lo hizo."
+        message="Se quitan las condiciones especiales y el certificado se regenera con la tarifa estándar. Queda registro de quién lo hizo."
         confirmLabel="Quitar condiciones"
       />
     </div>
@@ -227,7 +227,7 @@ function TarifaOverrideModal({
   ]
 
   return (
-    <Modal isOpen onClose={onClose} title="Condiciones especiales (Adenda §5)" size="sm">
+    <Modal isOpen onClose={onClose} title="Condiciones especiales" size="sm">
       <div className="space-y-3">
         <p className="text-xs text-gray-600">
           Sobrescriba la tabla estándar para este estudio. Lo que deje vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.

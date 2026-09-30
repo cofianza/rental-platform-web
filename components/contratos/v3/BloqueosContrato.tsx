@@ -242,7 +242,7 @@ export function BloqueosContrato({
       {para && (
         <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-900">
           <IconAlertTriangle size={18} className="shrink-0 text-amber-600" />
-          Para {para}, resuelve {numerados ? `estos ${puntos.length} puntos` : 'este punto'}:
+          Para {para}, resuelva {numerados ? `estos ${puntos.length} puntos` : 'este punto'}:
         </p>
       )}
       <ol className="space-y-3">

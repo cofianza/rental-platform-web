@@ -26,6 +26,8 @@ import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
+import { useAuthStore } from '@/stores/auth.store'
+import { textoVisible, esRolInterno } from './textoVisible'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -113,6 +115,8 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly = false, solicitante }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
+  // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
+  const externo = !esRolInterno(useAuthStore((s) => s.user?.rol))
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
@@ -335,11 +339,11 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             )}
 
             {/* Observaciones */}
-            {estudio.observaciones && (
+            {textoVisible(estudio.observaciones, { externo }) && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-1">Observaciones</h4>
                 <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
-                  {estudio.observaciones}
+                  {textoVisible(estudio.observaciones, { externo })}
                 </p>
               </div>
             )}
@@ -355,21 +359,21 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             )}
 
             {/* Motivo de rechazo */}
-            {estudio.resultado === 'rechazado' && estudio.motivo_rechazo && (
+            {estudio.resultado === 'rechazado' && textoVisible(estudio.motivo_rechazo, { externo }) && (
               <div>
                 <h4 className="text-sm font-medium text-red-700 mb-1">Motivo de rechazo</h4>
                 <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg border border-red-200 whitespace-pre-wrap">
-                  {estudio.motivo_rechazo}
+                  {textoVisible(estudio.motivo_rechazo, { externo })}
                 </p>
               </div>
             )}
 
             {/* Condiciones */}
-            {estudio.resultado === 'condicionado' && estudio.condiciones && (
+            {estudio.resultado === 'condicionado' && textoVisible(estudio.condiciones, { externo }) && (
               <div>
                 <h4 className="text-sm font-medium text-yellow-700 mb-1">Condiciones</h4>
                 <p className="text-sm text-yellow-700 bg-yellow-50 p-3 rounded-lg border border-yellow-200 whitespace-pre-wrap">
-                  {estudio.condiciones}
+                  {textoVisible(estudio.condiciones, { externo })}
                 </p>
               </div>
             )}

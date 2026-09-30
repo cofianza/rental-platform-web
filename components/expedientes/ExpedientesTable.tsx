@@ -105,7 +105,7 @@ function PrioridadBaja({ expediente, rol }: { expediente: IExpediente; rol?: str
   if (!interno || expediente.estado !== 'condicionado' || expediente.prioridad_revision !== 'baja') return null
   return (
     <span
-      title="Caso R2 (Adenda de precios §8): la banda de score 450-599 prevalece; va al final de la cola"
+      title="Puntaje de las centrales entre 450 y 599: se revisa al final de la cola"
       className="mt-1 inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
     >
       Prioridad baja

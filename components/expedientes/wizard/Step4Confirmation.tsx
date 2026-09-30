@@ -21,6 +21,7 @@ import {
   IconPencil,
   IconArrowRight,
   IconCreditCard,
+  IconSearch,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
@@ -50,12 +51,16 @@ export function Step4Confirmation({
 }: Step4ConfirmationProps) {
   const { inmueble } = data.step1
   const { solicitante, isNewSolicitante, formData } = data.step2
-  const { forma_pago, notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
+  const { forma_pago, proveedor, notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
+  const BURO_LABEL: Record<string, string> = {
+    transunion: 'TransUnion',
+    datacredito: 'DataCrédito',
+  }
 
   // §7: el resumen debe mostrar "propiedad, canon, datos del prospecto y forma
   // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
   const FORMA_PAGO_LABEL: Record<string, string> = {
-    credito: 'Descontado del paquete de estudios (opción A)',
+    credito: 'Se reserva 1 crédito de su paquete de estudios; se consume cuando la central entrega el resultado (opción A)',
     // Adenda 2 §7: la B se paga en línea; la solicitud sale al confirmarse el pago.
     inmobiliaria: 'Usted paga ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago (opción B)',
     prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
@@ -195,7 +200,7 @@ export function Step4Confirmation({
                   {solicitanteData.nombre} {solicitanteData.apellido}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">
-                  {solicitanteData.tipo_persona === 'natural' ? 'Persona Natural' : 'Persona Juridica'}
+                  {solicitanteData.tipo_persona === 'natural' ? 'Persona Natural' : 'Persona Jurídica'}
                 </p>
               </div>
 
@@ -237,7 +242,7 @@ export function Step4Confirmation({
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconFileText size={16} className="text-gray-500" />
-            Configuracion
+            Configuración
           </h3>
           <button
             type="button"
@@ -260,6 +265,15 @@ export function Step4Confirmation({
             ) : (
               <p className="text-sm text-red-600">Sin elegir — vuelva al paso 3</p>
             )}
+          </div>
+
+          {/* Buró elegido en el paso 3 */}
+          <div>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Buró a consultar</p>
+            <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
+              <IconSearch size={14} className="text-gray-500" />
+              {proveedor ? BURO_LABEL[proveedor] : 'Lo decide Cofianza (DataCrédito por defecto)'}
+            </p>
           </div>
 
           {/* Notas */}

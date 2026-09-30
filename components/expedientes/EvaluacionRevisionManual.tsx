@@ -77,10 +77,11 @@ export function EvaluacionRevisionManual({
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">
-        Con estas dos variables el puntaje se recalcula sobre un denominador mayor (Adenda 2 §4.3).
+        En la revisión manual el puntaje se recalcula con lo que usted verificó: la situación laboral y el
+        historial de arrendamiento del solicitante.
       </p>
-      {select('v7-estabilidad', 'Estabilidad laboral', 'estabilidad_laboral', OPCIONES_V7)}
-      {select('v9-arrendamiento', 'Historial de arrendamiento previo', 'arrendamiento_previo', OPCIONES_V9)}
+      {select('v7-estabilidad', 'Situación laboral verificada', 'estabilidad_laboral', OPCIONES_V7)}
+      {select('v9-arrendamiento', 'Historial de arrendamiento verificado', 'arrendamiento_previo', OPCIONES_V9)}
     </div>
   )
 }

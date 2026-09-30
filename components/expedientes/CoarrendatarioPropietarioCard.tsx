@@ -28,6 +28,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { IconUsers } from '@/components/icons'
+import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 
 interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
@@ -227,6 +228,7 @@ export function CoarrendatarioPropietarioCard({
             estudio={coa.estudio}
             onVerDetalle={handleVerDetalle}
             loadingDetail={loadingDetail}
+            externo={!esRolInterno(userRol)}
           />
         )}
       </div>
@@ -260,6 +262,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: boolean }) {
   const fallida = coa.estudio?.estado === 'fallido'
+  const fallo = coa.estudio ? tipoFallo(coa.estudio) : 'tecnico'
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
     // P3: con el estudio ya decidido, la invitación pendiente ya no se puede aceptar.
     pendiente_aceptacion: sinEfecto
@@ -284,7 +287,9 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       label: 'Aceptó la invitación',
       // P2: sin evaluación terminada no entra al contrato ni al certificado.
       mensaje: fallida
-        ? sinEfecto
+        ? fallo !== 'tecnico'
+          ? `Su evaluación no se completó: ${fallo === 'no_existe' ? 'la persona no aparece en la central consultada' : 'el primer apellido no coincide con el de la central'}. No es un rechazo; ${sinEfecto ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.' : 'revise el documento o el apellido y reinténtela en el panel «Co-arrendatario» de la evaluación, aquí abajo.'}`
+          : sinEfecto
           ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
           : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
@@ -315,10 +320,12 @@ function ResultadoEstudioBlock({
   estudio,
   onVerDetalle,
   loadingDetail,
+  externo,
 }: {
   estudio: NonNullable<ICoarrendatario['estudio']>
   onVerDetalle: () => void
   loadingDetail: boolean
+  externo: boolean
 }) {
   const cfg: Record<string, { color: string; label: string }> = {
     aprobado: { color: 'bg-green-50 border-green-200 text-green-900', label: 'Aprobado' },
@@ -346,8 +353,10 @@ function ResultadoEstudioBlock({
               Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin co-arrendatario.
             </p>
           )}
-          {estudio.observaciones && (
-            <p className="text-xs mt-2 opacity-90 whitespace-pre-wrap">{estudio.observaciones}</p>
+          {textoVisible(estudio.observaciones, { externo }) && (
+            <p className="text-xs mt-2 opacity-90 whitespace-pre-wrap">
+              {textoVisible(estudio.observaciones, { externo })}
+            </p>
           )}
         </div>
         <button

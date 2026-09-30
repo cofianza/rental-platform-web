@@ -9,6 +9,7 @@
 
 import { IconLoader } from '@/components/icons'
 import type { ICatalogoMotivos, IMotivosElegidos, TipoDecision } from '@/types/estudio'
+import { textoVisible } from './textoVisible'
 
 const OTRO: Record<TipoDecision, string> = { aprobar: 'A9', rechazar: 'R9', condicionar: 'C6' }
 const MIN_DETALLE = 10
@@ -110,9 +111,10 @@ export function SelectorMotivos({
               {/* Arriba el motivo específico (lo que decide el analista); abajo lo que
                   verá la inmobiliaria, que puede repetirse entre motivos. */}
               <span className="min-w-0 text-sm">
-                <span className="block text-gray-900">{m.interno}</span>
+                {/* El catálogo lo escribe la API; sin «(§14)» ni «Anexo A» en pantalla. */}
+                <span className="block text-gray-900">{textoVisible(m.interno)}</span>
                 {m.interno !== m.visible && (
-                  <span className="block text-xs text-gray-500">La inmobiliaria ve: «{m.visible}»</span>
+                  <span className="block text-xs text-gray-500">La inmobiliaria ve: «{textoVisible(m.visible)}»</span>
                 )}
               </span>
             </label>
@@ -127,7 +129,7 @@ export function SelectorMotivos({
               Escriba el motivo <span className="text-red-500">*</span>
             </>
           ) : (
-            'Detalle (opcional)'
+            'Comentario adicional (opcional)'
           )}
         </label>
         <textarea

@@ -770,12 +770,12 @@ export function AutorizacionSection({
                   </span>
                   {perfil.discrepancia_ingreso?.hay && (
                     <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">
-                      revisar discrepancia ({perfil.discrepancia_ingreso.desviacion_pct}% vs. lo inferido)
+                      revisar diferencia ({perfil.discrepancia_ingreso.desviacion_pct} % frente a lo estimado)
                     </span>
                   )}
                 </dd>
                 <p className="text-[11px] text-gray-500 mt-1">
-                  No se le muestra a la inmobiliaria ni al propietario (§8.2).
+                  No se le muestra a la inmobiliaria ni al propietario.
                 </p>
               </div>
             )}
