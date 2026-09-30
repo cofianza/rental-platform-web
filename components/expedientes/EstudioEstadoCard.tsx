@@ -105,19 +105,40 @@ const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
  * para que el estudio avance. Cambia segun estado + resultado, y siempre va
  * por encima de los detalles tecnicos en la card.
  */
+const HALLAZGO_ANTECEDENTES: Record<string, string> = {
+  policia: 'Policía',
+  procuraduria: 'Procuraduría',
+  contraloria: 'Contraloría',
+  interpol: 'Interpol',
+  europol: 'Europol',
+  banco_mundial: 'Banco Mundial',
+  peps: 'persona expuesta políticamente',
+  hallazgos_altos: 'hallazgos de nivel alto',
+  nivel_alto: 'nivel de riesgo alto',
+  registraduria_sin_informacion: 'Registraduría sin información',
+  documento_no_vigente: 'documento no vigente',
+  defuncion: 'registro de defunción',
+  fuentes_con_error: 'fuentes que no respondieron',
+}
+
 /**
- * Linea del background check de Auco para el gestor. El prospecto nunca la ve
- * (la API le manda `antecedentes: null`). Politica §6 (OFAC/ONU = regla dura),
- * §14 (sin verificar = revision manual) y §16.5 (antecedentes = flag).
+ * Línea de la verificación de antecedentes. El prospecto nunca la ve (la API
+ * le manda `antecedentes: null`). Cofianza ve qué se encontró; la inmobiliaria
+ * y el propietario, solo si hay algo que revisa un analista (sin nombres
+ * técnicos ni el error del proveedor).
  */
-function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>): string {
-  if (a.estado === 'desactivado') return 'no consultadas (verificacion apagada)'
-  if (a.estado === 'no_verificado') return `sin verificar — revision manual (${a.motivo ?? 'Auco no respondio'})`
+function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>, esCofianza: boolean): string {
+  if (a.estado === 'desactivado') return 'no consultadas'
+  if (a.estado === 'no_verificado') return 'sin verificar: lo revisa un analista de Cofianza'
   if (a.reportado_en_listas) {
     const listas = [a.listas_vinculantes.ofac ? 'OFAC' : null, a.listas_vinculantes.onu ? 'ONU' : null].filter(Boolean).join(' y ')
-    return `REPORTADO en ${listas} — regla dura`
+    return esCofianza ? `reportado en ${listas}` : 'reportado en listas restrictivas'
   }
-  if (a.flags_revision.length > 0) return `sin reporte en OFAC/ONU, pero con flags de revision: ${a.flags_revision.join(', ')}`
+  if (a.flags_revision.length > 0) {
+    return esCofianza
+      ? `sin reporte en OFAC ni ONU; para revisar: ${a.flags_revision.map((f) => HALLAZGO_ANTECEDENTES[f] ?? f).join(', ')}`
+      : 'sin reporte; hay hallazgos que revisa un analista de Cofianza'
+  }
   return 'sin reporte'
 }
 
@@ -189,10 +210,10 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
   }
 
   if (estudio.estado === 'completado') {
-    // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta interna
-    // ("Perfil medio (82 pts) — coarrendatario opcional"). El gestor SI puede ver
-    // el dato crudo; lo que no viaja es al prospecto, que recibe la ruta sin
-    // etiqueta (redactarEstudioParaProspecto en la API).
+    // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta
+    // ("Aprobado automático (87 puntos)"). Cofianza ve el puntaje; la
+    // inmobiliaria y el propietario la reciben sin él, y el prospecto sin
+    // etiqueta (redacción por rol en la API).
     const etiqueta = estudio.ruta?.etiquetaGestor
     if (estudio.resultado === 'aprobado') {
       const base = `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.`
@@ -483,6 +504,7 @@ function EstudioPanel({
   // Esconder el boton por una condicion que aqui no se puede comprobar dejaria
   // al gestor sin saber por que no aparece.
   const puedeReasignar = esGestor && onReasignado != null && estudio.estado === 'completado'
+  const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   // Va antes que el «expirado» del reloj: un enlace detenido no espera plazo.
   const tone = accionGestor ? 'warning' : getTone(estudio)
@@ -590,10 +612,10 @@ function EstudioPanel({
                       ? 'text-amber-700'
                       : 'text-gray-700'
                 }`}
-                title={estudio.antecedentes.motivo ?? undefined}
+                title={esCofianza ? (estudio.antecedentes.motivo ?? undefined) : undefined}
               >
-                Listas restrictivas (Auco):{' '}
-                <span className="font-medium">{describirAntecedentes(estudio.antecedentes)}</span>
+                Listas restrictivas:{' '}
+                <span className="font-medium">{describirAntecedentes(estudio.antecedentes, esCofianza)}</span>
               </p>
             )}
             {estudio.motivo_rechazo && (

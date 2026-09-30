@@ -19,6 +19,9 @@ import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReport
 import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
+
+/** La API agrega `nota_interna` solo para administrador, operador y gerencia. */
+type IEstudioConNota = IEstudio & { nota_interna?: string | null }
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
@@ -337,6 +340,16 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 <h4 className="text-sm font-medium text-gray-700 mb-1">Observaciones</h4>
                 <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                   {estudio.observaciones}
+                </p>
+              </div>
+            )}
+
+            {/* Nota interna: cifras, umbrales y centrales. La API solo la manda a Cofianza. */}
+            {(estudio as IEstudioConNota).nota_interna && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-1">Nota interna (solo Cofianza)</h4>
+                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                  {(estudio as IEstudioConNota).nota_interna}
                 </p>
               </div>
             )}

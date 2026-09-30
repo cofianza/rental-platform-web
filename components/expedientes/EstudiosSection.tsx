@@ -471,6 +471,15 @@ export function EstudiosSection({
                           {estudio.observaciones}
                         </p>
                       )}
+                    {/* Nota interna (cifras, umbrales, centrales): la API solo
+                        la manda a Cofianza. Las observaciones de arriba son
+                        las que ve la inmobiliaria. */}
+                    {(estudio as IEstudio & { nota_interna?: string | null }).nota_interna && (
+                      <p className="mt-2 text-xs rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-gray-700">
+                        <span className="font-semibold">Nota interna (solo Cofianza): </span>
+                        {(estudio as IEstudio & { nota_interna?: string | null }).nota_interna}
+                      </p>
+                    )}
                   </div>
 
                   {/* Actions — solo gestion (admin/operador). El click "ver detalle"
