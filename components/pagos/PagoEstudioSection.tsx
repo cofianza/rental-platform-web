@@ -329,7 +329,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     <IconShieldCheck size={32} className="text-emerald-600" />
                     <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
                     <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} estudios</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">Reserva 1 crédito y el proceso sigue de inmediato.</span>
                   </button>
                   </>
                 ) : (

@@ -216,7 +216,7 @@ export function EstudiosSection({
       if (!usarCredito) {
         toast.success('Evaluación solicitada exitosamente')
       } else {
-        // H99: la evaluación ya existe; el crédito se descuenta después. Si
+        // H99: la evaluación ya existe; el crédito se reserva después. Si
         // falla, queda solicitada sin pagar y se cobra desde Pagos.
         try {
           const r = await creditosEstudiosService.liberarEstudio(expedienteId)
@@ -224,7 +224,7 @@ export function EstudiosSection({
             `Evaluación solicitada y pagada con un crédito de la inmobiliaria (le quedan ${r.saldo_restante})`,
           )
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'No se pudo descontar el crédito.'
+          const msg = err instanceof Error ? err.message : 'No se pudo reservar el crédito.'
           toast.warning(`Evaluación solicitada, pero sin pagar: ${msg} Cóbrela desde la sección de pagos.`)
         }
       }
