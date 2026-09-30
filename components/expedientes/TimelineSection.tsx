@@ -23,6 +23,7 @@ import { expedienteService } from '@/services/expedienteService'
 import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
 import { cn } from '@/lib/utils'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { textoVisible } from './textoVisible'
 
 export interface TimelineSectionProps {
   expedienteId: string
@@ -251,7 +252,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <p className="text-sm font-medium text-gray-900">
-                        {evento.descripcion}
+                        {textoVisible(evento.descripcion)}
                       </p>
                       <span
                         className="text-xs text-gray-500 whitespace-nowrap"
@@ -366,7 +367,7 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
           </p>
         )}
         {comentario && (
-          <p className="text-xs text-gray-500 italic">&quot;{comentario}&quot;</p>
+          <p className="text-xs text-gray-500 italic">&quot;{textoVisible(comentario)}&quot;</p>
         )}
         {/* Adenda 2 §5.1: el analista registra fundamento, documentos
             consultados y puntaje recalculado. El API los guardaba y ninguna
@@ -380,7 +381,8 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
         )}
         {typeof puntaje === 'number' && (
           <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-700">Puntaje recalculado:</span> {puntaje}
+            <span className="font-medium text-gray-700">Puntaje recalculado:</span>{' '}
+            {puntaje.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100
           </p>
         )}
       </div>

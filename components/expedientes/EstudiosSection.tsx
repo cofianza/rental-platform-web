@@ -25,6 +25,7 @@ import {
 } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { textoVisible, esRolInterno } from './textoVisible'
 
 // ============================================
 // Constants
@@ -457,7 +458,7 @@ export function EstudiosSection({
                         información), rechazo, o fallo técnico. En un aprobado
                         las observaciones son solo el detalle del reporte, y el
                         badge + el score ya lo dicen todo. */}
-                    {estudio.observaciones &&
+                    {textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) }) &&
                       (estudio.estado === 'fallido' ||
                         estudio.resultado === 'condicionado' ||
                         estudio.resultado === 'rechazado') && (
@@ -468,7 +469,7 @@ export function EstudiosSection({
                               : 'bg-amber-50 border-amber-200 text-amber-800'
                           }`}
                         >
-                          {estudio.observaciones}
+                          {textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) })}
                         </p>
                       )}
                   </div>

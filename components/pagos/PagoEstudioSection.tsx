@@ -19,6 +19,8 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
+import { estudioService } from '@/services/estudioService'
+import type { IEstudio } from '@/types/estudio'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -36,6 +38,46 @@ function montoGestor(e: IPagoEstudioEstado): string {
 function montoProspecto(e: IPagoEstudioEstado): string {
   return `${e.monto_formateado} COP${e.iva > 0 ? ' (IVA incluido)' : ''}`
 }
+
+/**
+ * Tarjeta del estudio ya cubierto por la inmobiliaria. Con crédito del paquete
+ * (Adenda de precios §2) el cupo se RESERVA al crear, se consume solo cuando la
+ * central entrega el resultado y vuelve al saldo si la consulta no da
+ * resultado: el texto sigue ese ciclo en vez de repetir el monto.
+ * El pago con crédito se crea con metodo 'transferencia' y la descripción
+ * «liberado con credito de inmobiliaria» (creditos-estudios.service del API).
+ */
+export function textoCubierto(
+  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago'>,
+  estudio: Pick<IEstudio, 'estado'> | null,
+): { titulo: string; texto: string } {
+  const conCredito = /cr[eé]dito|cupo/i.test(`${e.pago?.descripcion ?? ''} ${e.pago?.notas ?? ''}`)
+  if (!conCredito) {
+    return {
+      titulo: 'Cubierto por la inmobiliaria',
+      texto: e.autorizado
+        ? `${e.monto_formateado} COP. El prospecto ya autorizó la consulta.`
+        : `${e.monto_formateado} COP. El enlace de autorización ya se envió al prospecto; el estudio arranca cuando lo firme.`,
+    }
+  }
+  if (estudio?.estado === 'completado') {
+    return { titulo: 'Crédito consumido', texto: 'Se usó 1 crédito de su paquete: la central entregó el resultado.' }
+  }
+  if (estudio?.estado === 'fallido') {
+    return {
+      titulo: 'Crédito devuelto a su saldo',
+      texto: 'La consulta no dio resultado, así que el crédito volvió a su paquete. Si vuelve a consultar, se reserva otra vez.',
+    }
+  }
+  return {
+    titulo: 'Crédito reservado',
+    texto: e.autorizado
+      ? 'El prospecto ya autorizó la consulta. El crédito se consume cuando la central entregue el resultado; si no lo entrega, vuelve a su saldo.'
+      : 'Se reservó 1 crédito de su paquete. El estudio arranca cuando el prospecto autorice la consulta; si no se llega a consultar, el crédito vuelve a su saldo.',
+  }
+}
+
+const ESTUDIO_CERRADO = ['completado', 'fallido', 'cancelado']
 
 interface PagoEstudioSectionProps {
   expedienteId: string
@@ -81,9 +123,19 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   // B fallida → C: confirmación antes de pasarle el cobro al arrendatario.
   const [confirmPasarArrendatario, setConfirmPasarArrendatario] = useState(false)
 
+  // Estudio del titular: solo para la tarjeta «cubierto» (reservado → consumido o devuelto).
+  const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
+
   const fetchEstado = useCallback(async () => {
     try {
       const data = await pagoEstudioService.getEstado(expedienteId)
+      if (data.estado === 'asumido_inmobiliaria') {
+        const lista = await estudioService.getEstudiosForExpediente(expedienteId, 1, 10).catch(() => null)
+        const titular = lista?.data
+          .filter((e) => e.tipo !== 'con_coarrendatario' && e.estado !== 'cancelado')
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+        if (lista) setEstudioTitular(titular ?? null)
+      }
       setEstado(data)
       setErrorCarga(false)
     } catch {
@@ -133,6 +185,18 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     return () => clearInterval(id)
   }, [estado, expedienteId, onPagoCompletado])
 
+  // Cubierto con crédito: el texto cambia cuando el prospecto autoriza y
+  // cuando la central responde, sin que nadie recargue la página.
+  const esperaCubierto =
+    estado?.estado === 'asumido_inmobiliaria' && !(estudioTitular && ESTUDIO_CERRADO.includes(estudioTitular.estado))
+  useEffect(() => {
+    if (!esperaCubierto) return
+    const id = setInterval(() => {
+      if (!document.hidden) void fetchEstado()
+    }, 15000)
+    return () => clearInterval(id)
+  }, [esperaCubierto, fetchEstado])
+
   // P22: el saldo en contra (compra contracargada) se resta de lo disponible;
   // se ofrece crédito solo si queda saldo efectivo (si no, la API da 409).
   const creditosEnContra = saldoCreditos?.creditos_en_contra ?? 0
@@ -145,7 +209,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     try {
       await creditosEstudiosService.liberarEstudio(expedienteId)
       await Promise.all([fetchEstado(), fetchSaldo()])
-      toast.success('Crédito descontado. La evaluación arranca de inmediato.')
+      toast.success(
+        estado?.autorizado
+          ? 'Crédito reservado. La evaluación arranca de inmediato.'
+          : 'Crédito reservado. La evaluación arranca cuando el prospecto autorice la consulta.',
+      )
       onPagoCompletado?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al liberar el estudio con credito')
@@ -294,11 +362,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             </span>
             <div>
               <h3 className="text-base font-bold text-gray-900">
-                Acción requerida: define quién paga el estudio
+                Acción requerida: defina quién paga el estudio
                 <span className="ml-2 inline-flex px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-200 text-amber-900">paso obligatorio</span>
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
-                La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elijas una de
+                La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elija una de
                 estas opciones. Monto: <span className="font-semibold text-gray-900">{montoGestor(estado)}</span>.
               </p>
             </div>
@@ -318,7 +386,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
                     confirmLabel="Reservar 1 crédito"
                   />
                   <button
@@ -329,7 +397,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     <IconShieldCheck size={32} className="text-emerald-600" />
                     <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
                     <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} estudios</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">Reserva 1 crédito y el proceso sigue de inmediato.</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">{estado.autorizado ? 'Reserva 1 crédito y el proceso sigue de inmediato.' : 'Reserva 1 crédito; el proceso sigue cuando el prospecto autorice.'}</span>
                   </button>
                   </>
                 ) : (
@@ -403,7 +471,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
                     confirmLabel="Reservar 1 crédito"
                   />
                   <button
@@ -429,17 +497,18 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       )}
 
       {/* Asumido por inmobiliaria */}
-      {estado.estado === 'asumido_inmobiliaria' && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <IconCheckCircle size={20} className="text-green-600 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-green-800">Cubierto por inmobiliaria</p>
-            <p className="text-xs text-green-600">
-              {estado.monto_formateado} COP — el enlace de autorización ya se envió al arrendatario; el estudio corre cuando firme.
-            </p>
+      {estado.estado === 'asumido_inmobiliaria' && (() => {
+        const { titulo, texto } = textoCubierto(estado, estudioTitular)
+        return (
+          <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <IconCheckCircle size={20} className="text-green-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-green-800">{titulo}</p>
+              <p className="text-xs text-green-600">{texto}</p>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* P1: la evaluación se devolvió. El API no manda el motivo (estudio sin
           consulta, contracargo, reembolso a mano): el texto no lo supone. */}

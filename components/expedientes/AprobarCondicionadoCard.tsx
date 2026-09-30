@@ -111,10 +111,14 @@ export function AprobarCondicionadoCard({
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
       })
       setConfirmAprobarOpen(false)
+      // El puntaje del modelo es interno: solo se le muestra a Cofianza, en
+      // escala de 0 a 100 y con coma decimal.
       const p = res.puntaje_revision_manual
-      toast.success(
-        `Estudio aprobado.${p?.puntaje_normalizado != null ? ` Puntaje recalculado: ${p.puntaje_normalizado} (sobre ${p.denominador} puntos).` : ''} Ya se puede crear el contrato desde el estudio.`,
-      )
+      const puntaje =
+        esCofianza && p?.puntaje_normalizado != null
+          ? ` Puntaje de la revisión: ${p.puntaje_normalizado.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100.`
+          : ''
+      toast.success(`Estudio aprobado. Ya puede crear el contrato.${puntaje}`)
       onAprobado?.()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
@@ -149,7 +153,7 @@ export function AprobarCondicionadoCard({
             <Paso n={1} titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
               {sinSalidaAprobable ? (
                 <p>
-                  Sin historial en ninguna central, la Política solo permite aprobarlo con un co-arrendatario, y en
+                  Sin historial en ninguna central, solo se puede aprobar con un co-arrendatario, y en
                   inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Si el otro buró
                   tampoco tiene información, el caso no puede aprobarse y se cierra con el motivo
                   {esCofianza
@@ -282,7 +286,7 @@ export function AprobarCondicionadoCard({
             onChange={(e) => setFundamento(e.target.value)}
             rows={3}
             disabled={loading}
-            placeholder="Por qué apruebas este caso (mínimo 10 caracteres)"
+            placeholder="Por qué aprueba este caso (mínimo 10 caracteres)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
           />
         </div>
@@ -292,7 +296,7 @@ export function AprobarCondicionadoCard({
         {sinInfoBuro && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-700">
             <p>
-              <strong>Sin historial en ninguna central</strong> (Política §15): para aprobarlo se exige un co-arrendatario
+              <strong>Sin historial en ninguna central:</strong> para aprobarlo se exige un co-arrendatario
               evaluado con puntaje de 80 o más, que el canon no pase del 30 % del ingreso y al menos una fuente de
               capacidad de pago verificable.
             </p>

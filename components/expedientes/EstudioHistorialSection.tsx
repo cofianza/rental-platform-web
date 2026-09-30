@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/Badge'
 import { IconLoader } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import type { IEstudioHistorial } from '@/types/estudio'
+import { useAuthStore } from '@/stores/auth.store'
+import { textoVisible, esRolInterno } from './textoVisible'
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -31,6 +33,7 @@ export function EstudioHistorialSection({
   isLoading,
   onEstudioSelect,
 }: EstudioHistorialSectionProps) {
+  const externo = !esRolInterno(useAuthStore((s) => s.user?.rol))
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-6">
@@ -111,9 +114,9 @@ export function EstudioHistorialSection({
                     <Badge estado={item.estado} />
                   </div>
 
-                  {item.observaciones && (
+                  {textoVisible(item.observaciones, { externo }) && (
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      {item.observaciones}
+                      {textoVisible(item.observaciones, { externo })}
                     </p>
                   )}
 
