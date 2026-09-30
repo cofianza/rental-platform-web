@@ -355,7 +355,10 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     const documentos = Array.isArray(detalle.documentos_consultados)
       ? (detalle.documentos_consultados as string[])
       : []
-    const puntaje = detalle.puntaje_revision_manual as number | undefined
+    // La API guarda el recálculo completo ({ puntaje_normalizado, denominador, … });
+    // filas viejas pueden traer solo el número.
+    const recalculo = detalle.puntaje_revision_manual as number | { puntaje_normalizado?: number | null } | null | undefined
+    const puntaje = typeof recalculo === 'number' ? recalculo : recalculo?.puntaje_normalizado
 
     return (
       <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">

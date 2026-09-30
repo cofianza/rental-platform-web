@@ -30,7 +30,10 @@ export function describirFlag(flag: string): string {
   return FLAGS[flag] ?? flag.replace(/_/g, ' ')
 }
 
-const MARCAS_INTERNAS = /Para el analista|puntaje \d|entre \d+ y \d+|umbral|denominador|\bm[aá]x(?:imo)?\.? (?:de )?\d/i
+// Frases con datos internos del modelo (puntaje intermedio, umbrales, bandas,
+// notas al analista) o con el error crudo de una central: «no respondio (…)».
+const MARCAS_INTERNAS =
+  /Para el analista|puntaje \d|puntaje (?:menor|mayor)|entre \d+ y \d+|umbral|denominador|\bbanda\b|\bm[aá]x(?:imo)?\.? (?:de )?\d|\bm[ií]n(?:imo)?\.? (?:de )?\d|mayor a \d+ puntos|no respondi[oó] \(/i
 
 function capitalizar(frase: string): string {
   return frase.charAt(0).toUpperCase() + frase.slice(1)
@@ -49,6 +52,11 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
     .replace(/Decisi[oó]n de Gerencia\s*\(\d{4}-\d{2}-\d{2}\)\s*:?\s*/gi, '')
     .replace(CITA_SUELTA, '')
     .replace(/\bPol[ií]tica(?: de Evaluaci[oó]n)? V\d(?:\.\d)?/g, 'política de riesgo')
+    // Versión del modelo («Fuente: transunion, modelo V4.1.») y rótulos de casos
+    // de la matriz («Caso G: », «Caso R2: »).
+    .replace(/,?\s*modelo\s+V\d(?:\.\d)?/gi, '')
+    .replace(/\bCaso [A-Z]\d?\s*:\s*/g, '')
+    .replace(/\bV1 = promedio\b/g, 'el score usado es el promedio')
     .replace(/\s?\bV\d\.\d\b/g, '')
     // Rótulo interno que repite los motivos que ya van en el texto.
     .replace(/Decisi[oó]n del modelo\s*:\s*/gi, '')
