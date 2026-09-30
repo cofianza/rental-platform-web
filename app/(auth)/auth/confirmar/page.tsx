@@ -132,6 +132,18 @@ export default function ConfirmarEnlacePage() {
             </>
           )}
         </button>
+        {/* M7: la API registra aquí la aceptación de quien abre el enlace (el dueño del correo). */}
+        <p className="mt-4 text-xs text-gray-500">
+          Al tocar «Entrar», usted acepta los{' '}
+          <Link href="/terminos" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">
+            términos y condiciones
+          </Link>{' '}
+          del servicio y autoriza el{' '}
+          <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline hover:text-primary-700">
+            tratamiento de sus datos personales
+          </Link>{' '}
+          conforme a la Ley 1581 de 2012.
+        </p>
       </div>
     )
   }
