@@ -52,7 +52,7 @@ export default function EditarInmueblePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Editar Inmueble" subtitle="Cargando datos..." />
+        <PageHeader title="Editar inmueble" subtitle="Cargando datos..." />
         <div className="flex items-center justify-center h-64">
           <IconLoader size={32} className="text-primary-600 animate-spin" />
         </div>
@@ -63,7 +63,7 @@ export default function EditarInmueblePage() {
   if (error || !inmueble) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Editar Inmueble" subtitle="Error al cargar" />
+        <PageHeader title="Editar inmueble" subtitle="Error al cargar" />
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-600 mb-4">{error || 'Inmueble no encontrado'}</p>
           <button

@@ -10,7 +10,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconChevronRight, IconHome, IconX, IconImage } from '@/components/icons'
+import { IconLoader, IconChevronRight, IconHome, IconX, IconImages } from '@/components/icons'
 import { PageHeader } from '@/components/ui'
 import { ImageUploader } from './ImageUploader'
 import { PropietarioSelector } from './PropietarioSelector'
@@ -34,17 +34,57 @@ import { FOTO_LIMITS } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 
-// ── Field Tooltip ───────────────────────────────────────────
+// ── Sección y campo ─────────────────────────────────────────
 
-function FieldTooltip({ text }: { text: string }) {
+function Seccion({ n, titulo, descripcion, opcional, children }: {
+  n: number
+  titulo: string
+  descripcion?: string
+  opcional?: boolean
+  children: ReactNode
+}) {
   return (
-    <span className="relative group ml-1 inline-flex">
-      <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold flex items-center justify-center cursor-help hover:bg-primary-100 hover:text-primary-600 transition-colors">?</span>
-      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-normal w-56 text-center opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-lg">
-        {text}
-        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-      </span>
-    </span>
+    <section className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <header className="flex items-start gap-3 px-5 sm:px-6 pt-5 pb-4 border-b border-gray-100">
+        <span className="shrink-0 w-7 h-7 rounded-full bg-primary-50 text-primary-700 text-sm font-semibold flex items-center justify-center">
+          {n}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold text-gray-900 flex flex-wrap items-center gap-2">
+            {titulo}
+            {opcional && <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>}
+          </h3>
+          {descripcion && <p className="text-sm text-gray-500 mt-0.5">{descripcion}</p>}
+        </div>
+      </header>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
+  )
+}
+
+/** Etiqueta + control + error o ayuda. La ayuda queda visible: el «?» con hover no se veía en el celular. */
+function Campo({ id, label, requerido, ayuda, error, className, children }: {
+  id: string
+  label: ReactNode
+  requerido?: boolean
+  ayuda?: ReactNode
+  error?: string
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {requerido && <span className="text-red-500"> *</span>}
+      </label>
+      {children}
+      {error ? (
+        <p className="mt-1 text-xs text-red-600">{error}</p>
+      ) : ayuda ? (
+        <p className="mt-1 text-xs text-gray-500">{ayuda}</p>
+      ) : null}
+    </div>
   )
 }
 
@@ -55,7 +95,7 @@ function formatCOPDisplay(value: number | ''): string {
   return new Intl.NumberFormat('es-CO').format(Number(value))
 }
 
-function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max, tooltip }: {
+function CurrencyInput({ label, id, value, onChange, disabled, placeholder, error, max, ayuda, requerido }: {
   label: string
   id: string
   value: number | ''
@@ -64,7 +104,8 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
   placeholder?: string
   error?: string
   max?: number
-  tooltip?: string
+  ayuda?: string
+  requerido?: boolean
 }) {
   const [display, setDisplay] = useState(formatCOPDisplay(value))
 
@@ -88,11 +129,7 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
   }
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-        {tooltip && <FieldTooltip text={tooltip} />}
-      </label>
+    <Campo id={id} label={label} requerido={requerido} ayuda={ayuda} error={error}>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
         <input
@@ -103,13 +140,13 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
           onChange={handleInputChange}
           disabled={disabled}
           placeholder={placeholder}
+          aria-invalid={!!error}
           className={`w-full pl-7 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
         />
       </div>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
+    </Campo>
   )
 }
 
@@ -407,7 +444,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
 
     // Validaciones de rango en campos numéricos
     if (formData.area_m2 && Number(formData.area_m2) > 99999) {
-      newErrors.area_m2 = 'El area no puede superar 99.999 m²'
+      newErrors.area_m2 = 'El área no puede superar 99.999 m²'
     }
     if (formData.valor_arriendo && Number(formData.valor_arriendo) > 999999999) {
       newErrors.valor_arriendo = 'El valor no puede superar $999.999.999'
@@ -419,13 +456,13 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       newErrors.administracion = 'El valor no puede superar $999.999.999'
     }
     if (formData.habitaciones && Number(formData.habitaciones) > 99) {
-      newErrors.habitaciones = 'Maximo 99 habitaciones'
+      newErrors.habitaciones = 'Máximo 99 habitaciones'
     }
     if (formData.banos && Number(formData.banos) > 99) {
-      newErrors.banos = 'Maximo 99 baños'
+      newErrors.banos = 'Máximo 99 baños'
     }
     if (formData.parqueaderos && Number(formData.parqueaderos) > 99) {
-      newErrors.parqueaderos = 'Maximo 99 parqueaderos'
+      newErrors.parqueaderos = 'Máximo 99 parqueaderos'
     }
 
     setErrors(newErrors)
@@ -614,11 +651,45 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       hasError ? 'border-red-300' : 'border-gray-300'
     )
 
-  const title = mode === 'create' ? 'Nuevo Inmueble' : 'Editar Inmueble'
+  const title = mode === 'create' ? 'Nuevo inmueble' : 'Editar inmueble'
   const subtitle =
     mode === 'create'
-      ? 'Complete los datos para registrar un nuevo inmueble'
-      : `Editando inmueble ${inmueble?.codigo || ''}`
+      ? 'Complete los datos del inmueble. Los marcados con * son obligatorios.'
+      : `Editando el inmueble ${inmueble?.codigo || ''}`
+
+  // Las secciones se numeran según lo que ve cada rol.
+  let numero = 0
+  const sig = () => ++numero
+
+  const campoCodigo = (
+    <Campo
+      id="codigo"
+      label="Código de la propiedad"
+      requerido
+      error={errors.codigo}
+      ayuda={
+        isPropietarioUser
+          ? 'Lo generamos por usted; cámbielo si desea. Debe ser único dentro de sus inmuebles.'
+          : 'Identificador interno para sus reportes: letras, números y guiones, máximo 30. Único dentro de sus inmuebles.'
+      }
+    >
+      <input
+        type="text"
+        id="codigo"
+        value={formData.codigo}
+        onChange={(e) => {
+          // Al escribirlo a mano dejamos de sugerirlo automáticamente.
+          setCodigoTocado(true)
+          handleChange('codigo', e.target.value)
+        }}
+        disabled={isSubmitting}
+        placeholder="Ej: APT-001, CASA-SAB, OF-302"
+        maxLength={30}
+        aria-invalid={!!errors.codigo}
+        className={cn(inputClasses(!!errors.codigo), 'font-mono font-semibold')}
+      />
+    </Campo>
+  )
 
   return (
     <div className="space-y-6">
@@ -642,113 +713,34 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       {/* Header */}
       <PageHeader title={title} subtitle={subtitle} />
 
-      {/* Formulario */}
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
-        {/* Fotos — Galeria completa en edicion, uploader simple en creacion */}
-        {mode === 'edit' && inmueble?.id ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Galeria de Fotos</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Suba, reordene, marque la foto de fachada y agregue descripciones a cada imagen.
-            </p>
-            <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
+      {/* A nombre de quién queda: contexto, no un campo a llenar. */}
+      {isAutoAssignOwner && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary-100 bg-primary-50/60 px-4 py-3">
+          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm">
+            {authUser?.email?.[0]?.toUpperCase() || 'U'}
           </div>
-        ) : (
-          <>
-            {/* Foto de fachada (creacion) */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Foto de Fachada *</h3>
-              <ImageUploader
-                value={formData.foto_fachada_url}
-                onChange={(url) => handleChange('foto_fachada_url', url)}
-                inmuebleId={inmueble?.id}
-                disabled={isSubmitting}
-                error={errors.foto_fachada_url}
-              />
-            </div>
+          <p className="text-sm text-primary-900">
+            {isPropietarioUser
+              ? 'El inmueble quedará a su nombre.'
+              : 'El inmueble quedará vinculado a su inmobiliaria.'}
+          </p>
+        </div>
+      )}
 
-            {/* Fotos adicionales (creacion) */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">Fotos adicionales</h3>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Opcional</span>
-              </div>
-              <p className="text-sm text-gray-500 mb-4">
-                Agregue fotos del interior. La primera foto sera la de fachada. Puede reordenar y editar descripciones despues desde el detalle.
-              </p>
+      {/* Formulario */}
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+        {/* 1. Datos generales */}
+        <Seccion n={sig()} titulo="Datos generales">
+          <div className={cn('grid grid-cols-1 gap-5', isPropietarioUser ? 'md:grid-cols-3' : 'md:grid-cols-2')}>
+            {!isPropietarioUser && campoCodigo}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {fotosAdicionales.map((foto, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
-                    <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        URL.revokeObjectURL(foto.preview)
-                        setFotosAdicionales((prev) => prev.filter((_, i) => i !== idx))
-                      }}
-                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <IconX size={14} />
-                    </button>
-                  </div>
-                ))}
-
-                {fotosAdicionales.length < 10 && (
-                  <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
-                    <IconImage size={24} className="text-gray-500 mb-1" />
-                    <span className="text-xs text-gray-500">Agregar</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      className="hidden"
-                      disabled={isSubmitting}
-                      onChange={(e) => {
-                        // Se descartan aquí las que uploadFoto rechazaría, para
-                        // que no queden en la vista previa y se pierdan al guardar.
-                        const allowedTypes: readonly string[] = FOTO_LIMITS.ALLOWED_TYPES
-                        const files = Array.from(e.target.files || []).filter((file) => {
-                          const ok = allowedTypes.includes(file.type) && file.size <= FOTO_LIMITS.MAX_FILE_SIZE
-                          if (!ok) toast.error(`${file.name}: supera 5 MB o no es JPG, PNG o WebP`)
-                          return ok
-                        })
-                        const remaining = 10 - fotosAdicionales.length
-                        const toAdd = files.slice(0, remaining)
-                        const newFotos = toAdd.map((file) => ({
-                          file,
-                          preview: URL.createObjectURL(file),
-                        }))
-                        setFotosAdicionales((prev) => [...prev, ...newFotos])
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {fotosAdicionales.length >= 10 && (
-                <p className="text-xs text-amber-600 mt-2">Máximo 10 fotos adicionales</p>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Información básica */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Tipo de inmueble */}
-            <div>
-              <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Inmueble *
-              </label>
+            <Campo id="tipo" label="Tipo de inmueble" requerido error={errors.tipo}>
               <select
                 id="tipo"
                 value={formData.tipo}
                 onChange={(e) => handleChange('tipo', e.target.value)}
                 disabled={isSubmitting}
+                aria-invalid={!!errors.tipo}
                 className={inputClasses(!!errors.tipo)}
               >
                 <option value="">Seleccionar tipo...</option>
@@ -758,15 +750,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                   </option>
                 ))}
               </select>
-              {errors.tipo && <p className="mt-1 text-xs text-red-600">{errors.tipo}</p>}
-            </div>
+            </Campo>
 
-            {/* Uso */}
-            <div>
-              <label htmlFor="uso" className="block text-sm font-medium text-gray-700 mb-1">
-                Uso
-                <FieldTooltip text="Vivienda: para habitar. Comercial: para oficinas, locales o negocios." />
-              </label>
+            <Campo id="uso" label="Uso" ayuda="Vivienda: para habitar. Comercial: oficinas, locales o negocios.">
               <select
                 id="uso"
                 value={formData.uso}
@@ -780,19 +766,21 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                   </option>
                 ))}
               </select>
-            </div>
+            </Campo>
 
-            {/* Estrato */}
-            <div>
-              <label htmlFor="estrato" className="block text-sm font-medium text-gray-700 mb-1">
-                Estrato *
-                <FieldTooltip text="Clasificacion socioeconomica de 1 a 7 usada en Colombia. Determina el costo de servicios publicos. 1 es el mas bajo, 7 el mas alto." />
-              </label>
+            <Campo
+              id="estrato"
+              label="Estrato"
+              requerido
+              error={errors.estrato}
+              ayuda="El que aparece en el recibo de servicios públicos."
+            >
               <select
                 id="estrato"
                 value={formData.estrato}
                 onChange={(e) => handleChange('estrato', e.target.value ? Number(e.target.value) : '')}
                 disabled={isSubmitting}
+                aria-invalid={!!errors.estrato}
                 className={inputClasses(!!errors.estrato)}
               >
                 <option value="">Seleccionar estrato...</option>
@@ -802,14 +790,94 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                   </option>
                 ))}
               </select>
-              {errors.estrato && <p className="mt-1 text-xs text-red-600">{errors.estrato}</p>}
-            </div>
+            </Campo>
+          </div>
 
-            {/* Área */}
-            <div>
-              <label htmlFor="area_m2" className="block text-sm font-medium text-gray-700 mb-1">
-                Área (m²)
-              </label>
+          {/* El propietario particular no tiene un sistema de códigos: lo generamos y se pliega. */}
+          {isPropietarioUser && (
+            <div className="mt-5">
+              <Avanzado plegar>{campoCodigo}</Avanzado>
+            </div>
+          )}
+        </Seccion>
+
+        {/* 2. Ubicación */}
+        <Seccion n={sig()} titulo="Ubicación">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Campo id="direccion" label="Dirección" requerido error={errors.direccion} className="md:col-span-2">
+              <input
+                type="text"
+                id="direccion"
+                value={formData.direccion}
+                onChange={(e) => handleChange('direccion', e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Ej: Calle 100 #15-50 Apto 501"
+                aria-invalid={!!errors.direccion}
+                className={inputClasses(!!errors.direccion)}
+              />
+            </Campo>
+
+            <Campo id="departamento" label="Departamento" requerido error={errors.departamento}>
+              <select
+                id="departamento"
+                value={formData.departamento}
+                onChange={(e) => handleChange('departamento', e.target.value)}
+                disabled={isSubmitting}
+                aria-invalid={!!errors.departamento}
+                className={inputClasses(!!errors.departamento)}
+              >
+                <option value="">Seleccionar departamento...</option>
+                {DEPARTAMENTOS.map((dep) => (
+                  <option key={dep} value={dep}>
+                    {dep}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+
+            <Campo id="ciudad" label="Ciudad" requerido error={errors.ciudad}>
+              <input
+                type="text"
+                id="ciudad"
+                value={formData.ciudad}
+                onChange={(e) => handleChange('ciudad', e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Ej: Bogotá"
+                aria-invalid={!!errors.ciudad}
+                className={inputClasses(!!errors.ciudad)}
+              />
+            </Campo>
+
+            <Campo id="barrio" label="Barrio">
+              <input
+                type="text"
+                id="barrio"
+                value={formData.barrio}
+                onChange={(e) => handleChange('barrio', e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Ej: Chapinero"
+                className={inputClasses(false)}
+              />
+            </Campo>
+
+            <Campo id="piso" label="Piso / interior">
+              <input
+                type="text"
+                id="piso"
+                value={formData.piso}
+                onChange={(e) => handleChange('piso', e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Ej: Piso 5, Apto 501"
+                className={inputClasses(false)}
+              />
+            </Campo>
+          </div>
+        </Seccion>
+
+        {/* 3. Características */}
+        <Seccion n={sig()} titulo="Características">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            <Campo id="area_m2" label="Área (m²)" error={errors.area_m2}>
               <input
                 type="number"
                 id="area_m2"
@@ -820,159 +888,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 max="99999"
                 step="0.01"
                 placeholder="Ej: 85"
+                aria-invalid={!!errors.area_m2}
                 className={inputClasses(!!errors.area_m2)}
               />
-              {errors.area_m2 && <p className="mt-1 text-xs text-red-600">{errors.area_m2}</p>}
-            </div>
-          </div>
-        </div>
+            </Campo>
 
-        {/* Identificación + Ubicación */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Identificación y ubicación</h3>
-
-          {/* Código de propiedad — campo destacado, obligatorio. Cada
-              inmobiliaria/propietario define su sistema (APT-001, etc).
-              Es único por propietario. */}
-          <div className="mb-6">
-            <Avanzado plegar={isPropietarioUser}>
-              <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-                <label htmlFor="codigo" className="block text-sm font-semibold text-primary-900 mb-1.5">
-                  Código de la propiedad *
-                </label>
-                <input
-                  type="text"
-                  id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => {
-                    // Al escribirlo a mano dejamos de sugerirlo automáticamente.
-                    setCodigoTocado(true)
-                    handleChange('codigo', e.target.value)
-                  }}
-                  disabled={isSubmitting}
-                  placeholder="Ej: APT-001, CASA-SAB, OF-302"
-                  maxLength={30}
-                  className={`w-full px-3 py-2 text-base font-mono font-semibold bg-white border rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${
-                    errors.codigo ? 'border-red-400' : 'border-primary-300'
-                  }`}
-                />
-                {errors.codigo ? (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.codigo}</p>
-                ) : (
-                  <p className="mt-1.5 text-xs text-primary-700">
-                    {isPropietarioUser
-                      ? 'Lo generamos por usted; cámbielo si desea. Debe ser único dentro de sus inmuebles.'
-                      : 'Identificador interno que usa para sus reportes. Letras, números, guiones, máx 30 caracteres. Debe ser único dentro de sus inmuebles.'}
-                  </p>
-                )}
-              </div>
-            </Avanzado>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Dirección */}
-            <div className="md:col-span-2">
-              <label htmlFor="direccion" className="block text-sm font-medium text-gray-700 mb-1">
-                Dirección *
-              </label>
-              <input
-                type="text"
-                id="direccion"
-                value={formData.direccion}
-                onChange={(e) => handleChange('direccion', e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Ej: Calle 100 #15-50 Apto 501"
-                className={inputClasses(!!errors.direccion)}
-              />
-              {errors.direccion && <p className="mt-1 text-xs text-red-600">{errors.direccion}</p>}
-            </div>
-
-            {/* Departamento */}
-            <div>
-              <label htmlFor="departamento" className="block text-sm font-medium text-gray-700 mb-1">
-                Departamento *
-              </label>
-              <select
-                id="departamento"
-                value={formData.departamento}
-                onChange={(e) => handleChange('departamento', e.target.value)}
-                disabled={isSubmitting}
-                className={inputClasses(!!errors.departamento)}
-              >
-                <option value="">Seleccionar departamento...</option>
-                {DEPARTAMENTOS.map((dep) => (
-                  <option key={dep} value={dep}>
-                    {dep}
-                  </option>
-                ))}
-              </select>
-              {errors.departamento && (
-                <p className="mt-1 text-xs text-red-600">{errors.departamento}</p>
-              )}
-            </div>
-
-            {/* Ciudad */}
-            <div>
-              <label htmlFor="ciudad" className="block text-sm font-medium text-gray-700 mb-1">
-                Ciudad *
-              </label>
-              <input
-                type="text"
-                id="ciudad"
-                value={formData.ciudad}
-                onChange={(e) => handleChange('ciudad', e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Ej: Bogotá"
-                className={inputClasses(!!errors.ciudad)}
-              />
-              {errors.ciudad && <p className="mt-1 text-xs text-red-600">{errors.ciudad}</p>}
-            </div>
-
-            {/* Barrio */}
-            <div>
-              <label htmlFor="barrio" className="block text-sm font-medium text-gray-700 mb-1">
-                Barrio
-              </label>
-              <input
-                type="text"
-                id="barrio"
-                value={formData.barrio}
-                onChange={(e) => handleChange('barrio', e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Ej: Chapinero"
-                className={inputClasses(false)}
-              />
-            </div>
-
-            {/* Piso */}
-            <div>
-              <label htmlFor="piso" className="block text-sm font-medium text-gray-700 mb-1">
-                Piso / Interior
-              </label>
-              <input
-                type="text"
-                id="piso"
-                value={formData.piso}
-                onChange={(e) => handleChange('piso', e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Ej: Piso 5, Apto 501"
-                className={inputClasses(false)}
-              />
-            </div>
-
-          </div>
-        </div>
-
-        {/* Características */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Características</h3>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {/* Habitaciones */}
-            <div>
-              <label htmlFor="habitaciones" className="block text-sm font-medium text-gray-700 mb-1">
-                Habitaciones
-              </label>
+            <Campo id="habitaciones" label="Habitaciones" error={errors.habitaciones}>
               <input
                 type="number"
                 id="habitaciones"
@@ -982,16 +903,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 min="0"
                 max="99"
                 placeholder="0"
+                aria-invalid={!!errors.habitaciones}
                 className={inputClasses(!!errors.habitaciones)}
               />
-              {errors.habitaciones && <p className="mt-1 text-xs text-red-600">{errors.habitaciones}</p>}
-            </div>
+            </Campo>
 
-            {/* Baños */}
-            <div>
-              <label htmlFor="banos" className="block text-sm font-medium text-gray-700 mb-1">
-                Baños
-              </label>
+            <Campo id="banos" label="Baños" error={errors.banos}>
               <input
                 type="number"
                 id="banos"
@@ -1001,58 +918,57 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 min="0"
                 max="99"
                 placeholder="0"
+                aria-invalid={!!errors.banos}
                 className={inputClasses(!!errors.banos)}
               />
-              {errors.banos && <p className="mt-1 text-xs text-red-600">{errors.banos}</p>}
-            </div>
+            </Campo>
 
-            {/* Parqueadero checkbox */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="parqueadero"
-                checked={formData.parqueadero}
-                onChange={(e) => handleChange('parqueadero', e.target.checked)}
-                disabled={isSubmitting}
-                className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="parqueadero" className="ml-2 text-sm text-gray-700">
-                Tiene parqueadero
-              </label>
-            </div>
-
-            {/* Parqueaderos cantidad */}
-            {formData.parqueadero && (
-              <div>
-                <label htmlFor="parqueaderos" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cantidad
+            {/* Parqueadero: la casilla y la cantidad comparten celda para no correr la grilla. */}
+            <div>
+              <span className="block text-sm font-medium text-gray-700 mb-1">Parqueadero</span>
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="parqueadero"
+                  className="flex items-center gap-2 h-[38px] px-3 border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 has-[:checked]:border-primary-400 has-[:checked]:bg-primary-50"
+                >
+                  <input
+                    type="checkbox"
+                    id="parqueadero"
+                    checked={formData.parqueadero}
+                    onChange={(e) => handleChange('parqueadero', e.target.checked)}
+                    disabled={isSubmitting}
+                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  Tiene
                 </label>
-                <input
-                  type="number"
-                  id="parqueaderos"
-                  value={formData.parqueaderos}
-                  onChange={(e) => handleChange('parqueaderos', e.target.value ? Number(e.target.value) : '')}
-                  disabled={isSubmitting}
-                  min="1"
-                  max="99"
-                  placeholder="1"
-                  className={inputClasses(!!errors.parqueaderos)}
-                />
-                {errors.parqueaderos && <p className="mt-1 text-xs text-red-600">{errors.parqueaderos}</p>}
+                {formData.parqueadero && (
+                  <input
+                    type="number"
+                    id="parqueaderos"
+                    aria-label="Cantidad de parqueaderos"
+                    value={formData.parqueaderos}
+                    onChange={(e) => handleChange('parqueaderos', e.target.value ? Number(e.target.value) : '')}
+                    disabled={isSubmitting}
+                    min="1"
+                    max="99"
+                    placeholder="Cant."
+                    aria-invalid={!!errors.parqueaderos}
+                    className={cn(inputClasses(!!errors.parqueaderos), 'w-20')}
+                  />
+                )}
               </div>
-            )}
+              {errors.parqueaderos && <p className="mt-1 text-xs text-red-600">{errors.parqueaderos}</p>}
+            </div>
           </div>
-        </div>
+        </Seccion>
 
-        {/* Valores */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Valores</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Valor arriendo */}
+        {/* 4. Valores */}
+        <Seccion n={sig()} titulo="Valores">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <CurrencyInput
-              label="Valor Arriendo (COP) *"
-              tooltip="Monto mensual que el arrendatario paga por vivir en el inmueble."
+              label="Valor del arriendo (COP)"
+              requerido
+              ayuda="Canon mensual que paga el arrendatario."
               id="valor_arriendo"
               value={formData.valor_arriendo}
               onChange={(val) => handleChange('valor_arriendo', val)}
@@ -1062,10 +978,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               max={999999999}
             />
 
-            {/* Administración */}
             <CurrencyInput
-              label="Administracion (COP)"
-              tooltip="Cuota mensual de administracion del conjunto o edificio. Dejalo en 0 si no aplica."
+              label="Administración (COP)"
+              ayuda="Cuota mensual del conjunto o edificio. Déjela vacía si no aplica."
               id="administracion"
               value={formData.administracion}
               onChange={(val) => handleChange('administracion', val)}
@@ -1079,8 +994,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 propietario particular no le pedimos el precio de venta. */}
             {!isPropietarioUser && (
               <CurrencyInput
-                label="Valor Comercial (COP)"
-                tooltip="Precio estimado de venta del inmueble en el mercado. Es referencial, no obligatorio."
+                label="Valor comercial (COP)"
+                ayuda="Precio estimado de venta. Es solo referencial."
                 id="valor_comercial"
                 value={formData.valor_comercial}
                 onChange={(val) => handleChange('valor_comercial', val)}
@@ -1091,213 +1006,298 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               />
             )}
           </div>
-        </div>
+        </Seccion>
 
-        {/* Propietario — auto-asigna para propietario e inmobiliaria */}
-        {isAutoAssignOwner ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
-              {authUser?.email?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-green-800">
-                {isPropietarioUser ? 'Propietario: Su cuenta' : 'Administrado por: Su inmobiliaria'}
-              </p>
-              <p className="text-xs text-green-600">
-                {isPropietarioUser
-                  ? 'El inmueble se registrará a su nombre automáticamente'
-                  : 'El inmueble quedará vinculado a su inmobiliaria'}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Propietario *</h3>
-            <PropietarioSelector
-              value={formData.propietario_id}
-              onChange={handlePropietarioChange}
-              disabled={isSubmitting}
-              error={errors.propietario_id}
-              initialPropietario={initialPropietario}
-            />
-          </div>
-        )}
-
-        {/* Descripción y notas */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Descripción</h3>
-
+        {/* 5. Fotos y vitrina — galería completa en edición, uploader simple en creación */}
+        <Seccion
+          n={sig()}
+          titulo="Fotos y vitrina"
+          descripcion="Lo que ven los interesados en la vitrina de Cofianza."
+        >
           <div className="space-y-6">
-            {/* Descripción pública */}
-            <div>
-              <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">
-                Descripción para Vitrina
-              </label>
+            {mode === 'edit' && inmueble?.id ? (
+              <div>
+                <p className="text-sm text-gray-500 mb-4">
+                  Suba, reordene, marque la foto de fachada y agregue descripciones a cada imagen.
+                </p>
+                <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Foto de fachada<span className="text-red-500"> *</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mb-2">Es la portada del inmueble en la vitrina.</p>
+                  <ImageUploader
+                    value={formData.foto_fachada_url}
+                    onChange={(url) => handleChange('foto_fachada_url', url)}
+                    inmuebleId={inmueble?.id}
+                    disabled={isSubmitting}
+                    error={errors.foto_fachada_url}
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <p className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    Fotos del interior
+                    <span className="text-xs font-normal text-gray-500">({fotosAdicionales.length}/10, opcional)</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Podrá reordenarlas y describirlas después, desde la galería del inmueble.
+                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {fotosAdicionales.map((foto, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                        <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          aria-label={`Quitar foto ${idx + 1}`}
+                          onClick={() => {
+                            URL.revokeObjectURL(foto.preview)
+                            setFotosAdicionales((prev) => prev.filter((_, i) => i !== idx))
+                          }}
+                          className="absolute top-1 right-1 w-7 h-7 bg-black/60 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                        >
+                          <IconX size={14} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {fotosAdicionales.length < 10 && (
+                      <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors focus-within:ring-2 focus-within:ring-primary-500">
+                        <IconImages size={22} className="text-gray-500 mb-1" />
+                        <span className="text-xs text-gray-600">Agregar fotos</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          className="sr-only"
+                          disabled={isSubmitting}
+                          onChange={(e) => {
+                            // Se descartan aquí las que uploadFoto rechazaría, para
+                            // que no queden en la vista previa y se pierdan al guardar.
+                            const allowedTypes: readonly string[] = FOTO_LIMITS.ALLOWED_TYPES
+                            const files = Array.from(e.target.files || []).filter((file) => {
+                              const ok = allowedTypes.includes(file.type) && file.size <= FOTO_LIMITS.MAX_FILE_SIZE
+                              if (!ok) toast.error(`${file.name}: supera 5 MB o no es JPG, PNG o WebP`)
+                              return ok
+                            })
+                            const remaining = 10 - fotosAdicionales.length
+                            const toAdd = files.slice(0, remaining)
+                            if (files.length > remaining) toast.warning('Máximo 10 fotos del interior; las demás no se agregaron')
+                            const newFotos = toAdd.map((file) => ({
+                              file,
+                              preview: URL.createObjectURL(file),
+                            }))
+                            setFotosAdicionales((prev) => [...prev, ...newFotos])
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Campo
+              id="descripcion"
+              label="Descripción para la vitrina"
+              ayuda="Lo que destacaría a un interesado: iluminación, vista, cercanías, zonas comunes."
+            >
               <textarea
                 id="descripcion"
                 value={formData.descripcion}
                 onChange={(e) => handleChange('descripcion', e.target.value)}
                 disabled={isSubmitting}
                 rows={4}
-                placeholder="Descripción del inmueble visible en la vitrina pública..."
+                placeholder="Ej: Apartamento iluminado, con balcón y vista a los cerros, a dos cuadras del parque."
                 className={inputClasses(false)}
               />
-            </div>
+            </Campo>
 
-            {/* Notas internas — herramienta de equipo; el propietario
-                particular no tiene "administradores" a quien dejarle notas. */}
-            {!isPropietarioUser && (
-            <div>
-              <label htmlFor="notas_internas" className="block text-sm font-medium text-gray-700 mb-1">
-                Notas Internas
-                <FieldTooltip text="Notas privadas visibles solo para administradores. No se muestran al arrendatario ni en la vitrina publica." />
-              </label>
-              <textarea
-                id="notas_internas"
-                value={formData.notas_internas}
-                onChange={(e) => handleChange('notas_internas', e.target.value)}
-                disabled={isSubmitting}
-                rows={3}
-                placeholder="Notas internas (solo visibles para el equipo)..."
-                className={inputClasses(false)}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Estas notas no serán visibles en la vitrina pública
-              </p>
-            </div>
-            )}
-
-            {/* Visible en vitrina */}
-            <div className="flex items-center">
+            {/* Publicar: es una decisión, no un detalle de la descripción. */}
+            <label
+              htmlFor="visible_vitrina"
+              className="flex items-start gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer has-[:checked]:border-primary-300 has-[:checked]:bg-primary-50/60"
+            >
               <input
                 type="checkbox"
                 id="visible_vitrina"
                 checked={formData.visible_vitrina}
                 onChange={(e) => handleChange('visible_vitrina', e.target.checked)}
                 disabled={isSubmitting}
-                className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
               />
-              <label htmlFor="visible_vitrina" className="ml-2 text-sm text-gray-700">
-                Visible en vitrina pública
-              </label>
-            </div>
+              <span>
+                <span className="block text-sm font-medium text-gray-900">Publicar en la vitrina de Cofianza</span>
+                <span className="block text-xs text-gray-500 mt-0.5">
+                  Los interesados podrán verlo y pedir una visita. Puede pausarlo cuando quiera.
+                </span>
+              </span>
+            </label>
           </div>
-        </div>
+        </Seccion>
 
-        {/* ============================================
-            Datos para contrato
-            Lo que aparece en las cláusulas PRIMERA y SEGUNDA del contrato
-            de arrendamiento generado para este inmueble.
-            ============================================ */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          {/* Para el propietario particular esto es jerga de cláusulas: se
-              pliega y, si no lo toca, lo deducimos igual. */}
+        {/* 6. Solo para el equipo: propietario (admin/operador) y notas internas.
+            El propietario particular no tiene equipo a quien dejarle notas. */}
+        {(!isAutoAssignOwner || !isPropietarioUser) && (
+          <Seccion
+            n={sig()}
+            titulo={isAutoAssignOwner ? 'Notas internas' : 'Propietario y notas internas'}
+            opcional={isAutoAssignOwner}
+          >
+            <div className="space-y-5">
+              {!isAutoAssignOwner && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    Propietario<span className="text-red-500"> *</span>
+                  </p>
+                  <PropietarioSelector
+                    value={formData.propietario_id}
+                    onChange={handlePropietarioChange}
+                    disabled={isSubmitting}
+                    error={errors.propietario_id}
+                    initialPropietario={initialPropietario}
+                  />
+                </div>
+              )}
+
+              <Campo
+                id="notas_internas"
+                label={isAutoAssignOwner ? <span className="sr-only">Notas internas</span> : 'Notas internas'}
+                ayuda="Solo las ve su equipo. No aparecen en la vitrina ni se le muestran al arrendatario."
+              >
+                <textarea
+                  id="notas_internas"
+                  value={formData.notas_internas}
+                  onChange={(e) => handleChange('notas_internas', e.target.value)}
+                  disabled={isSubmitting}
+                  rows={3}
+                  placeholder="Ej: Llaves en portería; el propietario prefiere visitas en la tarde."
+                  className={inputClasses(false)}
+                />
+              </Campo>
+            </div>
+          </Seccion>
+        )}
+
+        {/* Datos para contrato: lo que aparece en las cláusulas PRIMERA y SEGUNDA
+            del contrato generado. Para el propietario particular es jerga de
+            cláusulas: se pliega y, si no lo toca, lo deducimos igual. */}
+        <Seccion
+          n={sig()}
+          titulo="Datos para contrato"
+          descripcion="Aparecen en el contrato de arrendamiento de este inmueble."
+          opcional
+        >
           <Avanzado plegar={isPropietarioUser}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Datos para contrato</h2>
-          <p className="text-xs text-gray-500 mb-4">
-            Estos datos aparecen en el contrato de arrendamiento generado para este inmueble.
-          </p>
-          <div className="space-y-5">
-            {/* Propiedad horizontal */}
-            <div>
-              <p id="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="block text-sm font-medium text-gray-700 mb-1">
-                ¿Está en un conjunto o edificio con administración?
-              </p>
-              <div role="group" aria-labelledby="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="flex flex-wrap gap-x-4 gap-y-2">
-                {(['auto', 'si', 'no'] as const).map((opt) => (
-                  <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="propiedad_horizontal"
-                      value={opt}
-                      checked={formData.propiedad_horizontal === opt}
-                      onChange={() => handleChange('propiedad_horizontal', opt)}
-                      disabled={isSubmitting}
-                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      {opt === 'auto' ? 'Lo detectamos por la administración' : opt === 'si' ? 'Sí' : 'No'}
-                    </span>
-                  </label>
-                ))}
+            <div className="space-y-5">
+              <div>
+                <p id="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="block text-sm font-medium text-gray-700 mb-1">
+                  ¿Está en un conjunto o edificio con administración?
+                </p>
+                <div role="group" aria-labelledby="inmueble-form-esta-en-un-conjunto-o-edificio-con-admin" className="flex flex-wrap gap-x-4 gap-y-2">
+                  {(['auto', 'si', 'no'] as const).map((opt) => (
+                    <label key={opt} className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="propiedad_horizontal"
+                        value={opt}
+                        checked={formData.propiedad_horizontal === opt}
+                        onChange={() => handleChange('propiedad_horizontal', opt)}
+                        disabled={isSubmitting}
+                        className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {opt === 'auto' ? 'Lo detectamos por la administración' : opt === 'si' ? 'Sí' : 'No'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Si no lo sabe, lo deducimos: si el inmueble paga administración, asumimos que es propiedad horizontal.
+                </p>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Si no lo sabe, lo deducimos: si el inmueble paga administración, asumimos que es propiedad horizontal.</p>
-            </div>
 
-            {/* Cuarto útil */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="cuarto_util"
-                checked={formData.cuarto_util}
-                onChange={(e) => handleChange('cuarto_util', e.target.checked)}
-                disabled={isSubmitting}
-                className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="cuarto_util" className="ml-2 text-sm text-gray-700">
-                El inmueble incluye <strong>cuarto útil</strong>
-              </label>
-            </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="cuarto_util"
+                  checked={formData.cuarto_util}
+                  onChange={(e) => handleChange('cuarto_util', e.target.checked)}
+                  disabled={isSubmitting}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="cuarto_util" className="ml-2 text-sm text-gray-700">
+                  El inmueble incluye <strong>cuarto útil</strong>
+                </label>
+              </div>
 
-            {/* Matrícula inmobiliaria */}
-            <div>
-              <label htmlFor="matricula_inmobiliaria" className="block text-sm font-medium text-gray-700 mb-1">
-                Matrícula inmobiliaria (opcional)
-                <FieldTooltip text="El número del folio de matrícula del certificado de tradición y libertad. Si lo dejas vacío, el contrato no lo menciona." />
-              </label>
-              <input
-                type="text"
-                id="matricula_inmobiliaria"
-                value={formData.matricula_inmobiliaria}
-                onChange={(e) => handleChange('matricula_inmobiliaria', e.target.value)}
-                disabled={isSubmitting}
-                maxLength={40}
-                placeholder="Ej. 001-1234567"
-                className={inputClasses(false)}
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Campo
+                  id="matricula_inmobiliaria"
+                  label="Matrícula inmobiliaria"
+                  ayuda="Folio del certificado de tradición y libertad. Si lo deja vacío, el contrato no lo menciona."
+                >
+                  <input
+                    type="text"
+                    id="matricula_inmobiliaria"
+                    value={formData.matricula_inmobiliaria}
+                    onChange={(e) => handleChange('matricula_inmobiliaria', e.target.value)}
+                    disabled={isSubmitting}
+                    maxLength={40}
+                    placeholder="Ej: 001-1234567"
+                    className={inputClasses(false)}
+                  />
+                </Campo>
 
-            {/* Ubicación detallada */}
-            <div>
-              <label htmlFor="ubicacion_detallada" className="block text-sm font-medium text-gray-700 mb-1">
-                Ubicación detallada (opcional)
-                <FieldTooltip text="Cómo describir la ubicación en el contrato. Si lo dejas vacío usamos dirección + barrio + ciudad." />
-              </label>
-              <textarea
-                id="ubicacion_detallada"
-                value={formData.ubicacion_detallada}
-                onChange={(e) => handleChange('ubicacion_detallada', e.target.value)}
-                disabled={isSubmitting}
-                rows={2}
-                placeholder={
-                  [formData.direccion, formData.barrio, formData.ciudad, formData.departamento]
-                    .filter(Boolean)
-                    .join(', ') || 'Ej. Carrera 50 #20-30, barrio La Estrella, Caldas, Antioquia'
-                }
-                className={inputClasses(false)}
-              />
+                <Campo
+                  id="ubicacion_detallada"
+                  label="Ubicación detallada"
+                  ayuda="Cómo se describe la ubicación en el contrato. Si lo deja vacío, usamos dirección, barrio y ciudad."
+                >
+                  <textarea
+                    id="ubicacion_detallada"
+                    value={formData.ubicacion_detallada}
+                    onChange={(e) => handleChange('ubicacion_detallada', e.target.value)}
+                    disabled={isSubmitting}
+                    rows={2}
+                    placeholder={
+                      [formData.direccion, formData.barrio, formData.ciudad, formData.departamento]
+                        .filter(Boolean)
+                        .join(', ') || 'Ej: Carrera 50 #20-30, barrio La Estrella, Caldas, Antioquia'
+                    }
+                    className={inputClasses(false)}
+                  />
+                </Campo>
+              </div>
             </div>
-          </div>
           </Avanzado>
-        </div>
+        </Seccion>
 
-        {/* Botones */}
-        <div className="flex justify-end gap-4">
-          <Link
-            href={returnTo ?? rutaListado}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
-          >
-            {isSubmitting && <IconLoader size={16} className="animate-spin" />}
-            {mode === 'create' ? 'Crear Inmueble' : 'Guardar Cambios'}
-          </button>
+        {/* Botones: fijos abajo, el formulario es largo y el botón quedaba fuera de vista. */}
+        <div className="sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-gray-200 bg-white/95 backdrop-blur px-4 sm:px-6 py-3 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.12)]">
+          <p className="hidden sm:block text-xs text-gray-500">
+            <span className="text-red-500">*</span> Obligatorio
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Link
+              href={returnTo ?? rutaListado}
+              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {mode === 'create' ? 'Crear inmueble' : 'Guardar cambios'}
+            </button>
+          </div>
         </div>
       </form>
     </div>

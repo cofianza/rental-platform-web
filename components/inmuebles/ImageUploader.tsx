@@ -6,7 +6,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { IconUpload, IconImage, IconX, IconLoader } from '@/components/icons'
+import { IconUpload, IconCamera, IconX, IconLoader } from '@/components/icons'
 import { inmuebleService } from '@/services/inmuebleService'
 import { INMUEBLE_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
@@ -123,8 +123,8 @@ export function ImageUploader({
       />
 
       {value ? (
-        // Vista previa de imagen
-        <div className="relative group max-w-md mx-auto">
+        // Vista previa con acciones siempre visibles (el hover no existe en el celular)
+        <div className="space-y-2">
           <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-200">
             <Image
               src={value}
@@ -133,51 +133,57 @@ export function ImageUploader({
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 400px"
             />
+            {isUploading && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center gap-2 text-sm text-gray-700">
+                <IconLoader size={18} className="animate-spin" />
+                Subiendo...
+              </div>
+            )}
           </div>
-
-          {/* Overlay con acciones */}
           {!disabled && (
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-4 rounded-lg pointer-events-none [&>*]:pointer-events-auto">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleClick}
                 disabled={isUploading}
-                className="px-4 py-2 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors flex items-center gap-2"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
-                {isUploading ? (
-                  <>
-                    <IconLoader size={16} className="animate-spin" />
-                    Subiendo...
-                  </>
-                ) : (
-                  <>
-                    <IconUpload size={16} />
-                    Cambiar
-                  </>
-                )}
+                <IconUpload size={14} />
+                Cambiar
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
                 disabled={isUploading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
               >
-                <IconX size={16} />
-                Eliminar
+                <IconX size={14} />
+                Quitar
               </button>
             </div>
           )}
         </div>
       ) : (
-        // Zona de carga (drag & drop)
+        // Zona de carga (clic, teclado o arrastrar)
         <div
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-label="Subir foto de fachada"
+          aria-invalid={!!(error || uploadError)}
           onClick={handleClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleClick()
+            }
+          }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           className={cn(
-            'relative w-full max-w-md mx-auto aspect-[4/3] border-2 border-dashed rounded-lg transition-colors cursor-pointer',
-            'flex flex-col items-center justify-center gap-3',
+            'relative w-full aspect-[4/3] border-2 border-dashed rounded-lg transition-colors cursor-pointer',
+            'flex flex-col items-center justify-center gap-3 px-4',
+            'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500',
             dragOver
               ? 'border-primary-500 bg-primary-50'
               : error || uploadError
@@ -193,15 +199,15 @@ export function ImageUploader({
             </>
           ) : (
             <>
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <IconImage size={24} className="text-gray-500" />
+              <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center">
+                <IconCamera size={24} className="text-primary-600" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
-                  <span className="text-primary-600">Haga clic para subir</span> o arrastre una
-                  imagen
+                  <span className="text-primary-700">Suba la foto</span>
+                  <span className="hidden sm:inline"> o arrástrela aquí</span>
                 </p>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG o WebP (máx. 5MB)</p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG o WebP (máx. 5 MB)</p>
               </div>
             </>
           )}
