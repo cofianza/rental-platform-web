@@ -193,7 +193,7 @@ export function SolicitarEstudioModal({
           </select>
           {pagoPor === 'credito' && (
             <p className="mt-1 text-xs text-gray-500">
-              Al solicitar se descuenta 1 crédito del saldo de la inmobiliaria y la evaluación queda pagada. No se puede deshacer.
+              Al solicitar se reserva 1 crédito del saldo de la inmobiliaria y la evaluación queda pagada. El crédito se gasta solo si la consulta a centrales da resultado; si no, vuelve al saldo.
             </p>
           )}
         </div>

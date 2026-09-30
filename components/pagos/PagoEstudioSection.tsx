@@ -318,8 +318,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
-                    confirmLabel="Descontar 1 crédito"
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 crédito"
                   />
                   <button
                     onClick={() => setConfirmLiberar(true)}
@@ -329,7 +329,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     <IconShieldCheck size={32} className="text-emerald-600" />
                     <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
                     <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} estudios</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">Descuenta 1 crédito y el proceso sigue de inmediato.</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">Reserva 1 crédito y el proceso sigue de inmediato.</span>
                   </button>
                   </>
                 ) : (
@@ -403,8 +403,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
-                    confirmLabel="Descontar 1 crédito"
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 crédito"
                   />
                   <button
                 onClick={() => setConfirmLiberar(true)}
