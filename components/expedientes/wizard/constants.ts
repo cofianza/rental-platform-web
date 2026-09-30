@@ -9,8 +9,8 @@
 export const WIZARD_STEPS = [
   'Inmueble',
   'Solicitante',
-  'Configuracion',
-  'Confirmacion',
+  'Configuración',
+  'Confirmación',
 ] as const
 
 export type WizardStepName = (typeof WIZARD_STEPS)[number]
@@ -29,10 +29,10 @@ export const TIPO_PERSONA_OPTIONS = [
 ] as const
 
 export const TIPO_DOCUMENTO_OPTIONS = [
-  { value: 'cc', label: 'Cedula de Ciudadania' },
-  { value: 'ce', label: 'Cedula de Extranjeria' },
+  { value: 'cc', label: 'Cédula de ciudadanía' },
+  { value: 'ce', label: 'Cédula de extranjería' },
   // Flujo estudios §5.1: PPT y PEP para atender poblacion migrante.
-  { value: 'ppt', label: 'Permiso por Proteccion Temporal (PPT)' },
+  { value: 'ppt', label: 'Permiso por Protección Temporal (PPT)' },
   { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
   { value: 'pasaporte', label: 'Pasaporte' },
 ] as const
@@ -52,7 +52,7 @@ export function esPersonaJuridica(s: { tipo_persona?: string | null; tipo_docume
 export const NIVEL_EDUCATIVO_OPTIONS = [
   { value: 'primaria', label: 'Primaria' },
   { value: 'secundaria', label: 'Secundaria' },
-  { value: 'tecnico', label: 'Tecnico' },
+  { value: 'tecnico', label: 'Técnico' },
   { value: 'universitario', label: 'Universitario' },
   { value: 'posgrado', label: 'Posgrado' },
 ] as const

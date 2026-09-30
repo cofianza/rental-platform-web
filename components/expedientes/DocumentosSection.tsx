@@ -467,17 +467,27 @@ function DocumentUploadCard({
         ) : !puedeSubir ? (
           <p className="text-sm text-gray-500 text-center py-6">Aún no se ha cargado</p>
         ) : (
-          /* Upload zone */
-          <button
-            type="button"
+          /* Upload zone: div con role="button" (no <button>) porque adentro
+             van los botones de cámara y de reintento, y un botón no puede
+             contener otro (HTML inválido, error de hidratación). */
+          <div
+            role="button"
+            tabIndex={isUploading ? -1 : 0}
+            aria-disabled={isUploading}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={handleClick}
-            disabled={isUploading}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget || isUploading) return
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleClick()
+              }
+            }}
             aria-label={`Subir ${tipoDocumento.nombre}`}
             className={`
-              w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+              w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500
               ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}
               ${isUploading ? 'pointer-events-none opacity-70' : ''}
               ${error ? 'border-red-300 bg-red-50' : ''}
@@ -502,6 +512,7 @@ function DocumentUploadCard({
                 <IconX size={32} className="mx-auto text-red-500" />
                 <p className="text-sm text-red-600">{error}</p>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleClick()
@@ -517,6 +528,7 @@ function DocumentUploadCard({
                 {isSelfieType ? (
                   <div className="space-y-4">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleCameraClick()
@@ -524,7 +536,7 @@ function DocumentUploadCard({
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
                     >
                       <IconCamera size={20} />
-                      Tomar selfie con camara
+                      Tomar selfie con la cámara
                     </button>
                     <div className="flex items-center gap-2 text-gray-500">
                       <div className="flex-1 h-px bg-gray-200" />
@@ -550,11 +562,11 @@ function DocumentUploadCard({
                   Formatos: {getAcceptedFormatsText(tipoDocumento.formatos_aceptados)}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Max: {tipoDocumento.tamano_maximo_mb}MB
+                  Máx.: {tipoDocumento.tamano_maximo_mb} MB
                 </p>
               </>
             )}
-          </button>
+          </div>
         )}
 
         {/* Hidden file input */}

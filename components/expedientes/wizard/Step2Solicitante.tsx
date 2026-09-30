@@ -261,7 +261,7 @@ export function Step2Solicitante({
         })
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error en la busqueda'
+      const message = err instanceof Error ? err.message : 'Error en la búsqueda'
       setSearchError(message)
     } finally {
       setIsSearching(false)
@@ -603,7 +603,7 @@ export function Step2Solicitante({
             aria-label="Tipo de documento"
             value={searchTipoDoc}
             onChange={(e) => setSearchTipoDoc(e.target.value as TipoDocumento | '')}
-            className="sm:w-44 rounded-lg sm:rounded-r-none sm:border-r-0 border border-gray-300 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:z-10"
+            className="sm:w-auto sm:shrink-0 rounded-lg sm:rounded-r-none sm:border-r-0 border border-gray-300 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:z-10"
           >
             {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

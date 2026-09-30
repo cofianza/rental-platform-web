@@ -57,9 +57,11 @@ const OPCIONES_PAGO: {
   {
     valor: 'credito',
     letra: 'A',
-    titulo: 'Descontar de su paquete',
+    // Adenda de precios §2: el crédito se RESERVA al crear y se consume solo
+    // con el resultado; el estudio corre cuando el prospecto autoriza.
+    titulo: 'Reservar 1 crédito de su paquete',
     descripcion:
-      'Use un crédito de estudios del paquete que ya compró. Es la vía más ágil: el estudio arranca de inmediato.',
+      'Se aparta un crédito de estudios del paquete que ya compró, sin pagos adicionales. El estudio arranca cuando el prospecto autoriza la consulta; si la consulta no llega a hacerse, el crédito vuelve a su saldo.',
     Icono: IconCreditCard,
   },
   {
@@ -285,7 +287,7 @@ export function Step3Configuration({
                         </span>
                       ) : (
                         <span className="text-gray-600">
-                          Saldo actual: <strong>{saldo}</strong> · después de este estudio
+                          Saldo actual: <strong>{saldo}</strong> · después de reservar
                           le quedarían <strong>{saldo - 1}</strong>
                         </span>
                       )}
@@ -311,9 +313,8 @@ export function Step3Configuration({
           <span className="font-normal text-gray-500">(opcional)</span>
         </legend>
         <p className="text-xs text-gray-500">
-          Si no elige, se consulta DataCrédito, la central principal de Cofianza (la API lo
-          aplica por defecto). Cambiarlo después significa una consulta adicional al buró; el estudio
-          no se vuelve a cobrar.
+          Si no elige, se consulta DataCrédito, la central principal de Cofianza. Cambiarlo después
+          significa una consulta adicional al buró; el estudio no se vuelve a cobrar.
         </p>
         <div className="flex flex-wrap gap-2">
           {([

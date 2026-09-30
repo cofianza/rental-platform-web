@@ -219,7 +219,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
             {/* Apagado sin explicación parecía una falla. Solo lectura ya lo dice el banner. */}
             {porQueNo && (
               <p id="por-que-no-iniciar" className="text-xs text-gray-500">
-                Primero resuelve lo pendiente de abajo.
+                Primero resuelva lo pendiente de abajo.
               </p>
             )}
           </div>
@@ -539,7 +539,7 @@ function Asistente({
         !guardados[5]
         ? `Guarde el paso 5 (Notificaciones) antes de generar ${documentoTexto}.`
         : bloqueosQueFrenan.length > 0
-          ? `Resuelve ${bloqueosQueFrenan.length === 1 ? 'el punto pendiente' : 'los puntos pendientes'} de arriba antes de generar ${documentoTexto}.`
+          ? `Resuelva ${bloqueosQueFrenan.length === 1 ? 'el punto pendiente' : 'los puntos pendientes'} de arriba antes de generar ${documentoTexto}.`
           : pasosIncompletos.length > 0
             ? `Complete ${listaPasos(pasosIncompletos)} antes de generar ${documentoTexto}.`
             : null
