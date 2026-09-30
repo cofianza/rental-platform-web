@@ -318,8 +318,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
-                    confirmLabel="Descontar 1 crédito"
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 crédito"
                   />
                   <button
                     onClick={() => setConfirmLiberar(true)}
@@ -403,8 +403,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se descuenta 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. No se puede deshacer.`}
-                    confirmLabel="Descontar 1 crédito"
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca de inmediato. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 crédito"
                   />
                   <button
                 onClick={() => setConfirmLiberar(true)}
