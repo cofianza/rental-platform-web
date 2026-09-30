@@ -28,6 +28,7 @@ import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { abrirEnPestana } from '@/lib/utils'
+import { textoVisible } from './textoVisible'
 
 interface EstudioSolicitanteCardProps {
   expedienteId: string
@@ -452,7 +453,7 @@ export function EstudioSolicitanteCard({
           <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior falló</p>
             <p className="text-sm text-red-800">
-              {estudio.observaciones
+              {textoVisible(estudio.observaciones, { externo: true })
                 || 'Verifique que su tipo y número de documento sean correctos. Cofianza solo consulta documentos colombianos (CC, CE, TI, NIT).'}
             </p>
           </div>
@@ -614,10 +615,10 @@ export function EstudioSolicitanteCard({
 
               {/* §10: "se indica que puede mejorar. Nunca es un portazo." El
                   motivo de la regla dura ya trae la salida de su causa (P30). */}
-              {r.ruta === 'no_aprobable' && estudio.motivo_rechazo && (
-                <p className={`mt-3 text-sm ${tono.texto}`}>{estudio.motivo_rechazo}</p>
+              {r.ruta === 'no_aprobable' && textoVisible(estudio.motivo_rechazo, { externo: true }) && (
+                <p className={`mt-3 text-sm ${tono.texto}`}>{textoVisible(estudio.motivo_rechazo, { externo: true })}</p>
               )}
-              {r.ruta === 'no_aprobable' && !estudio.motivo_rechazo && (
+              {r.ruta === 'no_aprobable' && !textoVisible(estudio.motivo_rechazo, { externo: true }) && (
                 <SinMotivo className={`mt-3 text-sm ${tono.texto}`} />
               )}
 
@@ -707,8 +708,8 @@ export function EstudioSolicitanteCard({
             <IconInfo size={20} className="text-slate-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-slate-900 mb-0.5">No aprobable por ahora</p>
-              {estudio.motivo_rechazo ? (
-                <p className="text-sm text-slate-700">{estudio.motivo_rechazo}</p>
+              {textoVisible(estudio.motivo_rechazo, { externo: true }) ? (
+                <p className="text-sm text-slate-700">{textoVisible(estudio.motivo_rechazo, { externo: true })}</p>
               ) : (
                 <>
                   <p className="text-sm text-slate-700">

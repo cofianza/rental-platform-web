@@ -29,6 +29,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { textoVisible, esRolInterno, describirFlag, tipoFallo } from './textoVisible'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -74,6 +75,12 @@ interface EstudioEstadoCardProps {
    * contrato), según `vigente` de GET /expedientes/:id/coarrendatario/ventana.
    */
   coarrendatarioVigente?: boolean
+  /**
+   * Estado del expediente. La aprobación o el rechazo del analista en revisión
+   * manual cambian el expediente, no el `resultado` del estudio (sigue
+   * 'condicionado'): sin esto la tarjeta seguía diciendo «decida si proceder».
+   */
+  expedienteEstado?: string
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -101,23 +108,23 @@ const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
 }
 
 /**
- * Texto que explica al observador (propietario/inmobiliaria/admin) que falta
- * para que el estudio avance. Cambia segun estado + resultado, y siempre va
- * por encima de los detalles tecnicos en la card.
+ * Línea de listas restrictivas (verificación de antecedentes). El prospecto
+ * nunca la ve (la API le manda `antecedentes: null`). Lenguaje claro para
+ * todos: sin nombres de flags ni de proveedor. Cofianza ve qué quedó por
+ * revisar; la inmobiliaria y el propietario, que lo revisa un analista.
  */
-/**
- * Linea del background check de Auco para el gestor. El prospecto nunca la ve
- * (la API le manda `antecedentes: null`). Politica §6 (OFAC/ONU = regla dura),
- * §14 (sin verificar = revision manual) y §16.5 (antecedentes = flag).
- */
-function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>): string {
-  if (a.estado === 'desactivado') return 'no consultadas (verificacion apagada)'
-  if (a.estado === 'no_verificado') return `sin verificar — revision manual (${a.motivo ?? 'Auco no respondio'})`
+function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>, interno: boolean): string {
+  if (a.estado === 'desactivado') return 'no consultadas'
+  if (a.estado === 'no_verificado') return 'pendientes de verificación por un analista de Cofianza'
   if (a.reportado_en_listas) {
     const listas = [a.listas_vinculantes.ofac ? 'OFAC' : null, a.listas_vinculantes.onu ? 'ONU' : null].filter(Boolean).join(' y ')
-    return `REPORTADO en ${listas} — regla dura`
+    return `reportado en ${listas}`
   }
-  if (a.flags_revision.length > 0) return `sin reporte en OFAC/ONU, pero con flags de revision: ${a.flags_revision.join(', ')}`
+  if (a.flags_revision.length > 0) {
+    return interno
+      ? `sin reporte en OFAC ni ONU; por revisar: ${a.flags_revision.map(describirFlag).join('; ')}`
+      : 'sin reporte en OFAC ni ONU; un analista de Cofianza revisa el resto de la verificación'
+  }
   return 'sin reporte'
 }
 
@@ -174,7 +181,7 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
-function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
+function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string): string {
   const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
@@ -193,13 +200,20 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
     // ("Perfil medio (82 pts) — coarrendatario opcional"). El gestor SI puede ver
     // el dato crudo; lo que no viaja es al prospecto, que recibe la ruta sin
     // etiqueta (redactarEstudioParaProspecto en la API).
-    const etiqueta = estudio.ruta?.etiquetaGestor
+    // La etiqueta lleva el puntaje del modelo: solo para Cofianza.
+    const etiqueta = esCofianza ? textoVisible(estudio.ruta?.etiquetaGestor).replace(/\.$/, '') : ''
     if (estudio.resultado === 'aprobado') {
       const base = `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.`
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
     if (estudio.resultado === 'condicionado') {
+      if (expedienteEstado === 'aprobado') {
+        return 'Aprobado por un analista de Cofianza en revisión manual. Siguiente paso: generar contrato.'
+      }
+      if (expedienteEstado === 'rechazado') {
+        return 'Un analista de Cofianza revisó el caso y no lo aprobó. El estudio no avanza al contrato.'
+      }
       return esCofianza
         ? 'Estudio condicionado. Revise las observaciones y decida si proceder.'
         : 'Estudio condicionado. Lo revisa un analista de Cofianza.'
@@ -208,7 +222,14 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean): string {
     return 'Estudio completado, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
-    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla — puede cambiar de buró en el reintento.`
+    const tipo = tipoFallo(estudio)
+    if (tipo === 'no_existe') {
+      return `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos, o consulte el otro buró.`
+    }
+    if (tipo === 'apellido') {
+      return `${buro} encontró el documento, pero el primer apellido no coincide. Corrija el primer apellido en la ficha de la persona y vuelva a consultar.`
+    }
+    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla; puede cambiar de buró en el reintento.`
   }
   if (estudio.estado === 'cancelado') {
     return 'Estudio cancelado.'
@@ -306,6 +327,7 @@ export function EstudioEstadoCard({
   reconsultaEnGuia,
   enRevision = true,
   coarrendatarioVigente = true,
+  expedienteEstado,
 }: EstudioEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -376,6 +398,7 @@ export function EstudioEstadoCard({
           persona={titularSolicitante}
           accionGestor={accionGestor}
           expedienteId={expedienteId}
+          expedienteEstado={expedienteEstado}
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
@@ -399,6 +422,7 @@ export function EstudioEstadoCard({
           onRetried={fetchEstudios}
           sinReintento={!coarrendatarioVigente}
           ocultarReconsulta={!enRevision}
+          expedienteEstado={expedienteEstado}
           // La reasignacion NO se ofrece desde el panel del co-arrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
@@ -434,6 +458,7 @@ interface EstudioPanelProps {
   sinReintento?: boolean
   /** Solo titular: enlace detenido u opción B sin pagar — le toca al gestor. */
   accionGestor?: AccionGestor | null
+  expedienteEstado?: string
 }
 
 function EstudioPanel({
@@ -449,6 +474,7 @@ function EstudioPanel({
   expedienteId,
   sinReintento,
   accionGestor,
+  expedienteEstado,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
@@ -485,11 +511,26 @@ function EstudioPanel({
   const puedeReasignar = esGestor && onReasignado != null && estudio.estado === 'completado'
 
   // Va antes que el «expirado» del reloj: un enlace detenido no espera plazo.
-  const tone = accionGestor ? 'warning' : getTone(estudio)
+  const decisionAnalista =
+    estudio.estado === 'completado' && estudio.resultado === 'condicionado' &&
+    (expedienteEstado === 'aprobado' || expedienteEstado === 'rechazado')
+      ? expedienteEstado
+      : null
+  const tone = accionGestor
+    ? 'warning'
+    : decisionAnalista === 'aprobado'
+      ? 'success'
+      : decisionAnalista === 'rechazado'
+        ? 'danger'
+        : getTone(estudio)
   const styles = TONE_STYLES[tone]
   const estadoLabel = accionGestor?.etiqueta ?? ESTADO_LABEL[estudio.estado] ?? estudio.estado
   const resultadoLabel =
-    estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
+    decisionAnalista === 'aprobado'
+      ? 'Aprobado por el analista'
+      : decisionAnalista === 'rechazado'
+        ? 'No aprobado por el analista'
+        : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />
@@ -498,7 +539,11 @@ function EstudioPanel({
   const siguientePaso =
     sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista')
+      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado)
+  // Texto de la API: sin citas a documentos para nadie, y sin datos internos
+  // del modelo para quien no es de Cofianza.
+  const interno = esRolInterno(userRol)
+  const visible = (t: string | null | undefined) => textoVisible(t, { externo: !interno })
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
 
   return (
@@ -548,9 +593,9 @@ function EstudioPanel({
               concreta (documento no encontrado, apellido que no coincide con
               Registraduría, buró caído…). Sin esto había que ir a la base de
               datos para saber qué corregir. */}
-          {estudio.estado === 'fallido' && estudio.observaciones && (
+          {estudio.estado === 'fallido' && visible(estudio.observaciones) && (
             <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2">
-              {estudio.observaciones}
+              {visible(estudio.observaciones)}
             </p>
           )}
 
@@ -590,20 +635,19 @@ function EstudioPanel({
                       ? 'text-amber-700'
                       : 'text-gray-700'
                 }`}
-                title={estudio.antecedentes.motivo ?? undefined}
               >
-                Listas restrictivas (Auco):{' '}
-                <span className="font-medium">{describirAntecedentes(estudio.antecedentes)}</span>
+                Listas restrictivas:{' '}
+                <span className="font-medium">{describirAntecedentes(estudio.antecedentes, interno)}</span>
               </p>
             )}
-            {estudio.motivo_rechazo && (
-              <p className="text-xs text-red-700 mt-1" title={estudio.motivo_rechazo}>
-                Motivo: <span className="font-medium">{estudio.motivo_rechazo}</span>
+            {visible(estudio.motivo_rechazo) && (
+              <p className="text-xs text-red-700 mt-1">
+                Motivo: <span className="font-medium">{visible(estudio.motivo_rechazo)}</span>
               </p>
             )}
-            {estudio.condiciones && (
-              <p className="text-xs text-amber-700 mt-1" title={estudio.condiciones}>
-                Condiciones: <span className="font-medium">{estudio.condiciones}</span>
+            {visible(estudio.condiciones) && (
+              <p className="text-xs text-amber-700 mt-1">
+                Condiciones: <span className="font-medium">{visible(estudio.condiciones)}</span>
               </p>
             )}
           </div>

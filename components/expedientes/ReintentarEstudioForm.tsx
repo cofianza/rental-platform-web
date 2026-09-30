@@ -255,7 +255,7 @@ export function ReintentarEstudioForm({
             ? 'Verifique el documento y el buró antes de ejecutar la consulta'
             : 'Verifique el documento y el buró antes de reintentar'}
       </p>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="sm:w-40">
           <label htmlFor="reintentar-estudio-form-buro-de-credito" className="block text-[11px] font-medium text-gray-500 mb-1">
             Buró de crédito
@@ -270,7 +270,8 @@ export function ReintentarEstudioForm({
             <option value="datacredito">DataCrédito</option>
           </select>
         </div>
-        <div className="sm:w-44">
+        {/* Ancho automático: el tipo de documento se lee completo («Cédula de ciudadanía (CC)»). */}
+        <div className="sm:w-auto sm:shrink-0">
           <label htmlFor="reintentar-estudio-form-tipo-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
             Tipo de documento
           </label>
@@ -292,7 +293,7 @@ export function ReintentarEstudioForm({
             <option value="nit">NIT</option>
           </select>
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 sm:min-w-[10rem]">
           <label htmlFor="reintentar-estudio-form-numero-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
             Número de documento
           </label>
