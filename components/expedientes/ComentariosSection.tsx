@@ -350,7 +350,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
       {comentarios.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p className="text-sm">No hay comentarios aun</p>
-          <p className="text-xs mt-1">Se el primero en agregar un comentario interno</p>
+          <p className="text-xs mt-1">Sea el primero en agregar un comentario interno</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -449,7 +449,7 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Eliminar comentario"
-        message="Esta accion no se puede deshacer. ¿Estas seguro de que deseas eliminar este comentario?"
+        message="Esta acción no se puede deshacer. ¿Está seguro de que desea eliminar este comentario?"
         confirmLabel="Eliminar"
         variant="danger"
         isLoading={isDeleting}

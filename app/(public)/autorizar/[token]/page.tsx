@@ -1287,8 +1287,8 @@ export default function AutorizarPage() {
                       del co-arrendatario sí le pide la cédula. Prometemos solo
                       lo que la card cumple. */}
                   <p className="text-xs text-gray-500">
-                    Déjenos sus datos. Cuando avancemos con su estudio solo le pediremos su cédula: sus datos
-                    ya quedan guardados.
+                    Déjenos los datos de su co-arrendatario. Cuando avancemos con su estudio, a usted solo le
+                    pediremos la cédula de esa persona: lo demás ya queda guardado.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>

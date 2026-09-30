@@ -125,7 +125,7 @@ export function CatalogoClausulas({ datos, elegidas, onAgregar, onQuitar }: Prop
         {/* Adenda 1 del módulo de contratos, respuesta 13: sin cambios son texto de Cofianza. */}
         <p className="text-sm text-gray-500">
           Si las incorpora sin cambios, su texto es de Cofianza y no queda cubierto por la indemnidad de la
-          inmobiliaria; los datos que complete en ellos sí son de su responsabilidad. Si necesita cambiar uno,
+          inmobiliaria; los datos que complete en ellas sí son de su responsabilidad. Si necesita cambiar una,
           redacte su versión en «Mis cláusulas»: será una cláusula propia, de su responsabilidad.
         </p>
         <SearchInput

@@ -627,7 +627,7 @@ export function EstudioSolicitanteCard({
                 <div className="mt-3">
                   <p className={`text-sm ${tono.texto}`}>
                     Si antes del contrato suma como co-arrendatario a la persona con quien va a vivir, la prima de
-                    vinculación baja del 20 % al 10 % del canon. No necesita finca raíz.
+                    vinculación baja del 20 % al 10 % del canon. Esa persona no necesita tener finca raíz.
                   </p>
                   <a
                     href="#coarrendatario"

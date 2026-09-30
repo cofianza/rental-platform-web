@@ -127,7 +127,7 @@ export function CoarrendatarioInviteForm({
                   ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
                   : 'Su estudio fue aprobado y puede firmar solo. Si antes del contrato suma como '}
                 <strong>co-arrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
-                vinculación baja del 20 % al 10 % del canon; su evaluación no tiene costo adicional.{' '}
+                vinculación baja del 20 % al 10 % del canon; la evaluación del co-arrendatario no tiene costo adicional.{' '}
                 <strong>No es fiador ni codeudor</strong> y no necesita finca raíz.
               </>
             ) : esGestor ? (

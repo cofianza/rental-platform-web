@@ -749,7 +749,7 @@ function CrearCitaModal({
           <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
             <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
             <p className="text-sm text-primary-900">
-              Visitaras el <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
+              Visitará el <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
               <strong>{formatSlotHora(slot)}</strong>
             </p>
           </div>

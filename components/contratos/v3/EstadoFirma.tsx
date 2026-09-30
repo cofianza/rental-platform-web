@@ -414,7 +414,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {editable && (enFirma || incompleta) && firmantes.length > 0 && (
           <p className="text-xs text-gray-500">
             ¿Un celular o un correo está mal? Cancele el contrato y créelo de nuevo desde el estudio: el asistente trae lo que
-            ya llenó, corrija el dato y vuélvalo a enviar.
+            usted ya llenó. Corrija el dato y vuelva a enviarlo.
           </p>
         )}
       </section>

@@ -1,6 +1,8 @@
 /**
  * Términos y Condiciones — versión oficial v2.1.1 (Abril 2026) entregada
- * por el equipo legal de COFIANZA S.A.S. Página pública linkada desde el
+ * por el equipo legal de COFIANZA S.A.S.; v2.1.2 (Septiembre 2026) solo pasa
+ * el trato de tú a usted, sin cambiar el contenido (las aceptaciones previas
+ * quedan con la fecha en que se registraron). Página pública linkada desde el
  * checkbox de registro. Mantener la URL /terminos para no romper el link.
  *
  * NIT confirmado por el cliente el 09-jul-2026 (mismo dato que la Política de
@@ -26,7 +28,7 @@ export default function TerminosPage() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Términos y Condiciones de Uso</h1>
           <p className="text-base text-gray-700 mt-1">Plataforma digital Cofianza</p>
-          <p className="text-sm text-gray-500 mt-2">Versión 2.1.1 · Abril de 2026 · Titular: COFIANZA S.A.S.</p>
+          <p className="text-sm text-gray-500 mt-2">Versión 2.1.2 · Septiembre de 2026 · Titular: COFIANZA S.A.S.</p>
         </header>
 
         <article className="prose prose-sm max-w-none text-gray-700 space-y-7 leading-relaxed">
@@ -43,7 +45,7 @@ export default function TerminosPage() {
               <li>y crear inmuebles en promoción de arrendamiento propios y de terceros.</li>
             </ul>
             <p className="mt-2">
-              Al registrarte, navegar o usar cualquier funcionalidad de LA PLATAFORMA, aceptas íntegramente estos Términos y Condiciones y las políticas que se mencionan como parte de ellos.
+              Al registrarse, navegar o usar cualquier funcionalidad de LA PLATAFORMA, usted acepta íntegramente estos Términos y Condiciones y las políticas que se mencionan como parte de ellos.
             </p>
           </section>
 
@@ -65,7 +67,7 @@ export default function TerminosPage() {
               LA PLATAFORMA está dirigida a personas con capacidad legal para contratar según la legislación colombiana. Los menores de edad solo pueden usarla por medio de sus representantes legales.
             </p>
             <p>
-              Al crear cuenta, iniciar sesión o usar cualquier servicio de Cofianza, declaras que conoces y aceptas estos Términos y Condiciones, la Política de Tratamiento de Datos Personales y, cuando aplique, la Política de Cartera Cofianza y el Contrato de Afianzamiento correspondiente.
+              Al crear cuenta, iniciar sesión o usar cualquier servicio de Cofianza, usted declara que conoce y acepta estos Términos y Condiciones, la Política de Tratamiento de Datos Personales y, cuando aplique, la Política de Cartera Cofianza y el Contrato de Afianzamiento correspondiente.
             </p>
             <p>
               En caso de conflicto entre estos Términos y un contrato específico firmado con Cofianza, prevalecerá el contrato específico, que se interpretará de manera armónica con la ley y con la naturaleza de los servicios de Cofianza.
@@ -273,13 +275,13 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">13. Canales de contacto</h2>
-            <p>Para consultas, quejas o reclamos sobre la plataforma Cofianza, puedes escribir a:</p>
+            <p>Para consultas, quejas o reclamos sobre la plataforma Cofianza, puede escribir a:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
               <li>Correo: <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a></li>
               <li>Sitio web: <a href="https://www.cofianza.co" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">www.cofianza.co</a></li>
             </ul>
             <p className="mt-2">
-              Si presentaste una queja o reclamo ante Cofianza y no obtuviste respuesta satisfactoria dentro de los quince (15) días hábiles siguientes, puedes acudir a la Superintendencia de Industria y Comercio (SIC) como autoridad de protección al consumidor, en <a href="https://www.sic.gov.co" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">www.sic.gov.co</a> o en sus canales de atención, conforme a lo dispuesto en la Ley 1480 de 2011 (Estatuto del Consumidor).
+              Si presentó una queja o reclamo ante Cofianza y no obtuvo respuesta satisfactoria dentro de los quince (15) días hábiles siguientes, puede acudir a la Superintendencia de Industria y Comercio (SIC) como autoridad de protección al consumidor, en <a href="https://www.sic.gov.co" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">www.sic.gov.co</a> o en sus canales de atención, conforme a lo dispuesto en la Ley 1480 de 2011 (Estatuto del Consumidor).
             </p>
           </section>
 

@@ -1025,7 +1025,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Eliminar documento"
-        message={`¿Estas seguro de eliminar "${deleteTarget?.nombre_original}"? Esta accion no se puede deshacer.`}
+        message={`¿Está seguro de eliminar "${deleteTarget?.nombre_original}"? Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         variant="danger"
         isLoading={isDeleting}
