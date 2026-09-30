@@ -2,7 +2,8 @@
  * Términos y Condiciones — versión oficial v2.1.1 (Abril 2026) entregada
  * por el equipo legal de COFIANZA S.A.S.; v2.1.2 (Septiembre 2026) solo pasa
  * el trato de tú a usted, sin cambiar el contenido (las aceptaciones previas
- * quedan con la fecha en que se registraron). Página pública linkada desde el
+ * quedan con la fecha en que se registraron); v2.1.3 cambia el correo de
+ * contacto a gerencia@cofianza.co (hola@ no existe). Página pública linkada desde el
  * checkbox de registro. Mantener la URL /terminos para no romper el link.
  *
  * NIT confirmado por el cliente el 09-jul-2026 (mismo dato que la Política de
@@ -28,7 +29,7 @@ export default function TerminosPage() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Términos y Condiciones de Uso</h1>
           <p className="text-base text-gray-700 mt-1">Plataforma digital Cofianza</p>
-          <p className="text-sm text-gray-500 mt-2">Versión 2.1.2 · Septiembre de 2026 · Titular: COFIANZA S.A.S.</p>
+          <p className="text-sm text-gray-500 mt-2">Versión 2.1.3 · Septiembre de 2026 · Titular: COFIANZA S.A.S.</p>
         </header>
 
         <article className="prose prose-sm max-w-none text-gray-700 space-y-7 leading-relaxed">
@@ -277,7 +278,7 @@ export default function TerminosPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">13. Canales de contacto</h2>
             <p>Para consultas, quejas o reclamos sobre la plataforma Cofianza, puede escribir a:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>Correo: <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a></li>
+              <li>Correo: <a href="mailto:gerencia@cofianza.co" className="text-primary-600 underline">gerencia@cofianza.co</a></li>
               <li>Sitio web: <a href="https://www.cofianza.co" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">www.cofianza.co</a></li>
             </ul>
             <p className="mt-2">

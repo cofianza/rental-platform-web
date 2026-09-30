@@ -29,7 +29,7 @@ export default function PrivacidadPage() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Política de Tratamiento de Datos Personales</h1>
           <p className="text-base text-gray-700 mt-1">COFIANZA S.A.S.</p>
-          <p className="text-sm text-gray-500 mt-2">Versión 1.0 · Conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013</p>
+          <p className="text-sm text-gray-500 mt-2">Versión 1.1 · Conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013</p>
         </header>
 
         <article className="prose prose-sm max-w-none text-gray-700 space-y-7 leading-relaxed">
@@ -38,7 +38,7 @@ export default function PrivacidadPage() {
             <ul className="list-none pl-0 space-y-1">
               <li><strong>COFIANZA S.A.S.</strong></li>
               <li>NIT: 902.038.122-7</li>
-              <li>Correo: <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a></li>
+              <li>Correo: <a href="mailto:gerencia@cofianza.co" className="text-primary-600 underline">gerencia@cofianza.co</a></li>
               <li>Dirección: Calle 75ab sur 52d 336</li>
             </ul>
             <p className="mt-3">
@@ -141,7 +141,7 @@ export default function PrivacidadPage() {
               <li>Presentar quejas ante la Superintendencia de Industria y Comercio.</li>
             </ul>
             <p className="mt-3">
-              <strong>Canal de atención:</strong> Correo <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>
+              <strong>Canal de atención:</strong> Correo <a href="mailto:gerencia@cofianza.co" className="text-primary-600 underline">gerencia@cofianza.co</a>
             </p>
           </section>
 

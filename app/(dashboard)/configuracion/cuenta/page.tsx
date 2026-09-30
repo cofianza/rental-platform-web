@@ -244,7 +244,7 @@ export default function MiCuentaPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Para cambiar el email, escríbanos a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
+            Para cambiar el email, escríbanos a <a href="mailto:gerencia@cofianza.co" className="text-primary-600 underline">gerencia@cofianza.co</a>.
           </p>
         </div>
 
