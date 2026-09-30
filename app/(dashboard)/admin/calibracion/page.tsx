@@ -42,8 +42,8 @@ const fmt = (n: number, entero: boolean) => (entero ? n.toLocaleString('es-CO') 
  */
 const NOMBRE_PARAMETRO: Record<string, string> = {
   FACTOR_AJUSTE_INGRESO: 'Factor de ajuste del ingreso',
-  UMBRAL_CASCADA_RECHAZO: 'Umbral de rechazo en cascada',
-  UMBRAL_CASCADA_APROBACION: 'Umbral de aprobación en cascada',
+  UMBRAL_CASCADA_RECHAZO: 'Puntaje de rechazo sin consultar la segunda central',
+  UMBRAL_CASCADA_APROBACION: 'Puntaje de aprobación sin consultar la segunda central',
   UMBRAL_DIFERENCIA_INGRESO: 'Diferencia máxima ingreso declarado vs. estimado',
   VIGENCIA_CRC_DIAS: 'Vigencia del CRC (días)',
   DIAS_EXPIRACION_ESTUDIO: 'Expiración del estudio (días)',
@@ -51,9 +51,9 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   CANON_MAX_TRANSITORIO: 'Canon máximo sin coafianzamiento — vivienda (COP)',
   TOPE_CANON_COMERCIAL: 'Canon máximo sin coafianzamiento — comercial (COP, sin IVA)',
   UMBRAL_APROBACION_AUTOMATICA: 'Umbral de aprobación automática',
-  UMBRAL_ZONA_GRIS: 'Inicio de la zona gris',
-  UMBRAL_SCORE_RECHAZO: 'Score mínimo de la central',
-  UMBRAL_SCORE_REVISION: 'Tope de la banda de revisión por score',
+  UMBRAL_ZONA_GRIS: 'Inicio del rango intermedio',
+  UMBRAL_SCORE_RECHAZO: 'Puntaje mínimo de la central',
+  UMBRAL_SCORE_REVISION: 'Puntaje máximo de la central que pasa a revisión manual',
   UMBRAL_SIMILITUD_BIOMETRICA: 'Similitud biométrica mínima en la autorización y la firma (%)',
   TARIFA_IVA: 'Tarifa de IVA (%)',
   // Contratos V3 §14: rigen solo para el contrato (el motor y la reasignación no cambian).
@@ -145,7 +145,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
             </p>
           )}
           <p className="mt-1 text-[11px] text-gray-500">
-            {p.seccion} · <code>{p.clave}</code>
+            <code>{p.clave}</code>
             {p.nivel && ` · ${p.nivel === 'riesgo' ? 'de riesgo' : 'operativo'}`} · rango {fmt(p.min, p.entero)} –{' '}
             {fmt(p.max, p.entero)} · default{' '}
             {fmt(p.valorDefault, p.entero)}
@@ -294,7 +294,7 @@ export default function AdminCalibracionPage() {
     <div className="space-y-6">
       <PageHeader
         title="Calibración del modelo"
-        subtitle="Parámetros de la Política V4.1 y su Adenda 1. Cada cambio queda registrado con fecha, valor anterior, valor nuevo y usuario."
+        subtitle="Parámetros de la política de riesgo. Cada cambio queda registrado con fecha, valor anterior, valor nuevo y usuario."
       />
 
       {loading ? (
@@ -321,7 +321,7 @@ export default function AdminCalibracionPage() {
             {/* Decía "debe correrse scripts/check-decision-adenda.ts", algo que
                 Gerencia no puede hacer desde aquí: el aviso ahora pide lo que
                 sí está en su mano. */}
-            Adenda §11: antes de cambiar un parámetro en producción, pida a Tecnología que valide la matriz de
+            Antes de cambiar un parámetro en producción, pida a Tecnología que valide la matriz de
             casos de prueba y confirme que ningún caso crítico cambia de resultado.
           </div>
 
@@ -329,9 +329,9 @@ export default function AdminCalibracionPage() {
               con una consulta y cuántos necesitaron la segunda central. Con el
               motor apagado no hay rastro, y se dice en vez de contar ceros. */}
           <section className="rounded-xl border border-gray-200 bg-white p-4">
-            <h2 className="text-sm font-bold text-gray-900">Cascada de centrales (últimos 30 días)</h2>
+            <h2 className="text-sm font-bold text-gray-900">Consultas a centrales de riesgo (últimos 30 días)</h2>
             {cascada === null ? (
-              <p className="mt-1 text-sm text-gray-500">No se pudo cargar la cascada.</p>
+              <p className="mt-1 text-sm text-gray-500">No se pudo cargar este resumen.</p>
             ) : cascada.total === 0 ? (
               <p className="mt-1 text-sm text-gray-500">
                 Sin estudios ejecutados desde {formatDate(cascada.desde)}.
@@ -350,7 +350,7 @@ export default function AdminCalibracionPage() {
                   sub={`${cascada.dos_centrales.toLocaleString('es-CO')} estudios`}
                 />
                 <DatoCascada
-                  label="Sin dato (motor apagado)"
+                  label="Sin dato (decisión automática apagada)"
                   valor={cascada.sin_dato.toLocaleString('es-CO')}
                   sub={cascada.sin_dato > 0 ? 'no cuentan en los porcentajes' : undefined}
                 />
@@ -372,14 +372,14 @@ export default function AdminCalibracionPage() {
                   <DatoCascada
                     label="Resueltas"
                     valor={revision.resueltas.toLocaleString('es-CO')}
-                    sub={revision.resueltas > 0 ? `${pct(revision.dentro_del_sla, revision.resueltas)} dentro del SLA` : undefined}
+                    sub={revision.resueltas > 0 ? `${pct(revision.dentro_del_sla, revision.resueltas)} dentro del plazo` : undefined}
                   />
                   <DatoCascada
                     label="Tiempo promedio"
                     valor={revision.promedio_horas_habiles === null ? '—' : `${revision.promedio_horas_habiles} h`}
-                    sub={`hábiles · SLA ${revision.sla_horas_habiles} h`}
+                    sub={`hábiles · plazo de ${revision.sla_horas_habiles} h`}
                   />
-                  <DatoCascada label="Escaladas sin ingreso" valor={revision.escaladas_sin_ingreso.toLocaleString('es-CO')} sub="Adenda 2 §3" />
+                  <DatoCascada label="Escaladas sin ingreso" valor={revision.escaladas_sin_ingreso.toLocaleString('es-CO')} sub="sin ingreso estimado por las centrales" />
                 </dl>
                 <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <DatoCascada label="Consultas a DataCrédito" valor={revision.datacredito.consultas.toLocaleString('es-CO')} />
@@ -387,7 +387,7 @@ export default function AdminCalibracionPage() {
                   <DatoCascada
                     label="Tasa de caída"
                     valor={revision.datacredito.tasa_caida_pct === null ? '—' : `${revision.datacredito.tasa_caida_pct}%`}
-                    sub="revisión a los 3 meses (Adenda 2 §8)"
+                    sub="se revisa a los 3 meses"
                   />
                   <DatoCascada
                     label="Errores del dato"
@@ -407,7 +407,7 @@ export default function AdminCalibracionPage() {
               <p className="flex items-start gap-1.5 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
                 <IconLock size={14} className="mt-0.5 shrink-0" />
                 <span>
-                  Los parámetros de riesgo (topes de canon, umbrales de score, vigencia del certificado, entre otros)
+                  Los parámetros de riesgo (topes de canon, umbrales de puntaje, vigencia del certificado, entre otros)
                   solo los cambia la Gerencia General. Usted puede cambiar los operativos, y cada cambio queda en el
                   historial.
                 </span>

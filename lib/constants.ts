@@ -270,7 +270,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/admin/calibracion',
     // Icono propio: con 'Settings' se confundía con "Configuración" al colapsar.
     icon: 'Activity',
-    description: 'Parámetros del scorecard V4.1 y su historial',
+    description: 'Parámetros de la política de riesgo y su historial',
     resource: 'configuracion',
     requiredRoles: ['administrador'],
     group: 'Administración',

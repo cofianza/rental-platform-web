@@ -38,7 +38,7 @@ import {
   IconTrendingUp,
   type IconProps,
 } from '@/components/icons'
-import { cn } from '@/lib/utils'
+import { cn, sinReferenciasInternas } from '@/lib/utils'
 
 type NotifIconEntry = { icon: React.ComponentType<IconProps>; badge: string }
 
@@ -266,7 +266,7 @@ export function NotificationBell() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.mensaje}</p>
+                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{sinReferenciasInternas(n.mensaje)}</p>
                           <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(n.created_at)}</p>
                         </div>
                       </button>

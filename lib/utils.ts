@@ -106,3 +106,16 @@ export async function abrirEnPestana(obtenerUrl: () => Promise<string | null | u
     throw err
   }
 }
+
+/**
+ * Quita de un texto que viene de la API las citas a documentos internos
+ * («(Adenda de precios §2.2 a)», «Adenda 1 §2.3: …») y el id de la sesión de
+ * pago. La API ya no las escribe, pero las filas guardadas antes (notas del
+ * historial de cupos, notificaciones) las conservan.
+ */
+export function sinReferenciasInternas(texto: string): string {
+  return texto
+    .replace(/\s*\([^()]*(?:§|Adenda)[^()]*\)/g, '')
+    .replace(/(^|[.:]\s+)(?:Adenda|Pol[ií]tica|Flujo)[^§.:]{0,25}§[\d.]+(?:\s?[a-z])?\s*:\s*(\S)/g, (_, antes: string, letra: string) => antes + letra.toUpperCase())
+    .replace(/\s+—\s+sesi[oó]n\s+\S+/g, '')
+}

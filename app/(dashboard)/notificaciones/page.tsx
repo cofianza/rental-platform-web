@@ -44,7 +44,7 @@ import {
   IconTrendingUp,
   type IconProps,
 } from '@/components/icons'
-import { cn } from '@/lib/utils'
+import { cn, sinReferenciasInternas } from '@/lib/utils'
 
 type NotifIconEntry = { icon: React.ComponentType<IconProps>; badge: string }
 
@@ -283,7 +283,7 @@ export default function NotificacionesPage() {
                         </p>
                         <span className="text-xs text-gray-500 shrink-0">{formatDateTime(n.created_at)}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{n.mensaje}</p>
+                      <p className="text-sm text-gray-600 mt-1">{sinReferenciasInternas(n.mensaje)}</p>
                     </div>
                   </button>
                 </li>
