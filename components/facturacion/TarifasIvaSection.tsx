@@ -75,8 +75,8 @@ export function TarifasIvaSection() {
         <p className="text-sm text-gray-500 mt-1">
           Tasa aplicada al emitir facturas electrónicas; si es mayor que 0, el monto cobrado lleva
           el IVA incluido. <strong>0 = exento</strong>. La evaluación y la prima de vinculación van
-          gravadas con la tasa de IVA de Calibración, la misma con la que se cobran (Adenda de precios
-          y Adenda 1 de contratos); cada cobro guarda la tasa con la que se facturará. Los paquetes de
+          gravadas con la tasa de IVA de Calibración, la misma con la que se cobran; cada cobro guarda
+          la tasa con la que se facturará. Los paquetes de
           créditos son el pago anticipado de evaluaciones y llevan su misma tasa.
         </p>
       </div>

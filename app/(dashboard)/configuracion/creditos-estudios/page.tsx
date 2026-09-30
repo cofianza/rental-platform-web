@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { apiClient } from '@/lib/api'
+import { sinReferenciasInternas } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
@@ -531,15 +532,20 @@ export default function CreditosEstudiosPage() {
                       className={`px-4 py-3 text-sm text-right font-medium whitespace-nowrap ${
                         m.cantidad > 0 ? 'text-green-700' : m.cantidad < 0 ? 'text-red-700' : 'text-gray-500'
                       }`}
+                      title={m.cantidad === 0 && m.tipo === 'consumo' ? 'El cupo ya se había descontado al reservarlo' : undefined}
                     >
                       {/* Adenda §2: el consumo confirma una reserva (ya descontada) y la liberación de un paquete vencido no devuelve nada. */}
-                      {m.cantidad === 0 ? '—' : `${m.cantidad > 0 ? '+' : ''}${m.cantidad}`}
+                      {m.cantidad !== 0
+                        ? `${m.cantidad > 0 ? '+' : ''}${m.cantidad}`
+                        : m.tipo === 'consumo'
+                          ? 'Confirmado'
+                          : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-700 whitespace-nowrap">
                       {m.saldo_resultante}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
-                      {m.notas || '—'}
+                      {m.notas ? sinReferenciasInternas(m.notas) : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                       {m.tipo === 'compra' && m.compra_id ? (
