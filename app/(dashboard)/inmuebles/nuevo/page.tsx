@@ -19,7 +19,7 @@ import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 function LoadingFallback() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Nuevo Inmueble" subtitle="Cargando..." />
+      <PageHeader title="Nuevo inmueble" subtitle="Cargando..." />
       <div className="flex items-center justify-center h-64">
         <IconLoader size={32} className="text-primary-600 animate-spin" />
       </div>
@@ -40,7 +40,7 @@ function NuevoInmuebleContenido() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Nuevo Inmueble"
+          title="Nuevo inmueble"
           subtitle="Antes de continuar, complete sus datos para contrato"
         />
         <PerfilIncompletoBanner completitud={completitud} />
