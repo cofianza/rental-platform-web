@@ -32,8 +32,10 @@ import {
 } from '@/services/calibracionService'
 import { IconLoader, IconLock, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
+import { sinReferenciasInternas } from '@/lib/utils'
 
-const fmt = (n: number, entero: boolean) => (entero ? n.toLocaleString('es-CO') : String(n))
+// es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
+const fmt = (n: number, entero: boolean) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
 
 /**
  * Nombre humano de cada parámetro. La pantalla los titulaba con su clave de
@@ -137,17 +139,16 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-gray-900">{nombreDe(p.clave)}</p>
-          <p className="text-xs text-gray-600">{p.descripcion}</p>
+          <p className="text-xs text-gray-600">{sinReferenciasInternas(p.descripcion)}</p>
           {p.advertencia && (
             <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
               <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>{p.advertencia}</span>
+              <span>{sinReferenciasInternas(p.advertencia)}</span>
             </p>
           )}
           <p className="mt-1 text-[11px] text-gray-500">
-            <code>{p.clave}</code>
-            {p.nivel && ` · ${p.nivel === 'riesgo' ? 'de riesgo' : 'operativo'}`} · rango {fmt(p.min, p.entero)} –{' '}
-            {fmt(p.max, p.entero)} · default{' '}
+            {p.nivel ? `${p.nivel === 'riesgo' ? 'De riesgo' : 'Operativo'} · rango` : 'Rango'} {fmt(p.min, p.entero)} –{' '}
+            {fmt(p.max, p.entero)} · predeterminado{' '}
             {fmt(p.valorDefault, p.entero)}
             {p.actualizado_en ? ` · último cambio ${formatDate(p.actualizado_en)}` : ' · sin cambios desde el despliegue'}
           </p>
@@ -439,9 +440,9 @@ export default function AdminCalibracionPage() {
                     {historial.map((h) => (
                       <tr key={h.id} className="border-t border-gray-100">
                         <td className="px-3 py-2 whitespace-nowrap text-gray-600">{formatDate(h.created_at)}</td>
-                        <td className="px-3 py-2" title={h.clave}>{nombreDe(h.clave)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{h.valor_anterior ?? '—'}</td>
-                        <td className="px-3 py-2 text-right font-mono font-bold">{h.valor_nuevo}</td>
+                        <td className="px-3 py-2">{nombreDe(h.clave)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{h.valor_anterior === null ? '—' : fmt(h.valor_anterior, false)}</td>
+                        <td className="px-3 py-2 text-right font-mono font-bold">{fmt(h.valor_nuevo, false)}</td>
                         <td className="px-3 py-2 text-gray-700">{h.usuario_nombre ?? h.usuario_id ?? '—'}</td>
                         <td className="px-3 py-2 text-gray-500">{h.motivo ?? '—'}</td>
                       </tr>
