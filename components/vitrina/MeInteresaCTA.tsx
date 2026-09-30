@@ -325,7 +325,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary' }: MeInteresaCTA
             <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
               <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
               <p className="text-sm text-primary-900">
-                Visitarás el <strong>{formatFechaCompleta(fechaPropuesta)}</strong> a las{' '}
+                Visitará el <strong>{formatFechaCompleta(fechaPropuesta)}</strong> a las{' '}
                 <strong>{formatSlotHora(fechaPropuesta)}</strong>
               </p>
             </div>

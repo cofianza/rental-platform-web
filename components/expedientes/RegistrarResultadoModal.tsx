@@ -461,7 +461,7 @@ export function RegistrarResultadoModal({
         onClose={() => setShowConfirm(false)}
         onConfirm={handleSubmit}
         title="Confirmar resultado"
-        message={`Vas a registrar la evaluación como "${resultado}". No se puede deshacer y la evaluación quedará completada.`}
+        message={`Va a registrar la evaluación como "${resultado}". No se puede deshacer y la evaluación quedará completada.`}
         confirmLabel="Confirmar resultado"
         variant="default"
         isLoading={isSubmitting}

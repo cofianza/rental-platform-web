@@ -173,7 +173,7 @@ export function VerificacionIdentidadFirma({
           </p>
           <div>
             <label htmlFor="nota-identidad" className="mb-1 block text-sm font-medium text-gray-700">
-              Cómo verificaste la identidad <span className="text-red-500">*</span>
+              Cómo verificó la identidad <span className="text-red-500">*</span>
             </label>
             <textarea
               id="nota-identidad"
