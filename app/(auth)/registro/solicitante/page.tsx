@@ -268,7 +268,7 @@ function RegistroSolicitanteContent() {
 
         {/* Error general */}
         {errors.general && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
             {errors.general}
           </div>
         )}
@@ -398,6 +398,7 @@ function FormField({
           autoComplete={autoComplete}
           inputMode={inputMode}
           aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : undefined}
           className={`w-full px-3 py-2.5 ${isPassword ? 'pr-11' : ''} border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           }`}
@@ -407,14 +408,13 @@ function FormField({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-            tabIndex={-1}
             aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p id={`${id}-error`} className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   )
 }

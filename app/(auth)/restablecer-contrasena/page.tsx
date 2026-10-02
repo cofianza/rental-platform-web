@@ -261,7 +261,7 @@ function ResetPasswordForm() {
 
       {/* Error del servidor */}
       {serverError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{serverError}</p>
         </div>
       )}
@@ -293,6 +293,8 @@ function ResetPasswordForm() {
               disabled={isLoading}
               autoComplete="new-password"
               autoFocus
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'error-password' : undefined}
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
@@ -306,13 +308,13 @@ function ResetPasswordForm() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>
+            <p id="error-password" role="alert" className="mt-1.5 text-sm text-red-600">{errors.password}</p>
           )}
 
           {/* Indicador de requisitos */}
@@ -361,6 +363,8 @@ function ResetPasswordForm() {
               placeholder="••••••••"
               disabled={isLoading}
               autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? 'error-confirmPassword' : undefined}
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
@@ -374,13 +378,13 @@ function ResetPasswordForm() {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+              aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.confirmPassword}</p>
+            <p id="error-confirmPassword" role="alert" className="mt-1.5 text-sm text-red-600">{errors.confirmPassword}</p>
           )}
         </div>
 

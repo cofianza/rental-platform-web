@@ -240,6 +240,7 @@ export function PhoneInput({
             autoComplete="tel-national"
             required={required}
             aria-invalid={!!error}
+            aria-describedby={error ? `${inputId}-error` : undefined}
             value={localNumber}
             onChange={handleLocalChange}
             disabled={disabled}
@@ -254,7 +255,7 @@ export function PhoneInput({
           />
         </div>
       </div>
-      {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+      {error && <p id={`${inputId}-error`} className="mt-1.5 text-sm text-red-600">{error}</p>}
     </div>
   )
 }

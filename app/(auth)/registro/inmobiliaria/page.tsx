@@ -17,7 +17,7 @@ import { AUTH_ROUTES } from '@/lib/constants'
 import { validateNitModulo11, problemaNit } from '@/lib/nit'
 import {
   RegistroStepper, RegistroTipoTabs, FormSection, PasswordRequirements,
-  regInputCls, regSelectCls, ValidCheck, scrollToFirstError,
+  regInputCls, regSelectCls, ValidCheck, scrollToFirstError, ariaError,
 } from '@/components/auth/registro-ui'
 
 // Municipios del Valle de Aburrá. Se envía el nombre legible (lo que ya guardan
@@ -344,13 +344,13 @@ export default function RegisterInmobiliariaPage() {
       <RegistroStepper steps={pasos} />
 
       {serverError && (
-        <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
 
       {hayErrores && !serverError && (
-        <div className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+        <div role="alert" className="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500" />
           <p className="text-sm text-red-700">
             Faltan datos o hay campos con error. Revise los marcados en rojo abajo.
@@ -379,10 +379,10 @@ export default function RegisterInmobiliariaPage() {
                 className={inputCls(!!errors.razon_social)}
                 placeholder="Habitar Propiedades S.A.S."
                 autoComplete="organization"
-                aria-invalid={!!errors.razon_social}
+                {...ariaError(errors, 'razon_social')}
               />
             </div>
-            {errors.razon_social && <p className="mt-1.5 text-sm text-red-600">{errors.razon_social}</p>}
+            {errors.razon_social && <p id="error-razon_social" className="mt-1.5 text-sm text-red-600">{errors.razon_social}</p>}
           </div>
 
           <div>
@@ -413,6 +413,7 @@ export default function RegisterInmobiliariaPage() {
                   className={inputCls(!!errors.nit_numero, nitValido)}
                   placeholder="900819665"
                   aria-invalid={!!errors.nit_numero}
+                  aria-describedby={errors.nit_numero || errors.nit_dv ? 'error-nit' : undefined}
                 />
               </div>
               <span className="self-center text-gray-500 font-bold">−</span>
@@ -431,11 +432,12 @@ export default function RegisterInmobiliariaPage() {
                   maxLength={1}
                   aria-label="Dígito de verificación"
                   aria-invalid={!!errors.nit_dv}
+                  aria-describedby={errors.nit_numero || errors.nit_dv ? 'error-nit' : undefined}
                 />
               </div>
             </div>
             {(errors.nit_numero || errors.nit_dv) && (
-              <p className="mt-1.5 text-sm text-red-600">{errors.nit_numero || errors.nit_dv}</p>
+              <p id="error-nit" className="mt-1.5 text-sm text-red-600">{errors.nit_numero || errors.nit_dv}</p>
             )}
             {nitValido ? (
               <p className="mt-1 flex items-center gap-1 text-xs font-medium text-green-600">
@@ -457,7 +459,7 @@ export default function RegisterInmobiliariaPage() {
                   value={formData.ciudad}
                   onChange={(e) => updateField('ciudad', e.target.value)}
                   className={regSelectCls({ error: !!errors.ciudad, icon: true })}
-                  aria-invalid={!!errors.ciudad}
+                  {...ariaError(errors, 'ciudad')}
                 >
                   <option value="">Seleccione</option>
                   {CIUDADES.map((c) => (
@@ -466,7 +468,27 @@ export default function RegisterInmobiliariaPage() {
                   <option value={OTRA_CIUDAD}>Otra ciudad</option>
                 </select>
               </div>
-              {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
+              {errors.ciudad && <p id="error-ciudad" className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
+              {/* Dentro de la celda de «Ciudad»: así queda justo después en el celular
+                  y en el orden de tabulación (antes iba tras «Inmuebles gestionados»). */}
+              {formData.ciudad === OTRA_CIUDAD && (
+                <div className="mt-4">
+                  <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?<span className="text-coral-700"> *</span></label>
+                  <div className="relative">
+                    <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <input id="inmobiliaria-ciudad-otra"
+                      type="text" value={formData.ciudad_otra}
+                      onChange={(e) => updateField('ciudad_otra', e.target.value)}
+                      className={inputCls(!!errors.ciudad_otra)}
+                      placeholder="Nombre de la ciudad"
+                      autoComplete="address-level2"
+                      maxLength={100}
+                      {...ariaError(errors, 'ciudad_otra')}
+                    />
+                  </div>
+                  {errors.ciudad_otra && <p id="error-ciudad_otra" className="mt-1.5 text-sm text-red-600">{errors.ciudad_otra}</p>}
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-sm font-medium text-gray-700 mb-1">Inmuebles gestionados<span className="text-coral-700"> *</span></label>
@@ -476,7 +498,7 @@ export default function RegisterInmobiliariaPage() {
                   value={formData.inmuebles_gestionados}
                   onChange={(e) => updateField('inmuebles_gestionados', e.target.value)}
                   className={regSelectCls({ error: !!errors.inmuebles_gestionados, icon: true })}
-                  aria-invalid={!!errors.inmuebles_gestionados}
+                  {...ariaError(errors, 'inmuebles_gestionados')}
                 >
                   <option value="">Seleccione</option>
                   <option value="1-20">1 a 20</option>
@@ -486,28 +508,9 @@ export default function RegisterInmobiliariaPage() {
                   <option value="300+">Más de 300</option>
                 </select>
               </div>
-              {errors.inmuebles_gestionados && <p className="mt-1.5 text-sm text-red-600">{errors.inmuebles_gestionados}</p>}
+              {errors.inmuebles_gestionados && <p id="error-inmuebles_gestionados" className="mt-1.5 text-sm text-red-600">{errors.inmuebles_gestionados}</p>}
             </div>
           </div>
-
-          {formData.ciudad === OTRA_CIUDAD && (
-            <div>
-              <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?<span className="text-coral-700"> *</span></label>
-              <div className="relative">
-                <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input id="inmobiliaria-ciudad-otra"
-                  type="text" value={formData.ciudad_otra}
-                  onChange={(e) => updateField('ciudad_otra', e.target.value)}
-                  className={inputCls(!!errors.ciudad_otra)}
-                  placeholder="Nombre de la ciudad"
-                  autoComplete="address-level2"
-                  maxLength={100}
-                  aria-invalid={!!errors.ciudad_otra}
-                />
-              </div>
-              {errors.ciudad_otra && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad_otra}</p>}
-            </div>
-          )}
 
           <div>
             <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial<span className="text-coral-700"> *</span></label>
@@ -519,10 +522,10 @@ export default function RegisterInmobiliariaPage() {
                 className={inputCls(!!errors.direccion_comercial)}
                 placeholder="Calle 129 Sur 50 33 Of. 301"
                 autoComplete="street-address"
-                aria-invalid={!!errors.direccion_comercial}
+                {...ariaError(errors, 'direccion_comercial')}
               />
             </div>
-            {errors.direccion_comercial && <p className="mt-1.5 text-sm text-red-600">{errors.direccion_comercial}</p>}
+            {errors.direccion_comercial && <p id="error-direccion_comercial" className="mt-1.5 text-sm text-red-600">{errors.direccion_comercial}</p>}
           </div>
 
           <div>
@@ -539,10 +542,10 @@ export default function RegisterInmobiliariaPage() {
                 autoComplete="url"
                 inputMode="url"
                 maxLength={300}
-                aria-invalid={!!errors.sitio_web}
+                {...ariaError(errors, 'sitio_web')}
               />
             </div>
-            {errors.sitio_web && <p className="mt-1.5 text-sm text-red-600">{errors.sitio_web}</p>}
+            {errors.sitio_web && <p id="error-sitio_web" className="mt-1.5 text-sm text-red-600">{errors.sitio_web}</p>}
           </div>
 
           {/* ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6) */}
@@ -594,10 +597,10 @@ export default function RegisterInmobiliariaPage() {
                   className={inputCls(!!errors.nombre_representante_nombre)}
                   placeholder="Carlos Mario"
                   autoComplete="given-name"
-                  aria-invalid={!!errors.nombre_representante_nombre}
+                  {...ariaError(errors, 'nombre_representante_nombre')}
                 />
               </div>
-              {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
+              {errors.nombre_representante_nombre && <p id="error-nombre_representante_nombre" className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
             </div>
             <div>
               <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido<span className="text-coral-700"> *</span></label>
@@ -609,10 +612,10 @@ export default function RegisterInmobiliariaPage() {
                   className={inputCls(!!errors.nombre_representante_apellido)}
                   placeholder="Vélez Cifuentes"
                   autoComplete="family-name"
-                  aria-invalid={!!errors.nombre_representante_apellido}
+                  {...ariaError(errors, 'nombre_representante_apellido')}
                 />
               </div>
-              {errors.nombre_representante_apellido && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
+              {errors.nombre_representante_apellido && <p id="error-nombre_representante_apellido" className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
             </div>
           </div>
 
@@ -625,14 +628,14 @@ export default function RegisterInmobiliariaPage() {
                   value={formData.representante_tipo_documento}
                   onChange={(e) => updateField('representante_tipo_documento', e.target.value)}
                   className={regSelectCls({ error: !!errors.representante_tipo_documento, icon: true })}
-                  aria-invalid={!!errors.representante_tipo_documento}
+                  {...ariaError(errors, 'representante_tipo_documento')}
                 >
                   <option value="cc">Cédula</option>
                   <option value="ce">C. extranjería</option>
                   <option value="pasaporte">Pasaporte</option>
                 </select>
               </div>
-              {errors.representante_tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.representante_tipo_documento}</p>}
+              {errors.representante_tipo_documento && <p id="error-representante_tipo_documento" className="mt-1.5 text-sm text-red-600">{errors.representante_tipo_documento}</p>}
             </div>
             <div>
               <label htmlFor="inmobiliaria-representante-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento<span className="text-coral-700"> *</span></label>
@@ -644,10 +647,10 @@ export default function RegisterInmobiliariaPage() {
                   className={inputCls(!!errors.representante_documento)}
                   placeholder="71.234.567"
                   maxLength={40}
-                  aria-invalid={!!errors.representante_documento}
+                  {...ariaError(errors, 'representante_documento')}
                 />
               </div>
-              {errors.representante_documento && <p className="mt-1.5 text-sm text-red-600">{errors.representante_documento}</p>}
+              {errors.representante_documento && <p id="error-representante_documento" className="mt-1.5 text-sm text-red-600">{errors.representante_documento}</p>}
             </div>
           </div>
 
@@ -660,7 +663,7 @@ export default function RegisterInmobiliariaPage() {
                 onChange={(e) => updateField('cargo_representante', e.target.value)}
                 className={regSelectCls({ error: !!errors.cargo_representante, icon: true })}
                 autoComplete="organization-title"
-                aria-invalid={!!errors.cargo_representante}
+                {...ariaError(errors, 'cargo_representante')}
               >
                 <option value="">Seleccione</option>
                 {CARGOS.map((c) => (
@@ -668,7 +671,7 @@ export default function RegisterInmobiliariaPage() {
                 ))}
               </select>
             </div>
-            {errors.cargo_representante && <p className="mt-1.5 text-sm text-red-600">{errors.cargo_representante}</p>}
+            {errors.cargo_representante && <p id="error-cargo_representante" className="mt-1.5 text-sm text-red-600">{errors.cargo_representante}</p>}
           </div>
 
           <div>
@@ -682,11 +685,11 @@ export default function RegisterInmobiliariaPage() {
                 placeholder="rl@suinmobiliaria.com"
                 autoComplete="email"
                 inputMode="email"
-                aria-invalid={!!errors.email}
+                {...ariaError(errors, 'email')}
               />
               <ValidCheck show={emailValido && !errors.email} />
             </div>
-            {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
+            {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           <PhoneInput
@@ -712,13 +715,13 @@ export default function RegisterInmobiliariaPage() {
                   className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
                   placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
-                  aria-invalid={!!errors.password}
+                  {...ariaError(errors, 'password')}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-600">
                   {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
               </div>
-              {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
+              {errors.password && <p id="error-password" className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
               <PasswordRequirements password={formData.password} />
             </div>
 
@@ -733,13 +736,13 @@ export default function RegisterInmobiliariaPage() {
                   className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
                   placeholder="Repita su contraseña"
                   autoComplete="new-password"
-                  aria-invalid={!!errors.confirm_password}
+                  {...ariaError(errors, 'confirm_password')}
                 />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-600">
                   {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
                 </button>
               </div>
-              {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
+              {errors.confirm_password && <p id="error-confirm_password" className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
             </div>
           </div>
 
@@ -751,7 +754,7 @@ export default function RegisterInmobiliariaPage() {
               value={formData.origen}
               onChange={(e) => updateField('origen', e.target.value)}
               className={regSelectCls({ error: !!errors.origen })}
-              aria-invalid={!!errors.origen}
+              {...ariaError(errors, 'origen')}
             >
               <option value="">Seleccione</option>
               <option value="redes">Redes sociales</option>
@@ -760,7 +763,7 @@ export default function RegisterInmobiliariaPage() {
               <option value="evento">Evento o feria</option>
               <option value="otro">Otro</option>
             </select>
-            {errors.origen && <p className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
+            {errors.origen && <p id="error-origen" className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
           </div>
 
           <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>

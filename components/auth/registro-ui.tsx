@@ -74,6 +74,17 @@ export function regInputCls(opts: { error?: boolean; valid?: boolean; rightIcon?
   )
 }
 
+/**
+ * Atributos del campo para lectores de pantalla: lo marca inválido y lo enlaza
+ * con su mensaje (el `<p id="error-campo">`), que así se lee al llegar al campo.
+ */
+export function ariaError(errors: Record<string, string>, campo: string) {
+  return {
+    'aria-invalid': !!errors[campo],
+    'aria-describedby': errors[campo] ? `error-${campo}` : undefined,
+  }
+}
+
 /** Check verde a la derecha del input cuando el valor es válido. */
 export function ValidCheck({ show }: { show: boolean }) {
   if (!show) return null

@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
 
       {/* Error del servidor */}
       {serverError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{serverError}</p>
         </div>
       )}
@@ -130,6 +130,8 @@ export default function ForgotPasswordPage() {
               disabled={isLoading}
               autoComplete="email"
               autoFocus
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'error-email' : undefined}
               className={cn(
                 'block w-full pl-10 pr-4 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
@@ -141,7 +143,7 @@ export default function ForgotPasswordPage() {
             />
           </div>
           {errors.email && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
+            <p id="error-email" role="alert" className="mt-1.5 text-sm text-red-600">{errors.email}</p>
           )}
         </div>
 

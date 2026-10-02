@@ -186,7 +186,7 @@ function LoginForm() {
 
       {/* Error global. EMAIL_NOT_CONFIRMED tiene CTA de reenvio. */}
       {error && error.code === 'EMAIL_NOT_CONFIRMED' ? (
-        <div className="mb-5 p-4 bg-amber-50 border border-amber-300 rounded-xl">
+        <div role="alert" className="mb-5 p-4 bg-amber-50 border border-amber-300 rounded-xl">
           <p className="text-sm text-amber-900 mb-3">{error.message}</p>
           <button
             type="button"
@@ -199,7 +199,7 @@ function LoginForm() {
           </button>
         </div>
       ) : error ? (
-        <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div role="alert" className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-sm text-red-600">{error.message}</p>
         </div>
       ) : null}
@@ -221,6 +221,8 @@ function LoginForm() {
             placeholder="nombre@correo.com"
             disabled={isLoading}
             autoComplete="email"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'error-email' : undefined}
             className={cn(
               'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
               'placeholder:text-slate-400',
@@ -229,7 +231,7 @@ function LoginForm() {
               errors.email ? 'border-red-500 bg-red-50' : 'border-slate-200',
             )}
           />
-          {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
+          {errors.email && <p id="error-email" role="alert" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
         </div>
 
         {/* Password */}
@@ -249,6 +251,8 @@ function LoginForm() {
               placeholder="••••••••"
               disabled={isLoading}
               autoComplete="current-password"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'error-password' : undefined}
               className={cn(
                 'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
                 'placeholder:text-slate-400',
@@ -261,13 +265,12 @@ function LoginForm() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
-              tabIndex={-1}
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
-          {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
+          {errors.password && <p id="error-password" role="alert" className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
         </div>
 
         {/* Recuérdame + olvidé contraseña */}
