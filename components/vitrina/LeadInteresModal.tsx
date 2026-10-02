@@ -39,8 +39,10 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
 
   const enviar = async () => {
     const tel = telefono.replace(/\s+/g, '').trim()
-    // PhoneInput siempre antepone el indicativo: «+57» solo es un celular vacío.
-    if (nombre.trim().length < 2 || !/^\+?\d{7,15}$/.test(tel)) {
+    // PhoneInput siempre antepone el indicativo. El celular es el único contacto
+    // obligatorio: en Colombia se exige completo (3 + 9 dígitos).
+    const telOk = tel.startsWith('+57') ? /^\+573\d{9}$/.test(tel) : /^\+\d{8,15}$/.test(tel)
+    if (nombre.trim().length < 2 || !telOk) {
       toast.error('Complete su nombre y celular')
       return
     }
@@ -79,7 +81,14 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
 
   return (
     <Modal isOpen={isOpen} onClose={cerrar} title="Me interesa este inmueble" size="md" closeOnBackdrop={false}>
-      <div className="space-y-4">
+      <form
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          enviar()
+        }}
+        className="space-y-4"
+      >
         {resumen && <p className="text-sm text-gray-600 -mt-1">{resumen}</p>}
 
         <div>
@@ -159,7 +168,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
 
         <div className="flex gap-2 pt-1">
           <button
-            onClick={enviar}
+            type="submit"
             disabled={submitting}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
@@ -168,6 +177,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             {!submitting && <IconArrowRight size={14} />}
           </button>
           <button
+            type="button"
             onClick={cerrar}
             disabled={submitting}
             className="px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
@@ -175,7 +185,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             Cancelar
           </button>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

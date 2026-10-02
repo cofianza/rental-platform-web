@@ -5,8 +5,8 @@
  * Como funciona (3 pasos) -> Counters -> Audiencias (3 cards) ->
  * Vitrina (3 inmuebles) -> Comparacion -> FAQ -> CTA final.
  *
- * La vitrina de inmuebles vive en /vitrina (link en el navbar). Aqui
- * solo dejamos un teaser link en la audiencia "arrendatarios".
+ * La seccion de vitrina muestra los inmuebles mas recientes; el listado
+ * completo vive en /vitrina (link en el navbar).
  */
 
 import type { Metadata } from 'next'
@@ -480,8 +480,8 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════
-          VITRINA PREVIEW — 3 inmuebles destacados (#vitrina).
-          Ubicada debajo de "Para quién" (mockup 01_*).
+          VITRINA PREVIEW — hasta 3 inmuebles recientes (#vitrina).
+          Ubicada debajo de "Para quién" (mockup v2).
           ════════════════════════════════════════════════════════════ */}
       <VitrinaPreview />
 

@@ -54,9 +54,10 @@ function esNuevo(createdAt: string): boolean {
   return (Date.now() - t) / 86_400_000 <= NUEVO_DIAS
 }
 
-// Ancho fijo por tarjeta (un tercio de la fila menos los espacios) para que
-// con 1 o 2 inmuebles queden centradas en vez de estiradas o a la izquierda.
-const CARD_WIDTH = 'w-full md:w-[calc((100%-2rem)/3)]'
+// Ancho fijo por tarjeta para que con 1 o 2 inmuebles queden centradas en vez
+// de estiradas o a la izquierda: dos por fila en tableta, tres desde 1024 px
+// (con tres en 768 px el botón «Me interesa» no cabía y quedaba cortado).
+const CARD_WIDTH = 'w-full sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]'
 
 export function VitrinaPreview() {
   const [items, setItems] = useState<PublicProperty[]>([])
