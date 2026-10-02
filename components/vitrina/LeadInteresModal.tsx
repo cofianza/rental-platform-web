@@ -13,6 +13,7 @@ import { Modal } from '@/components/ui'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconLoader, IconArrowRight } from '@/components/icons'
 import { registrarInteresPublico } from '@/services/publicPropertiesService'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 interface LeadInteresModalProps {
   inmuebleId: string
@@ -73,14 +74,29 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
       setAcepta(false)
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar su interés. Intente de nuevo.')
+      // Sin red, fetch rechaza con un TypeError cuyo texto viene en inglés
+      // («Failed to fetch»): mensajeParaProspecto lo cambia por el aviso de
+      // conexión. Los demás errores traen el mensaje del API, ya en español.
+      toast.error(
+        mensajeParaProspecto(err, err instanceof Error ? err.message : 'No se pudo enviar su interés. Intente de nuevo.'),
+      )
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={cerrar} title="Me interesa este inmueble" size="md" closeOnBackdrop={false}>
+    <Modal
+      isOpen={isOpen}
+      onClose={cerrar}
+      title="Me interesa este inmueble"
+      size="md"
+      closeOnBackdrop={false}
+      // scroll-pb en el cuerpo desplazable del diálogo: al enfocar un campo (Tab
+      // o «Siguiente» del teclado del celular) el navegador lo deja por encima
+      // de la franja fija de botones, no escondido debajo de ella.
+      className="[&>.overflow-y-auto]:scroll-pb-32"
+    >
       <form
         noValidate
         onSubmit={(e) => {
@@ -166,7 +182,12 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
           Cofianza se encarga del estudio y firma como su fiador.
         </p>
 
-        <div className="flex gap-2 pt-1">
+        {/* Botones pegados al pie del cuerpo desplazable del diálogo: en teléfonos
+            bajos el formulario no cabe entero y «Solicitar visita» quedaba fuera
+            de la vista. Los márgenes y el bottom negativos deshacen el padding
+            del cuerpo (px-6 py-4 en Modal) para que la franja llegue a sus bordes;
+            rounded-b-lg conserva las esquinas redondeadas del diálogo. */}
+        <div className="sticky -bottom-4 -mx-6 -mb-4 flex gap-2 rounded-b-lg border-t border-gray-100 bg-white px-6 py-3">
           <button
             type="submit"
             disabled={submitting}
