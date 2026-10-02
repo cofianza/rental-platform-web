@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { IconCheck, IconMail, IconLoader } from '@/components/icons'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
@@ -21,8 +22,9 @@ function SuccessContent() {
     try {
       await authService.resendVerification(email)
       setResendMessage('Correo de verificación reenviado. Revise su bandeja de entrada.')
-    } catch {
-      setResendMessage('No se pudo reenviar el correo. Intente de nuevo más tarde.')
+    } catch (err) {
+      // Con el tope de reenvíos (3 por hora) el API dice cuánto esperar.
+      setResendMessage(mensajeParaProspecto(err, 'No se pudo reenviar el correo. Intente de nuevo más tarde.'))
     } finally {
       setResending(false)
     }
