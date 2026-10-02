@@ -250,8 +250,10 @@ export function PropertyGrid() {
           </select>
         </div>
 
-        {/* Precio min */}
-        <div className="min-w-[120px]">
+        {/* Precio min — flex-1 (aquí y en el máximo): sin él cada campo mide lo
+            que mida su letra (~250 px con Outfit) y en celulares de 390 px ya
+            no cabía junto a «Habitaciones»: los filtros ocupaban una fila más. */}
+        <div className="flex-1 min-w-[120px]">
           <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio mínimo</label>
           {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
           <input id="property-grid-precio-min"
@@ -265,7 +267,7 @@ export function PropertyGrid() {
         </div>
 
         {/* Precio max */}
-        <div className="min-w-[120px]">
+        <div className="flex-1 min-w-[120px]">
           <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio máximo</label>
           <input id="property-grid-precio-max"
             type="text"
