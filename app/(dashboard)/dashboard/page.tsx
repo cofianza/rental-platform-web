@@ -180,7 +180,12 @@ export default function DashboardPage() {
   // Resumen. Las demás secciones (Inmobiliarias, Propietarios, etc.) ahora
   // viven como rutas del sidebar, no como tabs.
   if (isAdmin) {
-    return <ResumenSection />
+    return (
+      <div className="space-y-6">
+        <AvisoCuentaIncompleta />
+        <ResumenSection />
+      </div>
+    )
   }
 
   // Vista simplificada para solicitante
@@ -226,6 +231,8 @@ export default function DashboardPage() {
         title="Inicio"
         subtitle="Indicadores operativos"
       />
+
+      <AvisoCuentaIncompleta />
 
       {/* Date filter bar */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -490,6 +497,34 @@ function formatCitaFecha(iso: string | null): string {
 interface PagoEstudioInfo {
   estado: string // 'sin_definir' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
   linkPago: string | null // payment_link_url de Mercado Pago si existe
+}
+
+/**
+ * Equipo de Cofianza (administrador, analista, gerencia): aviso de que a su
+ * cuenta le faltan datos personales. No bloquea nada. Solo `false` lo muestra
+ * (undefined = el dato aún no llegó).
+ */
+function AvisoCuentaIncompleta() {
+  const incompleta = useAuthStore((s) => s.user?.perfil_completo === false)
+  if (!incompleta) return null
+  return (
+    <div className="flex items-start gap-3 p-5 bg-amber-50 border border-amber-200 rounded-lg">
+      <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-amber-900">A su cuenta le faltan datos</p>
+        <p className="text-xs text-amber-800 mt-1">
+          Complete su teléfono y su documento de identidad (tipo y número) para dejar su cuenta al día.
+        </p>
+        <Link
+          href="/configuracion/cuenta?returnTo=%2Fdashboard"
+          className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
+        >
+          Completar en Mi cuenta
+          <IconArrowRight size={14} />
+        </Link>
+      </div>
+    </div>
+  )
 }
 
 function SolicitanteDashboard() {
