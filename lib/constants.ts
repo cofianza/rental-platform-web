@@ -841,5 +841,5 @@ export const CONTACTO_COFIANZA = {
   email: 'gerencia@cofianza.co',
   // Correo que se publica en el pie de las páginas públicas. Pasa a
   // hola@cofianza.co cuando exista ese buzón (hoy rebotaría).
-  emailProspectos: 'gerencia@cofianza.co',
+  emailProspectos: 'hola@cofianza.co',
 } as const
