@@ -46,10 +46,13 @@ export function generateId(): string {
 }
 
 /**
- * Valida si una cadena es un email válido
+ * Valida si una cadena es un email válido. Es la misma regla que `z.email()`
+ * del API (zod 4): con la anterior, más laxa, los formularios aprobaban
+ * «juan@gmail.com.» o «juan..perez@gmail.com», el API los rechazaba después
+ * y cada rechazo gastaba uno de los registros permitidos por hora.
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailRegex = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+.-]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/
   return emailRegex.test(email)
 }
 

@@ -7,6 +7,11 @@
  * saber si fue culpa suya ni que hacer despues — y el 429 es especialmente
  * injusto: viene del limitador por IP y en Colombia el CGNAT de las
  * operadoras hace que se lo gane gente que nunca hizo un segundo intento.
+ *
+ * Los topes del API no duran lo mismo (un minuto, una hora, un día) y cada
+ * uno ya trae su mensaje: se muestra ese. Antes todo 429 decía "espere un
+ * minuto" y quien pedía otro enlace de recuperación (tope de una hora)
+ * esperaba el minuto y recibía el mismo aviso.
  */
 
 import { ApiClientError } from '@/lib/api'
@@ -17,7 +22,9 @@ import { ApiClientError } from '@/lib/api'
  */
 export function mensajeParaProspecto(err: unknown, fallback: string): string {
   if (err instanceof ApiClientError) {
-    if (err.code === 'RATE_LIMIT_EXCEEDED' || err.statusCode === 429) {
+    if (err.code === 'RATE_LIMIT_EXCEEDED' && err.message) return err.message
+    // 429 sin el cuerpo del API (lo devolvió un intermediario): no se sabe cuánto dura.
+    if (err.statusCode === 429) {
       return 'Demasiados intentos desde su red. Espere un minuto e inténtelo de nuevo.'
     }
     if (err.code === 'NETWORK_ERROR' || err.statusCode === 0) {

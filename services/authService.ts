@@ -186,7 +186,13 @@ class AuthService {
   private async doRefreshToken(logoutOnFail: boolean): Promise<string | null> {
     try {
       const refresh_token = localStorage.getItem(REFRESH_TOKEN_KEY)
-      if (!refresh_token) return null
+      if (!refresh_token) {
+        // Sin refresh token no hay forma de renovar (lo borró otra pestaña al
+        // cerrar sesión, o se limpió el almacenamiento): se cierra aquí también,
+        // en vez de dejar el panel abierto con cada sección en error.
+        if (logoutOnFail) await this.logout()
+        return null
+      }
 
       const response = await apiClient.post<IRefreshResponse>('/auth/refresh', { refresh_token })
       const { access_token, refresh_token: new_refresh_token, expires_at } = response.data

@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
@@ -24,15 +24,31 @@ export function DashboardShell({ children }: Props) {
   const isInitialized = useAuthStore((state) => state.isInitialized)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const rol = useAuthStore((state) => state.user?.rol)
-  const router = useRouter()
   const pathname = usePathname()
 
   // Sin sesión válida (cookie vencida, otro dominio o una ruta que el proxy no
   // protege, como /contratos): al login, volviendo aquí. Antes el loader de
   // abajo quedaba girando para siempre.
+  // Con navegación completa y no con router.replace: si /login se precargó
+  // cuando aún había cookie (el proxy respondió «vaya a /dashboard»), el router
+  // reutilizaba ese desvío guardado, volvía aquí y el loader no terminaba nunca
+  // (pasaba tras cambiar la contraseña, que cierra todas las sesiones).
   useEffect(() => {
-    if (isInitialized && !isAuthenticated) router.replace(`/login?redirect=${encodeURIComponent(pathname)}`)
-  }, [isInitialized, isAuthenticated, pathname, router])
+    if (isInitialized && !isAuthenticated) window.location.replace(`/login?redirect=${encodeURIComponent(pathname)}`)
+  }, [isInitialized, isAuthenticated, pathname])
+
+  // Otra pestaña cerró la sesión (o cambió la contraseña) y borró el refresh
+  // token, que comparten todas ('hp-rt', la clave de authService). Sin él esta
+  // pestaña ya no puede renovar el acceso: antes se quedaba con el panel abierto
+  // y cada sección en «Token inválido o expirado», sin ir nunca al ingreso. Se
+  // cierra aquí también y el efecto de arriba lleva al login.
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key === 'hp-rt' && e.newValue === null) useAuthStore.getState().logout()
+    }
+    window.addEventListener('storage', alCambiar)
+    return () => window.removeEventListener('storage', alCambiar)
+  }, [])
 
   // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
   // vez al entrar al dashboard y limpia al hacer logout (cuando isAuthenticated

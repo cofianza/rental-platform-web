@@ -12,10 +12,10 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck, IconEye, IconEyeOff } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
+import { isValidEmail } from '@/lib/utils'
 
 // Registro liviano (H43, 2026-09-28): solo nombre, correo, celular y
 // contraseña. El documento se pide antes de la autorización del estudio
@@ -39,7 +39,7 @@ interface FormErrors {
 
 export default function RegistroSolicitantePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><IconLoader size={24} className="animate-spin text-primary-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><IconLoader size={24} className="animate-spin text-primary-600" /></div>}>
       <RegistroSolicitanteContent />
     </Suspense>
   )
@@ -91,7 +91,7 @@ function RegistroSolicitanteContent() {
     const e: FormErrors = {}
     if (!nombre.trim()) e.nombre = 'Requerido'
     if (!apellido.trim()) e.apellido = 'Requerido'
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido'
+    if (!isValidEmail(email)) e.email = 'Email inválido'
     if (!telefono.trim()) {
       e.telefono = 'Celular requerido'
     } else {
@@ -202,36 +202,28 @@ function RegistroSolicitanteContent() {
 
   if (enlaceEnviado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <IconCheck size={32} className="text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h1>
-          <p className="text-gray-500 mb-4">
-            Si <strong>{email.trim()}</strong> es el correo al que llegó su invitación, le enviamos un enlace para
-            entrar. Vence en una hora y sirve una sola vez.
-          </p>
-          <p className="text-sm text-gray-500">
-            Revise también su carpeta de spam. Si ya tenía cuenta de arrendatario con ese correo, el enlace lo lleva a ella.
-          </p>
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+          <IconCheck size={32} className="text-green-600" />
         </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h1>
+        <p className="text-gray-500 mb-4">
+          Si <strong>{email.trim()}</strong> es el correo al que llegó su invitación, le enviamos un enlace para
+          entrar. Vence en una hora y sirve una sola vez.
+        </p>
+        <p className="text-sm text-gray-500">
+          Revise también su carpeta de spam. Si ya tenía cuenta de arrendatario con ese correo, el enlace lo lleva a ella.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <CofianzaLogo size={32} withText textClassName="text-lg" />
-          </Link>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-lg mx-auto px-4 py-8 w-full">
+    // Sin cabecera ni fondo propios: el layout de (auth) ya pone el logo y el
+    // contenedor. Con los suyos salía el logo dos veces y una caja gris más
+    // alta que la pantalla.
+    <div className="w-full">
+      <main>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Crear cuenta</h1>
         <p className="text-sm text-gray-500 mb-6">
           {property ? 'Regístrese para continuar con su estudio' : 'Regístrese como solicitante'}
@@ -268,7 +260,7 @@ function RegistroSolicitanteContent() {
 
         {/* Error general */}
         {errors.general && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
             {errors.general}
           </div>
         )}
@@ -398,6 +390,7 @@ function FormField({
           autoComplete={autoComplete}
           inputMode={inputMode}
           aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : undefined}
           className={`w-full px-3 py-2.5 ${isPassword ? 'pr-11' : ''} border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           }`}
@@ -407,14 +400,13 @@ function FormField({
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-            tabIndex={-1}
             aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p id={`${id}-error`} className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   )
 }

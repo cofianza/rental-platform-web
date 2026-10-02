@@ -2,11 +2,12 @@
 
 import { Suspense, useState, useEffect, useCallback, FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
+import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
 
 interface FormErrors {
@@ -29,7 +30,6 @@ function getPasswordRequirements(password: string): PasswordRequirement[] {
 }
 
 function ResetPasswordForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -80,15 +80,18 @@ function ResetPasswordForm() {
     validar()
   }, [validar])
 
-  // Redirigir a login tras éxito
+  // Redirigir a login tras éxito. Navegación completa (aquí y en el botón de
+  // esa pantalla): con router.push, si había una sesión abierta al entrar, el
+  // router reutilizaba la precarga de /login hecha con la cookie («vaya a
+  // /dashboard») y la persona quedaba en un cargando sin fin.
   useEffect(() => {
     if (isSuccess) {
       const timer = setTimeout(() => {
-        router.push(AUTH_ROUTES.LOGIN)
+        window.location.replace(AUTH_ROUTES.LOGIN)
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [isSuccess, router])
+  }, [isSuccess])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -121,13 +124,23 @@ function ResetPasswordForm() {
 
     try {
       await authService.resetPassword(token, password)
+      // El cambio de clave cierra todas las sesiones en el servidor: se cierra
+      // también la de este navegador (cookie y refresh token), para que el
+      // ingreso no rebote al panel con una sesión que ya no sirve.
+      // Con tope de 3 s: la clave ya cambió, y si ese cierre no responde la
+      // pantalla no puede quedarse en «Restableciendo…».
+      await Promise.race([authService.logout(), new Promise((resolve) => setTimeout(resolve, 3000))])
       setIsSuccess(true)
     } catch (err) {
-      setServerError(
-        esErrorTransitorio(err)
-          ? mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtelo de nuevo.')
-          : 'Ocurrió un error al restablecer la contraseña. El enlace puede haber expirado.',
-      )
+      // El enlace venció o se usó mientras la persona escribía (o en otra
+      // pestaña): se pasa a la pantalla de «Enlace inválido», que ofrece pedir
+      // otro. Antes quedaba un aviso de «puede haber expirado» y reintentar
+      // repetía lo mismo.
+      if (err instanceof ApiClientError && err.code === 'INVALID_RESET_TOKEN') {
+        setIsTokenValid(false)
+        return
+      }
+      setServerError(mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtelo de nuevo.'))
     } finally {
       setIsLoading(false)
     }
@@ -226,7 +239,8 @@ function ResetPasswordForm() {
           <p className="text-sm text-gray-500 mb-8">
             Será redirigido al inicio de sesión en unos segundos...
           </p>
-          <Link
+          {/* <a> y no <Link>: navegación completa a propósito (ver el efecto de arriba). */}
+          <a
             href={AUTH_ROUTES.LOGIN}
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
@@ -236,7 +250,7 @@ function ResetPasswordForm() {
             )}
           >
             Iniciar sesión
-          </Link>
+          </a>
         </div>
       </div>
     )
@@ -254,7 +268,7 @@ function ResetPasswordForm() {
 
       {/* Error del servidor */}
       {serverError && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{serverError}</p>
         </div>
       )}
@@ -286,6 +300,8 @@ function ResetPasswordForm() {
               disabled={isLoading}
               autoComplete="new-password"
               autoFocus
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'error-password' : undefined}
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
@@ -299,13 +315,13 @@ function ResetPasswordForm() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>
+            <p id="error-password" role="alert" className="mt-1.5 text-sm text-red-600">{errors.password}</p>
           )}
 
           {/* Indicador de requisitos */}
@@ -354,6 +370,8 @@ function ResetPasswordForm() {
               placeholder="••••••••"
               disabled={isLoading}
               autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? 'error-confirmPassword' : undefined}
               className={cn(
                 'block w-full pl-10 pr-12 py-2.5 border rounded-lg text-base',
                 'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
@@ -367,13 +385,13 @@ function ResetPasswordForm() {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+              aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1.5 text-sm text-red-600">{errors.confirmPassword}</p>
+            <p id="error-confirmPassword" role="alert" className="mt-1.5 text-sm text-red-600">{errors.confirmPassword}</p>
           )}
         </div>
 
