@@ -31,7 +31,9 @@ export interface InteresadosQuery {
 export const interesadosService = {
   /**
    * Lista los interesados de los inmuebles del usuario (scopeado en el backend).
-   * El API topa en 100 por página; `total` (de `pagination`) dice cuántos hay en total.
+   * El API topa en 100 por página; `total` dice cuántos hay en total. El API lo
+   * manda en `meta` (utils/response.ts); antes se leía `pagination` y siempre
+   * valía lo recibido.
    */
   async list(query: InteresadosQuery = {}): Promise<{ data: Interesado[]; total: number }> {
     const params = new URLSearchParams()
@@ -41,7 +43,7 @@ export const interesadosService = {
     if (query.page) params.set('page', String(query.page))
     const res = await apiClient.get<Interesado[]>(`/interesados?${params.toString()}`)
     const data = res.data ?? []
-    const total = (res as { pagination?: { total?: number } }).pagination?.total ?? data.length
+    const total = (res as { meta?: { total?: number } }).meta?.total ?? data.length
     return { data, total }
   },
 

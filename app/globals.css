@@ -163,6 +163,17 @@ body {
   }
 }
 
+/* Portada: las anclas del menú público (#como-funciona, #preguntas…) bajan con
+   desplazamiento suave, como en el diseño. Solo mientras el puntero o el foco
+   están sobre una de esas anclas (en las demás páginas el menú enlaza a
+   «/#…» y no coincide). No se usa html { scroll-behavior: smooth } a secas:
+   animaría también el salto al cambiar de página (Next 16 pide
+   data-scroll-behavior en <html> para evitarlo) y el desplazamiento del panel.
+   El bloque de «reducir movimiento» de abajo lo anula. */
+html:has(header nav a[href^="#"]:is(:hover, :focus)) {
+  scroll-behavior: smooth;
+}
+
 /* 2.3 Movimiento: respeta la preferencia del SO de reducir animaciones
    (transiciones de hover, spinners, reveals del dashboard, etc.). */
 @media (prefers-reduced-motion: reduce) {

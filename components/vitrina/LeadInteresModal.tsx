@@ -12,7 +12,9 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconLoader, IconArrowRight } from '@/components/icons'
-import { registrarInteresPublico } from '@/services/publicPropertiesService'
+import { registrarInteresPublico, type PublicProperty } from '@/services/publicPropertiesService'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { formatCurrency } from '@/lib/constants'
 
 interface LeadInteresModalProps {
   inmuebleId: string
@@ -24,6 +26,18 @@ interface LeadInteresModalProps {
 
 const INPUT =
   'w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500'
+
+/**
+ * Texto de `resumen`, el mismo en la portada y en el detalle del inmueble:
+ * tipo + barrio · ubicación · canon.
+ */
+export function resumenInmueble(
+  tipoLabel: string,
+  p: Pick<PublicProperty, 'ciudad' | 'barrio' | 'valor_arriendo'>,
+): string {
+  const ubicacion = p.barrio ? `${p.ciudad}, ${p.barrio}` : p.ciudad
+  return `${tipoLabel} ${p.barrio || p.ciudad} · ${ubicacion} · ${formatCurrency(p.valor_arriendo)}/mes`
+}
 
 export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadInteresModalProps) {
   const [nombre, setNombre] = useState('')
@@ -38,7 +52,10 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
   }
 
   const enviar = async () => {
-    const tel = telefono.replace(/\s+/g, '').trim()
+    // Sin espacios ni guiones: PhoneInput entrega «indicativo número» y algún
+    // indicativo trae guion («+1-809», República Dominicana); con el guion la
+    // validación de abajo lo rechazaba y ese país no podía enviar el formulario.
+    const tel = telefono.replace(/[\s-]+/g, '')
     // PhoneInput siempre antepone el indicativo. El celular es el único contacto
     // obligatorio: en Colombia se exige completo (3 + 9 dígitos).
     const telOk = tel.startsWith('+57') ? /^\+573\d{9}$/.test(tel) : /^\+\d{8,15}$/.test(tel)
@@ -73,14 +90,29 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
       setAcepta(false)
       onClose()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar su interés. Intente de nuevo.')
+      // Sin red, fetch rechaza con un TypeError cuyo texto viene en inglés
+      // («Failed to fetch»): mensajeParaProspecto lo cambia por el aviso de
+      // conexión. Los demás errores traen el mensaje del API, ya en español.
+      toast.error(
+        mensajeParaProspecto(err, err instanceof Error ? err.message : 'No se pudo enviar su interés. Intente de nuevo.'),
+      )
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={cerrar} title="Me interesa este inmueble" size="md" closeOnBackdrop={false}>
+    <Modal
+      isOpen={isOpen}
+      onClose={cerrar}
+      title="Me interesa este inmueble"
+      size="md"
+      closeOnBackdrop={false}
+      // scroll-pb en el cuerpo desplazable del diálogo: al enfocar un campo (Tab
+      // o «Siguiente» del teclado del celular) el navegador lo deja por encima
+      // de la franja fija de botones, no escondido debajo de ella.
+      className="[&>.overflow-y-auto]:scroll-pb-32"
+    >
       <form
         noValidate
         onSubmit={(e) => {
@@ -166,7 +198,12 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
           Cofianza se encarga del estudio y firma como su fiador.
         </p>
 
-        <div className="flex gap-2 pt-1">
+        {/* Botones pegados al pie del cuerpo desplazable del diálogo: en teléfonos
+            bajos el formulario no cabe entero y «Solicitar visita» quedaba fuera
+            de la vista. Los márgenes y el bottom negativos deshacen el padding
+            del cuerpo (px-6 py-4 en Modal) para que la franja llegue a sus bordes;
+            rounded-b-lg conserva las esquinas redondeadas del diálogo. */}
+        <div className="sticky -bottom-4 -mx-6 -mb-4 flex gap-2 rounded-b-lg border-t border-gray-100 bg-white px-6 py-3">
           <button
             type="submit"
             disabled={submitting}

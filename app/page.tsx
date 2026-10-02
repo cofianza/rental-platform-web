@@ -36,7 +36,9 @@ export default function HomePage() {
         <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 md:py-28 lg:py-16 md:py-32">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+          {/* lg:justify-between: la tarjeta de ejemplo va pegada al borde derecho
+              (como en el diseño); sin él quedaba hacia el centro en pantallas anchas. */}
+          <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-16 items-center">
             {/* Copy izquierdo */}
             <div className="flex-1 max-w-2xl">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60 mb-7">

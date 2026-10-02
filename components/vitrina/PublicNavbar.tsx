@@ -31,7 +31,12 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
   const sectionLink = (anchor: string) => (useHomePrefix ? `/${anchor}` : anchor)
 
   return (
-    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50">
+    // font-display (Outfit, la letra de la portada) va en el propio menú: así no
+    // cambia de letra al pasar a una página cuyo contenedor use otra.
+    // z-30: por debajo de los diálogos (z-50) y de las capas fijas del detalle
+    // del inmueble (z-40) desde las que se abren. Con z-50 el menú quedaba
+    // encima del diálogo «Me interesa» de /inmueble y le tapaba el título y la X.
+    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-30 font-display">
       {/* Full-width con padding 40px (mockup 01_*: nav padding 12px 40px),
           no se constriñe a un contenedor centrado. */}
       <div className="px-4 sm:px-8 lg:px-10 py-3 flex justify-between items-center gap-3 sm:gap-6">
@@ -40,8 +45,12 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
           <CofianzaLogo size={32} withText textClassName="text-lg sm:text-xl" />
         </Link>
 
-        {/* Nav links — desktop only (orden del mockup 01_*) */}
-        <nav className="hidden md:flex items-center gap-7">
+        {/* Enlaces de sección (orden del mockup) — solo desde 1024 px, como el
+            diseño, que los oculta en tableta: mostrados desde 768 px no cabían
+            junto a los botones y «Registrarme» quedaba cortado fuera de pantalla.
+            En la portada son anclas (#…) y bajan con desplazamiento suave: la
+            regla está en globals.css (html:has(header nav a[href^="#"]…)). */}
+        <nav className="hidden lg:flex items-center gap-7">
           <Link
             href={sectionLink('#como-funciona')}
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
