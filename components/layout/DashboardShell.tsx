@@ -37,6 +37,19 @@ export function DashboardShell({ children }: Props) {
     if (isInitialized && !isAuthenticated) window.location.replace(`/login?redirect=${encodeURIComponent(pathname)}`)
   }, [isInitialized, isAuthenticated, pathname])
 
+  // Otra pestaña cerró la sesión (o cambió la contraseña) y borró el refresh
+  // token, que comparten todas ('hp-rt', la clave de authService). Sin él esta
+  // pestaña ya no puede renovar el acceso: antes se quedaba con el panel abierto
+  // y cada sección en «Token inválido o expirado», sin ir nunca al ingreso. Se
+  // cierra aquí también y el efecto de arriba lleva al login.
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key === 'hp-rt' && e.newValue === null) useAuthStore.getState().logout()
+    }
+    window.addEventListener('storage', alCambiar)
+    return () => window.removeEventListener('storage', alCambiar)
+  }, [])
+
   // Suscripcion Realtime + fetch inicial de notificaciones. Se monta una sola
   // vez al entrar al dashboard y limpia al hacer logout (cuando isAuthenticated
   // cambia a false) o al desmontar.
