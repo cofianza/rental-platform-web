@@ -139,7 +139,7 @@ function VerifyEmailContent() {
             </p>
             <ul className="space-y-2.5">
               {[
-                'Complete los datos para el contrato en Configuración (NIT, representante y cuenta de pago).',
+                'Complete sus datos para el contrato en Configuración.',
                 'Publique su primer inmueble en la vitrina.',
                 'Cuando tenga un interesado, cree su estudio y solicite la evaluación.',
               ].map((paso, i) => (

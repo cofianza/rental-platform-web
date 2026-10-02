@@ -4,7 +4,6 @@
  */
 
 import { useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
@@ -12,8 +11,6 @@ import { rutaInterna } from '@/lib/utils'
 import type { ILoginCredentials } from '@/types/auth'
 
 export function useAuth() {
-  const router = useRouter()
-
   // Estado del store
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -50,8 +47,12 @@ export function useAuth() {
    */
   const logout = useCallback(async () => {
     await authService.logout()
-    router.push(AUTH_ROUTES.LOGIN)
-  }, [router])
+    // Navegación completa a /login a secas. Al cerrar la sesión, el panel
+    // (DashboardShell) salta a /login?redirect=<página actual>; con router.push
+    // ganaba ese salto y quien entrara después en ese equipo caía en la última
+    // página del usuario anterior. Este replace va después y es el que queda.
+    window.location.replace(AUTH_ROUTES.LOGIN)
+  }, [])
 
   return {
     // Estado
