@@ -199,7 +199,9 @@ export default function RegisterInmobiliariaPage() {
 
   const handleSubmit = async () => {
     if (!validateAll()) {
-      // Lleva al usuario al primer campo con error (puede estar bajo el fold).
+      // El campo con error suele quedar arriba, fuera de pantalla: se lleva a la
+      // persona hasta él y se le avisa, para que el clic nunca parezca no hacer nada.
+      toast.error('Faltan datos o hay campos con error. Revise los marcados en rojo.')
       scrollToFirstError(formRef.current)
       return
     }
@@ -257,12 +259,12 @@ export default function RegisterInmobiliariaPage() {
       const marcados = (error instanceof ApiClientError ? error.details ?? [] : [])
         .map((d) => [campo(d.field), d.message] as const)
         .filter(([f]) => f in formData)
+      // El aviso queda arriba, fuera de pantalla (el botón de envío está al fondo):
+      // siempre sale el emergente, marque o no un campo el API.
+      toast.error(mensaje)
       if (marcados.length) {
         setErrors(Object.fromEntries(marcados))
-        window.setTimeout(() => scrollToFirstError(formRef.current), 0)
-      } else {
-        // El aviso queda arriba, fuera de pantalla: el botón de envío está al fondo.
-        toast.error(mensaje)
+        scrollToFirstError(formRef.current)
       }
     } finally {
       setIsLoading(false)

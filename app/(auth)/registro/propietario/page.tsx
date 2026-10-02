@@ -107,6 +107,9 @@ export default function RegisterPropietarioPage() {
 
   const handleSubmit = async () => {
     if (!validateAll()) {
+      // El campo con error suele quedar arriba, fuera de pantalla: se lleva a la
+      // persona hasta él y se le avisa, para que el clic nunca parezca no hacer nada.
+      toast.error('Faltan datos o hay campos con error. Revise los marcados en rojo.')
       scrollToFirstError(formRef.current)
       return
     }
@@ -140,12 +143,12 @@ export default function RegisterPropietarioPage() {
       // (solo los campos que existen aquí, para no anunciar errores que no se ven).
       const marcados = (error instanceof ApiClientError ? error.details ?? [] : [])
         .filter((d) => d.field in formData)
+      // El aviso queda arriba, fuera de pantalla (el botón de envío está al fondo):
+      // siempre sale el emergente, marque o no un campo el API.
+      toast.error(mensaje)
       if (marcados.length) {
         setErrors(Object.fromEntries(marcados.map((d) => [d.field, d.message])))
-        window.setTimeout(() => scrollToFirstError(formRef.current), 0)
-      } else {
-        // El aviso queda arriba, fuera de pantalla: el botón de envío está al fondo.
-        toast.error(mensaje)
+        scrollToFirstError(formRef.current)
       }
     } finally {
       setIsLoading(false)

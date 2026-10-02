@@ -89,19 +89,28 @@ export function ValidCheck({ show }: { show: boolean }) {
 /**
  * Hace scroll + foco al primer campo con `aria-invalid="true"` dentro del form.
  * Llamar tras marcar errores en el submit fallido.
+ *
+ * Busca el campo dos cuadros después: quien llama acaba de hacer setErrors y
+ * React aún no ha pintado el aria-invalid. Buscando en el acto (o con un
+ * setTimeout de 0) no se encontraba nada: el primer clic no llevaba a ningún
+ * lado y, con los errores del servidor, ningún clic lo hacía.
  */
 export function scrollToFirstError(form: HTMLFormElement | null): void {
   if (!form) return
-  const el = form.querySelector<HTMLElement>('[aria-invalid="true"]')
-  if (!el) return
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  window.setTimeout(() => {
-    try {
-      el.focus({ preventScroll: true })
-    } catch {
-      /* no-op */
-    }
-  }, 350)
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      const el = form.querySelector<HTMLElement>('[aria-invalid="true"]')
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => {
+        try {
+          el.focus({ preventScroll: true })
+        } catch {
+          /* no-op */
+        }
+      }, 350)
+    }),
+  )
 }
 
 const TIPOS_CUENTA = [
