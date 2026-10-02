@@ -21,8 +21,10 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 font-[family-name:var(--font-outfit)]">
-      {/* Lado izquierdo — promocional oscuro */}
-      <div className="hidden lg:flex relative overflow-hidden bg-[#0F172A] text-white p-12 flex-col">
+      {/* Lado izquierdo — promocional oscuro. Queda fijo a la altura de la
+          pantalla: con los formularios largos de registro, el panel se estiraba
+          con la página y el texto quedaba perdido en un bloque oscuro vacío. */}
+      <div className="hidden lg:flex lg:sticky lg:top-0 lg:h-screen lg:self-start overflow-hidden bg-[#0F172A] text-white p-12 flex-col">
         {/* Glows decorativos */}
         <div
           aria-hidden
