@@ -20,6 +20,7 @@ import {
 } from '@/services/publicPropertiesService'
 import { formatCurrency } from '@/lib/constants'
 import { esStorageSupabase } from '@/lib/imagenes'
+import { VitrinaVacia } from './VitrinaVacia'
 
 const DEBOUNCE_MS = 300
 const LIMIT = 12
@@ -71,7 +72,15 @@ export function PropertyGrid() {
   const [loading, setLoading] = useState(true)
   // Si la carga falla no se dice «No hay resultados»: culpaba a los filtros.
   const [error, setError] = useState(false)
+  // ¿La lista que se está mostrando se pidió con filtros? Sin filtros y sin
+  // inmuebles la vitrina está vacía (se invita a publicar); con filtros es «No
+  // hay resultados». Se guarda con la respuesta y no se lee de los campos: al
+  // limpiar un filtro los campos cambian antes de que llegue la lista nueva, y
+  // por un instante se anunciaba una vitrina vacía que no lo está.
+  const [conFiltros, setConFiltros] = useState(false)
   const [, setFiltersLoaded] = useState(false)
+
+  const hasActiveFilters = !!(search || ciudad || tipo || habitaciones || precioMin || precioMax)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // La primera carga va sin debounce (antes esperaba 300 ms).
@@ -113,6 +122,7 @@ export function PropertyGrid() {
       setProperties(result.data)
       setTotal(result.meta.total)
       setTotalPages(result.meta.totalPages)
+      setConFiltros(hasActiveFilters)
     } catch {
       if (n !== peticionRef.current) return
       setError(true)
@@ -122,7 +132,7 @@ export function PropertyGrid() {
     } finally {
       if (n === peticionRef.current) setLoading(false)
     }
-  }, [buildQuery])
+  }, [buildQuery, hasActiveFilters])
 
   // ── Sync URL ────────────────────────────────
 
@@ -174,7 +184,9 @@ export function PropertyGrid() {
     setPage(1)
   }
 
-  const hasActiveFilters = !!(search || ciudad || tipo || habitaciones || precioMin || precioMax)
+  // Aún no hay inmuebles publicados (distinto de que los filtros no encuentren
+  // nada, y de una página fuera de rango, que llega vacía pero con total > 0).
+  const vitrinaVacia = !loading && !error && properties.length === 0 && total === 0 && !conFiltros
 
   // ── Render ──────────────────────────────────
 
@@ -282,8 +294,8 @@ export function PropertyGrid() {
         <p className="text-sm text-gray-600">
           {loading ? (
             <span className="inline-block w-40 h-4 bg-gray-200 rounded animate-pulse" />
-          ) : error ? null : (
-            <><span className="font-semibold text-gray-900">{total}</span> propiedades encontradas</>
+          ) : error || vitrinaVacia ? null : (
+            <><span className="font-semibold text-gray-900">{total}</span> {total === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}</>
           )}
         </p>
       </div>
@@ -308,6 +320,8 @@ export function PropertyGrid() {
             Reintentar
           </button>
         </div>
+      ) : vitrinaVacia ? (
+        <VitrinaVacia />
       ) : properties.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <IconHome size={48} className="mx-auto text-gray-300 mb-4" />

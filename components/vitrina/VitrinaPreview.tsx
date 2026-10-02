@@ -17,6 +17,7 @@ import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
 import { useAuthStore } from '@/stores/auth.store'
 import { LeadInteresModal } from './LeadInteresModal'
+import { VitrinaVacia } from './VitrinaVacia'
 
 const TIPO_LABEL: Record<string, string> = {
   apartamento: 'Apartamento',
@@ -102,25 +103,14 @@ export function VitrinaPreview() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-gray-200 p-10 sm:p-12 text-center">
-            <p className="text-gray-600 mb-5">
-              Pronto verá aquí los primeros inmuebles. ¿Tiene uno? Publíquelo gratis.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-              <Link
-                href="/registro"
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-primary-700 rounded-xl hover:bg-primary-800 transition-colors"
-              >
-                Registre su inmueble <IconArrowRight size={16} />
-              </Link>
-              <Link
-                href="/vitrina"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline"
-              >
-                Ver la vitrina <IconArrowRight size={14} />
-              </Link>
-            </div>
-          </div>
+          <VitrinaVacia>
+            <Link
+              href="/vitrina"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline"
+            >
+              Ver la vitrina <IconArrowRight size={14} />
+            </Link>
+          </VitrinaVacia>
         ) : (
           <>
             <div className="flex flex-wrap justify-center gap-4">
