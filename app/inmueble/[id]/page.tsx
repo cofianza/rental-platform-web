@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const title = `${tipoLabel} en ${property.barrio || property.ciudad} - Cofianza`
     const description = property.descripcion
       ? property.descripcion.slice(0, 160)
-      : `${tipoLabel} disponible en ${property.ciudad}. ${property.habitaciones} hab, ${property.banos} banos.`
+      : `${tipoLabel} disponible en ${property.ciudad}. ${property.habitaciones} hab, ${property.banos} baño${property.banos === 1 ? '' : 's'}.`
 
     return {
       title,

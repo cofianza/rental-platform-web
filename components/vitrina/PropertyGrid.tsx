@@ -252,7 +252,7 @@ export function PropertyGrid() {
 
         {/* Precio min */}
         <div className="min-w-[120px]">
-          <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio min</label>
+          <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio mínimo</label>
           {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
           <input id="property-grid-precio-min"
             type="text"
@@ -266,13 +266,13 @@ export function PropertyGrid() {
 
         {/* Precio max */}
         <div className="min-w-[120px]">
-          <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio max</label>
+          <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio máximo</label>
           <input id="property-grid-precio-max"
             type="text"
             inputMode="numeric"
             value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
             onChange={(e) => handleFilterChange(setPrecioMax)(e.target.value.replace(/\D/g, '').slice(0, 12))}
-            placeholder="Sin limite"
+            placeholder="Sin límite"
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -353,7 +353,7 @@ export function PropertyGrid() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
             className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Pagina anterior"
+            aria-label="Página anterior"
           >
             <IconChevronLeft size={18} />
           </button>
@@ -380,7 +380,7 @@ export function PropertyGrid() {
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
             className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Pagina siguiente"
+            aria-label="Página siguiente"
           >
             <IconChevronRight size={18} />
           </button>
@@ -476,7 +476,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           {property.parqueadero && (
             <span className="flex items-center gap-1">
               <IconCar size={14} />
-              Si
+              Sí
             </span>
           )}
         </div>
