@@ -12,7 +12,6 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconHome, IconCheck, IconEye, IconEyeOff } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
@@ -39,7 +38,7 @@ interface FormErrors {
 
 export default function RegistroSolicitantePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><IconLoader size={24} className="animate-spin text-primary-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><IconLoader size={24} className="animate-spin text-primary-600" /></div>}>
       <RegistroSolicitanteContent />
     </Suspense>
   )
@@ -202,36 +201,28 @@ function RegistroSolicitanteContent() {
 
   if (enlaceEnviado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <IconCheck size={32} className="text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h1>
-          <p className="text-gray-500 mb-4">
-            Si <strong>{email.trim()}</strong> es el correo al que llegó su invitación, le enviamos un enlace para
-            entrar. Vence en una hora y sirve una sola vez.
-          </p>
-          <p className="text-sm text-gray-500">
-            Revise también su carpeta de spam. Si ya tenía cuenta de arrendatario con ese correo, el enlace lo lleva a ella.
-          </p>
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+          <IconCheck size={32} className="text-green-600" />
         </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Revise su correo</h1>
+        <p className="text-gray-500 mb-4">
+          Si <strong>{email.trim()}</strong> es el correo al que llegó su invitación, le enviamos un enlace para
+          entrar. Vence en una hora y sirve una sola vez.
+        </p>
+        <p className="text-sm text-gray-500">
+          Revise también su carpeta de spam. Si ya tenía cuenta de arrendatario con ese correo, el enlace lo lleva a ella.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <CofianzaLogo size={32} withText textClassName="text-lg" />
-          </Link>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-lg mx-auto px-4 py-8 w-full">
+    // Sin cabecera ni fondo propios: el layout de (auth) ya pone el logo y el
+    // contenedor. Con los suyos salía el logo dos veces y una caja gris más
+    // alta que la pantalla.
+    <div className="w-full">
+      <main>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Crear cuenta</h1>
         <p className="text-sm text-gray-500 mb-6">
           {property ? 'Regístrese para continuar con su estudio' : 'Regístrese como solicitante'}
