@@ -4,8 +4,8 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  IconUser, IconMail, IconLock, IconMapPin, IconId,
-  IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
+  IconUser, IconMail, IconLock, IconMapPin, IconId, IconHome, IconGlobe,
+  IconEye, IconEyeOff, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
   IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -13,8 +13,38 @@ import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
-import { validateNitModulo11 } from '@/lib/nit'
-import { RegistroStepper, regInputCls, ValidCheck, scrollToFirstError } from '@/components/auth/registro-ui'
+import { validateNitModulo11, problemaNit } from '@/lib/nit'
+import {
+  RegistroStepper, RegistroTipoTabs, FormSection, PasswordRequirements,
+  regInputCls, regSelectCls, ValidCheck, scrollToFirstError,
+} from '@/components/auth/registro-ui'
+
+// Municipios del Valle de Aburrá. Se envía el nombre legible (lo que ya guardan
+// las cuentas existentes); con «Otra ciudad» se envía lo que escriba la persona.
+const CIUDADES = [
+  'Medellín', 'Envigado', 'Itagüí', 'Sabaneta', 'Bello',
+  'Caldas', 'La Estrella', 'Copacabana', 'Girardota', 'Barbosa',
+]
+const OTRA_CIUDAD = 'otra'
+
+// Se envía la etiqueta: la columna del cargo ya guarda texto libre.
+const CARGOS = [
+  'Representante legal', 'Gerente general', 'Director comercial', 'Director de operaciones', 'Otro',
+]
+
+/** «www.empresa.com» → «https://www.empresa.com»; null si no es una dirección web. */
+function normalizarSitioWeb(valor: string): string | null {
+  const texto = valor.trim()
+  const conEsquema = /^https?:\/\//i.test(texto) ? texto : `https://${texto}`
+  try {
+    return new URL(conEsquema).hostname.includes('.') && conEsquema.length <= 300 ? conEsquema : null
+  } catch {
+    return null
+  }
+}
+
+/** Documento del representante sin puntos, espacios ni guiones (así lo guarda el API). */
+const limpiarDocumento = (valor: string) => valor.replace(/[.\s-]/g, '')
 
 interface FormData {
   razon_social: string
@@ -23,9 +53,15 @@ interface FormData {
   nit_numero: string
   nit_dv: string
   direccion_comercial: string
+  // Valor del select; con OTRA_CIUDAD el nombre va en ciudad_otra.
   ciudad: string
+  ciudad_otra: string
+  inmuebles_gestionados: string
+  sitio_web: string
   nombre_representante_nombre: string
   nombre_representante_apellido: string
+  representante_tipo_documento: string
+  representante_documento: string
   cargo_representante: string
   // ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6)
   afianzadora_tipo: '' | 'afianzadora' | 'aseguradora' | 'ninguna'
@@ -34,6 +70,7 @@ interface FormData {
   email: string
   password: string
   confirm_password: string
+  origen: string
   accept_terms: boolean
   accept_data_treatment: boolean
 }
@@ -44,8 +81,13 @@ const initialFormData: FormData = {
   nit_dv: '',
   direccion_comercial: '',
   ciudad: '',
+  ciudad_otra: '',
+  inmuebles_gestionados: '',
+  sitio_web: '',
   nombre_representante_nombre: '',
   nombre_representante_apellido: '',
+  representante_tipo_documento: 'cc',
+  representante_documento: '',
   cargo_representante: '',
   afianzadora_tipo: '',
   afianzadora_actual: '',
@@ -53,45 +95,9 @@ const initialFormData: FormData = {
   email: '',
   password: '',
   confirm_password: '',
+  origen: '',
   accept_terms: false,
   accept_data_treatment: false,
-}
-
-// Encabezado de sección numerado (estilo mockup htmls/02_*).
-function FormSection({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-700 text-[11px] font-bold text-white">
-          {num}
-        </span>
-        <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function PasswordRequirements({ password }: { password: string }) {
-  const checks = [
-    { label: 'Al menos 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
-    { label: 'Un número', met: /\d/.test(password) },
-  ]
-
-  return (
-    <div className="mt-2 space-y-1">
-      {checks.map((check) => (
-        <div key={check.label} className="flex items-center gap-2">
-          <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
-          <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-500')}>
-            {check.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export default function RegisterInmobiliariaPage() {
@@ -119,7 +125,7 @@ export default function RegisterInmobiliariaPage() {
     const newErrors: Record<string, string> = {}
 
     // Datos de la inmobiliaria
-    if (!formData.razon_social.trim()) newErrors.razon_social = 'Razón social requerida'
+    if (!formData.razon_social.trim()) newErrors.razon_social = 'Nombre de la inmobiliaria requerido'
     const numero = formData.nit_numero.trim()
     const dv = formData.nit_dv.trim()
     if (!numero) {
@@ -127,29 +133,44 @@ export default function RegisterInmobiliariaPage() {
     } else if (!/^\d{1,15}$/.test(numero)) {
       newErrors.nit_numero = 'Sólo dígitos (máx 15)'
     }
-    if (!dv) {
-      newErrors.nit_dv = 'DV'
-    } else if (!/^\d$/.test(dv)) {
-      newErrors.nit_dv = 'Un dígito'
-    } else if (numero && /^\d{1,15}$/.test(numero) && !validateNitModulo11(`${numero}-${dv}`)) {
-      newErrors.nit_dv = 'DV inválido'
+    if (/^\d{1,15}$/.test(numero)) {
+      // DV obligatorio. Si falta o no corresponde, el mensaje ya sugiere el dígito.
+      const problema = problemaNit(dv ? `${numero}-${dv}` : numero)
+      if (problema) newErrors.nit_dv = problema
+    } else if (!dv) {
+      newErrors.nit_dv = 'Dígito de verificación requerido'
     }
+    if (!formData.ciudad) {
+      newErrors.ciudad = 'Seleccione la ciudad'
+    } else if (formData.ciudad === OTRA_CIUDAD && !formData.ciudad_otra.trim()) {
+      newErrors.ciudad_otra = 'Escriba la ciudad'
+    }
+    if (!formData.inmuebles_gestionados) newErrors.inmuebles_gestionados = 'Seleccione una opción'
     if (!formData.direccion_comercial.trim()) newErrors.direccion_comercial = 'Dirección comercial requerida'
-    if (!formData.ciudad.trim()) newErrors.ciudad = 'Ciudad requerida'
+    if (formData.sitio_web.trim() && !normalizarSitioWeb(formData.sitio_web)) {
+      newErrors.sitio_web = 'Página web inválida (ej. https://www.suinmobiliaria.com)'
+    }
 
     // Representante legal
-    if (!formData.nombre_representante_nombre.trim()) newErrors.nombre_representante_nombre = 'Nombre del representante requerido'
-    if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido del representante requerido'
+    if (!formData.nombre_representante_nombre.trim()) newErrors.nombre_representante_nombre = 'Nombre requerido'
+    if (!formData.nombre_representante_apellido.trim()) newErrors.nombre_representante_apellido = 'Apellido requerido'
+    if (!formData.representante_tipo_documento) newErrors.representante_tipo_documento = 'Seleccione un tipo de documento'
+    if (!formData.representante_documento.trim()) {
+      newErrors.representante_documento = 'Número de documento requerido'
+    } else if (!/^[A-Za-z0-9]{3,30}$/.test(limpiarDocumento(formData.representante_documento))) {
+      newErrors.representante_documento = 'Número de documento inválido'
+    }
+    if (!formData.cargo_representante) newErrors.cargo_representante = 'Seleccione el cargo'
     if (!formData.telefono.trim()) {
-      newErrors.telefono = 'Teléfono requerido'
+      newErrors.telefono = 'Celular requerido'
     } else {
       const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-      if (localDigits.length !== 10) newErrors.telefono = 'El teléfono debe tener 10 dígitos'
+      if (localDigits.length !== 10) newErrors.telefono = 'El celular debe tener 10 dígitos'
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email requerido'
+      newErrors.email = 'Correo requerido'
     } else if (!isValidEmail(formData.email)) {
-      newErrors.email = 'Email inválido'
+      newErrors.email = 'Correo inválido'
     }
 
     // Acceso
@@ -181,30 +202,34 @@ export default function RegisterInmobiliariaPage() {
     setServerError(null)
 
     try {
+      const sitioWeb = formData.sitio_web.trim() ? normalizarSitioWeb(formData.sitio_web) : null
+      // Los opcionales vacíos se omiten: nunca se manda "".
       await authService.registerInmobiliaria({
-        razon_social: formData.razon_social,
+        razon_social: formData.razon_social.trim(),
         nit: `${formData.nit_numero.trim()}-${formData.nit_dv.trim()}`,
-        direccion_comercial: formData.direccion_comercial,
-        ciudad: formData.ciudad,
-        nombre_representante_nombre: formData.nombre_representante_nombre,
-        nombre_representante_apellido: formData.nombre_representante_apellido,
-        ...(formData.cargo_representante.trim()
-          ? { cargo_representante: formData.cargo_representante.trim() }
-          : {}),
+        direccion_comercial: formData.direccion_comercial.trim(),
+        ciudad: formData.ciudad === OTRA_CIUDAD ? formData.ciudad_otra.trim() : formData.ciudad,
+        inmuebles_gestionados: formData.inmuebles_gestionados,
+        ...(sitioWeb ? { sitio_web: sitioWeb } : {}),
         ...(formData.afianzadora_tipo ? { afianzadora_tipo: formData.afianzadora_tipo } : {}),
         // Solo enviamos el nombre cuando el tipo es afianzadora/aseguradora. Si
         // el usuario eligio 'ninguna' (o vacio) NO mandamos un nombre que quedo
         // escrito antes de cambiar el select — evita el dato contradictorio
         // tipo='ninguna' + afianzadora_actual='<nombre>'.
-        ...(formData.afianzadora_tipo === 'afianzadora' || formData.afianzadora_tipo === 'aseguradora'
-          ? formData.afianzadora_actual.trim()
-            ? { afianzadora_actual: formData.afianzadora_actual.trim() }
-            : {}
+        ...((formData.afianzadora_tipo === 'afianzadora' || formData.afianzadora_tipo === 'aseguradora') &&
+        formData.afianzadora_actual.trim()
+          ? { afianzadora_actual: formData.afianzadora_actual.trim() }
           : {}),
+        nombre_representante_nombre: formData.nombre_representante_nombre.trim(),
+        nombre_representante_apellido: formData.nombre_representante_apellido.trim(),
+        representante_tipo_documento: formData.representante_tipo_documento,
+        representante_documento: limpiarDocumento(formData.representante_documento),
+        cargo_representante: formData.cargo_representante,
         email: formData.email,
         telefono: formData.telefono,
         password: formData.password,
         confirm_password: formData.confirm_password,
+        ...(formData.origen ? { origen: formData.origen } : {}),
         accept_terms: true,
         accept_data_treatment: true,
       })
@@ -212,10 +237,19 @@ export default function RegisterInmobiliariaPage() {
     } catch (error) {
       if (error instanceof ApiClientError) {
         if (error.code === 'EMAIL_ALREADY_EXISTS') {
-          setServerError('Ya existe una cuenta con este email.')
+          setServerError('Ya existe una cuenta con este correo.')
         } else {
           // NIT_ALREADY_EXISTS cae aquí: el API ya dice qué hacer (pedir invitación al titular).
           setServerError(error.message)
+          // 400 de validación: el API dice qué campo falló; se marca en el formulario.
+          if (error.details?.length) {
+            const campo = (field: string) =>
+              field === 'nit' ? 'nit_numero'
+              : field === 'ciudad' && formData.ciudad === OTRA_CIUDAD ? 'ciudad_otra'
+              : field
+            setErrors(Object.fromEntries(error.details.map((d) => [campo(d.field), d.message])))
+            window.setTimeout(() => scrollToFirstError(formRef.current), 0)
+          }
         }
       } else {
         setServerError('Error en el servidor. Intente de nuevo más tarde.')
@@ -233,6 +267,9 @@ export default function RegisterInmobiliariaPage() {
     /^\d{1,15}$/.test(formData.nit_numero) &&
     /^\d$/.test(formData.nit_dv) &&
     validateNitModulo11(`${formData.nit_numero}-${formData.nit_dv}`)
+  const ciudadValida =
+    !!formData.ciudad && (formData.ciudad !== OTRA_CIUDAD || !!formData.ciudad_otra.trim())
+  const documentoValido = /^[A-Za-z0-9]{3,30}$/.test(limpiarDocumento(formData.representante_documento))
   const emailValido = !!formData.email.trim() && isValidEmail(formData.email)
   const telValido = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '').length === 10
   const passwordValida =
@@ -246,13 +283,15 @@ export default function RegisterInmobiliariaPage() {
       label: 'Inmobiliaria',
       done:
         !!formData.razon_social.trim() && nitValido &&
-        !!formData.direccion_comercial.trim() && !!formData.ciudad.trim(),
+        !!formData.direccion_comercial.trim() && ciudadValida && !!formData.inmuebles_gestionados,
     },
     {
       label: 'Representante',
       done:
         !!formData.nombre_representante_nombre.trim() &&
-        !!formData.nombre_representante_apellido.trim() && telValido && emailValido,
+        !!formData.nombre_representante_apellido.trim() &&
+        !!formData.representante_tipo_documento && documentoValido &&
+        !!formData.cargo_representante && telValido && emailValido,
     },
     {
       label: 'Acceso',
@@ -266,25 +305,24 @@ export default function RegisterInmobiliariaPage() {
   return (
     <div className="w-full">
       <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
-        Registro · Inmobiliaria
+        Nuevo usuario
       </p>
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Cree su cuenta como Inmobiliaria
+        Registre su inmobiliaria
       </h1>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-6">
-        Empresa o agencia que administra propiedades.{' '}
-        <a href="/registro" className="text-primary-600 font-semibold hover:underline">
-          ¿Otro tipo?
-        </a>
+        Conecte su cartera con Cofianza y ofrezca a sus arrendatarios un fiador profesional.
       </p>
+
+      <RegistroTipoTabs activo="inmobiliaria" />
 
       {/* Banner: contrato marco con Cofianza (primer paso tras el registro). */}
       <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg mb-7">
         <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
         <span>
-          <strong className="font-semibold">Registro empresarial:</strong> una vez creada su cuenta, lo
-          contactaremos para firmar el <strong>contrato marco</strong> de vinculación y activar el panel
-          de gestión. Hasta entonces su cuenta queda pre-activa.
+          <strong className="block font-bold">Registro empresarial</strong>
+          Una vez creada su cuenta, nos pondremos en contacto con usted para firmar el contrato marco de
+          vinculación y activar el panel de gestión.
         </span>
       </div>
 
@@ -317,14 +355,14 @@ export default function RegisterInmobiliariaPage() {
         {/* 1. Datos de la inmobiliaria */}
         <FormSection num={1} title="Datos de la inmobiliaria">
           <div>
-            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Razón social</label>
+            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Nombre de la inmobiliaria</label>
             <div className="relative">
               <IconBuilding2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-razon-social"
                 type="text" value={formData.razon_social}
                 onChange={(e) => updateField('razon_social', e.target.value)}
                 className={inputCls(!!errors.razon_social)}
-                placeholder="Nombre de la empresa"
+                placeholder="Habitar Propiedades S.A.S."
                 autoComplete="organization"
                 aria-invalid={!!errors.razon_social}
               />
@@ -343,7 +381,7 @@ export default function RegisterInmobiliariaPage() {
                   value={formData.nit_numero}
                   onChange={(e) => updateField('nit_numero', e.target.value.replace(/\D/g, '').slice(0, 15))}
                   className={inputCls(!!errors.nit_numero, nitValido)}
-                  placeholder="900123456"
+                  placeholder="900819665"
                   aria-invalid={!!errors.nit_numero}
                 />
               </div>
@@ -374,10 +412,71 @@ export default function RegisterInmobiliariaPage() {
               </p>
             ) : (
               <p className="mt-1 text-xs text-gray-500">
-                Número (sin puntos) y dígito de verificación. Ejemplo: 900123456 - 8
+                Número (sin puntos) y dígito de verificación (DV), tal como aparecen en el RUT.
               </p>
             )}
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+              <div className="relative">
+                <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <select id="inmobiliaria-ciudad"
+                  value={formData.ciudad}
+                  onChange={(e) => updateField('ciudad', e.target.value)}
+                  className={regSelectCls({ error: !!errors.ciudad, icon: true })}
+                  aria-invalid={!!errors.ciudad}
+                >
+                  <option value="">Seleccione</option>
+                  {CIUDADES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value={OTRA_CIUDAD}>Otra ciudad</option>
+                </select>
+              </div>
+              {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
+            </div>
+            <div>
+              <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-sm font-medium text-gray-700 mb-1">Inmuebles gestionados</label>
+              <div className="relative">
+                <IconHome size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <select id="inmobiliaria-inmuebles-gestionados"
+                  value={formData.inmuebles_gestionados}
+                  onChange={(e) => updateField('inmuebles_gestionados', e.target.value)}
+                  className={regSelectCls({ error: !!errors.inmuebles_gestionados, icon: true })}
+                  aria-invalid={!!errors.inmuebles_gestionados}
+                >
+                  <option value="">Seleccione</option>
+                  <option value="1-20">1 a 20</option>
+                  <option value="21-50">21 a 50</option>
+                  <option value="51-100">51 a 100</option>
+                  <option value="101-300">101 a 300</option>
+                  <option value="300+">Más de 300</option>
+                </select>
+              </div>
+              {errors.inmuebles_gestionados && <p className="mt-1.5 text-sm text-red-600">{errors.inmuebles_gestionados}</p>}
+            </div>
+          </div>
+
+          {formData.ciudad === OTRA_CIUDAD && (
+            <div>
+              <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?</label>
+              <div className="relative">
+                <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-ciudad-otra"
+                  type="text" value={formData.ciudad_otra}
+                  onChange={(e) => updateField('ciudad_otra', e.target.value)}
+                  className={inputCls(!!errors.ciudad_otra)}
+                  placeholder="Nombre de la ciudad"
+                  autoComplete="address-level2"
+                  maxLength={100}
+                  aria-invalid={!!errors.ciudad_otra}
+                />
+              </div>
+              {errors.ciudad_otra && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad_otra}</p>}
+            </div>
+          )}
 
           <div>
             <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial</label>
@@ -387,7 +486,7 @@ export default function RegisterInmobiliariaPage() {
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
                 className={inputCls(!!errors.direccion_comercial)}
-                placeholder="Dirección de la sede principal"
+                placeholder="Calle 129 Sur 50 33 Of. 301"
                 autoComplete="street-address"
                 aria-invalid={!!errors.direccion_comercial}
               />
@@ -396,78 +495,28 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-            <div className="relative">
-              <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="inmobiliaria-ciudad"
-                type="text" value={formData.ciudad}
-                onChange={(e) => updateField('ciudad', e.target.value)}
-                className={inputCls(!!errors.ciudad)}
-                placeholder="Ciudad"
-                autoComplete="address-level2"
-                aria-invalid={!!errors.ciudad}
-              />
-            </div>
-            {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
-          </div>
-        </FormSection>
-
-        {/* 2. Datos del representante legal */}
-        <FormSection num={2} title="Datos del representante legal">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre del representante</label>
-              <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input id="inmobiliaria-nombre-del-representante"
-                  type="text" value={formData.nombre_representante_nombre}
-                  onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
-                  className={inputCls(!!errors.nombre_representante_nombre)}
-                  placeholder="Nombre"
-                  autoComplete="given-name"
-                  aria-invalid={!!errors.nombre_representante_nombre}
-                />
-              </div>
-              {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
-            </div>
-            <div>
-              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido del representante</label>
-              <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input id="inmobiliaria-apellido-del-representante"
-                  type="text" value={formData.nombre_representante_apellido}
-                  onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
-                  className={inputCls(!!errors.nombre_representante_apellido)}
-                  placeholder="Apellido"
-                  autoComplete="family-name"
-                  aria-invalid={!!errors.nombre_representante_apellido}
-                />
-              </div>
-              {errors.nombre_representante_apellido && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="inmobiliaria-cargo-del-representante-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Cargo del representante <span className="text-gray-500 font-normal">(opcional)</span>
+            <label htmlFor="inmobiliaria-sitio-web" className="block text-sm font-medium text-gray-700 mb-1">
+              Página web <span className="text-gray-500 font-normal">(opcional)</span>
             </label>
             <div className="relative">
-              <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="inmobiliaria-cargo-del-representante-opcional"
-                type="text"
-                value={formData.cargo_representante}
-                onChange={(e) => updateField('cargo_representante', e.target.value)}
-                className={inputCls(false)}
-                placeholder="Ej: Representante Legal, Gerente, Director Comercial"
-                maxLength={100}
-                autoComplete="organization-title"
+              <IconGlobe size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input id="inmobiliaria-sitio-web"
+                type="url" value={formData.sitio_web}
+                onChange={(e) => updateField('sitio_web', e.target.value)}
+                className={inputCls(!!errors.sitio_web)}
+                placeholder="https://www.suinmobiliaria.com"
+                autoComplete="url"
+                inputMode="url"
+                maxLength={300}
+                aria-invalid={!!errors.sitio_web}
               />
             </div>
+            {errors.sitio_web && <p className="mt-1.5 text-sm text-red-600">{errors.sitio_web}</p>}
           </div>
 
           {/* ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div className={formData.afianzadora_tipo === '' || formData.afianzadora_tipo === 'ninguna' ? 'sm:col-span-2' : undefined}>
               <label htmlFor="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo" className="block text-sm font-medium text-gray-700 mb-1">
                 ¿Qué usan hoy para respaldar sus arriendos?{' '}
                 <span className="text-gray-500 font-normal">(opcional)</span>
@@ -475,9 +524,9 @@ export default function RegisterInmobiliariaPage() {
               <select id="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo"
                 value={formData.afianzadora_tipo}
                 onChange={(e) => updateField('afianzadora_tipo', e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                className={regSelectCls()}
               >
-                <option value="">Seleccionar…</option>
+                <option value="">Seleccione</option>
                 <option value="afianzadora">Afianzadora</option>
                 <option value="aseguradora">Aseguradora</option>
                 <option value="ninguna">Ninguna</option>
@@ -499,23 +548,107 @@ export default function RegisterInmobiliariaPage() {
               </div>
             )}
           </div>
+        </FormSection>
 
-          <PhoneInput
-            label="Teléfono de contacto"
-            value={formData.telefono}
-            onChange={(v) => updateField('telefono', v)}
-            error={errors.telefono}
-          />
+        {/* 2. Datos del representante legal */}
+        <FormSection num={2} title="Datos del representante legal">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <div className="relative">
+                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-nombre-del-representante"
+                  type="text" value={formData.nombre_representante_nombre}
+                  onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
+                  className={inputCls(!!errors.nombre_representante_nombre)}
+                  placeholder="Carlos Mario"
+                  autoComplete="given-name"
+                  aria-invalid={!!errors.nombre_representante_nombre}
+                />
+              </div>
+              {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
+            </div>
+            <div>
+              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+              <div className="relative">
+                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-apellido-del-representante"
+                  type="text" value={formData.nombre_representante_apellido}
+                  onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
+                  className={inputCls(!!errors.nombre_representante_apellido)}
+                  placeholder="Vélez Cifuentes"
+                  autoComplete="family-name"
+                  aria-invalid={!!errors.nombre_representante_apellido}
+                />
+              </div>
+              {errors.nombre_representante_apellido && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_apellido}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="inmobiliaria-representante-tipo-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+              <div className="relative">
+                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <select id="inmobiliaria-representante-tipo-documento"
+                  value={formData.representante_tipo_documento}
+                  onChange={(e) => updateField('representante_tipo_documento', e.target.value)}
+                  className={regSelectCls({ error: !!errors.representante_tipo_documento, icon: true })}
+                  aria-invalid={!!errors.representante_tipo_documento}
+                >
+                  <option value="cc">Cédula</option>
+                  <option value="ce">C. extranjería</option>
+                  <option value="pasaporte">Pasaporte</option>
+                </select>
+              </div>
+              {errors.representante_tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.representante_tipo_documento}</p>}
+            </div>
+            <div>
+              <label htmlFor="inmobiliaria-representante-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
+              <div className="relative">
+                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-representante-documento"
+                  type="text" value={formData.representante_documento}
+                  onChange={(e) => updateField('representante_documento', e.target.value)}
+                  className={inputCls(!!errors.representante_documento)}
+                  placeholder="71.234.567"
+                  maxLength={40}
+                  aria-invalid={!!errors.representante_documento}
+                />
+              </div>
+              {errors.representante_documento && <p className="mt-1.5 text-sm text-red-600">{errors.representante_documento}</p>}
+            </div>
+          </div>
 
           <div>
-            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Email corporativo</label>
+            <label htmlFor="inmobiliaria-cargo" className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+            <div className="relative">
+              <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <select id="inmobiliaria-cargo"
+                value={formData.cargo_representante}
+                onChange={(e) => updateField('cargo_representante', e.target.value)}
+                className={regSelectCls({ error: !!errors.cargo_representante, icon: true })}
+                autoComplete="organization-title"
+                aria-invalid={!!errors.cargo_representante}
+              >
+                <option value="">Seleccione</option>
+                {CARGOS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {errors.cargo_representante && <p className="mt-1.5 text-sm text-red-600">{errors.cargo_representante}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-email-corporativo"
                 type="email" value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
-                placeholder="contacto@empresa.com"
+                placeholder="rl@suinmobiliaria.com"
                 autoComplete="email"
                 inputMode="email"
                 aria-invalid={!!errors.email}
@@ -524,49 +657,78 @@ export default function RegisterInmobiliariaPage() {
             </div>
             {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
+
+          <PhoneInput
+            label="Celular (WhatsApp)"
+            value={formData.telefono}
+            onChange={(v) => updateField('telefono', v)}
+            error={errors.telefono}
+          />
         </FormSection>
 
         {/* 3. Acceso a la plataforma */}
         <FormSection num={3} title="Acceso a la plataforma">
-          <div>
-            <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="inmobiliaria-contrasena"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => updateField('password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Mínimo 8 caracteres"
-                autoComplete="new-password"
-                aria-invalid={!!errors.password}
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
-                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <div className="relative">
+                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-contrasena"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
+                  placeholder="Mínimo 8 caracteres"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.password}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                  {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
+              <PasswordRequirements password={formData.password} />
             </div>
-            {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
-            <PasswordRequirements password={formData.password} />
+
+            <div>
+              <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <div className="relative">
+                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="inmobiliaria-confirmar-contrasena"
+                  type={showConfirm ? 'text' : 'password'}
+                  value={formData.confirm_password}
+                  onChange={(e) => updateField('confirm_password', e.target.value)}
+                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
+                  placeholder="Repita su contraseña"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.confirm_password}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                  {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                </button>
+              </div>
+              {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
+            </div>
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
-            <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="inmobiliaria-confirmar-contrasena"
-                type={showConfirm ? 'text' : 'password'}
-                value={formData.confirm_password}
-                onChange={(e) => updateField('confirm_password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Repita su contraseña"
-                autoComplete="new-password"
-                aria-invalid={!!errors.confirm_password}
-              />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
-                {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-              </button>
-            </div>
-            {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
+            <label htmlFor="inmobiliaria-origen" className="block text-sm font-medium text-gray-700 mb-1">
+              ¿Cómo nos conoció? <span className="text-gray-500 font-normal">(opcional)</span>
+            </label>
+            <select id="inmobiliaria-origen"
+              value={formData.origen}
+              onChange={(e) => updateField('origen', e.target.value)}
+              className={regSelectCls({ error: !!errors.origen })}
+              aria-invalid={!!errors.origen}
+            >
+              <option value="">Seleccione</option>
+              <option value="redes">Redes sociales</option>
+              <option value="recomendacion">Recomendación</option>
+              <option value="google">Google / internet</option>
+              <option value="evento">Evento o feria</option>
+              <option value="otro">Otro</option>
+            </select>
+            {errors.origen && <p className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
           </div>
 
           <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
@@ -608,33 +770,35 @@ export default function RegisterInmobiliariaPage() {
           </label>
         </FormSection>
 
-        {/* Acciones */}
-        <div className="flex items-center justify-between pt-1">
-          <Link
-            href={AUTH_ROUTES.REGISTER}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <IconArrowLeft size={16} /> Volver
-          </Link>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-ink-900 text-sm font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-          >
-            {isLoading ? (
-              <>
-                <IconLoader size={16} className="animate-spin" /> Registrando...
-              </>
-            ) : (
-              <>
-                Crear cuenta empresarial
-                <IconArrowRight size={16} />
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-2 px-6 py-3.5 bg-coral-500 text-ink-900 text-[15px] font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+        >
+          {isLoading ? (
+            <>
+              <IconLoader size={16} className="animate-spin" /> Registrando...
+            </>
+          ) : (
+            <>
+              Crear cuenta empresarial
+              <IconArrowRight size={16} />
+            </>
+          )}
+        </button>
       </form>
+
+      <p className="mt-3.5 text-xs text-slate-500 text-center leading-[1.5]">
+        Después del registro, nos pondremos en contacto con usted en menos de 24 horas para firmar el
+        contrato marco y activar su panel.
+      </p>
+
+      <p className="mt-6 text-[13px] text-slate-500 text-center leading-[1.6]">
+        ¿Ya tiene cuenta?{' '}
+        <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
+          Inicie sesión
+        </Link>
+      </p>
     </div>
   )
 }
