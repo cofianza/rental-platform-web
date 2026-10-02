@@ -60,7 +60,6 @@ export default function MiCuentaPage() {
   // a donde estabamos. Solo aceptamos paths internos (evita open-redirect).
   const returnToParam = searchParams?.get('returnTo')
   const returnTo = rutaInterna(returnToParam)
-  const isInmobiliaria = user?.rol === 'inmobiliaria'
   const isSolicitante = user?.rol === 'solicitante'
 
   const [perfil, setPerfil] = useState<IMyProfile | null>(null)
@@ -116,18 +115,16 @@ export default function MiCuentaPage() {
       return
     }
 
-    // Para la inmobiliaria (titular y miembros del equipo) el documento es
-    // obligatorio: sin él, un miembro no puede administrar expedientes (queda
-    // bloqueado por perfil incompleto).
-    if (isInmobiliaria) {
-      if (!form.tipo_documento) {
-        toast.error('Seleccione su tipo de documento')
-        return
-      }
-      if (form.numero_documento.trim().length < 3) {
-        toast.error('Ingrese su número de documento')
-        return
-      }
+    // El documento es obligatorio para todos los roles: sin él el perfil queda
+    // incompleto (un miembro de inmobiliaria no puede administrar estudios, el
+    // arrendatario no puede autorizar y el equipo de Cofianza ve el aviso).
+    if (!form.tipo_documento) {
+      toast.error('Seleccione su tipo de documento')
+      return
+    }
+    if (form.numero_documento.trim().length < 3) {
+      toast.error('Ingrese su número de documento')
+      return
     }
 
     const payload: IUpdateMyProfilePayload = {
@@ -269,7 +266,7 @@ export default function MiCuentaPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="cuenta-tipo" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo{isInmobiliaria && <span className="text-coral-700"> *</span>}
+              Tipo<span className="text-coral-700"> *</span>
             </label>
             <select id="cuenta-tipo"
               value={form.tipo_documento}
@@ -296,7 +293,7 @@ export default function MiCuentaPage() {
               value={form.numero_documento}
               onChange={(v) => onChange('numero_documento', v)}
               placeholder="Ej. 1234567890"
-              required={isInmobiliaria}
+              required
             />
           </div>
         </div>
