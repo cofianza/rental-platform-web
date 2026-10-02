@@ -839,4 +839,7 @@ export const CONTACTO_COFIANZA = {
   whatsapp: '573169724813',
   whatsappVisible: '+57 316 972 4813',
   email: 'gerencia@cofianza.co',
+  // Correo que se publica en el pie de las páginas públicas. Pasa a
+  // hola@cofianza.co cuando exista ese buzón (hoy rebotaría).
+  emailProspectos: 'gerencia@cofianza.co',
 } as const
