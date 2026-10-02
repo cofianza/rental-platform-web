@@ -242,7 +242,8 @@ export default function RegisterInmobiliariaPage() {
         accept_terms: true,
         accept_data_treatment: true,
       })
-      router.push(`${AUTH_ROUTES.REGISTER_SUCCESS}?email=${encodeURIComponent(formData.email)}`)
+      // tipo=inmobiliaria: la pantalla de éxito repite la promesa del contrato marco.
+      router.push(`${AUTH_ROUTES.REGISTER_SUCCESS}?email=${encodeURIComponent(formData.email)}&tipo=inmobiliaria`)
     } catch (error) {
       // NIT_ALREADY_EXISTS usa el mensaje del API: ya dice qué hacer (pedir invitación al titular).
       const mensaje = !(error instanceof ApiClientError)

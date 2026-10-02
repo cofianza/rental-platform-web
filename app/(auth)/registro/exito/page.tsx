@@ -11,6 +11,10 @@ import { mensajeParaProspecto } from '@/lib/errorMessages'
 function SuccessContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email') || ''
+  // El formulario de inmobiliaria promete contacto para el contrato marco: aquí
+  // se dice lo mismo, y que mientras tanto ya puede entrar (antes solo decía
+  // «su cuenta queda activa», que sonaba a lo contrario de lo recién leído).
+  const esInmobiliaria = searchParams.get('tipo') === 'inmobiliaria'
   const [resending, setResending] = useState(false)
   const [resendMessage, setResendMessage] = useState<string | null>(null)
 
@@ -51,7 +55,14 @@ function SuccessContent() {
 
         <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
           <p>Revise su <span className="font-medium">bandeja de entrada</span> y la carpeta de <span className="font-medium">spam</span>.</p>
-          <p>Cuando confirme su correo, su cuenta queda activa y ya puede iniciar sesión. El enlace vence en 24 horas.</p>
+          {esInmobiliaria ? (
+            <>
+              <p>Cuando confirme su correo ya puede iniciar sesión y conocer su oficina virtual. El enlace vence en 24 horas.</p>
+              <p>Nos pondremos en contacto con usted en menos de 24 horas para firmar el contrato marco de vinculación.</p>
+            </>
+          ) : (
+            <p>Cuando confirme su correo, su cuenta queda activa y ya puede iniciar sesión. El enlace vence en 24 horas.</p>
+          )}
         </div>
 
         {resendMessage && (
