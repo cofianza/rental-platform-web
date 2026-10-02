@@ -101,15 +101,14 @@ export default function InteresadosPage() {
   const [filtro, setFiltro] = useState<InteresadoEstado | 'todos'>('todos')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [fallo, setFallo] = useState(false)
-  // El API entrega de a 100 (los más recientes primero): «Ver más» pide la
-  // siguiente página para que los leads viejos no desaparezcan sin aviso.
+  // El API entrega de a 100 (los más recientes primero): «Ver más» trae los
+  // que siguen para que los leads viejos no desaparezcan sin aviso.
   // Hay más si la última página llegó llena. No se usa el `total` del
   // servicio: lee la clave `pagination` y el API responde `meta`, así que
   // siempre valía lo recibido y «Ver más» nunca aparecía.
   // ponytail: con un múltiplo exacto de 100 el último «Ver más» no trae nada
   // y se oculta; con el total real (corrigiendo el servicio) sobraría ese clic.
   const [hayMas, setHayMas] = useState(false)
-  const [page, setPage] = useState(1)
   const [cargandoMas, setCargandoMas] = useState(false)
   const queryFiltro = filtro === 'todos' ? {} : { estado: filtro }
 
@@ -119,7 +118,7 @@ export default function InteresadosPage() {
   // del filtro anterior — por eso se limpia `items`.
   const load = useCallback(() => {
     setLoading(true)
-    setPage(1)
+    setHayMas(false)
     interesadosService
       .list({ ...(filtro === 'todos' ? {} : { estado: filtro }), limit: POR_PAGINA })
       .then(({ data }) => { setItems(data); setHayMas(data.length === POR_PAGINA); setFallo(false) })
@@ -135,16 +134,39 @@ export default function InteresadosPage() {
     load()
   }, [load])
 
+  // Con filtro, atender a todos los que están a la vista vacía la lista aunque
+  // el API tenga más: se recarga en vez de afirmar «Aún no tiene interesados».
+  const porRecargar = hayMas && items.length === 0
+  useEffect(() => {
+    if (porRecargar) load()
+  }, [porRecargar, load])
+
   const verMas = async () => {
     setCargandoMas(true)
     try {
-      const res = await interesadosService.list({ ...queryFiltro, page: page + 1, limit: POR_PAGINA })
-      // Sin duplicados si entró un lead nuevo y corrió la paginación.
-      // ponytail: si con filtro se sacaron leads de la lista, la página
-      // siguiente salta esos puestos; recargar los trae. Paginar por cursor si molesta.
-      setItems((prev) => [...prev, ...res.data.filter((d) => !prev.some((p) => p.id === d.id))])
-      setHayMas(res.data.length === POR_PAGINA)
-      setPage((p) => p + 1)
+      // Se pide la página donde cae el primer interesado que falta, no «la
+      // siguiente»: con filtro, cada interesado atendido sale de la lista (aquí
+      // y en el API) y corre a los demás un puesto, así que «página + 1» se
+      // saltaba tantos como se hubieran atendido y ya no había cómo traerlos.
+      // Lo que esa página repita se descarta por id; si llega llena y sin nada
+      // nuevo (entraron interesados y corrieron la lista hacia abajo) se sigue
+      // con la siguiente, para no quedarse pidiendo siempre la misma.
+      // ponytail: si OTRA sesión de la misma inmobiliaria atiende interesados a
+      // la vez, los puestos se corren sin que esta página lo sepa y puede
+      // quedar alguno sin mostrar hasta recargar; paginar por cursor si molesta.
+      let pagina = Math.floor(items.length / POR_PAGINA) + 1
+      let data: Interesado[]
+      let nuevos: Interesado[]
+      do {
+        data = (await interesadosService.list({ ...queryFiltro, page: pagina++, limit: POR_PAGINA })).data
+        nuevos = data.filter((d) => !items.some((p) => p.id === d.id))
+      } while (nuevos.length === 0 && data.length === POR_PAGINA)
+      // Por fecha: un interesado recién llegado que venga en la página repetida
+      // queda arriba, no al final.
+      setItems((prev) =>
+        [...prev, ...nuevos].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
+      )
+      setHayMas(data.length === POR_PAGINA)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No se pudieron cargar más interesados')
     } finally {
@@ -184,7 +206,11 @@ export default function InteresadosPage() {
             key={f.value}
             type="button"
             onClick={() => setFiltro(f.value)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            // En espera mientras llega «Ver más»: si se cambiaba de filtro con
+            // la petición en vuelo, su respuesta se sumaba a la lista del
+            // filtro nuevo (interesados «Contactado» bajo «Nuevos»).
+            disabled={cargandoMas}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors disabled:opacity-50 ${
               filtro === f.value
                 ? 'bg-primary-700 text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -195,7 +221,7 @@ export default function InteresadosPage() {
         ))}
       </div>
 
-      {loading ? (
+      {loading || porRecargar ? (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <IconLoader size={16} className="animate-spin" /> Cargando interesados…
         </div>
@@ -286,7 +312,10 @@ export default function InteresadosPage() {
                 )}
               </div>
 
-              {/* Acciones — el miembro solo lectura no crea estudios ni cambia el estado del interesado */}
+              {/* Acciones — el miembro solo lectura no crea estudios ni cambia el estado del interesado.
+                  Los cambios de estado y «Ver más» se esperan uno al otro: con
+                  filtro, un interesado que sale de la lista mientras llega la
+                  página corre los puestos y dejaría a otro sin mostrar. */}
               {puedeEditar && (
                 <div className="flex shrink-0 flex-wrap justify-end gap-2">
                   {/* Convertir el interesado en expediente (datos pre-llenados) */}
@@ -306,7 +335,7 @@ export default function InteresadosPage() {
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'contactado')}
-                      disabled={updatingId === it.id}
+                      disabled={updatingId === it.id || cargandoMas}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100 disabled:opacity-50"
                     >
                       {updatingId === it.id ? (
@@ -321,7 +350,7 @@ export default function InteresadosPage() {
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'descartado')}
-                      disabled={updatingId === it.id}
+                      disabled={updatingId === it.id || cargandoMas}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                     >
                       <IconX size={13} />
@@ -331,7 +360,7 @@ export default function InteresadosPage() {
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'nuevo')}
-                      disabled={updatingId === it.id}
+                      disabled={updatingId === it.id || cargandoMas}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                     >
                       Reabrir
@@ -349,7 +378,7 @@ export default function InteresadosPage() {
               <button
                 type="button"
                 onClick={verMas}
-                disabled={cargandoMas}
+                disabled={cargandoMas || updatingId !== null}
                 className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 {cargandoMas && <IconLoader size={14} className="animate-spin" />}
