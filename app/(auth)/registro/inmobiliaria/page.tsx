@@ -267,7 +267,9 @@ export default function RegisterInmobiliariaPage() {
         setErrors(Object.fromEntries(marcados))
         scrollToFirstError(formRef.current)
       }
-    } finally {
+      // Solo aquí, no en un finally: tras el éxito el botón sigue deshabilitado
+      // hasta que cambia la página (antes se reactivaba unas décimas de segundo
+      // y un segundo clic mandaba otro registro).
       setIsLoading(false)
     }
   }
@@ -368,7 +370,7 @@ export default function RegisterInmobiliariaPage() {
         {/* 1. Datos de la inmobiliaria */}
         <FormSection num={1} title="Datos de la inmobiliaria">
           <div>
-            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Nombre de la inmobiliaria</label>
+            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Nombre de la inmobiliaria<span className="text-coral-700"> *</span></label>
             <div className="relative">
               <IconBuilding2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-razon-social"
@@ -384,7 +386,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-nit" className="block text-sm font-medium text-gray-700 mb-1">NIT</label>
+            <label htmlFor="inmobiliaria-nit" className="block text-sm font-medium text-gray-700 mb-1">NIT<span className="text-coral-700"> *</span></label>
             <div className="flex items-stretch gap-2">
               <div className="relative flex-1">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -448,7 +450,7 @@ export default function RegisterInmobiliariaPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+              <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-ciudad"
@@ -467,7 +469,7 @@ export default function RegisterInmobiliariaPage() {
               {errors.ciudad && <p className="mt-1.5 text-sm text-red-600">{errors.ciudad}</p>}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-sm font-medium text-gray-700 mb-1">Inmuebles gestionados</label>
+              <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-sm font-medium text-gray-700 mb-1">Inmuebles gestionados<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconHome size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-inmuebles-gestionados"
@@ -490,7 +492,7 @@ export default function RegisterInmobiliariaPage() {
 
           {formData.ciudad === OTRA_CIUDAD && (
             <div>
-              <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?</label>
+              <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-ciudad-otra"
@@ -508,7 +510,7 @@ export default function RegisterInmobiliariaPage() {
           )}
 
           <div>
-            <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial</label>
+            <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial<span className="text-coral-700"> *</span></label>
             <div className="relative">
               <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-direccion-comercial"
@@ -583,7 +585,7 @@ export default function RegisterInmobiliariaPage() {
         <FormSection num={2} title="Datos del representante legal">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-nombre-del-representante"
@@ -598,7 +600,7 @@ export default function RegisterInmobiliariaPage() {
               {errors.nombre_representante_nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-apellido-del-representante"
@@ -616,7 +618,7 @@ export default function RegisterInmobiliariaPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="inmobiliaria-representante-tipo-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+              <label htmlFor="inmobiliaria-representante-tipo-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-representante-tipo-documento"
@@ -633,7 +635,7 @@ export default function RegisterInmobiliariaPage() {
               {errors.representante_tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.representante_tipo_documento}</p>}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-representante-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
+              <label htmlFor="inmobiliaria-representante-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-representante-documento"
@@ -650,7 +652,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-cargo" className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+            <label htmlFor="inmobiliaria-cargo" className="block text-sm font-medium text-gray-700 mb-1">Cargo<span className="text-coral-700"> *</span></label>
             <div className="relative">
               <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <select id="inmobiliaria-cargo"
@@ -670,7 +672,7 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico<span className="text-coral-700"> *</span></label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-email-corporativo"
@@ -692,6 +694,7 @@ export default function RegisterInmobiliariaPage() {
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
+            required
           />
         </FormSection>
 
@@ -699,7 +702,7 @@ export default function RegisterInmobiliariaPage() {
         <FormSection num={3} title="Acceso a la plataforma">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-contrasena"
@@ -720,7 +723,7 @@ export default function RegisterInmobiliariaPage() {
             </div>
 
             <div>
-              <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-confirmar-contrasena"

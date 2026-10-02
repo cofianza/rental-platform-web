@@ -36,7 +36,7 @@ interface FormData {
 const initialFormData: FormData = {
   nombre: '',
   apellido: '',
-  tipo_documento: '',
+  tipo_documento: 'cc',
   numero_documento: '',
   telefono: '',
   email: '',
@@ -150,7 +150,9 @@ export default function RegisterPropietarioPage() {
         setErrors(Object.fromEntries(marcados.map((d) => [d.field, d.message])))
         scrollToFirstError(formRef.current)
       }
-    } finally {
+      // Solo aquí, no en un finally: tras el éxito el botón sigue deshabilitado
+      // hasta que cambia la página (antes se reactivaba unas décimas de segundo
+      // y un segundo clic mandaba otro registro).
       setIsLoading(false)
     }
   }
@@ -229,7 +231,7 @@ export default function RegisterPropietarioPage() {
         <FormSection num={1} title="Datos personales">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="propietario-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <label htmlFor="propietario-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-nombre"
@@ -244,7 +246,7 @@ export default function RegisterPropietarioPage() {
               {errors.nombre && <p className="mt-1.5 text-sm text-red-600">{errors.nombre}</p>}
             </div>
             <div>
-              <label htmlFor="propietario-apellido" className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+              <label htmlFor="propietario-apellido" className="block text-sm font-medium text-gray-700 mb-1">Apellido<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-apellido"
@@ -262,7 +264,7 @@ export default function RegisterPropietarioPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="propietario-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento</label>
+              <label htmlFor="propietario-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="propietario-tipo-de-documento"
@@ -271,16 +273,15 @@ export default function RegisterPropietarioPage() {
                   className={regSelectCls({ error: !!errors.tipo_documento, icon: true })}
                   aria-invalid={!!errors.tipo_documento}
                 >
-                  <option value="">Seleccione</option>
-                  <option value="cc">Cédula de Ciudadanía</option>
-                  <option value="ce">Cédula de Extranjería</option>
+                  <option value="cc">Cédula de ciudadanía</option>
+                  <option value="ce">Cédula de extranjería</option>
                   <option value="pasaporte">Pasaporte</option>
                 </select>
               </div>
               {errors.tipo_documento && <p className="mt-1.5 text-sm text-red-600">{errors.tipo_documento}</p>}
             </div>
             <div>
-              <label htmlFor="propietario-numero-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento</label>
+              <label htmlFor="propietario-numero-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-numero-de-documento"
@@ -288,7 +289,7 @@ export default function RegisterPropietarioPage() {
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={inputCls(!!errors.numero_documento)}
                   placeholder="1.040.567.890"
-                  inputMode="numeric"
+                  inputMode={formData.tipo_documento === 'pasaporte' ? 'text' : 'numeric'}
                   aria-invalid={!!errors.numero_documento}
                 />
               </div>
@@ -301,13 +302,14 @@ export default function RegisterPropietarioPage() {
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
+            required
           />
         </FormSection>
 
         {/* 2. Acceso a la plataforma */}
         <FormSection num={2} title="Acceso a la plataforma">
           <div>
-            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico<span className="text-coral-700"> *</span></label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-email"
@@ -326,7 +328,7 @@ export default function RegisterPropietarioPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-contrasena"
@@ -347,7 +349,7 @@ export default function RegisterPropietarioPage() {
             </div>
 
             <div>
-              <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
                 <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-confirmar-contrasena"

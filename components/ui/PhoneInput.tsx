@@ -144,7 +144,7 @@ export function PhoneInput({
     <div className={className}>
       {label && (
         <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
-          {label}{required && ' *'}
+          {label}{required && <span className="text-coral-700"> *</span>}
         </label>
       )}
       <div className="relative flex">
