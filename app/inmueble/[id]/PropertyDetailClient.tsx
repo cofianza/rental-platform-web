@@ -180,10 +180,13 @@ export function PropertyDetailClient({ property, similares }: Props) {
 
         {/* Right column: info + CTA (sticky) */}
         <div className="space-y-6">
-          {/* lg:z-40: al quedar fija, la tarjeta es una capa propia y el diálogo
-              que abre su botón vive dentro de ella; con z-40 esa capa (y el
-              diálogo) queda por encima del menú público (z-30) y no debajo. */}
-          <div className="lg:sticky lg:top-20 lg:z-40 space-y-6">
+          {/* Al quedar fija, la tarjeta es una capa propia y el diálogo que abre
+              su botón vive dentro de ella: solo mientras tiene un diálogo
+              abierto sube a z-40, para que el diálogo quede por encima del menú
+              público (z-30). Con z-40 permanente, en ventanas bajas la tarjeta
+              —que al final de la página sube empujada por el fin de su
+              columna— tapaba «Ingresar» y «Registrarme». */}
+          <div className="lg:sticky lg:top-20 lg:has-[[role=dialog]]:z-40 space-y-6">
             {/* Price card */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <span className="inline-block px-2.5 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full mb-3">
