@@ -170,7 +170,9 @@ export function PhoneInput({
             onClick={() => { if (!disabled) setOpen(!open) }}
             disabled={disabled}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-2.5 border rounded-l-lg text-sm bg-gray-50 hover:bg-gray-100 transition-colors min-w-[90px] justify-center',
+              // h-full: en pantallas táctiles el campo del número sube a 16 px de letra
+              // (globals.css) y quedaba 3 px más alto que este botón.
+              'flex h-full items-center gap-1 px-2.5 py-2.5 border rounded-l-lg text-sm bg-gray-50 hover:bg-gray-100 transition-colors min-w-[90px] justify-center',
               error ? 'border-red-300' : 'border-gray-300',
               disabled && 'bg-gray-100 cursor-not-allowed opacity-60'
             )}
