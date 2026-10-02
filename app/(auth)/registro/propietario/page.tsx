@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   IconUser, IconMail, IconLock, IconId,
   IconEye, IconEyeOff, IconArrowRight, IconLoader, IconShield,
@@ -129,19 +130,22 @@ export default function RegisterPropietarioPage() {
       })
       router.push(`${AUTH_ROUTES.REGISTER_SUCCESS}?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        if (error.code === 'EMAIL_ALREADY_EXISTS') {
-          setServerError('Ya existe una cuenta con este correo.')
-        } else {
-          setServerError(error.message)
-          // 400 de validación: el API dice qué campo falló; se marca en el formulario.
-          if (error.details?.length) {
-            setErrors(Object.fromEntries(error.details.map((d) => [d.field, d.message])))
-            window.setTimeout(() => scrollToFirstError(formRef.current), 0)
-          }
-        }
+      const mensaje = !(error instanceof ApiClientError)
+        ? 'Error en el servidor. Intente de nuevo más tarde.'
+        : error.code === 'EMAIL_ALREADY_EXISTS'
+          ? 'Ya existe una cuenta con este correo.'
+          : error.message
+      setServerError(mensaje)
+      // 400 de validación: el API dice qué campo falló; se marca en el formulario
+      // (solo los campos que existen aquí, para no anunciar errores que no se ven).
+      const marcados = (error instanceof ApiClientError ? error.details ?? [] : [])
+        .filter((d) => d.field in formData)
+      if (marcados.length) {
+        setErrors(Object.fromEntries(marcados.map((d) => [d.field, d.message])))
+        window.setTimeout(() => scrollToFirstError(formRef.current), 0)
       } else {
-        setServerError('Error en el servidor. Intente de nuevo más tarde.')
+        // El aviso queda arriba, fuera de pantalla: el botón de envío está al fondo.
+        toast.error(mensaje)
       }
     } finally {
       setIsLoading(false)

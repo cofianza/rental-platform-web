@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   IconUser, IconMail, IconLock, IconMapPin, IconId, IconHome, IconGlobe,
   IconEye, IconEyeOff, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
@@ -115,6 +116,11 @@ export default function RegisterInmobiliariaPage() {
     setErrors((prev) => {
       const next = { ...prev }
       delete next[field]
+      // El NIT son dos campos con un solo mensaje: al tocar uno se limpia el del otro.
+      if (field === 'nit_numero' || field === 'nit_dv') {
+        delete next.nit_numero
+        delete next.nit_dv
+      }
       return next
     })
     setServerError(null)
@@ -235,24 +241,28 @@ export default function RegisterInmobiliariaPage() {
       })
       router.push(`${AUTH_ROUTES.REGISTER_SUCCESS}?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        if (error.code === 'EMAIL_ALREADY_EXISTS') {
-          setServerError('Ya existe una cuenta con este correo.')
-        } else {
-          // NIT_ALREADY_EXISTS cae aquí: el API ya dice qué hacer (pedir invitación al titular).
-          setServerError(error.message)
-          // 400 de validación: el API dice qué campo falló; se marca en el formulario.
-          if (error.details?.length) {
-            const campo = (field: string) =>
-              field === 'nit' ? 'nit_numero'
-              : field === 'ciudad' && formData.ciudad === OTRA_CIUDAD ? 'ciudad_otra'
-              : field
-            setErrors(Object.fromEntries(error.details.map((d) => [campo(d.field), d.message])))
-            window.setTimeout(() => scrollToFirstError(formRef.current), 0)
-          }
-        }
+      // NIT_ALREADY_EXISTS usa el mensaje del API: ya dice qué hacer (pedir invitación al titular).
+      const mensaje = !(error instanceof ApiClientError)
+        ? 'Error en el servidor. Intente de nuevo más tarde.'
+        : error.code === 'EMAIL_ALREADY_EXISTS'
+          ? 'Ya existe una cuenta con este correo.'
+          : error.message
+      setServerError(mensaje)
+      // 400 de validación: el API dice qué campo falló; se marca en el formulario
+      // (solo los campos que existen aquí, para no anunciar errores que no se ven).
+      const campo = (field: string) =>
+        field === 'nit' ? 'nit_numero'
+        : field === 'ciudad' && formData.ciudad === OTRA_CIUDAD ? 'ciudad_otra'
+        : field
+      const marcados = (error instanceof ApiClientError ? error.details ?? [] : [])
+        .map((d) => [campo(d.field), d.message] as const)
+        .filter(([f]) => f in formData)
+      if (marcados.length) {
+        setErrors(Object.fromEntries(marcados))
+        window.setTimeout(() => scrollToFirstError(formRef.current), 0)
       } else {
-        setServerError('Error en el servidor. Intente de nuevo más tarde.')
+        // El aviso queda arriba, fuera de pantalla: el botón de envío está al fondo.
+        toast.error(mensaje)
       }
     } finally {
       setIsLoading(false)
