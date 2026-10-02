@@ -33,7 +33,10 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
   return (
     // font-display (Outfit, la letra de la portada) va en el propio menú: así no
     // cambia de letra al pasar a una página cuyo contenedor use otra.
-    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50 font-display">
+    // z-30: por debajo de los diálogos (z-50) y de las capas fijas del detalle
+    // del inmueble (z-40) desde las que se abren. Con z-50 el menú quedaba
+    // encima del diálogo «Me interesa» de /inmueble y le tapaba el título y la X.
+    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-30 font-display">
       {/* Full-width con padding 40px (mockup 01_*: nav padding 12px 40px),
           no se constriñe a un contenedor centrado. */}
       <div className="px-4 sm:px-8 lg:px-10 py-3 flex justify-between items-center gap-3 sm:gap-6">
