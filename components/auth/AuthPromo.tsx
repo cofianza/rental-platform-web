@@ -69,10 +69,12 @@ export function AuthPromo() {
 
   return (
     <>
-      <h1 className="font-black leading-[1.05] tracking-[-2.5px] text-[clamp(36px,4.5vw,56px)] mb-3.5">
+      {/* Las variantes max-height compactan el panel en ventanas bajas (ver el
+          layout): título y espacios más chicos; el texto de los beneficios no se toca. */}
+      <h1 className="font-black leading-[1.05] tracking-[-2.5px] text-[clamp(36px,4.5vw,56px)] [@media(max-height:860px)]:text-[clamp(30px,3vw,40px)] mb-3.5 [@media(max-height:860px)]:mb-2.5">
         {p.titulo}
       </h1>
-      <p className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(18px,2.2vw,26px)] tracking-[-0.5px] text-white/55 leading-[1.3] mb-8">
+      <p className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(18px,2.2vw,26px)] [@media(max-height:860px)]:text-[clamp(16px,1.5vw,20px)] tracking-[-0.5px] text-white/55 leading-[1.3] mb-8 [@media(max-height:860px)]:mb-4">
         {p.subtitulo} <strong className="text-coral-500 font-normal">Usted arrienda tranquilo.</strong>
       </p>
 
@@ -80,7 +82,7 @@ export function AuthPromo() {
         {p.beneficios.map((b) => (
           <li
             key={b.title}
-            className="flex items-start gap-3.5 py-3.5 border-b border-white/[0.06] last:border-b-0 text-sm text-white/75 leading-[1.5]"
+            className="flex items-start gap-3.5 py-3.5 [@media(max-height:860px)]:py-2 border-b border-white/[0.06] last:border-b-0 text-sm text-white/75 leading-[1.5]"
           >
             <div className="w-8 h-8 rounded-lg bg-primary-500/[0.12] flex items-center justify-center shrink-0 text-primary-400">
               <span className="w-4 h-4 inline-block">{b.icon}</span>
