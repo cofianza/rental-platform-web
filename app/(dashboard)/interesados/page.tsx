@@ -52,6 +52,9 @@ const TIPO_LABEL: Record<string, string> = {
   parqueadero: 'Parqueadero',
 }
 
+// Tamaño de página que se le pide al API (su tope es 100).
+const POR_PAGINA = 100
+
 function inmuebleLabel(it: Interesado): string {
   const inm = it.inmuebles
   if (!inm) return 'Inmueble'
@@ -100,7 +103,12 @@ export default function InteresadosPage() {
   const [fallo, setFallo] = useState(false)
   // El API entrega de a 100 (los más recientes primero): «Ver más» pide la
   // siguiente página para que los leads viejos no desaparezcan sin aviso.
-  const [total, setTotal] = useState(0)
+  // Hay más si la última página llegó llena. No se usa el `total` del
+  // servicio: lee la clave `pagination` y el API responde `meta`, así que
+  // siempre valía lo recibido y «Ver más» nunca aparecía.
+  // ponytail: con un múltiplo exacto de 100 el último «Ver más» no trae nada
+  // y se oculta; con el total real (corrigiendo el servicio) sobraría ese clic.
+  const [hayMas, setHayMas] = useState(false)
   const [page, setPage] = useState(1)
   const [cargandoMas, setCargandoMas] = useState(false)
   const queryFiltro = filtro === 'todos' ? {} : { estado: filtro }
@@ -113,8 +121,8 @@ export default function InteresadosPage() {
     setLoading(true)
     setPage(1)
     interesadosService
-      .list(filtro === 'todos' ? {} : { estado: filtro })
-      .then(({ data, total }) => { setItems(data); setTotal(total); setFallo(false) })
+      .list({ ...(filtro === 'todos' ? {} : { estado: filtro }), limit: POR_PAGINA })
+      .then(({ data }) => { setItems(data); setHayMas(data.length === POR_PAGINA); setFallo(false) })
       .catch((e) => {
         setItems([])
         setFallo(true)
@@ -130,12 +138,12 @@ export default function InteresadosPage() {
   const verMas = async () => {
     setCargandoMas(true)
     try {
-      const res = await interesadosService.list({ ...queryFiltro, page: page + 1 })
+      const res = await interesadosService.list({ ...queryFiltro, page: page + 1, limit: POR_PAGINA })
       // Sin duplicados si entró un lead nuevo y corrió la paginación.
       // ponytail: si con filtro se sacaron leads de la lista, la página
       // siguiente salta esos puestos; recargar los trae. Paginar por cursor si molesta.
       setItems((prev) => [...prev, ...res.data.filter((d) => !prev.some((p) => p.id === d.id))])
-      setTotal(res.total)
+      setHayMas(res.data.length === POR_PAGINA)
       setPage((p) => p + 1)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No se pudieron cargar más interesados')
@@ -149,7 +157,6 @@ export default function InteresadosPage() {
     try {
       await interesadosService.updateEstado(id, estado)
       toast.success('Estado actualizado')
-      if (filtro !== 'todos' && estado !== filtro) setTotal((t) => Math.max(0, t - 1))
       setItems((prev) =>
         prev
           .map((it) => (it.id === id ? { ...it, estado } : it))
@@ -334,10 +341,10 @@ export default function InteresadosPage() {
               )}
             </div>
           ))}
-          {items.length < total && (
+          {hayMas && (
             <div className="flex flex-col items-center gap-2 pt-2">
               <p className="text-xs text-gray-500">
-                Mostrando {items.length} de {total}
+                Mostrando los {items.length} más recientes
               </p>
               <button
                 type="button"
