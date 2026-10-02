@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
-  IconUser, IconMail, IconLock, IconMapPin, IconId,
-  IconEye, IconEyeOff, IconArrowLeft, IconArrowRight, IconCheck, IconLoader, IconShield,
+  IconUser, IconMail, IconLock, IconId,
+  IconEye, IconEyeOff, IconArrowRight, IconLoader, IconShield,
   IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
@@ -13,7 +14,10 @@ import { cn, isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
-import { RegistroStepper, regInputCls, ValidCheck, scrollToFirstError } from '@/components/auth/registro-ui'
+import {
+  RegistroStepper, RegistroTipoTabs, FormSection, PasswordRequirements,
+  regInputCls, regSelectCls, ValidCheck, scrollToFirstError,
+} from '@/components/auth/registro-ui'
 
 interface FormData {
   nombre: string
@@ -21,10 +25,10 @@ interface FormData {
   tipo_documento: string
   numero_documento: string
   telefono: string
-  direccion: string
   email: string
   password: string
   confirm_password: string
+  origen: string
   accept_terms: boolean
   accept_data_treatment: boolean
 }
@@ -35,49 +39,12 @@ const initialFormData: FormData = {
   tipo_documento: '',
   numero_documento: '',
   telefono: '',
-  direccion: '',
   email: '',
   password: '',
   confirm_password: '',
+  origen: '',
   accept_terms: false,
   accept_data_treatment: false,
-}
-
-// Encabezado de sección numerado (estilo mockup htmls/02_*).
-function FormSection({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-700 text-[11px] font-bold text-white">
-          {num}
-        </span>
-        <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function PasswordRequirements({ password }: { password: string }) {
-  const checks = [
-    { label: 'Al menos 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
-    { label: 'Un número', met: /\d/.test(password) },
-  ]
-
-  return (
-    <div className="mt-2 space-y-1">
-      {checks.map((check) => (
-        <div key={check.label} className="flex items-center gap-2">
-          <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
-          <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-500')}>
-            {check.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 export default function RegisterPropietarioPage() {
@@ -109,17 +76,16 @@ export default function RegisterPropietarioPage() {
     if (!formData.tipo_documento) newErrors.tipo_documento = 'Seleccione un tipo de documento'
     if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Número de documento requerido'
     if (!formData.telefono.trim()) {
-      newErrors.telefono = 'Teléfono requerido'
+      newErrors.telefono = 'Celular requerido'
     } else {
       const localDigits = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '')
-      if (localDigits.length !== 10) newErrors.telefono = 'El teléfono debe tener 10 dígitos'
+      if (localDigits.length !== 10) newErrors.telefono = 'El celular debe tener 10 dígitos'
     }
-    if (!formData.direccion.trim()) newErrors.direccion = 'Dirección requerida'
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email requerido'
+      newErrors.email = 'Correo requerido'
     } else if (!isValidEmail(formData.email)) {
-      newErrors.email = 'Email inválido'
+      newErrors.email = 'Correo inválido'
     }
     if (!formData.password) {
       newErrors.password = 'Contraseña requerida'
@@ -156,22 +122,30 @@ export default function RegisterPropietarioPage() {
         telefono: formData.telefono,
         tipo_documento: formData.tipo_documento,
         numero_documento: formData.numero_documento,
-        direccion: formData.direccion,
         password: formData.password,
         confirm_password: formData.confirm_password,
+        ...(formData.origen ? { origen: formData.origen } : {}),
         accept_terms: true,
         accept_data_treatment: true,
       })
       router.push(`${AUTH_ROUTES.REGISTER_SUCCESS}?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        if (error.code === 'EMAIL_ALREADY_EXISTS') {
-          setServerError('Ya existe una cuenta con este email.')
-        } else {
-          setServerError(error.message)
-        }
+      const mensaje = !(error instanceof ApiClientError)
+        ? 'Error en el servidor. Intente de nuevo más tarde.'
+        : error.code === 'EMAIL_ALREADY_EXISTS'
+          ? 'Ya existe una cuenta con este correo.'
+          : error.message
+      setServerError(mensaje)
+      // 400 de validación: el API dice qué campo falló; se marca en el formulario
+      // (solo los campos que existen aquí, para no anunciar errores que no se ven).
+      const marcados = (error instanceof ApiClientError ? error.details ?? [] : [])
+        .filter((d) => d.field in formData)
+      if (marcados.length) {
+        setErrors(Object.fromEntries(marcados.map((d) => [d.field, d.message])))
+        window.setTimeout(() => scrollToFirstError(formRef.current), 0)
       } else {
-        setServerError('Error en el servidor. Intente de nuevo más tarde.')
+        // El aviso queda arriba, fuera de pantalla: el botón de envío está al fondo.
+        toast.error(mensaje)
       }
     } finally {
       setIsLoading(false)
@@ -195,7 +169,7 @@ export default function RegisterPropietarioPage() {
       label: 'Datos personales',
       done:
         !!formData.nombre.trim() && !!formData.apellido.trim() && !!formData.tipo_documento &&
-        !!formData.numero_documento.trim() && telValido && !!formData.direccion.trim(),
+        !!formData.numero_documento.trim() && telValido,
     },
     {
       label: 'Acceso',
@@ -211,17 +185,16 @@ export default function RegisterPropietarioPage() {
   return (
     <div className="w-full">
       <p className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-2">
-        Registro · Propietario
+        Nuevo usuario
       </p>
       <h1 className="text-[28px] sm:text-[32px] font-black tracking-[-1.5px] leading-[1.1] text-slate-900 mb-2">
-        Cree su cuenta como Propietario
+        Registre su cuenta
       </h1>
       <p className="text-[15px] text-slate-500 leading-[1.6] mb-8">
-        Persona natural que administra sus propiedades.{' '}
-        <a href="/registro" className="text-primary-600 font-semibold hover:underline">
-          ¿Otro tipo?
-        </a>
+        Como propietario, podrá conectar su inmueble con Cofianza como su fiador.
       </p>
+
+      <RegistroTipoTabs activo="propietario" />
 
       <RegistroStepper steps={pasos} />
 
@@ -260,7 +233,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
-                  placeholder="Su nombre"
+                  placeholder="Roberto"
                   autoComplete="given-name"
                   aria-invalid={!!errors.nombre}
                 />
@@ -275,7 +248,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
                   className={inputCls(!!errors.apellido)}
-                  placeholder="Su apellido"
+                  placeholder="Henao"
                   autoComplete="family-name"
                   aria-invalid={!!errors.apellido}
                 />
@@ -292,10 +265,10 @@ export default function RegisterPropietarioPage() {
                 <select id="propietario-tipo-de-documento"
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
-                  className={cn('w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500 bg-white', errors.tipo_documento ? 'border-red-500' : 'border-gray-300')}
+                  className={regSelectCls({ error: !!errors.tipo_documento, icon: true })}
                   aria-invalid={!!errors.tipo_documento}
                 >
-                  <option value="">Seleccionar...</option>
+                  <option value="">Seleccione</option>
                   <option value="cc">Cédula de Ciudadanía</option>
                   <option value="ce">Cédula de Extranjería</option>
                   <option value="pasaporte">Pasaporte</option>
@@ -311,7 +284,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={inputCls(!!errors.numero_documento)}
-                  placeholder="Número de documento"
+                  placeholder="1.040.567.890"
                   inputMode="numeric"
                   aria-invalid={!!errors.numero_documento}
                 />
@@ -321,33 +294,17 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <PhoneInput
-            label="Teléfono celular"
+            label="Celular (WhatsApp)"
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
           />
-
-          <div>
-            <label htmlFor="propietario-direccion-de-residencia" className="block text-sm font-medium text-gray-700 mb-1">Dirección de residencia</label>
-            <div className="relative">
-              <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="propietario-direccion-de-residencia"
-                type="text" value={formData.direccion}
-                onChange={(e) => updateField('direccion', e.target.value)}
-                className={inputCls(!!errors.direccion)}
-                placeholder="Su dirección"
-                autoComplete="street-address"
-                aria-invalid={!!errors.direccion}
-              />
-            </div>
-            {errors.direccion && <p className="mt-1.5 text-sm text-red-600">{errors.direccion}</p>}
-          </div>
         </FormSection>
 
         {/* 2. Acceso a la plataforma */}
         <FormSection num={2} title="Acceso a la plataforma">
           <div>
-            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
             <div className="relative">
               <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="propietario-email"
@@ -364,45 +321,67 @@ export default function RegisterPropietarioPage() {
             {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
           </div>
 
-          <div>
-            <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="propietario-contrasena"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => updateField('password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Mínimo 8 caracteres"
-                autoComplete="new-password"
-                aria-invalid={!!errors.password}
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
-                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <div className="relative">
+                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="propietario-contrasena"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
+                  placeholder="Mínimo 8 caracteres"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.password}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                  {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
+              <PasswordRequirements password={formData.password} />
             </div>
-            {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
-            <PasswordRequirements password={formData.password} />
+
+            <div>
+              <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
+              <div className="relative">
+                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input id="propietario-confirmar-contrasena"
+                  type={showConfirm ? 'text' : 'password'}
+                  value={formData.confirm_password}
+                  onChange={(e) => updateField('confirm_password', e.target.value)}
+                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
+                  placeholder="Repita su contraseña"
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.confirm_password}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
+                  {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                </button>
+              </div>
+              {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
+            </div>
           </div>
 
           <div>
-            <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
-            <div className="relative">
-              <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="propietario-confirmar-contrasena"
-                type={showConfirm ? 'text' : 'password'}
-                value={formData.confirm_password}
-                onChange={(e) => updateField('confirm_password', e.target.value)}
-                className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
-                placeholder="Repita su contraseña"
-                autoComplete="new-password"
-                aria-invalid={!!errors.confirm_password}
-              />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
-                {showConfirm ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-              </button>
-            </div>
-            {errors.confirm_password && <p className="mt-1.5 text-sm text-red-600">{errors.confirm_password}</p>}
+            <label htmlFor="propietario-origen" className="block text-sm font-medium text-gray-700 mb-1">
+              ¿Cómo nos conoció? <span className="text-gray-500 font-normal">(opcional)</span>
+            </label>
+            <select id="propietario-origen"
+              value={formData.origen}
+              onChange={(e) => updateField('origen', e.target.value)}
+              className={regSelectCls({ error: !!errors.origen })}
+              aria-invalid={!!errors.origen}
+            >
+              <option value="">Seleccione</option>
+              <option value="inmobiliaria">Una inmobiliaria</option>
+              <option value="redes">Redes sociales</option>
+              <option value="recomendacion">Recomendación</option>
+              <option value="google">Google / internet</option>
+              <option value="otro">Otro</option>
+            </select>
+            {errors.origen && <p className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
           </div>
         </FormSection>
 
@@ -448,37 +427,39 @@ export default function RegisterPropietarioPage() {
 
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
             <IconShield size={16} className="text-blue-500 shrink-0" />
-            <span>Sus datos están protegidos conforme a la legislacion colombiana de proteccion de datos personales.</span>
+            <span>Sus datos están protegidos conforme a la legislación colombiana de protección de datos personales.</span>
           </div>
         </FormSection>
 
-        {/* Acciones */}
-        <div className="flex items-center justify-between pt-1">
-          <Link
-            href={AUTH_ROUTES.REGISTER}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            <IconArrowLeft size={16} /> Volver
-          </Link>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex items-center gap-2 px-6 py-3 bg-coral-500 text-ink-900 text-sm font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-          >
-            {isLoading ? (
-              <>
-                <IconLoader size={16} className="animate-spin" /> Registrando...
-              </>
-            ) : (
-              <>
-                Crear mi cuenta
-                <IconArrowRight size={16} />
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-2 px-6 py-3.5 bg-coral-500 text-ink-900 text-[15px] font-bold rounded-xl hover:bg-coral-400 hover:-translate-y-px transition-all shadow-[0_2px_16px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_24px_rgba(249,115,22,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+        >
+          {isLoading ? (
+            <>
+              <IconLoader size={16} className="animate-spin" /> Registrando...
+            </>
+          ) : (
+            <>
+              Crear mi cuenta
+              <IconArrowRight size={16} />
+            </>
+          )}
+        </button>
       </form>
+
+      <p className="mt-3.5 text-xs text-slate-500 text-center leading-[1.5]">
+        Después del registro podrá acceder a su oficina virtual, registrar sus inmuebles y publicarlos
+        en la vitrina Cofianza.
+      </p>
+
+      <p className="mt-6 text-[13px] text-slate-500 text-center leading-[1.6]">
+        ¿Ya tiene cuenta?{' '}
+        <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
+          Inicie sesión
+        </Link>
+      </p>
     </div>
   )
 }

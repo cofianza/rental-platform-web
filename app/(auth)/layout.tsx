@@ -70,7 +70,7 @@ export default function AuthLayout({
           <CofianzaLogo size={28} withText textClassName="text-lg" />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-[420px]">{children}</div>
+          <div className="w-full max-w-[520px]">{children}</div>
         </div>
       </div>
     </div>

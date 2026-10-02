@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Alias de la ruta que usa el diseño nuevo; la canónica sigue siendo
+  // /recuperar-contrasena (los correos ya enviados apuntan a ella).
+  async redirects() {
+    return [{ source: '/recuperar-password', destination: '/recuperar-contrasena', permanent: true }]
+  },
   turbopack: {},
   webpack: (config) => {
     config.resolve.alias.canvas = false;
