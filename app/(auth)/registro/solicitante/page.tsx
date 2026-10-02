@@ -15,6 +15,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
+import { isValidEmail } from '@/lib/utils'
 
 // Registro liviano (H43, 2026-09-28): solo nombre, correo, celular y
 // contraseña. El documento se pide antes de la autorización del estudio
@@ -90,7 +91,7 @@ function RegistroSolicitanteContent() {
     const e: FormErrors = {}
     if (!nombre.trim()) e.nombre = 'Requerido'
     if (!apellido.trim()) e.apellido = 'Requerido'
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email inválido'
+    if (!isValidEmail(email)) e.email = 'Email inválido'
     if (!telefono.trim()) {
       e.telefono = 'Celular requerido'
     } else {
