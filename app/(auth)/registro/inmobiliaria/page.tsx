@@ -110,6 +110,7 @@ export default function RegisterInmobiliariaPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+  const dvRef = useRef<HTMLInputElement>(null)
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -391,7 +392,22 @@ export default function RegisterInmobiliariaPage() {
                   type="text"
                   inputMode="numeric"
                   value={formData.nit_numero}
-                  onChange={(e) => updateField('nit_numero', e.target.value.replace(/\D/g, '').slice(0, 15))}
+                  onChange={(e) => {
+                    // «900.555.123-4», como sale en el RUT: lo anterior al guion es
+                    // el número y el dígito siguiente el DV. Antes el guion se
+                    // borraba, el DV se colaba en el número y el formulario
+                    // terminaba dando por válido un NIT que no era.
+                    const valor = e.target.value
+                    const guion = valor.search(/[-–][^-–]*$/)
+                    updateField('nit_numero', (guion < 0 ? valor : valor.slice(0, guion)).replace(/\D/g, '').slice(0, 15))
+                    if (guion < 0) return
+                    const dv = valor.slice(guion + 1).replace(/\D/g, '').slice(0, 1)
+                    if (dv) updateField('nit_dv', dv)
+                    // El guion (tecleado o pegado) pasa al campo del DV; seleccionado,
+                    // para que un dígito nuevo reemplace al que hubiera.
+                    dvRef.current?.focus()
+                    dvRef.current?.select()
+                  }}
                   className={inputCls(!!errors.nit_numero, nitValido)}
                   placeholder="900819665"
                   aria-invalid={!!errors.nit_numero}
@@ -400,6 +416,7 @@ export default function RegisterInmobiliariaPage() {
               <span className="self-center text-gray-500 font-bold">−</span>
               <div className="w-20">
                 <input
+                  ref={dvRef}
                   type="text"
                   inputMode="numeric"
                   value={formData.nit_dv}
