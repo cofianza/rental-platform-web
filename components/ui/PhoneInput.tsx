@@ -145,12 +145,22 @@ export function PhoneInput({
     // primero y lo pegado quedaba mocho: «300 123 4567» → «30012345».
     const valor = e.target.value
     let raw = valor.replace(/[^\d]/g, '')
+    // Formato internacional: «+57 300…» o, con 00 en vez de +, «0057 300…». El 00
+    // solo cuenta si sobran dígitos: «001234567» es alguien corrigiendo el primer
+    // dígito de «3001234567», no un indicativo.
+    const con00 = raw.length > 10 && raw.startsWith('00')
+    const internacional = con00 || valor.trim().startsWith('+')
+    if (con00) raw = raw.slice(2)
     // Indicativo repetido delante («+57 300 123 4567», «573001234567»): sobra.
     const indicativo = selectedDial.replace(/[^\d]/g, '')
-    if ((valor.trim().startsWith('+') || raw.length > 10) && raw.startsWith(indicativo)) {
-      raw = raw.slice(indicativo.length)
-    }
-    raw = raw.slice(0, 10)
+    const traeElSuyo = (internacional || raw.length > 10) && raw.startsWith(indicativo)
+    if (traeElSuyo) raw = raw.slice(indicativo.length)
+    // Con el indicativo de OTRO país no se recorta a 10: «+1 305 555 1234» quedaba
+    // «1305555123», pasaba la validación y salía como «+57 1305555123». Se deja
+    // entero (tope de 15) para que lo frene «El celular debe tener 10 dígitos»;
+    // y mientras siga pasado de 10, teclear tampoco lo recorta a escondidas.
+    const sinRecortar = (internacional && !traeElSuyo) || localNumber.length > 10
+    raw = raw.slice(0, sinRecortar ? 15 : 10)
     setLocalNumber(raw)
     emitChange(selectedDial, raw)
   }
