@@ -16,7 +16,7 @@ import { formatCurrency } from '@/lib/constants'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
 import { useAuthStore } from '@/stores/auth.store'
-import { LeadInteresModal } from './LeadInteresModal'
+import { LeadInteresModal, resumenInmueble } from './LeadInteresModal'
 import { VitrinaVacia } from './VitrinaVacia'
 
 const TIPO_LABEL: Record<string, string> = {
@@ -237,7 +237,7 @@ function PropertyCard({ property, onLead }: { property: PublicProperty; onLead: 
           <button
             type="button"
             onClick={() =>
-              isAuthenticated ? router.push(href) : onLead(`${titulo} · ${ubicacion} · ${canon}/mes`)
+              isAuthenticated ? router.push(href) : onLead(resumenInmueble(tipoLabel, property))
             }
             className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold hover:bg-primary-700 hover:text-white transition-colors shrink-0"
           >

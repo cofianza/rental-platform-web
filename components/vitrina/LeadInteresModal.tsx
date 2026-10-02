@@ -12,8 +12,9 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconLoader, IconArrowRight } from '@/components/icons'
-import { registrarInteresPublico } from '@/services/publicPropertiesService'
+import { registrarInteresPublico, type PublicProperty } from '@/services/publicPropertiesService'
 import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { formatCurrency } from '@/lib/constants'
 
 interface LeadInteresModalProps {
   inmuebleId: string
@@ -25,6 +26,18 @@ interface LeadInteresModalProps {
 
 const INPUT =
   'w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500'
+
+/**
+ * Texto de `resumen`, el mismo en la portada y en el detalle del inmueble:
+ * tipo + barrio · ubicación · canon.
+ */
+export function resumenInmueble(
+  tipoLabel: string,
+  p: Pick<PublicProperty, 'ciudad' | 'barrio' | 'valor_arriendo'>,
+): string {
+  const ubicacion = p.barrio ? `${p.ciudad}, ${p.barrio}` : p.ciudad
+  return `${tipoLabel} ${p.barrio || p.ciudad} · ${ubicacion} · ${formatCurrency(p.valor_arriendo)}/mes`
+}
 
 export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadInteresModalProps) {
   const [nombre, setNombre] = useState('')

@@ -14,6 +14,7 @@ import {
 } from '@/components/icons'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { MeInteresaCTA } from '@/components/vitrina/MeInteresaCTA'
+import { resumenInmueble } from '@/components/vitrina/LeadInteresModal'
 import { registrarVisitaInmueble } from '@/services/publicPropertiesService'
 import type { PublicProperty } from '@/services/publicPropertiesService'
 import Image from 'next/image'
@@ -54,6 +55,8 @@ export function PropertyDetailClient({ property, similares }: Props) {
       : []
 
   const tipoLabel = TIPO_LABELS[property.tipo] || property.tipo
+  // Línea de contexto del formulario «Me interesa», igual que en la portada.
+  const resumen = resumenInmueble(tipoLabel, property)
 
   const handleImageClick = (index: number) => {
     setLightboxIndex(index)
@@ -221,7 +224,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
               </div>
 
               {/* CTA Button — 4 ramas según rol/sesión, ver MeInteresaCTA */}
-              <MeInteresaCTA inmuebleId={property.id} variant="primary" />
+              <MeInteresaCTA inmuebleId={property.id} variant="primary" resumen={resumen} />
             </div>
           </div>
         </div>
@@ -234,7 +237,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
             <p className="text-lg font-bold text-primary-700">{formatCurrency(property.valor_arriendo)}<span className="text-xs font-normal text-gray-500">/mes</span></p>
             <p className="text-xs text-gray-500">{property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}</p>
           </div>
-          <MeInteresaCTA inmuebleId={property.id} variant="sticky" />
+          <MeInteresaCTA inmuebleId={property.id} variant="sticky" resumen={resumen} />
         </div>
       </div>
 
