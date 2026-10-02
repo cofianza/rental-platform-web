@@ -52,7 +52,10 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
   }
 
   const enviar = async () => {
-    const tel = telefono.replace(/\s+/g, '').trim()
+    // Sin espacios ni guiones: PhoneInput entrega «indicativo número» y algún
+    // indicativo trae guion («+1-809», República Dominicana); con el guion la
+    // validación de abajo lo rechazaba y ese país no podía enviar el formulario.
+    const tel = telefono.replace(/[\s-]+/g, '')
     // PhoneInput siempre antepone el indicativo. El celular es el único contacto
     // obligatorio: en Colombia se exige completo (3 + 9 dígitos).
     const telOk = tel.startsWith('+57') ? /^\+573\d{9}$/.test(tel) : /^\+\d{8,15}$/.test(tel)
