@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback, FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, IconX, IconRefresh, IconAlertTriangle } from '@/components/icons'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
@@ -29,7 +29,6 @@ function getPasswordRequirements(password: string): PasswordRequirement[] {
 }
 
 function ResetPasswordForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -80,15 +79,18 @@ function ResetPasswordForm() {
     validar()
   }, [validar])
 
-  // Redirigir a login tras éxito
+  // Redirigir a login tras éxito. Navegación completa (aquí y en el botón de
+  // esa pantalla): con router.push, si había una sesión abierta al entrar, el
+  // router reutilizaba la precarga de /login hecha con la cookie («vaya a
+  // /dashboard») y la persona quedaba en un cargando sin fin.
   useEffect(() => {
     if (isSuccess) {
       const timer = setTimeout(() => {
-        router.push(AUTH_ROUTES.LOGIN)
+        window.location.replace(AUTH_ROUTES.LOGIN)
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [isSuccess, router])
+  }, [isSuccess])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -121,6 +123,10 @@ function ResetPasswordForm() {
 
     try {
       await authService.resetPassword(token, password)
+      // El cambio de clave cierra todas las sesiones en el servidor: se cierra
+      // también la de este navegador (cookie y refresh token), para que el
+      // ingreso no rebote al panel con una sesión que ya no sirve.
+      await authService.logout()
       setIsSuccess(true)
     } catch (err) {
       setServerError(
@@ -226,7 +232,8 @@ function ResetPasswordForm() {
           <p className="text-sm text-gray-500 mb-8">
             Será redirigido al inicio de sesión en unos segundos...
           </p>
-          <Link
+          {/* <a> y no <Link>: navegación completa a propósito (ver el efecto de arriba). */}
+          <a
             href={AUTH_ROUTES.LOGIN}
             className={cn(
               'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
@@ -236,7 +243,7 @@ function ResetPasswordForm() {
             )}
           >
             Iniciar sesión
-          </Link>
+          </a>
         </div>
       </div>
     )
