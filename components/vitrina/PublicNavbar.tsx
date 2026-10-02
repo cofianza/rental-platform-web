@@ -40,8 +40,10 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
           <CofianzaLogo size={32} withText textClassName="text-lg sm:text-xl" />
         </Link>
 
-        {/* Nav links — desktop only (orden del mockup 01_*) */}
-        <nav className="hidden md:flex items-center gap-7">
+        {/* Enlaces de sección (orden del mockup) — solo desde 1024 px, como el
+            diseño, que los oculta en tableta: mostrados desde 768 px no cabían
+            junto a los botones y «Registrarme» quedaba cortado fuera de pantalla. */}
+        <nav className="hidden lg:flex items-center gap-7">
           <Link
             href={sectionLink('#como-funciona')}
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
