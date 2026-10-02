@@ -1,9 +1,9 @@
 /**
- * Landing Cofianza — propuesta v3 del cliente.
+ * Landing Cofianza — propuesta v2 de Gerencia (2-oct-2026).
  *
  * Estructura: Hero (oscuro con mock + stats) -> Problema (4 cards) ->
  * Como funciona (3 pasos) -> Counters -> Audiencias (3 cards) ->
- * Comparacion -> FAQ -> CTA final.
+ * Vitrina (3 inmuebles) -> Comparacion -> FAQ -> CTA final.
  *
  * La vitrina de inmuebles vive en /vitrina (link en el navbar). Aqui
  * solo dejamos un teaser link en la audiencia "arrendatarios".
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans antialiased">
+    <div className="min-h-screen bg-white text-gray-900 font-display antialiased">
       <PublicNavbar />
 
       {/* ════════════════════════════════════════════════════════════
@@ -67,7 +67,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/registro"
-                  className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
+                  className="inline-flex items-center gap-2 px-9 py-4 border-[1.5px] border-white/25 text-white hover:bg-white/5 hover:border-white/40 text-base font-semibold rounded-2xl transition-colors"
                 >
                   Soy propietario / inmobiliaria
                 </Link>
@@ -201,7 +201,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             El problema
           </div>
-          <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
             Arrendar en Colombia
             <br />
             es incómodo.
@@ -282,7 +282,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Así funciona
           </div>
-          <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
             En 3 pasos tiene las llaves.
           </h2>
           <p className="text-lg text-gray-500 max-w-xl leading-relaxed">
@@ -355,7 +355,7 @@ export default function HomePage() {
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
             <div key={i} className="px-5 py-8 text-center">
-              <div className="text-5xl font-black text-white tracking-tight">
+              <div className="text-4xl sm:text-5xl font-black text-white tracking-tight">
                 {Array.isArray(c.val) ? (
                   <>
                     {c.val[0]}
@@ -379,7 +379,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Para quién es Cofianza
           </div>
-          <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
             Diseñado para las tres
             <br />
             partes del arriendo.
@@ -493,7 +493,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
           </div>
-          <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4 text-white">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 text-white">
             Así de diferente es
             <br />
             arrendar con nosotros.
@@ -556,7 +556,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Preguntas frecuentes
           </div>
-          <h2 className="font-black text-4xl sm:text-5xl tracking-tight leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
             Todo lo que quiere saber.
           </h2>
 
@@ -623,7 +623,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 px-9 py-4 border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-base font-semibold rounded-2xl transition-colors"
+              className="inline-flex items-center gap-2 px-9 py-4 border-[1.5px] border-white/25 text-white hover:bg-white/5 hover:border-white/40 text-base font-semibold rounded-2xl transition-colors"
             >
               Soy propietario / inmobiliaria <IconArrowRight size={18} />
             </Link>

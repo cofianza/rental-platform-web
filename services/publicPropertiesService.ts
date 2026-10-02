@@ -105,7 +105,8 @@ export async function getPublicPropertyById(id: string): Promise<PublicProperty>
 export interface RegistrarInteresPublicoInput {
   nombre: string
   telefono: string
-  email: string
+  /** Opcional: si viene vacío no se envía. */
+  email?: string
   mensaje?: string
   acepta: boolean
 }
@@ -121,7 +122,7 @@ export async function registrarInteresPublico(
   const res = await fetch(`${API_BASE_URL}/public/properties/${propertyId}/interes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, email: input.email?.trim() || undefined }),
   })
   if (!res.ok) {
     let msg = 'No se pudo enviar su interés. Intente de nuevo.'

@@ -264,9 +264,13 @@ export default function InteresadosPage() {
                   >
                     WhatsApp: {it.telefono}
                   </a>
-                  <a href={`mailto:${it.email}`} className="text-gray-600 hover:underline">
-                    {it.email}
-                  </a>
+                  {it.email ? (
+                    <a href={`mailto:${it.email}`} className="text-gray-600 hover:underline">
+                      {it.email}
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">Correo: No indicó</span>
+                  )}
                 </div>
                 {it.mensaje && (
                   <p className="mt-2 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-sm italic text-gray-700">

@@ -1,18 +1,22 @@
 /**
- * Sección "Vitrina Preview" para la landing — muestra 3 inmuebles
- * destacados. Diseño alineado al mockup htmls/01_*: badges sobre la imagen,
- * specs con estrato, canon mensual y botón verde centrado "Ver todos".
+ * Sección "Vitrina Preview" para la landing — muestra los 3 inmuebles más
+ * recientes. Badges sobre la imagen, specs con estrato, canon mensual, botón
+ * "Me interesa" por tarjeta (sin sesión abre el formulario corto de interés;
+ * con sesión lleva al detalle, donde están las demás ramas) y "Ver todos".
  */
 
 'use client'
 
-import { IconBuilding2, IconHome, IconMapPin, IconCar } from '@/components/icons'
+import { IconBuilding2, IconHome, IconMapPin, IconCar, IconArrowRight } from '@/components/icons'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getPublicProperties, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency } from '@/lib/constants'
 import Image from 'next/image'
 import { esStorageSupabase } from '@/lib/imagenes'
+import { useAuthStore } from '@/stores/auth.store'
+import { LeadInteresModal } from './LeadInteresModal'
 
 const TIPO_LABEL: Record<string, string> = {
   apartamento: 'Apartamento',
@@ -50,9 +54,15 @@ function esNuevo(createdAt: string): boolean {
   return (Date.now() - t) / 86_400_000 <= NUEVO_DIAS
 }
 
+// Ancho fijo por tarjeta (un tercio de la fila menos los espacios) para que
+// con 1 o 2 inmuebles queden centradas en vez de estiradas o a la izquierda.
+const CARD_WIDTH = 'w-full md:w-[calc((100%-2rem)/3)]'
+
 export function VitrinaPreview() {
   const [items, setItems] = useState<PublicProperty[]>([])
   const [loading, setLoading] = useState(true)
+  // Inmueble sobre el que el visitante sin cuenta dijo «Me interesa».
+  const [lead, setLead] = useState<{ id: string; resumen: string } | null>(null)
 
   useEffect(() => {
     getPublicProperties({ limit: 3, sortBy: 'created_at', sortOrder: 'desc' })
@@ -62,12 +72,12 @@ export function VitrinaPreview() {
   }, [])
 
   return (
-    <section id="vitrina" className="bg-white py-24 md:py-32 px-5 sm:px-8">
+    <section id="vitrina" className="bg-white py-16 md:py-24 px-5 sm:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
           Inmuebles disponibles
         </div>
-        <h2 className="font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-tight mb-4">
+        <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
           Encuentre su próximo hogar.
           <br />
           Sin codeudor.
@@ -78,10 +88,10 @@ export function VitrinaPreview() {
         </p>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-wrap justify-center gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-2xl border border-gray-200 overflow-hidden animate-pulse">
-                <div className="aspect-[16/10] bg-gray-100" />
+              <div key={i} className={`${CARD_WIDTH} rounded-3xl border border-gray-200 overflow-hidden animate-pulse`}>
+                <div className="h-[180px] bg-gray-100" />
                 <div className="p-5 space-y-3">
                   <div className="h-4 w-2/3 bg-gray-100 rounded" />
                   <div className="h-3 w-1/2 bg-gray-100 rounded" />
@@ -91,58 +101,84 @@ export function VitrinaPreview() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-            <p className="text-gray-500 mb-4">Aún no hay inmuebles publicados en la vitrina.</p>
-            <Link
-              href="/registro"
-              className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-xl hover:bg-primary-800 transition-colors"
-            >
-              Registrarme →
-            </Link>
+          <div className="rounded-3xl border border-dashed border-gray-200 p-10 sm:p-12 text-center">
+            <p className="text-gray-600 mb-5">
+              Pronto verá aquí los primeros inmuebles. ¿Tiene uno? Publíquelo gratis.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+              <Link
+                href="/registro"
+                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-primary-700 rounded-xl hover:bg-primary-800 transition-colors"
+              >
+                Registre su inmueble <IconArrowRight size={16} />
+              </Link>
+              <Link
+                href="/vitrina"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline"
+              >
+                Ver la vitrina <IconArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-wrap justify-center gap-4">
               {items.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+                <PropertyCard key={p.id} property={p} onLead={(resumen) => setLead({ id: p.id, resumen })} />
               ))}
             </div>
-            <div className="flex justify-center mt-12">
+            <div className="flex justify-center mt-10">
               <Link
                 href="/vitrina"
                 className="inline-flex items-center gap-2 px-8 py-4 text-base font-semibold text-white bg-primary-700 hover:bg-primary-800 rounded-2xl shadow-lg shadow-primary-600/25 transition-all hover:-translate-y-px"
               >
-                Ver todos los inmuebles →
+                Ver todos los inmuebles <IconArrowRight size={18} />
               </Link>
             </div>
           </>
         )}
       </div>
+
+      {lead && (
+        <LeadInteresModal
+          inmuebleId={lead.id}
+          resumen={lead.resumen}
+          isOpen
+          onClose={() => setLead(null)}
+        />
+      )}
     </section>
   )
 }
 
-function PropertyCard({ property }: { property: PublicProperty }) {
+function PropertyCard({ property, onLead }: { property: PublicProperty; onLead: (resumen: string) => void }) {
+  const router = useRouter()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const foto = property.fotos?.[0]?.url || property.foto_fachada_url
   const tipoLabel = TIPO_LABEL[property.tipo] || property.tipo
   const Icono = TIPO_ICONO[property.tipo] || IconHome
   const titulo = `${tipoLabel} ${property.barrio || property.ciudad}`
   const ubicacion = property.barrio ? `${property.ciudad}, ${property.barrio}` : property.ciudad
   const nuevo = esNuevo(property.created_at)
+  const href = `/inmueble/${property.id}`
+  const canon = formatCurrency(property.valor_arriendo)
 
   return (
-    <Link
-      href={`/inmueble/${property.id}`}
-      className="group rounded-2xl border border-gray-200 overflow-hidden bg-white hover:border-primary-300 hover:shadow-xl hover:-translate-y-1 transition-all"
+    <div
+      className={`${CARD_WIDTH} group rounded-3xl border border-gray-200 overflow-hidden bg-white hover:border-primary-600 hover:shadow-xl hover:shadow-primary-600/10 hover:-translate-y-1 transition-all`}
     >
       {/* Imagen / placeholder con badges sobrepuestos */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-primary-50 to-coral-50">
+      <Link
+        href={href}
+        aria-label={`Ver ${titulo}`}
+        className="relative block h-[180px] overflow-hidden bg-gradient-to-br from-primary-50 to-blue-100"
+      >
         {foto ? (
           <Image
             src={foto}
             alt={titulo}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 33vw"
             unoptimized={!esStorageSupabase(foto)}
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -153,7 +189,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
         )}
 
         {/* Badge tipo (arriba-izquierda) */}
-        <span className="absolute top-3 left-3 inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-white/95 text-ink-900 uppercase tracking-wide shadow-sm">
+        <span className="absolute top-3 left-3 inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold bg-white text-ink-900 uppercase tracking-wide shadow-sm">
           {tipoLabel}
         </span>
 
@@ -163,7 +199,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             Nuevo
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Contenido */}
       <div className="p-5">
@@ -171,9 +207,11 @@ function PropertyCard({ property }: { property: PublicProperty }) {
             derecha (solo el logo, en su columna). */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <h3 className="font-bold text-ink-900 text-base leading-tight mb-1.5 truncate">{titulo}</h3>
-            <p className="flex items-center gap-1 text-xs text-gray-500 truncate">
-              <IconMapPin size={12} aria-hidden className="shrink-0" /> {ubicacion}
+            <h3 className="font-extrabold text-ink-900 text-base leading-tight mb-1 truncate">
+              <Link href={href} className="hover:text-primary-700 transition-colors">{titulo}</Link>
+            </h3>
+            <p className="flex items-center gap-1 text-[13px] text-gray-500 truncate">
+              <IconMapPin size={13} aria-hidden className="shrink-0" /> {ubicacion}
             </p>
           </div>
           {property.inmobiliaria?.logo_url && (
@@ -190,33 +228,32 @@ function PropertyCard({ property }: { property: PublicProperty }) {
         </div>
 
         {/* Specs */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-500 border-b border-gray-100 pb-3.5 mb-3.5">
-          <span><strong className="text-gray-700">{property.habitaciones}</strong> hab</span>
-          <span className="text-gray-300">·</span>
-          <span><strong className="text-gray-700">{property.banos}</strong> baño{property.banos === 1 ? '' : 's'}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 mb-4">
+          <span><strong className="text-ink-900">{property.habitaciones}</strong> hab</span>
+          <span><strong className="text-ink-900">{property.banos}</strong> baño{property.banos === 1 ? '' : 's'}</span>
           {property.area_m2 ? (
-            <>
-              <span className="text-gray-300">·</span>
-              <span><strong className="text-gray-700">{property.area_m2}</strong> m²</span>
-            </>
+            <span><strong className="text-ink-900">{property.area_m2}</strong> m²</span>
           ) : null}
-          <span className="text-gray-300">·</span>
-          <span>Estrato <strong className="text-gray-700">{property.estrato}</strong></span>
+          <span>Estrato <strong className="text-ink-900">{property.estrato}</strong></span>
         </div>
 
         {/* Canon + CTA */}
-        <div className="flex items-end justify-between">
+        <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-gray-200">
           <div>
-            <div className="text-xl font-extrabold text-ink-900 leading-none">
-              {formatCurrency(property.valor_arriendo)}
-            </div>
-            <div className="text-[11px] text-gray-500 mt-1">Canon mensual</div>
+            <div className="text-xl font-black text-primary-700 leading-none tracking-tight">{canon}</div>
+            <div className="text-[10px] text-gray-500 font-medium mt-1">Canon mensual</div>
           </div>
-          <span className="text-sm font-semibold text-primary-600 group-hover:gap-2 inline-flex items-center gap-1 transition-all">
-            Me interesa →
-          </span>
+          <button
+            type="button"
+            onClick={() =>
+              isAuthenticated ? router.push(href) : onLead(`${titulo} · ${ubicacion} · ${canon}/mes`)
+            }
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold hover:bg-primary-700 hover:text-white transition-colors shrink-0"
+          >
+            Me interesa <IconArrowRight size={12} />
+          </button>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
