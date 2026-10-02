@@ -10,7 +10,7 @@ import { IconHome } from '@/components/icons'
 
 export default function InmuebleNoDisponible() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-display">
       <PublicNavbar />
       <main className="flex-1 max-w-2xl mx-auto px-4 py-16 text-center">
         <IconHome size={48} className="mx-auto text-gray-500 mb-4" />

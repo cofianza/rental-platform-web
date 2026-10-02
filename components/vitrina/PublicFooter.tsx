@@ -10,7 +10,8 @@ import { CONTACTO_COFIANZA } from '@/lib/constants'
 export function PublicFooter() {
   const year = new Date().getFullYear()
   return (
-    <footer className="bg-ink-900 text-white/40 border-t border-white/[0.06]">
+    // font-display: mismo motivo que en PublicNavbar (el pie no cambia de letra entre páginas).
+    <footer className="bg-ink-900 text-white/40 border-t border-white/[0.06] font-display">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-xs text-center md:text-left">
           &copy; {year} Cofianza S.A.S. · NIT 902.038.122 · Itagüí, Antioquia ·{' '}

@@ -31,7 +31,9 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
   const sectionLink = (anchor: string) => (useHomePrefix ? `/${anchor}` : anchor)
 
   return (
-    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50">
+    // font-display (Outfit, la letra de la portada) va en el propio menú: así no
+    // cambia de letra al pasar a una página cuyo contenedor use otra.
+    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50 font-display">
       {/* Full-width con padding 40px (mockup 01_*: nav padding 12px 40px),
           no se constriñe a un contenedor centrado. */}
       <div className="px-4 sm:px-8 lg:px-10 py-3 flex justify-between items-center gap-3 sm:gap-6">

@@ -19,7 +19,8 @@ export const metadata: Metadata = {
 
 export default function VitrinaPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    // font-display: la misma letra (Outfit) de la portada, de donde llega el visitante.
+    <div className="min-h-screen bg-white flex flex-col font-display">
       <PublicNavbar />
 
       {/* Hero compacto */}

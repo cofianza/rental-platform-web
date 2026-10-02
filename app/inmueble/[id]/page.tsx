@@ -81,7 +81,8 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
   return (
     // pb-24 en celular: la barra fija "Me interesa" tapaba el final del pie.
-    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-0">
+    // font-display: la misma letra (Outfit) de la portada y la vitrina.
+    <div className="min-h-screen bg-gray-50 pb-24 lg:pb-0 font-display">
       <PublicNavbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
