@@ -47,7 +47,9 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
 
         {/* Enlaces de sección (orden del mockup) — solo desde 1024 px, como el
             diseño, que los oculta en tableta: mostrados desde 768 px no cabían
-            junto a los botones y «Registrarme» quedaba cortado fuera de pantalla. */}
+            junto a los botones y «Registrarme» quedaba cortado fuera de pantalla.
+            En la portada son anclas (#…) y bajan con desplazamiento suave: la
+            regla está en globals.css (html:has(header nav a[href^="#"]…)). */}
         <nav className="hidden lg:flex items-center gap-7">
           <Link
             href={sectionLink('#como-funciona')}
