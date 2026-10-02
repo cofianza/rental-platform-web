@@ -127,7 +127,9 @@ function ResetPasswordForm() {
       // El cambio de clave cierra todas las sesiones en el servidor: se cierra
       // también la de este navegador (cookie y refresh token), para que el
       // ingreso no rebote al panel con una sesión que ya no sirve.
-      await authService.logout()
+      // Con tope de 3 s: la clave ya cambió, y si ese cierre no responde la
+      // pantalla no puede quedarse en «Restableciendo…».
+      await Promise.race([authService.logout(), new Promise((resolve) => setTimeout(resolve, 3000))])
       setIsSuccess(true)
     } catch (err) {
       // El enlace venció o se usó mientras la persona escribía (o en otra
