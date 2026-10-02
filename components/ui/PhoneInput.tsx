@@ -207,7 +207,13 @@ export function PhoneInput({
                     // esto, Enter enviaba el formulario entero en vez de elegir.
                     if (e.key !== 'Enter') return
                     e.preventDefault()
-                    if (filteredCountries[0]) handleDialChange(filteredCountries[0])
+                    // Sin texto no hay nada que elegir: se cierra y queda el país que
+                    // estaba (antes Enter ponía el primero de la lista, Colombia).
+                    if (!search.trim()) {
+                      setOpen(false)
+                      setSearch('')
+                      document.getElementById(inputId)?.focus()
+                    } else if (filteredCountries[0]) handleDialChange(filteredCountries[0])
                   }}
                   placeholder="Buscar país…"
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
