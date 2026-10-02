@@ -7,6 +7,7 @@ import { IconLock, IconLoader, IconEye, IconEyeOff, IconCheck, IconArrowLeft, Ic
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
+import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
 
 interface FormErrors {
@@ -129,11 +130,15 @@ function ResetPasswordForm() {
       await authService.logout()
       setIsSuccess(true)
     } catch (err) {
-      setServerError(
-        esErrorTransitorio(err)
-          ? mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtelo de nuevo.')
-          : 'Ocurrió un error al restablecer la contraseña. El enlace puede haber expirado.',
-      )
+      // El enlace venció o se usó mientras la persona escribía (o en otra
+      // pestaña): se pasa a la pantalla de «Enlace inválido», que ofrece pedir
+      // otro. Antes quedaba un aviso de «puede haber expirado» y reintentar
+      // repetía lo mismo.
+      if (err instanceof ApiClientError && err.code === 'INVALID_RESET_TOKEN') {
+        setIsTokenValid(false)
+        return
+      }
+      setServerError(mensajeParaProspecto(err, 'No pudimos restablecer la contraseña. Inténtelo de nuevo.'))
     } finally {
       setIsLoading(false)
     }
