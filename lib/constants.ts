@@ -838,8 +838,7 @@ export const PUBLIC_AUTH_ROUTES = [
 export const CONTACTO_COFIANZA = {
   whatsapp: '573169724813',
   whatsappVisible: '+57 316 972 4813',
-  email: 'gerencia@cofianza.co',
-  // Correo que se publica en el pie de las páginas públicas (prospectos);
-  // gerencia@ queda para clientes (notas de Gerencia, 2-oct-2026).
+  email: 'hola@cofianza.co',
+  // Correo que se publica en el pie de las páginas públicas.
   emailProspectos: 'hola@cofianza.co',
 } as const
