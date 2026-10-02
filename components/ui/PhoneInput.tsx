@@ -12,18 +12,18 @@ interface CountryCode {
 
 const COUNTRY_CODES: CountryCode[] = [
   { code: 'CO', dial: '+57', flag: '🇨🇴', name: 'Colombia' },
-  { code: 'MX', dial: '+52', flag: '🇲🇽', name: 'Mexico' },
+  { code: 'MX', dial: '+52', flag: '🇲🇽', name: 'México' },
   { code: 'US', dial: '+1', flag: '🇺🇸', name: 'Estados Unidos' },
-  { code: 'ES', dial: '+34', flag: '🇪🇸', name: 'Espana' },
+  { code: 'ES', dial: '+34', flag: '🇪🇸', name: 'España' },
   { code: 'AR', dial: '+54', flag: '🇦🇷', name: 'Argentina' },
   { code: 'CL', dial: '+56', flag: '🇨🇱', name: 'Chile' },
-  { code: 'PE', dial: '+51', flag: '🇵🇪', name: 'Peru' },
+  { code: 'PE', dial: '+51', flag: '🇵🇪', name: 'Perú' },
   { code: 'EC', dial: '+593', flag: '🇪🇨', name: 'Ecuador' },
   { code: 'VE', dial: '+58', flag: '🇻🇪', name: 'Venezuela' },
-  { code: 'PA', dial: '+507', flag: '🇵🇦', name: 'Panama' },
+  { code: 'PA', dial: '+507', flag: '🇵🇦', name: 'Panamá' },
   { code: 'BR', dial: '+55', flag: '🇧🇷', name: 'Brasil' },
   { code: 'CR', dial: '+506', flag: '🇨🇷', name: 'Costa Rica' },
-  { code: 'DO', dial: '+1-809', flag: '🇩🇴', name: 'Republica Dominicana' },
+  { code: 'DO', dial: '+1-809', flag: '🇩🇴', name: 'República Dominicana' },
   { code: 'GT', dial: '+502', flag: '🇬🇹', name: 'Guatemala' },
   { code: 'UY', dial: '+598', flag: '🇺🇾', name: 'Uruguay' },
   { code: 'BO', dial: '+591', flag: '🇧🇴', name: 'Bolivia' },
@@ -32,6 +32,9 @@ const COUNTRY_CODES: CountryCode[] = [
   { code: 'SV', dial: '+503', flag: '🇸🇻', name: 'El Salvador' },
   { code: 'NI', dial: '+505', flag: '🇳🇮', name: 'Nicaragua' },
 ]
+
+/** Sin tildes ni mayúsculas, para que «espana» o «mexico» encuentren su país. */
+const plano = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
 /**
  * Parses a full phone value like "+57 3101234567" into country dial code and local number.
@@ -115,7 +118,7 @@ export function PhoneInput({
   const filteredCountries = search
     ? COUNTRY_CODES.filter(
         (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          plano(c.name).includes(plano(search)) ||
           c.dial.includes(search) ||
           c.code.toLowerCase().includes(search.toLowerCase())
       )
@@ -126,20 +129,32 @@ export function PhoneInput({
     onChange(`${dial} ${cleaned}`)
   }
 
+  const inputId = useId()
+
   const handleDialChange = (country: CountryCode) => {
     setSelectedDial(country.dial)
     setOpen(false)
     setSearch('')
     emitChange(country.dial, localNumber)
+    // El buscador desaparece al cerrar: el cursor sigue en el número.
+    document.getElementById(inputId)?.focus()
   }
 
   const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^\d]/g, '')
+    // Se limpia y DESPUÉS se recorta a 10. Con maxLength el navegador cortaba
+    // primero y lo pegado quedaba mocho: «300 123 4567» → «30012345».
+    const valor = e.target.value
+    let raw = valor.replace(/[^\d]/g, '')
+    // Indicativo repetido delante («+57 300 123 4567», «573001234567»): sobra.
+    const indicativo = selectedDial.replace(/[^\d]/g, '')
+    if ((valor.trim().startsWith('+') || raw.length > 10) && raw.startsWith(indicativo)) {
+      raw = raw.slice(indicativo.length)
+    }
+    raw = raw.slice(0, 10)
     setLocalNumber(raw)
     emitChange(selectedDial, raw)
   }
 
-  const inputId = useId()
   return (
     <div className={className}>
       {label && (
@@ -175,7 +190,14 @@ export function PhoneInput({
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar pais..."
+                  onKeyDown={(e) => {
+                    // El buscador vive dentro del formulario de la página: sin
+                    // esto, Enter enviaba el formulario entero en vez de elegir.
+                    if (e.key !== 'Enter') return
+                    e.preventDefault()
+                    if (filteredCountries[0]) handleDialChange(filteredCountries[0])
+                  }}
+                  placeholder="Buscar país…"
                   className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
                   autoFocus
                 />
@@ -222,7 +244,6 @@ export function PhoneInput({
             onChange={handleLocalChange}
             disabled={disabled}
             placeholder={placeholder || '3001234567'}
-            maxLength={10}
             className={cn(
               'w-full py-2.5 border rounded-r-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500',
               icon ? 'pl-10 pr-4' : 'px-3',
