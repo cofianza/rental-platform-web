@@ -401,7 +401,10 @@ export default function RegisterInmobiliariaPage() {
                     // borraba, el DV se colaba en el número y el formulario
                     // terminaba dando por válido un NIT que no era.
                     const valor = e.target.value
-                    const guion = valor.search(/[-–][^-–]*$/)
+                    // Vale el guion del teclado y los que llegan al pegar desde Word,
+                    // WhatsApp o un PDF (‐ ‑ ‒ – — ―, U+2010 a U+2015) y el signo menos
+                    // (−, U+2212): con cualquiera de esos el DV se volvía a colar.
+                    const guion = valor.search(/[-\u2010-\u2015\u2212][^-\u2010-\u2015\u2212]*$/)
                     updateField('nit_numero', (guion < 0 ? valor : valor.slice(0, guion)).replace(/\D/g, '').slice(0, 15))
                     if (guion < 0) return
                     const dv = valor.slice(guion + 1).replace(/\D/g, '').slice(0, 1)
