@@ -142,7 +142,16 @@ export function VitrinaPreview() {
   )
 }
 
-function PropertyCard({ property, onLead }: { property: PublicProperty; onLead: (resumen: string) => void }) {
+/** Tarjeta de inmueble de la portada; /vitrina usa la misma (PropertyGrid). `className` fija el ancho. */
+export function PropertyCard({
+  property,
+  onLead,
+  className = CARD_WIDTH,
+}: {
+  property: PublicProperty
+  onLead: (resumen: string) => void
+  className?: string
+}) {
   const router = useRouter()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const foto = property.fotos?.[0]?.url || property.foto_fachada_url
@@ -156,7 +165,7 @@ function PropertyCard({ property, onLead }: { property: PublicProperty; onLead: 
 
   return (
     <div
-      className={`${CARD_WIDTH} group rounded-3xl border border-gray-200 overflow-hidden bg-white hover:border-primary-600 hover:shadow-xl hover:shadow-primary-600/10 hover:-translate-y-1 transition-all`}
+      className={`${className} group rounded-3xl border border-gray-200 overflow-hidden bg-white hover:border-primary-600 hover:shadow-xl hover:shadow-primary-600/10 hover:-translate-y-1 transition-all`}
     >
       {/* Imagen / placeholder con badges sobrepuestos */}
       <Link

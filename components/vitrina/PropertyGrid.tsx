@@ -8,9 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { IconSearch, IconHome, IconBed, IconBath, IconCar, IconRuler, IconChevronLeft, IconChevronRight, IconX, IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { IconSearch, IconHome, IconChevronLeft, IconChevronRight, IconX, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import {
   getPublicProperties,
   getPublicPropertyFilters,
@@ -18,9 +16,9 @@ import {
   type PublicPropertyFilters,
   type PublicPropertiesQuery,
 } from '@/services/publicPropertiesService'
-import { formatCurrency } from '@/lib/constants'
-import { esStorageSupabase } from '@/lib/imagenes'
 import { VitrinaVacia } from './VitrinaVacia'
+import { PropertyCard } from './VitrinaPreview'
+import { LeadInteresModal } from './LeadInteresModal'
 
 const DEBOUNCE_MS = 300
 const LIMIT = 12
@@ -79,6 +77,8 @@ export function PropertyGrid() {
   // por un instante se anunciaba una vitrina vacía que no lo está.
   const [conFiltros, setConFiltros] = useState(false)
   const [, setFiltersLoaded] = useState(false)
+  // Inmueble sobre el que el visitante sin cuenta dijo «Me interesa».
+  const [lead, setLead] = useState<{ id: string; resumen: string } | null>(null)
 
   const hasActiveFilters = !!(search || ciudad || tipo || habitaciones || precioMin || precioMax)
 
@@ -343,7 +343,12 @@ export function PropertyGrid() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+            <PropertyCard
+              key={property.id}
+              property={property}
+              className="w-full"
+              onLead={(resumen) => setLead({ id: property.id, resumen })}
+            />
           ))}
         </div>
       )}
@@ -388,102 +393,11 @@ export function PropertyGrid() {
           </button>
         </div>
       )}
+
+      {lead && (
+        <LeadInteresModal inmuebleId={lead.id} resumen={lead.resumen} isOpen onClose={() => setLead(null)} />
+      )}
     </div>
-  )
-}
-
-// ── Property Card ───────────────────────────
-
-
-function PropertyCard({ property }: { property: PublicProperty }) {
-  return (
-    <Link
-      href={`/inmueble/${property.id}`}
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all group"
-    >
-      {/* Image */}
-      <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
-        {property.foto_fachada_url ? (
-          <Image
-            src={property.foto_fachada_url}
-            alt={`${TIPO_LABELS[property.tipo] || property.tipo} en ${property.ciudad}`}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            unoptimized={!esStorageSupabase(property.foto_fachada_url)}
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IconHome size={48} className="text-gray-300" />
-          </div>
-        )}
-        {/* Tipo badge */}
-        <span className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-gray-700">
-          {TIPO_LABELS[property.tipo] || property.tipo}
-        </span>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        {/* Precio + ubicación a la izquierda; logo de la inmobiliaria a la
-            derecha (solo el logo, en su columna). */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            {/* Price */}
-            <p className="text-lg font-bold text-primary-700 mb-0.5">
-              {formatCurrency(property.valor_arriendo)}
-              <span className="text-xs font-normal text-gray-500"> /mes</span>
-            </p>
-            {property.administracion > 0 && (
-              <p className="text-xs text-gray-500 mb-2">
-                Admin: {formatCurrency(property.administracion)}
-              </p>
-            )}
-
-            {/* Location */}
-            <p className="text-sm text-gray-700 font-medium truncate">
-              {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
-            </p>
-            <p className="text-xs text-gray-500">Estrato {property.estrato}</p>
-          </div>
-          {property.inmobiliaria?.logo_url && (
-            <Image
-              src={property.inmobiliaria.logo_url}
-              alt={property.inmobiliaria.nombre || 'Inmobiliaria'}
-              width={0}
-              height={0}
-              sizes="160px"
-              unoptimized={!esStorageSupabase(property.inmobiliaria.logo_url)}
-              className="h-14 w-auto max-w-[40%] object-contain shrink-0"
-            />
-          )}
-        </div>
-
-        {/* Features */}
-        <div className="flex items-center gap-3 text-xs text-gray-500 mt-3">
-          {property.area_m2 && (
-            <span className="flex items-center gap-1">
-              <IconRuler size={14} />
-              {property.area_m2} m²
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <IconBed size={14} />
-            {property.habitaciones}
-          </span>
-          <span className="flex items-center gap-1">
-            <IconBath size={14} />
-            {property.banos}
-          </span>
-          {property.parqueadero && (
-            <span className="flex items-center gap-1">
-              <IconCar size={14} />
-              Sí
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
   )
 }
 
@@ -491,8 +405,8 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
 function PropertyCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
-      <div className="aspect-[4/3] bg-gray-200" />
+    <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden animate-pulse">
+      <div className="h-[180px] bg-gray-200" />
       <div className="p-4 space-y-3">
         <div className="h-5 w-32 bg-gray-200 rounded" />
         <div className="h-4 w-48 bg-gray-200 rounded" />
