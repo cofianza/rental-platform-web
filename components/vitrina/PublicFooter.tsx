@@ -14,7 +14,7 @@ export function PublicFooter() {
     <footer className="bg-ink-900 text-white/40 border-t border-white/[0.06] font-display">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-xs text-center md:text-left">
-          &copy; {year} Cofianza S.A.S. · NIT 902.038.122 · Itagüí, Antioquia ·{' '}
+          &copy; {year} Cofianza S.A.S. · NIT 902.038.122-7 · Itagüí, Antioquia ·{' '}
           <a href={`mailto:${CONTACTO_COFIANZA.emailProspectos}`} className="hover:text-white/80 transition-colors">
             {CONTACTO_COFIANZA.emailProspectos}
           </a>
