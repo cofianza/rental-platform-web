@@ -10,6 +10,7 @@
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
@@ -27,6 +28,14 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
   const pathname = usePathname()
   const isHome = pathname === '/'
   const useHomePrefix = forceHomeLinks ?? !isHome
+  // Sombra al bajar de los primeros 40 px (diseño Landing v2).
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const sectionLink = (anchor: string) => (useHomePrefix ? `/${anchor}` : anchor)
 
@@ -36,7 +45,11 @@ export function PublicNavbar({ forceHomeLinks }: PublicNavbarProps = {}) {
     // z-30: por debajo de los diálogos (z-50) y de las capas fijas del detalle
     // del inmueble (z-40) desde las que se abren. Con z-50 el menú quedaba
     // encima del diálogo «Me interesa» de /inmueble y le tapaba el título y la X.
-    <header className="bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-30 font-display">
+    <header
+      className={`bg-white/97 backdrop-blur-xl border-b border-black/5 sticky top-0 z-30 font-display transition-shadow duration-300 ${
+        scrolled ? 'shadow-[0_2px_24px_rgba(0,0,0,0.06)]' : ''
+      }`}
+    >
       {/* Full-width con padding 40px (mockup 01_*: nav padding 12px 40px),
           no se constriñe a un contenedor centrado. */}
       <div className="px-4 sm:px-8 lg:px-10 py-3 flex justify-between items-center gap-3 sm:gap-6">
