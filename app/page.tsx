@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
 import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
+import { ScrollReveal } from '@/components/vitrina/ScrollReveal'
 import { IconCheck, IconX, IconArrowRight } from '@/components/icons'
 
 export const metadata: Metadata = {
@@ -41,26 +42,26 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-16 items-center">
             {/* Copy izquierdo */}
             <div className="flex-1 max-w-2xl">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60 mb-7">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60 mb-7 hero-in [animation-delay:100ms]">
                 <span className="w-2 h-2 rounded-full bg-primary-400 animate-pulse" />
                 Disponible en toda Colombia · 100% digital
               </span>
 
-              <h1 className="font-black text-5xl sm:text-6xl lg:text-[80px] leading-none tracking-[-0.04em] mb-3">
+              <h1 className="font-black text-5xl sm:text-6xl lg:text-[80px] leading-none tracking-[-0.04em] mb-3 hero-in [animation-delay:150ms]">
                 <span className="text-primary-400">co</span>fianza
               </h1>
 
-              <p className="font-script italic text-2xl sm:text-3xl lg:text-[38px] leading-tight text-white/55 mb-5">
+              <p className="font-script italic text-2xl sm:text-3xl lg:text-[38px] leading-tight text-white/55 mb-5 hero-in [animation-delay:250ms]">
                 ¿Le pidieron fiador? <strong className="text-coral-500 not-italic font-normal">Soy yo.</strong>{' '}
                 Llámenos.
               </p>
 
-              <p className="text-base text-white/45 leading-relaxed max-w-lg mb-9">
+              <p className="text-base text-white/45 leading-relaxed max-w-lg mb-9 hero-in [animation-delay:300ms]">
                 Evaluamos su perfil en segundos y firmamos como su fiador en el contrato de
                 arrendamiento. Sin codeudor humano. Sin deberle el favor a nadie.
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-12">
+              <div className="flex flex-wrap gap-3 mb-12 hero-in [animation-delay:350ms]">
                 <Link
                   href="/vitrina"
                   className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
@@ -75,7 +76,7 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium">
+              <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium hero-in [animation-delay:450ms]">
                 <span className="flex items-center gap-1.5">
                   <IconCheck size={14} className="text-primary-400 shrink-0" /> Respuesta en segundos
                 </span>
@@ -89,7 +90,7 @@ export default function HomePage() {
             </div>
 
             {/* Mock card */}
-            <div className="w-full max-w-sm flex-shrink-0">
+            <div className="w-full max-w-sm flex-shrink-0 hero-in [animation-duration:800ms] [animation-delay:500ms]">
               <div className="rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur p-7">
                 <div className="flex justify-between items-center mb-5">
                   <div>
@@ -169,7 +170,7 @@ export default function HomePage() {
           ].map((s, i) => (
             <div
               key={i}
-              className={`px-5 py-7 text-center ${
+              className={`px-5 py-7 text-center reveal ${
                 i < 3 ? 'md:border-r border-gray-100' : ''
               } ${i === 1 ? 'border-r border-gray-100 md:border-r' : ''} ${
                 i === 0 ? 'border-r border-gray-100' : ''
@@ -203,12 +204,12 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             El problema
           </div>
-          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 reveal">
             Arrendar en Colombia
             <br />
             es incómodo.
           </h2>
-          <p className="text-lg text-gray-500 max-w-xl leading-relaxed">
+          <p className="text-lg text-gray-500 max-w-xl leading-relaxed reveal">
             Nadie debería perder un hogar por no tener quién responda por él.
           </p>
 
@@ -241,7 +242,7 @@ export default function HomePage() {
             ].map((c) => (
               <div
                 key={c.tag}
-                className={`p-9 rounded-3xl border transition-all ${
+                className={`p-9 rounded-3xl border transition-all reveal ${
                   c.variant === 'green'
                     ? 'bg-primary-700 border-primary-700 text-white hover:bg-primary-800'
                     : c.variant === 'orange'
@@ -284,10 +285,10 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Así funciona
           </div>
-          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 reveal">
             En 3 pasos tiene las llaves.
           </h2>
-          <p className="text-lg text-gray-500 max-w-xl leading-relaxed">
+          <p className="text-lg text-gray-500 max-w-xl leading-relaxed reveal">
             Sin filas. Sin codeudor. Sin papeleo.
           </p>
 
@@ -329,7 +330,7 @@ export default function HomePage() {
             ].map((c) => (
               <div
                 key={c.n}
-                className="relative bg-gray-50 hover:bg-white border border-gray-200 hover:border-primary-600 rounded-3xl p-10 transition-all hover:shadow-xl hover:shadow-primary-600/[0.06]"
+                className="reveal relative bg-gray-50 hover:bg-white border border-gray-200 hover:border-primary-600 rounded-3xl p-10 transition-all hover:shadow-xl hover:shadow-primary-600/[0.06]"
               >
                 <span className="absolute top-5 right-6 text-6xl font-black text-black/[0.03] leading-none">
                   {c.n}
@@ -356,7 +357,7 @@ export default function HomePage() {
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
-            <div key={i} className="px-5 py-8 text-center">
+            <div key={i} className="px-5 py-8 text-center reveal">
               <div className="text-4xl sm:text-5xl font-black text-white tracking-tight">
                 {Array.isArray(c.val) ? (
                   <>
@@ -381,7 +382,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Para quién es Cofianza
           </div>
-          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 reveal">
             Diseñado para las tres
             <br />
             partes del arriendo.
@@ -433,7 +434,7 @@ export default function HomePage() {
             ].map((a) => (
               <div
                 key={a.tag}
-                className={`p-9 rounded-3xl border flex flex-col transition-all ${
+                className={`p-9 rounded-3xl border flex flex-col transition-all reveal ${
                   a.featured
                     ? 'bg-ink-900 border-gray-800 shadow-2xl md:scale-[1.03]'
                     : 'bg-white border-gray-200 hover:shadow-xl'
@@ -495,13 +496,13 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
           </div>
-          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 text-white">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 text-white reveal">
             Así de diferente es
             <br />
             arrendar con nosotros.
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-1 mt-14 rounded-3xl overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-1 mt-14 rounded-3xl overflow-hidden reveal">
             <div className="bg-white/[0.03] p-10">
               <h3 className="text-base font-extrabold text-white/35 mb-6">Método tradicional</h3>
               <ul className="space-y-2">
@@ -558,7 +559,7 @@ export default function HomePage() {
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Preguntas frecuentes
           </div>
-          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4">
+          <h2 className="font-black text-[32px] sm:text-5xl tracking-[-0.04em] leading-tight mb-4 reveal">
             Todo lo que quiere saber.
           </h2>
 
@@ -591,7 +592,7 @@ export default function HomePage() {
             ].map((f) => (
               <div
                 key={f.q}
-                className="bg-white p-7 sm:p-8 rounded-2xl border border-gray-200"
+                className="bg-white p-7 sm:p-8 rounded-2xl border border-gray-200 reveal"
               >
                 <h3 className="text-base font-extrabold mb-2.5">{f.q}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{f.a}</p>
@@ -607,16 +608,16 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-ink-900 text-white py-16 md:py-32 px-5 sm:px-8 text-center">
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
-          <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white">
+          <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white reveal">
             ¿Le pidieron fiador?
             <br />
             <span className="text-coral-500">Soy yo.</span> Llámenos.
           </h2>
-          <p className="text-lg text-white/45 mb-10">
+          <p className="text-lg text-white/45 mb-10 reveal">
             <strong className="text-white">Sin codeudor humano. Sin deberle el favor a nadie.</strong>{' '}
             Su fiador profesional en segundos.
           </p>
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center reveal">
             <Link
               href="/vitrina"
               className="inline-flex items-center gap-2 px-9 py-4 bg-coral-500 hover:bg-coral-400 text-ink-900 text-base font-semibold rounded-2xl shadow-lg shadow-coral-500/30 transition-all hover:-translate-y-px"
@@ -634,6 +635,7 @@ export default function HomePage() {
       </section>
 
       <PublicFooter />
+      <ScrollReveal />
     </div>
   )
 }
