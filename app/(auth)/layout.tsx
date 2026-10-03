@@ -63,7 +63,7 @@ export default function AuthLayout({
         </div>
 
         <p className="relative z-10 text-[13px] text-white/30 mt-auto pt-8 [@media(max-height:860px)]:pt-4">
-          © 2026 Cofianza S.A.S. · NIT 902.038.122 · Itagüí, Antioquia
+          © 2026 Cofianza S.A.S. · NIT 902.038.122-7 · Itagüí, Antioquia
         </p>
       </div>
 
