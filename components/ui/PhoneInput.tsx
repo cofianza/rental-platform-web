@@ -74,6 +74,8 @@ interface PhoneInputProps {
   required?: boolean
   className?: string
   icon?: React.ReactNode
+  /** «auth»: campo del diseño de login/registro (borde 1,5 px, 15 px de letra). */
+  variant?: 'default' | 'auth'
 }
 
 export function PhoneInput({
@@ -86,7 +88,9 @@ export function PhoneInput({
   required,
   className,
   icon,
+  variant = 'default',
 }: PhoneInputProps) {
+  const auth = variant === 'auth'
   const parsed = parsePhoneValue(value)
   const [selectedDial, setSelectedDial] = useState(parsed.dial)
   const [localNumber, setLocalNumber] = useState(parsed.local)
@@ -168,7 +172,7 @@ export function PhoneInput({
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={inputId} className={auth ? 'block text-[13px] font-semibold text-slate-900 mb-1.5' : 'block text-sm font-medium text-gray-700 mb-1'}>
           {label}{required && <span className="text-coral-700"> *</span>}
         </label>
       )}
@@ -183,7 +187,8 @@ export function PhoneInput({
               // h-full: en pantallas táctiles el campo del número sube a 16 px de letra
               // (globals.css) y quedaba 3 px más alto que este botón.
               'flex h-full items-center gap-1 px-2.5 py-2.5 border rounded-l-lg text-sm bg-gray-50 hover:bg-gray-100 transition-colors min-w-[90px] justify-center',
-              error ? 'border-red-300' : 'border-gray-300',
+              auth && 'rounded-l-[10px] border-[1.5px] bg-white',
+              error ? 'border-red-300' : auth ? 'border-slate-200' : 'border-gray-300',
               disabled && 'bg-gray-100 cursor-not-allowed opacity-60'
             )}
           >
@@ -265,8 +270,9 @@ export function PhoneInput({
             placeholder={placeholder || '3001234567'}
             className={cn(
               'w-full py-2.5 border rounded-r-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500',
-              icon ? 'pl-10 pr-4' : 'px-3',
-              error ? 'border-red-300 bg-red-50' : 'border-gray-300',
+              auth && 'rounded-r-[10px] border-[1.5px] py-3 text-[15px] leading-[1.25] placeholder:text-slate-400 focus:ring-[3px] focus:ring-primary-600/10 focus:border-primary-600',
+              icon ? 'pl-10 pr-4' : auth ? 'px-3.5' : 'px-3',
+              error ? 'border-red-300 bg-red-50' : auth ? 'border-slate-200' : 'border-gray-300',
               'border-l-0',
               disabled && 'bg-gray-100 cursor-not-allowed'
             )}

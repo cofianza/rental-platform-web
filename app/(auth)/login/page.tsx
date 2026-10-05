@@ -224,7 +224,7 @@ function LoginForm() {
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'error-email' : undefined}
             className={cn(
-              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
+              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
               'placeholder:text-slate-400',
               'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
               'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -254,7 +254,7 @@ function LoginForm() {
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? 'error-password' : undefined}
               className={cn(
-                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-base text-slate-900 bg-white transition-all',
+                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
                 'placeholder:text-slate-400',
                 'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -311,7 +311,7 @@ function LoginForm() {
       </form>
 
       {/* Enlace mágico (H44): el arrendatario invitado que entró sin contraseña */}
-      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-6">
+      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-3">
         ¿Lo invitaron a un estudio?{' '}
         <Link href="/auth/confirmar" className="text-primary-600 font-semibold hover:underline">
           Entre con un enlace a su correo
@@ -319,7 +319,7 @@ function LoginForm() {
       </p>
 
       {/* Footer */}
-      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-2">
+      <p className="text-[13px] text-slate-500 text-center leading-[1.6] mt-1">
         ¿No tiene cuenta?{' '}
         <Link href={registroHref} className="text-primary-600 font-semibold hover:underline">
           Cree una en segundos

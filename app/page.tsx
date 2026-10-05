@@ -31,12 +31,13 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           HERO
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink-900 text-white">
+      {/* Alto de pantalla (menos el menú) con el contenido centrado, como el diseño v2. */}
+      <section className="relative overflow-hidden bg-ink-900 text-white px-5 sm:px-8 lg:px-12 lg:min-h-[calc(100svh-61px)] lg:flex lg:items-center">
         {/* Glow blobs */}
         <div className="absolute -top-1/4 -right-1/12 w-[700px] h-[700px] bg-primary-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-1/4 -left-1/12 w-[500px] h-[500px] bg-coral-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 md:py-28 lg:py-16 md:py-32">
+        <div className="relative w-full max-w-[1280px] mx-auto py-20 md:py-28 lg:pt-10 lg:pb-24">
           {/* lg:justify-between: la tarjeta de ejemplo va pegada al borde derecho
               (como en el diseño); sin él quedaba hacia el centro en pantallas anchas. */}
           <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-16 items-center">
@@ -199,8 +200,8 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           PROBLEMA
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-gray-50 py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             El problema
           </div>
@@ -280,8 +281,8 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CÓMO FUNCIONA
           ════════════════════════════════════════════════════════════ */}
-      <section id="como-funciona" className="bg-white py-16 md:py-32 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section id="como-funciona" className="bg-white py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Así funciona
           </div>
@@ -350,7 +351,7 @@ export default function HomePage() {
           COUNTERS
           ════════════════════════════════════════════════════════════ */}
       <section className="bg-primary-600 py-20 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
             { val: '< 1 min', lbl: 'Respuesta de su estudio' },
@@ -377,8 +378,8 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           AUDIENCIAS
           ════════════════════════════════════════════════════════════ */}
-      <section id="para-quien" className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section id="para-quien" className="bg-gray-50 py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Para quién es Cofianza
           </div>
@@ -491,8 +492,8 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           COMPARACIÓN
           ════════════════════════════════════════════════════════════ */}
-      <section className="bg-ink-900 text-white py-16 md:py-32 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-ink-900 text-white py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-white/30 mb-3">
             Comparación
           </div>
@@ -554,8 +555,8 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           FAQ
           ════════════════════════════════════════════════════════════ */}
-      <section id="preguntas" className="bg-gray-50 py-16 md:py-32 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section id="preguntas" className="bg-gray-50 py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
             Preguntas frecuentes
           </div>
@@ -605,7 +606,7 @@ export default function HomePage() {
       {/* ════════════════════════════════════════════════════════════
           CTA FINAL
           ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink-900 text-white py-16 md:py-32 px-5 sm:px-8 text-center">
+      <section className="relative overflow-hidden bg-ink-900 text-white py-16 md:py-[120px] px-5 sm:px-8 lg:px-12 text-center">
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary-500/[0.12] blur-3xl rounded-full pointer-events-none" />
         <div className="relative max-w-3xl mx-auto">
           <h2 className="font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-tight mb-4 text-white reveal">

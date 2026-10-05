@@ -74,8 +74,8 @@ export function VitrinaPreview() {
   }, [])
 
   return (
-    <section id="vitrina" className="bg-white py-16 md:py-24 px-5 sm:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section id="vitrina" className="bg-white py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
+      <div className="max-w-[1200px] mx-auto">
         <div className="text-xs font-bold tracking-[3px] uppercase text-primary-600 mb-3">
           Inmuebles disponibles
         </div>
