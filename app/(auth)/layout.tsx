@@ -77,7 +77,9 @@ export default function AuthLayout({
           </Link>
           <CofianzaLogo size={28} withText textClassName="text-lg" />
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        {/* Arriba, no centrado: así lo pone el diseño v2 y el título no salta
+            de altura al pasar del login (corto) al registro (largo). */}
+        <div className="flex justify-center lg:pt-5">
           <div className="w-full max-w-[520px]">{children}</div>
         </div>
       </div>

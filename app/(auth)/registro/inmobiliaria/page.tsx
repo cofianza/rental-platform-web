@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  IconUser, IconMail, IconLock, IconMapPin, IconId, IconHome, IconGlobe,
-  IconEye, IconEyeOff, IconArrowRight, IconCheck, IconLoader, IconShield, IconBuilding2,
-  IconAlertTriangle,
+  IconEye, IconEyeOff, IconArrowRight, IconCheck, IconLoader, IconShield, IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { cn, isValidEmail } from '@/lib/utils'
@@ -16,8 +14,8 @@ import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
 import { validateNitModulo11, problemaNit } from '@/lib/nit'
 import {
-  RegistroStepper, RegistroTipoTabs, FormSection, PasswordRequirements,
-  regInputCls, regSelectCls, ValidCheck, scrollToFirstError, ariaError,
+  RegistroTipoTabs, FormSection, PasswordHelp,
+  regInputCls, regSelectCls, scrollToFirstError, ariaError,
 } from '@/components/auth/registro-ui'
 
 // Municipios del Valle de Aburrá. Se envía el nombre legible (lo que ya guardan
@@ -275,47 +273,14 @@ export default function RegisterInmobiliariaPage() {
     }
   }
 
-  const inputCls = (hasError?: boolean, valid?: boolean, rightIcon?: boolean) =>
-    regInputCls({ error: hasError, valid, rightIcon })
+  const inputCls = (hasError?: boolean) => regInputCls({ error: hasError })
 
-  // Validez en vivo para feedback (check verde) y para el stepper de progreso.
+  // NIT válido: se confirma bajo el campo.
   const nitValido =
     /^\d{1,15}$/.test(formData.nit_numero) &&
     /^\d$/.test(formData.nit_dv) &&
     validateNitModulo11(`${formData.nit_numero}-${formData.nit_dv}`)
-  const ciudadValida =
-    !!formData.ciudad && (formData.ciudad !== OTRA_CIUDAD || !!formData.ciudad_otra.trim())
-  const documentoValido = /^[A-Za-z0-9]{3,30}$/.test(limpiarDocumento(formData.representante_documento))
-  const emailValido = !!formData.email.trim() && isValidEmail(formData.email)
-  const telValido = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '').length === 10
-  const passwordValida =
-    formData.password.length >= 8 &&
-    /[A-Z]/.test(formData.password) &&
-    /[a-z]/.test(formData.password) &&
-    /\d/.test(formData.password)
 
-  const pasos = [
-    {
-      label: 'Inmobiliaria',
-      done:
-        !!formData.razon_social.trim() && nitValido &&
-        !!formData.direccion_comercial.trim() && ciudadValida && !!formData.inmuebles_gestionados,
-    },
-    {
-      label: 'Representante',
-      done:
-        !!formData.nombre_representante_nombre.trim() &&
-        !!formData.nombre_representante_apellido.trim() &&
-        !!formData.representante_tipo_documento && documentoValido &&
-        !!formData.cargo_representante && telValido && emailValido,
-    },
-    {
-      label: 'Acceso',
-      done:
-        passwordValida && formData.password === formData.confirm_password &&
-        !!formData.confirm_password && formData.accept_terms && formData.accept_data_treatment,
-    },
-  ]
   const hayErrores = Object.keys(errors).length > 0
 
   return (
@@ -333,7 +298,7 @@ export default function RegisterInmobiliariaPage() {
       <RegistroTipoTabs activo="inmobiliaria" />
 
       {/* Banner: contrato marco con Cofianza (primer paso tras el registro). */}
-      <div className="flex items-start gap-2.5 text-xs text-primary-800 bg-primary-50 border border-primary-200 p-3 rounded-lg mb-7">
+      <div className="flex items-start gap-2.5 text-[13px] leading-[1.5] text-primary-800 bg-primary-50 border border-primary-600 px-3.5 py-3 rounded-[10px] mb-6">
         <IconShield size={16} className="text-primary-600 shrink-0 mt-0.5" />
         <span>
           <strong className="block font-bold">Registro empresarial</strong>
@@ -342,7 +307,6 @@ export default function RegisterInmobiliariaPage() {
         </span>
       </div>
 
-      <RegistroStepper steps={pasos} />
 
       {serverError && (
         <div role="alert" className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -366,14 +330,13 @@ export default function RegisterInmobiliariaPage() {
           e.preventDefault()
           handleSubmit()
         }}
-        className="space-y-7"
+        className="space-y-6"
       >
         {/* 1. Datos de la inmobiliaria */}
         <FormSection num={1} title="Datos de la inmobiliaria">
           <div>
-            <label htmlFor="inmobiliaria-razon-social" className="block text-sm font-medium text-gray-700 mb-1">Nombre de la inmobiliaria<span className="text-coral-700"> *</span></label>
+            <label htmlFor="inmobiliaria-razon-social" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Nombre de la inmobiliaria<span className="text-coral-700"> *</span></label>
             <div className="relative">
-              <IconBuilding2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-razon-social"
                 type="text" value={formData.razon_social}
                 onChange={(e) => updateField('razon_social', e.target.value)}
@@ -387,10 +350,9 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-nit" className="block text-sm font-medium text-gray-700 mb-1">NIT<span className="text-coral-700"> *</span></label>
-            <div className="flex items-stretch gap-2">
-              <div className="relative flex-1">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <label htmlFor="inmobiliaria-nit" className="block text-[13px] font-semibold text-slate-900 mb-1.5">NIT<span className="text-coral-700"> *</span></label>
+            <div className="grid grid-cols-[1fr_80px] gap-3">
+              <div className="relative">
                 <input id="inmobiliaria-nit"
                   type="text"
                   inputMode="numeric"
@@ -414,24 +376,20 @@ export default function RegisterInmobiliariaPage() {
                     dvRef.current?.focus()
                     dvRef.current?.select()
                   }}
-                  className={inputCls(!!errors.nit_numero, nitValido)}
+                  className={inputCls(!!errors.nit_numero)}
                   placeholder="900819665"
                   aria-invalid={!!errors.nit_numero}
                   aria-describedby={errors.nit_numero || errors.nit_dv ? 'error-nit' : undefined}
                 />
               </div>
-              <span className="self-center text-gray-500 font-bold">−</span>
-              <div className="w-20">
+              <div>
                 <input
                   ref={dvRef}
                   type="text"
                   inputMode="numeric"
                   value={formData.nit_dv}
                   onChange={(e) => updateField('nit_dv', e.target.value.replace(/\D/g, '').slice(0, 1))}
-                  className={cn(
-                    'w-full px-3 py-2.5 border rounded-lg text-sm font-bold text-center focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-                    errors.nit_dv ? 'border-red-500' : nitValido ? 'border-green-400' : 'border-gray-300',
-                  )}
+                  className={cn(regInputCls({ error: !!errors.nit_dv }), 'text-center font-bold')}
                   placeholder="DV"
                   maxLength={1}
                   aria-label="Dígito de verificación"
@@ -454,15 +412,14 @@ export default function RegisterInmobiliariaPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="inmobiliaria-ciudad" className="block text-sm font-medium text-gray-700 mb-1">Ciudad<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-ciudad" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Ciudad<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-ciudad"
                   value={formData.ciudad}
                   onChange={(e) => updateField('ciudad', e.target.value)}
-                  className={regSelectCls({ error: !!errors.ciudad, icon: true })}
+                  className={regSelectCls({ error: !!errors.ciudad })}
                   {...ariaError(errors, 'ciudad')}
                 >
                   <option value="">Seleccione</option>
@@ -477,9 +434,8 @@ export default function RegisterInmobiliariaPage() {
                   y en el orden de tabulación (antes iba tras «Inmuebles gestionados»). */}
               {formData.ciudad === OTRA_CIUDAD && (
                 <div className="mt-4">
-                  <label htmlFor="inmobiliaria-ciudad-otra" className="block text-sm font-medium text-gray-700 mb-1">¿Cuál ciudad?<span className="text-coral-700"> *</span></label>
+                  <label htmlFor="inmobiliaria-ciudad-otra" className="block text-[13px] font-semibold text-slate-900 mb-1.5">¿Cuál ciudad?<span className="text-coral-700"> *</span></label>
                   <div className="relative">
-                    <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input id="inmobiliaria-ciudad-otra"
                       type="text" value={formData.ciudad_otra}
                       onChange={(e) => updateField('ciudad_otra', e.target.value)}
@@ -495,13 +451,12 @@ export default function RegisterInmobiliariaPage() {
               )}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-sm font-medium text-gray-700 mb-1">Inmuebles gestionados<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-inmuebles-gestionados" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Inmuebles gestionados<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconHome size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-inmuebles-gestionados"
                   value={formData.inmuebles_gestionados}
                   onChange={(e) => updateField('inmuebles_gestionados', e.target.value)}
-                  className={regSelectCls({ error: !!errors.inmuebles_gestionados, icon: true })}
+                  className={regSelectCls({ error: !!errors.inmuebles_gestionados })}
                   {...ariaError(errors, 'inmuebles_gestionados')}
                 >
                   <option value="">Seleccione</option>
@@ -517,9 +472,8 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-direccion-comercial" className="block text-sm font-medium text-gray-700 mb-1">Dirección comercial<span className="text-coral-700"> *</span></label>
+            <label htmlFor="inmobiliaria-direccion-comercial" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Dirección comercial<span className="text-coral-700"> *</span></label>
             <div className="relative">
-              <IconMapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-direccion-comercial"
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
@@ -533,11 +487,10 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-sitio-web" className="block text-sm font-medium text-gray-700 mb-1">
-              Página web <span className="text-gray-500 font-normal">(opcional)</span>
+            <label htmlFor="inmobiliaria-sitio-web" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+              Página web <span className="text-[11px] font-normal text-slate-500">opcional</span>
             </label>
             <div className="relative">
-              <IconGlobe size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input id="inmobiliaria-sitio-web"
                 type="url" value={formData.sitio_web}
                 onChange={(e) => updateField('sitio_web', e.target.value)}
@@ -553,11 +506,11 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           {/* ¿Qué afianzadora/aseguradora usan hoy? (opcional, tarea 1.6) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
             <div className={formData.afianzadora_tipo === '' || formData.afianzadora_tipo === 'ninguna' ? 'sm:col-span-2' : undefined}>
-              <label htmlFor="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
                 ¿Qué usan hoy para respaldar sus arriendos?{' '}
-                <span className="text-gray-500 font-normal">(opcional)</span>
+                <span className="text-[11px] font-normal text-slate-500">opcional</span>
               </label>
               <select id="inmobiliaria-que-usan-hoy-para-respaldar-sus-arriendo"
                 value={formData.afianzadora_tipo}
@@ -572,14 +525,14 @@ export default function RegisterInmobiliariaPage() {
             </div>
             {formData.afianzadora_tipo !== '' && formData.afianzadora_tipo !== 'ninguna' && (
               <div>
-                <label htmlFor="inmobiliaria-cual-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-                  ¿Cuál? <span className="text-gray-500 font-normal">(opcional)</span>
+                <label htmlFor="inmobiliaria-cual-opcional" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+                  ¿Cuál? <span className="text-[11px] font-normal text-slate-500">opcional</span>
                 </label>
                 <input id="inmobiliaria-cual-opcional"
                   type="text"
                   value={formData.afianzadora_actual}
                   onChange={(e) => updateField('afianzadora_actual', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                  className={regInputCls()}
                   placeholder="Nombre de la afianzadora / aseguradora"
                   maxLength={200}
                 />
@@ -590,11 +543,10 @@ export default function RegisterInmobiliariaPage() {
 
         {/* 2. Datos del representante legal */}
         <FormSection num={2} title="Datos del representante legal">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Nombre<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-nombre-del-representante" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Nombre<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-nombre-del-representante"
                   type="text" value={formData.nombre_representante_nombre}
                   onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
@@ -607,9 +559,8 @@ export default function RegisterInmobiliariaPage() {
               {errors.nombre_representante_nombre && <p id="error-nombre_representante_nombre" className="mt-1.5 text-sm text-red-600">{errors.nombre_representante_nombre}</p>}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-sm font-medium text-gray-700 mb-1">Apellido<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-apellido-del-representante" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Apellido<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-apellido-del-representante"
                   type="text" value={formData.nombre_representante_apellido}
                   onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
@@ -623,15 +574,14 @@ export default function RegisterInmobiliariaPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
             <div>
-              <label htmlFor="inmobiliaria-representante-tipo-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-representante-tipo-documento" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Tipo doc.<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="inmobiliaria-representante-tipo-documento"
                   value={formData.representante_tipo_documento}
                   onChange={(e) => updateField('representante_tipo_documento', e.target.value)}
-                  className={regSelectCls({ error: !!errors.representante_tipo_documento, icon: true })}
+                  className={regSelectCls({ error: !!errors.representante_tipo_documento })}
                   {...ariaError(errors, 'representante_tipo_documento')}
                 >
                   <option value="cc">Cédula</option>
@@ -642,9 +592,8 @@ export default function RegisterInmobiliariaPage() {
               {errors.representante_tipo_documento && <p id="error-representante_tipo_documento" className="mt-1.5 text-sm text-red-600">{errors.representante_tipo_documento}</p>}
             </div>
             <div>
-              <label htmlFor="inmobiliaria-representante-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-representante-documento" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Número de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-representante-documento"
                   type="text" value={formData.representante_documento}
                   onChange={(e) => updateField('representante_documento', e.target.value)}
@@ -659,13 +608,12 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-cargo" className="block text-sm font-medium text-gray-700 mb-1">Cargo<span className="text-coral-700"> *</span></label>
+            <label htmlFor="inmobiliaria-cargo" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Cargo<span className="text-coral-700"> *</span></label>
             <div className="relative">
-              <IconShield size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <select id="inmobiliaria-cargo"
                 value={formData.cargo_representante}
                 onChange={(e) => updateField('cargo_representante', e.target.value)}
-                className={regSelectCls({ error: !!errors.cargo_representante, icon: true })}
+                className={regSelectCls({ error: !!errors.cargo_representante })}
                 autoComplete="organization-title"
                 {...ariaError(errors, 'cargo_representante')}
               >
@@ -678,45 +626,45 @@ export default function RegisterInmobiliariaPage() {
             {errors.cargo_representante && <p id="error-cargo_representante" className="mt-1.5 text-sm text-red-600">{errors.cargo_representante}</p>}
           </div>
 
-          <div>
-            <label htmlFor="inmobiliaria-email-corporativo" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico<span className="text-coral-700"> *</span></label>
-            <div className="relative">
-              <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="inmobiliaria-email-corporativo"
-                type="email" value={formData.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
-                placeholder="rl@suinmobiliaria.com"
-                autoComplete="email"
-                inputMode="email"
-                {...ariaError(errors, 'email')}
-              />
-              <ValidCheck show={emailValido && !errors.email} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="inmobiliaria-email-corporativo" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Correo electrónico<span className="text-coral-700"> *</span></label>
+              <div className="relative">
+                <input id="inmobiliaria-email-corporativo"
+                  type="email" value={formData.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  className={inputCls(!!errors.email)}
+                  placeholder="rl@suinmobiliaria.com"
+                  autoComplete="email"
+                  inputMode="email"
+                  {...ariaError(errors, 'email')}
+                />
+              </div>
+              {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
             </div>
-            {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
-          </div>
 
-          <PhoneInput
-            label="Celular (WhatsApp)"
-            value={formData.telefono}
-            onChange={(v) => updateField('telefono', v)}
-            error={errors.telefono}
-            required
-          />
+            <PhoneInput
+              variant="auth"
+              label="Celular (WhatsApp)"
+              value={formData.telefono}
+              onChange={(v) => updateField('telefono', v)}
+              error={errors.telefono}
+              required
+            />
+          </div>
         </FormSection>
 
         {/* 3. Acceso a la plataforma */}
         <FormSection num={3} title="Acceso a la plataforma">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="inmobiliaria-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-contrasena" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-contrasena"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => updateField('password', e.target.value)}
-                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
+                  className={regInputCls({ error: !!errors.password, rightIcon: true })}
                   placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
                   {...ariaError(errors, 'password')}
@@ -726,18 +674,17 @@ export default function RegisterInmobiliariaPage() {
                 </button>
               </div>
               {errors.password && <p id="error-password" className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
-              <PasswordRequirements password={formData.password} />
+              <PasswordHelp />
             </div>
 
             <div>
-              <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña<span className="text-coral-700"> *</span></label>
+              <label htmlFor="inmobiliaria-confirmar-contrasena" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Confirmar contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="inmobiliaria-confirmar-contrasena"
                   type={showConfirm ? 'text' : 'password'}
                   value={formData.confirm_password}
                   onChange={(e) => updateField('confirm_password', e.target.value)}
-                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
+                  className={regInputCls({ error: !!errors.confirm_password, rightIcon: true })}
                   placeholder="Repita su contraseña"
                   autoComplete="new-password"
                   {...ariaError(errors, 'confirm_password')}
@@ -751,8 +698,8 @@ export default function RegisterInmobiliariaPage() {
           </div>
 
           <div>
-            <label htmlFor="inmobiliaria-origen" className="block text-sm font-medium text-gray-700 mb-1">
-              ¿Cómo nos conoció? <span className="text-gray-500 font-normal">(opcional)</span>
+            <label htmlFor="inmobiliaria-origen" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+              ¿Cómo nos conoció? <span className="text-[11px] font-normal text-slate-500">opcional</span>
             </label>
             <select id="inmobiliaria-origen"
               value={formData.origen}
@@ -770,17 +717,17 @@ export default function RegisterInmobiliariaPage() {
             {errors.origen && <p id="error-origen" className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
           </div>
 
-          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+          <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.accept_terms}
               onChange={(e) => updateField('accept_terms', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
             />
             <div>
-              <span className="text-sm text-gray-700">
+              <span className="text-[13px] leading-[1.5] text-slate-500">
                 Como representante legal, acepto los{' '}
-                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-semibold hover:underline">
                   términos y condiciones
                 </Link>{' '}
                 del servicio
@@ -789,17 +736,17 @@ export default function RegisterInmobiliariaPage() {
             </div>
           </label>
 
-          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+          <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.accept_data_treatment}
               onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
             />
             <div>
-              <span className="text-sm text-gray-700">
+              <span className="text-[13px] leading-[1.5] text-slate-500">
                 Autorizo el{' '}
-                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-semibold hover:underline">
                   tratamiento de los datos personales
                 </Link>{' '}
                 conforme a la Ley 1581 de 2012, y declaro que la información suministrada es veraz
@@ -832,7 +779,7 @@ export default function RegisterInmobiliariaPage() {
         contrato marco y activar su panel.
       </p>
 
-      <p className="mt-6 text-[13px] text-slate-500 text-center leading-[1.6]">
+      <p className="mt-1 text-[13px] text-slate-500 text-center leading-[1.6]">
         ¿Ya tiene cuenta?{' '}
         <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
           Inicie sesión

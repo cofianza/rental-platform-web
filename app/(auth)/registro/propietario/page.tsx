@@ -5,18 +5,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  IconUser, IconMail, IconLock, IconId,
-  IconEye, IconEyeOff, IconArrowRight, IconLoader, IconShield,
-  IconAlertTriangle,
+  IconEye, IconEyeOff, IconArrowRight, IconLoader, IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { cn, isValidEmail } from '@/lib/utils'
+import { isValidEmail } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
 import {
-  RegistroStepper, RegistroTipoTabs, FormSection, PasswordRequirements,
-  regInputCls, regSelectCls, ValidCheck, scrollToFirstError, ariaError,
+  RegistroTipoTabs, PasswordHelp,
+  regInputCls, regSelectCls, scrollToFirstError, ariaError,
 } from '@/components/auth/registro-ui'
 
 interface FormData {
@@ -157,34 +155,8 @@ export default function RegisterPropietarioPage() {
     }
   }
 
-  const inputCls = (hasError?: boolean, valid?: boolean, rightIcon?: boolean) =>
-    regInputCls({ error: hasError, valid, rightIcon })
+  const inputCls = (hasError?: boolean) => regInputCls({ error: hasError })
 
-  // Validez en vivo (check verde + stepper de progreso).
-  const emailValido = !!formData.email.trim() && isValidEmail(formData.email)
-  const telValido = formData.telefono.replace(/^\+[\d-]+\s*/, '').replace(/\D/g, '').length === 10
-  const passwordValida =
-    formData.password.length >= 8 &&
-    /[A-Z]/.test(formData.password) &&
-    /[a-z]/.test(formData.password) &&
-    /\d/.test(formData.password)
-
-  const pasos = [
-    {
-      label: 'Datos personales',
-      done:
-        !!formData.nombre.trim() && !!formData.apellido.trim() && !!formData.tipo_documento &&
-        !!formData.numero_documento.trim() && telValido,
-    },
-    {
-      label: 'Acceso',
-      done: emailValido && passwordValida && formData.password === formData.confirm_password && !!formData.confirm_password,
-    },
-    {
-      label: 'Términos',
-      done: formData.accept_terms && formData.accept_data_treatment,
-    },
-  ]
   const hayErrores = Object.keys(errors).length > 0
 
   return (
@@ -201,7 +173,6 @@ export default function RegisterPropietarioPage() {
 
       <RegistroTipoTabs activo="propietario" />
 
-      <RegistroStepper steps={pasos} />
 
       {serverError && (
         <div role="alert" className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -225,15 +196,12 @@ export default function RegisterPropietarioPage() {
           e.preventDefault()
           handleSubmit()
         }}
-        className="space-y-7"
+        className="space-y-4"
       >
-        {/* 1. Datos personales */}
-        <FormSection num={1} title="Datos personales">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="propietario-nombre" className="block text-sm font-medium text-gray-700 mb-1">Nombre<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-nombre" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Nombre<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-nombre"
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
@@ -246,9 +214,8 @@ export default function RegisterPropietarioPage() {
               {errors.nombre && <p id="error-nombre" className="mt-1.5 text-sm text-red-600">{errors.nombre}</p>}
             </div>
             <div>
-              <label htmlFor="propietario-apellido" className="block text-sm font-medium text-gray-700 mb-1">Apellido<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-apellido" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Apellido<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconUser size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-apellido"
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
@@ -262,28 +229,26 @@ export default function RegisterPropietarioPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
             <div>
-              <label htmlFor="propietario-tipo-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Tipo de documento<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-tipo-de-documento" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Tipo doc.<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <select id="propietario-tipo-de-documento"
                   value={formData.tipo_documento}
                   onChange={(e) => updateField('tipo_documento', e.target.value)}
-                  className={regSelectCls({ error: !!errors.tipo_documento, icon: true })}
+                  className={regSelectCls({ error: !!errors.tipo_documento })}
                   {...ariaError(errors, 'tipo_documento')}
                 >
-                  <option value="cc">Cédula de ciudadanía</option>
-                  <option value="ce">Cédula de extranjería</option>
+                  <option value="cc">Cédula</option>
+                  <option value="ce">C. extranjería</option>
                   <option value="pasaporte">Pasaporte</option>
                 </select>
               </div>
               {errors.tipo_documento && <p id="error-tipo_documento" className="mt-1.5 text-sm text-red-600">{errors.tipo_documento}</p>}
             </div>
             <div>
-              <label htmlFor="propietario-numero-de-documento" className="block text-sm font-medium text-gray-700 mb-1">Número de documento<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-numero-de-documento" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Número de documento<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconId size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-numero-de-documento"
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
@@ -297,45 +262,41 @@ export default function RegisterPropietarioPage() {
             </div>
           </div>
 
+
+          <div>
+            <label htmlFor="propietario-email" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Correo electrónico<span className="text-coral-700"> *</span></label>
+            <div className="relative">
+              <input id="propietario-email"
+                type="email" value={formData.email}
+                onChange={(e) => updateField('email', e.target.value)}
+                className={inputCls(!!errors.email)}
+                placeholder="nombre@correo.com"
+                autoComplete="email"
+                inputMode="email"
+                {...ariaError(errors, 'email')}
+              />
+            </div>
+            {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
+          </div>
+
           <PhoneInput
+            variant="auth"
             label="Celular (WhatsApp)"
             value={formData.telefono}
             onChange={(v) => updateField('telefono', v)}
             error={errors.telefono}
             required
           />
-        </FormSection>
 
-        {/* 2. Acceso a la plataforma */}
-        <FormSection num={2} title="Acceso a la plataforma">
-          <div>
-            <label htmlFor="propietario-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico<span className="text-coral-700"> *</span></label>
-            <div className="relative">
-              <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input id="propietario-email"
-                type="email" value={formData.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                className={inputCls(!!errors.email, emailValido && !errors.email, emailValido && !errors.email)}
-                placeholder="nombre@correo.com"
-                autoComplete="email"
-                inputMode="email"
-                {...ariaError(errors, 'email')}
-              />
-              <ValidCheck show={emailValido && !errors.email} />
-            </div>
-            {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="propietario-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Contraseña<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-contrasena" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-contrasena"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => updateField('password', e.target.value)}
-                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.password ? 'border-red-500' : passwordValida ? 'border-green-400' : 'border-gray-300')}
+                  className={regInputCls({ error: !!errors.password, rightIcon: true })}
                   placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
                   {...ariaError(errors, 'password')}
@@ -345,18 +306,17 @@ export default function RegisterPropietarioPage() {
                 </button>
               </div>
               {errors.password && <p id="error-password" className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
-              <PasswordRequirements password={formData.password} />
+              <PasswordHelp />
             </div>
 
             <div>
-              <label htmlFor="propietario-confirmar-contrasena" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña<span className="text-coral-700"> *</span></label>
+              <label htmlFor="propietario-confirmar-contrasena" className="block text-[13px] font-semibold text-slate-900 mb-1.5">Confirmar contraseña<span className="text-coral-700"> *</span></label>
               <div className="relative">
-                <IconLock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input id="propietario-confirmar-contrasena"
                   type={showConfirm ? 'text' : 'password'}
                   value={formData.confirm_password}
                   onChange={(e) => updateField('confirm_password', e.target.value)}
-                  className={cn('w-full pl-10 pr-12 py-2.5 border rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500', errors.confirm_password ? 'border-red-500' : formData.confirm_password && formData.confirm_password === formData.password ? 'border-green-400' : 'border-gray-300')}
+                  className={regInputCls({ error: !!errors.confirm_password, rightIcon: true })}
                   placeholder="Repita su contraseña"
                   autoComplete="new-password"
                   {...ariaError(errors, 'confirm_password')}
@@ -370,8 +330,8 @@ export default function RegisterPropietarioPage() {
           </div>
 
           <div>
-            <label htmlFor="propietario-origen" className="block text-sm font-medium text-gray-700 mb-1">
-              ¿Cómo nos conoció? <span className="text-gray-500 font-normal">(opcional)</span>
+            <label htmlFor="propietario-origen" className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+              ¿Cómo nos conoció? <span className="text-[11px] font-normal text-slate-500">opcional</span>
             </label>
             <select id="propietario-origen"
               value={formData.origen}
@@ -388,21 +348,18 @@ export default function RegisterPropietarioPage() {
             </select>
             {errors.origen && <p id="error-origen" className="mt-1.5 text-sm text-red-600">{errors.origen}</p>}
           </div>
-        </FormSection>
 
-        {/* 3. Términos */}
-        <FormSection num={3} title="Términos">
-          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_terms ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+          <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.accept_terms}
               onChange={(e) => updateField('accept_terms', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
             />
             <div>
-              <span className="text-sm text-gray-700">
+              <span className="text-[13px] leading-[1.5] text-slate-500">
                 Acepto los{' '}
-                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                <Link href="/terminos" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-semibold hover:underline">
                   términos y condiciones
                 </Link>{' '}
                 del servicio
@@ -411,17 +368,17 @@ export default function RegisterPropietarioPage() {
             </div>
           </label>
 
-          <label className={cn('flex items-start gap-3 cursor-pointer p-3 border rounded-lg transition-colors', errors.accept_data_treatment ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:bg-gray-50')}>
+          <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.accept_data_treatment}
               onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
             />
             <div>
-              <span className="text-sm text-gray-700">
+              <span className="text-[13px] leading-[1.5] text-slate-500">
                 Autorizo el{' '}
-                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-medium underline hover:text-primary-700">
+                <Link href="/privacidad" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary-600 font-semibold hover:underline">
                   tratamiento de mis datos personales
                 </Link>{' '}
                 conforme a la Ley 1581 de 2012
@@ -430,11 +387,6 @@ export default function RegisterPropietarioPage() {
             </div>
           </label>
 
-          <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
-            <IconShield size={16} className="text-blue-500 shrink-0" />
-            <span>Sus datos están protegidos conforme a la legislación colombiana de protección de datos personales.</span>
-          </div>
-        </FormSection>
 
         <button
           type="submit"
@@ -459,7 +411,7 @@ export default function RegisterPropietarioPage() {
         en la vitrina Cofianza.
       </p>
 
-      <p className="mt-6 text-[13px] text-slate-500 text-center leading-[1.6]">
+      <p className="mt-1 text-[13px] text-slate-500 text-center leading-[1.6]">
         ¿Ya tiene cuenta?{' '}
         <Link href={AUTH_ROUTES.LOGIN} className="text-primary-600 font-semibold hover:underline">
           Inicie sesión

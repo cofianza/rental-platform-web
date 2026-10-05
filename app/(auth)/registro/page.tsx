@@ -1,5 +1,7 @@
 /**
- * Selector de tipo de cuenta — Registro.
+ * Selector de tipo de cuenta — Registro. Solo se ve con una invitación a un
+ * estudio guardada (para ofrecer «Soy Arrendatario»); si no, redirige al
+ * registro de propietario.
  * Sigue el rebrand de cofianza_login v1: eyebrow + titulo Outfit + tabs
  * Iniciar sesion / Crear cuenta. Tres opciones (Arrendatario, Propietario,
  * Inmobiliaria) que llevan a paginas dedicadas con su flujo especifico.
@@ -9,6 +11,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AUTH_ROUTES } from '@/lib/constants'
 import { IconHome, IconBuilding2, IconArrowRight, IconUser } from '@/components/icons'
 
@@ -39,15 +42,22 @@ const OPCIONES = [
 export default function RegisterTypeSelectorPage() {
   // ...salvo que traiga una invitación a su estudio (el token quedó guardado al
   // pasar por /invitacion): sin esta opción quedaba sin forma de crear cuenta.
-  const [conInvitacion, setConInvitacion] = useState(false)
+  // Sin invitación, «Crear cuenta» abre de una el formulario del propietario con
+  // el selector «Soy:» arriba, como el diseño v2 (no hay pantalla intermedia).
+  const router = useRouter()
+  const [conInvitacion, setConInvitacion] = useState<boolean | null>(null)
   useEffect(() => {
+    let invitado = false
     try {
-      setConInvitacion(!!sessionStorage.getItem('invitacion_token'))
+      invitado = !!sessionStorage.getItem('invitacion_token')
     } catch {
-      // sin sessionStorage: las dos opciones de siempre
+      // sin sessionStorage: sin invitación
     }
-  }, [])
-  const opciones = conInvitacion ? [OPCION_ARRENDATARIO, ...OPCIONES] : OPCIONES
+    if (invitado) setConInvitacion(true)
+    else router.replace(AUTH_ROUTES.REGISTER_PROPIETARIO)
+  }, [router])
+  if (!conInvitacion) return null
+  const opciones = [OPCION_ARRENDATARIO, ...OPCIONES]
 
   return (
     <div className="w-full">

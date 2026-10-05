@@ -2,76 +2,24 @@
 
 /**
  * Piezas de UI compartidas por las pantallas de registro (inmobiliaria,
- * propietario). Centraliza las pestañas + selector «Soy:», el stepper de
- * progreso, el encabezado de sección, los requisitos de contraseña, el helper
- * de clases de input (con estado válido/error) y el scroll+foco al primer
+ * propietario). Centraliza las pestañas + selector «Soy:», el encabezado de
+ * sección, la ayuda de contraseña, las clases de input/select y el scroll+foco al primer
  * campo con error, para que las pantallas tengan el mismo trato.
  */
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { AUTH_ROUTES } from '@/lib/constants'
-import { IconCheck, IconHome, IconBuilding2 } from '@/components/icons'
+import { IconHome, IconBuilding2 } from '@/components/icons'
 
-export interface StepDef {
-  label: string
-  done: boolean
-}
+// Campo del diseño v2 (COFIANZA_Login_Registro_v2): sin icono a la izquierda,
+// borde 1,5 px, 15 px de letra; el mismo del login.
+const CAMPO =
+  'w-full rounded-[10px] border-[1.5px] bg-white py-3 text-[15px] leading-[1.25] text-slate-900 placeholder:text-slate-400 transition-all focus:outline-hidden focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10'
 
-/** Indicador de progreso 1·2·3: marca completadas (check) y la actual. */
-export function RegistroStepper({ steps }: { steps: StepDef[] }) {
-  const firstPending = steps.findIndex((s) => !s.done)
-  return (
-    <ol className="mb-7 flex items-center gap-1.5" aria-label="Progreso del registro">
-      {steps.map((s, i) => {
-        const current = i === firstPending
-        return (
-          <li key={s.label} className="flex min-w-0 flex-1 items-center gap-2">
-            <span
-              aria-current={current ? 'step' : undefined}
-              className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-bold transition-colors',
-                s.done
-                  ? 'border-primary-700 bg-primary-700 text-white'
-                  : current
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-gray-300 bg-white text-gray-500',
-              )}
-            >
-              {s.done ? <IconCheck size={14} /> : i + 1}
-            </span>
-            <span
-              className={cn(
-                'hidden truncate text-[11px] font-semibold uppercase tracking-wide sm:block',
-                s.done || current ? 'text-primary-700' : 'text-gray-500',
-              )}
-            >
-              {s.label}
-            </span>
-            {i < steps.length - 1 && (
-              <span
-                className={cn('mx-1 hidden h-0.5 flex-1 rounded sm:block', s.done ? 'bg-primary-500' : 'bg-gray-200')}
-                aria-hidden="true"
-              />
-            )}
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
-
-/**
- * Clase de input con estado. `valid` pinta borde verde (campo correcto),
- * `error` pinta borde rojo (tiene prioridad). `rightIcon` reserva espacio a la
- * derecha para el check/ojo.
- */
-export function regInputCls(opts: { error?: boolean; valid?: boolean; rightIcon?: boolean } = {}): string {
-  return cn(
-    'w-full rounded-lg border py-2.5 pl-10 text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-    opts.rightIcon ? 'pr-10' : 'pr-4',
-    opts.error ? 'border-red-500' : opts.valid ? 'border-green-400' : 'border-gray-300',
-  )
+/** Clase de input; `error` pinta borde rojo y `rightIcon` reserva espacio para el ojo. */
+export function regInputCls(opts: { error?: boolean; rightIcon?: boolean } = {}): string {
+  return cn(CAMPO, 'pl-3.5', opts.rightIcon ? 'pr-11' : 'pr-3.5', opts.error ? 'border-red-500' : 'border-slate-200')
 }
 
 /**
@@ -83,18 +31,6 @@ export function ariaError(errors: Record<string, string>, campo: string) {
     'aria-invalid': !!errors[campo],
     'aria-describedby': errors[campo] ? `error-${campo}` : undefined,
   }
-}
-
-/** Check verde a la derecha del input cuando el valor es válido. */
-export function ValidCheck({ show }: { show: boolean }) {
-  if (!show) return null
-  return (
-    <IconCheck
-      size={18}
-      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-green-500"
-      aria-hidden="true"
-    />
-  )
 }
 
 /**
@@ -183,8 +119,8 @@ export function RegistroTipoTabs({ activo }: { activo: 'propietario' | 'inmobili
 export function FormSection({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-700 text-[11px] font-bold text-white">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-primary-700 text-[11px] font-bold text-white">
           {num}
         </span>
         <span className="text-[13px] font-bold uppercase tracking-[2px] text-primary-700">{title}</span>
@@ -194,33 +130,16 @@ export function FormSection({ num, title, children }: { num: number; title: stri
   )
 }
 
-export function PasswordRequirements({ password }: { password: string }) {
-  const checks = [
-    { label: 'Al menos 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
-    { label: 'Un número', met: /\d/.test(password) },
-  ]
-
+/** Requisitos de la contraseña, como texto de ayuda bajo el campo (diseño v2). */
+export function PasswordHelp() {
   return (
-    <div className="mt-2 space-y-1">
-      {checks.map((check) => (
-        <div key={check.label} className="flex items-center gap-2">
-          <IconCheck size={14} className={check.met ? 'text-green-500' : 'text-gray-300'} />
-          <span className={cn('text-xs', check.met ? 'text-green-600' : 'text-gray-500')}>
-            {check.label}
-          </span>
-        </div>
-      ))}
-    </div>
+    <p className="mt-1 text-xs leading-[1.4] text-slate-500">
+      Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.
+    </p>
   )
 }
 
-/** Clase de select con estado de error; `icon` reserva espacio a la izquierda. */
-export function regSelectCls(opts: { error?: boolean; icon?: boolean } = {}): string {
-  return cn(
-    'w-full rounded-lg border bg-white py-2.5 pr-4 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-    opts.icon ? 'pl-10' : 'pl-3',
-    opts.error ? 'border-red-500' : 'border-gray-300',
-  )
+/** Clase de select con estado de error. */
+export function regSelectCls(opts: { error?: boolean } = {}): string {
+  return cn(CAMPO, 'px-3.5', opts.error ? 'border-red-500' : 'border-slate-200')
 }
