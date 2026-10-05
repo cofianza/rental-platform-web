@@ -267,7 +267,7 @@ export function PhoneInput({
             value={localNumber}
             onChange={handleLocalChange}
             disabled={disabled}
-            placeholder={placeholder || '3001234567'}
+            placeholder={placeholder || (auth ? 'Número de celular' : '3001234567')}
             className={cn(
               'w-full py-2.5 border rounded-r-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500',
               auth && 'rounded-r-[10px] border-[1.5px] py-3 text-[15px] leading-[1.25] placeholder:text-slate-400 focus:ring-[3px] focus:ring-primary-600/10 focus:border-primary-600',
