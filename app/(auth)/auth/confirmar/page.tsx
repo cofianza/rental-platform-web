@@ -177,7 +177,7 @@ export default function ConfirmarEnlacePage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
+              placeholder="nombre@correo.com"
               disabled={enviando}
               autoComplete="email"
               className="block w-full pl-10 pr-4 py-2.5 border border-gray-300 bg-white rounded-lg text-base focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"

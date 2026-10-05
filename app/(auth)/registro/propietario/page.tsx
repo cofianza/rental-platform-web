@@ -206,7 +206,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.nombre}
                   onChange={(e) => updateField('nombre', e.target.value)}
                   className={inputCls(!!errors.nombre)}
-                  placeholder="Roberto"
+                  placeholder="Su nombre"
                   autoComplete="given-name"
                   {...ariaError(errors, 'nombre')}
                 />
@@ -220,7 +220,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.apellido}
                   onChange={(e) => updateField('apellido', e.target.value)}
                   className={inputCls(!!errors.apellido)}
-                  placeholder="Henao"
+                  placeholder="Sus apellidos"
                   autoComplete="family-name"
                   {...ariaError(errors, 'apellido')}
                 />
@@ -253,7 +253,7 @@ export default function RegisterPropietarioPage() {
                   type="text" value={formData.numero_documento}
                   onChange={(e) => updateField('numero_documento', e.target.value)}
                   className={inputCls(!!errors.numero_documento)}
-                  placeholder="1.040.567.890"
+                  placeholder="Sin puntos ni espacios"
                   inputMode={formData.tipo_documento === 'pasaporte' ? 'text' : 'numeric'}
                   {...ariaError(errors, 'numero_documento')}
                 />

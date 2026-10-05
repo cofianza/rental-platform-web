@@ -126,7 +126,7 @@ export default function ForgotPasswordPage() {
                 if (errors.email) setErrors({ ...errors, email: undefined })
                 if (serverError) setServerError(null)
               }}
-              placeholder="correo@ejemplo.com"
+              placeholder="nombre@correo.com"
               disabled={isLoading}
               autoComplete="email"
               autoFocus

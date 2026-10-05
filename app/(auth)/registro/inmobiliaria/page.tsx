@@ -341,7 +341,7 @@ export default function RegisterInmobiliariaPage() {
                 type="text" value={formData.razon_social}
                 onChange={(e) => updateField('razon_social', e.target.value)}
                 className={inputCls(!!errors.razon_social)}
-                placeholder="Habitar Propiedades S.A.S."
+                placeholder="Razón social de la inmobiliaria"
                 autoComplete="organization"
                 {...ariaError(errors, 'razon_social')}
               />
@@ -377,7 +377,7 @@ export default function RegisterInmobiliariaPage() {
                     dvRef.current?.select()
                   }}
                   className={inputCls(!!errors.nit_numero)}
-                  placeholder="900819665"
+                  placeholder="Número sin puntos"
                   aria-invalid={!!errors.nit_numero}
                   aria-describedby={errors.nit_numero || errors.nit_dv ? 'error-nit' : undefined}
                 />
@@ -478,7 +478,7 @@ export default function RegisterInmobiliariaPage() {
                 type="text" value={formData.direccion_comercial}
                 onChange={(e) => updateField('direccion_comercial', e.target.value)}
                 className={inputCls(!!errors.direccion_comercial)}
-                placeholder="Calle 129 Sur 50 33 Of. 301"
+                placeholder="Dirección de la oficina"
                 autoComplete="street-address"
                 {...ariaError(errors, 'direccion_comercial')}
               />
@@ -495,7 +495,7 @@ export default function RegisterInmobiliariaPage() {
                 type="url" value={formData.sitio_web}
                 onChange={(e) => updateField('sitio_web', e.target.value)}
                 className={inputCls(!!errors.sitio_web)}
-                placeholder="https://www.suinmobiliaria.com"
+                placeholder="www.suinmobiliaria.com"
                 autoComplete="url"
                 inputMode="url"
                 maxLength={300}
@@ -551,7 +551,7 @@ export default function RegisterInmobiliariaPage() {
                   type="text" value={formData.nombre_representante_nombre}
                   onChange={(e) => updateField('nombre_representante_nombre', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_nombre)}
-                  placeholder="Carlos Mario"
+                  placeholder="Nombre del representante"
                   autoComplete="given-name"
                   {...ariaError(errors, 'nombre_representante_nombre')}
                 />
@@ -565,7 +565,7 @@ export default function RegisterInmobiliariaPage() {
                   type="text" value={formData.nombre_representante_apellido}
                   onChange={(e) => updateField('nombre_representante_apellido', e.target.value)}
                   className={inputCls(!!errors.nombre_representante_apellido)}
-                  placeholder="Vélez Cifuentes"
+                  placeholder="Apellidos del representante"
                   autoComplete="family-name"
                   {...ariaError(errors, 'nombre_representante_apellido')}
                 />
@@ -598,7 +598,7 @@ export default function RegisterInmobiliariaPage() {
                   type="text" value={formData.representante_documento}
                   onChange={(e) => updateField('representante_documento', e.target.value)}
                   className={inputCls(!!errors.representante_documento)}
-                  placeholder="71.234.567"
+                  placeholder="Sin puntos ni espacios"
                   maxLength={40}
                   {...ariaError(errors, 'representante_documento')}
                 />
@@ -634,7 +634,7 @@ export default function RegisterInmobiliariaPage() {
                   type="email" value={formData.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   className={inputCls(!!errors.email)}
-                  placeholder="rl@suinmobiliaria.com"
+                  placeholder="nombre@suinmobiliaria.com"
                   autoComplete="email"
                   inputMode="email"
                   {...ariaError(errors, 'email')}
