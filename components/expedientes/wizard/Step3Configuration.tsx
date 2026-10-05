@@ -95,6 +95,9 @@ export function Step3Configuration({
   const esInterno = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
   // El responsable-MIEMBRO (multi-tenant Fase 3.1) aplica a la inmobiliaria.
   const esInmobiliaria = userRol === 'inmobiliaria'
+  // Solo la inmobiliaria (y el administrador) tienen paquetes de créditos: al
+  // propietario la consulta del saldo le da 403 y la opción salía deshabilitada.
+  const usaCreditos = esInmobiliaria || userRol === 'administrador'
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
@@ -108,6 +111,7 @@ export function Step3Configuration({
   const [saldoError, setSaldoError] = useState(false)
 
   const cargarSaldo = useCallback(() => {
+    if (!usaCreditos) return
     creditosEstudiosService
       .getMiSaldo()
       .then((s) => {
@@ -120,7 +124,7 @@ export function Step3Configuration({
         // deshabilitada y las otras dos siguen disponibles.
         setSaldoError(true)
       })
-  }, [])
+  }, [usaCreditos])
 
   useEffect(() => {
     cargarSaldo()
@@ -214,7 +218,7 @@ export function Step3Configuration({
         <div className="space-y-2.5">
           {/* Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
               (paquete o prospecto); el API responde 403. */}
-          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria')).map(({ valor, letra, titulo, descripcion, Icono }) => {
+          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito')).map(({ valor, letra, titulo, descripcion, Icono }) => {
             const seleccionada = data.forma_pago === valor
             const sinSaldo = valor === 'credito' && (saldoError || saldo === 0)
             return (
