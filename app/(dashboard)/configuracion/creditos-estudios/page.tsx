@@ -18,6 +18,7 @@ import { sinReferenciasInternas } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import {
   creditosEstudiosService,
   type IPaqueteCreditos,
@@ -56,6 +57,9 @@ const ESTADO_PAQUETE: Record<IDetallePaquete['estado'], { label: string; clase: 
 
 export default function CreditosEstudiosPage() {
   const { user } = useAuth()
+  // El miembro «Sólo lectura» ve su saldo, pero no compra ni factura (el API le
+  // niega esas acciones y el botón terminaba en error).
+  const puedeEditar = usePuedeEditar()
   const searchParams = useSearchParams()
   const compraStatus = searchParams?.get('status')
   // MP agrega el id del pago a la URL de retorno — lo usamos para confirmar la
@@ -328,7 +332,7 @@ export default function CreditosEstudiosPage() {
       )}
 
       {/* Paquetes */}
-      {isInmobiliaria && (
+      {isInmobiliaria && puedeEditar && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Comprar paquete</h2>
           <p className="text-sm text-gray-500 mb-4">
@@ -557,6 +561,8 @@ export default function CreditosEstudiosPage() {
                             <IconFileText size={14} />
                             {m.factura.factus_number || 'Ver factura'}
                           </Link>
+                        ) : !puedeEditar ? (
+                          <span className="text-gray-300 text-xs">—</span>
                         ) : (
                           <button
                             onClick={() => handleFacturarClick(m.compra_id!)}
