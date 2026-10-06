@@ -132,6 +132,8 @@ export interface InmobiliariaRow {
   contratosActivos: number
   canonTotal: number
   moraActivaCount: number
+  /** Créditos de estudio de la organización. */
+  estudios: { comprados: number; usados: number; disponibles: number; ultimaCompra: string | null }
 }
 
 export interface PropietarioRow {
@@ -145,6 +147,9 @@ export interface PropietarioRow {
   contratosActivos: number
   canonTotal: number
   moraActivaCount: number
+  /** Estudios pagados (evaluaciones completadas) de sus inmuebles. */
+  estudiosPagados: number
+  ultimoPagoEstudio: string | null
 }
 
 export interface InquilinoRow {
