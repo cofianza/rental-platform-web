@@ -54,6 +54,9 @@ interface PerfilRow {
   contratosActivos: number
   canonTotal: number
   moraActivaCount: number
+  estudios?: { comprados: number; usados: number; disponibles: number; ultimaCompra: string | null }
+  estudiosPagados?: number
+  ultimoPagoEstudio?: string | null
 }
 
 interface Props {
@@ -205,8 +208,8 @@ export function GestionPerfilesPage({ rol }: Props) {
   // ── Render ────────────────────────────────────────────────
 
   const head = esInmobiliaria
-    ? ['Nombre', 'NIT', 'Contacto', 'Ciudad', 'Estado', 'Contratos', 'Canon', 'Mora', '']
-    : ['Nombre', 'Cédula', 'Teléfono', 'Ciudad', 'Estado', 'Contratos', 'Canon', 'Mora', '']
+    ? ['Nombre', 'NIT', 'Contacto', 'Ciudad', 'Estado', 'Estudios comprados', 'Contratos', 'Canon', 'Mora', '']
+    : ['Nombre', 'Cédula', 'Teléfono', 'Ciudad', 'Estado', 'Estudios pagados', 'Contratos', 'Canon', 'Mora', '']
 
   const nuevoBtn = (
     <button
@@ -328,6 +331,28 @@ export function GestionPerfilesPage({ rol }: Props) {
                 <Chip tone={r.estado === 'activo' ? 'green' : 'gray'}>
                   {r.estado === 'activo' ? 'Activo' : 'Inactivo'}
                 </Chip>
+              </Td>
+              <Td>
+                {esInmobiliaria ? (
+                  r.estudios && r.estudios.comprados > 0 ? (
+                    <>
+                      <div className="font-semibold text-ink-900">{r.estudios.comprados}</div>
+                      <div className="text-[10px] text-ink-500 whitespace-nowrap">
+                        {r.estudios.usados} usados · {r.estudios.disponibles} disponibles
+                      </div>
+                      {r.estudios.ultimaCompra && (
+                        <div className="text-[10px] text-ink-500">Última: {fechaCorta(r.estudios.ultimaCompra)}</div>
+                      )}
+                    </>
+                  ) : '—'
+                ) : r.estudiosPagados ? (
+                  <>
+                    <div className="font-semibold text-ink-900">{r.estudiosPagados}</div>
+                    {r.ultimoPagoEstudio && (
+                      <div className="text-[10px] text-ink-500">Último: {fechaCorta(r.ultimoPagoEstudio)}</div>
+                    )}
+                  </>
+                ) : '—'}
               </Td>
               <Td>{r.contratosActivos > 0 ? r.contratosActivos : '—'}</Td>
               <Td>{r.canonTotal > 0 ? money(r.canonTotal) : '—'}</Td>
