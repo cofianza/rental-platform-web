@@ -13,6 +13,7 @@ const CONCEPTO_LABELS: Record<string, string> = {
   deposito: 'Depósito',
   otro: 'Otros conceptos',
   creditos_estudios: 'Paquetes de créditos de evaluación',
+  tarifa_mensual: 'Tarifa mensual de la fianza',
 }
 
 export function TarifasIvaSection() {
@@ -77,7 +78,8 @@ export function TarifasIvaSection() {
           el IVA incluido. <strong>0 = exento</strong>. La evaluación y la prima de vinculación van
           gravadas con la tasa de IVA de Calibración, la misma con la que se cobran; cada cobro guarda
           la tasa con la que se facturará. Los paquetes de
-          créditos son el pago anticipado de evaluaciones y llevan su misma tasa.
+          créditos son el pago anticipado de evaluaciones y llevan su misma tasa. La tarifa mensual se
+          factura con la tasa que guardó cada línea de la cuenta de cobro.
         </p>
       </div>
 

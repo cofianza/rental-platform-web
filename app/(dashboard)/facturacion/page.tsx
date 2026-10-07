@@ -15,6 +15,7 @@ import { PendientesFacturarSection } from '@/components/facturacion/PendientesFa
 import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { ReembolsosSection } from '@/components/facturacion/ReembolsosSection'
 import { PrimasPorRemitirSection } from '@/components/facturacion/PrimasPorRemitirSection'
+import { TarifaMensualSection } from '@/components/facturacion/TarifaMensualSection'
 import { useAuthStore } from '@/stores/auth.store'
 
 export default function FacturacionPage() {
@@ -27,6 +28,9 @@ export default function FacturacionPage() {
   // P1: devolver plata por Mercado Pago es una decisión de Cofianza (la API
   // también lo exige).
   const canReembolsar = user?.rol === 'administrador'
+  // Plan cobro-tarifa-mensual B8: de la inmobiliaria, solo los titulares ven las
+  // cuentas de cobro de Cofianza (la API responde 403 SOLO_TITULARES al resto).
+  const esTitular = user?.rol === 'inmobiliaria' && user.rol_miembro === 'owner'
   // Mismo criterio una linea arriba: 'Datos Fiscales' pega a
   // /perfil-arrendador/me, cuyo router es roleGuard(admin, inmobiliaria,
   // propietario). Para operador_analista y gerencia_consulta la pestaña —que
@@ -57,6 +61,9 @@ export default function FacturacionPage() {
         ...(canReembolsar ? [{ id: 'reembolsos', label: 'Reembolsos' }] : []),
         // Adenda de precios §5.1: lo que las inmobiliarias remiten a Cofianza.
         ...(canSeeTarifasIva ? [{ id: 'primas', label: 'Primas por remitir' }] : []),
+        // Plan cobro-tarifa-mensual §4: las cuentas de cobro de la tarifa a cada inmobiliaria.
+        ...(canSeeTarifasIva ? [{ id: 'tarifa', label: 'Tarifa mensual' }] : []),
+        ...(esTitular ? [{ id: 'tarifa', label: 'Cuentas de cobro Cofianza' }] : []),
       ]
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales.
@@ -114,6 +121,7 @@ export default function FacturacionPage() {
         )}
         {activeTab === 'reembolsos' && canReembolsar && <ReembolsosSection />}
         {activeTab === 'primas' && canSeeTarifasIva && <PrimasPorRemitirSection />}
+        {activeTab === 'tarifa' && (canSeeTarifasIva || esTitular) && <TarifaMensualSection />}
       </div>
     </div>
   )

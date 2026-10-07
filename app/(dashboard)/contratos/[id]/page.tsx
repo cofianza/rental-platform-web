@@ -35,6 +35,9 @@ import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSe
 import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
 import { ContratoVerificacionView } from '@/components/contratos/ContratoVerificacionView'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
+import { RegistrarCanonReajustado } from '@/components/contratos/RegistrarCanonReajustado'
+import { aniversarioPorConfirmar } from '@/lib/tarifaCobro'
+import { hoyBogota } from '@/hooks/useContratoV3'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -444,6 +447,19 @@ export default function ContratoDetallePage() {
   const valorArriendoFmt = contrato.valor_arriendo ? formatCurrency(Number(contrato.valor_arriendo)) : '—'
   // Migrado: se activó con el Acta de Migración; no se genera, verifica ni envía a firma aquí.
   const esMigrado = contrato.origen === 'migracion'
+  // Plan cobro-tarifa-mensual B9: la inmobiliaria (no solo_lectura) o el
+  // administrador confirman el canon reajustado en los 30 días previos al aniversario, cuando la API lo pide.
+  // Solo contratos que causan tarifa (V3 o migrado, firmado y vigente); el
+  // propietario directo no tiene cobro de tarifa mensual.
+  const aniversarioCanon =
+    (user?.rol === 'inmobiliaria' || user?.rol === 'administrador') &&
+    puedeEditar &&
+    contrato.estado === 'vigente' &&
+    contrato.fecha_firma &&
+    contrato.fecha_inicio &&
+    (contrato.destinacion || esMigrado)
+      ? aniversarioPorConfirmar(contrato.fecha_inicio, hoyBogota())
+      : null
 
   return (
     <div className="space-y-6">
@@ -678,6 +694,14 @@ export default function ContratoDetallePage() {
               )}
             </div>
           </div>
+
+          {aniversarioCanon && (
+            <RegistrarCanonReajustado
+              contratoId={contrato.id}
+              aniversario={aniversarioCanon}
+              canonActual={contrato.valor_arriendo ? Number(contrato.valor_arriendo) : null}
+            />
+          )}
 
           {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de
               firma. Se auto-oculta si el contrato no usa firma multi-parte.
