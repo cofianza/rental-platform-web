@@ -265,6 +265,17 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Administración',
   },
   {
+    // Migración de cartera (spec §2.3.0): en la fase 1 carga un analista de
+    // Cofianza, no la inmobiliaria. Sin recurso RBAC propio: se gatea solo por
+    // rol, los mismos que admite la API en /admin/migracion.
+    label: 'Migración de cartera',
+    href: '/admin/migracion',
+    icon: 'Upload',
+    description: 'Habilitación, carga de lotes, actas y tablero de la cartera migrada',
+    requiredRoles: ['administrador', 'operador_analista'],
+    group: 'Administración',
+  },
+  {
     // Adenda 1 §11: parámetros del modelo editables por Gerencia sin desarrollo.
     label: 'Calibración del modelo',
     href: '/admin/calibracion',
@@ -490,8 +501,9 @@ const ETIQUETA_V3: Partial<Record<EstadoContratoKey, string>> = {
  * A dónde lleva un contrato: el V3 (con destinacion) se ve en el asistente del
  * estudio. /contratos/:id también redirige ahí, pero después de una espera.
  */
-export function rutaContrato(c: { id: string; destinacion?: string | null; expediente_id?: string | null }): string {
-  return c.destinacion && c.expediente_id ? `/expedientes/${c.expediente_id}/contrato` : `/contratos/${c.id}`
+export function rutaContrato(c: { id: string; destinacion?: string | null; expediente_id?: string | null; origen?: string | null }): string {
+  // Los migrados tienen destinación pero no nacen del asistente: se ven en su detalle.
+  return c.destinacion && c.expediente_id && c.origen !== 'migracion' ? `/expedientes/${c.expediente_id}/contrato` : `/contratos/${c.id}`
 }
 
 /** Etiqueta del estado de un contrato; `v3` = el contrato tiene destinacion (asistente V3). */

@@ -58,8 +58,14 @@ export function ContratosSection() {
 
   const [estado, setEstado] = useState<string>(TODOS)
   const [pago, setPago] = useState<string>(TODOS)
+  const [origen, setOrigen] = useState<string>(TODOS)
 
-  const rows = useMemo<ContratoAdminRow[]>(() => data ?? [], [data])
+  // Spec migración §4.1: el filtro de origen separa también los KPIs (originada vs migrada).
+  const rows = useMemo<ContratoAdminRow[]>(
+    () => (data ?? []).filter((r) => origen === TODOS || (r.origen ?? 'plataforma') === origen),
+    [data, origen],
+  )
+  const hayMigrados = (data ?? []).some((r) => r.origen === 'migracion')
 
   const estadoOptions = useMemo(() => {
     const presentes = Array.from(new Set(rows.map((r) => r.estado))).sort()
@@ -115,6 +121,18 @@ export function ContratosSection() {
             { value: 'mora', label: 'Mora' },
           ]}
         />
+        {hayMigrados && (
+          <FiltroSelect
+            label="Filtrar por origen"
+            value={origen}
+            onChange={setOrigen}
+            options={[
+              { value: TODOS, label: 'Toda la cartera' },
+              { value: 'plataforma', label: 'Originada en la plataforma' },
+              { value: 'migracion', label: 'Migrada' },
+            ]}
+          />
+        )}
       </FiltroBar>
 
       <SeccionEstado
@@ -149,6 +167,7 @@ export function ContratosSection() {
                 <div className="flex flex-wrap items-center gap-1">
                   <Chip tone={estadoTone(r.estado)}>{r.estado.replace(/_/g, ' ')}</Chip>
                   {r.porVencer && <Chip tone="orange">Por vencer</Chip>}
+                  {r.origen === 'migracion' && <Chip tone="purple">Migrado</Chip>}
                 </div>
               </Td>
               <Td>{pagoChip(r.pago)}</Td>

@@ -57,6 +57,8 @@ export interface IMoraMensaje {
 
 export interface IMoraDetalle extends IMoraTicket {
   mensajes: IMoraMensaje[]
+  /** Solo contratos migrados (§5.1.4): si la mora se puede reportar a centrales. null = no aplica. */
+  reportable_centrales?: { reportable: boolean | null; motivo: string | null } | null
 }
 
 /** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =

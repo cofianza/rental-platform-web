@@ -276,6 +276,7 @@ export function InquilinosSection() {
                 <tr>
                   <Td>
                     <span className="font-semibold text-ink-900">{r.inquilino}</span>
+                    {r.origen === 'migracion' && <> <Chip tone="purple">Migrado</Chip></>}
                     {r.telefono && (
                       <a
                         href={`tel:${r.telefono}`}

@@ -50,8 +50,32 @@ export interface IContrato {
   destinacion?: 'vivienda' | 'comercial' | null
   /** Consecutivo CTO-… (lo asigna el trigger al crear la fila V3). */
   numero?: string | null
+  /** 'migracion' = fianza activada por migración de cartera (no pasa por el asistente V3). */
+  origen?: 'plataforma' | 'migracion'
+  /** Solo en el detalle y solo si origen = 'migracion'. */
+  migracion?: IContratoMigracion | null
   created_at: string
   updated_at: string
+}
+
+/** Bloque de migración de cartera que GET /contratos/:id agrega a los migrados. */
+export interface IContratoMigracion {
+  /** = fecha_firma: última firma del Acta de Migración. */
+  fecha_activacion: string | null
+  fila_id: string | null
+  n_fila: number | null
+  reportable: boolean | null
+  reportable_motivo: string | null
+  tarifa_vigente_pct: number | null
+  tarifa_acta_pct: number | null
+  tarifa_pct: number | null
+  tarifa_desde: string | null
+  en_revision: boolean
+  en_revision_motivo: string | null
+  excluido_en: string | null
+  excluido_motivo: string | null
+  lote: { id: string; numero: string; activado_en: string | null } | null
+  acta: { id: string; estado: string; cerrado_en: string | null } | null
 }
 
 export type ModalidadFianza = 'plena' | 'compartida' | 'plus'

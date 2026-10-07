@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
 import {
@@ -20,6 +21,7 @@ import {
   IconScrollText,
   IconFolderOpen,
   IconMail,
+  IconEye,
 } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, formatCurrency } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
@@ -36,9 +38,10 @@ import { RegenerarContratoModal } from '@/components/contratos/RegenerarContrato
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { abrirEnPestana } from '@/lib/utils'
 import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
-import type { IContrato, EstadoContrato } from '@/types/contrato'
+import type { IContrato, IContratoMigracion, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 
 const PdfViewer = dynamic(
@@ -142,7 +145,9 @@ export default function ContratoDetallePage() {
       // Contratos V3: se ven y se editan en el asistente del estudio. Las acciones
       // de esta pantalla son del flujo anterior (el API las rechaza para V3).
       // Sin apagar el skeleton, para no pintar esta vista mientras redirige.
-      if (data.destinacion) {
+      // Los migrados también tienen destinación, pero no nacen del asistente:
+      // se ven aquí, con el panel «Contrato migrado».
+      if (data.destinacion && data.origen !== 'migracion') {
         redirigiendo = true
         router.replace(`/expedientes/${data.expediente_id}/contrato`)
         return
@@ -437,6 +442,8 @@ export default function ContratoDetallePage() {
   const estadoConfig = ESTADOS_CONTRATO[contrato.estado as EstadoContratoKey]
   const dotClass = ESTADO_DOT[estadoConfig?.color ?? 'gray'] || 'bg-gray-400'
   const valorArriendoFmt = contrato.valor_arriendo ? formatCurrency(Number(contrato.valor_arriendo)) : '—'
+  // Migrado: se activó con el Acta de Migración; no se genera, verifica ni envía a firma aquí.
+  const esMigrado = contrato.origen === 'migracion'
 
   return (
     <div className="space-y-6">
@@ -491,7 +498,7 @@ export default function ContratoDetallePage() {
             {downloadLoading ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
             Descargar PDF
           </button>
-          {canRegenerate && contrato.estado === 'borrador' && (
+          {canRegenerate && !esMigrado && contrato.estado === 'borrador' && (
             <button
               onClick={() => setRegenerarOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
@@ -500,7 +507,7 @@ export default function ContratoDetallePage() {
               Editar y regenerar
             </button>
           )}
-          {canRegenerate && ESTADOS_PRE_FIRMA.includes(contrato.estado) && (
+          {canRegenerate && !esMigrado && ESTADOS_PRE_FIRMA.includes(contrato.estado) && (
             <button
               onClick={handleEnviarAFirma}
               disabled={enviandoFirma || !contrato.storage_key}
@@ -542,32 +549,34 @@ export default function ContratoDetallePage() {
               resaltados) para confirmar que el contrato se generó bien. La vista
               de verificación es independiente del PDF (usa su propio endpoint),
               así que el toggle se muestra aunque el PDF no esté disponible. */}
-          <div className="flex items-center px-4 py-2.5 border-b border-gray-200 bg-gray-50/70">
-            <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5">
-              <button
-                onClick={() => setVista('pdf')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
-                  vista === 'pdf'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                <IconFileText size={14} />
-                PDF
-              </button>
-              <button
-                onClick={() => setVista('verificacion')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
-                  vista === 'verificacion'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                <IconFileCheck size={14} />
-                Vista de verificación
-              </button>
+          {!esMigrado && (
+            <div className="flex items-center px-4 py-2.5 border-b border-gray-200 bg-gray-50/70">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5">
+                <button
+                  onClick={() => setVista('pdf')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                    vista === 'pdf'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <IconFileText size={14} />
+                  PDF
+                </button>
+                <button
+                  onClick={() => setVista('verificacion')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                    vista === 'verificacion'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <IconFileCheck size={14} />
+                  Vista de verificación
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           {previewFirmado && vista === 'pdf' && previewUrl && (
             previewFuente === 'combinado' ? (
               <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-xs font-medium text-amber-700">
@@ -591,7 +600,7 @@ export default function ContratoDetallePage() {
           {/* 4.1c: el contrato supera las 11 páginas; damos casi toda la
               altura de la ventana para leerlo cómodo (el visor scrollea). */}
           <div className="h-[85vh] min-h-150">
-            {vista === 'verificacion' ? (
+            {vista === 'verificacion' && !esMigrado ? (
               <ContratoVerificacionView contratoId={id} />
             ) : previewUrl ? (
               <PdfViewer url={previewUrl} />
@@ -615,6 +624,10 @@ export default function ContratoDetallePage() {
 
         {/* Info panel */}
         <div className="space-y-6">
+          {contrato.migracion && (
+            <PanelMigrado contratoId={contrato.id} m={contrato.migracion} verLote={canManage} />
+          )}
+
           {/* Contract info */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Canon mensual — la cifra clave del contrato, destacada. */}
@@ -670,12 +683,14 @@ export default function ContratoDetallePage() {
               firma. Se auto-oculta si el contrato no usa firma multi-parte.
               El recordatorio lo permite la API también al dueño (inmobiliaria
               o propietario), no solo a los roles internos. */}
-          <FirmantesContratoSection
-            contratoId={id}
-            canManage={canRegenerate}
-            enFirma={contrato.estado === 'pendiente_firma'}
-            onAllSigned={handleAllSigned}
-          />
+          {!esMigrado && (
+            <FirmantesContratoSection
+              contratoId={id}
+              canManage={canRegenerate}
+              enFirma={contrato.estado === 'pendiente_firma'}
+              onAllSigned={handleAllSigned}
+            />
+          )}
 
           {/* Accesos: expediente + historial de estados, agrupados en una sola
               tarjeta de lista en vez de dos tarjetas sueltas. */}
@@ -715,13 +730,15 @@ export default function ContratoDetallePage() {
           contrato renderizado en el PDF. */}
 
       {/* Version history section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <VersionHistorialSection
-          contratoId={contrato.id}
-          currentVersion={contrato.version}
-          onCompare={(v1, v2) => setCompareVersions({ v1, v2 })}
-        />
-      </div>
+      {!esMigrado && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <VersionHistorialSection
+            contratoId={contrato.id}
+            currentVersion={contrato.version}
+            onCompare={(v1, v2) => setCompareVersions({ v1, v2 })}
+          />
+        </div>
+      )}
 
       {/* Modals */}
       {/* Editor controlado + regeneracion (4.1e) */}
@@ -798,6 +815,97 @@ export default function ContratoDetallePage() {
         confirmLabel="Enviar a firma"
         isLoading={confirmandoFirma}
       />
+    </div>
+  )
+}
+
+const pctFmt = (n: number | null) =>
+  n == null ? '—' : `${n.toLocaleString('es-CO', { maximumFractionDigits: 2 })} %`
+
+/** Fianza activada por migración de cartera: lo que reemplaza al asistente V3. */
+function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: IContratoMigracion; verLote: boolean }) {
+  const [abriendo, setAbriendo] = useState(false)
+  const reporte =
+    m.reportable == null
+      ? '—'
+      : m.reportable
+        ? 'REPORTABLE'
+        : `NO REPORTABLE${m.reportable_motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
+
+  async function verActa() {
+    setAbriendo(true)
+    try {
+      const ok = await abrirEnPestana(async () => (await contratoService.descargarContratoFirmado(contratoId)).url)
+      if (!ok) toast.error('El acta firmada aún no está disponible')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo abrir el acta firmada')
+    } finally {
+      setAbriendo(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-purple-200 p-5">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">
+        Contrato migrado
+        <span className="rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">Migrado</span>
+      </h3>
+      <dl className="space-y-3.5 text-sm">
+        <InfoRow
+          icon={<IconFileCheck size={15} />}
+          label="Activación"
+          value={m.fecha_activacion ? formatDateTime(m.fecha_activacion) : '—'}
+        />
+        <InfoRow icon={<IconScrollText size={15} />} label="Reporte a centrales" value={reporte} />
+        <InfoRow
+          icon={<IconClock size={15} />}
+          label="Tarifa mensual"
+          value={
+            m.tarifa_acta_pct != null && m.tarifa_acta_pct !== m.tarifa_vigente_pct
+              ? `${pctFmt(m.tarifa_vigente_pct)} (acta: ${pctFmt(m.tarifa_acta_pct)})`
+              : pctFmt(m.tarifa_vigente_pct)
+          }
+        />
+        <div className="flex items-center justify-between gap-3">
+          <dt className="flex items-center gap-2 text-gray-500">
+            <IconFolderOpen size={15} className="text-gray-500 shrink-0" />
+            Lote
+          </dt>
+          <dd className="font-medium text-gray-900 text-right">
+            {!m.lote ? '—' : verLote ? (
+              <Link href={`/admin/migracion/lotes/${m.lote.id}`} className="text-primary-700 hover:underline">
+                {m.lote.numero}
+              </Link>
+            ) : (
+              m.lote.numero
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      {m.en_revision && (
+        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          En revisión{m.en_revision_motivo ? `: ${m.en_revision_motivo}` : ''}
+        </p>
+      )}
+      {m.excluido_en && (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+          Excluido el {formatDateTime(m.excluido_en)}{m.excluido_motivo
+            ? `: ${m.excluido_motivo === 'auditoria_no_entregada' ? 'soportes de auditoría no entregados' : 'declaración falsa'}`
+            : ''}
+        </p>
+      )}
+
+      {m.acta?.estado === 'completo' && (
+        <button
+          onClick={verActa}
+          disabled={abriendo}
+          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+        >
+          {abriendo ? <IconLoader size={16} className="animate-spin" /> : <IconEye size={16} />}
+          Ver acta firmada
+        </button>
+      )}
     </div>
   )
 }

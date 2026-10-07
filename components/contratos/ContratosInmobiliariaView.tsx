@@ -108,10 +108,15 @@ function EstadoBadge({ c }: { c: IContratoListItem }) {
   const bs = BADGE_STYLE[badgeKind(c.estado)]
   const label = etiquetaContrato(c.estado, !!c.destinacion)
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
-      <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
-      {label}
-    </span>
+    <>
+      <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
+        <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
+        {label}
+      </span>
+      {c.origen === 'migracion' && (
+        <span className="ml-1.5 inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">Migrado</span>
+      )}
+    </>
   )
 }
 

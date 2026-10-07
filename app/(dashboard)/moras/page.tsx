@@ -908,6 +908,19 @@ function MoraDetalleModal({
                   })}
                 />
                 <Field label="Teléfono inquilino" value={mora.inquilino_telefono ?? '—'} />
+                {/* Contrato migrado (§5.1.4): solo los REPORTABLE autorizan el reporte a centrales. */}
+                {mora.reportable_centrales && (
+                  <Field
+                    label="Reporte a centrales"
+                    value={
+                      mora.reportable_centrales.reportable == null
+                        ? 'Sin definir'
+                        : mora.reportable_centrales.reportable
+                          ? 'REPORTABLE'
+                          : `NO REPORTABLE${mora.reportable_centrales.motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
+                    }
+                  />
+                )}
               </div>
 
               {mora.descripcion && (

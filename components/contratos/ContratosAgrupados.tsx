@@ -51,11 +51,16 @@ function Arrendatario({ c }: { c: IContratoListItem }) {
 function EstadoChip({ c }: { c: IContratoListItem }) {
   const cfg = ESTADOS_CONTRATO[c.estado]
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg?.bgColor || 'bg-gray-100'} ${cfg?.textColor || 'text-gray-700'}`}
-    >
-      {etiquetaContrato(c.estado, !!c.destinacion)}
-    </span>
+    <>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg?.bgColor || 'bg-gray-100'} ${cfg?.textColor || 'text-gray-700'}`}
+      >
+        {etiquetaContrato(c.estado, !!c.destinacion)}
+      </span>
+      {c.origen === 'migracion' && (
+        <span className="ml-1.5 inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">Migrado</span>
+      )}
+    </>
   )
 }
 

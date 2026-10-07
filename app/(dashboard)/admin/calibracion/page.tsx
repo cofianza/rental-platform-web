@@ -73,6 +73,14 @@ const NOMBRE_PARAMETRO: Record<string, string> = {
   // Adenda de precios §9.10-9.11.
   PORCENTAJE_BENEFICIO_TRADICIONAL: 'Beneficio de la inmobiliaria en modalidad Tradicional (%)',
   ALERTA_MEZCLA_TRADICIONAL_PAQUETE_25: 'Alerta de mezcla: % de contratos Tradicional con paquete de 25',
+  // Migración de cartera §10.
+  MESES_SIN_MORA_REQUERIDOS: 'Meses sin mora que se declaran por contrato migrado',
+  TARIFA_MIGRACION_REPORTABLE: 'Tarifa mensual de un contrato migrado reportable (%)',
+  RECARGO_NO_REPORTABLE: 'Recargo a la tarifa de un contrato migrado no reportable (puntos %)',
+  MAX_FILAS_POR_CARGA: 'Máximo de contratos por archivo de migración',
+  UMBRAL_ALERTA_EXPOSICION_LOTE: 'Exposición de un lote que dispara la alerta a Gerencia (COP)',
+  DIAS_RESPUESTA_AUDITORIA: 'Días hábiles para entregar soportes de una auditoría',
+  DIAS_VIGENCIA_LOTE_SIN_FIRMA: 'Días para firmar el Acta de Migración antes de que el lote expire',
 }
 
 const nombreDe = (clave: string) => NOMBRE_PARAMETRO[clave] ?? clave
