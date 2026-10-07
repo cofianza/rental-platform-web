@@ -213,6 +213,7 @@ function inferConceptoLabel(concepto: string): string {
     afianzamiento: 'Afianzamiento',
     garantia: 'Prima de vinculación de la fianza',
     creditos_estudios: 'Paquete de créditos de estudios',
+    tarifa_mensual: 'Tarifa mensual de la fianza',
     canon: 'Canon de arrendamiento',
     administracion: 'Cuota de administración',
   }

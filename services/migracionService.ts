@@ -61,7 +61,7 @@ async function crudo(path: string, init: { method?: string; form?: FormData } = 
 const json = async <T>(res: Response) => ((await res.json()) as ApiResponse<T>).data
 
 // El nombre se arma aquí (el mismo que pone la API): CORS no expone Content-Disposition.
-const descargar = async (path: string, nombre: string, form?: FormData): Promise<ArchivoDescargado> => ({
+export const descargar = async (path: string, nombre: string, form?: FormData): Promise<ArchivoDescargado> => ({
   blob: await (await crudo(path, form ? { method: 'POST', form } : {})).blob(),
   nombre,
 })
