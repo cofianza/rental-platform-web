@@ -34,6 +34,7 @@ import {
   Tabla,
   Td,
   fechaCorta,
+  TotalesPorOrigenTabla,
 } from './_shared'
 
 // Por qué un contrato activo no entra en el ingreso del mes (no se inventa su tarifa).
@@ -133,6 +134,8 @@ export function IngresosSection() {
         />
       </KpiRow>
 
+      <TotalesPorOrigenTabla porOrigen={data?.porOrigen} />
+
       <SeccionHeader title="Afianzamiento por contrato" />
 
       <SeccionEstado
@@ -156,7 +159,9 @@ export function IngresosSection() {
         >
           {filas.map((r: IngresoContratoRow) => (
             <tr key={r.contratoId}>
-              <Td className="font-medium text-ink-900">{r.inquilino}</Td>
+              <Td className="font-medium text-ink-900">
+                {r.inquilino} {r.origen === 'migracion' && <Chip tone="purple">Migrado</Chip>}
+              </Td>
               <Td>{r.inmueble}</Td>
               <Td>{money(r.canon)}</Td>
               <Td>{money(r.afianzamiento)}</Td>
@@ -189,7 +194,7 @@ export function IngresosSection() {
           <ul className="space-y-0.5">
             {excluidos.map((e) => (
               <li key={e.contratoId}>
-                {e.inquilino} · {e.inmueble} — {motivoExcluido(e)}
+                {e.inquilino} · {e.inmueble}{e.origen === 'migracion' && ' (migrado)'} — {motivoExcluido(e)}
               </li>
             ))}
           </ul>

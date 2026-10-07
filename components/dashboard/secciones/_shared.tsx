@@ -11,6 +11,7 @@
 import { formatCurrency } from '@/lib/constants'
 import { useCallback, useEffect, useState } from 'react'
 import type { IconProps } from '@/components/icons'
+import type { TotalesPorOrigen } from '@/services/dashboardService'
 import { IconRefresh, IconX, IconTrendingUp, IconTrendingDown } from '@/components/icons'
 
 // ── Formatters ───────────────────────────────────────────────
@@ -379,6 +380,32 @@ export function Tabla({
 
 export function Td({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
   return <td className={`border-b border-ink-100 px-3 py-2.5 text-xs text-ink-800 ${className}`}>{children}</td>
+}
+
+// ── Cartera por origen (spec migración §4.1) ────────────────
+
+/** Originada en la plataforma y migrada, nunca sumadas. Sin migrados no se muestra. */
+export function TotalesPorOrigenTabla({ porOrigen }: { porOrigen?: TotalesPorOrigen }) {
+  if (!porOrigen || porOrigen.migracion.contratos === 0) return null
+  const filas: Array<[string, TotalesPorOrigen['plataforma']]> = [
+    ['Originada en la plataforma', porOrigen.plataforma],
+    ['Migrada', porOrigen.migracion],
+  ]
+  return (
+    <div className="mb-4">
+      <Tabla head={['Cartera', 'Contratos activos', 'Canon', 'Tarifa del mes', 'IVA']} density="compact">
+        {filas.map(([label, t]) => (
+          <tr key={label}>
+            <Td className="font-semibold text-ink-900">{label}</Td>
+            <Td>{t.contratos}</Td>
+            <Td>{money(t.canon)}</Td>
+            <Td>{money(t.tarifa)}</Td>
+            <Td>{money(t.iva)}</Td>
+          </tr>
+        ))}
+      </Tabla>
+    </div>
+  )
 }
 
 // ── Barra de filtros (selects) ───────────────────────────────

@@ -125,7 +125,10 @@ export function InmobiliariasSection() {
               <Td>
                 <Chip tone={r.estado === 'activo' ? 'green' : 'gray'}>{r.estado}</Chip>
               </Td>
-              <Td>{r.contratosActivos}</Td>
+              <Td>
+                {r.contratosActivos}
+                {!!r.contratosMigrados && <span className="text-ink-500"> ({r.contratosMigrados} migrados)</span>}
+              </Td>
               <Td>{money(r.canonTotal)}</Td>
               <Td>
                 {r.moraActivaCount > 0 ? <Chip tone="red">{r.moraActivaCount}</Chip> : '0'}

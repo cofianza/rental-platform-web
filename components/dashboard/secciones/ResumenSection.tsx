@@ -21,6 +21,7 @@ import {
   money,
   fechaCorta,
   fechaRelativa,
+  TotalesPorOrigenTabla,
 } from '@/components/dashboard/secciones/_shared'
 import {
   IconLoader,
@@ -243,7 +244,7 @@ export function ResumenSection() {
     onClick: goContratos,
     message: (
       <>
-        {c.inquilino} en <strong>mes {c.mes}</strong> · {c.inmueble} ·{' '}
+        {c.inquilino}{c.origen === 'migracion' && ' (migrado)'} en <strong>mes {c.mes}</strong> · {c.inmueble} ·{' '}
         <span className="font-semibold">{money(c.canon)}/mes</span>
       </>
     ),
@@ -267,7 +268,7 @@ export function ResumenSection() {
     onClick: goContratos,
     message: (
       <>
-        {c.inquilino} — vence {fechaCorta(c.fechaFin)} ·{' '}
+        {c.inquilino}{c.origen === 'migracion' && ' (migrado)'} — vence {fechaCorta(c.fechaFin)} ·{' '}
         <span className="font-semibold">{money(c.canon)}/mes</span> · gestionar renovación
       </>
     ),
@@ -420,6 +421,8 @@ export function ResumenSection() {
           onClick={goSoporte}
         />
       </KpiRow>
+
+      <TotalesPorOrigenTabla porOrigen={kpis.porOrigen} />
 
       {/* Alertas agrupadas (o banner positivo si no hay ninguna) */}
       <section className="space-y-3">

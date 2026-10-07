@@ -33,6 +33,17 @@ export interface PortfolioStats {
 
 // ── Admin overview (Centro de Control) ──────
 
+/** Spec migración §4.1: cartera originada en la plataforma y migrada, por separado. */
+export type OrigenContrato = 'plataforma' | 'migracion'
+export interface TotalesOrigen {
+  contratos: number
+  canon: number
+  /** Tarifa mensual causada (sin IVA) de los que entran en el mes. */
+  tarifa: number
+  iva: number
+}
+export type TotalesPorOrigen = Record<OrigenContrato, TotalesOrigen>
+
 export interface AdminOverviewKpis {
   inmobiliariasActivas: number
   contratosActivos: number
@@ -55,6 +66,7 @@ export interface AdminOverviewKpis {
   desembolsado: number
   ticketsAbiertos: number
   vitrinaVisitasMes: number
+  porOrigen?: TotalesPorOrigen
 }
 
 export interface AdminOverviewConfig {
@@ -66,6 +78,7 @@ export interface AdminOverviewConfig {
 
 export interface AdminOverviewContratoItem {
   id: string
+  origen?: OrigenContrato
   inquilino: string
   inmueble: string
   mes: number
@@ -130,6 +143,8 @@ export interface InmobiliariaRow {
   estado: string
   desde: string
   contratosActivos: number
+  /** De los activos, los que llegaron por migración de cartera. */
+  contratosMigrados?: number
   canonTotal: number
   moraActivaCount: number
   /** Créditos de estudio de la organización. */
@@ -154,6 +169,7 @@ export interface PropietarioRow {
 
 export interface InquilinoRow {
   contratoId: string
+  origen?: OrigenContrato
   expedienteId: string
   inquilino: string
   cedula: string | null
@@ -177,6 +193,7 @@ export interface InquilinoRow {
 
 export interface ContratoAdminRow {
   id: string
+  origen?: OrigenContrato
   inmueble: string
   inquilino: string
   propietario: string
@@ -223,6 +240,7 @@ export interface VitrinaData {
 
 export interface IngresoContratoRow {
   contratoId: string
+  origen?: OrigenContrato
   inquilino: string
   inmueble: string
   canon: number
@@ -234,6 +252,7 @@ export interface IngresoContratoRow {
 /** Contrato activo que no entra en el mes, con el porqué. */
 export interface IngresoExcluidoRow {
   contratoId: string
+  origen?: OrigenContrato
   inquilino: string
   inmueble: string
   canon: number
@@ -249,6 +268,7 @@ export interface IngresosData {
   totalBruto: number
   porContrato: IngresoContratoRow[]
   excluidos?: IngresoExcluidoRow[]
+  porOrigen?: TotalesPorOrigen
 }
 
 // ── Detalle de aliado (inmobiliaria/propietario) ────────────
