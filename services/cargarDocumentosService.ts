@@ -20,7 +20,7 @@ export interface ContextoCargaDocumentos {
   estado: string
   puede_subir: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
-  /** Su co-arrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
+  /** Su coarrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {
     /** En revisión o aprobado antes del contrato, y canal de inmobiliaria (Decisiones 2 y 4). */
     puede_invitar: boolean
@@ -69,7 +69,7 @@ export const cargarDocumentosService = {
     return res.data
   },
 
-  /** El prospecto invita a su co-arrendatario desde su enlace, sin cuenta. */
+  /** El prospecto invita a su coarrendatario desde su enlace, sin cuenta. */
   async invitarCoarrendatario(
     token: string,
     input: IInvitarCoarrendatarioInput,

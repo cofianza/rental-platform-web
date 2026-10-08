@@ -33,22 +33,14 @@ import { textoVisible } from './textoVisible'
 interface EstudioSolicitanteCardProps {
   expedienteId: string
   onEjecutado?: () => void
-  /** Documento del solicitante segun la tabla `solicitantes`. Se usa como
-   *  prefill cuando `datos_formulario` aun no tiene un documento (primer
-   *  intento). Si despues escribe otro CC y envia, el backend sincroniza
-   *  el solicitante con lo nuevo (ver estudios.service.ejecutarEstudio). */
+  /** Documento del solicitante segun la tabla `solicitantes`. Se muestra
+   *  cuando `datos_formulario` aun no tiene uno (solo lectura: BLQ §3.5). */
   prefillTipoDocumento?: string | null
   prefillNumeroDocumento?: string | null
   /** Teléfono del solicitante — solo para el copy del card de autorización
    *  (el enlace va por email siempre y por WhatsApp solo si hay número). */
   solicitanteTelefono?: string | null
 }
-
-// TransUnion Colombia solo soporta documentos colombianos. Pasaporte y otros
-// documentos extranjeros no estan en las centrales de riesgo locales — el
-// estudio falla con 'tercero no existe'. Restringimos las opciones desde
-// el dropdown para evitar el error.
-type TipoDoc = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
 
 /**
  * §10: "Nunca es un portazo", pero sin saber la causa (la API manda el motivo
@@ -72,7 +64,7 @@ export function EstudioSolicitanteCard({
   const [estudio, setEstudio] = useState<IEstudio | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [tipoDoc, setTipoDoc] = useState<TipoDoc>('cc')
+  const [tipoDoc, setTipoDoc] = useState('')
   const [numeroDoc, setNumeroDoc] = useState('')
   // Autorización habeas data del expediente. Si hay una pendiente, el camino
   // correcto es firmarla (el estudio corre solo al firmar) — ocultamos el form
@@ -80,16 +72,11 @@ export function EstudioSolicitanteCard({
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [descargandoCert, setDescargandoCert] = useState(false)
-  // Decisión 2 (2026-09-25): el aprobado puede sumar co-arrendatario antes del
+  // Decisión 2 (2026-09-25): el aprobado puede sumar coarrendatario antes del
   // contrato y pagar la prima del 10 %. La oferta sale solo si el API abre la
   // ventana (sin contrato fijo, sin otra invitación, canal de inmobiliaria).
   const [puedeSumarCoa, setPuedeSumarCoa] = useState(false)
 
-  // El prefill solo se aplica UNA vez (primer fetch). Sin esta guarda, los
-  // pollings que llaman fetchEstudio re-aplicarían el prefill cada tick y
-  // pisarían lo que el solicitante está escribiendo en el input (p. ej. al
-  // corregir su cédula tras un estudio fallido).
-  const prefillAppliedRef = useRef(false)
   // Igual que authLoadedRef: tras el primer load exitoso, un error transitorio
   // de un tick del polling NO debe poner estudio=null (dejaría la card en
   // blanco y mataría el polling sin recuperación).
@@ -105,35 +92,12 @@ export function EstudioSolicitanteCard({
       setEstudio(elegido)
       estudioLoadedRef.current = true
 
-      if (prefillAppliedRef.current) return
-      prefillAppliedRef.current = true
-
-      // Prefill del form, en orden de prioridad:
-      //   1. datos_formulario del estudio (lo ultimo que el solicitante escribio).
-      //   2. solicitante.tipo_documento + numero_documento (lo del registro).
-      // Si el tipo no esta en el set soportado por TransUnion CO, lo ignoramos
-      // y forzamos al solicitante a elegir uno valido (cc/ce/ppt/pep/nit; la TI ya no
-      // se ofrece: el servicio es solo para mayores de edad).
+      // Documento que se consultará (solo lectura): el del estudio, que la
+      // corrección actualiza, o el de la ficha. Se relee en cada refresco.
       const datos = (elegido?.datos_formulario || {}) as { tipo_documento?: string; numero_documento?: string }
-      const tipoFromDatos = datos.tipo_documento?.toLowerCase()
-      const tipoFromPrefill = prefillTipoDocumento?.toLowerCase()
-      const numeroFromDatos = datos.numero_documento?.trim() || ''
-      const numeroFromPrefill = prefillNumeroDocumento?.trim() || ''
-
-      const isTipoValido = (t: string | undefined): t is TipoDoc =>
-        t === 'cc' || t === 'nit' || t === 'ce' || t === 'ppt' || t === 'pep'
-
-      if (isTipoValido(tipoFromDatos)) {
-        setTipoDoc(tipoFromDatos)
-      } else if (isTipoValido(tipoFromPrefill)) {
-        setTipoDoc(tipoFromPrefill)
-      }
-
-      if (numeroFromDatos) {
-        setNumeroDoc(numeroFromDatos)
-      } else if (numeroFromPrefill) {
-        setNumeroDoc(numeroFromPrefill)
-      }
+      const deDatos = !!datos.numero_documento?.trim()
+      setTipoDoc((deDatos ? datos.tipo_documento : prefillTipoDocumento) || '')
+      setNumeroDoc((deDatos ? datos.numero_documento : prefillNumeroDocumento)?.trim() || '')
     } catch {
       // Solo en el primer load tratamos el error como "sin estudio".
       if (!estudioLoadedRef.current) setEstudio(null)
@@ -261,9 +225,8 @@ export function EstudioSolicitanteCard({
 
   const handleEjecutar = async () => {
     if (!estudio) return
-    const numero = numeroDoc.trim()
-    if (!numero) {
-      toast.error('Ingrese su número de cédula para continuar')
+    if (!numeroDoc.trim()) {
+      toast.error('Falta su documento. Pídale a quien tramita su arriendo que lo registre.')
       return
     }
     setSubmitting(true)
@@ -279,10 +242,7 @@ export function EstudioSolicitanteCard({
     }, 90000)
 
     try {
-      await estudioService.ejecutarEstudio(estudio.id, {
-        tipo_documento: tipoDoc,
-        numero_documento: numero,
-      })
+      await estudioService.ejecutarEstudio(estudio.id)
       clearTimeout(safetyTimer)
       toast.success('Estudio enviado. Le avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
@@ -445,7 +405,7 @@ export function EstudioSolicitanteCard({
   }
 
   if (enFormulario) {
-    const canSubmit = numeroDoc.trim().length >= 5 && !submitting
+    const canSubmit = !!numeroDoc.trim() && !submitting
     const esReintento = estudio.estado === 'fallido'
     return (
       <div className={`border-2 rounded-lg p-6 ${esReintento ? 'border-red-200 bg-red-50/40' : 'border-primary-200 bg-primary-50/40'}`}>
@@ -454,59 +414,26 @@ export function EstudioSolicitanteCard({
             <p className="text-sm font-semibold text-red-900 mb-0.5">El intento anterior falló</p>
             <p className="text-sm text-red-800">
               {textoVisible(estudio.observaciones, { externo: true })
-                || 'Verifique que su tipo y número de documento sean correctos. Cofianza solo consulta documentos colombianos (CC, CE, TI, NIT).'}
+                || 'Si su documento está mal, pídale a quien tramita su arriendo que lo corrija y luego reintente.'}
             </p>
           </div>
         )}
         <h3 className="text-base font-semibold text-gray-900 mb-1">
-          {esReintento ? 'Corrija sus datos y reintente' : 'Confirme sus datos para la evaluación crediticia'}
+          {esReintento ? 'Reintente la evaluación' : 'Confirme sus datos para la evaluación crediticia'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           Al hacer click en <strong>Enviar</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
         </p>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 mb-4">
-          <div>
-            <label htmlFor="estudio-solicitante-card-tipo-de-documento" className="block text-xs font-medium text-gray-700 mb-1">
-              Tipo de documento
-            </label>
-            <select id="estudio-solicitante-card-tipo-de-documento"
-              value={tipoDoc}
-              onChange={(e) => setTipoDoc(e.target.value as TipoDoc)}
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-            >
-              <option value="cc">Cédula de ciudadanía (CC)</option>
-              <option value="ce">Cédula de extranjería (CE)</option>
-              <option value="ppt">Permiso por protección temporal (PPT)</option>
-              <option value="pep">Permiso especial de permanencia (PEP)</option>
-              {/* Sin TI: el servicio es solo para mayores de edad. */}
-              <option value="nit">NIT</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="estudio-solicitante-card-numero-de-documento" className="block text-xs font-medium text-gray-700 mb-1">
-              Número de documento
-            </label>
-            <input id="estudio-solicitante-card-numero-de-documento"
-              type="text"
-              inputMode="numeric"
-              value={numeroDoc}
-              onChange={(e) => setNumeroDoc(e.target.value.replace(/[^\w]/g, ''))}
-              placeholder="Ingrese su número de cédula"
-              disabled={submitting}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-              maxLength={20}
-            />
-          </div>
-        </div>
-
-        <div className="text-xs text-gray-500 mb-4 space-y-1">
-          <p>
-            Verifique que su número de documento sea correcto antes de enviar — es el que consultaremos en las centrales de riesgo.
+        {/* BLQ §3.5: el documento solo lo corrige quien tramita el arriendo
+            («Corregir documento»); la API ya no acepta cambiarlo aquí. */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+          <p className="text-xs font-medium text-gray-700 mb-1">Documento que se consultará</p>
+          <p className="font-mono text-sm font-semibold text-gray-900">
+            {numeroDoc.trim() ? `${tipoDoc.toUpperCase()} ${numeroDoc}` : 'Sin documento registrado'}
           </p>
-          <p className="text-amber-700">
-            <strong>Importante:</strong> solo consultamos documentos colombianos. Si es extranjero residente, use su Cédula de Extranjería (CE), PPT o PEP.
+          <p className="text-xs text-gray-500 mt-2">
+            Si su documento está mal, pídale a quien tramita su arriendo que lo corrija.
           </p>
         </div>
 
@@ -623,11 +550,11 @@ export function EstudioSolicitanteCard({
               )}
 
               {/* §10: el incentivo comercial del aprobado (Decisión 2). El
-                  formulario es la tarjeta del co-arrendatario, debajo. */}
+                  formulario es la tarjeta del coarrendatario, debajo. */}
               {r.coarrendatarioAbarataPrima && puedeSumarCoa && (
                 <div className="mt-3">
                   <p className={`text-sm ${tono.texto}`}>
-                    Si antes del contrato suma como co-arrendatario a la persona con quien va a vivir, la prima de
+                    Si antes del contrato suma como coarrendatario a la persona con quien va a vivir, la prima de
                     vinculación baja del 20 % al 10 % del canon. Esa persona no necesita tener finca raíz.
                   </p>
                   <a
@@ -635,7 +562,7 @@ export function EstudioSolicitanteCard({
                     className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     <IconUsers size={14} />
-                    Invitar a mi co-arrendatario
+                    Invitar a mi coarrendatario
                   </a>
                 </div>
               )}

@@ -31,6 +31,78 @@ export interface IAutorizacion {
    *  del reporte SOLO llegan a los roles internos de Cofianza — el backend los
    *  omite del JSON por allowlist, no los esconde el render. */
   perfil_prospecto?: IPerfilProspecto | null
+  /** BLQ §8: estado derivado. Ausente en APIs anteriores al bloque 2. */
+  estado_bloqueo?: EstadoBloqueo | null
+  /** Con 'bloqueado_documento': intentos agotados o «soy yo, pero los datos están mal». */
+  motivo_bloqueo?: MotivoBloqueo | null
+  /** null = no se pudo contar. */
+  correcciones_restantes?: number | null
+  /** Límite de la inmobiliaria y el propietario; Cofianza no lo tiene. */
+  reenvios_restantes?: number | null
+}
+
+export type EstadoBloqueo = 'bloqueado_documento' | 'identidad_rechazada' | 'pendiente_reenvio'
+export type MotivoBloqueo = 'intentos' | 'datos_incorrectos'
+
+export type FuenteVerificacion = 'documento_fisico' | 'copia_documento' | 'confirmacion_telefonica'
+
+export interface ICorregirDocumentoInput {
+  tipo_documento: string
+  numero_documento: string
+  fuente_verificacion: FuenteVerificacion
+}
+
+export interface ICorregirDocumentoResponse {
+  correcciones_restantes: number
+  estado_bloqueo: 'pendiente_reenvio'
+}
+
+export interface IBloqueoPendiente {
+  expediente_id: string
+  numero: string
+  prospecto: string
+  bloqueado_en: string
+  motivo?: MotivoBloqueo
+}
+
+export interface IConfirmarIdentidadResponse {
+  coincide: boolean
+  /** BLQ §1. Ausente en APIs anteriores: se toma como 0 (detenido). */
+  intentos_restantes?: number
+}
+
+/** BLQ §7: solo roles internos de Cofianza. */
+export interface ITrazaAutorizacion {
+  intentos: Array<{
+    autorizacion_id: string
+    tipo_digitado: string | null
+    valor_digitado: string
+    coincide: boolean
+    origen: 'confirmacion' | 'firma'
+    ip: string | null
+    user_agent: string | null
+    created_at: string
+  }>
+  correcciones: Array<{
+    tipo_anterior: string | null
+    numero_anterior: string | null
+    tipo_nuevo: string
+    numero_nuevo: string
+    fuente_verificacion: FuenteVerificacion
+    usuario_id: string
+    created_at: string
+  }>
+  enlaces: Array<{
+    autorizacion_id: string
+    creado_en: string
+    estado: string
+    generado_por: string | null
+    es_reenvio: boolean | null
+    envios: Array<{ canal: string; destino_enmascarado: string | null; estado: string; error?: string }>
+    motivo_cierre: string | null
+    cerrado_en: string | null
+  }>
+  cupo: Array<{ tipo: string; literal: string | null; notas: string | null; created_at: string }>
 }
 
 export interface IPerfilProspecto {

@@ -257,7 +257,7 @@ export function EstudiosTable({
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-sm text-gray-700 capitalize">
-                    {estudio.tipo === 'con_coarrendatario' ? 'Co-arrendatario' : 'Individual'}
+                    {estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Individual'}
                   </span>
                 </td>
                 <td className="px-4 py-3">

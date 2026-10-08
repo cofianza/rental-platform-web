@@ -54,7 +54,7 @@ export * from './ExpedienteRechazadoBanner'
 export * from './PerfilPersonalIncompletoBanner'
 // SoportesCondicionadoSection se mantiene exportado solo para uso del flujo de
 // re-evaluación (admin/operador). Ya NO se usa en el flujo del solicitante en
-// estado condicionado — Mario (5-may-2026) movió a un flujo de co-arrendatario.
+// estado condicionado — Mario (5-may-2026) movió a un flujo de coarrendatario.
 export * from './SoportesCondicionadoSection'
 export * from './ContratoEstadoCard'
 export * from './EstudioEstadoCard'

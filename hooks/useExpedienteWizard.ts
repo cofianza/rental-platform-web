@@ -52,8 +52,6 @@ export interface WizardStep3Data {
    * elegir todavía, que es lo único que impide avanzar al paso 4.
    */
   forma_pago: FormaPagoEstudio | ''
-  /** Buró a consultar. Vacío = lo decide el backend por cascada. */
-  proveedor?: 'transunion' | 'datacredito' | ''
   notas: string
   analista_id: string
   /** Miembro de la inmobiliaria responsable (multi-tenant Fase 3.1). '' = sin asignar/auto. */
@@ -92,7 +90,6 @@ const initialStep2: WizardStep2Data = {
 
 const initialStep3: WizardStep3Data = {
   forma_pago: '',
-  proveedor: '',
   notas: '',
   analista_id: '',
   miembro_responsable_id: '',
@@ -253,7 +250,7 @@ function validateStep3(data: WizardStep3Data): Record<string, string> {
   const errors: Record<string, string> = {}
 
   if (!data.forma_pago) {
-    errors.forma_pago = 'Elija cómo se paga el estudio'
+    errors.forma_pago = 'Elija quién paga el estudio'
   }
 
   if (data.notas && data.notas.length > 5000) {
@@ -576,7 +573,6 @@ export function useExpedienteWizard() {
       try {
         const inicio = await expedienteService.iniciarEstudio(expediente.id, {
           forma_pago: data.step3.forma_pago as FormaPagoEstudio,
-          proveedor: data.step3.proveedor || undefined,
           notas: data.step3.notas || undefined,
         })
         // Opción B (Adenda 2 §7): el gestor paga ya en Mercado Pago. Al volver,

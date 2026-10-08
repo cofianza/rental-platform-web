@@ -4,17 +4,15 @@
  *
  * Adenda 2 §5: la revisión manual la resuelve SOLO un analista de Cofianza
  * (admin/operador), que es quien ve "Aprobar estudio". Mientras tanto el dueño
- * puede reforzar el caso: pedir soportes al solicitante, consultar el otro buró
- * (solo si el primero no tenía información) o sumar un co-arrendatario (su
- * tarjeta va justo debajo). Cada salida dice qué pasa después:
- *  - otro buró con información → su resultado pasa a la revisión del analista
- *    (un «aprobado» no aprueba solo, P33); un rechazo sí mueve el expediente;
- *  - co-arrendatario → su resultado pasa a la revisión del analista, salvo una
+ * puede reforzar el caso: pedir soportes al solicitante o sumar un
+ * coarrendatario (su tarjeta va justo debajo). La central no se elige ni se
+ * re-consulta a mano (CORR §2): la decide la cascada del motor.
+ *  - coarrendatario → su resultado pasa a la revisión del analista, salvo una
  *    regla dura suya, que no lo deja aprobar (ponderacion.ts del API).
  * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí): el
  * contrato se crea después desde el estudio.
  * Canal del propietario directo (inmueble sin inmobiliaria, Decisión 4): no hay
- * co-arrendatario hasta el Convenio, así que no se ofrece y, sin historial en
+ * coarrendatario hasta el Convenio, así que no se ofrece y, sin historial en
  * ninguna central (Política §15, que lo exige), el caso no puede aprobarse:
  * se cierra con motivo.
  */
@@ -26,13 +24,12 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
-import type { IEstudio, IMotivosElegidos } from '@/types/estudio'
+import type { IMotivosElegidos } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
-import { ReintentarEstudioForm } from './ReintentarEstudioForm'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -40,15 +37,9 @@ interface AprobarCondicionadoCardProps {
   userRol?: string
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
-  /** Inmueble sin inmobiliaria: el co-arrendatario no existe en este canal (Decisión 4). */
+  /** Inmueble sin inmobiliaria: el coarrendatario no existe en este canal (Decisión 4). */
   canalPropietario?: boolean
-  /** Estudio del titular: con él se ofrece consultar el otro buró aquí mismo. */
-  estudioTitular?: IEstudio | null
-  /** Documento del titular, para prellenar la consulta al otro buró. */
-  persona?: { nombre?: string | null; apellido?: string | null; tipo_documento?: string | null; numero_documento?: string | null } | null
   onAprobado?: () => void
-  /** Tras disparar la consulta al otro buró. */
-  onReconsultado?: () => void
 }
 
 export function AprobarCondicionadoCard({
@@ -57,16 +48,12 @@ export function AprobarCondicionadoCard({
   userRol,
   sinInfoBuro,
   canalPropietario,
-  estudioTitular,
-  persona,
   onAprobado,
-  onReconsultado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
   const aprobando = useRef(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
-  const [otroBuroAbierto, setOtroBuroAbierto] = useState(false)
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
   // H58: con el catálogo del API, el motivo se elige de la lista (+ texto opcional).
@@ -129,9 +116,7 @@ export function AprobarCondicionadoCard({
     }
   }
 
-  // Solo si el primer buró no tenía información (el API solo deja cambiar de buró en ese caso).
-  const ofreceOtroBuro = !!sinInfoBuro && !!estudioTitular
-  // §15 exige co-arrendatario al que no tiene historial, y en este canal no lo hay.
+  // §15 exige coarrendatario al que no tiene historial, y en este canal no lo hay.
   const sinSalidaAprobable = !!canalPropietario && !!sinInfoBuro
 
   return (
@@ -153,9 +138,9 @@ export function AprobarCondicionadoCard({
             <Paso n={1} titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
               {sinSalidaAprobable ? (
                 <p>
-                  Sin historial en ninguna central, solo se puede aprobar con un co-arrendatario, y en
-                  inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Si el otro buró
-                  tampoco tiene información, el caso no puede aprobarse y se cierra con el motivo
+                  Sin historial en ninguna central, solo se puede aprobar con un coarrendatario, y en
+                  inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Por eso el caso no
+                  puede aprobarse y se cierra con el motivo
                   {esCofianza
                     ? ': use «Cambiar estado», arriba.'
                     : '. Lo cierra un analista de Cofianza y le avisamos por notificación y correo.'}
@@ -163,7 +148,7 @@ export function AprobarCondicionadoCard({
               ) : esCofianza ? (
                 <>
                   <p>
-                    Revise el caso, los soportes y el co-arrendatario si lo hay. Si lo aprueba, el estudio pasa a
+                    Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
                   <button
@@ -207,41 +192,11 @@ export function AprobarCondicionadoCard({
                   </div>
                 </Opcion>
 
-                {ofreceOtroBuro && (
-                  <Opcion titulo="Consultar el otro buró">
-                    <p>
-                      Si el otro buró sí tiene información, su resultado pasa al analista de Cofianza, que decide
-                      el caso (si sale no aprobable, el estudio queda no aprobable). Es una consulta nueva y se factura.
-                    </p>
-                    {otroBuroAbierto ? (
-                      <div className="mt-2">
-                        <ReintentarEstudioForm
-                          key={`${estudioTitular!.id}:${estudioTitular!.proveedor}`}
-                          estudioId={estudioTitular!.id}
-                          proveedorActual={estudioTitular!.proveedor}
-                          persona={persona}
-                          esTitular
-                          expedienteId={expedienteId}
-                          esReconsulta
-                          onRetried={onReconsultado}
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setOtroBuroAbierto(true)}
-                        className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        Consultar el otro buró
-                      </button>
-                    )}
-                  </Opcion>
-                )}
-
                 {!canalPropietario && (
-                  <Opcion titulo="Sumar un co-arrendatario (en el recuadro de abajo)">
+                  <Opcion titulo="Sumar un coarrendatario (en el recuadro de abajo)">
                     <p>
                       Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
-                      los dos resultados. Si el co-arrendatario tiene un impedimento que no admite excepciones (por
+                      los dos resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
                       ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
                     </p>
                   </Opcion>
@@ -296,7 +251,7 @@ export function AprobarCondicionadoCard({
         {sinInfoBuro && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-700">
             <p>
-              <strong>Sin historial en ninguna central:</strong> para aprobarlo se exige un co-arrendatario
+              <strong>Sin historial en ninguna central:</strong> para aprobarlo se exige un coarrendatario
               evaluado con puntaje de 80 o más, que el canon no pase del 30 % del ingreso y al menos una fuente de
               capacidad de pago verificable.
             </p>

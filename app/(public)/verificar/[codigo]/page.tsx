@@ -25,7 +25,7 @@ interface PageProps {
 // 'condicionado' se deja como esta: el §13 solo prohibe la palabra 'rechazado'.
 // Ademas el PDF del certificado imprime "CONDICIONADO" (certificado.service.ts)
 // y esta pagina es justamente la que prueba que el papel no fue alterado, asi
-// que las dos etiquetas tienen que decir lo mismo. Y "con co-arrendatario"
+// que las dos etiquetas tienen que decir lo mismo. Y "con coarrendatario"
 // seria falso cuando el condicionado viene de que el buro no pudo evaluar.
 const RESULTADO_BADGES: Record<string, { bg: string; text: string; label: string }> = {
   aprobado: { bg: 'bg-green-100', text: 'text-green-800', label: 'Aprobado' },

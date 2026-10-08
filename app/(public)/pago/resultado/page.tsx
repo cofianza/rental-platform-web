@@ -149,7 +149,7 @@ function PagoResultadoContent() {
     ? `Su pago (${conceptoLabel.toLowerCase()}) quedó registrado.`
     : esArrendatario
       ? 'Su pago del estudio quedó registrado y su evaluación ya está en marcha.'
-      : 'El pago del estudio quedó registrado. La evaluación arranca en cuanto el arrendatario firme la autorización de consulta; si ya la firmó, ya está en marcha.'
+      : 'El pago del estudio quedó registrado. La evaluación inicia en cuanto el arrendatario firme la autorización de consulta; si ya la firmó, ya está en marcha.'
 
   return (
     <div className="max-w-md mx-auto py-8">

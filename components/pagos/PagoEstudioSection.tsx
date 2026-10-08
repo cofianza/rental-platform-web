@@ -57,7 +57,7 @@ export function textoCubierto(
       titulo: 'Cubierto por la inmobiliaria',
       texto: e.autorizado
         ? `${e.monto_formateado} COP. El prospecto ya autorizó la consulta.`
-        : `${e.monto_formateado} COP. El enlace de autorización ya se envió al prospecto; el estudio arranca cuando lo firme.`,
+        : `${e.monto_formateado} COP. El enlace de autorización ya se envió al prospecto; el estudio inicia cuando lo firme.`,
     }
   }
   if (estudio?.estado === 'completado') {
@@ -73,7 +73,7 @@ export function textoCubierto(
     titulo: 'Crédito reservado',
     texto: e.autorizado
       ? 'El prospecto ya autorizó la consulta. El crédito se consume cuando la central entregue el resultado; si no lo entrega, vuelve a su saldo.'
-      : 'Se reservó 1 crédito de su paquete. El estudio arranca cuando el prospecto autorice la consulta; si no se llega a consultar, el crédito vuelve a su saldo.',
+      : 'Se reservó 1 crédito de su paquete. El estudio inicia cuando el prospecto autorice la consulta; si no se llega a consultar, el crédito vuelve a su saldo.',
   }
 }
 
@@ -211,8 +211,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       await Promise.all([fetchEstado(), fetchSaldo()])
       toast.success(
         estado?.autorizado
-          ? 'Crédito reservado. La evaluación arranca de inmediato.'
-          : 'Crédito reservado. La evaluación arranca cuando el prospecto autorice la consulta.',
+          ? 'Crédito reservado. La evaluación inicia de inmediato.'
+          : 'Crédito reservado. La evaluación inicia cuando el prospecto autorice la consulta.',
       )
       onPagoCompletado?.()
     } catch (err) {
@@ -386,7 +386,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
                     confirmLabel="Reservar 1 crédito"
                   />
                   <button
@@ -471,7 +471,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     }}
                     isLoading={isSubmitting}
                     title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación arranca ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
+                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
                     confirmLabel="Reservar 1 crédito"
                   />
                   <button
@@ -1179,7 +1179,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-1">Pague su evaluación crediticia</h3>
             <p className="text-sm text-gray-600 mb-1">
-              Monto a pagar: <span className="font-semibold text-gray-900">{montoProspecto(estado)}</span>
+              Monto a pagar: <span className="text-lg font-bold text-gray-900">{montoProspecto(estado)}</span>
             </p>
             <p className="text-xs text-gray-500 mb-4">
               Ya firmó su autorización. Será redirigido a la pasarela de pago segura y, al confirmarse el pago,

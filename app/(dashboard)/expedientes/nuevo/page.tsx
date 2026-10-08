@@ -93,7 +93,7 @@ function NuevoExpedienteContent() {
         // al paso 2 sin validarlo y el gestor chocaba con el bloqueo al final.
         const [inmueble, topeCanon] = await Promise.all([
           inmuebleService.getInmuebleById(inmueblePreseleccionId),
-          estudioService.getTopeCanon().catch(() => null),
+          estudioService.getTopeCanon().then((t) => t.tope_cop).catch(() => null),
         ])
         let hasActiveExpediente = false
         try {

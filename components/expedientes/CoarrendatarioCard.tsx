@@ -1,12 +1,12 @@
 /**
  * CoarrendatarioCard — visible para el SOLICITANTE cuando su expediente
  * está en estado 'condicionado' o, desde la Decisión 2 (2026-09-25), aprobado
- * y todavía sin contrato: sumar al co-arrendatario baja la prima al 10 %. La
+ * y todavía sin contrato: sumar al coarrendatario baja la prima al 10 %. La
  * ventana la decide el API (en revisión o aprobado antes del contrato, canal de
  * inmobiliaria: Decisión 4).
  *
  * Mario (5-may-2026): nuevo paradigma. Cuando el estudio queda condicionado,
- * en vez de pedir documentos, ofrecemos invitar a un co-arrendatario.
+ * en vez de pedir documentos, ofrecemos invitar a un coarrendatario.
  * Cofianza no pide fiador — pide que pongas a la persona con quien vas
  * a vivir y juntos los respaldamos como un solo arrendatario.
  *
@@ -141,7 +141,7 @@ export function CoarrendatarioCard({
           <IconUsers size={20} className="text-amber-700" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">Co-arrendatario invitado</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-0.5">Coarrendatario invitado</h3>
           <p className="text-sm text-gray-700 truncate">
             <strong>{coa.nombre} {coa.apellido}</strong> · {coa.email}
           </p>
@@ -210,8 +210,8 @@ function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEf
       // Sobre un aprobado (Decisión 2) su resultado no es del titular (Ley 1266):
       // solo si quedó vinculado, y eso va por correo.
       mensaje: aprobado
-        ? 'La evaluación de su co-arrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
-        : 'La evaluación de su co-arrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
+        ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+        : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
     },
   }
   const c = cfg[coa.estado]

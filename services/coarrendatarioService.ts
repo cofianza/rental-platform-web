@@ -1,7 +1,7 @@
 /**
- * Servicio de Co-arrendatarios — flujo nuevo para estudios condicionados
+ * Servicio de Coarrendatarios — flujo nuevo para estudios condicionados
  * (Mario, 5-may-2026). Reemplaza la subida de documentos: el solicitante
- * invita a un co-arrendatario que acepta T&C y se le hace su propio estudio.
+ * invita a un coarrendatario que acepta T&C y se le hace su propio estudio.
  */
 
 import { apiClient } from '@/lib/api'
@@ -43,7 +43,7 @@ export interface ICoarrendatario {
 }
 
 /**
- * Si se puede invitar co-arrendatario ahora (Decisiones 2 y 4, 2026-09-25): con
+ * Si se puede invitar coarrendatario ahora (Decisiones 2 y 4, 2026-09-25): con
  * el estudio en revisión o aprobado antes del contrato, en el canal de
  * inmobiliaria y sin otra invitación viva. `vigente`: la invitación ya enviada
  * sigue en pie.
@@ -88,7 +88,7 @@ export interface ICoarrendatarioPublicView {
 }
 
 export const coarrendatarioService = {
-  /** Solicitante / propietario invita a un co-arrendatario. */
+  /** Solicitante / propietario invita a un coarrendatario. */
   async invitar(expedienteId: string, input: IInvitarCoarrendatarioInput): Promise<ICoarrendatario> {
     const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario`, input)) as unknown as {
       data: ICoarrendatario

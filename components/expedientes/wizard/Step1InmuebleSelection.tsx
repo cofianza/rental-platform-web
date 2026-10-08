@@ -21,6 +21,7 @@ import {
 import { formatCurrency } from '@/lib/constants'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
+import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IInmueble } from '@/types/inmueble'
 import {
@@ -91,6 +92,25 @@ export function Step1InmuebleSelection({
   // Propietario/inmobiliaria ven dropdown directo con sus propios inmuebles.
   // Admin/operador siempre usan el buscador (catalogo completo).
   const usaDropdownPropios = userRol === 'propietario' || userRol === 'inmobiliaria'
+  // CORR §4: el saldo de cupos se ve desde el paso 1 (mismo criterio que el
+  // paso 3: el propietario no usa cupos y ahí no se muestra nada).
+  const usaCreditos = userRol === 'inmobiliaria' || userRol === 'administrador'
+  const [saldoCupos, setSaldoCupos] = useState<ISaldoCreditos | null>(null)
+  useEffect(() => {
+    if (!usaCreditos) return
+    let vivo = true
+    creditosEstudiosService
+      .getMiSaldo()
+      .then((s) => {
+        if (vivo) setSaldoCupos(s)
+      })
+      .catch(() => {
+        // Sin saldo no se bloquea nada: el paso 3 lo vuelve a consultar.
+      })
+    return () => {
+      vivo = false
+    }
+  }, [usaCreditos])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearching, setIsSearching] = useState(false)
@@ -199,7 +219,7 @@ export function Step1InmuebleSelection({
     estudioService
       .getTopeCanon()
       .then((t) => {
-        if (vivo) setTopeCanon(t)
+        if (vivo) setTopeCanon(t.tope_cop)
       })
       .catch(() => {
         // Sin el tope no se bloquea nada: el API lo valida igual al enviar.
@@ -209,7 +229,7 @@ export function Step1InmuebleSelection({
     }
   }, [])
 
-  // §4.2: estudios en curso = expedientes, no evaluaciones (el co-arrendatario no suma).
+  // §4.2: estudios en curso = expedientes, no evaluaciones (el coarrendatario no suma).
   const enCurso = data.inmueble?.expedientes_activos ?? data.inmueble?.estudios_activos ?? 0
 
   const excedeElTope = (inmueble: IInmueble) =>
@@ -271,6 +291,8 @@ export function Step1InmuebleSelection({
           {WIZARD_MESSAGES.STEP1_SUBTITLE}
         </p>
       </div>
+
+      {saldoCupos && <SaldoCuposAviso saldo={saldoCupos} />}
 
       {/* Si no hay inmueble seleccionado, mostrar selector */}
       {!data.inmueble ? (
@@ -521,7 +543,7 @@ export function Step1InmuebleSelection({
               <div>
                 <p className="text-sm font-medium text-blue-800">
                   {/* §4.2: se cuentan ESTUDIOS (expedientes), no evaluaciones: la del
-                      co-arrendatario es parte del mismo estudio y no suma otro. */}
+                      coarrendatario es parte del mismo estudio y no suma otro. */}
                   {enCurso > 0
                     ? `Este inmueble ya tiene ${enCurso} ${enCurso === 1 ? 'estudio' : 'estudios'} en curso.`
                     : 'Este inmueble ya tiene un estudio activo'}
@@ -630,5 +652,33 @@ export function Step1InmuebleSelection({
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * CORR §4.3-4.5: «Le quedan 12 de 25 cupos. Vencen el 15 de marzo de 2027.»
+ * Con varios paquetes, el total disponible y el vencimiento más próximo (el
+ * orden de consumo). Sin cupos se dice desde aquí, no en el paso 3.
+ */
+function SaldoCuposAviso({ saldo }: { saldo: ISaldoCreditos }) {
+  const disponibles = saldo.saldo_efectivo ?? saldo.saldo_total
+  if (disponibles <= 0) {
+    return (
+      <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+        No le quedan cupos en su paquete. En el paso 3 podrá elegir otra forma de pago.
+      </p>
+    )
+  }
+  const comprados = saldo.lotes.reduce((n, l) => n + l.cantidad_inicial, 0)
+  const vence = saldo.proximo_vencimiento
+    ? new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' }).format(
+        new Date(saldo.proximo_vencimiento),
+      )
+    : null
+  return (
+    <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+      Le quedan <strong>{disponibles}</strong> de {comprados} cupos.{vence ? ` Vencen el ${vence}.` : ''}
+    </p>
   )
 }

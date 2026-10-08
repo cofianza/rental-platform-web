@@ -274,7 +274,7 @@ export function EstudiosInmobiliariaView({
                             esCoa ? 'bg-blue-50 text-blue-600' : 'bg-coral-50 text-coral-700',
                           )}
                         >
-                          {esCoa ? 'Co-arrendatario' : 'Individual'}
+                          {esCoa ? 'Coarrendatario' : 'Individual'}
                         </span>
                       </td>
                       <td className="px-6 py-3 text-gray-600">{formatNumeroEstudio(e.expedientes?.numero) || '—'}</td>

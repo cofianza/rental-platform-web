@@ -119,7 +119,7 @@ export const WIZARD_MESSAGES = {
 
   // Paso 3
   STEP3_TITLE: 'Configuración',
-  STEP3_SUBTITLE: 'Defina cómo se paga el estudio de este prospecto',
+  STEP3_SUBTITLE: 'Defina quién paga el estudio de este prospecto',
   NOTAS_LABEL: 'Notas internas',
   NOTAS_PLACEHOLDER: 'Notas internas sobre el estudio (opcional)...',
   NOTAS_MAX_LENGTH: 'Las notas no deben exceder 5000 caracteres',

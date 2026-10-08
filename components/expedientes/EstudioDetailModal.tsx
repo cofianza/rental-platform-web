@@ -122,7 +122,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
   // Quién paga según el cobro real (A10). `estudios.pago_por` se quedaba en
   // 'arrendatario' si el gestor eligió enviar el link y después pagó él. El
-  // cobro del expediente es el del titular: el estudio del co-arrendatario
+  // cobro del expediente es el del titular: el estudio del coarrendatario
   // conserva su pago_por. El expediente_id llega con la recarga por id (el
   // listado por expediente no lo trae).
   const expedienteDelCobro =
@@ -221,7 +221,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
         estudio.tipo !== 'con_coarrendatario' &&
         estudio.decision_cofianza === 'negado'))
 
-  // El CRC se emite sobre el estudio del titular: el del co-arrendatario ya se
+  // El CRC se emite sobre el estudio del titular: el del coarrendatario ya se
   // refleja en él (la API responde 409).
   const isCertificable =
     estudio.tipo !== 'con_coarrendatario' &&

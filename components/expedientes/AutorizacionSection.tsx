@@ -8,12 +8,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
-import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2 } from '@/components/icons'
+import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2, IconPencil } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { autorizacionService } from '@/services/autorizacionService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { IAutorizacion, IRevocarInput } from '@/types/autorizacion'
 import { usePermissions } from '@/hooks/usePermissions'
+import { CorregirDocumentoModal } from '@/components/expedientes/CorregirDocumentoModal'
+import { TrazaAutorizacion } from '@/components/expedientes/TrazaAutorizacion'
+import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 
 interface AutorizacionSectionProps {
@@ -26,6 +29,8 @@ interface AutorizacionSectionProps {
   /** Documento de la ficha. Vacío = auto-registro liviano (H43): se pide aquí
    *  porque la API no emite la autorización sin él. */
   solicitanteDocumento?: string | null
+  /** Tipo del documento de la ficha (se muestra en «Corregir documento»). */
+  solicitanteTipoDocumento?: string | null
   /** Refresca el expediente padre cuando el contacto del solicitante cambió. */
   onContactoActualizado?: () => void
   /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
@@ -65,6 +70,7 @@ export function AutorizacionSection({
   solicitanteEmail,
   solicitanteTelefono,
   solicitanteDocumento,
+  solicitanteTipoDocumento,
   onContactoActualizado,
   soloLectura = false,
 }: AutorizacionSectionProps) {
@@ -80,6 +86,11 @@ export function AutorizacionSection({
   // Cofianza (admin/operador); el gestor no revoca por él: cancela el estudio.
   const { hasRole } = usePermissions()
   const puedeRegistrarRevocacion = hasRole(['administrador', 'operador_analista'])
+  // BLQ §4.5 y §8.2: Cofianza no tiene límite de reenvíos y es quien reenvía tras «no soy yo».
+  const esCofianza = puedeRegistrarRevocacion
+  const [showCorregir, setShowCorregir] = useState(false)
+  // BLQ §7: la traza (con lo digitado por el prospecto) es solo de Cofianza.
+  const veTraza = hasRole(['administrador', 'operador_analista', 'gerencia_consulta'])
   const [showRevocar, setShowRevocar] = useState(false)
   const [revocarMotivo, setRevocarMotivo] = useState('')
   const [revocarCanal, setRevocarCanal] = useState<IRevocarInput['canal'] | ''>('')
@@ -162,20 +173,11 @@ export function AutorizacionSection({
     }
     setSending(true)
     try {
-      const result = await autorizacionService.enviarEnlace(expedienteId, contacto)
+      await autorizacionService.enviarEnlace(expedienteId, contacto)
       toast.success('Solicitud de autorización enviada al prospecto')
-      setAutorizacion({
-        id: result.id,
-        estado: 'pendiente',
-        canal: 'enlace',
-        metodo_firma: null,
-        autorizado_en: null,
-        hash_documento: null,
-        fecha_revocacion: null,
-        motivo_revocacion: null,
-        token_expiracion: result.token_expiracion,
-        created_at: new Date().toISOString(),
-      })
+      // Trae el estado derivado y los reenvíos que quedan; el banner se atiende (BLQ §2.6).
+      void fetchStatus()
+      window.dispatchEvent(new Event(EVENTO_BLOQUEOS))
       if (contacto) {
         setEditContacto(false)
         onContactoActualizado?.()
@@ -354,6 +356,58 @@ export function AutorizacionSection({
       perfil.identidad_reporte_en &&
       new Date(autorizacion.autorizado_en) > new Date(perfil.identidad_reporte_en)
     )
+  // BLQ §8. undefined = API anterior al bloque 2: queda el banner del §12.
+  const bloqueo = autorizacion?.estado_bloqueo
+  const reenvioSoloCofianza = bloqueo === 'identidad_rechazada' && !esCofianza
+  const sinReenvios = !esCofianza && autorizacion?.reenvios_restantes === 0
+  const puedeCorregir =
+    !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !reenvioSoloCofianza
+
+  // Reenviar y corregir: compartido por pendiente, revocado y expirado.
+  const acciones = (etiqueta: string, primario: boolean) =>
+    !soloLectura && (
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!reenvioSoloCofianza && (
+            <button
+              onClick={handleEnviarEnlace}
+              disabled={sending || sinReenvios}
+              className={
+                primario
+                  ? 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50'
+                  : 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50'
+              }
+            >
+              {sending ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+              {etiqueta}
+            </button>
+          )}
+          {puedeCorregir && (
+            <button
+              type="button"
+              onClick={() => setShowCorregir(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <IconPencil size={14} />
+              Corregir documento
+            </button>
+          )}
+        </div>
+        {reenvioSoloCofianza ? (
+          <p className="text-xs text-gray-600">Para continuar, comuníquese con Cofianza.</p>
+        ) : sinReenvios ? (
+          <p className="text-xs text-red-700">
+            Alcanzó el máximo de reenvíos de este estudio. Comuníquese con Cofianza.
+          </p>
+        ) : (
+          !esCofianza &&
+          autorizacion?.reenvios_restantes != null && (
+            <p className="text-xs text-gray-500">Reenvíos restantes: {autorizacion.reenvios_restantes}</p>
+          )
+        )}
+      </div>
+    )
+
   const hayPerfil8 =
     !!perfil &&
     (perfil.situacion_laboral != null ||
@@ -381,7 +435,54 @@ export function AutorizacionSection({
         gestor aqui (donde esta auditada y scopeada) y reenvia el enlace: la
         pantalla publica NUNCA reescribe el documento del solicitante.
       */}
-      {reporteVigente && (
+      {bloqueo === 'bloqueado_documento' && (
+        <div role="alert" className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <IconAlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-red-800">Bloqueado por documento</p>
+            <p className="text-xs text-red-700">
+              {autorizacion?.motivo_bloqueo === 'datos_incorrectos'
+                ? 'El prospecto indicó que sus datos registrados no son correctos y el enlace se detuvo.'
+                : 'El número de documento que escribió el prospecto no coincide con el registrado y el enlace se detuvo.'}{' '}
+              No se consultó ninguna central de riesgo, no se consumió cupo ni se generó ningún cobro adicional.
+              Verifique los datos con el prospecto: si el documento está mal, corríjalo; si está bien, solo reenvíe
+              el enlace.
+            </p>
+            {autorizacion?.motivo_bloqueo === 'datos_incorrectos' && perfil?.identidad_reporte_detalle && (
+              <p className="text-xs italic text-red-700">«{perfil.identidad_reporte_detalle}»</p>
+            )}
+          </div>
+        </div>
+      )}
+      {bloqueo === 'identidad_rechazada' && (
+        <div role="alert" className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <IconUserX size={18} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-amber-800">Identidad rechazada por el titular</p>
+            <p className="text-xs text-amber-700">
+              Quien abrió el enlace dice que no es el titular de estos datos. El enlace se detuvo y no se consultó
+              ninguna central de riesgo.
+              {!esCofianza && ' Para continuar, comuníquese con Cofianza.'}
+            </p>
+            {perfil?.identidad_reporte_detalle && (
+              <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>
+            )}
+          </div>
+        </div>
+      )}
+      {bloqueo === 'pendiente_reenvio' && (
+        <div role="status" className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4">
+          <IconClock size={18} className="text-sky-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-sky-800">Pendiente de reenvío</p>
+            <p className="text-xs text-sky-700">
+              Se corrigió el documento del prospecto. Reenvíe el enlace para que autorice con el dato correcto.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {bloqueo === undefined && reporteVigente && (
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
           <IconUserX size={18} className="text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
@@ -456,20 +557,7 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          {!soloLectura && (
-            <button
-              onClick={handleEnviarEnlace}
-              disabled={sending}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
-            >
-              {sending ? (
-                <IconLoader size={14} className="animate-spin" />
-              ) : (
-                <IconMail size={14} />
-              )}
-              Reenviar enlace
-            </button>
-          )}
+          {acciones('Reenviar enlace', false)}
         </div>
       )}
 
@@ -669,50 +757,26 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          {!soloLectura && (
-            <button
-              onClick={handleEnviarEnlace}
-              disabled={sending}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-            >
-              {sending ? (
-                <IconLoader size={16} className="animate-spin" />
-              ) : (
-                <IconMail size={16} />
-              )}
-              Enviar nueva autorizacion
-            </button>
-          )}
+          {acciones('Enviar nueva autorización', true)}
         </div>
       )}
 
       {/* Expirado */}
       {estado === 'expirado' && (
         <div className="space-y-3">
-          <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <IconClock size={18} className="text-gray-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-gray-700">El enlace de autorizacion ha expirado</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Enviado el {formatDate(autorizacion?.created_at)}
-              </p>
+          {!bloqueo && (
+            <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <IconClock size={18} className="text-gray-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-gray-700">El enlace de autorización venció</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enviado el {formatDate(autorizacion?.created_at)}
+                </p>
+              </div>
             </div>
-          </div>
-          {contactoDestino}
-          {!soloLectura && (
-            <button
-              onClick={handleEnviarEnlace}
-              disabled={sending}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-            >
-              {sending ? (
-                <IconLoader size={16} className="animate-spin" />
-              ) : (
-                <IconMail size={16} />
-              )}
-              Enviar nueva autorizacion
-            </button>
           )}
+          {contactoDestino}
+          {acciones('Enviar nueva autorización', true)}
         </div>
       )}
 
@@ -730,9 +794,11 @@ export function AutorizacionSection({
 
         ponytail: el §8.3 se queda en mostrar la intención. Prellenar
         CoarrendatarioInviteForm exigiría bajar el dato por dos cards más, y la
-        cédula del co-arrendatario (obligatoria al invitar) no se le pide al
+        cédula del coarrendatario (obligatoria al invitar) no se le pide al
         prospecto de todos modos: el gestor va a teclear ese campo igual.
       */}
+      {veTraza && autorizacion && <TrazaAutorizacion expedienteId={expedienteId} />}
+
       {hayPerfil8 && perfil && (
         <div className="mt-4 border border-gray-200 rounded-lg p-4 space-y-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -788,7 +854,7 @@ export function AutorizacionSection({
                     en toda la página del expediente vista en un móvil. */}
                 <dd className="text-gray-900 font-medium flex flex-wrap items-center gap-1.5">
                   <IconUsers size={13} className="text-gray-500 shrink-0" />
-                  {perfil.presentacion === 'acompanado' ? 'Con un co-arrendatario' : 'Solo'}
+                  {perfil.presentacion === 'acompanado' ? 'Con un coarrendatario' : 'Solo'}
                   {perfil.coarrendatario_intencion && (
                     <span className="text-gray-600 font-normal min-w-0 break-all">
                       — {perfil.coarrendatario_intencion.nombre} {perfil.coarrendatario_intencion.apellido}
@@ -800,13 +866,28 @@ export function AutorizacionSection({
                 {perfil.presentacion === 'acompanado' && (
                   <p className="text-[11px] text-gray-500 mt-1">
                     Es una intención, no una invitación: la invitación real se emite desde la sección de
-                    co-arrendatario cuando el estudio quede condicionado.
+                    coarrendatario cuando el estudio quede condicionado.
                   </p>
                 )}
               </div>
             )}
           </dl>
         </div>
+      )}
+
+      {showCorregir && (
+        <CorregirDocumentoModal
+          isOpen
+          onClose={() => setShowCorregir(false)}
+          expedienteId={expedienteId}
+          tipoActual={solicitanteTipoDocumento}
+          numeroActual={solicitanteDocumento}
+          correccionesRestantes={autorizacion?.correcciones_restantes}
+          onCorregido={() => {
+            void fetchStatus()
+            onContactoActualizado?.()
+          }}
+        />
       )}
     </div>
   )

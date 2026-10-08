@@ -3,7 +3,7 @@
  * La inmobiliaria envía este enlace cuando el estudio quedó condicionado para
  * que el solicitante suba su documentación adicional; también llega en el
  * correo del condicionado. Desde aquí el prospecto, sin cuenta, invita a su
- * co-arrendatario (P18); desde la Decisión 2 (2026-09-25), también con el
+ * coarrendatario (P18); desde la Decisión 2 (2026-09-25), también con el
  * estudio aprobado y antes del contrato, para bajar la prima al 10 % (el enlace
  * llega en el correo del aprobado). El API decide si se puede (Decisión 4: no en
  * el canal del propietario directo).
@@ -35,7 +35,7 @@ function textoInvitado(
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
       ? 'Su estudio se cerró, así que esta invitación quedó sin efecto.'
-      : 'Su estudio se cerró, así que su co-arrendatario ya no sigue en el proceso.'
+      : 'Su estudio se cerró, así que su coarrendatario ya no sigue en el proceso.'
   }
   if (!vigente) {
     return invitado.estado === 'pendiente_aceptacion'
@@ -49,8 +49,8 @@ function textoInvitado(
   }
   if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
   return estadoEstudio === 'aprobado'
-    ? 'La evaluación de su co-arrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
-    : 'La evaluación de su co-arrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
+    ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+    : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
 }
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
@@ -58,7 +58,7 @@ const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
   { value: 'extractos_bancarios', label: 'Extractos bancarios' },
   { value: 'declaracion_renta', label: 'Declaración de renta' },
   { value: 'carta_referencia', label: 'Carta de referencia' },
-  { value: 'codeudor', label: 'Documentos de codeudor' },
+  { value: 'codeudor', label: 'Documentos de respaldo de un tercero' },
   { value: 'poliza', label: 'Póliza' },
   { value: 'otros_soportes', label: 'Otros soportes' },
 ]
@@ -175,7 +175,7 @@ export default function CargarDocumentosPage() {
     )
   }
 
-  // Decisión 2: aprobado antes del contrato, el enlace sirve para sumar al co-arrendatario (no para soportes).
+  // Decisión 2: aprobado antes del contrato, el enlace sirve para sumar al coarrendatario (no para soportes).
   const aprobado = ctx.estado === 'aprobado'
   const vigente = ctx.coarrendatario?.vigente ?? ctx.estado === 'condicionado'
   const soloCoarrendatario = aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado)
@@ -185,7 +185,7 @@ export default function CargarDocumentosPage() {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {soloCoarrendatario ? 'Su co-arrendatario' : 'Carga de documentos'}
+            {soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
             {soloCoarrendatario ? (
@@ -197,7 +197,7 @@ export default function CargarDocumentosPage() {
               <>
                 Hola {ctx.solicitante}, suba los documentos para su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-                {ctx.coarrendatario?.puede_invitar ? ' o invite a su co-arrendatario' : ''}.
+                {ctx.coarrendatario?.puede_invitar ? ' o invite a su coarrendatario' : ''}.
               </>
             )}
           </p>
@@ -217,7 +217,7 @@ export default function CargarDocumentosPage() {
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
-              <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como co-arrendatario</p>
+              <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
               <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente)}</p>
             </div>
           </div>

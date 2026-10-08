@@ -5,6 +5,7 @@
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -21,9 +22,9 @@ import {
   IconPencil,
   IconArrowRight,
   IconCreditCard,
-  IconSearch,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
+import { estudioService } from '@/services/estudioService'
 import type { WizardData } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
@@ -51,22 +52,36 @@ export function Step4Confirmation({
 }: Step4ConfirmationProps) {
   const { inmueble } = data.step1
   const { solicitante, isNewSolicitante, formData } = data.step2
-  const { forma_pago, proveedor, notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
-  const BURO_LABEL: Record<string, string> = {
-    transunion: 'TransUnion',
-    datacredito: 'DataCrédito',
-  }
-
+  const { forma_pago, notas, analista_id, miembro_responsable_id, miembro_responsable_nombre } = data.step3
   // §7: el resumen debe mostrar "propiedad, canon, datos del prospecto y forma
   // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
   const FORMA_PAGO_LABEL: Record<string, string> = {
-    credito: 'Se reserva 1 crédito de su paquete de estudios; se consume cuando la central entrega el resultado (opción A)',
-    // Adenda 2 §7: la B se paga en línea; la solicitud sale al confirmarse el pago.
-    inmobiliaria: 'Usted paga ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago (opción B)',
-    prospecto: 'Enlace de pago al prospecto, después de que autorice (opción C)',
+    credito: 'Se reserva un cupo de su paquete; se descuenta cuando la central entrega el resultado',
+    // Adenda 2 §7: se paga en línea; la solicitud sale al confirmarse el pago.
+    inmobiliaria: 'Usted paga ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago',
+    prospecto: 'Enlace de pago al prospecto, después de que autorice',
   }
-  // Opción B: el botón no envía nada todavía, lleva al pago.
+  // Paga la inmobiliaria en línea: el botón no envía nada todavía, lleva al pago.
   const pagaAhora = forma_pago === 'inmobiliaria'
+
+  // CORR §5.2: antes de enviar, el valor que se le cobrará al prospecto (con
+  // IVA incluido, calculado por la API desde la calibración).
+  const [precioProspecto, setPrecioProspecto] = useState<string | null>(null)
+  useEffect(() => {
+    if (forma_pago !== 'prospecto') return
+    let vivo = true
+    estudioService
+      .getTopeCanon()
+      .then((r) => {
+        if (vivo) setPrecioProspecto(r.precio_estudio ?? null)
+      })
+      .catch(() => {
+        // Sin el precio no se bloquea: la página de pago del prospecto lo muestra igual.
+      })
+    return () => {
+      vivo = false
+    }
+  }, [forma_pago])
 
   // Obtener datos del solicitante (existente o nuevo)
   const solicitanteData = solicitante || formData
@@ -263,17 +278,13 @@ export function Step4Confirmation({
                 {FORMA_PAGO_LABEL[forma_pago]}
               </p>
             ) : (
-              <p className="text-sm text-red-600">Sin elegir — vuelva al paso 3</p>
+              <p className="text-sm text-red-600">Sin elegir: vuelva al paso 3</p>
             )}
-          </div>
-
-          {/* Buró elegido en el paso 3 */}
-          <div>
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Buró a consultar</p>
-            <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
-              <IconSearch size={14} className="text-gray-500" />
-              {proveedor ? BURO_LABEL[proveedor] : 'Lo decide Cofianza (DataCrédito por defecto)'}
-            </p>
+            {forma_pago === 'prospecto' && precioProspecto && (
+              <p className="mt-2 rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-900">
+                Se le cobrará al prospecto <strong>{precioProspecto}</strong>.
+              </p>
+            )}
           </div>
 
           {/* Notas */}

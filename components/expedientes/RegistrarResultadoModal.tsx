@@ -348,7 +348,7 @@ export function RegistrarResultadoModal({
                   className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del co-arrendatario.
+                  Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del coarrendatario.
                 </p>
               </div>
             </div>

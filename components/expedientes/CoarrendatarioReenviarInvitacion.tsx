@@ -1,11 +1,11 @@
 /**
- * CoarrendatarioReenviarInvitacion — corrige los datos del co-arrendatario
+ * CoarrendatarioReenviarInvitacion — corrige los datos del coarrendatario
  * invitado (contacto, nombre o documento) y reenvía la invitación pendiente, o
  * la cancela para invitar a otra persona (P4, 2026-09-24). Sin esto, un correo
  * o una cédula mal escritos eran un callejón sin salida.
  *
  * Solo se muestra con la invitación en 'pendiente_aceptacion': después de la
- * evaluación el co-arrendatario ya no se reemplaza (uno por estudio). El
+ * evaluación el coarrendatario ya no se reemplaza (uno por estudio). El
  * backend regenera el token al reenviar y al cancelar, así que el enlace
  * anterior queda invalidado.
  */

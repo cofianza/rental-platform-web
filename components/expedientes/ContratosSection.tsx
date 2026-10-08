@@ -106,7 +106,7 @@ export function ContratosSection({
   const esDuenio = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
   // El contrato (paso 5) solo se genera cuando el expediente está APROBADO.
   // En 'condicionado' hay que aprobar explícito primero (card "Aprobar y generar
-  // contrato", que transiciona a 'aprobado') o invitar a un co-arrendatario.
+  // contrato", que transiciona a 'aprobado') o invitar a un coarrendatario.
   // Mismo gate que el backend (generarContrato).
   const expedienteAprobado = expedienteEstado === 'aprobado'
   // Contratos V3: las filas con destinacion son del asistente. Ahí viven (y se
