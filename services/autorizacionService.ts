@@ -17,6 +17,11 @@ import type {
   IReportarIdentidadInput,
   IBiometriaResponse,
   IPagoProspecto,
+  IConfirmarIdentidadResponse,
+  ICorregirDocumentoInput,
+  ICorregirDocumentoResponse,
+  IBloqueoPendiente,
+  ITrazaAutorizacion,
 } from '@/types/autorizacion'
 
 // ============================================
@@ -42,6 +47,27 @@ export const autorizacionService = {
       contacto || {}
     )
     return res.data
+  },
+
+  /** BLQ §3: corrección ciega del documento. No reenvía el enlace. */
+  async corregirDocumento(expedienteId: string, input: ICorregirDocumentoInput): Promise<ICorregirDocumentoResponse> {
+    const res = await apiClient.patch<ICorregirDocumentoResponse>(
+      `/expedientes/${expedienteId}/autorizacion-riesgo/documento`,
+      input
+    )
+    return res.data
+  },
+
+  /** BLQ §7: solo Cofianza (lleva lo digitado por el prospecto). */
+  async getTraza(expedienteId: string): Promise<ITrazaAutorizacion> {
+    const res = await apiClient.get<ITrazaAutorizacion>(`/expedientes/${expedienteId}/autorizacion-riesgo/traza`)
+    return res.data
+  },
+
+  /** BLQ §2.1: estudios bloqueados por documento sin atender (banner). */
+  async getBloqueosPendientes(): Promise<IBloqueoPendiente[]> {
+    const res = await apiClient.get<IBloqueoPendiente[]>('/expedientes/bloqueos-pendientes')
+    return res.data ?? []
   },
 
   async revocar(expedienteId: string, input: IRevocarInput): Promise<IRevocarResponse> {
@@ -89,10 +115,11 @@ export const autorizacionPublicService = {
   },
 
   /** §8.1: el prospecto escribe su documento y la API lo compara con la ficha
-   *  sin revelarlo. `coincide: false` = el enlace quedó detenido y se avisó
-   *  al gestor (mismo camino que "los datos están mal"). */
-  async confirmarIdentidad(token: string, numeroDocumento: string): Promise<{ coincide: boolean }> {
-    const res = await publicClient.post<{ coincide: boolean }>(
+   *  sin revelarlo. `coincide: false` con `intentos_restantes > 0` = puede
+   *  volver a escribirlo (BLQ §1); sin intentos, el enlace quedó detenido y se
+   *  avisó al gestor. */
+  async confirmarIdentidad(token: string, numeroDocumento: string): Promise<IConfirmarIdentidadResponse> {
+    const res = await publicClient.post<IConfirmarIdentidadResponse>(
       `/public/autorizar/${token}/confirmar-identidad`,
       { numero_documento: numeroDocumento }
     )

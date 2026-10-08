@@ -229,7 +229,7 @@ export default function AutorizarPage() {
   // Se enciende al intentar continuar, no al teclear: nadie quiere ver
   // "revisa el correo" cuando lleva escrita una sola letra.
   const [coaEmailError, setCoaEmailError] = useState(false)
-  // M9: qué le falta al co-arrendatario para poder guardarlo. Antes, con datos
+  // M9: qué le falta al coarrendatario para poder guardarlo. Antes, con datos
   // a medias, se descartaban en silencio y el prospecto creía haberlos dejado.
   const [coaFaltan, setCoaFaltan] = useState<string[]>([])
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
@@ -372,7 +372,7 @@ export default function AutorizarPage() {
   //
   // El silencio del catch cubre red y 5xx, NO errores de validación: los tres
   // bloques del §8 viajan en un solo POST y el backend rechazaba el body
-  // entero, así que un correo mal tecleado del co-arrendatario borraba también
+  // entero, así que un correo mal tecleado del coarrendatario borraba también
   // la identidad, lo laboral y el ingreso. Ahora hay dos defensas: este chequeo
   // en el campo (el prospecto ve el dedazo y lo corrige) y `.catch(undefined)`
   // por campo en perfilProspectoSchema (un campo malo se cae solo).
@@ -446,13 +446,24 @@ export default function AutorizarPage() {
     requestAnimationFrame(() => document.getElementById('numero-documento')?.focus())
   }
 
+  // BLQ §1: le quedan intentos en este enlace. Vuelve al campo sin revelar el número registrado.
+  function volverAlDocumento(restantes: number) {
+    setIdentidadOk(false)
+    setRepasoDoc(false)
+    setPaso(1)
+    setDocumentoError(mensajeIntentosRestantes(restantes))
+    requestAnimationFrame(() => document.getElementById('numero-documento')?.focus())
+  }
+
   async function handleConfirmarIdentidad() {
     if (verificandoDoc || !documento.trim()) return
     setVerificandoDoc(true)
     setDocumentoError('')
     try {
-      const { coincide } = await autorizacionPublicService.confirmarIdentidad(token, documento.trim())
+      // Una API anterior al bloque 2 no manda intentos_restantes: 0 = detenido.
+      const { coincide, intentos_restantes = 0 } = await autorizacionPublicService.confirmarIdentidad(token, documento.trim())
       if (coincide) setIdentidadOk(true)
+      else if (intentos_restantes > 0) volverAlDocumento(intentos_restantes)
       else setPageState('no_coincide')
     } catch (err) {
       const code = (err as { code?: string })?.code
@@ -566,7 +577,9 @@ export default function AutorizarPage() {
         return
       }
       if (code === 'DOCUMENTO_NO_COINCIDE') {
-        setPageState('no_coincide')
+        const restantes = (err as { details?: { intentos_restantes?: number } })?.details?.intentos_restantes ?? 0
+        if (restantes > 0) volverAlDocumento(restantes)
+        else setPageState('no_coincide')
         return
       }
       if (code === 'AUTORIZACION_NO_VIGENTE' || code === 'AUTORIZACION_EXPIRADA') {
@@ -762,13 +775,20 @@ export default function AutorizarPage() {
               {pago?.payment_link_url ? (
                 <>
                   <p className="mb-3 text-sm text-gray-600">
-                    Falta un paso: pagar el estudio. Su evaluación arranca apenas se confirme el pago.
+                    Falta un paso: pagar el estudio. Su evaluación inicia apenas se confirme el pago.
                   </p>
+                  {/* CORR §5.3 (Ley 1480 art. 26): el total con IVA, destacado. */}
+                  {pago.monto_formateado && (
+                    <p className="mx-auto mb-3 max-w-xs rounded-xl bg-primary-50 px-4 py-3">
+                      <span className="block text-xs font-medium uppercase tracking-wide text-primary-800">Valor del estudio</span>
+                      <span className="block font-display text-2xl font-bold text-primary-900">{pago.monto_formateado}</span>
+                    </p>
+                  )}
                   <a
                     href={pago.payment_link_url}
                     className="inline-flex w-full items-center justify-center rounded-xl bg-primary-700 px-5 py-3 text-base font-semibold text-white hover:bg-primary-800 sm:w-auto"
                   >
-                    Pagar {pago.monto_formateado ?? 'el estudio'} ahora
+                    Pagar el estudio ahora
                   </a>
                   <p className="mt-2 text-xs text-gray-500">
                     El pago se hace en Mercado Pago. También le enviamos el enlace por correo y WhatsApp por si
@@ -781,7 +801,7 @@ export default function AutorizarPage() {
                 </p>
               ) : pago?.estado === 'procesando' ? (
                 <p className="text-sm text-gray-600">
-                  Su pago está en proceso. Apenas el banco lo confirme arrancamos su evaluación:{' '}
+                  Su pago está en proceso. Apenas el banco lo confirme iniciamos su evaluación:{' '}
                   <strong>no necesita pagar de nuevo.</strong>
                 </p>
               ) : pago?.estado === 'sin_enlace' ? (
@@ -934,8 +954,8 @@ export default function AutorizarPage() {
                   </p>
                   <p className="text-sm font-bold text-gray-900">¿Es correcto?</p>
                   <p className="text-xs leading-relaxed text-gray-500">
-                    Revíselo bien: si no coincide con el registrado, detenemos el proceso y necesitará un enlace
-                    nuevo.
+                    Revíselo bien: tiene un número limitado de intentos. Si se agotan, {quien} revisará sus datos
+                    y le enviará un enlace nuevo.
                   </p>
                   <button
                     type="button"
@@ -979,7 +999,8 @@ export default function AutorizarPage() {
                   />
                   <p id="numero-documento-ayuda" className="text-xs leading-relaxed text-gray-500">
                     Lo comparamos con el que está registrado en su estudio; por su seguridad no se lo
-                    mostramos. Si no coincide, detenemos el proceso para no consultar los datos de otra persona.
+                    mostramos. Tiene un número limitado de intentos. Si se agotan, {quien} revisará sus datos y
+                    le enviará un enlace nuevo.
                   </p>
                   {documentoError && (
                     <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -1274,25 +1295,24 @@ export default function AutorizarPage() {
 
               {/* El mensaje que rompe la objeción más frecuente del mercado (§8.3).
                   Alineado con la plantilla de WhatsApp que ya está en producción
-                  ("no eres fiador ni codeudor"). */}
+                  (CORR §6). */}
               <p className="mt-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs leading-relaxed text-primary-800">
-                Un co-arrendatario <strong>no necesita tener finca raíz</strong>. No es fiador ni codeudor:
-                respondemos por los dos como un solo arrendatario.
+                Un coarrendatario <strong>no necesita tener finca raíz</strong>. No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente. Respondemos por los dos como un solo arrendatario.
               </p>
 
               {presentacion === 'acompanado' && (
                 <div className="mt-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
                   {/* La promesa anterior ("tú no tienes que repetir nada") no
                       era verificable: si el estudio queda condicionado, la card
-                      del co-arrendatario sí le pide la cédula. Prometemos solo
+                      del coarrendatario sí le pide la cédula. Prometemos solo
                       lo que la card cumple. */}
                   <p className="text-xs text-gray-500">
-                    Déjenos los datos de su co-arrendatario. Cuando avancemos con su estudio, a usted solo le
+                    Déjenos los datos de su coarrendatario. Cuando avancemos con su estudio, a usted solo le
                     pediremos la cédula de esa persona: lo demás ya queda guardado.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                    <label htmlFor="coa-nombre" className="sr-only">Nombre de su co-arrendatario</label>
+                    <label htmlFor="coa-nombre" className="sr-only">Nombre de su coarrendatario</label>
                     <input
                       id="coa-nombre"
                       type="text"
@@ -1308,7 +1328,7 @@ export default function AutorizarPage() {
                     />
                     </div>
                     <div>
-                    <label htmlFor="coa-apellido" className="sr-only">Apellido de su co-arrendatario</label>
+                    <label htmlFor="coa-apellido" className="sr-only">Apellido de su coarrendatario</label>
                     <input
                       id="coa-apellido"
                       type="text"
@@ -1324,7 +1344,7 @@ export default function AutorizarPage() {
                     />
                     </div>
                   </div>
-                  <label htmlFor="coa-email" className="sr-only">Correo de su co-arrendatario</label>
+                  <label htmlFor="coa-email" className="sr-only">Correo de su coarrendatario</label>
                   <input
                     id="coa-email"
                     type="email"
@@ -1350,7 +1370,7 @@ export default function AutorizarPage() {
                       WhatsApp.
                     </p>
                   )}
-                  <label htmlFor="coa-telefono" className="sr-only">WhatsApp de su co-arrendatario (opcional)</label>
+                  <label htmlFor="coa-telefono" className="sr-only">WhatsApp de su coarrendatario (opcional)</label>
                   <input
                     id="coa-telefono"
                     type="tel"
@@ -1368,7 +1388,7 @@ export default function AutorizarPage() {
                   {coaFaltan.length > 0 && (
                     <div role="alert" className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                       <p className="text-sm text-amber-900">
-                        Para guardar a su co-arrendatario {coaFaltan.length > 1 ? 'faltan' : 'falta'} {unirConY(coaFaltan)}. Complételo o siga sin sus
+                        Para guardar a su coarrendatario {coaFaltan.length > 1 ? 'faltan' : 'falta'} {unirConY(coaFaltan)}. Complételo o siga sin sus
                         datos; nos los puede dar después.
                       </p>
                       <button
@@ -1725,6 +1745,12 @@ function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, espe
 // Siempre va al inicio de la frase: así el nombre no choca con «a»/«al».
 function quienTramita(solicitadoPor: string | null): string {
   return solicitadoPor?.trim() || 'Quien tramita su arriendo'
+}
+
+function mensajeIntentosRestantes(n: number): string {
+  return `El número de documento no coincide con el registrado. Verifíquelo e intente de nuevo. ${
+    n === 1 ? 'Le queda 1 intento.' : `Le quedan ${n} intentos.`
+  }`
 }
 
 function enlaceNoActivo(quien: string): string {

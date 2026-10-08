@@ -147,7 +147,7 @@ export default function CoarrendatarioPublicPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
         <p className="text-sm text-gray-600 mb-4">
-          Le avisamos a {view?.expediente.titular_nombre} que no continuará como co-arrendatario.
+          Le avisamos a {view?.expediente.titular_nombre} que no continuará como coarrendatario.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
       </div>
@@ -197,7 +197,7 @@ export default function CoarrendatarioPublicPage() {
               </p>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">
-              En Cofianza <strong>rentamos sin fiador</strong>. {titular} lo invita a ser su co-arrendatario para que
+              En Cofianza <strong>rentamos sin fiador</strong>. {titular} lo invita a ser su coarrendatario para que
               tomen el arriendo juntos: los dos firman como un solo arrendatario y nosotros los respaldamos.
             </p>
           </div>

@@ -23,7 +23,6 @@ import {
   IconBank,
   IconWhatsapp,
   IconCheck,
-  IconSearch,
 } from '@/components/icons'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { expedienteService } from '@/services/expedienteService'
@@ -47,38 +46,32 @@ interface Analista {
 const MAX_NOTAS_LENGTH = 5000
 
 // §6.1/6.2/6.3 — el texto de cada opción es del documento, resumido.
+// CORR §1.1/1.4: sin «Opción A/B/C» y una línea por opción; la regla del cupo va al pie.
 const OPCIONES_PAGO: {
   valor: FormaPagoEstudio
-  letra: string
   titulo: string
   descripcion: string
   Icono: typeof IconCreditCard
 }[] = [
   {
     valor: 'credito',
-    letra: 'A',
-    // Adenda de precios §2: el crédito se RESERVA al crear y se consume solo
-    // con el resultado; el estudio corre cuando el prospecto autoriza.
-    titulo: 'Reservar 1 crédito de su paquete',
-    descripcion:
-      'Se aparta un crédito de estudios del paquete que ya compró, sin pagos adicionales. El estudio arranca cuando el prospecto autoriza la consulta; si la consulta no llega a hacerse, el crédito vuelve a su saldo.',
+    // Adenda de precios §2: el cupo se RESERVA al crear y se consume solo
+    // con el resultado (CORR §1.5).
+    titulo: 'Reservar un cupo de su paquete',
+    descripcion: 'Se aparta un cupo y no hay pagos adicionales.',
     Icono: IconCreditCard,
   },
   {
     valor: 'inmobiliaria',
-    letra: 'B',
-    // Adenda 2 §7: la opción B se paga en línea; "a cuenta" no se aprobó.
+    // Adenda 2 §7: se paga en línea; "a cuenta" no se aprobó.
     titulo: 'Pagar ahora con Mercado Pago',
-    descripcion:
-      'Usted paga el estudio en línea (tarjeta o PSE). Al terminar el asistente lo llevamos al pago; el estudio sigue cuando se confirme.',
+    descripcion: 'Usted paga el estudio en línea con tarjeta o PSE al terminar el asistente.',
     Icono: IconBank,
   },
   {
     valor: 'prospecto',
-    letra: 'C',
     titulo: 'Enviar el enlace de pago al prospecto',
-    descripcion:
-      'El prospecto paga directamente. Primero se le pide la autorización y solo después el pago, así no se le cobra a quien nunca autoriza.',
+    descripcion: 'El prospecto paga el estudio después de autorizar la consulta.',
     Icono: IconWhatsapp,
   },
 ]
@@ -120,7 +113,7 @@ export function Step3Configuration({
         setSaldoError(false)
       })
       .catch(() => {
-        // Sin saldo legible no bloqueamos el paso: la opción A queda
+        // Sin saldo legible no bloqueamos el paso: la opción del paquete queda
         // deshabilitada y las otras dos siguen disponibles.
         setSaldoError(true)
       })
@@ -131,8 +124,8 @@ export function Step3Configuration({
   }, [cargarSaldo])
 
   // Si el gestor se va a comprar un paquete en otra pestaña, al volver aquí
-  // reconsultamos el saldo: sin esto la opción A seguía deshabilitada aunque ya
-  // hubiera créditos, y tocaba rehacer los 3 pasos.
+  // reconsultamos el saldo: sin esto la opción del paquete seguía deshabilitada
+  // aunque ya hubiera cupos, y tocaba rehacer los 3 pasos.
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === 'visible') cargarSaldo()
@@ -213,12 +206,12 @@ export function Step3Configuration({
       {/* §6 — la decisión del paso: forma de pago del estudio */}
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium text-gray-700">
-          ¿Cómo se paga el estudio?
+          ¿Quién paga el estudio?
         </legend>
         <div className="space-y-2.5">
           {/* Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
               (paquete o prospecto); el API responde 403. */}
-          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito')).map(({ valor, letra, titulo, descripcion, Icono }) => {
+          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito')).map(({ valor, titulo, descripcion, Icono }) => {
             const seleccionada = data.forma_pago === valor
             const sinSaldo = valor === 'credito' && (saldoError || saldo === 0)
             return (
@@ -250,25 +243,20 @@ export function Step3Configuration({
                   {seleccionada ? <IconCheck size={18} /> : <Icono size={18} />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">{titulo}</span>
-                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
-                      Opción {letra}
-                    </span>
-                  </span>
+                  <span className="block text-sm font-semibold text-gray-900">{titulo}</span>
                   <span className="mt-1 block text-sm text-gray-500">{descripcion}</span>
 
                   {valor === 'credito' && (
                     <span className="mt-2 block text-xs font-medium">
                       {saldoError ? (
                         <span className="text-amber-600">
-                          No pudimos consultar su saldo de estudios.
+                          No pudimos consultar su saldo de cupos.
                         </span>
                       ) : saldo === null ? (
                         <span className="text-gray-500">Consultando saldo…</span>
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
-                          No le quedan estudios en el paquete.{' '}
+                          No le quedan cupos en su paquete.{' '}
                           {esInmobiliaria ? (
                             <>
                               {/* La compra NO vive en "Pagos a Cofianza": está en
@@ -291,7 +279,7 @@ export function Step3Configuration({
                         </span>
                       ) : (
                         <span className="text-gray-600">
-                          Saldo actual: <strong>{saldo}</strong> · después de reservar
+                          Cupos disponibles: <strong>{saldo}</strong> · después de reservar
                           le quedarían <strong>{saldo - 1}</strong>
                         </span>
                       )}
@@ -305,42 +293,12 @@ export function Step3Configuration({
         {errors.forma_pago && (
           <p className="text-sm text-red-600">{errors.forma_pago}</p>
         )}
-      </fieldset>
-
-      {/* Buró a consultar. La card de habilitar sí lo preguntaba, pero no
-          aparece si el asistente ya habilitó — y cambiarlo después es otra
-          consulta al buró (ejecutarEstudio no crea un cobro nuevo al cliente). */}
-      <fieldset className="space-y-2">
-        <legend className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <IconSearch size={16} className="text-gray-500" />
-          Buró a consultar
-          <span className="font-normal text-gray-500">(opcional)</span>
-        </legend>
-        <p className="text-xs text-gray-500">
-          Si no elige, se consulta DataCrédito, la central principal de Cofianza. Cambiarlo después
-          significa una consulta adicional al buró; el estudio no se vuelve a cobrar.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {([
-            { value: '', label: 'Que decida Cofianza' },
-            { value: 'transunion', label: 'TransUnion' },
-            { value: 'datacredito', label: 'DataCrédito' },
-          ] as const).map((b) => (
-            <button
-              key={b.value || 'auto'}
-              type="button"
-              aria-pressed={(data.proveedor ?? '') === b.value}
-              onClick={() => onUpdate({ proveedor: b.value })}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                (data.proveedor ?? '') === b.value
-                  ? 'border-primary-500 bg-primary-50 font-medium text-primary-700'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              {b.label}
-            </button>
-          ))}
-        </div>
+        {usaCreditos && (
+          <p className="text-xs text-gray-500">
+            El cupo se descuenta cuando la consulta a centrales entrega resultado. Si el prospecto no autoriza o la
+            consulta no se realiza, el cupo se libera.
+          </p>
+        )}
       </fieldset>
 
       {/* Notas internas */}

@@ -2,25 +2,26 @@
  * ReintentarEstudioForm — reintento de un estudio 'fallido' (o ejecución a mano
  * del que no arrancó solo tras la firma o el pago) con el documento
  * verificable/corregible en el lugar (la causa típica del fallo es una cédula
- * mal escrita o un tipo de documento no soportado) y con el BURÓ elegible:
- * si TransUnion falla, el gestor puede relanzar por DataCrédito o viceversa.
- * El cambio es manual a propósito — cada consulta se factura, así que la
- * decisión de gastar en el otro buró es del gestor, no automática.
+ * mal escrita o un tipo de documento no soportado). La central NO se elige
+ * (CORR §2): la decide la cascada del motor, con DataCrédito como primaria.
  *
  * Compartido por EstudioEstadoCard (resumen) y EstudiosSection (tab Estudios).
- * Documento y proveedor van como override a POST /estudios/:id/ejecutar: se
- * consulta eso, se persiste en el estudio y (solo titular) el documento se
- * sincroniza en el solicitante.
+ * El documento ya no se corrige aquí (BLQ §3.5): /ejecutar lo descarta, y el
+ * del titular se corrige con «Corregir documento» (corrección ciega con la
+ * fuente de verificación) y luego se reenvía el enlace. Solo el primer
+ * apellido viaja como override.
  */
 
 'use client'
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { IconLoader, IconMail, IconRefresh } from '@/components/icons'
+import { IconLoader, IconMail, IconPencil, IconRefresh } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
 import { ApiClientError } from '@/lib/api'
+import { CorregirDocumentoModal } from '@/components/expedientes/CorregirDocumentoModal'
+import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
 
 // Tipos soportados por TransUnion Colombia (mismo set que el backend acepta
 // en ejecutarEstudioBodySchema). Pasaporte se excluye a propósito: falla con
@@ -28,34 +29,17 @@ import { ApiClientError } from '@/lib/api'
 // solo DataCrédito los consulta; TransUnion no tiene código para ellos.
 export type TipoDocEstudio = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
 
-const SOLO_DATACREDITO: readonly string[] = ['ppt', 'pep']
-
 export function normalizeTipoDocEstudio(t?: string | null): TipoDocEstudio {
   const v = (t || '').toLowerCase()
   return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ppt' || v === 'pep' || v === 'ti' ? v : 'cc'
 }
 
-// Burós ejecutables por reintento (mismo enum que ejecutarEstudioBodySchema).
-type ProveedorReintento = 'transunion' | 'datacredito'
-
-const PROVEEDOR_REINTENTO_LABELS: Record<ProveedorReintento, string> = {
-  transunion: 'TransUnion',
-  datacredito: 'DataCrédito',
-}
-
-function normalizeProveedorReintento(p?: string | null): ProveedorReintento {
-  return p === 'datacredito' ? 'datacredito' : 'transunion'
-}
-
-function otroBuro(p: ProveedorReintento): ProveedorReintento {
-  return p === 'datacredito' ? 'transunion' : 'datacredito'
-}
-
 /**
  * Un estudio completado, condicionado y SIN score significa que el buró no
  * pudo evaluar a la persona (código 14 de DataCrédito, exclusiones de
- * CreditVision). No es un perfil marginal: es falta de información, y la
- * salida natural es preguntarle al OTRO buró.
+ * CreditVision). No es un perfil marginal: es falta de información, y lo
+ * resuelve el analista en la revisión manual (ya no se re-consulta a mano
+ * «el otro buró», CORR §2).
  */
 export function esCondicionadoSinInfo(estudio: {
   estado: string
@@ -76,15 +60,11 @@ export function esPendienteDeEjecutar(estudio: { estado: string }): boolean {
 }
 
 /**
- * ¿Se puede relanzar este estudio contra un buró? Compartido por la card del
- * resumen y el tab Estudios para que no se desincronicen.
+ * ¿Se puede relanzar este estudio? Compartido por la card del resumen y el
+ * tab Estudios para que no se desincronicen.
  */
-export function puedeRelanzarEstudio(estudio: {
-  estado: string
-  resultado?: string | null
-  score?: number | null
-}): boolean {
-  return estudio.estado === 'fallido' || esPendienteDeEjecutar(estudio) || esCondicionadoSinInfo(estudio)
+export function puedeRelanzarEstudio(estudio: { estado: string }): boolean {
+  return estudio.estado === 'fallido' || esPendienteDeEjecutar(estudio)
 }
 
 /**
@@ -104,9 +84,7 @@ function proponerPrimerApellido(nombreCompleto?: string | null): string {
 
 interface ReintentarEstudioFormProps {
   estudioId: string
-  /** Buró con el que falló — preseleccionado; el gestor puede cambiarlo. */
-  proveedorActual?: string | null
-  /** Documento actual del evaluado — prellenado para verificar/corregir. */
+  /** Documento actual del evaluado — se muestra para verificarlo. */
   persona?: {
     tipo_documento?: string | null
     numero_documento?: string | null
@@ -115,19 +93,10 @@ interface ReintentarEstudioFormProps {
     /** Apellido ya separado. Si existe se usa tal cual (más fiable que derivarlo). */
     apellido?: string | null
   } | null
-  /** true = titular (el documento corregido se sincroniza en el solicitante). */
+  /** true = titular (solo su documento se corrige desde aquí). */
   esTitular?: boolean
-  /**
-   * Para pedir una autorización nueva cuando la firmada es de otro documento
-   * (cédula mal digitada y corregida aquí). Solo titular.
-   */
+  /** Para corregir el documento y reenviar el enlace. Solo titular. */
   expedienteId?: string
-  /**
-   * true cuando el estudio no falló sino que quedó condicionado sin
-   * información del buró. El backend solo deja re-ejecutarlo si se CAMBIA de
-   * proveedor, así que el form arranca con el otro buró y lo exige.
-   */
-  esReconsulta?: boolean
   /** true cuando el estudio nunca se ejecutó (ver esPendienteDeEjecutar): el copy dice "ejecutar", no "reintentar". */
   esPrimeraEjecucion?: boolean
   /** Refresca la lista/card padre tras disparar el reintento. */
@@ -136,26 +105,17 @@ interface ReintentarEstudioFormProps {
 
 export function ReintentarEstudioForm({
   estudioId,
-  proveedorActual,
   persona,
   esTitular = true,
   expedienteId,
-  esReconsulta = false,
   esPrimeraEjecucion = false,
   onRetried,
 }: ReintentarEstudioFormProps) {
-  // Init lazy: no se pisa con los re-render del polling del padre.
-  const [tipoDoc, setTipoDoc] = useState<TipoDocEstudio>(() =>
-    normalizeTipoDocEstudio(persona?.tipo_documento),
-  )
-  const [numeroDoc, setNumeroDoc] = useState(() => persona?.numero_documento?.trim() ?? '')
-  // En una re-consulta arranca con el OTRO buró: repetir el que ya dijo "no
-  // tengo información" no aporta nada, y además el backend lo rechaza.
-  const [proveedor, setProveedor] = useState<ProveedorReintento>(() => {
-    const actual = normalizeProveedorReintento(proveedorActual)
-    if (SOLO_DATACREDITO.includes(normalizeTipoDocEstudio(persona?.tipo_documento))) return 'datacredito'
-    return esReconsulta ? otroBuro(actual) : actual
-  })
+  const tipoDoc = normalizeTipoDocEstudio(persona?.tipo_documento)
+  const numeroDoc = persona?.numero_documento?.trim() ?? ''
+  const puedeCorregir = esTitular && !!expedienteId
+  // undefined = cerrado; null = abierto sin conteo de correcciones.
+  const [corregir, setCorregir] = useState<number | null | undefined>(undefined)
   // Si el apellido viene separado se usa tal cual; solo si no, se propone a
   // partir del nombre completo. En ambos casos queda editable: es lo que el
   // buró contrasta contra la Registraduría.
@@ -170,43 +130,32 @@ export function ReintentarEstudioForm({
   const [firmoOtroDocumento, setFirmoOtroDocumento] = useState(false)
   const [enviandoAutorizacion, setEnviandoAutorizacion] = useState(false)
 
-  // Solo DataCrédito valida el apellido (contra Registraduría, y únicamente
-  // cuando el documento es CC). Con TransUnion el campo sobra y solo distrae.
-  const requiereApellido = proveedor === 'datacredito' && tipoDoc === 'cc'
+  // DataCrédito (la central primaria) valida el apellido contra la
+  // Registraduría, y únicamente cuando el documento es CC.
+  const requiereApellido = tipoDoc === 'cc'
+
+  const abrirCorregir = async () => {
+    if (!expedienteId) return
+    const aut = await autorizacionService.getStatus(expedienteId).catch(() => null)
+    setCorregir(aut?.correcciones_restantes ?? null)
+  }
 
   const handleReintentar = async () => {
-    const numero = numeroDoc.trim()
-    if (!numero) {
-      toast.error('Ingrese el número de documento para reintentar')
-      return
-    }
     const apellido = primerApellido.trim()
     if (requiereApellido && apellido.length < 2) {
       toast.error('DataCrédito requiere el primer apellido para validar la identidad')
       return
     }
-    if (esReconsulta && proveedor === normalizeProveedorReintento(proveedorActual)) {
-      toast.error(
-        `${PROVEEDOR_REINTENTO_LABELS[proveedor]} ya respondió que no tiene información de esta persona. Elija el otro buró.`,
-      )
-      return
-    }
     setReintentando(true)
     try {
       await estudioService.ejecutarEstudio(estudioId, {
-        tipo_documento: tipoDoc,
-        numero_documento: numero,
-        proveedor,
         // SOLO cuando el campo está visible: el backend trata cualquier
         // primer_apellido como corrección explícita y lo sincroniza en
-        // solicitantes.apellido. Mandarlo con el campo oculto (TransUnion, o
-        // DataCrédito con CE/TI) pisaba en silencio un apellido compuesto
+        // solicitantes.apellido. Mandarlo con el campo oculto (CE/TI) pisaba en silencio un apellido compuesto
         // ('Pérez García' → 'Pérez') que el gestor nunca vio ni tocó.
         ...(requiereApellido && apellido ? { primer_apellido: apellido } : {}),
       })
-      toast.success(
-        `${esPrimeraEjecucion ? 'Ejecutando' : 'Reintentando'} la consulta a ${PROVEEDOR_REINTENTO_LABELS[proveedor]}…`,
-      )
+      toast.success(`${esPrimeraEjecucion ? 'Ejecutando' : 'Reintentando'} la consulta…`)
       onRetried?.()
     } catch (err) {
       const motivo =
@@ -219,9 +168,8 @@ export function ReintentarEstudioForm({
           ? err.message
           : `No se pudo ${esPrimeraEjecucion ? 'ejecutar' : 'reintentar'} la consulta.`,
       )
-      // Refrescar también al fallar: el backend pudo haber tomado el lock y
-      // persistido el cambio de buró antes de romperse, así que sin esto la
-      // card seguiría mostrando el proveedor viejo y el estado anterior.
+      // Refrescar también al fallar: el backend pudo haber tomado el lock
+      // antes de romperse, y sin esto la card seguiría con el estado anterior.
       onRetried?.()
     } finally {
       setReintentando(false)
@@ -232,11 +180,9 @@ export function ReintentarEstudioForm({
     if (!expedienteId) return
     setEnviandoAutorizacion(true)
     try {
-      await autorizacionService.enviarEnlace(expedienteId, {
-        tipo_documento: tipoDoc,
-        numero_documento: numeroDoc.trim(),
-      })
-      toast.success('Enviamos la nueva autorización. Cuando la persona la firme, reintenta la consulta.')
+      await autorizacionService.enviarEnlace(expedienteId)
+      window.dispatchEvent(new Event(EVENTO_BLOQUEOS))
+      toast.success('Enviamos la nueva autorización. Cuando la persona la firme, reintente la consulta.')
       setFirmoOtroDocumento(false)
       onRetried?.()
     } catch (err) {
@@ -249,67 +195,32 @@ export function ReintentarEstudioForm({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
-        {esReconsulta
-          ? `${PROVEEDOR_REINTENTO_LABELS[normalizeProveedorReintento(proveedorActual)]} no tiene información de esta persona. Puede consultar el otro buró.`
-          : esPrimeraEjecucion
-            ? 'Verifique el documento y el buró antes de ejecutar la consulta'
-            : 'Verifique el documento y el buró antes de reintentar'}
+        {esPrimeraEjecucion
+          ? 'Verifique el documento antes de ejecutar la consulta'
+          : 'Verifique el documento antes de reintentar'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="sm:w-40">
-          <label htmlFor="reintentar-estudio-form-buro-de-credito" className="block text-[11px] font-medium text-gray-500 mb-1">
-            Buró de crédito
-          </label>
-          <select id="reintentar-estudio-form-buro-de-credito"
-            value={proveedor}
-            onChange={(e) => setProveedor(e.target.value as ProveedorReintento)}
-            disabled={reintentando}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-          >
-            <option value="transunion" disabled={SOLO_DATACREDITO.includes(tipoDoc)}>TransUnion</option>
-            <option value="datacredito">DataCrédito</option>
-          </select>
-        </div>
-        {/* Ancho automático: el tipo de documento se lee completo («Cédula de ciudadanía (CC)»). */}
-        <div className="sm:w-auto sm:shrink-0">
-          <label htmlFor="reintentar-estudio-form-tipo-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
-            Tipo de documento
-          </label>
-          <select id="reintentar-estudio-form-tipo-de-documento"
-            value={tipoDoc}
-            onChange={(e) => {
-              const t = e.target.value as TipoDocEstudio
-              setTipoDoc(t)
-              if (SOLO_DATACREDITO.includes(t)) setProveedor('datacredito')
-            }}
-            disabled={reintentando}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-          >
-            <option value="cc">Cédula de ciudadanía (CC)</option>
-            <option value="ce">Cédula de extranjería (CE)</option>
-            <option value="ppt">Permiso por protección temporal (PPT)</option>
-            <option value="pep">Permiso especial de permanencia (PEP)</option>
-            <option value="ti">Tarjeta de identidad (TI)</option>
-            <option value="nit">NIT</option>
-          </select>
-        </div>
         <div className="flex-1 min-w-0 sm:min-w-[10rem]">
-          <label htmlFor="reintentar-estudio-form-numero-de-documento" className="block text-[11px] font-medium text-gray-500 mb-1">
-            Número de documento
-          </label>
-          <input id="reintentar-estudio-form-numero-de-documento"
-            type="text"
-            inputMode="numeric"
-            value={numeroDoc}
-            onChange={(e) => setNumeroDoc(e.target.value.replace(/[^\w]/g, ''))}
-            placeholder="Número de cédula"
-            disabled={reintentando}
-            maxLength={20}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-          />
+          <p className="block text-[11px] font-medium text-gray-500 mb-1">Documento</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-mono text-gray-900">
+              {tipoDoc.toUpperCase()} {numeroDoc || '—'}
+            </span>
+            {puedeCorregir && (
+              <button
+                type="button"
+                onClick={abrirCorregir}
+                disabled={reintentando}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800 disabled:opacity-50"
+              >
+                <IconPencil size={12} />
+                Corregir documento
+              </button>
+            )}
+          </div>
         </div>
-        {/* Solo DataCrédito + CC: es el único caso en que el buró contrasta el
-            apellido contra Registraduría (código 10 si no coincide). */}
+        {/* Solo CC: es el único caso en que DataCrédito contrasta el apellido
+            contra Registraduría (código 10 si no coincide). */}
         {requiereApellido && (
           <div className="sm:w-52">
             <label htmlFor="reintentar-estudio-form-primer-apellido" className="block text-[11px] font-medium text-gray-500 mb-1">
@@ -329,59 +240,55 @@ export function ReintentarEstudioForm({
         <button
           type="button"
           onClick={handleReintentar}
-          disabled={reintentando || numeroDoc.trim().length < 5}
+          disabled={reintentando || numeroDoc.length < 5}
           className="inline-flex shrink-0 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {reintentando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
           {reintentando
-            ? esReconsulta
-              ? 'Consultando…'
-              : esPrimeraEjecucion
-                ? 'Ejecutando…'
-                : 'Reintentando…'
-            : esReconsulta
-              ? 'Consultar este buró'
-              : esPrimeraEjecucion
-                ? 'Ejecutar consulta'
-                : 'Reintentar consulta'}
+            ? esPrimeraEjecucion
+              ? 'Ejecutando…'
+              : 'Reintentando…'
+            : esPrimeraEjecucion
+              ? 'Ejecutar consulta'
+              : 'Reintentar consulta'}
         </button>
       </div>
       <p className="text-[11px] text-gray-500 mt-2">
-        {esReconsulta
-          ? 'Que un buró no tenga datos no garantiza que el otro sí. Esta consulta se factura igual. '
-          : ''}
         Solo se consultan documentos colombianos (CC, CE, TI, NIT).
         {requiereApellido
           ? ' DataCrédito valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
           : ''}
-        {/* Comparación contra el valor CRUDO, no el normalizado: un estudio
-            legacy con proveedor 'sifin'/'manual' se normaliza a 'transunion'
-            en el select, y comparar contra el normalizado ocultaría el aviso
-            justo cuando el buró sí está cambiando. */}
-        {proveedor !== proveedorActual
-          ? ' El estudio quedará registrado con el buró seleccionado.'
-          : ''}
-        {esTitular
-          ? ' Si la consulta se ejecuta, el documento corregido también queda en los datos del solicitante.'
+        {puedeCorregir
+          ? ' Si el documento está mal, corríjalo y reenvíe el enlace: el prospecto debe autorizar con el dato correcto.'
           : ''}
       </p>
       {firmoOtroDocumento && (
         <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
           <p className="text-xs text-amber-900">
             La persona autorizó la consulta con otro documento. Para consultar este, tiene que volver a
-            autorizar: le enviamos un enlace nuevo y el documento se corrige en sus datos. La autorización
-            anterior queda como registro.
+            autorizar: reenvíele el enlace. La autorización anterior queda como registro.
           </p>
           <button
             type="button"
             onClick={handleEnviarAutorizacion}
-            disabled={enviandoAutorizacion || numeroDoc.trim().length < 5}
+            disabled={enviandoAutorizacion}
             className="mt-2 inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-amber-900 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {enviandoAutorizacion ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
-            {enviandoAutorizacion ? 'Enviando…' : 'Enviar nueva autorización con este documento'}
+            {enviandoAutorizacion ? 'Enviando…' : 'Reenviar el enlace de autorización'}
           </button>
         </div>
+      )}
+      {corregir !== undefined && expedienteId && (
+        <CorregirDocumentoModal
+          isOpen
+          onClose={() => setCorregir(undefined)}
+          expedienteId={expedienteId}
+          tipoActual={persona?.tipo_documento}
+          numeroActual={numeroDoc}
+          correccionesRestantes={corregir}
+          onCorregido={onRetried}
+        />
       )}
     </div>
   )

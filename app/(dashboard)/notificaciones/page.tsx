@@ -87,6 +87,9 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   // Firma completa: la prima de vinculación queda causada (cuenta por cobrar).
   'contrato.prima_por_cobrar': { icon: IconReceipt, badge: 'bg-amber-50 text-amber-600' },
   'firma.bloqueada': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
+  // BLQ §2.1: prioritaria (payload.prioridad='alta'); el banner de la oficina virtual la repite.
+  'autorizacion.bloqueo_documento': { icon: IconUserX, badge: 'bg-red-100 text-red-700' },
+  'estudio.limite_correcciones_documento': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   'soporte.subido': { icon: IconPaperclip, badge: 'bg-slate-50 text-slate-600' },
   'expediente_asignado': { icon: IconFolderOpen, badge: 'bg-slate-50 text-slate-600' },
   'inmueble_asignado': { icon: IconHome, badge: 'bg-slate-50 text-slate-600' },
@@ -266,6 +269,8 @@ export default function NotificacionesPage() {
           <ul className="divide-y divide-gray-100">
             {lista.map((n) => {
               const unread = !estaLeida(n)
+              // BLQ §2.1: misma regla que la campanita.
+              const prioritaria = n.payload?.prioridad === 'alta'
               return (
                 <li key={n.id}>
                   <button
@@ -273,6 +278,7 @@ export default function NotificacionesPage() {
                     className={cn(
                       'w-full text-left px-4 py-4 hover:bg-gray-50 transition-colors flex gap-3',
                       unread && 'bg-primary-50/40',
+                      prioritaria && 'border-l-4 border-red-500 bg-red-50/60',
                     )}
                   >
                     <NotificationIcon tipo={n.tipo} titulo={n.titulo} />
@@ -280,6 +286,11 @@ export default function NotificacionesPage() {
                       <div className="flex items-start justify-between gap-2">
                         <p className={cn('text-sm text-gray-900', unread && 'font-semibold')}>
                           {n.titulo}
+                          {prioritaria && (
+                            <span className="ml-2 rounded bg-red-600 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase text-white">
+                              Prioritaria
+                            </span>
+                          )}
                         </p>
                         <span className="text-xs text-gray-500 shrink-0">{formatDateTime(n.created_at)}</span>
                       </div>

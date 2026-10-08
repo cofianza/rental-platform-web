@@ -170,8 +170,6 @@ export default function ExpedienteDetallePage() {
 
   // Condicionado SIN score = el buró no tenía datos de la persona, no "riesgo
   // medio". El banner y la tarjeta de decisión cambian el texto con esto.
-  // El estudio del titular se guarda entero: la guía del condicionado ofrece
-  // con él la consulta al otro buró.
   // También da el "Reasignado desde …" del Flujo §11 (lo trae el listado de
   // estudios, que la tarjeta del estudio ya pide: la petición se comparte).
   const [titular, setTitular] = useState<(IEstudio & { reasignado_desde?: string | null }) | null>(null)
@@ -199,7 +197,7 @@ export default function ExpedienteDetallePage() {
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
 
-  // Decisión 2: la invitación del co-arrendatario sigue en pie en revisión o
+  // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
   // su evaluación fallida se reintenta. Sin leerla (cargando o error) manda
   // «condicionado», la regla de antes. Solo quien puede reintentar la pide.
@@ -761,7 +759,7 @@ export default function ExpedienteDetallePage() {
                   />
                 )}
 
-                {/* Condicionado: la guía de "qué sigue" y el co-arrendatario van
+                {/* Condicionado: la guía de "qué sigue" y el coarrendatario van
                     ARRIBA de la evaluación — es lo que hay que resolver ahora. */}
                 {esCondicionado && (
                   <>
@@ -772,10 +770,7 @@ export default function ExpedienteDetallePage() {
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
                         canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
-                        estudioTitular={titularCondicionado}
-                        persona={expediente.solicitante}
                         onAprobado={fetchExpediente}
-                        onReconsultado={fetchExpediente}
                       />
                     )}
                     <CoarrendatarioPropietarioCard
@@ -810,8 +805,6 @@ export default function ExpedienteDetallePage() {
                     expediente.estado !== 'rechazado' &&
                     expediente.inmueble?.reservado_por_expediente_id !== id
                   }
-                  reconsultaEnGuia={esCondicionado && puedeEditar}
-                  enRevision={esCondicionado}
                   coarrendatarioVigente={coarrendatarioVigente}
                   expedienteEstado={expediente.estado}
                 />
@@ -839,6 +832,7 @@ export default function ExpedienteDetallePage() {
                     solicitanteEmail={expediente.solicitante?.email}
                     solicitanteTelefono={expediente.solicitante?.telefono}
                     solicitanteDocumento={expediente.solicitante ? expediente.solicitante.numero_documento ?? '' : undefined}
+                    solicitanteTipoDocumento={expediente.solicitante?.tipo_documento}
                     onContactoActualizado={fetchExpediente}
                     soloLectura={!puedeEditar}
                   />
@@ -1076,7 +1070,6 @@ export default function ExpedienteDetallePage() {
               expedienteId={id}
               solicitante={expediente.solicitante}
               onEstudioActualizado={fetchExpediente}
-              enRevision={expediente.estado === 'condicionado'}
               coarrendatarioVigente={coarrendatarioVigente}
             />
 

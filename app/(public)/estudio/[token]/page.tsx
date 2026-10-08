@@ -192,7 +192,7 @@ export default function EstudioFormularioPage() {
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
         <p className="text-gray-500">
-          Gracias, recibimos sus datos. Su evaluación arranca cuando firme la autorización de consulta,
+          Gracias, recibimos sus datos. Su evaluación inicia cuando firme la autorización de consulta,
           que le llega en otro enlace por correo o WhatsApp. Si ya la firmó, no tiene que hacer nada más.
         </p>
         <p className="text-sm text-gray-500 mt-4">

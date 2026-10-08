@@ -144,7 +144,7 @@ export function CoarrendatarioPropietarioCard({
   ) {
     return null
   }
-  // Sin co-arrendatario aún: el gestor (inmobiliaria / propietario / admin /
+  // Sin coarrendatario aún: el gestor (inmobiliaria / propietario / admin /
   // operador) puede invitarlo directamente — útil cuando es la inmobiliaria la
   // que lleva el expediente. Solo con la ventana abierta (en revisión, o
   // aprobado antes del contrato para bajar la prima al 10 %); si no, no hay
@@ -188,9 +188,9 @@ export function CoarrendatarioPropietarioCard({
             <IconUsers size={20} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">Co-arrendatario invitado</h3>
+            <h3 className="text-base font-semibold text-gray-900">Coarrendatario invitado</h3>
             <p className="text-xs text-gray-500">
-              El solicitante invitó a esta persona como co-arrendatario para respaldar el arrendamiento.
+              El solicitante invitó a esta persona como coarrendatario para respaldar el arrendamiento.
             </p>
           </div>
         </div>
@@ -269,7 +269,7 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       ? {
           color: 'bg-gray-50 border-gray-200 text-gray-900',
           label: 'Invitación sin efecto',
-          mensaje: 'El estudio ya se resolvió sin co-arrendatario, así que esta invitación ya no se puede aceptar.',
+          mensaje: 'El estudio ya se resolvió sin coarrendatario, así que esta invitación ya no se puede aceptar.',
         }
       : invitacionVencida(coa)
       ? {
@@ -288,10 +288,16 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       // P2: sin evaluación terminada no entra al contrato ni al certificado.
       mensaje: fallida
         ? fallo !== 'tecnico'
-          ? `Su evaluación no se completó: ${fallo === 'no_existe' ? 'la persona no aparece en la central consultada' : 'el primer apellido no coincide con el de la central'}. No es un rechazo; ${sinEfecto ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.' : 'revise el documento o el apellido y reinténtela en el panel «Co-arrendatario» de la evaluación, aquí abajo.'}`
+          ? `Su evaluación no se completó: ${fallo === 'no_existe' ? 'la persona no aparece en la central consultada' : 'el primer apellido no coincide con el de la central'}. No es un rechazo; ${
+              sinEfecto
+                ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.'
+                : fallo === 'no_existe'
+                  ? 'si el documento está mal escrito, comuníquese con Cofianza para corregirlo.'
+                  : 'corrija el primer apellido y vuelva a consultar en el panel «Coarrendatario» de la evaluación, aquí abajo.'
+            }`
           : sinEfecto
           ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
-          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Co-arrendatario» de la evaluación, aquí abajo.'
+          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
           : 'Procesando su evaluación crediticia.',
@@ -304,7 +310,7 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
     estudio_completado: {
       color: 'bg-gray-50 border-gray-200 text-gray-900',
       label: 'Evaluación completada',
-      mensaje: 'La evaluación del co-arrendatario terminó. Ver resultado abajo.',
+      mensaje: 'La evaluación del coarrendatario terminó. Ver resultado abajo.',
     },
   }
   const c = cfg[coa.estado]
@@ -350,7 +356,7 @@ function ResultadoEstudioBlock({
           {/* P2: solo cuenta con la evaluación terminada y no rechazada. */}
           {resultado === 'rechazado' && (
             <p className="text-xs mt-1 font-medium">
-              Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin co-arrendatario.
+              Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.
             </p>
           )}
           {textoVisible(estudio.observaciones, { externo }) && (

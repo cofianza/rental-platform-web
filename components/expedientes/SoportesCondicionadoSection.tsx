@@ -22,7 +22,7 @@ const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
   extractos_bancarios: 'Extractos bancarios',
   declaracion_renta: 'Declaración de renta',
   carta_referencia: 'Carta de referencia',
-  codeudor: 'Codeudor / avalista',
+  codeudor: 'Respaldo de un tercero',
   poliza: 'Póliza de arrendamiento',
   otros_soportes: 'Otros soportes',
 }

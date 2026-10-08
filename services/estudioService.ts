@@ -67,9 +67,10 @@ export const estudioService = {
     return res.data
   },
 
-  async getTopeCanon(): Promise<number> {
-    const res = await apiClient.get<{ tope_cop: number }>('/estudios/tope-canon')
-    return res.data.tope_cop
+  /** CORR §5.2: trae también el precio al prospecto con IVA incluido (texto de la API; opcional con la API vieja). */
+  async getTopeCanon(): Promise<{ tope_cop: number; precio_estudio?: string }> {
+    const res = await apiClient.get<{ tope_cop: number; precio_estudio?: string }>('/estudios/tope-canon')
+    return res.data
   },
 
   async getStats(): Promise<IEstudiosStats> {
@@ -122,16 +123,11 @@ export const estudioService = {
   /**
    * Ejecuta el estudio contra el proveedor de riesgo (TransUnion).
    * Lo dispara el solicitante tras confirmar sus datos, o admin/operador.
-   * Acepta override del documento (opcional) cuando el solicitante lo
-   * confirma/corrige desde la card.
+   * El documento no viaja: se corrige con «Corregir documento» (BLQ §3.5).
    */
   async ejecutarEstudio(
     estudioId: string,
     body?: {
-      tipo_documento?: string
-      numero_documento?: string
-      /** Cambio manual de buró en el reintento (transunion | datacredito). */
-      proveedor?: 'transunion' | 'datacredito'
       /** Primer apellido — solo DataCrédito lo valida (contra Registraduría). */
       primer_apellido?: string
     },

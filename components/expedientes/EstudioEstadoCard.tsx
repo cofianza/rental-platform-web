@@ -21,13 +21,13 @@ import { formatDate } from '@/lib/constants'
 import {
   ReintentarEstudioForm,
   puedeRelanzarEstudio,
-  esCondicionadoSinInfo,
   esPendienteDeEjecutar,
 } from './ReintentarEstudioForm'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
+import type { EstadoBloqueo } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 
@@ -62,15 +62,7 @@ interface EstudioEstadoCardProps {
    */
   reasignable?: boolean
   /**
-   * La consulta al otro buró del titular condicionado se ofrece en la guía
-   * "Estudio condicionado: qué sigue" (AprobarCondicionadoCard): aquí se omite
-   * para no tener el mismo formulario dos veces en la pantalla.
-   */
-  reconsultaEnGuia?: boolean
-  /** Estudio en revisión manual (condicionado): solo ahí se consulta el otro buró (A1). */
-  enRevision?: boolean
-  /**
-   * P3 y Decisión 2: la evaluación fallida del co-arrendatario se reintenta
+   * P3 y Decisión 2: la evaluación fallida del coarrendatario se reintenta
    * mientras su invitación siga en pie (en revisión, o aprobado antes del
    * contrato), según `vigente` de GET /expedientes/:id/coarrendatario/ventana.
    */
@@ -166,12 +158,46 @@ interface AccionGestor {
 /** Estados del estudio que esperan la autorización o el pago (sin ejecutar). */
 const ESTADOS_EN_ESPERA: EstadoEstudio[] = ['solicitado', 'pago_pendiente', 'formulario_enviado']
 
+const ACCION_BLOQUEO: Record<EstadoBloqueo, AccionGestor & { textoCofianza?: string }> = {
+  bloqueado_documento: {
+    etiqueta: 'Bloqueado por documento',
+    texto:
+      'El prospecto agotó los intentos para confirmar su documento. Requiere su acción: verifique el documento, corríjalo si hace falta y reenvíe el enlace. No se consumió cupo ni se generó ningún cobro adicional.',
+  },
+  identidad_rechazada: {
+    etiqueta: 'Identidad rechazada por el titular',
+    texto: 'Quien abrió el enlace dice que no es el titular de estos datos. Para continuar, comuníquese con Cofianza. No se consumió cupo ni se generó ningún cobro adicional.',
+    textoCofianza: 'Quien abrió el enlace dice que no es el titular de estos datos. Revise el caso antes de reenviar el enlace.',
+  },
+  pendiente_reenvio: {
+    etiqueta: 'Pendiente de reenvío',
+    texto: 'Se corrigió el documento del prospecto. Requiere su acción: reenvíe el enlace de autorización.',
+  },
+}
+
+/** «Soy yo, pero los datos están mal»: no digitó nada ni agotó intentos. */
+const TEXTO_DATOS_INCORRECTOS =
+  'El prospecto indicó que sus datos registrados no son correctos. Requiere su acción: verifíquelos con él, corrija el documento si hace falta y reenvíe el enlace. No se consumió cupo ni se generó ningún cobro adicional.'
+
 async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Promise<AccionGestor | null> {
   const [aut, pago] = await Promise.all([
     // undefined = no se pudo leer: entonces no se afirma nada.
     autorizacionService.getStatus(expedienteId).catch(() => undefined),
     pagoEstudioService.getEstado(expedienteId).catch(() => null),
   ])
+  // BLQ §8: estados derivados por la API (ausentes en APIs anteriores).
+  const bloqueo = aut?.estado_bloqueo ? ACCION_BLOQUEO[aut.estado_bloqueo] : null
+  if (bloqueo) {
+    return {
+      etiqueta: bloqueo.etiqueta,
+      texto:
+        aut?.estado_bloqueo === 'identidad_rechazada' && esCofianza
+          ? bloqueo.textoCofianza ?? bloqueo.texto
+          : aut?.motivo_bloqueo === 'datos_incorrectos'
+            ? TEXTO_DATOS_INCORRECTOS
+            : bloqueo.texto,
+    }
+  }
   if (aut && (aut.estado === 'revocado' || aut.estado === 'expirado')) {
     // Vencido por el reloj lo cuenta ya `expiracion` (mensaje del §12); aquí
     // solo lo detenido ANTES del plazo.
@@ -203,7 +229,7 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
-function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string): string {
+function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string, esCoarrendatario = false): string {
   const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
@@ -245,12 +271,15 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
   if (estudio.estado === 'fallido') {
     const tipo = tipoFallo(estudio)
     if (tipo === 'no_existe') {
-      return `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos, o consulte el otro buró.`
+      // El documento del coarrendatario no se corrige desde aquí (solo el del titular).
+      return esCoarrendatario
+        ? `La persona no aparece en ${buro}. No es un rechazo de crédito. Si el documento está mal escrito, comuníquese con Cofianza para corregirlo.`
+        : `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos y vuelva a consultar.`
     }
     if (tipo === 'apellido') {
       return `${buro} encontró el documento, pero el primer apellido no coincide. Corrija el primer apellido en la ficha de la persona y vuelva a consultar.`
     }
-    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla; puede cambiar de buró en el reintento.`
+    return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla.`
   }
   if (estudio.estado === 'cancelado') {
     return 'Estudio cancelado.'
@@ -345,8 +374,6 @@ export function EstudioEstadoCard({
   inmuebleActualId,
   onReasignado,
   reasignable = true,
-  reconsultaEnGuia,
-  enRevision = true,
   coarrendatarioVigente = true,
   expedienteEstado,
 }: EstudioEstadoCardProps) {
@@ -423,9 +450,6 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
-          // A1: el otro buró solo se consulta con el caso en revisión manual
-          // (la API lo niega fuera de 'condicionado').
-          ocultarReconsulta={reconsultaEnGuia || !enRevision}
           inmuebleActualId={inmuebleActualId}
           onReasignado={reasignable ? () => {
             fetchEstudios()
@@ -436,15 +460,14 @@ export function EstudioEstadoCard({
       {estudioCoa && (
         <EstudioPanel
           estudio={estudioCoa}
-          etiqueta="Co-arrendatario"
+          etiqueta="Coarrendatario"
           persona={coaSolicitante}
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
           sinReintento={!coarrendatarioVigente}
-          ocultarReconsulta={!enRevision}
           expedienteEstado={expedienteEstado}
-          // La reasignacion NO se ofrece desde el panel del co-arrendatario: lo
+          // La reasignacion NO se ofrece desde el panel del coarrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
           // servirian para que el gestor crea que son dos cosas distintas.
@@ -458,7 +481,7 @@ export function EstudioEstadoCard({
 
 interface EstudioPanelProps {
   estudio: IEstudio
-  etiqueta: 'Titular' | 'Co-arrendatario'
+  etiqueta: 'Titular' | 'Coarrendatario'
   persona: {
     nombre: string
     apellido?: string
@@ -468,14 +491,12 @@ interface EstudioPanelProps {
   onVerEstudios?: () => void
   userRol?: string
   onRetried?: () => void
-  /** La consulta al otro buró la ofrece la guía del condicionado (solo el titular). */
-  ocultarReconsulta?: boolean
   /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
   inmuebleActualId?: string | null
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
-  /** Co-arrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
+  /** Coarrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
   sinReintento?: boolean
   /** Solo titular: enlace detenido u opción B sin pagar — le toca al gestor. */
   accionGestor?: AccionGestor | null
@@ -489,7 +510,6 @@ function EstudioPanel({
   onVerEstudios,
   userRol,
   onRetried,
-  ocultarReconsulta,
   inmuebleActualId,
   onReasignado,
   expedienteId,
@@ -508,11 +528,7 @@ function EstudioPanel({
     userRol === 'administrador' ||
     userRol === 'operador_analista') &&
     puedeEditar
-  // Incluye el condicionado-sin-información: ahí el form no reintenta sino que
-  // ofrece consultar el otro buró (ver puedeRelanzarEstudio).
-  const esReconsulta = esCondicionadoSinInfo(estudio)
-  const puedeReintentar =
-    esGestor && !sinReintento && puedeRelanzarEstudio(estudio) && !(ocultarReconsulta && esReconsulta)
+  const puedeReintentar = esGestor && !sinReintento && puedeRelanzarEstudio(estudio)
   // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
   // otra propiedad sin volver a cobrar. El caso natural es el candidato que
   // perdio el inmueble porque otro fue aprobado primero (§4.2 ya se lo avisa
@@ -561,7 +577,7 @@ function EstudioPanel({
   const siguientePaso =
     sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado)
+      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario')
   // Texto de la API: sin citas a documentos para nadie, y sin datos internos
   // del modelo para quien no es de Cofianza.
   const interno = esRolInterno(userRol)
@@ -576,7 +592,7 @@ function EstudioPanel({
         </h3>
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${
-            etiqueta === 'Co-arrendatario'
+            etiqueta === 'Coarrendatario'
               ? 'bg-amber-100 text-amber-800 border-amber-200'
               : 'bg-primary-50 text-primary-700 border-primary-200'
           }`}
@@ -684,15 +700,12 @@ function EstudioPanel({
           {puedeReintentar && (
             <ReintentarEstudioForm
               // key: el form inicializa su estado de forma lazy, así que sin
-              // esto la preselección de buró/documento quedaría del estudio
-              // anterior al cambiar de estudio o de buró.
-              key={`${estudio.id}:${estudio.proveedor}`}
+              // esto el documento quedaría del estudio anterior.
+              key={estudio.id}
               estudioId={estudio.id}
-              proveedorActual={estudio.proveedor}
               persona={persona}
               esTitular={etiqueta === 'Titular'}
               expedienteId={expedienteId}
-              esReconsulta={esReconsulta}
               esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
               onRetried={onRetried}
             />

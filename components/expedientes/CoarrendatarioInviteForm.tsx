@@ -1,5 +1,5 @@
 /**
- * CoarrendatarioInviteForm — formulario para invitar a un co-arrendatario
+ * CoarrendatarioInviteForm — formulario para invitar a un coarrendatario
  * cuando el estudio está en revisión ('condicionado') o, desde la Decisión 2
  * (2026-09-25), aprobado y todavía sin contrato: ahí baja la prima de
  * vinculación del 20 % al 10 % del canon. Compartido por:
@@ -7,7 +7,7 @@
  *     cuenta, desde su enlace personal /cargar-documentos (P18).
  *   - el GESTOR (audience='gestor'): inmobiliaria / propietario / admin /
  *     operador, desde CoarrendatarioPropietarioCard. Útil cuando es la
- *     inmobiliaria quien lleva el expediente y agrega al co-arrendatario en
+ *     inmobiliaria quien lleva el expediente y agrega al coarrendatario en
  *     nombre del inquilino.
  *
  * Quien lo monta decide a qué endpoint va (`invitar`): el panel o el enlace
@@ -24,7 +24,7 @@ import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioServi
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
-// NIT: el co-arrendatario es una persona natural (el contrato lo rechaza y el
+// NIT: el coarrendatario es una persona natural (el contrato lo rechaza y el
 // enlace del prospecto solo acepta estas dos).
 /**
  * Mismo filtro que el API (src/lib/textoSinEnlaces.ts): letras, espacios,
@@ -52,7 +52,7 @@ interface CoarrendatarioInviteFormProps {
    *  promesa se rompe y le toca teclear los mismos cuatro campos otra vez. */
   initial?: { nombre?: string; apellido?: string; email?: string; telefono?: string } | null
   onInvited?: () => void
-  /** Estudio ya aprobado (Decisión 2): el co-arrendatario es opcional y baja la prima. */
+  /** Estudio ya aprobado (Decisión 2): el coarrendatario es opcional y baja la prima. */
   aprobado?: boolean
 }
 
@@ -66,7 +66,7 @@ export function CoarrendatarioInviteForm({
   const esGestor = audience === 'gestor'
 
   // Con datos precargados abrimos el formulario de una: esconderlo tras
-  // "Agregar co-arrendatario" ocultaria justo la prueba de que ya los tenemos.
+  // "Agregar coarrendatario" ocultaria justo la prueba de que ya los tenemos.
   const [showForm, setShowForm] = useState(!!initial)
   const [submitting, setSubmitting] = useState(false)
   const [nombre, setNombre] = useState(initial?.nombre ?? '')
@@ -118,7 +118,7 @@ export function CoarrendatarioInviteForm({
         </div>
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-            {esGestor ? 'Invite a un co-arrendatario' : 'Puede sumar un co-arrendatario (opcional)'}
+            {esGestor ? 'Invite a un coarrendatario' : 'Puede sumar un coarrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
             {aprobado ? (
@@ -126,22 +126,22 @@ export function CoarrendatarioInviteForm({
                 {esGestor
                   ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
                   : 'Su estudio fue aprobado y puede firmar solo. Si antes del contrato suma como '}
-                <strong>co-arrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
-                vinculación baja del 20 % al 10 % del canon; la evaluación del co-arrendatario no tiene costo adicional.{' '}
-                <strong>No es fiador ni codeudor</strong> y no necesita finca raíz.
+                <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
+                vinculación baja del 20 % al 10 % del canon; la evaluación del coarrendatario no tiene costo adicional.{' '}
+                No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : esGestor ? (
               <>
                 El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
-                solicitante como <strong>co-arrendatario</strong>: se evalúa a ambos y los
-                respaldamos juntos como un solo arrendatario. <strong>No es fiador ni codeudor.</strong>
+                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
+                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : (
               <>
                 Su estudio quedó condicionado y lo revisa un analista de Cofianza; no tiene que hacer
                 nada para que avance. Si quiere reforzar su caso, invite a la persona con quien va a
-                vivir como <strong>co-arrendatario</strong>: los dos toman el arriendo y los respaldamos
-                juntos como un solo arrendatario. <strong>No es un fiador ni codeudor</strong>.
+                vivir como <strong>coarrendatario</strong>: los dos toman el arriendo y los respaldamos
+                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             )}
           </p>
@@ -153,7 +153,7 @@ export function CoarrendatarioInviteForm({
           onClick={() => setShowForm(true)}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
         >
-          Agregar co-arrendatario
+          Agregar coarrendatario
           <IconArrowRight size={16} />
         </button>
       ) : (
@@ -162,7 +162,7 @@ export function CoarrendatarioInviteForm({
             {initial?.nombre
               ? `Ya nos contó de ${initial.nombre}: complete sus datos y envíele la invitación.`
               : esGestor
-                ? 'Capture los datos del co-arrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
+                ? 'Capture los datos del coarrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
                 : 'Capture los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
           </p>
 

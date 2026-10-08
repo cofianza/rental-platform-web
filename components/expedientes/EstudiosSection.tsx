@@ -20,7 +20,6 @@ import { RegistrarResultadoModal } from './RegistrarResultadoModal'
 import {
   ReintentarEstudioForm,
   puedeRelanzarEstudio,
-  esCondicionadoSinInfo,
   esPendienteDeEjecutar,
 } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
@@ -51,12 +50,12 @@ function formatDate(dateStr: string): string {
 /**
  * Persona evaluada por el estudio. Para tipo='individual' es el titular del
  * expediente (prop solicitante). Para tipo='con_coarrendatario' es el
- * co-arrendatario, cuyos datos viajan en estudio.datos_formulario.
+ * coarrendatario, cuyos datos viajan en estudio.datos_formulario.
  */
 function getPersonaEvaluada(
   estudio: IEstudio,
   titular: { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined,
-): { nombre: string; apellido?: string | null; tipo_documento?: string | null; numero_documento?: string | null; etiqueta: 'Titular' | 'Co-arrendatario' } | null {
+): { nombre: string; apellido?: string | null; tipo_documento?: string | null; numero_documento?: string | null; etiqueta: 'Titular' | 'Coarrendatario' } | null {
   if (estudio.tipo === 'con_coarrendatario') {
     const datos = (estudio.datos_formulario || {}) as {
       nombre_completo?: string
@@ -74,7 +73,7 @@ function getPersonaEvaluada(
       apellido: datos.apellido ?? null,
       tipo_documento: datos.tipo_documento ?? null,
       numero_documento: datos.numero_documento ?? null,
-      etiqueta: 'Co-arrendatario',
+      etiqueta: 'Coarrendatario',
     }
   }
   if (!titular) return null
@@ -135,9 +134,7 @@ interface EstudiosSectionProps {
    *  Resumen queda montado aunque esté oculto y sin esto mostraba lo anterior.
    *  Esta lista se vuelve a pedir sola al subir `version`. */
   onEstudioActualizado?: () => void
-  /** Estudio en revisión manual (condicionado): solo ahí se consulta el otro buró (A1). */
-  enRevision?: boolean
-  /** P3 y Decisión 2: la evaluación del co-arrendatario se reintenta mientras su invitación siga en pie. */
+  /** P3 y Decisión 2: la evaluación del coarrendatario se reintenta mientras su invitación siga en pie. */
   coarrendatarioVigente?: boolean
 }
 
@@ -145,7 +142,6 @@ export function EstudiosSection({
   expedienteId,
   solicitante,
   onEstudioActualizado,
-  enRevision = true,
   coarrendatarioVigente = true,
 }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -409,9 +405,9 @@ export function EstudiosSection({
                       </span>
                       <Badge estado={estudio.estado} />
                       <Badge estado={estudio.resultado} />
-                      {persona?.etiqueta === 'Co-arrendatario' && (
+                      {persona?.etiqueta === 'Coarrendatario' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                          Co-arrendatario
+                          Coarrendatario
                         </span>
                       )}
                     </div>
@@ -538,9 +534,7 @@ export function EstudiosSection({
                     para no abrir el modal de detalle al interactuar. */}
                 {(canManage || isStakeholder) &&
                   puedeRelanzarEstudio(estudio) &&
-                  (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario') &&
-                  // A1: la consulta al otro buró, solo con el expediente condicionado.
-                  (enRevision || !esCondicionadoSinInfo(estudio)) && (
+                  (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario') && (
                   <div
                     className="mt-3"
                     onClick={(e) => e.stopPropagation()}
@@ -549,13 +543,11 @@ export function EstudiosSection({
                     onKeyDown={(e) => e.stopPropagation()}
                   >
                     <ReintentarEstudioForm
-                      key={`${estudio.id}:${estudio.proveedor}`}
+                      key={estudio.id}
                       estudioId={estudio.id}
-                      proveedorActual={estudio.proveedor}
                       persona={persona}
-                      esTitular={persona?.etiqueta !== 'Co-arrendatario'}
+                      esTitular={persona?.etiqueta !== 'Coarrendatario'}
                       expedienteId={expedienteId}
-                      esReconsulta={esCondicionadoSinInfo(estudio)}
                       esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
                       onRetried={trasCambio}
                     />

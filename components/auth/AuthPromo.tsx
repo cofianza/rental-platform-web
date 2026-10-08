@@ -28,8 +28,8 @@ const PROPIETARIO = {
     },
     {
       icon: <IconDollarSign size={16} />,
-      title: 'Pago garantizado desde día 20',
-      desc: 'Si el inquilino entra en mora, Cofianza paga y gestiona el cobro.',
+      title: 'Pago el día 30 de mora',
+      desc: 'Si reporta la mora dentro de los primeros 10 días, Cofianza paga el día 30 y gestiona el cobro.',
     },
     {
       icon: <IconHome size={16} />,

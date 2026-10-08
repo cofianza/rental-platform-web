@@ -81,6 +81,9 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   // Firma completa: la prima de vinculación queda causada (cuenta por cobrar).
   'contrato.prima_por_cobrar': { icon: IconReceipt, badge: 'bg-amber-50 text-amber-600' },
   'firma.bloqueada': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
+  // BLQ §2.1: prioritaria (payload.prioridad='alta'); el banner de la oficina virtual la repite.
+  'autorizacion.bloqueo_documento': { icon: IconUserX, badge: 'bg-red-100 text-red-700' },
+  'estudio.limite_correcciones_documento': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
   'soporte.subido': { icon: IconPaperclip, badge: 'bg-slate-50 text-slate-600' },
   'expediente_asignado': { icon: IconFolderOpen, badge: 'bg-slate-50 text-slate-600' },
   'inmueble_asignado': { icon: IconHome, badge: 'bg-slate-50 text-slate-600' },
@@ -245,6 +248,7 @@ export function NotificationBell() {
               <ul className="divide-y divide-gray-100">
                 {items.map((n) => {
                   const unread = !n.leida_at
+                  const prioritaria = n.payload?.prioridad === 'alta'
                   return (
                     <li key={n.id}>
                       <button
@@ -252,6 +256,7 @@ export function NotificationBell() {
                         className={cn(
                           'w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex gap-3',
                           unread && 'bg-primary-50/50',
+                          prioritaria && 'border-l-4 border-red-500 bg-red-50/60',
                         )}
                       >
                         <NotificationIcon tipo={n.tipo} titulo={n.titulo} />
@@ -260,6 +265,11 @@ export function NotificationBell() {
                             <p className={cn('text-sm text-gray-900 truncate', unread && 'font-semibold')}>
                               {n.titulo}
                             </p>
+                            {prioritaria && (
+                              <span className="shrink-0 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                                Prioritaria
+                              </span>
+                            )}
                             {unread && (
                               <span className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-1.5">
                                 <span className="sr-only">Sin leer</span>

@@ -412,7 +412,7 @@ export default function HomePage() {
                 body: 'Publique en nuestra vitrina o reciba arrendatarios respaldados. Su contrato viene con fiador firmado.',
                 items: [
                   'Fiador solidario sin beneficio de excusión',
-                  'Pago garantizado desde día 20 de mora',
+                  'Pago el día 30 si reporta la mora dentro de los primeros 10 días',
                   'Proceso de restitución coordinado',
                   'Sin tramitar cobros directamente',
                 ],
@@ -572,11 +572,11 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'La evaluación crediticia tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un co-arrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
+                a: 'La evaluación crediticia tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un coarrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
-                a: 'Si su perfil necesita un respaldo adicional, puede aplicar con un co-titular — puede ser su pareja, un familiar o alguien que vaya a vivir con usted. Si en este momento no es posible, puede volver a aplicar cuando su situación financiera mejore.',
+                a: 'Si su perfil necesita un respaldo adicional, puede aplicar con un coarrendatario — puede ser su pareja, un familiar o alguien que vaya a vivir con usted. Si en este momento no es posible, puede volver a aplicar cuando su situación financiera mejore.',
               },
               {
                 q: '¿Cómo funciona el cashback del 30%?',
@@ -588,7 +588,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Qué pasa si me atraso en el pago?',
-                a: 'Desde el día 6 de mora Cofianza activa su protocolo de cobro. El día 9 le notificamos formalmente que en 20 días reportaremos a centrales de riesgo. El día 20 pagamos al propietario y el cobro es directamente contra usted.',
+                a: 'Desde el día 6 de mora Cofianza activa su protocolo de cobro. El día 9 le notificamos formalmente que en 20 días reportaremos a centrales de riesgo. El día 30 pagamos al propietario, siempre que haya reportado la mora a tiempo, y el cobro pasa a ser directamente contra usted.',
               },
             ].map((f) => (
               <div
