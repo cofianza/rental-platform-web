@@ -43,6 +43,8 @@ export interface IEstudio {
    */
   antecedentes?: IAntecedentesEstudio | null
   score?: number | null
+  /** Política §14 caso L: ninguna central respondió. Solo en el listado por expediente. */
+  sin_centrales?: boolean
   observaciones?: string | null
   duracion_contrato_meses: number
   pago_por: PagoPor

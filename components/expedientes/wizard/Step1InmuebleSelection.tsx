@@ -92,9 +92,10 @@ export function Step1InmuebleSelection({
   // Propietario/inmobiliaria ven dropdown directo con sus propios inmuebles.
   // Admin/operador siempre usan el buscador (catalogo completo).
   const usaDropdownPropios = userRol === 'propietario' || userRol === 'inmobiliaria'
-  // CORR §4: el saldo de cupos se ve desde el paso 1 (mismo criterio que el
-  // paso 3: el propietario no usa cupos y ahí no se muestra nada).
-  const usaCreditos = userRol === 'inmobiliaria' || userRol === 'administrador'
+  // CORR §4: el saldo de cupos se ve desde el paso 1. Solo la inmobiliaria
+  // tiene paquete: el administrador no tiene lotes propios (vería «no le
+  // quedan cupos») ni puede gastar los de la inmobiliaria.
+  const usaCreditos = userRol === 'inmobiliaria'
   const [saldoCupos, setSaldoCupos] = useState<ISaldoCreditos | null>(null)
   useEffect(() => {
     if (!usaCreditos) return

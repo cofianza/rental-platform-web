@@ -6,7 +6,9 @@
  * (admin/operador), que es quien ve "Aprobar estudio". Mientras tanto el dueño
  * puede reforzar el caso: pedir soportes al solicitante o sumar un
  * coarrendatario (su tarjeta va justo debajo). La central no se elige ni se
- * re-consulta a mano (CORR §2): la decide la cascada del motor.
+ * re-consulta a mano (CORR §2): la decide la cascada del motor. Única
+ * excepción, Política §14 caso L: si ninguna central respondió, el analista
+ * puede volver a ejecutar la misma consulta.
  *  - coarrendatario → su resultado pasa a la revisión del analista, salvo una
  *    regla dura suya, que no lo deja aprobar (ponderacion.ts del API).
  * Al aprobar, el expediente pasa a 'aprobado' (SIN generar contrato aquí): el
@@ -24,6 +26,7 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
+import { estudioService } from '@/services/estudioService'
 import type { IMotivosElegidos } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
@@ -37,6 +40,8 @@ interface AprobarCondicionadoCardProps {
   userRol?: string
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
+  /** Política §14 caso L: id del estudio del titular si ninguna central respondió. */
+  estudioSinCentrales?: string | null
   /** Inmueble sin inmobiliaria: el coarrendatario no existe en este canal (Decisión 4). */
   canalPropietario?: boolean
   onAprobado?: () => void
@@ -47,10 +52,12 @@ export function AprobarCondicionadoCard({
   expedienteEstado,
   userRol,
   sinInfoBuro,
+  estudioSinCentrales,
   canalPropietario,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
+  const [reconsultando, setReconsultando] = useState(false)
   const aprobando = useRef(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
@@ -81,6 +88,21 @@ export function AprobarCondicionadoCard({
       toast.error(err instanceof Error ? err.message : 'No se pudo enviar el enlace.')
     } finally {
       setEnviandoEnlace(false)
+    }
+  }
+
+  // Caso L: misma cascada, DataCrédito primaria; nadie elige la central (CORR §2).
+  const handleReconsultar = async () => {
+    if (!estudioSinCentrales || reconsultando) return
+    setReconsultando(true)
+    try {
+      await estudioService.ejecutarEstudio(estudioSinCentrales)
+      toast.success('Consultando de nuevo las centrales. El resultado aparecerá en el estudio en unos minutos.')
+      onAprobado?.()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo volver a consultar las centrales.')
+    } finally {
+      setReconsultando(false)
     }
   }
 
@@ -129,10 +151,21 @@ export function AprobarCondicionadoCard({
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado: qué sigue</h3>
           <p className="text-sm text-gray-700">
-            {sinInfoBuro
-              ? 'El buró no tiene información crediticia de esta persona. No es un rechazo: falta información para medir el riesgo.'
-              : 'El buró sí evaluó a esta persona y el riesgo salió medio. No es un rechazo.'}
+            {estudioSinCentrales
+              ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'
+              : sinInfoBuro
+                ? 'El buró no tiene información crediticia de esta persona. No es un rechazo: falta información para medir el riesgo.'
+                : 'El buró sí evaluó a esta persona y el riesgo salió medio. No es un rechazo.'}
           </p>
+          {estudioSinCentrales && esCofianza && (
+            <button
+              onClick={handleReconsultar}
+              disabled={reconsultando || loading}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+            >
+              {reconsultando ? 'Consultando…' : 'Volver a consultar las centrales'}
+            </button>
+          )}
 
           <ol className="mt-4 space-y-4">
             <Paso n={1} titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>

@@ -196,6 +196,9 @@ export default function ExpedienteDetallePage() {
   const titularCondicionado = estadoExpediente === 'condicionado' ? titular : null
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
+  // Política §14 caso L: ninguna central respondió; Cofianza puede volver a consultar.
+  const estudioSinCentrales =
+    titularCondicionado?.sin_centrales && titularCondicionado.estado === 'completado' ? titularCondicionado.id : null
 
   // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
@@ -769,6 +772,7 @@ export default function ExpedienteDetallePage() {
                         expedienteEstado={expediente.estado}
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
+                        estudioSinCentrales={estudioSinCentrales}
                         canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                         onAprobado={fetchExpediente}
                       />
@@ -1089,6 +1093,7 @@ export default function ExpedienteDetallePage() {
                     expedienteEstado={expediente.estado}
                     userRol={user?.rol}
                     sinInfoBuro={condicionadoSinInfo}
+                    estudioSinCentrales={estudioSinCentrales}
                     canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                     onAprobado={fetchExpediente}
                   />
