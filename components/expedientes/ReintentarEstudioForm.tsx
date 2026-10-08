@@ -45,8 +45,10 @@ export function esCondicionadoSinInfo(estudio: {
   estado: string
   resultado?: string | null
   score?: number | null
+  sin_centrales?: boolean
 }): boolean {
-  return estudio.estado === 'completado' && estudio.resultado === 'condicionado' && estudio.score == null
+  // Caso L (ninguna central respondió) no es falta de información del buró.
+  return estudio.estado === 'completado' && estudio.resultado === 'condicionado' && estudio.score == null && !estudio.sin_centrales
 }
 
 /**

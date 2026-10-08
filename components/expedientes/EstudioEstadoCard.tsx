@@ -277,7 +277,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
         : `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos y vuelva a consultar.`
     }
     if (tipo === 'apellido') {
-      return `${buro} encontró el documento, pero el primer apellido no coincide. Corrija el primer apellido en la ficha de la persona y vuelva a consultar.`
+      return `${buro} encontró el documento, pero el primer apellido no coincide. Escriba el primer apellido tal como figura en la Registraduría en el campo «Primer apellido» del reintento y vuelva a consultar.`
     }
     return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla.`
   }
