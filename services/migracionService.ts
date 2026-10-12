@@ -8,9 +8,12 @@ import { apiClient, ApiClientError, handleApiError, type ApiResponse } from '@/l
 import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
+  AuditoriaAbierta,
   ActaEnviada,
   ActaPdf,
   ArchivoDescargado,
+  CorreccionBody,
+  CorreccionLote,
   Destinacion,
   DetalleFilaExcluida,
   DetalleFilaMigrada,
@@ -159,6 +162,28 @@ export const migracionService = {
     return (await apiClient.post<EstadoActaLote>(`${BASE}/lotes/${loteId}/cancelar`)).data
   },
 
+  // ── Acta de corrección de contratos activos (§3.8) ──
+
+  /** Genera el acta y la envía a firma por Auco; nada cambia hasta que se firma. */
+  async proponerCorreccion(loteId: string, body: CorreccionBody): Promise<CorreccionLote> {
+    return (await apiClient.post<CorreccionLote>(`${BASE}/lotes/${loteId}/correcciones`, body)).data
+  },
+  /** La más reciente primero. */
+  async listarCorrecciones(loteId: string): Promise<CorreccionLote[]> {
+    return (await apiClient.get<CorreccionLote[]>(`${BASE}/lotes/${loteId}/correcciones`)).data
+  },
+  /** La firmada si existe; si no, la generada. */
+  async actaCorreccionPdf(correccionId: string): Promise<ActaPdf> {
+    return (await apiClient.get<ActaPdf>(`${BASE}/correcciones/${correccionId}/pdf`)).data
+  },
+  /** Reconcilia con Auco; si quedó firmada, la aplica. */
+  async actualizarCorreccion(correccionId: string): Promise<void> {
+    await apiClient.post(`${BASE}/correcciones/${correccionId}/actualizar`)
+  },
+  async cancelarCorreccion(correccionId: string): Promise<void> {
+    await apiClient.post(`${BASE}/correcciones/${correccionId}/cancelar`)
+  },
+
   // ── Lotes, tablero y reportes (§8, §4.7) ──
 
   async listarLotes(inmobiliariaId?: string): Promise<LoteResumen[]> {
@@ -201,6 +226,10 @@ export const migracionService = {
   ): Promise<DetalleFilaMigrada> {
     return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/reportable`, body)).data
   },
+  /** §7.3.4: auditorías sin resultado, la que vence primero arriba. */
+  async auditoriasAbiertas(): Promise<AuditoriaAbierta[]> {
+    return (await apiClient.get<AuditoriaAbierta[]>(`${BASE}/auditorias`)).data
+  },
   async requerirAuditoria(filaId: string, notas?: string | null): Promise<DetalleFilaMigrada> {
     return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/auditorias`, { notas })).data
   },
@@ -216,3 +245,10 @@ export const migracionService = {
     return (await apiClient.post<DetalleFilaExcluida>(`${BASE}/auditorias/${auditoriaId}/decision`, { resultado, notas })).data
   },
 }
+
+/**
+ * Spec §7.3.2-§7.3.3: pasado el plazo sin respuesta registrada (misma regla que
+ * la API para «Soportes no entregados»).
+ */
+export const plazoVencido = (a: { respuesta_en: string | null; vence_en: string }) =>
+  !a.respuesta_en && Date.now() > Date.parse(a.vence_en)

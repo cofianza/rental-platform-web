@@ -41,6 +41,7 @@ import { hoyBogota } from '@/hooks/useContratoV3'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { CambiosCorreccion } from '@/components/migracion/Correcciones'
 import { abrirEnPestana } from '@/lib/utils'
 import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
@@ -848,7 +849,7 @@ const pctFmt = (n: number | null) =>
 
 /** Fianza activada por migración de cartera: lo que reemplaza al asistente V3. */
 function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: IContratoMigracion; verLote: boolean }) {
-  const [abriendo, setAbriendo] = useState(false)
+  const [abriendo, setAbriendo] = useState<string | null>(null)
   const reporte =
     m.reportable == null
       ? '—'
@@ -856,17 +857,18 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
         ? 'REPORTABLE'
         : `NO REPORTABLE${m.reportable_motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
 
-  async function verActa() {
-    setAbriendo(true)
+  async function abrirActa(url: () => Promise<string>, clave = 'migracion') {
+    setAbriendo(clave)
     try {
-      const ok = await abrirEnPestana(async () => (await contratoService.descargarContratoFirmado(contratoId)).url)
+      const ok = await abrirEnPestana(url)
       if (!ok) toast.error('El acta firmada aún no está disponible')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo abrir el acta firmada')
     } finally {
-      setAbriendo(false)
+      setAbriendo(null)
     }
   }
+  const verActa = () => abrirActa(async () => (await contratoService.descargarContratoFirmado(contratoId)).url)
 
   return (
     <div className="bg-white rounded-xl border border-purple-200 p-5">
@@ -923,12 +925,41 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
       {m.acta?.estado === 'completo' && (
         <button
           onClick={verActa}
-          disabled={abriendo}
+          disabled={!!abriendo}
           className="mt-4 inline-flex w-full items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
         >
-          {abriendo ? <IconLoader size={16} className="animate-spin" /> : <IconEye size={16} />}
+          {abriendo === 'migracion' ? <IconLoader size={16} className="animate-spin" /> : <IconEye size={16} />}
           Ver acta firmada
         </button>
+      )}
+
+      {/* Spec migración §3.7-§3.8: las actas de corrección del contrato, junto al Acta de Migración. */}
+      {(m.correcciones?.length ?? 0) > 0 && (
+        <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Actas de corrección</p>
+          {m.correcciones!.map((c) => (
+            <div key={c.id} className="rounded-lg border border-gray-200 p-3">
+              <p className="mb-1 flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-gray-900">Corrección {c.numero}</span>
+                <span className="text-gray-500">
+                  {c.estado_etiqueta}
+                  {c.aplicada_en ? ` · ${formatDateTime(c.aplicada_en)}` : ''}
+                </span>
+              </p>
+              <CambiosCorreccion campos={c.campos} />
+              {c.acta?.firmada && (
+                <button
+                  onClick={() => abrirActa(async () => (await contratoService.actaCorreccion(contratoId, c.id)).url, c.id)}
+                  disabled={!!abriendo}
+                  className="mt-2 inline-flex w-full items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                >
+                  {abriendo === c.id ? <IconLoader size={14} className="animate-spin" /> : <IconEye size={14} />}
+                  Ver acta de corrección firmada
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

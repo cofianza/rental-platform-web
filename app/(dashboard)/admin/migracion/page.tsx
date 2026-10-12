@@ -1,6 +1,7 @@
 /**
- * Migración de cartera (backoffice, spec §1.1 y §8): inmobiliarias con su
- * habilitación por destinación y suspensión, y los lotes cargados.
+ * Migración de cartera (backoffice, spec §1.1, §7.3 y §8): inmobiliarias con su
+ * habilitación por destinación y suspensión, los lotes cargados y las
+ * auditorías abiertas con su vencimiento.
  */
 
 'use client'
@@ -9,7 +10,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader, Button, buttonClasses } from '@/components/ui'
-import { IconBuilding2, IconDownload, IconFolderOpen, IconUpload, IconShieldCheck } from '@/components/icons'
+import { IconBuilding2, IconClipboardList, IconDownload, IconFolderOpen, IconUpload, IconShieldCheck } from '@/components/icons'
 import {
   Chip,
   SeccionEstado,
@@ -21,7 +22,7 @@ import {
   useSeccion,
   type ChipTone,
 } from '@/components/dashboard/secciones/_shared'
-import { guardarArchivo, migracionService } from '@/services/migracionService'
+import { guardarArchivo, migracionService, plazoVencido } from '@/services/migracionService'
 import type { Destinacion, EstadoLote, InmobiliariaMigracion, LoteResumen } from '@/types/migracion'
 
 const ESTADO_LOTE: Record<EstadoLote, { label: string; tone: ChipTone }> = {
@@ -57,6 +58,57 @@ const puedeCargar = (o: InmobiliariaMigracion) =>
 async function cargar() {
   const [orgs, lotes] = await Promise.all([migracionService.listarInmobiliarias(), migracionService.listarLotes()])
   return { orgs, lotes }
+}
+
+/** Spec §7.3.2-§7.3.4: requerimientos sin resultado; vencido sin respuesta procede «Soportes no entregados». */
+function AuditoriasAbiertas() {
+  const { data, loading, error, reload } = useSeccion(migracionService.auditoriasAbiertas)
+  const auditorias = data ?? []
+  return (
+    <SeccionEstado
+      loading={loading}
+      error={error}
+      onRetry={reload}
+      vacio={
+        auditorias.length === 0 && {
+          icon: IconClipboardList,
+          titulo: 'No hay auditorías abiertas',
+          descripcion: 'Las auditorías se requieren desde el detalle de cada contrato migrado.',
+        }
+      }
+    >
+      <Tabla head={['Contrato', 'Inmobiliaria', 'Lote', 'Requerida', 'Vence', 'Estado', '']}>
+        {auditorias.map((a) => (
+          <tr key={a.id}>
+            <Td className="font-semibold">
+              {a.contrato_numero ?? `Fila ${a.n_fila ?? '—'}`}
+              {a.direccion && <span className="block text-[11px] font-normal text-ink-500">{a.direccion}</span>}
+            </Td>
+            <Td>{a.inmobiliaria ?? '—'}</Td>
+            <Td>{a.lote_numero ?? '—'}</Td>
+            <Td className="whitespace-nowrap">{fechaCorta(a.requerido_en)}</Td>
+            <Td className="whitespace-nowrap">{fechaCorta(a.vence_en)}</Td>
+            <Td>
+              {a.respuesta_en ? (
+                <Chip tone="blue">Respondida, por calificar</Chip>
+              ) : plazoVencido(a) ? (
+                <Chip tone="red">Plazo vencido</Chip>
+              ) : (
+                <Chip tone="yellow">Pendiente de respuesta</Chip>
+              )}
+            </Td>
+            <Td className="text-right">
+              {a.lote_id && a.fila_id && (
+                <Link href={`/admin/migracion/lotes/${a.lote_id}?fila=${a.fila_id}`} className={buttonClasses('secondary', 'sm')}>
+                  Ver contrato
+                </Link>
+              )}
+            </Td>
+          </tr>
+        ))}
+      </Tabla>
+    </SeccionEstado>
+  )
 }
 
 const INPUT =
@@ -252,6 +304,14 @@ export default function MigracionPage() {
             ))}
           </Tabla>
         </SeccionEstado>
+      </section>
+
+      <section>
+        <SeccionHeader
+          title="Auditorías abiertas"
+          subtitle="Soportes de recaudo requeridos a las inmobiliarias. Vencido el plazo sin respuesta, el contrato puede excluirse por soportes no entregados."
+        />
+        <AuditoriasAbiertas />
       </section>
 
       <section>

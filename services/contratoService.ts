@@ -262,6 +262,11 @@ class ContratoService {
     return json.data
   }
 
+  /** Spec migración §3.7-§3.8: acta de corrección firmada de un contrato migrado (enlace de 10 min). */
+  async actaCorreccion(id: string, correccionId: string): Promise<{ url: string }> {
+    return (await apiClient.get<{ url: string }>(`/contratos/${id}/actas-correccion/${correccionId}`)).data
+  }
+
   async descargarContratoFirmado(id: string, opts?: { vista?: boolean }): Promise<IContratoDownloadResponse> {
     // `vista`: la vista previa del detalle; el API la registra como
     // visualización, no como descarga. Clave aparte para no fusionarla con un

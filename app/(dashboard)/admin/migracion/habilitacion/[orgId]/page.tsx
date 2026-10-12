@@ -169,10 +169,17 @@ function TarjetaDestinacion({
   const [renovacion, setRenovacion] = useState(h?.renovacion_comercial ?? '')
   const [observaciones, setObservaciones] = useState(h?.observaciones ?? '')
   const [convenio, setConvenio] = useState(h?.convenio_vigente_confirmado ?? false)
+  const [adhesion, setAdhesion] = useState(h?.adhesion_propietario ?? false)
   const [guardando, setGuardando] = useState(false)
+  // §1.1.4: si el arrendador es el propietario, solo No habilitada o exigir su adhesión.
+  const soloNoHabilitada = arrendador === 'no' && !adhesion
 
   const guardar = async () => {
     if (!estado) return
+    if (soloNoHabilitada && estado !== 'no_habilitada') {
+      toast.error('Si la inmobiliaria no figura como arrendadora, marque que se exige la adhesión del propietario o deje la revisión en No habilitada.')
+      return
+    }
     const body: GuardarHabilitacionBody = {
       estado,
       arrendador_es_inmobiliaria: deSiNo(arrendador),
@@ -183,6 +190,7 @@ function TarjetaDestinacion({
       renovacion_comercial: comercial ? renovacion.trim() || null : null,
       observaciones: observaciones.trim() || null,
       convenio_vigente_confirmado: convenio,
+      adhesion_propietario: arrendador === 'no' && adhesion,
     }
     setGuardando(true)
     try {
@@ -199,7 +207,13 @@ function TarjetaDestinacion({
   const cargarDoc = (tipo: TipoDocumentoHabilitacion) => async (f: File) => {
     try {
       await migracionService.cargarDocumento(orgId, destinacion, tipo, f)
-      toast.success(tipo === 'plantilla' ? 'Plantilla de contrato cargada.' : 'Convenio de migración cargado.')
+      toast.success(
+        tipo === 'plantilla'
+          ? 'Plantilla de contrato cargada.'
+          : tipo === 'convenio'
+            ? 'Convenio de migración cargado.'
+            : 'Adhesión del propietario cargada.',
+      )
       onCambio()
     } catch (e) {
       toast.error(msg(e, 'No se pudo cargar el documento'))
@@ -241,6 +255,20 @@ function TarjetaDestinacion({
           value={arrendador}
           onChange={setArrendador}
         />
+        {arrendador === 'no' && (
+          <label className="flex items-start gap-2 text-sm text-gray-900">
+            <input
+              type="checkbox"
+              checked={adhesion}
+              onChange={(e) => setAdhesion(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span>
+              Se exige la adhesión del propietario. Sin ella la revisión solo puede quedar No habilitada; con ella, cargue el
+              documento de adhesión firmado en Documentos.
+            </span>
+          </label>
+        )}
         <PreguntaSiNo
           id={`${p}habeas`}
           label="¿La cláusula de habeas data autoriza reportar a quien sea acreedor o subrogatario?"
@@ -289,8 +317,12 @@ function TarjetaDestinacion({
             className={`${INPUT} mt-1 sm:w-64`}
           >
             <option value="">Seleccione…</option>
-            <option value="habilitada">Habilitada</option>
-            <option value="con_observaciones">Habilitada con observaciones</option>
+            <option value="habilitada" disabled={soloNoHabilitada}>
+              Habilitada
+            </option>
+            <option value="con_observaciones" disabled={soloNoHabilitada}>
+              Habilitada con observaciones
+            </option>
             <option value="no_habilitada">No habilitada</option>
           </select>
         </div>
@@ -327,6 +359,15 @@ function TarjetaDestinacion({
           disabled={!h}
           onCargar={cargarDoc('convenio')}
         />
+        {(h?.adhesion_propietario || h?.adhesion_propietario_url) && (
+          <Documento
+            id={`${p}adhesion`}
+            label="Adhesión del propietario"
+            url={h?.adhesion_propietario_url ?? null}
+            disabled={!h}
+            onCargar={cargarDoc('adhesion')}
+          />
+        )}
       </div>
     </section>
   )

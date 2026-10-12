@@ -1,14 +1,15 @@
 /**
  * Tablero de un lote de migración (spec §8): conteo por estado, vista interna
  * de Cofianza (exposición y tarifa), Acta de Migración (§3.3) y la cartera
- * contrato por contrato con sus acciones (§5.1.3, §5.2.5, §6, §7).
+ * contrato por contrato con sus acciones (§5.1.3, §5.2.5, §6, §7) y las
+ * actas de corrección de contratos ya activos (§3.8).
  */
 
 'use client'
 
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
-import { useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button, ConfirmDialog, Modal, MotivoDialog, PageHeader, buttonClasses } from '@/components/ui'
 import {
@@ -20,6 +21,7 @@ import {
   IconFileCheck,
   IconFileText,
   IconFolderOpen,
+  IconPencil,
   IconRefresh,
   IconScrollText,
   IconUpload,
@@ -42,7 +44,8 @@ import {
 } from '@/components/dashboard/secciones/_shared'
 import { ApiClientError } from '@/lib/api'
 import { abrirEnPestana } from '@/lib/utils'
-import { errorPdf, guardarArchivo, migracionService } from '@/services/migracionService'
+import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
+import { errorPdf, guardarArchivo, migracionService, plazoVencido } from '@/services/migracionService'
 import type {
   DetalleFilaExcluida,
   DetalleFilaMigrada,
@@ -123,11 +126,15 @@ type Dialogo =
   | { tipo: 'revision' | 'quitarRevision' | 'auditoria' | 'verificacion' | 'excluirNota' | 'cancelarLote' }
   | { tipo: 'excluir'; nota: string }
   | { tipo: 'decision'; auditoriaId: string; resultado: ResultadoAuditoria }
+  | { tipo: 'cancelarCorreccion'; correccionId: string; numero: number }
 
 export default function LoteMigracionPage() {
   const { id } = useParams<{ id: string }>()
   const tablero = useSeccion(() => migracionService.tablero(id))
   const acta = useSeccion(() => migracionService.estadoActa(id))
+  const correcciones = useSeccion(() => migracionService.listarCorrecciones(id))
+  // Modal «Corregir con acta» (§3.8): abierto desde el lote (sin contrato) o desde el detalle de uno.
+  const [corrigiendo, setCorrigiendo] = useState<{ inicial: DetalleFilaMigrada | null } | null>(null)
 
   const [filtro, setFiltro] = useState<EstadoMigracion | null>(null)
   const [ocupado, setOcupado] = useState<string | null>(null)
@@ -154,6 +161,13 @@ export default function LoteMigracionPage() {
       setDetError(msg(e, 'No se pudo cargar el contrato'))
     }
   }
+
+  // Enlace directo a un contrato (?fila=…): lo usan la lista de auditorías abiertas y su aviso de vencimiento (§7.3.4).
+  // Depende de la query: un aviso del mismo lote cambia solo ?fila y la página no se vuelve a montar.
+  const filaParam = useSearchParams().get('fila')
+  useEffect(() => {
+    if (filaParam) void abrirDetalle(filaParam)
+  }, [filaParam])
 
   /** Corre una acción con candado y toast; devuelve false si falló (MotivoDialog conserva el texto). */
   const correr = async (clave: string, fn: () => Promise<unknown>, error: string) => {
@@ -199,6 +213,18 @@ export default function LoteMigracionPage() {
       'No se pudo completar la acción',
     )
 
+  const accionCorreccion = (clave: string, fn: () => Promise<unknown>, ok: string) =>
+    correr(
+      clave,
+      async () => {
+        await fn()
+        toast.success(ok)
+        correcciones.reload()
+        tablero.reload()
+      },
+      'No se pudo completar la acción',
+    )
+
   const descargarTablero = (vista: VistaTablero) =>
     correr(`xlsx-${vista}`, async () => guardarArchivo(await migracionService.tableroXlsx(id, vista)), 'No se pudo descargar el tablero')
 
@@ -213,6 +239,13 @@ export default function LoteMigracionPage() {
   const migrado = det && !det.excluido_en && (det.contrato?.estado === 'vigente' || det.contrato?.estado === 'finalizado')
   const vigente = det && (det.estado === 'activa' || det.estado === 'en_revision')
   const auditoriaAbierta = det?.auditorias.find((x) => !x.resultado) ?? null
+
+  // §3.8: solo contratos con fianza activa por migración de un lote activo; una corrección a la vez por lote (la API responde 409).
+  const correccionPendiente = (correcciones.data ?? []).some((c) => c.estado === 'en_firma' || c.estado === 'firmada')
+  const puedeCorregir = loteEstado === 'activo' && !correccionPendiente
+  const elegibles = (t?.filas ?? [])
+    .filter((f) => f.contrato_id && (f.estado === 'activa' || f.estado === 'en_revision'))
+    .map((f) => ({ fila_id: f.fila_id, etiqueta: [f.contrato_numero ?? `Fila ${f.n_fila}`, f.direccion, f.arrendatario].filter(Boolean).join(' · ') }))
 
   return (
     <div className="space-y-8">
@@ -368,6 +401,95 @@ export default function LoteMigracionPage() {
           </div>
         </SeccionEstado>
       </section>
+
+      {(loteEstado === 'activo' || (correcciones.data?.length ?? 0) > 0) && (
+        <section>
+          <SeccionHeader
+            title="Actas de corrección"
+            subtitle="Un contrato ya activado solo se corrige con un acta nueva firmada por el representante legal y por Cofianza. Nada cambia hasta la firma."
+            right={
+              puedeCorregir && elegibles.length > 0 ? (
+                <Button tamano="sm" onClick={() => setCorrigiendo({ inicial: null })} disabled={!!ocupado}>
+                  <IconPencil size={14} /> Corregir con acta
+                </Button>
+              ) : undefined
+            }
+          />
+          <SeccionEstado
+            loading={correcciones.loading}
+            error={correcciones.error}
+            onRetry={correcciones.reload}
+            vacio={(correcciones.data?.length ?? 0) === 0 && { icon: IconScrollText, titulo: 'Este lote no tiene correcciones' }}
+          >
+            {correccionPendiente && (
+              <p className="mb-3 text-xs text-ink-600">Hay una corrección en curso. Para proponer otra, espere a que termine o cancélela.</p>
+            )}
+            <ul className="space-y-3">
+              {(correcciones.data ?? []).map((c) => (
+                <li key={c.id} className="space-y-3 rounded-xl border border-ink-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold text-ink-900">Corrección {c.numero}</span>
+                    <Chip tone={ESTADO_CORRECCION_TONO[c.estado]}>{c.estado_etiqueta}</Chip>
+                    <span className="text-ink-600">
+                      Propuesta {fechaCorta(c.creada_en)}
+                      {c.aplicada_en
+                        ? ` · aplicada ${fechaCorta(c.aplicada_en)}`
+                        : c.estado === 'en_firma' && c.acta
+                          ? ` · vence ${fechaCorta(c.acta.expira_en)}`
+                          : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-600">Motivo: {c.motivo}</p>
+                  {c.contratos.map((k) => (
+                    <div key={k.fila_id}>
+                      <p className="text-xs font-semibold text-ink-700">Contrato {k.contrato_numero ?? '—'}</p>
+                      <CambiosCorreccion campos={k.campos} />
+                    </div>
+                  ))}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variante="secondary"
+                      tamano="sm"
+                      disabled={!!ocupado}
+                      onClick={() =>
+                        correr(
+                          `ver-corr-${c.id}`,
+                          async () => {
+                            await abrirEnPestana(async () => (await migracionService.actaCorreccionPdf(c.id)).url)
+                          },
+                          'No se pudo abrir el acta',
+                        )
+                      }
+                    >
+                      <IconEye size={14} /> {c.acta?.firmada ? 'Ver acta firmada' : 'Ver acta'}
+                    </Button>
+                    {(c.estado === 'en_firma' || c.estado === 'firmada') && (
+                      <Button
+                        variante="secondary"
+                        tamano="sm"
+                        disabled={!!ocupado}
+                        onClick={() => accionCorreccion(`act-corr-${c.id}`, () => migracionService.actualizarCorreccion(c.id), 'Estado de la corrección actualizado')}
+                      >
+                        <IconRefresh size={14} /> {ocupado === `act-corr-${c.id}` ? 'Consultando…' : 'Actualizar estado'}
+                      </Button>
+                    )}
+                    {c.estado === 'en_firma' && (
+                      <Button
+                        variante="danger"
+                        tamano="sm"
+                        disabled={!!ocupado}
+                        onClick={() => setDialogo({ tipo: 'cancelarCorreccion', correccionId: c.id, numero: c.numero })}
+                      >
+                        <IconX size={14} /> Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </SeccionEstado>
+        </section>
+      )}
 
       <section>
         <SeccionHeader title="Contratos del lote" />
@@ -528,6 +650,19 @@ export default function LoteMigracionPage() {
                 <Button variante="danger" tamano="sm" onClick={() => setDialogo({ tipo: 'excluirNota' })} disabled={!!ocupado}>
                   Excluir por declaración falsa
                 </Button>
+                {puedeCorregir && det.contrato?.estado === 'vigente' && vigente && (
+                  <Button
+                    variante="secondary"
+                    tamano="sm"
+                    disabled={!!ocupado}
+                    onClick={() => {
+                      setCorrigiendo({ inicial: det })
+                      setFilaId(null)
+                    }}
+                  >
+                    <IconPencil size={14} /> Corregir con acta
+                  </Button>
+                )}
               </div>
             )}
 
@@ -557,6 +692,24 @@ export default function LoteMigracionPage() {
               </div>
             )}
 
+            {det.correcciones.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold text-ink-900">Correcciones</p>
+                <ul className="space-y-2">
+                  {det.correcciones.map((c) => (
+                    <li key={c.id} className="rounded-lg border border-ink-200 p-3 text-xs text-ink-700">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">Corrección {c.numero}</span>
+                        <Chip tone={ESTADO_CORRECCION_TONO[c.estado]}>{c.estado_etiqueta}</Chip>
+                        <span>{c.aplicada_en ? `aplicada ${fechaCorta(c.aplicada_en)}` : `propuesta ${fechaCorta(c.creada_en)}`}</span>
+                      </div>
+                      <CambiosCorreccion campos={c.campos} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div>
               <p className="mb-2 text-sm font-semibold text-ink-900">Auditorías</p>
               {det.auditorias.length === 0 ? (
@@ -569,7 +722,10 @@ export default function LoteMigracionPage() {
                         {au.resultado ? (
                           <Chip tone={RESULTADO_AUDITORIA[au.resultado].tone}>{RESULTADO_AUDITORIA[au.resultado].label}</Chip>
                         ) : (
-                          <Chip tone="yellow">{au.respuesta_en ? 'Respondida' : 'Pendiente de respuesta'}</Chip>
+                          // §7.3.3: vencido sin respuesta, procede «Soportes no entregados».
+                          <Chip tone={plazoVencido(au) ? 'red' : 'yellow'}>
+                            {au.respuesta_en ? 'Respondida' : plazoVencido(au) ? 'Plazo vencido' : 'Pendiente de respuesta'}
+                          </Chip>
                         )}
                         <span>
                           Requerida {fechaCorta(au.requerido_en)} · plazo {fechaCorta(au.vence_en)}
@@ -630,7 +786,7 @@ export default function LoteMigracionPage() {
                             <span className="font-medium">Resultado:</span>
                             {/* «No entregado» solo procede vencido el plazo y sin respuesta (misma regla que la API). */}
                             {(Object.keys(RESULTADO_AUDITORIA) as ResultadoAuditoria[])
-                              .filter((r) => r !== 'no_entregado' || (!au.respuesta_en && Date.now() > Date.parse(au.vence_en)))
+                              .filter((r) => r !== 'no_entregado' || plazoVencido(au))
                               .map((r) => (
                               <Button
                                 key={r}
@@ -751,6 +907,30 @@ export default function LoteMigracionPage() {
               () => migracionService.decidirAuditoria(dialogo.auditoriaId, dialogo.resultado, notas.trim() || null),
               'Resultado registrado',
             )
+        }}
+      />
+      <CorreccionModal
+        isOpen={!!corrigiendo}
+        onClose={() => setCorrigiendo(null)}
+        loteId={id}
+        elegibles={elegibles}
+        inicial={corrigiendo?.inicial ?? null}
+        onEnviada={() => {
+          setCorrigiendo(null)
+          correcciones.reload()
+        }}
+      />
+      <ConfirmDialog
+        isOpen={dialogo?.tipo === 'cancelarCorreccion'}
+        onClose={() => setDialogo(null)}
+        title={dialogo?.tipo === 'cancelarCorreccion' ? `Cancelar la corrección ${dialogo.numero}` : ''}
+        variant="danger"
+        confirmLabel="Cancelar corrección"
+        cancelLabel="Volver"
+        message="Se anula el acta de corrección en Auco. Los contratos quedan como estaban."
+        onConfirm={async () => {
+          if (dialogo?.tipo === 'cancelarCorreccion')
+            await accionCorreccion('cancelar-corr', () => migracionService.cancelarCorreccion(dialogo.correccionId), 'Corrección cancelada')
         }}
       />
       <ConfirmDialog

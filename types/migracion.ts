@@ -5,7 +5,7 @@
 
 export type Destinacion = 'vivienda' | 'comercial'
 export type EstadoHabilitacion = 'habilitada' | 'con_observaciones' | 'no_habilitada'
-export type TipoDocumentoHabilitacion = 'plantilla' | 'convenio'
+export type TipoDocumentoHabilitacion = 'plantilla' | 'convenio' | 'adhesion'
 export type ResultadoValidacion = 'aceptada' | 'advertencia' | 'rechazada'
 export type EstadoLote = 'procesado' | 'en_firma' | 'activo' | 'expirado' | 'cancelado'
 export type EstadoActa = 'creando' | 'en_firma' | 'completo' | 'incompleto' | 'cancelado' | 'fallido'
@@ -31,6 +31,11 @@ export interface Habilitacion {
   plantilla_storage_key: string | null
   convenio_migracion_storage_key: string | null
   convenio_vigente_confirmado: boolean
+  /** §1.1.4: el arrendador es el propietario y se exige su adhesión (PDF). */
+  adhesion_propietario: boolean
+  adhesion_propietario_storage_key: string | null
+  /** Versión vigente de la revisión (historial en la API, §1.1.5). */
+  revision_id: string | null
   revisado_por: string | null
   revisado_en: string | null
 }
@@ -41,6 +46,7 @@ export interface HabilitacionConEstado extends Habilitacion {
   /** Enlaces firmados de 10 minutos. */
   plantilla_url: string | null
   convenio_migracion_url: string | null
+  adhesion_propietario_url: string | null
 }
 
 export interface EstadoMigracionOrg {
@@ -74,6 +80,7 @@ export interface GuardarHabilitacionBody {
   renovacion_comercial?: string | null
   observaciones?: string | null
   convenio_vigente_confirmado?: boolean
+  adhesion_propietario?: boolean
 }
 
 export interface SuspensionResultado {
@@ -288,6 +295,21 @@ export interface AuditoriaMigracion {
   decidido_en: string | null
 }
 
+/** Spec §7.3.4: auditoría sin resultado, para la lista de /admin/migracion. */
+export interface AuditoriaAbierta {
+  id: string
+  requerido_en: string
+  vence_en: string
+  respuesta_en: string | null
+  fila_id: string | null
+  lote_id: string | null
+  lote_numero: string | null
+  n_fila: number | null
+  contrato_numero: string | null
+  direccion: string | null
+  inmobiliaria: string | null
+}
+
 export interface DetalleFilaMigrada {
   id: string
   lote_id: string
@@ -321,6 +343,61 @@ export interface DetalleFilaMigrada {
   estado_etiqueta: string
   tarifa_vigente_pct: number | null
   auditorias: AuditoriaMigracion[]
+  /** Spec §3.8: actas de corrección de este contrato (solo sus propios cambios). */
+  correcciones: CorreccionContrato[]
+}
+
+// ── Acta de corrección (Spec §3.8) ──
+
+export type EstadoCorreccion = 'en_firma' | 'firmada' | 'aplicada' | 'sin_efecto'
+
+/** Columnas de la plantilla que se corrigen por acta (ni la destinación ni la inmobiliaria). */
+export type CampoCorregible =
+  | 'direccion'
+  | 'municipio'
+  | 'codigo_interno'
+  | 'canon'
+  | 'fecha_inicio'
+  | 'fecha_vencimiento'
+  | 'arrendatario_nombre'
+  | 'arrendatario_apellido'
+  | 'arrendatario_tipo_documento'
+  | 'arrendatario_numero_documento'
+  | 'arrendatario_celular'
+  | 'arrendatario_email'
+
+/** Sin formato: canon número, fechas AAAA-MM-DD, tipo de documento en minúscula. */
+export interface CampoCorregido {
+  campo: CampoCorregible
+  etiqueta: string
+  anterior: string | number | null
+  nuevo: string | number | null
+}
+
+interface CorreccionBase {
+  id: string
+  numero: number
+  motivo: string
+  estado: EstadoCorreccion
+  estado_etiqueta: string
+  creada_en: string
+  aplicada_en: string | null
+  acta: { estado: EstadoActa; expira_en: string; cerrado_en: string | null; firmada: boolean } | null
+}
+
+/** La corrección vista desde un contrato: solo sus cambios. */
+export interface CorreccionContrato extends CorreccionBase {
+  campos: CampoCorregido[]
+}
+
+/** La corrección vista desde el lote: todos los contratos del acta. */
+export interface CorreccionLote extends CorreccionBase {
+  contratos: { fila_id: string; contrato_numero: string | null; campos: CampoCorregido[] }[]
+}
+
+export interface CorreccionBody {
+  motivo: string
+  contratos: { fila_id: string; cambios: Partial<Record<CampoCorregible, string | number>> }[]
 }
 
 /** La exclusión (directa o por auditoría) devuelve además si se suspendió la inmobiliaria. */
