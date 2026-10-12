@@ -16,12 +16,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { cn } from '@/lib/utils'
+import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 
 export function Sidebar() {
   const pathname = usePathname()
   const { sidebarExpanded, sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
   const { logout } = useAuth()
   const { canAccessResource, userRole } = usePermissions()
+  // Spec migración §3.3: el firmante de Cofianza es obligatorio; se marca en el menú.
+  const faltaFirmante = useFirmantePendienteStore((st) => st.falta) === true && userRole === 'administrador'
 
   // Filtrar items de navegacion por permisos del usuario. Aplica 2 reglas:
   //   1) Si el item declara `resource`, el rol debe tener acceso a ese recurso.
@@ -227,6 +230,13 @@ export function Sidebar() {
                       >
                         {item.label}
                       </span>
+                      {faltaFirmante && item.href === '/configuracion' && (
+                        <span
+                          className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"
+                          aria-label="Dato obligatorio pendiente"
+                          title="Dato obligatorio pendiente"
+                        />
+                      )}
 
                       {/* Tooltip para modo colapsado (tablet y desktop colapsado) */}
                       <div

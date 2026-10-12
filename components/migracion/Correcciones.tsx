@@ -13,6 +13,7 @@ import { IconAlertTriangle, IconScrollText, IconTrash } from '@/components/icons
 import { fechaCorta, money, type ChipTone } from '@/components/dashboard/secciones/_shared'
 import { ApiClientError } from '@/lib/api'
 import { migracionService } from '@/services/migracionService'
+import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 import type { CampoCorregible, CampoCorregido, DatosFilaMigrada, DetalleFilaMigrada, EstadoCorreccion } from '@/types/migracion'
 
 export const ESTADO_CORRECCION_TONO: Record<EstadoCorreccion, ChipTone> = {
@@ -121,6 +122,8 @@ export function CorreccionModal({
   const [motivo, setMotivo] = useState('')
   const [agregando, setAgregando] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  // Spec §3.3: el acta de corrección tiene los mismos firmantes que la de migración.
+  const faltaFirmante = useFirmantePendienteStore((st) => st.falta) === true
   const [fallas, setFallas] = useState<Falla[]>([])
 
   useEffect(() => {
@@ -310,7 +313,10 @@ export function CorreccionModal({
           <Button variante="secondary" onClick={onClose} disabled={enviando}>
             Cerrar
           </Button>
-          <Button onClick={enviar} disabled={!listo || enviando}>
+          {faltaFirmante && (
+            <p className="mr-auto self-center text-xs text-red-700">Falta registrar quién firma por Cofianza (Datos de la empresa).</p>
+          )}
+          <Button onClick={enviar} disabled={!listo || enviando || faltaFirmante}>
             <IconScrollText size={16} /> {enviando ? 'Enviando…' : 'Enviar a firma'}
           </Button>
         </div>
