@@ -46,6 +46,7 @@ import { ApiClientError } from '@/lib/api'
 import { abrirEnPestana } from '@/lib/utils'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
 import { errorPdf, guardarArchivo, migracionService, plazoVencido } from '@/services/migracionService'
+import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 import type {
   DetalleFilaExcluida,
   DetalleFilaMigrada,
@@ -165,6 +166,12 @@ export default function LoteMigracionPage() {
   // Enlace directo a un contrato (?fila=…): lo usan la lista de auditorías abiertas y su aviso de vencimiento (§7.3.4).
   // Depende de la query: un aviso del mismo lote cambia solo ?fila y la página no se vuelve a montar.
   const filaParam = useSearchParams().get('fila')
+  // Spec §3.3: sin el firmante de Cofianza el acta no puede salir a firma (la API responde 422).
+  const { falta: faltaFirmante, cargar: cargarFirmante } = useFirmantePendienteStore()
+  useEffect(() => {
+    void cargarFirmante()
+  }, [cargarFirmante])
+
   useEffect(() => {
     if (filaParam) void abrirDetalle(filaParam)
   }, [filaParam])
@@ -360,10 +367,18 @@ export default function LoteMigracionPage() {
               <p className="text-sm text-ink-600">El acta está generada y aún no se ha enviado a firma.</p>
             )}
             <div className="flex flex-wrap gap-2 pt-1">
+              {loteAbierto && !actaViva && faltaFirmante && (
+                <p className="w-full text-sm text-red-700">
+                  No se puede enviar a firma: falta registrar quién firma por Cofianza.{' '}
+                  <Link href="/configuracion/empresa" className="font-semibold underline">
+                    Completar en Datos de la empresa
+                  </Link>
+                </p>
+              )}
               {loteAbierto && !actaViva && (
                 <Button
                   onClick={() => accionActa('enviar', () => migracionService.enviarActa(id), 'Acta enviada a firma por Auco')}
-                  disabled={!!ocupado}
+                  disabled={!!ocupado || faltaFirmante === true}
                 >
                   <IconScrollText size={16} /> {ocupado === 'enviar' ? 'Enviando…' : a ? 'Enviar de nuevo a firma' : 'Enviar a firma'}
                 </Button>

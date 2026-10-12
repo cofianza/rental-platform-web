@@ -14,6 +14,7 @@ import { IconLoader, IconBuilding2 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getEmpresa, updateEmpresa, type EmpresaInfo } from '@/services/empresaService'
 import { TIPOS_DOCUMENTO } from '@/lib/constants'
+import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 
 // Auco solo acepta documentos de persona natural: el NIT no sirve para firmar.
 const TIPOS_FIRMANTE = (['CC', 'CE', 'PPT', 'PEP', 'PASAPORTE'] as const).map((k) => ({ value: k, label: TIPOS_DOCUMENTO[k] }))
@@ -99,6 +100,7 @@ export default function EmpresaPage() {
       const { name, nit, address, email, website } = form
       const updated = await updateEmpresa({ name, nit, address, phone, email, website, ...firmante })
       setForm(updated)
+      void useFirmantePendienteStore.getState().cargar() // el aviso y el punto del menú se apagan al guardar
       toast.success('Datos de la empresa actualizados')
     } catch (err: unknown) {
       toast.error((err as { message?: string }).message || 'No se pudo guardar')
