@@ -2,6 +2,8 @@
  * Tipos para Contratos generados desde plantillas
  */
 
+import type { CorreccionContrato } from './migracion'
+
 export type EstadoContrato =
   | 'borrador'
   | 'en_revision'
@@ -76,6 +78,8 @@ export interface IContratoMigracion {
   excluido_motivo: string | null
   lote: { id: string; numero: string; activado_en: string | null } | null
   acta: { id: string; estado: string; cerrado_en: string | null } | null
+  /** Spec migración §3.7-§3.8: actas de corrección del contrato. */
+  correcciones?: CorreccionContrato[]
 }
 
 export type ModalidadFianza = 'plena' | 'compartida' | 'plus'

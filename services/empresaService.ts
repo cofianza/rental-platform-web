@@ -12,6 +12,12 @@ export interface EmpresaInfo {
   email: string
   website: string
   certificateValidityDays: number
+  /** Persona que firma el Acta de Migración por Cofianza (spec migración §3.3). '' = sin configurar. */
+  firmanteNombre: string
+  firmanteTipoDocumento: string
+  firmanteDocumento: string
+  firmanteEmail: string
+  firmanteCelular: string
 }
 
 export async function getEmpresa(): Promise<EmpresaInfo> {
