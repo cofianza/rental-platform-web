@@ -16,6 +16,7 @@ import { DashboardLayoutWrapper } from './DashboardLayoutWrapper'
 import { OficinaVirtualShell } from './OficinaVirtualShell'
 import { PropietarioShell } from './PropietarioShell'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
+import { DatosEmpresaPendientesBanner } from '@/components/layout/DatosEmpresaPendientesBanner'
 
 interface Props {
   children: React.ReactNode
@@ -101,6 +102,7 @@ export function DashboardShell({ children }: Props) {
         <Header />
         <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-hidden focus:outline-none">
           {/* BLQ §2.1: Cofianza también envía enlaces y corrige documentos. */}
+          {rol === 'administrador' && <DatosEmpresaPendientesBanner />}
           {(rol === 'administrador' || rol === 'operador_analista') && <BloqueosPendientesBanner />}
           {children}
         </main>
