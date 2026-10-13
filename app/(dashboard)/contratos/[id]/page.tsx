@@ -1,5 +1,6 @@
 'use client'
 
+import { motivoRevision } from '@/services/migracionService'
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -911,7 +912,7 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
 
       {m.en_revision && (
         <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          En revisión{m.en_revision_motivo ? `: ${m.en_revision_motivo}` : ''}
+          En revisión{m.en_revision_motivo ? `: ${motivoRevision(m.en_revision_motivo)}` : ''}
         </p>
       )}
       {m.excluido_en && (
@@ -922,7 +923,7 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
         </p>
       )}
 
-      {m.acta?.estado === 'completo' && (
+      {m.acta?.estado === 'completo' && m.puede_ver_acta !== false && (
         <button
           onClick={verActa}
           disabled={!!abriendo}
@@ -947,7 +948,7 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
                 </span>
               </p>
               <CambiosCorreccion campos={c.campos} />
-              {c.acta?.firmada && (
+              {c.acta?.firmada && m.puede_ver_acta !== false && (
                 <button
                   onClick={() => abrirActa(async () => (await contratoService.actaCorreccion(contratoId, c.id)).url, c.id)}
                   disabled={!!abriendo}

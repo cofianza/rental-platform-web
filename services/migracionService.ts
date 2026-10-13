@@ -246,9 +246,22 @@ export const migracionService = {
   },
 }
 
+/** §7.3.3: los soportes llegaron después del plazo (cuenta como no entregados dentro del plazo). */
+export const respondidaTarde = (a: { respuesta_en: string | null; vence_en: string }) =>
+  !!a.respuesta_en && Date.parse(a.respuesta_en) > Date.parse(a.vence_en)
+
 /**
- * Spec §7.3.2-§7.3.3: pasado el plazo sin respuesta registrada (misma regla que
- * la API para «Soportes no entregados»).
+ * Spec §7.3.2-§7.3.3: pasado el plazo sin soportes recibidos DENTRO de él (sin respuesta o
+ * con respuesta tardía): misma regla que la API para «Soportes no entregados».
  */
 export const plazoVencido = (a: { respuesta_en: string | null; vence_en: string }) =>
-  !a.respuesta_en && Date.now() > Date.parse(a.vence_en)
+  Date.now() > Date.parse(a.vence_en) && (!a.respuesta_en || respondidaTarde(a))
+
+/** Los códigos que deja la activación del lote (fn_activar_lote_migracion), en palabras. */
+const MOTIVOS_REVISION: Record<string, string> = {
+  INMUEBLE_OCUPADO: 'el inmueble figuraba ocupado o con otro contrato al activar',
+  VENCIDO_ANTES_DE_ACTIVACION: 'el contrato venció antes de la firma del acta',
+  CODIGO_INMUEBLE_EXISTENTE: 'el código interno ya era de otro inmueble de la inmobiliaria',
+}
+export const motivoRevision = (m: string | null | undefined) =>
+  m ? m.replace(/\b[A-Z_]{8,}\b/g, (c) => MOTIVOS_REVISION[c] ?? c) : m

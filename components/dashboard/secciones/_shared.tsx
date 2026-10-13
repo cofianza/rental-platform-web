@@ -393,7 +393,10 @@ export function TotalesPorOrigenTabla({ porOrigen }: { porOrigen?: TotalesPorOri
   ]
   return (
     <div className="mb-4">
-      <Tabla head={['Cartera', 'Contratos activos', 'Canon', 'Tarifa del mes', 'IVA']} density="compact">
+      <Tabla
+        head={['Cartera', 'Contratos activos', 'Canon', 'Tarifa del mes', 'IVA', 'Mora activa', 'Siniestralidad', 'Exposición máx.']}
+        density="compact"
+      >
         {filas.map(([label, t]) => (
           <tr key={label}>
             <Td className="font-semibold text-ink-900">{label}</Td>
@@ -401,6 +404,10 @@ export function TotalesPorOrigenTabla({ porOrigen }: { porOrigen?: TotalesPorOri
             <Td>{money(t.canon)}</Td>
             <Td>{money(t.tarifa)}</Td>
             <Td>{money(t.iva)}</Td>
+            {/* §9.5: el riesgo de cada cartera por separado. */}
+            <Td>{t.moraActivaCount != null ? `${t.moraActivaCount} · ${money(t.moraActivaMonto ?? 0)}` : '—'}</Td>
+            <Td>{t.siniestralidad != null ? `${t.siniestralidad.toFixed(1)}%` : '—'}</Td>
+            <Td>{t.exposicionMaxima != null ? money(t.exposicionMaxima) : '—'}</Td>
           </tr>
         ))}
       </Tabla>

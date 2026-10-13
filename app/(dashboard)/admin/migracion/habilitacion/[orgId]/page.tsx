@@ -173,11 +173,26 @@ function TarjetaDestinacion({
   const [guardando, setGuardando] = useState(false)
   // §1.1.4: si el arrendador es el propietario, solo No habilitada o exigir su adhesión.
   const soloNoHabilitada = arrendador === 'no' && !adhesion
+  // §1.1.4: en vivienda el depósito en dinero «es causal de observación» (la API responde 400 si queda Habilitada).
+  const conObservacion = !comercial && deposito === 'si'
+  // §1.1.4: la revisión cubre todos los puntos antes de habilitar (la API los lista como faltantes).
+  const sinContestar = [
+    arrendador === '' && 'quién figura como arrendador',
+    habeas === '' && 'habeas data',
+    deposito === '' && 'depósito en dinero',
+    !imputacion.trim() && 'orden de imputación',
+    !prorroga.trim() && 'régimen de prórroga',
+    comercial && !renovacion.trim() && 'renovación y desahucio',
+  ].filter(Boolean)
 
   const guardar = async () => {
     if (!estado) return
     if (soloNoHabilitada && estado !== 'no_habilitada') {
       toast.error('Si la inmobiliaria no figura como arrendadora, marque que se exige la adhesión del propietario o deje la revisión en No habilitada.')
+      return
+    }
+    if (conObservacion && estado === 'habilitada') {
+      toast.error('La plantilla de vivienda contempla depósito en dinero: la revisión debe quedar Habilitada con observaciones o No habilitada.')
       return
     }
     const body: GuardarHabilitacionBody = {
@@ -317,7 +332,7 @@ function TarjetaDestinacion({
             className={`${INPUT} mt-1 sm:w-64`}
           >
             <option value="">Seleccione…</option>
-            <option value="habilitada" disabled={soloNoHabilitada}>
+            <option value="habilitada" disabled={soloNoHabilitada || conObservacion}>
               Habilitada
             </option>
             <option value="con_observaciones" disabled={soloNoHabilitada}>
@@ -325,6 +340,11 @@ function TarjetaDestinacion({
             </option>
             <option value="no_habilitada">No habilitada</option>
           </select>
+          {estado !== 'no_habilitada' && sinContestar.length > 0 && (
+            <p className="mt-1 text-xs text-coral-800">
+              Para habilitar, conteste todos los puntos de la revisión. Falta: {sinContestar.join(', ')}.
+            </p>
+          )}
         </div>
 
         <label className="flex items-start gap-2 text-sm text-gray-900">
