@@ -41,6 +41,13 @@ export interface TotalesOrigen {
   /** Tarifa mensual causada (sin IVA) de los que entran en el mes. */
   tarifa: number
   iva: number
+  /** Migración §6 (4.1) / §9.5: el riesgo de cada producto, sin mezclarlo (backends viejos no lo mandan). */
+  moraActivaCount?: number
+  moraActivaMonto?: number
+  siniestralidad?: number
+  zonaRiesgoCount?: number
+  zonaRiesgoExposicion?: number
+  exposicionMaxima?: number
 }
 export type TotalesPorOrigen = Record<OrigenContrato, TotalesOrigen>
 
@@ -116,6 +123,8 @@ export interface AdminOverview {
   kpis: AdminOverviewKpis
   config: AdminOverviewConfig
   histSiniestralidad: AdminOverviewHistItem[]
+  /** Migración §9.5: el histórico de la cartera originada y de la migrada por separado. */
+  histSiniestralidadPorOrigen?: Record<OrigenContrato, AdminOverviewHistItem[]>
   contratosPorVencer: AdminOverviewContratoItem[]
   contratosZonaRiesgo: AdminOverviewContratoItem[]
   moraActiva: AdminOverviewMoraItem[]
@@ -370,10 +379,14 @@ export interface MisInmueblesData {
 export interface MiCarteraAnalitica {
   salud: {
     contratosActivos: number
+    /** Con cartera migrada: la de la cartera originada (la migrada va en `migrada`, §9.5). */
     morosidadPct: number
     moraActiva: number
     diasPromedioMora: number
     canonGestionado: number
+    contratosMigrados?: number
+    canonMigrado?: number
+    migrada?: { moraActiva: number; morosidadPct: number }
   }
   estudios: {
     total: number

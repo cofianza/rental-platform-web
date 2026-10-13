@@ -45,7 +45,7 @@ import {
 import { ApiClientError } from '@/lib/api'
 import { abrirEnPestana } from '@/lib/utils'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
-import { errorPdf, guardarArchivo, migracionService, plazoVencido } from '@/services/migracionService'
+import { errorPdf, guardarArchivo, migracionService, motivoRevision, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 import type {
   DetalleFilaExcluida,
@@ -107,6 +107,8 @@ const msg = (e: unknown, def: string) => (e instanceof Error && e.message) || de
 const pct = (n: number | string | null | undefined) =>
   n == null ? '—' : `${Number(n).toLocaleString('es-CO', { maximumFractionDigits: 2 })} %`
 const hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
+/** AAAA-MM-DD en Bogotá de un instante (la activación del contrato, §5.2.5). */
+const diaBogota = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
 const siNo = (b: boolean | null) => (b == null ? '—' : b ? 'Sí' : 'No')
 
 function Marca({ reportable }: { reportable: boolean | null }) {
@@ -240,6 +242,8 @@ export default function LoteMigracionPage() {
   const loteEstado = acta.data?.lote.estado ?? t?.lote.estado
   const loteAbierto = loteEstado === 'procesado' || loteEstado === 'en_firma'
   const actaViva = a?.estado === 'creando' || a?.estado === 'en_firma'
+  // §3.4: firmada y la activación aún reintentándose: no se pide otra firma ni se cancela el lote.
+  const actaFirmada = a?.estado === 'completo'
   const filas = (t?.filas ?? []).filter((f) => !filtro || f.estado === filtro)
 
   // Misma condición que exigirMigrado en la API: 'terminado' también agrupa contratos cancelados, que no admiten auditoría ni exclusión.
@@ -347,12 +351,19 @@ export default function LoteMigracionPage() {
             {a ? (
               <>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <Chip tone={ESTADO_ACTA[a.estado].tone}>{ESTADO_ACTA[a.estado].label}</Chip>
+                  <Chip tone={ESTADO_ACTA[a.estado].tone}>
+                    {actaFirmada && loteAbierto ? 'Firmada, activándose' : ESTADO_ACTA[a.estado].label}
+                  </Chip>
                   <span className="text-ink-600">
                     Intento {a.intento} · {a.cerrado_en ? `cerrada ${fechaCorta(a.cerrado_en)}` : `vence ${fechaCorta(a.expira_en)}`}
                   </span>
                 </div>
                 {a.motivo && <p className="text-xs text-red-700">{MOTIVO_ACTA[a.motivo] ?? 'El proceso de firma no terminó. Envíe el acta de nuevo.'}</p>}
+                {actaFirmada && loteAbierto && (
+                  <p className="text-xs text-ink-600">
+                    El acta ya está firmada: la plataforma está activando los contratos. Pulse «Actualizar estado» en unos minutos.
+                  </p>
+                )}
                 <ul className="space-y-1 text-sm">
                   {a.firmantes.map((f) => (
                     <li key={f.parteId} className="flex items-center gap-2">
@@ -366,8 +377,16 @@ export default function LoteMigracionPage() {
             ) : (
               <p className="text-sm text-ink-600">El acta está generada y aún no se ha enviado a firma.</p>
             )}
+            {acta.data?.lote.rep_legal?.nombre && (
+              <p className="text-xs text-ink-600">
+                Firma por la inmobiliaria: {acta.data.lote.rep_legal.nombre}
+                {acta.data.lote.rep_legal.documento ? `, documento ${acta.data.lote.rep_legal.documento}` : ''} ·{' '}
+                {[acta.data.lote.rep_legal.email, acta.data.lote.rep_legal.celular].filter(Boolean).join(' · ')}. Si algún dato está mal,
+                cancele el lote y cargue de nuevo el archivo.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2 pt-1">
-              {loteAbierto && !actaViva && faltaFirmante && (
+              {loteAbierto && !actaViva && !actaFirmada && faltaFirmante && (
                 <p className="w-full text-sm text-red-700">
                   No se puede enviar a firma: falta registrar quién firma por Cofianza.{' '}
                   <Link href="/configuracion/empresa" className="font-semibold underline">
@@ -375,7 +394,7 @@ export default function LoteMigracionPage() {
                   </Link>
                 </p>
               )}
-              {loteAbierto && !actaViva && (
+              {loteAbierto && !actaViva && !actaFirmada && (
                 <Button
                   onClick={() => accionActa('enviar', () => migracionService.enviarActa(id), 'Acta enviada a firma por Auco')}
                   disabled={!!ocupado || faltaFirmante === true}
@@ -407,7 +426,7 @@ export default function LoteMigracionPage() {
               >
                 <IconEye size={16} /> {a?.firmada ? 'Ver acta firmada' : 'Ver acta'}
               </Button>
-              {loteAbierto && (
+              {loteAbierto && !actaFirmada && (
                 <Button variante="danger" onClick={() => setDialogo({ tipo: 'cancelarLote' })} disabled={!!ocupado}>
                   <IconX size={16} /> Cancelar lote
                 </Button>
@@ -535,7 +554,7 @@ export default function LoteMigracionPage() {
                 <Td>
                   <Chip tone={ESTADO[f.estado].tone}>{f.estado_etiqueta}</Chip>
                   {f.motivos.length > 0 && <span className="mt-1 block text-[11px] text-red-700">{f.motivos.join('; ')}</span>}
-                  {f.en_revision_motivo && <span className="mt-1 block text-[11px] text-amber-700">{f.en_revision_motivo}</span>}
+                  {f.en_revision_motivo && <span className="mt-1 block text-[11px] text-amber-700">{motivoRevision(f.en_revision_motivo)}</span>}
                 </Td>
                 <Td>
                   <Marca reportable={f.reportable} />
@@ -587,7 +606,7 @@ export default function LoteMigracionPage() {
                 </Link>
               )}
             </div>
-            {det.en_revision_motivo && <p className="text-sm text-amber-700">En revisión: {det.en_revision_motivo}</p>}
+            {det.en_revision_motivo && <p className="text-sm text-amber-700">En revisión: {motivoRevision(det.en_revision_motivo)}</p>}
             {det.excluido_en && (
               <p className="text-sm text-red-700">
                 Excluido el {fechaCorta(det.excluido_en)} ·{' '}
@@ -688,7 +707,12 @@ export default function LoteMigracionPage() {
                 <div className="mt-2 flex flex-wrap items-end gap-2">
                   <label className="text-xs font-medium text-gray-700">
                     Fecha de la autorización
-                    <input type="date" max={hoy()} value={fechaAut} onChange={(e) => setFechaAut(e.target.value)} className={`${INPUT} mt-1 block w-44`} />
+                    <input
+                      type="date"
+                      // §5.2.5 «con posterioridad»: no antes de la activación (la API responde 400).
+                      min={det.contrato?.fecha_firma ? diaBogota(det.contrato.fecha_firma) : undefined}
+                      max={hoy()}
+                      value={fechaAut} onChange={(e) => setFechaAut(e.target.value)} className={`${INPUT} mt-1 block w-44`} />
                   </label>
                   <Button
                     tamano="sm"
@@ -737,9 +761,15 @@ export default function LoteMigracionPage() {
                         {au.resultado ? (
                           <Chip tone={RESULTADO_AUDITORIA[au.resultado].tone}>{RESULTADO_AUDITORIA[au.resultado].label}</Chip>
                         ) : (
-                          // §7.3.3: vencido sin respuesta, procede «Soportes no entregados».
+                          // §7.3.3: vencido sin soportes dentro del plazo, procede «Soportes no entregados».
                           <Chip tone={plazoVencido(au) ? 'red' : 'yellow'}>
-                            {au.respuesta_en ? 'Respondida' : plazoVencido(au) ? 'Plazo vencido' : 'Pendiente de respuesta'}
+                            {respondidaTarde(au)
+                              ? 'Respondida fuera de plazo'
+                              : au.respuesta_en
+                                ? 'Respondida'
+                                : plazoVencido(au)
+                                  ? 'Plazo vencido'
+                                  : 'Pendiente de respuesta'}
                           </Chip>
                         )}
                         <span>
@@ -757,7 +787,7 @@ export default function LoteMigracionPage() {
                             maxLength={2000}
                             value={notas}
                             onChange={(e) => setNotas(e.target.value)}
-                            placeholder="Notas (opcional)"
+                            placeholder="Notas (opcional). Una nota sola no cuenta como respuesta: la respuesta es el soporte."
                             aria-label="Notas de la auditoría"
                             className={INPUT}
                           />
@@ -790,16 +820,17 @@ export default function LoteMigracionPage() {
                                 accionFila(
                                   'respuesta',
                                   () => migracionService.responderAuditoria(au.id, soporte, notas.trim() || null),
-                                  'Respuesta registrada',
+                                  soporte ? 'Respuesta registrada' : 'Nota guardada',
                                 )
                               }
                             >
-                              {ocupado === 'respuesta' ? 'Guardando…' : 'Registrar respuesta'}
+                              {/* §7.3.4: solo un soporte es respuesta; sin él se guarda la nota (§7.3.3 sigue disponible). */}
+                              {ocupado === 'respuesta' ? 'Guardando…' : soporte ? 'Registrar respuesta' : 'Guardar nota'}
                             </Button>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">Resultado:</span>
-                            {/* «No entregado» solo procede vencido el plazo y sin respuesta (misma regla que la API). */}
+                            {/* «No entregado» solo procede vencido el plazo sin soportes dentro de él (misma regla que la API). */}
                             {(Object.keys(RESULTADO_AUDITORIA) as ResultadoAuditoria[])
                               .filter((r) => r !== 'no_entregado' || plazoVencido(au))
                               .map((r) => (
@@ -843,7 +874,8 @@ export default function LoteMigracionPage() {
         isOpen={dialogo?.tipo === 'auditoria'}
         onClose={() => setDialogo(null)}
         title="Requerir auditoría"
-        descripcion="Se piden a la inmobiliaria los soportes de recaudo de los seis meses anteriores a la migración. Tiene cinco días hábiles para entregarlos; si no los entrega, el contrato se puede excluir."
+        // §7.3.1-§7.3.2: los valores que firmó el acta del lote (no fijos en el texto).
+        descripcion={`Se piden a la inmobiliaria los soportes de recaudo de los ${t?.lote.meses_sin_mora ?? 6} meses anteriores a la migración. Tiene ${t?.lote.dias_respuesta_auditoria ?? 5} días hábiles para entregarlos; si no los entrega dentro del plazo, el contrato se puede excluir.`}
         label="Notas (opcional)"
         minLength={0}
         confirmLabel="Requerir"

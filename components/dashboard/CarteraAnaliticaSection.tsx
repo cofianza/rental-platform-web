@@ -92,11 +92,15 @@ export function CarteraAnaliticaSection() {
             color="text-primary-600"
             sub="con Cofianza"
           />
+          {/* Migración §9.5: con cartera migrada, la morosidad es la de la originada y la migrada va aparte. */}
           <StatCard
-            label="Morosidad actual"
+            label={s.contratosMigrados && s.migrada ? 'Morosidad (cartera originada)' : 'Morosidad actual'}
             value={`${s.morosidadPct}%`}
             color={s.moraActiva > 0 ? 'text-red-500' : 'text-gray-900'}
-            sub={`${s.moraActiva} contrato${s.moraActiva === 1 ? '' : 's'} en mora`}
+            sub={
+              `${s.moraActiva} contrato${s.moraActiva === 1 ? '' : 's'} en mora` +
+              (s.contratosMigrados && s.migrada ? ` · migrada: ${s.migrada.morosidadPct}% (${s.migrada.moraActiva} en mora)` : '')
+            }
           />
           <StatCard
             label="Días prom. de mora"

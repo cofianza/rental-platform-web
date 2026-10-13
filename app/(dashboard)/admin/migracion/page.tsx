@@ -22,7 +22,7 @@ import {
   useSeccion,
   type ChipTone,
 } from '@/components/dashboard/secciones/_shared'
-import { guardarArchivo, migracionService, plazoVencido } from '@/services/migracionService'
+import { guardarArchivo, migracionService, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import type { Destinacion, EstadoLote, InmobiliariaMigracion, LoteResumen } from '@/types/migracion'
 
 const ESTADO_LOTE: Record<EstadoLote, { label: string; tone: ChipTone }> = {
@@ -89,7 +89,10 @@ function AuditoriasAbiertas() {
             <Td className="whitespace-nowrap">{fechaCorta(a.requerido_en)}</Td>
             <Td className="whitespace-nowrap">{fechaCorta(a.vence_en)}</Td>
             <Td>
-              {a.respuesta_en ? (
+              {respondidaTarde(a) ? (
+                // §7.3.3: soportes después del plazo: procede «Soportes no entregados».
+                <Chip tone="red">Respondida fuera de plazo</Chip>
+              ) : a.respuesta_en ? (
                 <Chip tone="blue">Respondida, por calificar</Chip>
               ) : plazoVencido(a) ? (
                 <Chip tone="red">Plazo vencido</Chip>

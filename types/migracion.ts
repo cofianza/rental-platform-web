@@ -154,7 +154,14 @@ export interface ActaEnviada {
 }
 
 export interface EstadoActaLote {
-  lote: { id: string; numero: string; estado: EstadoLote; vence_en: string }
+  lote: {
+    id: string
+    numero: string
+    estado: EstadoLote
+    vence_en: string
+    /** §3.3: quién firma por la inmobiliaria (se fija al procesar). */
+    rep_legal?: { nombre: string | null; documento: string | null; email: string | null; celular: string | null }
+  }
   acta: {
     id: string
     intento: number
@@ -224,6 +231,9 @@ export interface TableroLote {
     created_at: string
     vence_en: string
     activado_en: string | null
+    /** §7.3.1-§7.3.2: periodo y plazo de auditoría que imprimió el acta del lote. */
+    meses_sin_mora?: number
+    dias_respuesta_auditoria?: number
   }
   conteos: Record<EstadoMigracion, number>
   /** Lo que puede ver la inmobiliaria. */

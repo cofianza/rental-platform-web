@@ -207,19 +207,26 @@ export function ResumenSection() {
 
   const fechaActual = new Date().toLocaleString('es-CO', { month: 'long', year: 'numeric' })
 
+  // Migración §6 (4.1) / §9.5: con cartera migrada, la siniestralidad es la de la originada; la migrada
+  // va aparte (sub del KPI y tabla por origen), nunca sumadas.
+  const o = kpis.porOrigen
+  const hayMigrada = !!o && o.migracion.contratos > 0 && o.plataforma.siniestralidad != null
+  const siniestralidad = hayMigrada ? o!.plataforma.siniestralidad! : kpis.siniestralidad
+  const hist = hayMigrada && data.histSiniestralidadPorOrigen ? data.histSiniestralidadPorOrigen.plataforma : histSiniestralidad
+
   // KPI: siniestralidad (mismos umbrales que la versión previa).
-  const siniestralidadTone = kpis.siniestralidad > 15 ? 'red' : kpis.siniestralidad > 5 ? 'orange' : 'green'
-  const siniestralidadAccent = kpis.siniestralidad > 15 ? 'danger' : kpis.siniestralidad > 5 ? 'warning' : 'none'
-  const SiniestralidadIcon = kpis.siniestralidad > 5 ? IconAlertTriangle : IconCheck
+  const siniestralidadTone = siniestralidad > 15 ? 'red' : siniestralidad > 5 ? 'orange' : 'green'
+  const siniestralidadAccent = siniestralidad > 15 ? 'danger' : siniestralidad > 5 ? 'warning' : 'none'
+  const SiniestralidadIcon = siniestralidad > 5 ? IconAlertTriangle : IconCheck
 
   const capitalDisponible = kpis.capitalLibre !== null
   const capitalDeficit = capitalDisponible && kpis.capitalLibre !== null && kpis.capitalLibre < kpis.exposicionMaxima
 
   // Tendencia de siniestralidad: último mes vs penúltimo (desde histSiniestralidad[].r).
   let siniestralidadDelta: { value: string; dir: 'up' | 'down'; tone: 'good' | 'bad' | 'neutral' } | undefined
-  if (histSiniestralidad.length >= 2) {
-    const ultimo = histSiniestralidad[histSiniestralidad.length - 1].r
-    const penultimo = histSiniestralidad[histSiniestralidad.length - 2].r
+  if (hist.length >= 2) {
+    const ultimo = hist[hist.length - 1].r
+    const penultimo = hist[hist.length - 2].r
     const diff = ultimo - penultimo
     if (diff !== 0) {
       siniestralidadDelta = {
@@ -287,12 +294,12 @@ export function ResumenSection() {
       ),
     })
   }
-  if (kpis.siniestralidad > 20) {
+  if (siniestralidad > 20) {
     alertasGlobales.push({
       key: 'siniestralidad-alta',
       message: (
         <>
-          Siniestralidad al <strong>{kpis.siniestralidad.toFixed(1)}%</strong> — supera umbral del 20%.
+          Siniestralidad{hayMigrada ? ' de la cartera originada' : ''} al <strong>{siniestralidad.toFixed(1)}%</strong> — supera umbral del 20%.
         </>
       ),
     })
@@ -340,9 +347,13 @@ export function ResumenSection() {
           Icon={SiniestralidadIcon}
           tone={siniestralidadTone}
           accent={siniestralidadAccent}
-          label="Siniestralidad"
-          value={`${kpis.siniestralidad.toFixed(1)}%`}
-          sub={`${kpis.moraActivaCount} de ${kpis.contratosActivos}`}
+          label={hayMigrada ? 'Siniestralidad originada' : 'Siniestralidad'}
+          value={`${siniestralidad.toFixed(1)}%`}
+          sub={
+            hayMigrada
+              ? `${o!.plataforma.moraActivaCount} de ${o!.plataforma.contratos} · migrada ${o!.migracion.siniestralidad!.toFixed(1)}%`
+              : `${kpis.moraActivaCount} de ${kpis.contratosActivos}`
+          }
           delta={siniestralidadDelta}
           onClick={goMoras}
         />
@@ -361,7 +372,7 @@ export function ResumenSection() {
           accent={kpis.moraActivaCount ? 'danger' : 'none'}
           label="Mora activa"
           value={kpis.moraActivaCount}
-          sub={money(kpis.moraActivaMonto)}
+          sub={`${money(kpis.moraActivaMonto)}${hayMigrada ? ` · ${o!.migracion.moraActivaCount} en migrada` : ''}`}
           onClick={goMoras}
         />
       </KpiRow>
@@ -399,7 +410,7 @@ export function ResumenSection() {
           tone="orange"
           label="Exposición máx."
           value={money(kpis.exposicionMaxima)}
-          sub="si caen M8–14 + mora"
+          sub={hayMigrada ? `M8–14 + mora · migrada ${money(o!.migracion.exposicionMaxima ?? 0)}` : 'si caen M8–14 + mora'}
         />
         <Kpi
           Icon={IconDollarSign}
@@ -459,7 +470,7 @@ export function ResumenSection() {
         {/* Siniestralidad últimos meses */}
         <div className="rounded-xl border border-ink-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h3 className="text-sm font-bold text-ink-900">Siniestralidad · 6 meses</h3>
+            <h3 className="text-sm font-bold text-ink-900">{hayMigrada ? 'Siniestralidad originada · 6 meses' : 'Siniestralidad · 6 meses'}</h3>
             {siniestralidadDelta && (
               <span
                 className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${
@@ -476,11 +487,11 @@ export function ResumenSection() {
               </span>
             )}
           </div>
-          {histSiniestralidad.length === 0 ? (
+          {hist.length === 0 ? (
             <p className="py-6 text-center text-xs text-ink-500">Sin datos históricos suficientes.</p>
           ) : (
             <>
-              <SiniestralidadChart hist={histSiniestralidad} />
+              <SiniestralidadChart hist={hist} />
               {/* Leyenda de umbrales */}
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-ink-500">
                 <span className="inline-flex items-center gap-1">

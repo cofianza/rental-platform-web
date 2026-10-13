@@ -374,10 +374,15 @@ export default function CargaMigracionPage() {
           <div className="space-y-2">
             <p>
               Se creará un lote de <strong>{org?.nombre}</strong> con {usables} {usables === 1 ? 'contrato' : 'contratos'}
-              {resumen?.rechazadas ? ` y se descartarán ${resumen.rechazadas} filas rechazadas` : ''}.
+              {/* §2.4.4 y §3.2: las rechazadas no se descartan, el acta las lista con su motivo. */}
+              {resumen?.rechazadas
+                ? `; ${resumen.rechazadas} ${resumen.rechazadas === 1 ? 'fila rechazada quedará listada' : 'filas rechazadas quedarán listadas'} en el acta con su motivo`
+                : ''}
+              .
             </p>
             <p>
-              Los contratos se activan cuando {rep.rep_legal_nombre || 'el representante legal'} firme el Acta de Migración.
+              {/* §3.3-§3.4: la activación es la última firma, la de Cofianza. */}
+              Los contratos se activan cuando firmen el Acta de Migración {rep.rep_legal_nombre || 'el representante legal'} y Cofianza.
             </p>
           </div>
         }

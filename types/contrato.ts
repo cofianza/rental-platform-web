@@ -78,6 +78,8 @@ export interface IContratoMigracion {
   excluido_motivo: string | null
   lote: { id: string; numero: string; activado_en: string | null } | null
   acta: { id: string; estado: string; cerrado_en: string | null } | null
+  /** §3.7: las actas traen datos de todo el lote: solo Cofianza y quien ve la cartera completa. */
+  puede_ver_acta?: boolean
   /** Spec migración §3.7-§3.8: actas de corrección del contrato. */
   correcciones?: CorreccionContrato[]
 }
