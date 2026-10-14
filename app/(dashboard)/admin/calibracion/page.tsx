@@ -37,7 +37,9 @@ import { sinReferenciasInternas } from '@/lib/utils'
 // es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
 const fmt = (n: number, entero: boolean) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
 
-type Unidad = 'cop' | 'pct' | 'puntos' | 'dias' | 'dias_habiles' | 'meses' | 'mes' | 'onoff' | 'num'
+// 'criterio': 1 = el mayor, 0 = el menor (CRITERIO_SELECCION_INGRESO). Como
+// 'onoff', es de dos valores: se cambia al contrario y se confirma.
+type Unidad = 'cop' | 'pct' | 'puntos' | 'dias' | 'dias_habiles' | 'meses' | 'mes' | 'onoff' | 'criterio' | 'num'
 
 /**
  * Nombre humano, grupo y unidad de cada parámetro. La pantalla los titulaba con
@@ -54,6 +56,11 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   UMBRAL_CASCADA_RECHAZO: { nombre: 'Rechazo sin consultar la segunda central (por debajo de)', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_CASCADA_APROBACION: { nombre: 'Aprobación sin consultar la segunda central (desde)', grupo: 'evaluacion', unidad: 'puntos' },
   FACTOR_AJUSTE_INGRESO: { nombre: 'Factor de ajuste del ingreso', grupo: 'evaluacion', unidad: 'num' },
+  ADENDA3_INGRESO: { nombre: 'Nuevo cálculo del ingreso (dos factores)', grupo: 'evaluacion', unidad: 'onoff' },
+  FACTOR_AJUSTE_INGRESO_CANON: { nombre: 'Factor de ajuste del ingreso para el canon', grupo: 'evaluacion', unidad: 'num' },
+  FACTOR_AJUSTE_INGRESO_DTI: { nombre: 'Factor de ajuste del ingreso para el endeudamiento', grupo: 'evaluacion', unidad: 'num' },
+  CRITERIO_SELECCION_INGRESO: { nombre: 'Estimación de ingreso que se toma entre las centrales', grupo: 'evaluacion', unidad: 'criterio' },
+  USAR_PISOS_FACTUALES: { nombre: 'Pisos de ingreso compiten al elegir el ingreso', grupo: 'evaluacion', unidad: 'onoff' },
   UMBRAL_DIFERENCIA_INGRESO: { nombre: 'Diferencia entre ingreso declarado y estimado que manda a revisión', grupo: 'evaluacion', unidad: 'pct' },
   UMBRAL_SIMILITUD_BIOMETRICA: { nombre: 'Similitud mínima del reconocimiento facial', grupo: 'evaluacion', unidad: 'pct' },
   // Topes de canon
@@ -125,6 +132,7 @@ function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'entero'>
     case 'dias_habiles': return `${v} ${n === 1 ? 'día hábil' : 'días hábiles'}`
     case 'meses': return `${v} ${n === 1 ? 'mes' : 'meses'}`
     case 'onoff': return n === 1 ? 'Encendido' : 'Apagado'
+    case 'criterio': return n === 1 ? 'La mayor' : 'La menor'
     case 'mes': {
       if (n >= MES_APAGADO) return 'Sin activar'
       const anio = Math.floor(n / 100)
@@ -207,7 +215,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
 
   function abrirEdicion() {
     // Un interruptor no se «edita»: se cambia al valor contrario y se confirma.
-    if (unidad === 'onoff') {
+    if (unidad === 'onoff' || unidad === 'criterio') {
       setValor(p.valor === 1 ? '0' : '1')
       setConfirmar(true)
       return
