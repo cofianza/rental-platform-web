@@ -37,6 +37,8 @@ import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivos
 import { ContratoVerificacionView } from '@/components/contratos/ContratoVerificacionView'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { RegistrarCanonReajustado } from '@/components/contratos/RegistrarCanonReajustado'
+import { TerminacionEfectivaTarifa } from '@/components/contratos/TerminacionEfectivaTarifa'
+import { useCobroDeContrato } from '@/hooks/useTarifaCobro'
 import { aniversarioPorConfirmar } from '@/lib/tarifaCobro'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
@@ -129,6 +131,15 @@ export default function ContratoDetallePage() {
   // firmantes entero antes de encontrarse el 403.
   const canRegenerate =
     puedeEditar && (canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario')
+  // Plan cobro-tarifa-mensual: solo los contratos que pueden causar tarifa (V3 o
+  // migrado, firmado) piden a la API si tienen inmobiliaria, el canon con que se
+  // liquida y la fecha efectiva de terminación.
+  const pideCobro =
+    !!contrato?.fecha_firma &&
+    (!!contrato.destinacion || contrato.origen === 'migracion') &&
+    ['vigente', 'finalizado', 'cancelado'].includes(contrato.estado) &&
+    (canManage || user?.rol === 'inmobiliaria')
+  const { cobro, recargar: recargarCobro } = useCobroDeContrato(pideCobro ? contrato!.id : null)
 
   // opts.silent = refresco EN SITIO (p. ej. cuando FirmantesContratoSection
   // avisa vía onAllSigned que ya firmaron todos). En modo silencioso NO tocamos
@@ -451,17 +462,18 @@ export default function ContratoDetallePage() {
   const esMigrado = contrato.origen === 'migracion'
   // Plan cobro-tarifa-mensual B9: la inmobiliaria (no solo_lectura) o el
   // administrador confirman el canon reajustado en los 30 días previos al aniversario, cuando la API lo pide.
-  // Solo contratos que causan tarifa (V3 o migrado, firmado y vigente); el
-  // propietario directo no tiene cobro de tarifa mensual.
+  // Solo contratos que causan tarifa (V3 o migrado, firmado, con inmobiliaria:
+  // cobro?.con_inmobiliaria); el propietario directo no tiene cobro de tarifa mensual.
   const aniversarioCanon =
+    cobro?.con_inmobiliaria &&
     (user?.rol === 'inmobiliaria' || user?.rol === 'administrador') &&
     puedeEditar &&
     contrato.estado === 'vigente' &&
-    contrato.fecha_firma &&
-    contrato.fecha_inicio &&
-    (contrato.destinacion || esMigrado)
+    contrato.fecha_inicio
       ? aniversarioPorConfirmar(contrato.fecha_inicio, hoyBogota())
       : null
+  // A5: Cofianza registra la fecha efectiva de terminación (los avisos de la tarifa enlazan aquí).
+  const puedeTerminacionEfectiva = !!cobro?.con_inmobiliaria && canManage && puedeEditar
 
   return (
     <div className="space-y-6">
@@ -697,12 +709,17 @@ export default function ContratoDetallePage() {
             </div>
           </div>
 
-          {aniversarioCanon && (
+          {aniversarioCanon && cobro && (
             <RegistrarCanonReajustado
               contratoId={contrato.id}
               aniversario={aniversarioCanon}
-              canonActual={contrato.valor_arriendo ? Number(contrato.valor_arriendo) : null}
+              canonActual={cobro.canon_vigente}
+              liquidacionActiva={cobro.liquidacion_activa}
             />
+          )}
+
+          {puedeTerminacionEfectiva && cobro && (
+            <TerminacionEfectivaTarifa contratoId={contrato.id} actual={cobro.fecha_terminacion_efectiva} onRegistrada={recargarCobro} />
           )}
 
           {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de

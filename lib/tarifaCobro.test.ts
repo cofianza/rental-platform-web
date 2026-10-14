@@ -5,6 +5,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { accionesDeCuenta, accionesDeLinea, aniversarioPorConfirmar, contarCuentas } from './tarifaCobro'
+import type { ICuentaCobro } from '../types/tarifaCobro'
 
 test('contarCuentas cuenta por situación y las de nota crédito', () => {
   const r = contarCuentas([
@@ -19,22 +20,36 @@ test('contarCuentas cuenta por situación y las de nota crédito', () => {
 })
 
 test('accionesDeCuenta: emitir y reintentar solo el administrador; pagar con saldo', () => {
-  assert.deepEqual(accionesDeCuenta({ estado: 'borrador', saldo_cop: null }, 'administrador'), { emitir: true, reintentar: false, pagar: false })
-  assert.deepEqual(accionesDeCuenta({ estado: 'borrador', saldo_cop: null }, 'operador_analista'), { emitir: false, reintentar: false, pagar: false })
-  assert.equal(accionesDeCuenta({ estado: 'emitiendo', saldo_cop: null }, 'administrador').reintentar, true)
-  assert.equal(accionesDeCuenta({ estado: 'emitida', saldo_cop: 1000 }, 'operador_analista').pagar, true)
-  assert.equal(accionesDeCuenta({ estado: 'emitida', saldo_cop: 0 }, 'administrador').pagar, false)
-  assert.equal(accionesDeCuenta({ estado: 'bloqueada_fiscal', saldo_cop: null }, 'administrador').emitir, false)
-  assert.equal(accionesDeCuenta({ estado: 'emitida', saldo_cop: 1000 }, 'inmobiliaria').pagar, false)
+  const hoy = '2026-11-18'
+  const c = (estado: ICuentaCobro['estado'], saldo_cop: number | null, periodo = '2026-11-01') => ({ estado, saldo_cop, periodo })
+  assert.deepEqual(accionesDeCuenta(c('borrador', null), 'administrador', hoy), { emitir: true, reintentar: false, pagar: false })
+  assert.deepEqual(accionesDeCuenta(c('borrador', null), 'operador_analista', hoy), { emitir: false, reintentar: false, pagar: false })
+  assert.equal(accionesDeCuenta(c('emitiendo', null), 'administrador', hoy).reintentar, true)
+  assert.equal(accionesDeCuenta(c('emitida', 1000), 'operador_analista', hoy).pagar, true)
+  assert.equal(accionesDeCuenta(c('emitida', 0), 'administrador', hoy).pagar, false)
+  assert.equal(accionesDeCuenta(c('bloqueada_fiscal', null), 'administrador', hoy).emitir, false)
+  assert.equal(accionesDeCuenta(c('emitida', 1000), 'inmobiliaria', hoy).pagar, false)
+})
+
+test('accionesDeCuenta: la cuenta de diciembre (línea tardía) no se emite antes de su corte, el 30-nov', () => {
+  const dic = { estado: 'borrador' as const, saldo_cop: null, periodo: '2026-12-01' }
+  assert.equal(accionesDeCuenta(dic, 'administrador', '2026-11-18').emitir, false)
+  assert.equal(accionesDeCuenta(dic, 'administrador', '2026-11-30').emitir, true)
 })
 
 test('accionesDeLinea: no recaudada se puede pagar; pagada o anulada no; nada mientras se emite', () => {
   const t = 'tradicional'
   assert.deepEqual(accionesDeLinea({ estado: 'no_recaudada', modalidad: t }, 'emitida', 'operador_analista'), { pagar: true, anular: false, noRecaudada: false })
-  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'emitida', 'administrador'), { pagar: true, anular: true, noRecaudada: false })
-  assert.deepEqual(accionesDeLinea({ estado: 'pagada', modalidad: t }, 'emitida', 'administrador'), { pagar: false, anular: false, noRecaudada: false })
-  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'borrador', 'administrador'), { pagar: false, anular: true, noRecaudada: false })
-  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'emitiendo', 'administrador'), { pagar: false, anular: false, noRecaudada: false })
+  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'emitida', 'administrador', true), { pagar: true, anular: true, noRecaudada: false })
+  assert.deepEqual(accionesDeLinea({ estado: 'pagada', modalidad: t }, 'emitida', 'administrador', true), { pagar: false, anular: false, noRecaudada: false })
+  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'borrador', 'administrador', true), { pagar: false, anular: true, noRecaudada: false })
+  assert.deepEqual(accionesDeLinea({ estado: 'pendiente', modalidad: t }, 'emitiendo', 'administrador', true), { pagar: false, anular: false, noRecaudada: false })
+})
+
+test('accionesDeLinea: «Anular» solo para la Gerencia General, no para cualquier administrador', () => {
+  const l = { estado: 'pendiente' as const, modalidad: 'tradicional' }
+  assert.equal(accionesDeLinea(l, 'emitida', 'administrador').anular, false)
+  assert.equal(accionesDeLinea(l, 'emitida', 'administrador', true).anular, true)
 })
 
 test('accionesDeLinea: no recaudada solo el titular, en Trasladada pendiente de una cuenta emitida', () => {
