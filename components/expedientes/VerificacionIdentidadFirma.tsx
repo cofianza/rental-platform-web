@@ -83,8 +83,14 @@ export function VerificacionIdentidadFirma({
     if (!revision) return
     setGuardando(true)
     try {
-      await firmaService.revisarIdentidad(contratoId, revision.v.id, { resultado: revision.resultado, nota: nota.trim() })
-      toast.success(revision.resultado === 'suplantacion' ? 'Suplantación registrada. El contrato quedó cancelado.' : 'Identidad confirmada.')
+      const r = await firmaService.revisarIdentidad(contratoId, revision.v.id, { resultado: revision.resultado, nota: nota.trim() })
+      toast.success(
+        revision.resultado !== 'suplantacion'
+          ? 'Identidad confirmada.'
+          : r.cancelado
+            ? 'Suplantación registrada. El contrato quedó cancelado.'
+            : 'Suplantación registrada. El contrato no se canceló porque ya tiene la fianza activa: los administradores decidirán.',
+      )
       setRevision(null)
       setNota('')
       onChange()
@@ -168,7 +174,7 @@ export function VerificacionIdentidadFirma({
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
             {revision?.resultado === 'suplantacion'
-              ? 'El contrato se cancela y queda registrado quién lo decidió y por qué.'
+              ? 'Si el contrato aún no tiene la fianza activa, se cancela; si ya la tiene, se avisa a los administradores para que decidan. Queda registrado quién lo decidió y por qué.'
               : 'Queda registrado quién confirmó la identidad, cuándo y cómo.'}
           </p>
           <div>
@@ -202,7 +208,7 @@ export function VerificacionIdentidadFirma({
                 revision?.resultado === 'suplantacion' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
               }`}
             >
-              {guardando ? 'Guardando…' : revision?.resultado === 'suplantacion' ? 'Cancelar el contrato' : 'Confirmar identidad'}
+              {guardando ? 'Guardando…' : revision?.resultado === 'suplantacion' ? 'Registrar suplantación' : 'Confirmar identidad'}
             </button>
           </div>
         </div>

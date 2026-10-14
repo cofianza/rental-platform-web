@@ -25,6 +25,8 @@ export interface IFirmantePreview {
   auto: boolean
   falta_datos: boolean
   duplicado: boolean
+  /** Comparte correo con otro firmante (Auco empareja la firma por correo). */
+  correo_duplicado?: boolean
   /** Fuente editable del teléfono, para corregirlo en línea desde el modal:
    *  'solicitante' → ficha del solicitante (origen_id); 'arrendador' → WhatsApp
    *  de recaudo de la inmobiliaria (perfil-arrendador propio). */

@@ -78,13 +78,25 @@ class FirmaService {
     return { firmantes: response.data.firmantes, verificaciones: response.data.verificaciones ?? [] }
   }
 
-  /** Adenda 2 §9: el analista registra cómo verificó la identidad ('suplantacion' cancela el contrato). */
+  /** Consulta Auco y concilia las firmas (recupera una firma cuyo aviso se perdió). */
+  async actualizarFirmantes(contratoId: string): Promise<void> {
+    await apiClient.post(`/contratos/${contratoId}/firma/firmantes/actualizar`)
+  }
+
+  /**
+   * Adenda 2 §9: el analista registra cómo verificó la identidad. 'suplantacion'
+   * cancela el contrato salvo que ya tenga la fianza activa: `cancelado` dice qué pasó.
+   */
   async revisarIdentidad(
     contratoId: string,
     verificacionId: string,
     input: { resultado: 'confirmada' | 'suplantacion'; nota: string },
-  ): Promise<void> {
-    await apiClient.post(`/contratos/${contratoId}/firma/firmantes/identidad/${verificacionId}/revisar`, input)
+  ): Promise<{ revision: string; cancelado: boolean }> {
+    const res = await apiClient.post<{ revision: string; cancelado: boolean }>(
+      `/contratos/${contratoId}/firma/firmantes/identidad/${verificacionId}/revisar`,
+      input,
+    )
+    return res.data
   }
 
   // ── Página pública /verificar-identidad/[token] (Adenda 2 §9) ──

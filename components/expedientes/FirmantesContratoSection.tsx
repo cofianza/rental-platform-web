@@ -112,6 +112,19 @@ export function FirmantesContratoSection({
     cargar()
   }, [cargar])
 
+  // El botón pregunta a Auco (no solo a la base): recupera una firma cuyo aviso
+  // se perdió. Si la consulta falla (p. ej. un usuario de solo lectura), igual relee.
+  const [consultandoAuco, setConsultandoAuco] = useState(false)
+  const actualizarDesdeAuco = async () => {
+    setConsultandoAuco(true)
+    try {
+      await firmaService.actualizarFirmantes(contratoId).catch(() => undefined)
+      await cargar(true)
+    } finally {
+      setConsultandoAuco(false)
+    }
+  }
+
   const firmados = firmantes.filter((f) => f.estado === 'firmado').length
   const total = firmantes.length
   const todasFirmaron = total > 0 && firmados === total
@@ -243,12 +256,13 @@ export function FirmantesContratoSection({
             </span>
           )}
           <button
-            onClick={() => cargar(true)}
-            disabled={refreshing || isLoading}
+            onClick={() => { void actualizarDesdeAuco() }}
+            disabled={refreshing || consultandoAuco || isLoading}
             className="p-1 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
             title="Actualizar estado de firmas"
+            aria-label="Actualizar estado de firmas"
           >
-            <IconRefresh size={14} className={refreshing ? 'animate-spin' : ''} />
+            <IconRefresh size={14} className={refreshing || consultandoAuco ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
