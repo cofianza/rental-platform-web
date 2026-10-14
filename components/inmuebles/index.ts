@@ -25,7 +25,7 @@ export { HistorialSection } from './HistorialSection'
 // Galería (HP-203)
 export { GaleriaSection } from './GaleriaSection'
 
-// Widget de solicitudes de visita pendientes (nueva propuesta UI Mario 12-may-2026)
+// Widget de solicitudes de visita pendientes (nueva propuesta UI Gerencia 12-may-2026)
 export { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
 
 // Vista re-skineada de Propiedades y Vitrina para la inmobiliaria (mockup 13_v2)

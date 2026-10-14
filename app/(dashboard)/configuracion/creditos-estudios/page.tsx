@@ -346,7 +346,7 @@ export default function CreditosEstudiosPage() {
             </div>
           ) : (() => {
             // Calcular el paquete "Más popular": el que ofrece el mejor descuento
-            // por estudio respecto al paquete más pequeño (Mario 12-may-2026).
+            // por estudio respecto al paquete más pequeño (Gerencia 12-may-2026).
             const sortedByQty = [...paquetes].sort((a, b) => a.cantidad_estudios - b.cantidad_estudios)
             const baseUnit = sortedByQty[0].precio_cop / sortedByQty[0].cantidad_estudios
             let popularId: string | null = null

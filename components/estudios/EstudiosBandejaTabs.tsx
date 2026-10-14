@@ -37,7 +37,7 @@ export function EstudiosBandejaTabs({
 
   return (
     <div className="space-y-4">
-      {/* KPI Cards — nueva propuesta UI Mario (12-may-2026): Este mes /
+      {/* KPI Cards — nueva propuesta UI Gerencia (12-may-2026): Este mes /
           Aprobados / En proceso / Rechazados. "Condicionados" se sumó porque
           stats ya lo devolvía y es la cola que exige decisión humana (§14):
           sin él, esos casos no se contaban en ninguna parte. */}

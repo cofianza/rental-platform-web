@@ -47,7 +47,7 @@ const limpiarDocumento = (valor: string) => valor.replace(/[.\s-]/g, '')
 
 interface FormData {
   razon_social: string
-  // NIT separado en dos campos (mockup nueva propuesta UI, Mario 12-may-2026)
+  // NIT separado en dos campos (mockup nueva propuesta UI, Gerencia 12-may-2026)
   // — al enviar se concatenan como "XXXXXXXXX-D" para mantener contrato API.
   nit_numero: string
   nit_dv: string

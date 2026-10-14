@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Theme tokens — rebrand Cofianza 2026 (Mario, 12-may-2026).
+  /* Theme tokens — rebrand Cofianza 2026 (Gerencia, 12-may-2026).
      Paleta principal pasa de teal a esmeralda. Coral entra como accent
      para CTAs principales. Ink (slate-900) es el negro del mockup. */
   --background: #ffffff;

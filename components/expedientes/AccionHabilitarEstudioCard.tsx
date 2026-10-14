@@ -13,7 +13,7 @@
  * kanban /citas — mantiene el flujo dentro del expediente. Tras la accion,
  * el padre refresca via onAction.
  *
- * Nota (Mario, 5-may-2026): este card YA NO pide duracion + fecha del
+ * Nota (Gerencia, 5-may-2026): este card YA NO pide duracion + fecha del
  * contrato. Esos datos se piden cuando se va a generar el contrato
  * (post-aprobacion del cliente) en AprobarCondicionadoCard o
  * AccionContratoPendienteCard.

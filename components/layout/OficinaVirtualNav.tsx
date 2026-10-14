@@ -1,6 +1,6 @@
 /**
  * OficinaVirtualNav — Tab bar horizontal con las 7 secciones de la nueva
- * propuesta UI (Mario 12-may-2026, mockup 13_*propietario.html y
+ * propuesta UI (Gerencia 12-may-2026, mockup 13_*propietario.html y
  * 13_*_v2.html). Reemplaza al sidebar para roles propietario/inmobiliaria.
  *
  * Cada tab apunta a una ruta existente — no se mueven las páginas, sólo se

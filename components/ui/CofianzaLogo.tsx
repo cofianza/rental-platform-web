@@ -3,7 +3,7 @@
  *
  * SVG inline para no depender de un archivo estatico (escala perfecta a
  * cualquier resolucion y permite override de colores). El logo viene del
- * landing v3 que entrego Mario; los colores son `#10B981` (verde claro,
+ * landing v3 que entrego Gerencia; los colores son `#10B981` (verde claro,
  * triangulo) y `#047857` (verde oscuro, pildora).
  *
  * Variants:

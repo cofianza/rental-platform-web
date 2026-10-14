@@ -222,7 +222,7 @@ function InmueblesGestion() {
         <SolicitudesVisitaWidget />
       )}
 
-      {/* Filter-chips de la nueva propuesta UI (Mario 12-may-2026): la
+      {/* Filter-chips de la nueva propuesta UI (Gerencia 12-may-2026): la
           inmobiliaria/propietario filtra rapidamente entre Todas / En
           vitrina / Pausadas / Sin publicar sin abrir el panel completo
           de filtros. Cada chip dispara setFilters con la combinacion

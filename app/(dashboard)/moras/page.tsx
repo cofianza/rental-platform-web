@@ -1,5 +1,5 @@
 /**
- * Reportar Mora — módulo completo de 3 fases (Mario 12-may-2026,
+ * Reportar Mora — módulo completo de 3 fases (Gerencia 12-may-2026,
  * mockup 13_*propietario.html). Reemplaza al stub anterior:
  *   - KPIs reales (reportadas mes / resueltas / en gestión / monto total)
  *   - Form de reporte (contrato + fecha vencimiento + monto + descripción)

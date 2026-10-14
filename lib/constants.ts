@@ -73,7 +73,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Operación',
   },
   {
-    // Rename Mario 12-may-2026: "Inmuebles" -> "Propiedades y Vitrina".
+    // Rename Gerencia 12-may-2026: "Inmuebles" -> "Propiedades y Vitrina".
     // En la nueva propuesta UI ambas funcionalidades viven en una sola
     // pantalla con filter-chips (Todas/En vitrina/Pausadas/Sin publicar).
     // La ruta sigue siendo /inmuebles para preservar deep-links.
@@ -164,7 +164,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Financiero',
   },
   {
-    // Rename Mario 12-may-2026: "Facturación" -> "Pagos a Cofianza".
+    // Rename Gerencia 12-may-2026: "Facturación" -> "Pagos a Cofianza".
     // Facturas Factus y datos fiscales; el label refleja la lógica de negocio
     // (la inmobiliaria le paga a Cofianza las evaluaciones y los paquetes). La
     // comisión de intermediación no: la paga el arrendatario a la inmobiliaria.
@@ -194,7 +194,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Financiero',
   },
   {
-    // Rename Mario 12-may-2026: "Reportes" -> "Analítica".
+    // Rename Gerencia 12-may-2026: "Reportes" -> "Analítica".
     label: 'Analítica',
     href: '/reportes',
     icon: 'BarChart3',

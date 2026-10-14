@@ -3,7 +3,7 @@
 /**
  * Panel super-admin: limpieza de usuarios huérfanos en auth.users.
  *
- * Mario (5-may-2026): además del botón "eliminar" del panel principal,
+ * Gerencia (5-may-2026): además del botón "eliminar" del panel principal,
  * pidió un panel para borrar "de un plumazo" a los usuarios sueltos —
  * los que quedan invisibles en /usuarios porque su INSERT en perfiles
  * falló a mitad de un registro. Aquí se listan y se borran.
