@@ -236,6 +236,14 @@ function FilaCuenta({
             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${SITUACION_CLASES[c.situacion]}`}>
               {SITUACION_LABELS[c.situacion]}
             </span>
+            {c.sombra && (
+              <span
+                className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600"
+                title="Emitida con la factura apagada: ese mes se cobró a mano. La inmobiliaria no la ve ni recibe recordatorios."
+              >
+                Sombra
+              </span>
+            )}
             {c.nota_credito_pendiente && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-700">
                 <IconAlertTriangle size={12} />
@@ -295,7 +303,7 @@ function DetalleCuenta({ id, rol, onCambio }: { id: string; rol: string | undefi
       </div>
     )
 
-  const acciones = accionesDeCuenta(cuenta, rol)
+  const acciones = accionesDeCuenta(cuenta, rol, hoyBogota())
 
   return (
     <div className="px-6 pb-5 space-y-3 bg-gray-50/50">
@@ -494,7 +502,9 @@ function FilaLinea({
   onAnular: (l: ILineaCobro) => void
   onNoRecaudada: (l: ILineaCobro) => void
 }) {
-  const acciones = accionesDeLinea(l, cuenta.estado, rol)
+  // «Anular» es solo de la Gerencia General (la API responde 403 al resto de administradores).
+  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
+  const acciones = accionesDeLinea(l, cuenta.estado, rol, esGerencia)
   const numero = l.contrato?.numero ?? l.contrato_id.slice(0, 8)
   return (
     <tr className={l.estado === 'anulada' ? 'text-gray-400' : 'text-gray-700'}>

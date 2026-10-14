@@ -20,11 +20,15 @@ export function RegistrarCanonReajustado({
   contratoId,
   aniversario,
   canonActual,
+  liquidacionActiva,
 }: {
   contratoId: string
   /** AAAA-MM-DD: el aniversario en que se reajusta el canon. */
   aniversario: string
+  /** El canon con que se liquida hoy la tarifa (el último reajuste registrado), el mismo piso que valida la API. */
   canonActual: number | null
+  /** TARIFA_LIQUIDACION_ENABLED: si no, la tarifa todavía no se liquida en la plataforma. */
+  liquidacionActiva: boolean
 }) {
   const [abierto, setAbierto] = useState(false)
   const [canon, setCanon] = useState('')
@@ -65,7 +69,7 @@ export function RegistrarCanonReajustado({
       <p className="mt-1 text-sm text-gray-600">
         {registrado
           ? 'Ya registró el canon reajustado. Si necesita corregirlo, regístrelo de nuevo.'
-          : `El ${formatDate(aniversario)} el contrato cumple un año más y el canon se reajusta. Mientras no registre el canon reajustado, la tarifa mensual se liquida sobre el canon actual. Si ya lo registró, no necesita hacerlo de nuevo.`}
+          : `El ${formatDate(aniversario)} el contrato cumple un año más y el canon se reajusta. Mientras no registre el canon reajustado, la tarifa mensual se ${liquidacionActiva ? 'liquida' : 'liquidará'} sobre el canon actual. Si ya lo registró, no necesita hacerlo de nuevo.`}
       </p>
       <button
         type="button"
@@ -79,8 +83,8 @@ export function RegistrarCanonReajustado({
         <form onSubmit={enviar} className="space-y-4">
           <p className="text-sm text-gray-600">
             Canon actual: {canonActual ? formatCurrency(canonActual) : '—'}. El nuevo canon rige desde el aniversario (
-            {formatDate(aniversario)}); si cae a mitad de mes, la tarifa lo toma desde el mes siguiente. El valor sugerido
-            con el IPC está en el aviso que le enviamos.
+            {formatDate(aniversario)}); si cae a mitad de mes, la tarifa lo toma desde el mes siguiente. No puede ser menor
+            que el canon actual.
           </p>
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
           <div>

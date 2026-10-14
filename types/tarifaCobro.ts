@@ -28,6 +28,8 @@ export interface ICuentaCobro {
   /** AAAA-MM-DD: el día 10 del mes. */
   vence_en: string
   estado: EstadoCuenta
+  /** Emitida con la factura apagada (mes de sombra): se cobró a mano; solo la ve Cofianza. */
+  sombra?: boolean
   base_cop: Monto | null
   iva_cop: Monto | null
   cash_rounding_cop: Monto | null
@@ -80,4 +82,16 @@ export interface IDatosPagoTarifa {
   referencia: string
   /** AAAA-MM-DD */
   fecha: string
+}
+
+/** Lo que la ficha del contrato necesita del cobro de la tarifa (GET /tarifa-cobro/contratos/:id/cobro). */
+export interface ICobroDeContrato {
+  /** false = propietario directo: no causa tarifa mensual. */
+  con_inmobiliaria: boolean
+  /** El canon con que se liquida la tarifa (el último reajuste registrado, o el del contrato). */
+  canon_vigente: number | null
+  /** AAAA-MM-DD registrada por Cofianza; prevalece sobre fecha_terminacion para el cobro. */
+  fecha_terminacion_efectiva: string | null
+  /** TARIFA_LIQUIDACION_ENABLED: la plataforma ya liquida la tarifa. */
+  liquidacion_activa: boolean
 }

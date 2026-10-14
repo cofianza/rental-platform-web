@@ -6,7 +6,7 @@
 
 import { apiClient } from '@/lib/api'
 import { descargar, guardarArchivo } from '@/services/migracionService'
-import type { ICuentaCobro, ICuentaCobroDetalle, IDatosPagoTarifa, SituacionCuenta } from '@/types/tarifaCobro'
+import type { ICobroDeContrato, ICuentaCobro, ICuentaCobroDetalle, IDatosPagoTarifa, SituacionCuenta } from '@/types/tarifaCobro'
 
 const BASE = '/tarifa-cobro'
 
@@ -46,6 +46,16 @@ export const tarifaCobroService = {
   /** B9: canon reajustado desde `fecha` (AAAA-MM-DD; a mitad de mes rige desde el siguiente). */
   async registrarCanon(contratoId: string, fecha: string, canon_cop: number): Promise<void> {
     await apiClient.post(`${BASE}/contratos/${contratoId}/condiciones-cobro`, { fecha, canon_cop })
+  },
+
+  /** Si el contrato causa tarifa, el canon con que se liquida y la fecha efectiva de terminación. */
+  async cobroDeContrato(contratoId: string): Promise<ICobroDeContrato> {
+    return (await apiClient.get<ICobroDeContrato>(`${BASE}/contratos/${contratoId}/cobro`)).data
+  },
+
+  /** A5: Cofianza registra la fecha real de terminación; la API anula las líneas de los meses siguientes. */
+  async registrarTerminacionEfectiva(contratoId: string, fecha: string): Promise<{ lineas_anuladas: number }> {
+    return (await apiClient.patch<{ lineas_anuladas: number }>(`${BASE}/contratos/${contratoId}/terminacion-efectiva`, { fecha })).data
   },
 
   /** Excel con las líneas de las cuentas de un mes (AAAA-MM-01). */

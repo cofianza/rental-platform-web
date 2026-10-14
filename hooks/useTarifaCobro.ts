@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { tarifaCobroService } from '@/services/tarifaCobroService'
-import type { ICuentaCobro, ICuentaCobroDetalle } from '@/types/tarifaCobro'
+import type { ICobroDeContrato, ICuentaCobro, ICuentaCobroDetalle } from '@/types/tarifaCobro'
 
 function useCarga<T>(cargar: (() => Promise<T>) | null) {
   const [data, setData] = useState<T | null>(null)
@@ -45,4 +45,11 @@ export function useCuentaCobro(id: string | null) {
   const cargar = useCallback(() => tarifaCobroService.obtenerCuenta(id!), [id])
   const { data, ...resto } = useCarga<ICuentaCobroDetalle>(id ? cargar : null)
   return { cuenta: id ? data : null, ...resto }
+}
+
+/** El cobro de la tarifa de un contrato (ficha del contrato); null = no se pide (rol o contrato sin tarifa). */
+export function useCobroDeContrato(contratoId: string | null) {
+  const cargar = useCallback(() => tarifaCobroService.cobroDeContrato(contratoId!), [contratoId])
+  const { data, recargar } = useCarga<ICobroDeContrato>(contratoId ? cargar : null)
+  return { cobro: contratoId ? data : null, recargar }
 }
