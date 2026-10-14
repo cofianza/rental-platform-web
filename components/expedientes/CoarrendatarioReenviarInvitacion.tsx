@@ -97,11 +97,18 @@ export function CoarrendatarioReenviarInvitacion({
     }
   }
 
+  // La invitó quien tramita su arriendo: el titular no ve el contacto del
+  // tercero, así que no corrige ni reenvía; puede cancelarla.
+  const protegidos = !!coa.datos_protegidos
+
   return (
     <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3">
       <p className="text-xs font-semibold text-gray-700 mb-2">
-        ¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación, o cancélela para invitar a otra persona
+        {protegidos
+          ? 'Esta invitación la envió quien tramita su arriendo. Si algún dato está mal, pídale que la corrija y la reenvíe, o cancélela para invitar a otra persona'
+          : '¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación, o cancélela para invitar a otra persona'}
       </p>
+      {!protegidos && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
           <label htmlFor="coarrendatario-reenviar-nombre" className="block text-[11px] font-medium text-gray-500 mb-1">Nombre</label>
@@ -158,6 +165,7 @@ export function CoarrendatarioReenviarInvitacion({
           />
         </div>
       </div>
+      )}
       <p className="text-[11px] text-gray-500 mb-2">
         Al reenviar o cancelar, el enlace anterior deja de funcionar. Reenviada, vale 7 días.
       </p>
@@ -171,6 +179,7 @@ export function CoarrendatarioReenviarInvitacion({
           <IconUserX size={14} />
           Cancelar invitación
         </button>
+        {!protegidos && (
         <button
           type="button"
           onClick={handleReenviar}
@@ -180,6 +189,7 @@ export function CoarrendatarioReenviarInvitacion({
           {sending ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
           {sending ? 'Reenviando…' : 'Reenviar invitación'}
         </button>
+        )}
       </div>
 
       <ConfirmDialog
