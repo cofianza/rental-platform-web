@@ -248,8 +248,9 @@ export function CapturaBiometrica({
       await autorizacionPublicService.omitirBiometria(token)
       onResultado?.('omitida')
     } catch {
-      // El registro del "no autorizo" es best-effort: si falla, el estudio
-      // igual llega sin biometría y termina en revisión manual.
+      // El registro del "no autorizo" es best-effort: si falla, la API lo
+      // registra como "no verificada" al firmar (firmarAutorizacion) y el
+      // estudio va a revisión manual.
     } finally {
       setEnviando(false)
       onContinuar()

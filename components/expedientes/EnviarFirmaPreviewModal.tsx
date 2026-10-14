@@ -115,9 +115,10 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
           <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
             <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
             <span>
-              No se puede enviar todavía: hay firmantes con el <strong>mismo número</strong> o con datos
-              faltantes. Cada parte necesita un número de WhatsApp distinto. Corrija el teléfono con el
-              botón de editar de cada firmante y vuelva a intentar.
+              No se puede enviar todavía: hay firmantes con el <strong>mismo número</strong>, con el
+              <strong> mismo correo</strong> o con datos faltantes. Cada parte necesita un número de WhatsApp
+              y un correo distintos. Corrija el teléfono con el botón de editar de cada firmante (el correo,
+              en la ficha del solicitante o en «Datos para contrato») y vuelva a intentar.
             </span>
           </div>
         )}
@@ -126,7 +127,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
           {firmantes.map((f) => {
             const meta = ROL_META[f.rol_firmante]
             const Icon = meta?.icon ?? IconUser
-            const problema = f.duplicado || f.falta_datos
+            const problema = f.duplicado || f.correo_duplicado || f.falta_datos
             const editable = esEditable(f)
             const editando = editingRol === f.rol_firmante
             const guardando = savingRol === f.rol_firmante
@@ -153,6 +154,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                           <span className="truncate">
                             {f.telefono ? <>Su código llega a <span className="font-medium">{f.telefono}</span></> : 'Sin teléfono'}
                             {f.duplicado && ' · repetido'}
+                            {f.correo_duplicado && ' · correo repetido'}
                             {f.falta_datos && !f.telefono && ' · falta teléfono'}
                             {f.falta_datos && f.telefono && !f.email && ' · falta correo'}
                           </span>
