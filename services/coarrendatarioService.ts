@@ -38,6 +38,11 @@ export interface ICoarrendatario {
   rechazado_at: string | null
   created_at: string
   updated_at: string
+  /**
+   * Solo al titular, si lo invitó quien tramita el arriendo: llegan el nombre y
+   * el documento enmascarado, sin correo ni teléfono (email '', telefono null).
+   */
+  datos_protegidos?: boolean
   /** Estudio TransUnion del coarrendatario (embebido por el backend). */
   estudio?: ICoarrendatarioEstudio | null
 }
