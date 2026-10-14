@@ -5,7 +5,7 @@
  * ventana la decide el API (en revisión o aprobado antes del contrato, canal de
  * inmobiliaria: Decisión 4).
  *
- * Mario (5-may-2026): nuevo paradigma. Cuando el estudio queda condicionado,
+ * Gerencia (5-may-2026): nuevo paradigma. Cuando el estudio queda condicionado,
  * en vez de pedir documentos, ofrecemos invitar a un coarrendatario.
  * Cofianza no pide fiador — pide que pongas a la persona con quien vas
  * a vivir y juntos los respaldamos como un solo arrendatario.

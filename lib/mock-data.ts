@@ -652,9 +652,9 @@ export const MOCK_EXPEDIENTES: MockExpediente[] = [
 export const MOCK_USUARIOS: MockUsuario[] = [
   {
     id: '1',
-    nombres: 'Mario',
-    apellidos: 'Vélez Ramírez',
-    email: 'mario.velez@cofianza.com',
+    nombres: 'Santiago',
+    apellidos: 'Restrepo Gil',
+    email: 'santiago.restrepo@cofianza.com',
     rol: 'admin',
     rol_label: 'Administrador',
     activo: true,

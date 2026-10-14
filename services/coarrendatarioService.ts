@@ -1,6 +1,6 @@
 /**
  * Servicio de Coarrendatarios — flujo nuevo para estudios condicionados
- * (Mario, 5-may-2026). Reemplaza la subida de documentos: el solicitante
+ * (Gerencia, 5-may-2026). Reemplaza la subida de documentos: el solicitante
  * invita a un coarrendatario que acepta T&C y se le hace su propio estudio.
  */
 

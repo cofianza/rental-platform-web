@@ -1,7 +1,7 @@
 /**
  * Documentos legales que la inmobiliaria/propietario sube para operar
  * con Cofianza (Camara de Comercio, RUT, Matricula, Cedula RL, Poder,
- * Poliza, Contrato Marco). Mario 12-may-2026.
+ * Poliza, Contrato Marco). Gerencia 12-may-2026.
  */
 
 import { apiClient } from '@/lib/api'

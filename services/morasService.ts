@@ -1,5 +1,5 @@
 // ============================================
-// Moras Service — flujo 3 fases (Mario 12-may-2026).
+// Moras Service — flujo 3 fases (Gerencia 12-may-2026).
 // ============================================
 
 import { apiClient } from '@/lib/api'

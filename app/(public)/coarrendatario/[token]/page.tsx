@@ -3,7 +3,7 @@
 /**
  * /coarrendatario/[token] — vista pública del invitado.
  *
- * Mario (5-may-2026): el invitado abre el link que recibe por correo,
+ * Gerencia (5-may-2026): el invitado abre el link que recibe por correo,
  * acepta T&C + política de tratamiento de datos, y ahí mismo se dispara
  * su evaluación crediticia. NO necesita crear cuenta.
  */

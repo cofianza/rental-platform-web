@@ -64,7 +64,7 @@ function ContratosContent() {
         actions={datosContratoAction}
       />
 
-      {/* KPI cards (Mario 12-may-2026): Pendientes de generar (coral) /
+      {/* KPI cards (Gerencia 12-may-2026): Pendientes de generar (coral) /
           En proceso de firma (azul) / Activos (verde). */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPIMini label="Pendientes de generar" value={stats?.pendientes_generar ?? 0} color="bg-coral-500" />

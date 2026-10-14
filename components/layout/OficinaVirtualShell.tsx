@@ -3,7 +3,7 @@
  * por una barra superior con logo, breadcrumb mínimo, notificaciones y
  * avatar, seguida del tab bar de 7 secciones de la Oficina Virtual.
  *
- * (Mario 12-may-2026, mockups 13_*propietario.html y 13_*_v2.html.)
+ * (Gerencia 12-may-2026, mockups 13_*propietario.html y 13_*_v2.html.)
  *
  * El bloque de usuario (arriba a la derecha) muestra el nombre de la
  * inmobiliaria (razón social) + su logo si lo subió, y es un menú desplegable

@@ -1,7 +1,7 @@
 /**
  * Mi Inmobiliaria — gestión de los documentos legales que la
  * inmobiliaria/propietario tiene que cargar para operar con Cofianza
- * (Mario 12-may-2026). Cada doc se sube/reemplaza/descarga/elimina via
+ * (Gerencia 12-may-2026). Cada doc se sube/reemplaza/descarga/elimina via
  * /api/v1/documentos-legales/:tipo.
  */
 

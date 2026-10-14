@@ -7,7 +7,7 @@
  * para enviar a firma desde la pestaña Contratos.
  *
  * Flujo: estudio aprobado por el buró → expediente queda en 'aprobado'
- * SIN contrato (el orchestrator ya no lo auto-genera, decisión Mario
+ * SIN contrato (el orchestrator ya no lo auto-genera, decisión Gerencia
  * 5-may-2026) → este card pide los datos y dispara la generación.
  *
  * Contratos V3 (Entrega 3): con `contratosV3` (flag del API + inmueble de una

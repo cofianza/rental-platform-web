@@ -1,137 +1,62 @@
-# Cofianza - Frontend Web
+# Cofianza — Frontend web
 
-Plataforma de gestión de arrendamientos en Colombia.
+Frontend de **Cofianza 2.0**, plataforma de afianzamiento de arriendos en Colombia: inmobiliarias y propietarios publican inmuebles, gestionan estudios de los arrendatarios, contratos con firma electrónica y pagos.
 
-## Stack Tecnológico
+Este repo es solo la web. El backend (API REST en Express + Supabase) es un repositorio aparte.
 
-- **Framework:** Next.js 16.1.6 (App Router)
-- **UI Library:** React 19.2.3
-- **Estilos:** Tailwind CSS 4
-- **Lenguaje:** TypeScript 5
+## Stack
 
-## Desarrollo Local
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS 4
+- Zustand (estado del cliente)
+- TipTap (texto enriquecido) y react-pdf (visor de PDF)
 
-### Requisitos
+## Correr en local
 
-- Node.js 20 LTS o superior
-- npm
-
-### Instalación
+Requisitos: Node.js 20+ y la API corriendo (por defecto en `http://localhost:4000`).
 
 ```bash
-# Instalar dependencias
 npm install
-
-# Copiar variables de entorno
-cp .env.example .env.local
-
-# Editar .env.local con valores reales (URL del backend, etc.)
+cp .env.example .env.local   # ajuste NEXT_PUBLIC_API_URL y las variables de Supabase
+npm run dev                  # http://localhost:3000
 ```
 
-### Comandos
+`NEXT_PUBLIC_API_URL` debe apuntar al prefijo `/api/v1` de la API (ej. `http://localhost:4000/api/v1`).
 
-```bash
-# Desarrollo (puerto 3000)
-npm run dev
+| Comando | Qué hace |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo en el puerto 3000 (usa `--webpack`, no turbopack) |
+| `npm run build` | Build de producción (incluye el chequeo de tipos) |
+| `npm run start` | Sirve el build de producción |
+| `npm run lint` | ESLint (`npm run lint -- --fix` para corregir) |
+| `npx tsc --noEmit` | Chequeo de tipos sin compilar |
 
-# Build de producción
-npm run build
+No hay suite de pruebas en este repo.
 
-# Iniciar producción
-npm run start
+## Estructura
+
+```
+app/
+  (auth)/        login, registro, recuperar contraseña, verificar email
+  (dashboard)/   aplicación con sesión (inmuebles, expedientes, contratos, pagos, configuración, admin…)
+  (public)/      flujos públicos protegidos por un token en la URL (autorizar, firma, pago, coarrendatario…)
+  page.tsx       landing; además /vitrina, /inmueble, /privacidad, /terminos
+services/        un <dominio>Service.ts por recurso de la API (HTTP puro sobre lib/api.ts)
+stores/          stores de Zustand (caché y estado compartido)
+hooks/           hooks use* que combinan services + stores para los componentes
+components/      componentes por dominio y components/ui (base)
+lib/             cliente HTTP (api.ts), constantes, utilidades
+types/           tipos de dominio y RBAC
+proxy.ts         middleware de Next (protege las rutas del dashboard)
+docs/            arquitectura, convenciones, modelo de datos, roles y permisos
 ```
 
-## Estructura del Proyecto
+Los componentes usan hooks; los hooks usan services y stores. Toda la autorización y el aislamiento entre inmobiliarias los aplica la API; la web solo oculta lo que el usuario no puede usar.
 
-```
-rental-platform-web/
-├── app/                        # Next.js App Router
-│   ├── (auth)/                # Grupo: páginas de autenticación
-│   │   ├── layout.tsx         # Layout centrado sin sidebar
-│   │   └── login/page.tsx     # Página de login
-│   ├── (dashboard)/           # Grupo: páginas del dashboard
-│   │   ├── layout.tsx         # Layout con sidebar + header
-│   │   ├── dashboard/         # Página principal
-│   │   ├── inmuebles/         # Gestión de inmuebles
-│   │   ├── expedientes/       # Gestión de expedientes
-│   │   ├── usuarios/          # Gestión de usuarios
-│   │   ├── reportes/          # Reportes
-│   │   └── configuracion/     # Configuración
-│   ├── layout.tsx             # Layout raíz
-│   ├── page.tsx               # Landing / vitrina pública
-│   └── globals.css            # Estilos globales + paleta teal
-├── lib/                       # Utilidades y configuraciones
-│   ├── constants.ts           # Constantes del dominio
-│   ├── mock-data.ts           # Datos mock colombianos
-│   ├── api.ts                 # Cliente HTTP para backend
-│   └── utils.ts               # Funciones helper
-├── types/                     # Tipos TypeScript
-└── tailwind.config.ts         # Configuración Tailwind
+## Despliegue
 
-(Próximamente: components/, hooks/, stores/, schemas/)
-```
+Vercel, con despliegue automático desde `main` y previews por rama. Las variables de entorno se configuran en Vercel (mismos nombres que `.env.example`).
 
-## Convenciones
+## Instrucciones para agentes
 
-### Nomenclatura
-
-- **Componentes:** PascalCase (`PropertyCard.tsx`)
-- **Hooks:** camelCase con prefijo `use` (`useAuth.ts`)
-- **Utilidades:** camelCase (`formatCurrency.ts`)
-- **Tipos/Interfaces:** PascalCase (`IUser`)
-- **Constantes:** UPPER_SNAKE_CASE
-- **Modelos de negocio:** español (inmueble, expediente, solicitante)
-- **Código utilitario:** inglés (isLoading, formatDate)
-
-### Paleta de Colores
-
-La paleta principal es **teal** (tonos 50-950), definida en `tailwind.config.ts`:
-
-- `primary-50` hasta `primary-950`
-- Uso: `bg-primary-600`, `text-primary-700`, etc.
-
-### Estados del Sistema
-
-Estados configurados en `lib/constants.ts`:
-
-- **Borrador:** gris
-- **En Revisión:** ámbar
-- **Información Incompleta:** naranja
-- **Aprobado:** verde
-- **Rechazado:** rojo
-- **Condicionado:** violeta
-- **Cerrado:** gris oscuro
-
-### Formato de Moneda
-
-```typescript
-import { formatCurrency } from '@/lib/constants'
-
-formatCurrency(1500000) // "$1.500.000"
-```
-
-## Integración con Backend
-
-El frontend se comunica con el backend Express vía API REST:
-
-- **URL Base:** `http://localhost:4000/api/v1` (desarrollo)
-- **Autenticación:** JWT Bearer token en header `Authorization`
-- **Cliente HTTP:** `apiClient` de `@/lib/api`
-
-```typescript
-import { apiClient } from '@/lib/api'
-
-// Ejemplo
-const response = await apiClient.get('/inmuebles')
-```
-
-## Roadmap de Historias
-
-- [x] HP-35: Setup del proyecto frontend (actual)
-- [ ] HP-41: Layout principal y navegación
-- [ ] HP-51: Componentes UI base
-- [ ] Historias de funcionalidades específicas...
-
-## Autor
-
-**INXENIUX** - Equipo de desarrollo
+Ver [AGENTS.md](AGENTS.md) (comandos, arquitectura y convenciones). `CLAUDE.md` solo lo importa.
