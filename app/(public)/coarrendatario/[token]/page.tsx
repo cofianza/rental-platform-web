@@ -19,7 +19,7 @@ import {
 } from '@/services/coarrendatarioService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 
-type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'error'
+type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'error'
 
 export default function CoarrendatarioPublicPage() {
   const params = useParams<{ token: string }>()
@@ -111,6 +111,25 @@ export default function CoarrendatarioPublicPage() {
     }
   }
 
+  // «Mi documento está mal»: no cierra la invitación, avisa para que la corrijan y reenvíen.
+  const handleDocumentoIncorrecto = async () => {
+    if (!token) return
+    setErrorMsg(null)
+    setPhase('reportando')
+    try {
+      await coarrendatarioService.reportarDocumentoIncorrecto(token)
+      setPhase('reportado')
+    } catch (err) {
+      // 404: la API todavía no tiene este aviso; la salida de antes.
+      setErrorMsg(
+        (err as { statusCode?: number })?.statusCode === 404
+          ? `No pudimos enviar su aviso. Decline la invitación y avísele a ${view?.expediente.titular_nombre || 'quien lo invitó'} para que lo invite de nuevo con el documento correcto.`
+          : mensajeParaProspecto(err, 'No pudimos enviar su aviso. Intente de nuevo.'),
+      )
+      setPhase('lista')
+    }
+  }
+
   // ── Renders ──────────────────────────────────────────────────────
 
   if (phase === 'cargando') {
@@ -154,6 +173,19 @@ export default function CoarrendatarioPublicPage() {
     )
   }
 
+  if (phase === 'reportado') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Gracias por avisarnos</h1>
+        <p className="text-sm text-gray-600 mb-4">
+          Le pedimos a quien tramita el arriendo que corrija su número de documento. Cuando lo haga, le llegará una
+          invitación nueva y este enlace dejará de funcionar.
+        </p>
+        <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+      </div>
+    )
+  }
+
   if (phase === 'aceptado') {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 text-center">
@@ -176,7 +208,7 @@ export default function CoarrendatarioPublicPage() {
   // phase === 'lista' o 'aceptando' o 'rechazando'
   const titular = view?.expediente.titular_nombre || 'El solicitante'
   const inmueble = `${view?.expediente.inmueble_direccion}${view?.expediente.inmueble_ciudad ? `, ${view.expediente.inmueble_ciudad}` : ''}`
-  const procesando = phase === 'aceptando' || phase === 'rechazando'
+  const procesando = phase === 'aceptando' || phase === 'rechazando' || phase === 'reportando'
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -190,12 +222,23 @@ export default function CoarrendatarioPublicPage() {
         <div className="p-6 space-y-5">
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-1">Hola, {view?.nombre} {view?.apellido}</h2>
-            {/* P4: si el documento no es el suyo, que decline en vez de autorizar una consulta ajena. */}
+            {/* P4: si el documento no es el suyo, que no autorice una consulta ajena.
+                UX #10: avisa sin declinar; la invitación sigue abierta hasta que la corrijan. */}
             {view?.documento && (
-              <p className="text-xs text-gray-500 mb-2">
-                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el suyo, decline la
-                invitación y avísele a {view.expediente.titular_nombre || 'quien lo invitó'} para que lo invite de nuevo con el documento correcto.
-              </p>
+              <div className="mb-2 text-xs text-gray-500">
+                <p>
+                  Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si el número no es el
+                  suyo, no acepte todavía: avísenos y quien tramita el arriendo lo corregirá y le enviará la invitación de nuevo.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDocumentoIncorrecto}
+                  disabled={procesando}
+                  className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
+                </button>
+              </div>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">
               Con Cofianza <strong>no necesita buscar un fiador</strong>: nosotros respaldamos el arriendo. {titular} lo

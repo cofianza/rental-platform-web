@@ -127,7 +127,7 @@ export function ExpedienteProgressBar({
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
             : conCondicion
-              ? 'Para continuar, invite a un coarrendatario. Abajo ve el puntaje mínimo y el plazo.'
+              ? 'Para continuar, invite a un coarrendatario antes de la fecha que ve abajo. Su inmobiliaria le indicará qué perfil debe tener.'
               : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>

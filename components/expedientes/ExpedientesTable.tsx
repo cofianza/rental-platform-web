@@ -173,6 +173,7 @@ export function ExpedientesTable({
 }: ExpedientesTableProps) {
   const router = useRouter()
   const rol = useAuthStore((st) => st.user?.rol)
+  const interno = rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
   // Solo lectura y el prospecto no crean estudios: sin esto el estado vacío les
   // ofrecía un botón que termina en 403.
   const puedeCrear = usePuedeEditar() && rol !== 'solicitante'
@@ -344,8 +345,12 @@ export function ExpedientesTable({
                     resultado={expediente.estudio_vigente?.resultado}
                     score={expediente.estudio_vigente?.score}
                     expirado={expediente.estudio_vigente?.expirado}
+                    estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
+                    esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
+                    rolInterno={interno}
                   />
-                  {expediente.depende_de && (
+                  {/* Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra. */}
+                  {expediente.depende_de && (interno || expediente.estudio_vigente?.estado_bloqueo !== 'identidad_rechazada') && (
                     <span
                       className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
                         expediente.depende_de === 'gestor'
@@ -448,6 +453,9 @@ export function ExpedientesTable({
                   resultado={expediente.estudio_vigente?.resultado}
                   score={expediente.estudio_vigente?.score}
                   expirado={expediente.estudio_vigente?.expirado}
+                  estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
+                  esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
+                  rolInterno={interno}
                 />
               </div>
             </div>

@@ -47,6 +47,7 @@ import { abrirEnPestana } from '@/lib/utils'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
 import { errorPdf, guardarArchivo, migracionService, motivoRevision, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   DetalleFilaExcluida,
   DetalleFilaMigrada,
@@ -172,6 +173,7 @@ export default function LoteMigracionPage() {
   const filaParam = useSearchParams().get('fila')
   // Spec §3.3: sin el firmante de Cofianza el acta no puede salir a firma (la API responde 422).
   const { falta: faltaFirmante, cargar: cargarFirmante } = useFirmantePendienteStore()
+  const esAdmin = useAuthStore((st) => st.user?.rol) === 'administrador'
   useEffect(() => {
     void cargarFirmante()
   }, [cargarFirmante])
@@ -391,9 +393,13 @@ export default function LoteMigracionPage() {
               {loteAbierto && !actaViva && !actaFirmada && faltaFirmante && (
                 <p className="w-full text-sm text-red-700">
                   No se puede enviar a firma: falta registrar quién firma por Cofianza.{' '}
-                  <Link href="/configuracion/empresa" className="font-semibold underline">
-                    Completar en Datos de la empresa
-                  </Link>
+                  {esAdmin ? (
+                    <Link href="/configuracion/empresa" className="font-semibold underline">
+                      Completar en Datos de la empresa
+                    </Link>
+                  ) : (
+                    'Pídale a un administrador que lo complete en Configuración › Datos de la empresa.'
+                  )}
                 </p>
               )}
               {loteAbierto && !actaViva && !actaFirmada && (

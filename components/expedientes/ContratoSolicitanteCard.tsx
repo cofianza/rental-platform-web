@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import type { IContrato } from '@/types/contrato'
+import type { IVerificacionIdentidad } from '@/types/firma'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { abrirEnPestana } from '@/lib/utils'
 import { IconAlertTriangle, IconCheckCircle, IconClock, IconDownload, IconRefresh } from '@/components/icons'
@@ -33,6 +34,30 @@ function parseDateOnly(s: string): Date {
     return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0))
   }
   return new Date(s)
+}
+
+/**
+ * En qué paso va el arrendatario (Adenda 2 §9): primero confirma su identidad
+ * con el enlace del correo; el WhatsApp para firmar sale cuando TODAS las
+ * partes la confirmaron. null = sin verificación (o API vieja): texto general.
+ */
+function pasoIdentidad(verificaciones: IVerificacionIdentidad[]): string | null {
+  const propia = verificaciones.find((v) => v.rol === 'arrendatario')
+  if (!propia) return null
+  if (propia.estado === 'pendiente') {
+    const vence = propia.token_expiracion ? new Date(propia.token_expiracion) : null
+    if (vence && vence.getTime() < Date.now()) {
+      return 'Paso 1 de 2: confirmar su identidad. El enlace que le enviamos por correo venció: pídale a quien tramita su arriendo que le envíe uno nuevo.'
+    }
+    const fecha = vence
+      ? ` (vence el ${vence.toLocaleString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })})`
+      : ''
+    return `Paso 1 de 2: confirme su identidad con el enlace que le enviamos por correo${fecha}. Mientras tanto, revise el contrato.`
+  }
+  if (verificaciones.some((v) => v.rol !== 'arrendatario' && v.estado === 'pendiente')) {
+    return 'Ya confirmó su identidad. Falta que su coarrendatario confirme la suya con el enlace que le llegó por correo; después les llega por WhatsApp el enlace para firmar.'
+  }
+  return 'Ya confirmó su identidad. Paso 2 de 2: le llega por WhatsApp el enlace seguro para firmar cuando sea su turno; ábralo y siga las instrucciones.'
 }
 
 interface ContratoSolicitanteCardProps {
@@ -53,6 +78,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
   // Multi-parte (un sobre para todos): la API no deja cambiar el correo del
   // firmante, así que "Reenviar a otro correo" siempre fallaba.
   const [esMultiparte, setEsMultiparte] = useState(false)
+  // Adenda 2 §9: en qué va la verificación de identidad previa a la firma
+  // (la suya y la del coarrendatario). Vacío = sin verificación o API caída.
+  const [verificaciones, setVerificaciones] = useState<IVerificacionIdentidad[]>([])
   const [showResendForm, setShowResendForm] = useState(false)
   const [resendEmail, setResendEmail] = useState('')
   const [resending, setResending] = useState(false)
@@ -99,9 +127,25 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
   // de firma activa para poder ofrecer "reenviar correo a otro destinatario".
   // Un V3 no tiene solicitudes (su firma va por Auco, en orden): no aplica.
   useEffect(() => {
-    if (contrato?.estado !== 'pendiente_firma' || contrato.destinacion) {
+    if (contrato?.estado !== 'pendiente_firma') {
+      setVerificaciones([])
       setSolicitudId(null)
       setEsMultiparte(false)
+      return
+    }
+    const esV3 = !!contrato.destinacion
+    firmaService
+      .listarFirmantes(contrato.id)
+      .then(({ firmantes, verificaciones: v }) => {
+        setVerificaciones(v)
+        setEsMultiparte(!esV3 && firmantes.length > 0)
+      })
+      .catch(() => {
+        setVerificaciones([])
+        setEsMultiparte(false)
+      })
+    if (esV3) {
+      setSolicitudId(null)
       return
     }
     firmaService
@@ -113,10 +157,6 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         setSolicitudId(activa?.id ?? null)
       })
       .catch(() => setSolicitudId(null))
-    firmaService
-      .listarFirmantes(contrato.id)
-      .then(({ firmantes }) => setEsMultiparte(firmantes.length > 0))
-      .catch(() => setEsMultiparte(false))
   }, [contrato])
 
   const handleResend = async (toAlternativeEmail: boolean) => {
@@ -241,9 +281,8 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Su contrato está listo para firmar</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Revise el contrato antes de firmar. Primero le llega un correo de Cofianza para confirmar su identidad (el
-          enlace vence en 72 horas). Cuando lo haga, le llega por WhatsApp el enlace seguro para firmar, cuando sea su
-          turno: ábralo y siga las instrucciones.
+          {pasoIdentidad(verificaciones) ??
+            'Revise el contrato antes de firmar. Primero le llega un correo de Cofianza para confirmar su identidad (el enlace vence en 72 horas). Cuando lo haga, le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'}
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">

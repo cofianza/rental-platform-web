@@ -88,10 +88,14 @@ export interface IDatosPagoTarifa {
 export interface ICobroDeContrato {
   /** false = propietario directo: no causa tarifa mensual. */
   con_inmobiliaria: boolean
-  /** El canon con que se liquida la tarifa (el último reajuste registrado, o el del contrato). */
+  /** El canon con que se liquida la tarifa este mes (el último reajuste ya vigente, o el del contrato). */
   canon_vigente: number | null
   /** AAAA-MM-DD registrada por Cofianza; prevalece sobre fecha_terminacion para el cobro. */
   fecha_terminacion_efectiva: string | null
   /** TARIFA_LIQUIDACION_ENABLED: la plataforma ya liquida la tarifa. */
   liquidacion_activa: boolean
+  /** El canon ya registrado para el próximo aniversario (desde = AAAA-MM-01). Opcional: la API anterior no lo manda. */
+  canon_confirmado_aniversario?: { valor: number; desde: string } | null
+  /** Solo V3: el canon del aniversario con la variación del IPC (una propuesta; la inmobiliaria confirma el suyo). */
+  canon_propuesto?: { valor: number; ipc_anual: number } | null
 }

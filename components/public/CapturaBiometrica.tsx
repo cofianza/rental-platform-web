@@ -106,6 +106,21 @@ interface RanuraProps {
 }
 
 /** Una foto (cédula o selfie) reescalada. También la usa /verificar-identidad (Adenda 2 §9). */
+const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
+  cc: 'cédula de ciudadanía',
+  ce: 'cédula de extranjería',
+  ti: 'tarjeta de identidad',
+  pasaporte: 'pasaporte',
+  ppt: 'PPT',
+  pep: 'PEP',
+  nit: 'NIT',
+}
+
+/** Cómo se llama el documento para la persona («cédula de extranjería», «PPT»…). */
+export function nombreDocumento(tipo: string | null | undefined, otro = 'documento'): string {
+  return TIPO_DOCUMENTO_TEXTO[(tipo ?? '').toLowerCase()] ?? otro
+}
+
 export function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disabled }: RanuraProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [cargando, setCargando] = useState(false)

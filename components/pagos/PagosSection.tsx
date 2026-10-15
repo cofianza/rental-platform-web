@@ -15,6 +15,7 @@ import { facturacionService } from '@/services/facturacionService'
 import { PagoManualModal } from './PagoManualModal'
 import { GenerarLinkPagoModal } from './GenerarLinkPagoModal'
 import { PagoDetalleModal } from './PagoDetalleModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   IconPlus,
   IconRefresh,
@@ -203,58 +204,31 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
     }
   }, [onPagoActualizado])
 
-  const handleFacturar = useCallback((pagoId: string) => {
-    toast('¿Generar factura electrónica para este pago?', {
-      description: 'Se enviará a Factus / DIAN. La factura se emite con CUFE oficial.',
-      duration: 10000,
-      action: {
-        label: 'Generar',
-        onClick: async () => {
-          setActionLoading(pagoId)
-          try {
-            const factura = await facturacionService.facturarPago(pagoId)
-            toast.success(`Factura emitida: ${factura.numero}`)
-            fetchPagos()
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al generar factura')
-          } finally {
-            setActionLoading(null)
-          }
-        },
-      },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
-    })
-  }, [fetchPagos])
+  // Emitir la factura DIAN o cancelar un pago: confirmación en diálogo, no en un toast que se va solo.
+  const [confirmar, setConfirmar] = useState<{ accion: 'facturar' | 'cancelar'; pagoId: string } | null>(null)
+  const handleFacturar = useCallback((pagoId: string) => setConfirmar({ accion: 'facturar', pagoId }), [])
+  const handleCancelar = useCallback((pagoId: string) => setConfirmar({ accion: 'cancelar', pagoId }), [])
 
-  const handleCancelar = useCallback((pagoId: string) => {
-    toast('¿Cancelar este pago?', {
-      description: 'Esta acción marcará el pago como cancelado. No se puede deshacer.',
-      duration: 10000,
-      action: {
-        label: 'Cancelar pago',
-        onClick: async () => {
-          setActionLoading(pagoId)
-          try {
-            await pagoService.cancelar(pagoId)
-            toast.success('Pago cancelado')
-            fetchPagos()
-            onPagoActualizado?.()
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al cancelar')
-          } finally {
-            setActionLoading(null)
-          }
-        },
-      },
-      cancel: {
-        label: 'Volver',
-        onClick: () => {},
-      },
-    })
-  }, [fetchPagos, onPagoActualizado])
+  const ejecutarConfirmado = async () => {
+    if (!confirmar) return
+    const { accion, pagoId } = confirmar
+    setActionLoading(pagoId)
+    try {
+      if (accion === 'facturar') {
+        const factura = await facturacionService.facturarPago(pagoId)
+        toast.success(`Factura emitida: ${factura.numero}`)
+      } else {
+        await pagoService.cancelar(pagoId)
+        toast.success('Pago cancelado')
+        onPagoActualizado?.()
+      }
+      fetchPagos()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : accion === 'facturar' ? 'No se pudo generar la factura' : 'No se pudo cancelar el pago')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const handleDescargarComprobante = useCallback(async (pagoId: string) => {
     setActionLoading(pagoId)
@@ -603,6 +577,20 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
           pagoId={selectedPagoId}
         />
       )}
+      <ConfirmDialog
+        isOpen={!!confirmar}
+        onClose={() => setConfirmar(null)}
+        onConfirm={ejecutarConfirmado}
+        title={confirmar?.accion === 'cancelar' ? '¿Cancelar este pago?' : '¿Generar la factura electrónica de este pago?'}
+        message={
+          confirmar?.accion === 'cancelar'
+            ? 'El pago queda cancelado y no se puede deshacer.'
+            : 'Se envía a Factus y la DIAN la emite con CUFE oficial. Una factura emitida solo se anula con una nota crédito.'
+        }
+        confirmLabel={confirmar?.accion === 'cancelar' ? 'Cancelar pago' : 'Generar factura'}
+        cancelLabel="Volver"
+        variant={confirmar?.accion === 'cancelar' ? 'danger' : 'default'}
+      />
     </div>
   )
 }

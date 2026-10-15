@@ -207,7 +207,7 @@ export function PropertyGrid() {
           type="text"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          // El buscador separa términos por comas («Laureles, Medellín»).
+          // La API separa términos por comas y espacios, sin tildes y con el tipo en plural («apartamentos Laureles»).
           placeholder="Ej.: Laureles, Medellín"
           aria-label="Buscar inmuebles por barrio, ciudad o tipo"
           className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
@@ -340,7 +340,7 @@ export function PropertyGrid() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay resultados</h3>
           <p className="text-sm text-gray-500 mb-4">
             {search.trim()
-              ? 'No encontramos inmuebles con esa búsqueda. Pruebe solo con el barrio o la ciudad, o separe las palabras con comas.'
+              ? 'No encontramos inmuebles con esa búsqueda. Pruebe con menos palabras, por ejemplo solo el barrio o la ciudad.'
               : 'No encontramos inmuebles con los filtros actuales. Intente ampliar su búsqueda.'}
           </p>
           {hasActiveFilters && (

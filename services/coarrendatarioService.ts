@@ -163,6 +163,14 @@ export const coarrendatarioService = {
     return res.data
   },
 
+  /** «Mi documento está mal»: avisa a quien puede corregirlo; la invitación sigue abierta. */
+  async reportarDocumentoIncorrecto(token: string): Promise<{ ok: true }> {
+    const res = (await apiClient.post(`/public/coarrendatario/${token}/documento-incorrecto`, {})) as unknown as {
+      data: { ok: true }
+    }
+    return res.data
+  },
+
   /** Invitado declina la invitación. */
   async rechazar(token: string): Promise<{ ok: true }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/rechazar`, {})) as unknown as {

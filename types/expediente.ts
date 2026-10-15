@@ -5,6 +5,7 @@
 
 import type { EstadoExpediente } from '@/lib/constants'
 import type { EstadoEstudio, ResultadoEstudio } from './estudio'
+import type { EstadoBloqueo } from './autorizacion'
 
 // Re-export del tipo de estado
 export type { EstadoExpediente }
@@ -17,6 +18,10 @@ export interface IEstudioVigente {
   created_at: string
   /** La autorización del prospecto venció sin firmarse (Flujo §12). Lo calcula el RPC de la lista. */
   expirado?: boolean
+  /** BLQ §8: por qué se detuvo el enlace (mismo estado que el detalle). Ausente con una API anterior. */
+  estado_bloqueo?: EstadoBloqueo | null
+  /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
+  condicion_coarrendatario?: { puntaje_objetivo: number; vence_en: string } | null
 }
 
 /** Filtro de la vista fusionada por el estado del estudio vigente. */

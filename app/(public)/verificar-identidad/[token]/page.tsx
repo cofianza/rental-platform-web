@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { firmaService } from '@/services/firmaService'
-import { Ranura } from '@/components/public/CapturaBiometrica'
+import { Ranura, nombreDocumento } from '@/components/public/CapturaBiometrica'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import type { IVerificacionIdentidadPublica } from '@/types/firma'
@@ -215,7 +215,7 @@ export default function VerificarIdentidadPage() {
         <>
           <div className="space-y-3">
             <Ranura
-              titulo="Foto de su documento de identidad"
+              titulo={`Foto de su ${nombreDocumento(data?.tipo_documento, 'documento de identidad')}`}
               ayuda="El lado con su foto, sobre una superficie plana"
               icono={<IconId size={22} />}
               capture="environment"

@@ -1181,6 +1181,128 @@ export function IconPaperclip({ className, size = defaultSize }: IconProps) {
   )
 }
 
+// Bold — editor de texto: negrita
+export function IconBold({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />
+    </svg>
+  )
+}
+
+// Italic — editor de texto: cursiva
+export function IconItalic({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <line x1="19" y1="4" x2="10" y2="4" />
+      <line x1="14" y1="20" x2="5" y2="20" />
+      <line x1="15" y1="4" x2="9" y2="20" />
+    </svg>
+  )
+}
+
+// Underline — editor de texto: subrayado
+export function IconUnderline({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M6 4v6a6 6 0 0 0 12 0V4" />
+      <line x1="4" y1="20" x2="20" y2="20" />
+    </svg>
+  )
+}
+
+// List — editor de texto: lista con viñetas
+export function IconList({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+    </svg>
+  )
+}
+
+// ListOrdered — editor de texto: lista numerada
+export function IconListOrdered({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M10 6h11" />
+      <path d="M10 12h11" />
+      <path d="M10 18h11" />
+      <path d="M4 6h1v4" />
+      <path d="M4 10h2" />
+      <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
+    </svg>
+  )
+}
+
+// AlignLeft — editor de texto: alinear a la izquierda
+export function IconAlignLeft({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 6H3" />
+      <path d="M15 12H3" />
+      <path d="M17 18H3" />
+    </svg>
+  )
+}
+
+// AlignCenter — editor de texto: centrar
+export function IconAlignCenter({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 6H3" />
+      <path d="M17 12H7" />
+      <path d="M19 18H5" />
+    </svg>
+  )
+}
+
+// AlignRight — editor de texto: alinear a la derecha
+export function IconAlignRight({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 6H3" />
+      <path d="M21 12H9" />
+      <path d="M21 18H7" />
+    </svg>
+  )
+}
+
+// AlignJustify — editor de texto: justificar
+export function IconAlignJustify({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 6h18" />
+      <path d="M3 12h18" />
+      <path d="M3 18h18" />
+    </svg>
+  )
+}
+
+// Undo — editor de texto: deshacer
+export function IconUndo({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 7v6h6" />
+      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+    </svg>
+  )
+}
+
+// Redo — editor de texto: rehacer
+export function IconRedo({ className, size = defaultSize }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 7v6h-6" />
+      <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
+    </svg>
+  )
+}
+
 // Mapeo de nombres a componentes para uso dinámico
 export const ICON_MAP = {
   LayoutDashboard: IconLayoutDashboard,

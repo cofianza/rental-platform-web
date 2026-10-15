@@ -7,6 +7,7 @@
 'use client'
 
 import type { EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
+import type { EstadoBloqueo } from '@/types/autorizacion'
 
 type BadgeKind = 'aprobado' | 'rechazado' | 'condicionado' | 'procesando' | 'esperando' | 'expirado' | 'sin'
 
@@ -20,17 +21,36 @@ const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
   sin: { wrap: 'bg-gray-50 text-gray-500 border border-dashed border-gray-300', dot: 'bg-gray-300' },
 }
 
+interface Detalle {
+  /** BLQ §8: por qué se detuvo el enlace (la API lo manda en los vencidos). */
+  estadoBloqueo?: EstadoBloqueo | null
+  /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
+  esperaCoarrendatario?: boolean
+  /** Cofianza: la identidad rechazada la resuelve ella, no se le pide comunicarse. */
+  rolInterno?: boolean
+}
+
 function resolveBadge(
   estado?: EstadoEstudio | null,
   resultado?: ResultadoEstudio | null,
   expirado?: boolean,
+  { estadoBloqueo, esperaCoarrendatario, rolInterno }: Detalle = {},
 ): { kind: BadgeKind; label: string } {
   if (!estado && !resultado) return { kind: 'sin', label: 'Sin evaluación' }
   // Flujo §11/§12: el prospecto no autorizó dentro del plazo. Sin esto seguía
   // diciendo "Esperando autorización" para siempre.
   // También cubre el enlace DETENIDO (documento que no coincide, «no soy yo»):
   // el RPC lo marca igual, así que «Expirado» a secas sugería un plazo vencido.
-  if (expirado && (!resultado || resultado === 'pendiente')) return { kind: 'expirado', label: 'Enlace vencido o detenido' }
+  // Con la API que manda estado_bloqueo se dice cuál de los dos.
+  if (expirado && (!resultado || resultado === 'pendiente')) {
+    if (estadoBloqueo === 'bloqueado_documento') return { kind: 'rechazado', label: 'Bloqueado por documento' }
+    if (estadoBloqueo === 'identidad_rechazada') {
+      return { kind: 'rechazado', label: rolInterno ? 'Identidad rechazada' : 'Identidad rechazada — comuníquese con Cofianza' }
+    }
+    if (estadoBloqueo === 'pendiente_reenvio') return { kind: 'expirado', label: 'Pendiente de reenvío' }
+    return { kind: 'expirado', label: 'Enlace vencido o detenido' }
+  }
+  if (esperaCoarrendatario) return { kind: 'condicionado', label: 'Espera coarrendatario' }
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
   if (resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
   if (resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
@@ -66,14 +86,15 @@ export function EstudioResultadoBadge({
   score,
   expirado,
   className = '',
+  ...detalle
 }: {
   estado?: EstadoEstudio | null
   resultado?: ResultadoEstudio | null
   score?: number | null
   expirado?: boolean
   className?: string
-}) {
-  const { kind, label } = resolveBadge(estado, resultado, expirado)
+} & Detalle) {
+  const { kind, label } = resolveBadge(estado, resultado, expirado, detalle)
   const style = BADGE_STYLE[kind]
   return (
     <span

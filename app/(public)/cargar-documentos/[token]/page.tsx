@@ -16,6 +16,7 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
+import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import {
   cargarDocumentosService,
@@ -188,6 +189,9 @@ export default function CargarDocumentosPage() {
   // error de lectura llega como null y se muestra la revisión de hoy). La API
   // cierra la carga de soportes y solo falta invitar al coarrendatario.
   const conCondicion = ctx.estado === 'condicionado' && ctx.condicion_coarrendatario === true
+  // El plazo, solo si sigue corriendo (vencido, el barrido cierra el estudio).
+  const plazo =
+    conCondicion && ctx.condicion_vence_en && new Date(ctx.condicion_vence_en) > new Date() ? ctx.condicion_vence_en : null
   const soloCoarrendatario =
     conCondicion || (aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado))
 
@@ -203,7 +207,9 @@ export default function CargarDocumentosPage() {
               <>
                 Hola {ctx.solicitante}, su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-                {conCondicion ? ' fue aprobado con la condición de presentar un coarrendatario.' : ' fue aprobado.'}
+                {conCondicion
+                  ? ` fue aprobado con la condición de presentar un coarrendatario${plazo ? ` antes del ${fechaCondicion(plazo)}` : ''}.`
+                  : ' fue aprobado.'}
               </>
             ) : (
               <>
@@ -219,7 +225,7 @@ export default function CargarDocumentosPage() {
           <CoarrendatarioInviteForm
             audience="solicitante"
             aprobado={aprobado}
-            condicion={conCondicion ? {} : null}
+            condicion={conCondicion ? { vence_en: plazo ?? undefined } : null}
             initial={ctx.coarrendatario.sugerido}
             invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
             onInvited={cargar}

@@ -14,6 +14,7 @@ import type {
   IOtpResponse,
   IVerificarOtpResponse,
   IPerfilProspectoInput,
+  IGuardarPerfilResponse,
   IReportarIdentidadInput,
   IBiometriaResponse,
   IPagoProspecto,
@@ -127,8 +128,9 @@ export const autorizacionPublicService = {
   },
 
   /** PASO 5 (§8.2 + §8.3). Una sola llamada, ANTES del paso de firma. */
-  async guardarPerfil(token: string, input: IPerfilProspectoInput): Promise<{ guardado: boolean }> {
-    const res = await publicClient.post<{ guardado: boolean }>(
+  /** `coarrendatario_error`: escribió su propio correo o WhatsApp; el coarrendatario no se guardó. Ausente en APIs viejas. */
+  async guardarPerfil(token: string, input: IPerfilProspectoInput): Promise<IGuardarPerfilResponse> {
+    const res = await publicClient.post<IGuardarPerfilResponse>(
       `/public/autorizar/${token}/perfil`,
       input
     )
