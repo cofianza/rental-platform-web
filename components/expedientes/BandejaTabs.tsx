@@ -14,20 +14,15 @@ const BANDEJAS: Array<{
   id: EstadoExpediente | null
   label: string
   estado: EstadoExpediente | null
-  ayuda?: string
 }> = [
   { id: null, label: 'Todos', estado: null },
   { id: 'en_revision', label: 'En revisión', estado: 'en_revision' },
   { id: 'informacion_incompleta', label: 'Incompletos', estado: 'informacion_incompleta' },
   { id: 'aprobado', label: 'Aprobados', estado: 'aprobado' },
-  // Adenda 3 §6: los aprobados con condición siguen aquí («Espera
-  // coarrendatario»): piden algo a la inmobiliaria, no al analista.
-  {
-    id: 'condicionado',
-    label: 'Condicionados',
-    estado: 'condicionado',
-    ayuda: 'En revisión de un analista o en espera de coarrendatario (aprobados con condición).',
-  },
+  // Adenda 3 §6: los aprobados con condición también caen aquí. Sin texto de
+  // ayuda en la pestaña: con el cuarto desenlace apagado describiría un caso
+  // que no puede darse.
+  { id: 'condicionado', label: 'Condicionados', estado: 'condicionado' },
   { id: 'rechazado', label: 'No aprobables', estado: 'rechazado' },
   { id: 'cerrado', label: 'Cerrados', estado: 'cerrado' },
   { id: 'borrador', label: 'Borradores', estado: 'borrador' },
@@ -111,7 +106,6 @@ export function BandejaTabs({
               return (
                 <button
                   key={bandeja.label}
-                  title={bandeja.ayuda}
                   onClick={() => onBandejaChange(bandeja.estado)}
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',

@@ -123,6 +123,7 @@ export function textoCondicionCoarrendatario(c: { puntaje_objetivo: number; venc
     timeZone: 'America/Bogota',
   })
   return c.vencida
-    ? `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio se cerrará como no aprobado.`
+    ? // Con un coarrendatario que aceptó, la API no rechaza: pondera o pasa a revisión manual.
+      `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario en evaluación, el estudio se cerrará como no aprobado.`
     : `Aprobado con condición: presente un coarrendatario con puntaje mínimo ${c.puntaje_objetivo} antes del ${fecha}.`
 }
