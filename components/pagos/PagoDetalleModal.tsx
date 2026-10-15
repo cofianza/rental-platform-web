@@ -144,7 +144,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
   // ============================================
   if (pageState === 'loading') {
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg">
+      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
         <div className="flex items-center justify-center py-12">
           <IconLoader size={32} className="animate-spin text-primary-600" />
         </div>
@@ -157,7 +157,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
   // ============================================
   if (pageState === 'error') {
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg">
+      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
         <div className="text-center py-8">
           <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
           <p className="text-gray-600 mb-4">{errorMessage}</p>
@@ -178,7 +178,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
   const EstadoIcon = estadoConfig.icon
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
       {/* Scrollable content container */}
       <div className="max-h-[70vh] overflow-y-auto space-y-6 pr-1">
         {/* Header with status */}

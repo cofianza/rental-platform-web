@@ -48,21 +48,19 @@ function InmueblesContent() {
 function InmueblesInmobiliaria() {
   const meta = useInmueblesStore((s) => s.meta)
   const error = useInmueblesStore((s) => s.error)
+  // El error (con «Reintentar») lo pinta la vista, en el lugar de la lista.
   return (
     <div className="space-y-6">
       <PageHeader
         title="Propiedades y Vitrina"
         subtitle={
           meta
-            ? `${meta.total} propiedades · gestiona el catálogo y publica en la vitrina`
-            : 'Cargando...'
+            ? `${meta.total} propiedades · gestione el catálogo y publique en la vitrina`
+            : error
+              ? 'Gestione el catálogo y publique en la vitrina'
+              : 'Cargando...'
         }
       />
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
-        </div>
-      )}
       <PropiedadesInmobiliariaView />
     </div>
   )

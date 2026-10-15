@@ -101,7 +101,7 @@ export default function CreditosEstudiosPage() {
       setComprasPendientes(c.filter((x) => x.estado === 'pendiente'))
       setDetallePaquetes(d)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error cargando créditos')
+      toast.error(err instanceof Error ? err.message : 'No pudimos cargar sus cupos')
     } finally {
       setLoading(false)
     }
@@ -113,7 +113,7 @@ export default function CreditosEstudiosPage() {
 
   useEffect(() => {
     if (compraStatus === 'success') {
-      toast.success('Pago confirmado — los créditos se acreditarán en unos segundos.')
+      toast.success('Pago confirmado: los cupos se sumarán a su saldo en unos segundos.')
       // Reconciliación: confirma la compra consultando la pasarela con el
       // payment_id (red de seguridad si el webhook no llega) y refresca el saldo.
       if (paymentId) {
@@ -187,7 +187,7 @@ export default function CreditosEstudiosPage() {
   if (!isInmobiliaria && !isAdmin) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Créditos de estudios" />
+        <PageHeader title="Cupos de estudios" />
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 flex gap-3">
           <IconAlertTriangle className="text-amber-600 flex-shrink-0" size={20} />
           <div className="text-sm text-amber-800">
@@ -209,8 +209,8 @@ export default function CreditosEstudiosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Créditos de estudios"
-        subtitle="Compre paquetes de estudios y libérelos manualmente cuando lo necesite"
+        title="Cupos de estudios"
+        subtitle="Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos"
       />
 
       {/* P22: saldo en contra por el contracargo de una compra */}
@@ -219,10 +219,10 @@ export default function CreditosEstudiosPage() {
           <IconAlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
           <div className="text-sm text-red-800">
             <p className="font-semibold">
-              Tiene {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'crédito' : 'créditos'} en contra
+              Tiene {saldo?.creditos_en_contra} {saldo?.creditos_en_contra === 1 ? 'cupo' : 'cupos'} en contra
             </p>
             <p className="mt-0.5">
-              Se usaron créditos de una compra que se reversó con el banco. Se restan de su saldo y se descuentan de su
+              Se usaron cupos de una compra que se reversó con el banco. Se restan de su saldo y se descuentan de su
               próxima compra; si no le queda saldo, pague las evaluaciones de inmediato o con el enlace al prospecto.
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function CreditosEstudiosPage() {
             <div>
               <p className="text-sm text-gray-500">Saldo total</p>
               <p className="text-3xl font-bold text-gray-900 mt-1">{saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0}</p>
-              <p className="text-xs text-gray-500 mt-1">créditos disponibles</p>
+              <p className="text-xs text-gray-500 mt-1">cupos disponibles</p>
               {!!saldo?.saldo_reservado && (
                 <p className="text-xs text-gray-500 mt-1">
                   {saldo.saldo_reservado} {saldo.saldo_reservado === 1 ? 'reservado' : 'reservados'} en estudios sin resultado
@@ -336,8 +336,8 @@ export default function CreditosEstudiosPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Comprar paquete</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Pague con tarjeta de crédito por la pasarela de pago segura. Los créditos se acreditan
-            automáticamente tras la confirmación del pago.
+            Pague con tarjeta o PSE por la pasarela de pago segura. Los cupos se suman a su saldo
+            automáticamente al confirmarse el pago.
           </p>
 
           {paquetes.length === 0 ? (
@@ -385,7 +385,7 @@ export default function CreditosEstudiosPage() {
                     >
                       {esPopular && (
                         <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-coral-500 text-ink-900 shadow-sm whitespace-nowrap">
-                          ⭐ Más popular
+                          Más popular
                         </span>
                       )}
                       <h3 className="text-base font-semibold text-gray-900">{p.nombre}</h3>
@@ -458,7 +458,7 @@ export default function CreditosEstudiosPage() {
               {comprasPendientes.length === 1 ? 'Tiene una compra en proceso' : `Tiene ${comprasPendientes.length} compras en proceso`}
             </p>
             <p className="mt-1 text-xs text-amber-800">
-              Si ya pagó, los créditos entran en unos minutos. No vuelva a comprar.
+              Si ya pagó, los cupos entran en unos minutos. No vuelva a comprar.
             </p>
             <ul className="mt-3 space-y-2">
               {comprasPendientes.map((c) => (

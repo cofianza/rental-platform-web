@@ -19,6 +19,7 @@ export const ACTION_LABELS: Record<string, string> = {
   password_reset_request: 'Solicitud de recuperación',
   password_reset_complete: 'Contraseña restablecida',
   password_reset_by_admin: 'Contraseña restablecida por un admin',
+  enlace_magico_enviado: 'Enlace de ingreso sin contraseña enviado',
 
   // Usuarios y configuración
   user_created: 'Usuario creado',
@@ -48,6 +49,7 @@ export const ACTION_LABELS: Record<string, string> = {
   expediente_created: 'Estudio creado',
   expediente_updated: 'Estudio editado',
   expediente_cerrado_sin_acta: 'Estudio cerrado sin acta de entrega',
+  expediente_excepcion_tope: 'Excepción de tope de canon autorizada',
 
   // Comentarios y asignaciones
   comment_created: 'Comentario agregado',
@@ -82,6 +84,7 @@ export const ACTION_LABELS: Record<string, string> = {
   estudio_reevaluacion_solicitada: 'Re-evaluación solicitada',
   estudio_apelacion_radicada: 'Fecha de apelación registrada',
   estudio_tarifa_override: 'Tarifa negociada de la evaluación',
+  estudio_apellido_corregido: 'Apellido corregido para la consulta',
   certificado_generated: 'Certificado generado',
 
   // Autorización (habeas data)
@@ -110,6 +113,9 @@ export const ACTION_LABELS: Record<string, string> = {
   contrato_archivo_uploaded: 'Archivo del contrato cargado',
   contrato_archivo_downloaded: 'Archivo del contrato descargado',
   contrato_archivo_deleted: 'Archivo del contrato eliminado',
+  clausula_adicional_guardada: 'Cláusula adicional modificada',
+  contrato_clausulas_aceptadas: 'Cláusulas adicionales aceptadas',
+  contrato_clausulas_exceso_autorizado: 'Exceso de cláusulas autorizado',
 
   // Firma electrónica
   firma_solicitud_created: 'Solicitud de firma creada',
@@ -137,6 +143,34 @@ export const ACTION_LABELS: Record<string, string> = {
   pago_link_resent: 'Enlace de pago reenviado',
   pago_webhook_processed: 'Webhook de pago procesado',
   pago_state_transitioned: 'Pago cambió de estado',
+  prima_remitida: 'Prima remitida por la inmobiliaria',
+
+  // Cobro de la tarifa mensual
+  tarifa_linea_pagada: 'Línea de la tarifa pagada',
+  tarifa_cuenta_pagada: 'Cuenta de cobro pagada',
+  tarifa_linea_no_recaudada: 'Línea de la tarifa no recaudada',
+  tarifa_linea_anulada: 'Línea de la tarifa anulada',
+  tarifa_terminacion_efectiva: 'Terminación efectiva registrada',
+  tarifa_condicion_registrada: 'Canon o tarifa reajustados',
+
+  // Migración de cartera
+  migracion_habilitacion_guardada: 'Habilitación de migración guardada',
+  migracion_documento_cargado: 'Documento de migración cargado',
+  migracion_suspendida: 'Migración suspendida',
+  migracion_reactivada: 'Migración reactivada',
+  migracion_lote_procesado: 'Lote de migración procesado',
+  migracion_acta_enviada: 'Acta de Migración enviada a firma',
+  migracion_lote_activado: 'Lote de migración activado',
+  migracion_lote_expirado: 'Lote de migración vencido sin firma',
+  migracion_lote_cancelado: 'Lote de migración cancelado',
+  migracion_contrato_revision: 'Revisión de contrato migrado',
+  migracion_contrato_excluido: 'Contrato migrado excluido',
+  migracion_auditoria_requerida: 'Auditoría de contrato migrado solicitada',
+  migracion_auditoria_respuesta: 'Respuesta a la auditoría de migración',
+  migracion_auditoria_decidida: 'Auditoría de migración decidida',
+  migracion_contrato_reportable: 'Contrato migrado pasó a reportable',
+  migracion_correccion_propuesta: 'Acta de corrección propuesta',
+  migracion_correccion_cancelada: 'Acta de corrección cancelada',
 
   // WhatsApp
   whatsapp_enviado: 'WhatsApp enviado',
@@ -155,6 +189,7 @@ export const ACTION_LABELS: Record<string, string> = {
   miembro_acepto: 'Miembro aceptó la invitación',
   miembro_rol_cambiado: 'Rol del miembro cambiado',
   inmobiliaria_cerrada: 'Inmobiliaria cerrada por su titular',
+  inmobiliaria_convenio_actualizado: 'Convenio de la inmobiliaria actualizado',
 }
 
 /**
@@ -169,11 +204,16 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['whatsapp_fallido', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['estudio_provider_failed', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['estudio_autorizacion_bloqueada', { bg: 'bg-red-100', text: 'text-red-800' }],
+  ['migracion_lote_cancelado', { bg: 'bg-red-100', text: 'text-red-800' }],
+  ['migracion_contrato_excluido', { bg: 'bg-red-100', text: 'text-red-800' }],
+  ['tarifa_linea_anulada', { bg: 'bg-red-100', text: 'text-red-800' }],
+  ['enlace_magico', { bg: 'bg-blue-100', text: 'text-blue-800' }],
   ['login_', { bg: 'bg-blue-100', text: 'text-blue-800' }],
   ['logout', { bg: 'bg-blue-100', text: 'text-blue-800' }],
   ['password_', { bg: 'bg-blue-100', text: 'text-blue-800' }],
   ['user_', { bg: 'bg-yellow-100', text: 'text-yellow-800' }],
   ['miembro_', { bg: 'bg-yellow-100', text: 'text-yellow-800' }],
+  ['inmobiliaria_', { bg: 'bg-yellow-100', text: 'text-yellow-800' }],
   ['expediente_', { bg: 'bg-primary-100', text: 'text-primary-800' }],
   ['comment_', { bg: 'bg-primary-100', text: 'text-primary-800' }],
   ['assignment_', { bg: 'bg-primary-100', text: 'text-primary-800' }],
@@ -186,7 +226,11 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['contrato_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['plantilla_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['firma_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
+  ['clausula_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['pago_', { bg: 'bg-green-100', text: 'text-green-800' }],
+  ['prima_', { bg: 'bg-green-100', text: 'text-green-800' }],
+  ['tarifa_', { bg: 'bg-green-100', text: 'text-green-800' }],
+  ['migracion_', { bg: 'bg-teal-100', text: 'text-teal-800' }],
   ['mora_', { bg: 'bg-orange-100', text: 'text-orange-800' }],
   ['inmueble_', { bg: 'bg-cyan-100', text: 'text-cyan-800' }],
   ['foto_', { bg: 'bg-cyan-100', text: 'text-cyan-800' }],
@@ -218,7 +262,12 @@ export const ENTITY_LABELS: Record<string, string> = {
   pago: 'Pago',
   whatsapp: 'WhatsApp',
   inmobiliaria_miembro: 'Miembro de inmobiliaria',
+  inmobiliaria: 'Inmobiliaria',
+  clausula_adicional: 'Cláusula adicional',
   mora: 'Mora',
+  migracion_habilitacion: 'Habilitación de migración',
+  migracion_lote: 'Lote de migración',
+  migracion_fila: 'Contrato migrado',
 }
 
 function toOption(value: string): { value: string; label: string } {
@@ -243,6 +292,7 @@ export const ACTION_GROUPS: Array<{
       'password_reset_request',
       'password_reset_complete',
       'password_reset_by_admin',
+      'enlace_magico_enviado',
     ].map(toOption),
   },
   {
@@ -260,6 +310,7 @@ export const ACTION_GROUPS: Array<{
       'miembro_rol_cambiado',
       'miembro_revocado',
       'inmobiliaria_cerrada',
+      'inmobiliaria_convenio_actualizado',
     ].map(toOption),
   },
   {
@@ -279,6 +330,7 @@ export const ACTION_GROUPS: Array<{
       'expediente_created',
       'expediente_updated',
       'expediente_cerrado_sin_acta',
+      'expediente_excepcion_tope',
       'assignment_created',
       'comment_created',
       'solicitante_created',
@@ -310,6 +362,8 @@ export const ACTION_GROUPS: Array<{
       'estudio_reasignado',
       'estudio_reevaluacion_solicitada',
       'estudio_apelacion_radicada',
+      'estudio_tarifa_override',
+      'estudio_apellido_corregido',
       'estudio_cancelled',
       'certificado_generated',
     ].map(toOption),
@@ -342,6 +396,9 @@ export const ACTION_GROUPS: Array<{
       'firma_identidad_revisada',
       'firma_plazo_prorrogado',
       'firma_aviso_aceptado',
+      'clausula_adicional_guardada',
+      'contrato_clausulas_aceptadas',
+      'contrato_clausulas_exceso_autorizado',
       'plantilla_created',
       'plantilla_updated',
     ].map(toOption),
@@ -357,6 +414,40 @@ export const ACTION_GROUPS: Array<{
       'pago_reembolso_resuelto',
       'pago_nota_credito_pendiente',
       'pago_cancelled',
+      'prima_remitida',
+    ].map(toOption),
+  },
+  {
+    label: 'Cobro de la tarifa',
+    options: [
+      'tarifa_linea_pagada',
+      'tarifa_cuenta_pagada',
+      'tarifa_linea_no_recaudada',
+      'tarifa_linea_anulada',
+      'tarifa_terminacion_efectiva',
+      'tarifa_condicion_registrada',
+    ].map(toOption),
+  },
+  {
+    label: 'Migración de cartera',
+    options: [
+      'migracion_habilitacion_guardada',
+      'migracion_documento_cargado',
+      'migracion_suspendida',
+      'migracion_reactivada',
+      'migracion_lote_procesado',
+      'migracion_acta_enviada',
+      'migracion_lote_activado',
+      'migracion_lote_expirado',
+      'migracion_lote_cancelado',
+      'migracion_contrato_revision',
+      'migracion_contrato_excluido',
+      'migracion_auditoria_requerida',
+      'migracion_auditoria_respuesta',
+      'migracion_auditoria_decidida',
+      'migracion_contrato_reportable',
+      'migracion_correccion_propuesta',
+      'migracion_correccion_cancelada',
     ].map(toOption),
   },
   {
@@ -388,6 +479,6 @@ export const DEFAULT_FILTERS: IAuditLogFilters = {
 }
 
 export const BITACORA_MESSAGES = {
-  FETCH_ERROR: 'Error al cargar la bitacora',
-  NO_RESULTS: 'No se encontraron registros de auditoria',
+  FETCH_ERROR: 'Error al cargar la bitácora',
+  NO_RESULTS: 'No se encontraron registros de auditoría',
 }

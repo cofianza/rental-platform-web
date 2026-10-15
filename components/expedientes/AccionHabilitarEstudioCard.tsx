@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { IconShieldCheck, IconLoader, IconAlertTriangle, IconCalendar } from '@/components/icons'
+import { IconShieldCheck, IconLoader, IconAlertTriangle, IconCalendar, IconRefresh } from '@/components/icons'
 import { Modal } from '@/components/ui'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
@@ -71,6 +71,8 @@ export function AccionHabilitarEstudioCard({
 
   const [tieneCitaRealizada, setTieneCitaRealizada] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Sin leer las citas no se sabe si la visita se hizo: no se afirma que falte.
+  const [errorCitas, setErrorCitas] = useState(false)
   const [showRechazar, setShowRechazar] = useState(false)
   const [motivoRechazo, setMotivoRechazo] = useState('')
   const [showOmitir, setShowOmitir] = useState(false)
@@ -91,9 +93,9 @@ export function AccionHabilitarEstudioCard({
     try {
       const citas = await citaService.getCitasByExpediente(expedienteId)
       setTieneCitaRealizada(citas.some((c) => c.estado === 'realizada'))
+      setErrorCitas(false)
     } catch {
-      // Si falla, no mostramos la card — es informativa, no critica.
-      setTieneCitaRealizada(false)
+      setErrorCitas(true)
     } finally {
       setLoading(false)
     }
@@ -105,7 +107,12 @@ export function AccionHabilitarEstudioCard({
     setSubmitting(true)
     try {
       await expedienteService.habilitarEstudio(expedienteId)
-      toast.success(`Evaluación habilitada. Defina el pago desde el estudio; al solicitante le llega primero la autorización`)
+      // El propietario no elige el pago: la API le envía la autorización al solicitante.
+      toast.success(
+        userRol === 'propietario'
+          ? 'Evaluación habilitada. Le enviamos al prospecto la solicitud de autorización.'
+          : 'Evaluación habilitada. Defina el pago desde el estudio; al prospecto le llega primero la autorización.',
+      )
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { code?: string; message?: string }
@@ -142,13 +149,13 @@ export function AccionHabilitarEstudioCard({
     setSubmitting(true)
     try {
       await expedienteService.rechazarEstudio(expedienteId, motivoRechazo.trim() || undefined)
-      toast.success('Estudio no habilitado, se notifico al solicitante')
+      toast.success('Evaluación no habilitada. Se notificó al prospecto.')
       setShowRechazar(false)
       setMotivoRechazo('')
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { message?: string }
-      toast.error(errObj.message || 'Error al rechazar el estudio')
+      toast.error(errObj.message || 'No se pudo cerrar el proceso. Intente de nuevo.')
     } finally {
       setSubmitting(false)
     }
@@ -164,6 +171,26 @@ export function AccionHabilitarEstudioCard({
   // Se puede habilitar el estudio si hubo cita realizada O si el gestor omitió
   // la cita (visita coordinada por fuera, 3.2).
   const puedeContinuar = tieneCitaRealizada || !!citaOmitida
+
+  if (errorCitas && !citaOmitida) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">
+          No pudimos consultar las visitas de este estudio, así que no sabemos si ya puede habilitar la evaluación.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            void fetchCitas()
+          }}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
 
   // Sin cita realizada y sin omitir: ofrecemos omitir la cita (3.2) en vez de
   // dejar el flujo atascado en "Agenda una visita".
@@ -256,9 +283,12 @@ export function AccionHabilitarEstudioCard({
               Acción requerida: ¿habilitamos la evaluación crediticia?
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              {citaOmitida
-                ? 'Marcó la visita como ya realizada. Decida si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
-                : 'La cita de visita se realizó. Decida si proceder con la evaluación crediticia del solicitante (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'}
+              {citaOmitida ? 'Marcó la visita como ya realizada.' : 'La cita de visita se realizó.'}{' '}
+              {/* Igual que la API (habilitarEstudio): solo al habilitar el propietario le
+                  llega algo al prospecto; los demás eligen antes quién paga. */}
+              {userRol === 'propietario'
+                ? 'Decida si proceder con la evaluación crediticia del prospecto (le llegará el enlace para autorizar la consulta en centrales; el cobro va después) o cerrar el proceso aquí.'
+                : 'Decida si proceder con la evaluación crediticia del prospecto o cerrar el proceso aquí. Al habilitarla, al prospecto no le llega nada todavía: después elija en el estudio quién paga.'}
             </p>
             {noAfianzable && (
               <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
@@ -290,14 +320,14 @@ export function AccionHabilitarEstudioCard({
       <Modal
         isOpen={showRechazar}
         onClose={() => !submitting && setShowRechazar(false)}
-        title="No habilitar estudio"
+        title="No habilitar la evaluación"
         size="sm"
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
             <p className="text-sm text-amber-800">
-              Al confirmar, el solicitante recibirá un aviso por correo de que decidió no continuar con el proceso. Esta acción es irreversible.
+              Al confirmar, el prospecto recibirá un aviso por correo de que decidió no continuar con el proceso. Esta acción es irreversible.
             </p>
           </div>
 
@@ -310,11 +340,11 @@ export function AccionHabilitarEstudioCard({
               onChange={(e) => setMotivoRechazo(e.target.value)}
               rows={3}
               maxLength={2000}
-              placeholder="Ej: prefiero esperar otro candidato, no me convencio el perfil, etc."
+              placeholder="Ej.: el inmueble ya se comprometió con otro candidato."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Este texto aparecerá en el correo al solicitante.
+              Este texto aparecerá en el correo al prospecto: escríbalo en tono formal.
             </p>
           </div>
 

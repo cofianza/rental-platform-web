@@ -8,9 +8,10 @@
  * Para admin/operador: todo el universo, incluidas las compras de paquetes
  * de créditos (se facturan a la inmobiliaria que compró).
  *
- * Si los datos fiscales del solicitante estan incompletos, la emision
- * fallara con CLIENTE_DATOS_INCOMPLETOS — mostramos un toast con el
- * detalle y sugerimos ir al tab "Datos Fiscales".
+ * Si los datos fiscales de quien pagó estan incompletos, la emision falla con
+ * CLIENTE_DATOS_INCOMPLETOS. Al solicitante (son sus datos) se le lleva al tab
+ * "Datos Fiscales"; a los demás se les dice junto a la fila qué falta y quién
+ * debe completarlo (no son sus datos: su pestaña no sirve para corregirlos).
  */
 
 'use client'
@@ -28,8 +29,8 @@ interface PendientesFacturarSectionProps {
   /** Callback cuando una factura se emite — el page la usa para refrescar
    *  el tab de Mis facturas si el usuario cambia de tab despues. */
   onFacturaEmitida?: () => void
-  /** Callback cuando el backend reporta datos fiscales incompletos. El page
-   *  lo usa para llevar al usuario al tab "Datos Fiscales". */
+  /** Solo para el solicitante: cuando faltan SUS datos fiscales, el page lo
+   *  lleva al tab "Datos Fiscales". Sin callback, el aviso va junto a la fila. */
   onDatosFiscalesIncompletos?: () => void
 }
 
@@ -41,14 +42,19 @@ export function PendientesFacturarSection({
   const [items, setItems] = useState<IPagoPendienteFacturar[]>([])
   const [loading, setLoading] = useState(true)
   const [emitiendo, setEmitiendo] = useState<string | null>(null)
+  // Sin esto un fallo de carga se veía como «no hay pendientes».
+  const [errorCarga, setErrorCarga] = useState<string | null>(null)
+  // Datos fiscales faltantes por fila (id del pago o de la compra).
+  const [faltaDatos, setFaltaDatos] = useState<Record<string, string>>({})
 
   const fetchPendientes = useCallback(async () => {
     setLoading(true)
     try {
       const data = await facturacionService.listPendientesFacturar()
       setItems(data)
+      setErrorCarga(null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No pudimos cargar los pagos pendientes de facturar')
+      setErrorCarga(err instanceof Error ? err.message : 'No pudimos cargar los pagos pendientes de facturar')
     } finally {
       setLoading(false)
     }
@@ -71,14 +77,20 @@ export function PendientesFacturarSection({
       // cuando faltan campos del solicitante. Detectamos ese caso para
       // ofrecer la accion correcta al usuario.
       const errObj = err as { code?: string; message?: string; details?: { faltantes?: string[] } }
-      if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS' && pago.compra_id) {
-        // Los datos son de la inmobiliaria que compró, no los de Cofianza.
-        const faltantes = errObj.details?.faltantes?.join(', ') ?? 'algunos campos'
-        toast.error(`Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. Debe completarlos en Configuración › Datos para contrato.`)
-      } else if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS') {
-        const faltantes = errObj.details?.faltantes?.join(', ') ?? 'algunos campos'
-        toast.error(`Faltan datos fiscales: ${faltantes}. Complete sus datos para continuar.`)
-        onDatosFiscalesIncompletos?.()
+      if (errObj.code === 'CLIENTE_DATOS_INCOMPLETOS') {
+        const faltantes = describirFaltantes(errObj.details?.faltantes)
+        if (onDatosFiscalesIncompletos) {
+          toast.error(`Faltan datos fiscales: ${faltantes}. Complételos en la pestaña Datos Fiscales.`)
+          onDatosFiscalesIncompletos()
+        } else {
+          // Los datos son de quien pagó (o de la inmobiliaria que compró el
+          // paquete), no de quien está mirando la lista.
+          const aviso = pago.compra_id
+            ? `Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. Debe completarlos en Configuración › Datos para contrato.`
+            : `Faltan datos fiscales de quien pagó: ${faltantes}. Si pagó el arrendatario, los completa en Facturación › Datos Fiscales; si pagó la inmobiliaria o el propietario, en Configuración › Datos para contrato.`
+          setFaltaDatos((prev) => ({ ...prev, [id]: aviso }))
+          toast.error('No se emitió la factura: faltan datos fiscales de quien pagó.')
+        }
       } else {
         toast.error(errObj.message || 'No pudimos emitir la factura')
       }
@@ -95,13 +107,28 @@ export function PendientesFacturarSection({
     )
   }
 
+  if (errorCarga) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 p-6 text-center">
+        <p className="text-sm text-red-700">{errorCarga}</p>
+        <button
+          onClick={fetchPendientes}
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary-700 hover:text-primary-800"
+        >
+          <IconRefresh size={14} />
+          Reintentar
+        </button>
+      </div>
+    )
+  }
+
   if (items.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconCheck size={32} className="mx-auto text-green-500 mb-3" />
-        <h3 className="text-base font-semibold text-gray-900 mb-1">No tiene pagos pendientes de facturar</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">No hay pagos pendientes de facturar</h3>
         <p className="text-sm text-gray-500">
-          Cada vez que completes un pago, aparecerá aquí con su botón para emitir la factura electrónica.
+          Aquí aparecen los pagos confirmados que aún no tienen factura electrónica, con su botón para emitirla.
         </p>
         <button
           onClick={fetchPendientes}
@@ -171,6 +198,11 @@ export function PendientesFacturarSection({
                     {pago.factura_error}
                   </p>
                 )}
+                {faltaDatos[itemId(pago)] && (
+                  <p className="mt-1 text-xs text-red-600" role="alert">
+                    {faltaDatos[itemId(pago)]}
+                  </p>
+                )}
               </div>
 
               <button
@@ -204,6 +236,23 @@ function itemId(p: IPagoPendienteFacturar): string {
   return (p.pago_id ?? p.compra_id)!
 }
 
+// Claves de details.faltantes (cliente-fiscal.ts de la API) en palabras.
+const FALTANTE_LABEL: Record<string, string> = {
+  tipo_documento: 'tipo de documento válido para facturar',
+  numero_documento: 'número de documento',
+  email: 'correo',
+  direccion: 'dirección',
+  telefono: 'teléfono',
+  municipio_codigo: 'municipio',
+  razon_social: 'razón social',
+  digito_verificacion: 'dígito de verificación del NIT',
+}
+
+function describirFaltantes(faltantes?: string[]): string {
+  if (!faltantes?.length) return 'algunos campos'
+  return faltantes.map((f) => FALTANTE_LABEL[f] ?? f.replace(/_/g, ' ')).join(', ')
+}
+
 // Labels mas legibles que el slug del concepto. Si aparece un concepto nuevo
 // que no este en el mapa, devolvemos el slug capitalizado.
 function inferConceptoLabel(concepto: string): string {
@@ -212,7 +261,7 @@ function inferConceptoLabel(concepto: string): string {
     estudio_credito: 'Evaluación crediticia',
     afianzamiento: 'Afianzamiento',
     garantia: 'Prima de vinculación de la fianza',
-    creditos_estudios: 'Paquete de créditos de estudios',
+    creditos_estudios: 'Paquete de cupos de estudios',
     tarifa_mensual: 'Tarifa mensual de la fianza',
     canon: 'Canon de arrendamiento',
     administracion: 'Cuota de administración',

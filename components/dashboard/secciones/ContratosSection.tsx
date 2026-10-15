@@ -97,7 +97,7 @@ export function ContratosSection() {
         subtitle="Cartera de contratos administrados y su estado de pago"
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi label="Total" value={total} Icon={IconFileText} />
         <Kpi label="Vigentes" value={vigentes} tone="green" Icon={IconCheck} />
         <Kpi label="Por vencer" value={porVencer} tone="orange" Icon={IconAlertTriangle} />

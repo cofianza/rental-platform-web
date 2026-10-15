@@ -136,7 +136,7 @@ export default function RegisterInmobiliariaPage() {
     if (!numero) {
       newErrors.nit_numero = 'Número de NIT requerido'
     } else if (!/^\d{1,15}$/.test(numero)) {
-      newErrors.nit_numero = 'Sólo dígitos (máx 15)'
+      newErrors.nit_numero = 'Solo dígitos (máximo 15)'
     }
     if (/^\d{1,15}$/.test(numero)) {
       // DV obligatorio. Si falta o no corresponde, el mensaje ya sugiere el dígito.

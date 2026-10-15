@@ -51,7 +51,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
 
   return (
     <>
-      <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del contrato" className="rounded-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
+      <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del contrato" closeOnBackdrop className="rounded-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>

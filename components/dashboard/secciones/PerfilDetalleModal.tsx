@@ -42,7 +42,7 @@ const esZonaRiesgo = (mes: number) => mes >= 8 && mes <= 14
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[9px] font-semibold uppercase tracking-wide text-ink-500">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</div>
       <div className="mt-0.5 text-xs text-ink-800">{children}</div>
     </div>
   )
@@ -94,7 +94,7 @@ export function PerfilDetalleModal({
     !data.recaudo.titularNombre
 
   return (
-    <Modal isOpen={!!perfilId} onClose={onClose} title={data?.nombre ?? 'Detalle del aliado'} size="lg">
+    <Modal isOpen={!!perfilId} onClose={onClose} title={data?.nombre ?? 'Detalle del aliado'} size="lg" closeOnBackdrop>
       {loading && (
         <div className="flex items-center justify-center py-16">
           <IconLoader size={28} className="animate-spin text-primary-600" />

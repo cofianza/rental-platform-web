@@ -115,7 +115,7 @@ export function GenerarLinkPagoModal({
 
     const montoNum = parseInt(monto, 10)
     if (!monto || montoNum <= 0 || isNaN(montoNum)) {
-      setError('Ingrese un monto valido mayor a 0')
+      setError('Ingrese un monto válido mayor a 0')
       return
     }
 
@@ -132,7 +132,7 @@ export function GenerarLinkPagoModal({
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(emailPagador)) {
-      setError('Ingrese un email valido')
+      setError('Ingrese un correo válido')
       return
     }
 

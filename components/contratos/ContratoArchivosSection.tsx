@@ -12,6 +12,7 @@ import {
   IconRefresh,
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -46,6 +47,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
   const [selectedTipo, setSelectedTipo] = useState<TipoArchivoContrato | ''>('')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [aEliminar, setAEliminar] = useState<IContratoArchivo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -114,30 +116,18 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
     }
   }
 
-  function handleEliminar(archivo: IContratoArchivo) {
-    toast(`¿Eliminar "${archivo.nombre_archivo}"?`, {
-      duration: 10000,
-      action: {
-        label: 'Eliminar',
-        onClick: async () => {
-          setDeletingId(archivo.id)
-          try {
-            await contratoService.eliminarArchivo(contrato.id, archivo.id)
-            toast.success('Archivo eliminado')
-            setArchivos((prev) => prev.filter((a) => a.id !== archivo.id))
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Error al eliminar'
-            toast.error(message)
-          } finally {
-            setDeletingId(null)
-          }
-        },
-      },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
-    })
+  async function handleEliminar(archivo: IContratoArchivo) {
+    setDeletingId(archivo.id)
+    try {
+      await contratoService.eliminarArchivo(contrato.id, archivo.id)
+      toast.success('Archivo eliminado')
+      setArchivos((prev) => prev.filter((a) => a.id !== archivo.id))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar'
+      toast.error(message)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   function formatBytes(bytes: number): string {
@@ -156,7 +146,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <IconFolderOpen size={16} className="text-primary-600" />
-        Archivos Asociados
+        Archivos asociados
       </h3>
 
       {loading ? (
@@ -218,6 +208,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                           disabled={downloadingId === archivo.id}
                           className="p-1.5 text-gray-500 hover:text-gray-600 rounded disabled:opacity-50"
                           title="Descargar"
+                          aria-label={`Descargar ${archivo.nombre_archivo}`}
                         >
                           {downloadingId === archivo.id ? (
                             <IconLoader size={14} className="animate-spin" />
@@ -227,10 +218,11 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                         </button>
                         {isAdmin && (
                           <button
-                            onClick={() => handleEliminar(archivo)}
+                            onClick={() => setAEliminar(archivo)}
                             disabled={deletingId === archivo.id}
                             className="p-1.5 text-gray-500 hover:text-red-600 rounded disabled:opacity-50"
                             title="Eliminar"
+                            aria-label={`Eliminar ${archivo.nombre_archivo}`}
                           >
                             {deletingId === archivo.id ? (
                               <IconLoader size={14} className="animate-spin" />
@@ -251,22 +243,35 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
         </div>
       )}
 
-      {/* Hidden file input */}
+      {/* sr-only y no `hidden`: Safari de iOS no abre el selector de un input con display:none. */}
       <input
         ref={fileInputRef}
         type="file"
         accept="application/pdf,image/jpeg,image/png,image/webp"
         onChange={handleFileSelected}
-        className="hidden"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
       />
 
       {/* Upload overlay */}
       {uploading && (
         <div className="mt-3 flex items-center gap-2 text-sm text-primary-600">
           <IconLoader size={14} className="animate-spin" />
-          Subiendo archivo...
+          Subiendo archivo…
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!aEliminar}
+        onClose={() => setAEliminar(null)}
+        onConfirm={() => (aEliminar ? handleEliminar(aEliminar) : undefined)}
+        title="¿Eliminar el archivo?"
+        message={`Se elimina «${aEliminar?.nombre_archivo ?? ''}» del contrato. No se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={!!deletingId}
+      />
     </div>
   )
 }

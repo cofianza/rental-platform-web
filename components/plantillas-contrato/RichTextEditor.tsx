@@ -69,6 +69,8 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={title}
+      aria-pressed={isActive}
       className={`p-1.5 rounded text-sm font-medium transition-colors ${
         isActive
           ? 'bg-primary-100 text-primary-700'
@@ -201,21 +203,21 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         isActive={editor.isActive('heading', { level: 1 })}
-        title="Titulo 1"
+        title="Título 1"
       >
         H1
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         isActive={editor.isActive('heading', { level: 2 })}
-        title="Titulo 2"
+        title="Título 2"
       >
         H2
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         isActive={editor.isActive('heading', { level: 3 })}
-        title="Titulo 3"
+        title="Título 3"
       >
         H3
       </ToolbarButton>
@@ -316,7 +318,7 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       {/* Horizontal rule */}
       <ToolbarButton
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        title="Linea horizontal"
+        title="Línea horizontal"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="3" y1="12" x2="21" y2="12" />

@@ -195,7 +195,8 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
               type="text"
               value={filterBusqueda}
               onChange={(e) => setFilterBusqueda(e.target.value)}
-              placeholder="Buscar por numero, concepto o receptor..."
+              placeholder="Buscar por número, concepto o receptor..."
+              aria-label="Buscar facturas por número, concepto o receptor"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             />
           </div>
@@ -204,6 +205,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           <select
             value={filterEstado}
             onChange={(e) => setFilterEstado(e.target.value as EstadoFactura | 'nota_credito' | '')}
+            aria-label="Estado de la factura"
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos los estados</option>
@@ -214,20 +216,25 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           </select>
 
           {/* Date range */}
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={filterFechaDesde}
-              onChange={(e) => setFilterFechaDesde(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={filterFechaHasta}
-              onChange={(e) => setFilterFechaHasta(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+              Desde
+              <input
+                type="date"
+                value={filterFechaDesde}
+                onChange={(e) => setFilterFechaDesde(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+              Hasta
+              <input
+                type="date"
+                value={filterFechaHasta}
+                onChange={(e) => setFilterFechaHasta(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
+            </label>
           </div>
 
           {/* Refresh */}
@@ -236,6 +243,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
             disabled={pageState === 'loading'}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             title="Actualizar"
+            aria-label="Actualizar facturas"
           >
             <IconRefresh size={18} className={pageState === 'loading' ? 'animate-spin' : ''} />
           </button>
@@ -335,6 +343,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                           href={`/facturacion/${factura.id}`}
                           className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                           title="Ver detalle"
+                          aria-label={`Ver detalle de la factura ${factura.numero}`}
                         >
                           <IconEye size={16} />
                         </Link>
@@ -345,6 +354,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                             onClick={() => handleDownload(factura, 'pdf')}
                             className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Descargar PDF"
+                            aria-label={`Descargar PDF de la factura ${factura.numero}`}
                           >
                             <IconDownload size={16} />
                           </button>
@@ -356,6 +366,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                             onClick={() => handleDownload(factura, 'xml')}
                             className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Descargar XML"
+                            aria-label={`Descargar XML de la factura ${factura.numero}`}
                           >
                             <IconFileText size={16} />
                           </button>

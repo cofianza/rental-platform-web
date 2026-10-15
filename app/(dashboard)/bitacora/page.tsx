@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react'
 import { PageHeader } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { IconLoader, IconRefresh } from '@/components/icons'
 import { BitacoraFilters } from '@/components/bitacora/BitacoraFilters'
 import { BitacoraTable } from '@/components/bitacora/BitacoraTable'
 import { BitacoraDetailModal } from '@/components/bitacora/BitacoraDetailModal'
@@ -20,6 +20,7 @@ function BitacoraContent() {
     selectedLog,
     setFilters,
     clearFilters,
+    fetchLogs,
     viewDetail,
     clearSelectedLog,
   } = useBitacora()
@@ -44,12 +45,16 @@ function BitacoraContent() {
     <div className="space-y-6">
       <PageHeader
         title="Bitácora"
-        subtitle={meta ? `${meta.total} registros de actividad` : 'Cargando...'}
+        subtitle={meta ? `${meta.total} registros de actividad` : error ? '—' : 'Cargando...'}
       />
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+        <div role="alert" className="flex flex-wrap items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <span className="flex-1">No se pudo cargar la bitácora: {error}</span>
+          <button type="button" onClick={fetchLogs} disabled={isLoading} className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100">
+            <IconRefresh size={14} />
+            Reintentar
+          </button>
         </div>
       )}
 
@@ -60,6 +65,8 @@ function BitacoraContent() {
         isLoading={isLoading}
       />
 
+      {/* Sin registros por un fallo no es «no se encontraron registros». */}
+      {!(error && logs.length === 0) && (
       <div className="relative">
         <BitacoraTable
           logs={logs}
@@ -70,6 +77,7 @@ function BitacoraContent() {
           isLoading={isLoading}
         />
       </div>
+      )}
 
       <BitacoraDetailModal log={selectedLog} onClose={clearSelectedLog} />
     </div>

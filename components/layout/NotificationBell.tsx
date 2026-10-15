@@ -129,11 +129,24 @@ export function NotificationBell() {
   const items = useNotificationStore((s) => s.items)
   const unreadCount = useNotificationStore((s) => s.unreadCount)
   const isLoading = useNotificationStore((s) => s.isLoading)
+  const errorCarga = useNotificationStore((s) => s.error)
   const markRead = useNotificationStore((s) => s.markRead)
   const clearAll = useNotificationStore((s) => s.clearAll)
 
   const [open, setOpen] = useState(false)
+  const [reintentando, setReintentando] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const reintentar = async () => {
+    setReintentando(true)
+    try {
+      useNotificationStore.getState().setItems((await notificacionService.list({ limit: 30 })).data)
+    } catch {
+      // Sigue el aviso de error; el sondeo de cada minuto vuelve a intentarlo.
+    } finally {
+      setReintentando(false)
+    }
+  }
 
   // Cerrar al hacer click fuera del dropdown.
   useEffect(() => {
@@ -226,7 +239,7 @@ export function NotificationBell() {
             {items.length > 0 && (
               <button
                 onClick={handleLimpiar}
-                className="text-xs font-medium text-primary-600 hover:text-primary-700"
+                className="-my-2 -mr-2 px-2 py-2 text-xs font-medium text-primary-600 hover:text-primary-700"
               >
                 {unreadCount > 0 ? 'Marcar todas como leídas' : 'Limpiar'}
               </button>
@@ -237,6 +250,18 @@ export function NotificationBell() {
           <div className="overflow-y-auto flex-1">
             {isLoading && items.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-gray-500">Cargando…</div>
+            ) : errorCarga && items.length === 0 ? (
+              <div role="alert" className="px-4 py-10 text-center">
+                <p className="text-sm text-gray-700 font-medium">No pudimos cargar sus notificaciones.</p>
+                <button
+                  type="button"
+                  onClick={reintentar}
+                  disabled={reintentando}
+                  className="mt-3 inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  {reintentando ? 'Reintentando…' : 'Reintentar'}
+                </button>
+              </div>
             ) : items.length === 0 ? (
               <div className="px-4 py-12 text-center">
                 <p className="text-sm text-gray-700 font-medium">Sin notificaciones</p>
@@ -293,7 +318,7 @@ export function NotificationBell() {
               <Link
                 href="/notificaciones"
                 onClick={() => setOpen(false)}
-                className="text-xs font-medium text-gray-600 hover:text-gray-900"
+                className="inline-block px-2 py-2 text-xs font-medium text-gray-600 hover:text-gray-900"
               >
                 Ver todas
               </Link>

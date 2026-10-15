@@ -218,10 +218,10 @@ export function EstudiosSection({
         try {
           const r = await creditosEstudiosService.liberarEstudio(expedienteId)
           toast.success(
-            `Evaluación solicitada y pagada con un crédito de la inmobiliaria (le quedan ${r.saldo_restante})`,
+            `Evaluación solicitada y pagada con un cupo de su paquete (le quedan ${r.saldo_restante})`,
           )
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'No se pudo reservar el crédito.'
+          const msg = err instanceof Error ? err.message : 'No se pudo reservar el cupo.'
           toast.warning(`Evaluación solicitada, pero sin pagar: ${msg} Cóbrela desde la sección de pagos.`)
         }
       }

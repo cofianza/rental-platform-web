@@ -2,10 +2,8 @@
  * Servicio de Contratos
  */
 
-import { ApiClientError, apiClient, handleApiError } from '@/lib/api'
+import { apiClient } from '@/lib/api'
 import { coalesceRequest } from '@/lib/requestCoalesce'
-import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
 import type { IFirmantesPreview } from '@/types/firma'
 import type {
   IContrato,
@@ -248,18 +246,11 @@ class ContratoService {
     if (opts?.referencia_otp) formData.append('referencia_otp', opts.referencia_otp)
     if (opts?.notas) formData.append('notas', opts.notas)
 
-    const token = useAuthStore.getState().accessToken
-    const response = await fetch(`${API_BASE_URL}/contratos/${id}/subir-firmado`, {
+    const response = await apiClient.raw(`/contratos/${id}/subir-firmado`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     })
-
-    const json = await response.json()
-    if (!response.ok) {
-      throw new Error(json.message || 'Error al subir el contrato firmado')
-    }
-    return json.data
+    return ((await response.json()) as { data: IContrato }).data
   }
 
   /** Spec migración §3.7-§3.8: acta de corrección firmada de un contrato migrado (enlace de 10 min). */
@@ -317,19 +308,7 @@ class ContratoService {
     formData.append('archivo', file)
     formData.append('tipo_archivo', tipoArchivo)
 
-    const token = useAuthStore.getState().accessToken
-    let response: Response
-    try {
-      response = await fetch(`${API_BASE_URL}/contratos/${id}/archivos`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: formData,
-        credentials: 'include',
-      })
-    } catch {
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-    if (!response.ok) await handleApiError(response)
+    const response = await apiClient.raw(`/contratos/${id}/archivos`, { method: 'POST', body: formData })
     return ((await response.json()) as { data: IContratoArchivo }).data
   }
 

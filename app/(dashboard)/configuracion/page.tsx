@@ -58,8 +58,8 @@ const SECCIONES: Array<{
   {
     id: 'creditos-estudios',
     href: '/configuracion/creditos-estudios',
-    titulo: 'Créditos de estudios',
-    descripcion: 'Compre paquetes de estudios y libérelos manualmente para sus solicitantes.',
+    titulo: 'Cupos de estudios',
+    descripcion: 'Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos.',
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['inmobiliaria'],
@@ -126,7 +126,7 @@ const SECCIONES: Array<{
   {
     id: 'paquetes-creditos',
     href: '/admin/paquetes-creditos-estudios',
-    titulo: 'Paquetes de créditos de estudios',
+    titulo: 'Paquetes de cupos de estudios',
     descripcion: 'Precios, cantidades y vigencia de los paquetes que compran las inmobiliarias.',
     icon: IconCreditCard,
     color: 'bg-emerald-100 text-emerald-600',
@@ -146,7 +146,7 @@ const SECCIONES: Array<{
     id: 'usuarios-permisos',
     href: '/usuarios',
     titulo: 'Usuarios y permisos',
-    descripcion: 'Administra roles, permisos y accesos de los usuarios del sistema.',
+    descripcion: 'Administre roles, permisos y accesos de los usuarios del sistema.',
     icon: IconUsers,
     color: 'bg-green-100 text-green-600',
     soloRoles: ['administrador'],

@@ -24,7 +24,7 @@ import {
   IconMail,
   IconEye,
 } from '@/components/icons'
-import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, formatCurrency } from '@/lib/constants'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatDate, formatDateTime, formatCurrency } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -36,11 +36,7 @@ import { ContratoFirmadoSection } from '@/components/contratos/ContratoFirmadoSe
 import { ContratoArchivosSection } from '@/components/contratos/ContratoArchivosSection'
 import { ContratoVerificacionView } from '@/components/contratos/ContratoVerificacionView'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
-import { RegistrarCanonReajustado } from '@/components/contratos/RegistrarCanonReajustado'
-import { TerminacionEfectivaTarifa } from '@/components/contratos/TerminacionEfectivaTarifa'
-import { useCobroDeContrato } from '@/hooks/useTarifaCobro'
-import { aniversarioPorConfirmar } from '@/lib/tarifaCobro'
-import { hoyBogota } from '@/hooks/useContratoV3'
+import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { FirmantesContratoSection } from '@/components/expedientes/FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -131,15 +127,6 @@ export default function ContratoDetallePage() {
   // firmantes entero antes de encontrarse el 403.
   const canRegenerate =
     puedeEditar && (canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario')
-  // Plan cobro-tarifa-mensual: solo los contratos que pueden causar tarifa (V3 o
-  // migrado, firmado) piden a la API si tienen inmobiliaria, el canon con que se
-  // liquida y la fecha efectiva de terminación.
-  const pideCobro =
-    !!contrato?.fecha_firma &&
-    (!!contrato.destinacion || contrato.origen === 'migracion') &&
-    ['vigente', 'finalizado', 'cancelado'].includes(contrato.estado) &&
-    (canManage || user?.rol === 'inmobiliaria')
-  const { cobro, recargar: recargarCobro } = useCobroDeContrato(pideCobro ? contrato!.id : null)
 
   // opts.silent = refresco EN SITIO (p. ej. cuando FirmantesContratoSection
   // avisa vía onAllSigned que ya firmaron todos). En modo silencioso NO tocamos
@@ -460,20 +447,13 @@ export default function ContratoDetallePage() {
   const valorArriendoFmt = contrato.valor_arriendo ? formatCurrency(Number(contrato.valor_arriendo)) : '—'
   // Migrado: se activó con el Acta de Migración; no se genera, verifica ni envía a firma aquí.
   const esMigrado = contrato.origen === 'migracion'
-  // Plan cobro-tarifa-mensual B9: la inmobiliaria (no solo_lectura) o el
-  // administrador confirman el canon reajustado en los 30 días previos al aniversario, cuando la API lo pide.
-  // Solo contratos que causan tarifa (V3 o migrado, firmado, con inmobiliaria:
-  // cobro?.con_inmobiliaria); el propietario directo no tiene cobro de tarifa mensual.
-  const aniversarioCanon =
-    cobro?.con_inmobiliaria &&
-    (user?.rol === 'inmobiliaria' || user?.rol === 'administrador') &&
-    puedeEditar &&
-    contrato.estado === 'vigente' &&
-    contrato.fecha_inicio
-      ? aniversarioPorConfirmar(contrato.fecha_inicio, hoyBogota())
-      : null
-  // A5: Cofianza registra la fecha efectiva de terminación (los avisos de la tarifa enlazan aquí).
-  const puedeTerminacionEfectiva = !!cobro?.con_inmobiliaria && canManage && puedeEditar
+  // Los migrados no tienen PDF generado (nombre_archivo vacío): se nombran por su número.
+  const titulo =
+    !esMigrado && contrato.nombre_archivo
+      ? contrato.nombre_archivo
+      : contrato.numero
+        ? `Contrato N° ${contrato.numero}`
+        : 'Contrato'
 
   return (
     <div className="space-y-6">
@@ -493,7 +473,7 @@ export default function ContratoDetallePage() {
           Contratos
         </button>
         <IconChevronRight size={14} className="text-gray-500" />
-        <span className="text-gray-900 font-medium truncate">{contrato.nombre_archivo || 'contrato.pdf'}</span>
+        <span className="text-gray-900 font-medium truncate">{titulo}</span>
       </div>
 
       {/* Header */}
@@ -504,12 +484,12 @@ export default function ContratoDetallePage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight wrap-break-word">
-              {contrato.nombre_archivo || 'contrato.pdf'}
+              {titulo}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${estadoConfig?.bgColor || 'bg-gray-100'} ${estadoConfig?.textColor || 'text-gray-700'}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
-                {estadoConfig?.label || contrato.estado}
+                {etiquetaContrato(contrato.estado, !!contrato.destinacion)}
               </span>
               <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 tabular-nums">
                 v{contrato.version}
@@ -520,14 +500,18 @@ export default function ContratoDetallePage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            onClick={handleDownload}
-            disabled={downloadLoading || !contrato.storage_key}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-          >
-            {downloadLoading ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
-            Descargar PDF
-          </button>
+          {/* El migrado no tiene PDF generado: su documento es el acta («Ver acta firmada»). */}
+          {!esMigrado && (
+            <button
+              onClick={handleDownload}
+              disabled={downloadLoading || !contrato.storage_key}
+              title={!contrato.storage_key ? 'El PDF del contrato aún no se ha generado' : undefined}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+            >
+              {downloadLoading ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
+              Descargar PDF
+            </button>
+          )}
           {canRegenerate && !esMigrado && contrato.estado === 'borrador' && (
             <button
               onClick={() => setRegenerarOpen(true)}
@@ -552,9 +536,13 @@ export default function ContratoDetallePage() {
             <button
               key={t.estado}
               onClick={() => handleAbrirTransicion(t.estado)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              className={
+                TERMINAL_STATES.includes(t.estado)
+                  ? 'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40'
+                  : 'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40'
+              }
             >
-              <IconArrowRight size={16} />
+              {!TERMINAL_STATES.includes(t.estado) && <IconArrowRight size={16} />}
               {t.label}
             </button>
           ))}
@@ -620,9 +608,11 @@ export default function ContratoDetallePage() {
               <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border-b border-green-200 text-xs font-medium text-green-700">
                 <IconFileCheck size={15} className="shrink-0" />
                 <span>
-                  {previewFuente === 'manual'
-                    ? 'Documento firmado subido a la plataforma (p. ej. el escaneado de un contrato en papel).'
-                    : 'Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.'}
+                  {esMigrado
+                    ? `Acta de Migración${contrato.migracion?.lote ? ` del lote ${contrato.migracion.lote.numero}` : ''}, firmada en Auco: incluye a todos los contratos del lote.`
+                    : previewFuente === 'manual'
+                      ? 'Documento firmado subido a la plataforma (p. ej. el escaneado de un contrato en papel).'
+                      : 'Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.'}
                 </span>
               </div>
             )
@@ -644,8 +634,14 @@ export default function ContratoDetallePage() {
                   <IconFileText size={26} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">PDF no disponible</p>
-                  <p className="text-xs text-gray-500 mt-0.5">El documento aún no se ha generado o no pudo cargarse.</p>
+                  <p className="text-sm font-medium text-gray-600">{esMigrado ? 'Acta no disponible' : 'PDF no disponible'}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {!esMigrado
+                      ? 'El documento aún no se ha generado o no pudo cargarse.'
+                      : contrato.migracion?.puede_ver_acta === false
+                        ? 'Su usuario no tiene acceso al Acta de Migración de este lote.'
+                        : 'El Acta de Migración aún no está firmada o no pudo cargarse.'}
+                  </p>
                 </div>
               </div>
             )}
@@ -668,26 +664,31 @@ export default function ContratoDetallePage() {
             <div className="p-5">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Información del contrato</h3>
               <dl className="space-y-3.5 text-sm">
-                <InfoRow icon={<IconCalendar size={15} />} label="Fecha de inicio" value={contrato.fecha_inicio || '—'} />
+                <InfoRow icon={<IconCalendar size={15} />} label="Fecha de inicio" value={contrato.fecha_inicio ? formatDate(contrato.fecha_inicio) : '—'} />
                 <InfoRow
                   icon={<IconClock size={15} />}
                   label="Duración"
                   value={contrato.duracion_meses ? `${contrato.duracion_meses} meses` : '—'}
                 />
-                <InfoRow
-                  icon={<IconScrollText size={15} />}
-                  label="Plantilla"
-                  value={contrato.plantilla_version ? `v${contrato.plantilla_version}` : '—'}
-                />
-                <InfoRow
-                  icon={<IconCalendar size={15} />}
-                  label="Fecha de generación"
-                  value={
-                    contrato.fecha_generacion
-                      ? formatDateTime(contrato.fecha_generacion)
-                      : formatDateTime(contrato.created_at)
-                  }
-                />
+                {/* El migrado no se generó con plantilla: su activación está en «Contrato migrado». */}
+                {!esMigrado && (
+                  <>
+                    <InfoRow
+                      icon={<IconScrollText size={15} />}
+                      label="Plantilla"
+                      value={contrato.plantilla_version ? `v${contrato.plantilla_version}` : '—'}
+                    />
+                    <InfoRow
+                      icon={<IconCalendar size={15} />}
+                      label="Fecha de generación"
+                      value={
+                        contrato.fecha_generacion
+                          ? formatDateTime(contrato.fecha_generacion)
+                          : formatDateTime(contrato.created_at)
+                      }
+                    />
+                  </>
+                )}
                 {contrato.fecha_firma && (
                   <InfoRow icon={<IconFileCheck size={15} />} label="Fecha de firma" value={formatDateTime(contrato.fecha_firma)} />
                 )}
@@ -709,18 +710,13 @@ export default function ContratoDetallePage() {
             </div>
           </div>
 
-          {aniversarioCanon && cobro && (
-            <RegistrarCanonReajustado
-              contratoId={contrato.id}
-              aniversario={aniversarioCanon}
-              canonActual={cobro.canon_vigente}
-              liquidacionActiva={cobro.liquidacion_activa}
-            />
-          )}
-
-          {puedeTerminacionEfectiva && cobro && (
-            <TerminacionEfectivaTarifa contratoId={contrato.id} actual={cobro.fecha_terminacion_efectiva} onRegistrada={recargarCobro} />
-          )}
+          <CobroTarifaContrato
+            contratoId={contrato.id}
+            estado={contrato.estado}
+            fechaInicio={contrato.fecha_inicio}
+            causaTarifa={!!contrato.fecha_firma && (!!contrato.destinacion || esMigrado)}
+            editable={puedeEditar}
+          />
 
           {/* Firmantes del contrato: quiénes firmaron, sus datos y la fecha de
               firma. Se auto-oculta si el contrato no usa firma multi-parte.
@@ -752,8 +748,8 @@ export default function ContratoDetallePage() {
             />
           </div>
 
-          {/* Documento firmado section */}
-          {FIRMADO_VISIBLE_STATES.includes(contrato.estado) && (
+          {/* Documento firmado section. El migrado no: su documento es el acta del lote («Ver acta firmada»). */}
+          {!esMigrado && FIRMADO_VISIBLE_STATES.includes(contrato.estado) && (
             <ContratoFirmadoSection
               contrato={contrato}
               onContratoUpdated={fetchContrato}
@@ -872,8 +868,8 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
     m.reportable == null
       ? '—'
       : m.reportable
-        ? 'REPORTABLE'
-        : `NO REPORTABLE${m.reportable_motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
+        ? 'Se reporta'
+        : `No se reporta${m.reportable_motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
 
   async function abrirActa(url: () => Promise<string>, clave = 'migracion') {
     setAbriendo(clave)

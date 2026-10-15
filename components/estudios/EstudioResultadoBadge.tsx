@@ -28,7 +28,9 @@ function resolveBadge(
   if (!estado && !resultado) return { kind: 'sin', label: 'Sin evaluación' }
   // Flujo §11/§12: el prospecto no autorizó dentro del plazo. Sin esto seguía
   // diciendo "Esperando autorización" para siempre.
-  if (expirado && (!resultado || resultado === 'pendiente')) return { kind: 'expirado', label: 'Expirado' }
+  // También cubre el enlace DETENIDO (documento que no coincide, «no soy yo»):
+  // el RPC lo marca igual, así que «Expirado» a secas sugería un plazo vencido.
+  if (expirado && (!resultado || resultado === 'pendiente')) return { kind: 'expirado', label: 'Enlace vencido o detenido' }
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
   if (resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
   if (resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }

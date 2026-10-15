@@ -8,7 +8,7 @@
 import { useState, useEffect, use } from 'react'
 import { estudioPublicService } from '@/services/estudioService'
 import type { IVerificacionCertificado } from '@/types/estudio'
-import { IconAlertTriangle, IconCheck, IconX } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconRefresh, IconX } from '@/components/icons'
 
 interface PageProps {
   params: Promise<{ codigo: string }>
@@ -63,9 +63,12 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
   const [data, setData] = useState<IVerificacionCertificado | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     async function fetch() {
+      setLoading(true)
+      setError(false)
       try {
         const result = await estudioPublicService.verificarCertificado(codigo)
         setData(result)
@@ -76,7 +79,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
       }
     }
     fetch()
-  }, [codigo])
+  }, [codigo, intento])
 
   if (loading) {
     return (
@@ -93,8 +96,15 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
           <IconX size={32} className="text-red-600" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de Verificación</h1>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Error de verificación</h1>
         <p className="text-sm text-gray-600">No se pudo verificar el certificado. Intente nuevamente.</p>
+        <button
+          type="button"
+          onClick={() => setIntento((n) => n + 1)}
+          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
       </div>
     )
   }
@@ -106,12 +116,12 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
           <IconX size={32} className="text-red-600" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Certificado No Encontrado</h1>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Certificado no encontrado</h1>
         <p className="text-sm text-gray-600 mb-4">
           El código <span className="font-mono font-medium">{codigo}</span> no corresponde a ningún certificado emitido.
         </p>
         <p className="text-xs text-gray-500">
-          Si crees que esto es un error, contacte a {data.empresa}.
+          Si cree que es un error, contacte a {data.empresa}.
         </p>
       </div>
     )
@@ -131,13 +141,13 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
       ? {
           fondo: 'bg-green-100',
           icono: <IconCheck size={32} className="text-green-600" />,
-          titulo: 'Certificado Válido',
+          titulo: 'Certificado válido',
           texto: 'Este certificado es auténtico y se encuentra vigente.',
         }
       : {
           fondo: 'bg-yellow-100',
           icono: <IconAlertTriangle size={32} className="text-yellow-600" />,
-          titulo: 'Certificado Vencido',
+          titulo: 'Certificado vencido',
           texto: 'Este certificado es auténtico pero ha expirado.',
         }
 

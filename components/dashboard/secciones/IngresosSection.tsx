@@ -74,7 +74,7 @@ export function IngresosSection() {
             href="/facturacion"
             className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-ink-300 hover:bg-ink-50"
           >
-            <IconExternalLink size={14} /> Ir a Facturación
+            <IconExternalLink size={14} /> Ir a Pagos a Cofianza
           </Link>
         }
       />
@@ -86,9 +86,9 @@ export function IngresosSection() {
             <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-600">
               <IconReceipt size={14} />
             </span>
-            <Chip tone="green">Garantía exenta de IVA</Chip>
+            <Chip tone="green">Tarifa exenta de IVA</Chip>
             <span className="text-[11px] text-ink-500">
-              El afianzamiento no genera IVA; el total bruto equivale al afianzamiento.
+              La tarifa mensual no genera IVA; el total bruto equivale a la tarifa.
             </span>
           </div>
         ) : (
@@ -103,9 +103,9 @@ export function IngresosSection() {
           </div>
         ))}
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi
-          label="Afianzamiento del mes"
+          label="Tarifa mensual"
           value={moneyCompact(data?.totalAfianzamiento)}
           sub={money(data?.totalAfianzamiento)}
           tone="green"
@@ -136,7 +136,7 @@ export function IngresosSection() {
 
       <TotalesPorOrigenTabla porOrigen={data?.porOrigen} />
 
-      <SeccionHeader title="Afianzamiento por contrato" />
+      <SeccionHeader title="Tarifa mensual por contrato" />
 
       <SeccionEstado
         loading={loading}
@@ -146,14 +146,14 @@ export function IngresosSection() {
           !loading && vacio
             ? {
                 icon: IconFileText,
-                titulo: 'Sin afianzamiento este periodo',
-                descripcion: 'No hay contratos activos que generen afianzamiento.',
+                titulo: 'Sin tarifa mensual este periodo',
+                descripcion: 'No hay contratos activos que generen tarifa mensual.',
               }
             : false
         }
       >
         <Tabla
-          head={['Inquilino', 'Inmueble', 'Canon', 'Afianzamiento', 'IVA', 'Total']}
+          head={['Inquilino', 'Inmueble', 'Canon', 'Tarifa', 'IVA', 'Total']}
           density="compact"
           zebra
         >

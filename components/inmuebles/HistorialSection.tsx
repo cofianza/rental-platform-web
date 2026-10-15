@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { IconHistory, IconClock, IconUser, IconLoader, IconChevronLeft, IconChevronRight } from '@/components/icons'
+import { IconHistory, IconClock, IconUser, IconLoader, IconChevronLeft, IconChevronRight, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import { inmuebleService } from '@/services/inmuebleService'
 import { formatCurrency, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -94,8 +94,12 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
   const [filterUsuario, setFilterUsuario] = useState('')
   const [usuarios, setUsuarios] = useState<UsuarioOption[]>([])
 
+  // Un fallo de carga no se pinta como «No hay cambios registrados».
+  const [loadError, setLoadError] = useState(false)
+
   const fetchData = useCallback(async () => {
     setIsLoading(true)
+    setLoadError(false)
     try {
       const [cambiosResult, resumenResult] = await Promise.all([
         inmuebleService.getCambios(inmuebleId, {
@@ -129,6 +133,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
       })
     } catch (error) {
       console.error('Error fetching historial:', error)
+      setLoadError(true)
     } finally {
       setIsLoading(false)
     }
@@ -161,6 +166,24 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <IconLoader size={24} className="text-primary-600 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!isLoading && loadError) {
+    return (
+      <div className="text-center py-12" role="alert">
+        <IconAlertTriangle size={32} className="mx-auto mb-3 text-amber-400" />
+        <p className="text-gray-900 font-medium mb-1">No pudimos cargar el historial</p>
+        <p className="text-sm text-gray-500 mb-4">Esto no significa que no haya cambios. Inténtelo de nuevo.</p>
+        <button
+          type="button"
+          onClick={fetchData}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+        >
+          <IconRefresh size={16} />
+          Reintentar
+        </button>
       </div>
     )
   }

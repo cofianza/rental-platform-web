@@ -87,7 +87,7 @@ export function VitrinaSection() {
         subtitle="Inmuebles publicados y prospectos generados desde la vitrina pública"
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi label="Publicados" value={publicados.length} tone="green" Icon={IconImages} />
         <Kpi label="Visitas mes" value={data?.visitasMes ?? 0} tone="blue" Icon={IconEye} />
         <Kpi label="Interesados" value={totalInteresados} tone="orange" Icon={IconPhone} />

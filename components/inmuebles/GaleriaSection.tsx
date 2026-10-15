@@ -134,9 +134,11 @@ function SortablePhoto({
         </div>
       )}
 
-      {/* Overlay con acciones */}
+      {/* Overlay con acciones. En pantallas táctiles no hay hover: ahí van en una
+          franja visible al pie de la foto (antes eran botones invisibles en el
+          centro que se pulsaban al querer ampliarla). */}
       {canEdit && !isDragging && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 z-20 pointer-events-none [&>*]:pointer-events-auto">
+        <div className="absolute inset-x-0 bottom-0 py-1.5 bg-black/50 sm:inset-0 sm:py-0 sm:bg-black/0 sm:group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 z-20 pointer-events-none [&>*]:pointer-events-auto">
           {/* Set as fachada */}
           {!foto.es_fachada && (
             <button
@@ -147,6 +149,7 @@ function SortablePhoto({
               disabled={isSettingFachada === foto.id}
               className="p-2 bg-white rounded-full text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
               title="Establecer como fachada"
+              aria-label="Establecer como fachada"
             >
               {isSettingFachada === foto.id ? (
                 <IconLoader size={16} className="animate-spin" />
@@ -164,6 +167,7 @@ function SortablePhoto({
             }}
             className="p-2 bg-white rounded-full text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
             title="Editar descripción"
+            aria-label="Editar descripción"
           >
             <IconEdit size={16} />
           </button>
@@ -176,6 +180,7 @@ function SortablePhoto({
             }}
             className="p-2 bg-white rounded-full text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
             title="Eliminar"
+            aria-label="Eliminar foto"
           >
             <IconTrash size={16} />
           </button>
@@ -184,7 +189,7 @@ function SortablePhoto({
 
       {/* Descripción */}
       {foto.descripcion && (
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-linear-to-t from-black/60 to-transparent z-10">
+        <div className={`absolute left-0 right-0 p-2 bg-linear-to-t from-black/60 to-transparent z-10 ${canEdit ? 'bottom-11 sm:bottom-0' : 'bottom-0'}`}>
           <p className="text-xs text-white truncate">{foto.descripcion}</p>
         </div>
       )}

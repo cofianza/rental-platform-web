@@ -2,35 +2,35 @@
 
 import { useState, useRef, useEffect, useId } from 'react'
 import { cn } from '@/lib/utils'
+import { IconChevronDown } from '@/components/icons'
 
 interface CountryCode {
   code: string
   dial: string
-  flag: string
   name: string
 }
 
 const COUNTRY_CODES: CountryCode[] = [
-  { code: 'CO', dial: '+57', flag: '🇨🇴', name: 'Colombia' },
-  { code: 'MX', dial: '+52', flag: '🇲🇽', name: 'México' },
-  { code: 'US', dial: '+1', flag: '🇺🇸', name: 'Estados Unidos' },
-  { code: 'ES', dial: '+34', flag: '🇪🇸', name: 'España' },
-  { code: 'AR', dial: '+54', flag: '🇦🇷', name: 'Argentina' },
-  { code: 'CL', dial: '+56', flag: '🇨🇱', name: 'Chile' },
-  { code: 'PE', dial: '+51', flag: '🇵🇪', name: 'Perú' },
-  { code: 'EC', dial: '+593', flag: '🇪🇨', name: 'Ecuador' },
-  { code: 'VE', dial: '+58', flag: '🇻🇪', name: 'Venezuela' },
-  { code: 'PA', dial: '+507', flag: '🇵🇦', name: 'Panamá' },
-  { code: 'BR', dial: '+55', flag: '🇧🇷', name: 'Brasil' },
-  { code: 'CR', dial: '+506', flag: '🇨🇷', name: 'Costa Rica' },
-  { code: 'DO', dial: '+1-809', flag: '🇩🇴', name: 'República Dominicana' },
-  { code: 'GT', dial: '+502', flag: '🇬🇹', name: 'Guatemala' },
-  { code: 'UY', dial: '+598', flag: '🇺🇾', name: 'Uruguay' },
-  { code: 'BO', dial: '+591', flag: '🇧🇴', name: 'Bolivia' },
-  { code: 'PY', dial: '+595', flag: '🇵🇾', name: 'Paraguay' },
-  { code: 'HN', dial: '+504', flag: '🇭🇳', name: 'Honduras' },
-  { code: 'SV', dial: '+503', flag: '🇸🇻', name: 'El Salvador' },
-  { code: 'NI', dial: '+505', flag: '🇳🇮', name: 'Nicaragua' },
+  { code: 'CO', dial: '+57', name: 'Colombia' },
+  { code: 'MX', dial: '+52', name: 'México' },
+  { code: 'US', dial: '+1', name: 'Estados Unidos' },
+  { code: 'ES', dial: '+34', name: 'España' },
+  { code: 'AR', dial: '+54', name: 'Argentina' },
+  { code: 'CL', dial: '+56', name: 'Chile' },
+  { code: 'PE', dial: '+51', name: 'Perú' },
+  { code: 'EC', dial: '+593', name: 'Ecuador' },
+  { code: 'VE', dial: '+58', name: 'Venezuela' },
+  { code: 'PA', dial: '+507', name: 'Panamá' },
+  { code: 'BR', dial: '+55', name: 'Brasil' },
+  { code: 'CR', dial: '+506', name: 'Costa Rica' },
+  { code: 'DO', dial: '+1-809', name: 'República Dominicana' },
+  { code: 'GT', dial: '+502', name: 'Guatemala' },
+  { code: 'UY', dial: '+598', name: 'Uruguay' },
+  { code: 'BO', dial: '+591', name: 'Bolivia' },
+  { code: 'PY', dial: '+595', name: 'Paraguay' },
+  { code: 'HN', dial: '+504', name: 'Honduras' },
+  { code: 'SV', dial: '+503', name: 'El Salvador' },
+  { code: 'NI', dial: '+505', name: 'Nicaragua' },
 ]
 
 /** Sin tildes ni mayúsculas, para que «espana» o «mexico» encuentren su país. */
@@ -97,6 +97,7 @@ export function PhoneInput({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const botonRef = useRef<HTMLButtonElement>(null)
 
   // Sync when external value changes
   useEffect(() => {
@@ -180,9 +181,13 @@ export function PhoneInput({
         {/* Country selector button */}
         <div className="relative" ref={dropdownRef}>
           <button
+            ref={botonRef}
             type="button"
             onClick={() => { if (!disabled) setOpen(!open) }}
             disabled={disabled}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-label={`País: ${selectedCountry.name} ${selectedCountry.dial}`}
             className={cn(
               // h-full: en pantallas táctiles el campo del número sube a 16 px de letra
               // (globals.css) y quedaba 3 px más alto que este botón.
@@ -192,16 +197,25 @@ export function PhoneInput({
               disabled && 'bg-gray-100 cursor-not-allowed opacity-60'
             )}
           >
-            <span className="text-base leading-none">{selectedCountry.flag}</span>
+            <span className="text-xs font-semibold text-gray-500">{selectedCountry.code}</span>
             <span className="text-gray-700 font-medium">{selectedCountry.dial}</span>
-            <svg className={cn('w-3 h-3 text-gray-500 transition-transform', open && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <IconChevronDown size={12} className={cn('text-gray-500 transition-transform', open && 'rotate-180')} />
           </button>
 
           {/* Dropdown */}
           {open && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden">
+            <div
+              className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-hidden"
+              onKeyDown={(e) => {
+                // Escape cierra solo la lista. Sin el preventDefault, el Modal que la
+                // contiene (cita, interés de la vitrina…) se cerraba y borraba lo escrito.
+                if (e.key !== 'Escape') return
+                e.preventDefault()
+                setOpen(false)
+                setSearch('')
+                botonRef.current?.focus()
+              }}
+            >
               <div className="p-2 border-b border-gray-100">
                 <input
                   type="text"
@@ -236,7 +250,7 @@ export function PhoneInput({
                       country.dial === selectedDial && 'bg-primary-50 text-primary-700 font-medium'
                     )}
                   >
-                    <span className="text-base leading-none">{country.flag}</span>
+                    <span className="w-6 text-xs font-semibold text-gray-500">{country.code}</span>
                     <span className="flex-1 truncate">{country.name}</span>
                     <span className="text-gray-500 text-xs">{country.dial}</span>
                   </button>

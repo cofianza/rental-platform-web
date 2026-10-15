@@ -70,10 +70,6 @@ export interface ICrearFacturaInput {
   subtotal: number
 }
 
-export interface IAnularFacturaInput {
-  motivo: string
-}
-
 // ============================================
 // Listado con paginacion
 // ============================================

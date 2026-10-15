@@ -31,6 +31,8 @@ function textoInvitado(
   invitado: NonNullable<NonNullable<ContextoCargaDocumentos['coarrendatario']>['invitado']>,
   estadoEstudio: string,
   vigente: boolean,
+  /** Adenda 3 §6: con condición no decide un analista y el plazo corre. */
+  conCondicion: boolean,
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
@@ -45,12 +47,16 @@ function textoInvitado(
   if (invitado.estado === 'pendiente_aceptacion') {
     return invitado.vencida
       ? 'La invitación venció sin respuesta. Pídale a quien le pidió el estudio (su inmobiliaria o el propietario) que la reenvíe.'
-      : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
+      : conCondicion
+        ? 'Le enviamos la invitación. Debe aceptarla dentro del plazo de la condición; si no, el estudio se cierra sin aprobarse.'
+        : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
   }
   if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
   return estadoEstudio === 'aprobado'
     ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
-    : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
+    : conCondicion
+      ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por correo.'
+      : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
 }
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
@@ -213,6 +219,7 @@ export default function CargarDocumentosPage() {
           <CoarrendatarioInviteForm
             audience="solicitante"
             aprobado={aprobado}
+            condicion={conCondicion ? {} : null}
             initial={ctx.coarrendatario.sugerido}
             invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
             onInvited={cargar}
@@ -224,7 +231,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente)}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion)}</p>
             </div>
           </div>
         )}

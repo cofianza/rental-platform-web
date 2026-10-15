@@ -118,7 +118,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
     // Validations
     const montoNum = parseInt(monto, 10)
     if (!concepto) { setError('Seleccione un concepto'); return }
-    if (!monto || montoNum <= 0 || isNaN(montoNum)) { setError('Ingrese un monto valido mayor a 0'); return }
+    if (!monto || montoNum <= 0 || isNaN(montoNum)) { setError('Ingrese un monto válido mayor a 0'); return }
     if (!metodo) { setError('Seleccione un metodo de pago'); return }
     if (!fechaPago) { setError('Seleccione la fecha de pago'); return }
 

@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
@@ -16,12 +16,12 @@ import {
   type IPaqueteCreditos,
   type ISaldoCreditos,
 } from '@/services/creditosEstudiosService'
-import { IconCheckCircle, IconDollarSign, IconLoader, IconArrowRight, IconClock } from '@/components/icons'
+import { IconCheckCircle, IconDollarSign, IconLoader, IconArrowRight, IconClock, IconRefresh } from '@/components/icons'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 
 const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`
 
-/** Comprar créditos es escribir: Gerencia y el miembro «Sólo lectura» no lo ven. */
+/** Comprar cupos es escribir: Gerencia y el miembro «Sólo lectura» no lo ven. */
 export function AdquirirEstudiosCredito() {
   const puedeEditar = usePuedeEditar()
   return puedeEditar ? <AdquirirEstudiosCreditoContenido /> : null
@@ -34,10 +34,14 @@ function AdquirirEstudiosCreditoContenido() {
   const [paquetes, setPaquetes] = useState<IPaqueteCreditos[]>([])
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [loading, setLoading] = useState(true)
+  // Sin esto un fallo decía «0 cupos» y «No hay paquetes disponibles».
+  const [errorCarga, setErrorCarga] = useState(false)
   const [comprando, setComprando] = useState<string | null>(null)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     let cancel = false
+    setLoading(true)
+    setErrorCarga(false)
     Promise.all([creditosEstudiosService.listPaquetes(), creditosEstudiosService.getMiSaldo()])
       .then(([p, s]) => {
         if (!cancel) {
@@ -45,7 +49,9 @@ function AdquirirEstudiosCreditoContenido() {
           setSaldo(s)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancel) setErrorCarga(true)
+      })
       .finally(() => {
         if (!cancel) setLoading(false)
       })
@@ -54,10 +60,12 @@ function AdquirirEstudiosCreditoContenido() {
     }
   }, [])
 
+  useEffect(() => cargar(), [cargar])
+
   // Toast al volver de Mercado Pago (?status=success|cancelled).
   useEffect(() => {
     if (status === 'success') {
-      toast.success('Pago confirmado — los créditos se acreditarán en unos segundos.')
+      toast.success('Pago confirmado: los cupos se sumarán a su saldo en unos segundos.')
     } else if (status === 'cancelled') {
       toast.info('Pago cancelado.')
     }
@@ -97,15 +105,16 @@ function AdquirirEstudiosCreditoContenido() {
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <IconDollarSign size={18} className="text-coral-700" />
-          <h2 className="text-lg font-bold text-gray-900">Adquirir estudios de crédito</h2>
+          <h2 className="text-lg font-bold text-gray-900">Comprar paquetes de cupos</h2>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
           <IconCheckCircle size={15} />
-          {loading ? '…' : (saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0)} créditos disponibles
+          {loading ? '…' : saldo ? (saldo.saldo_efectivo ?? saldo.saldo_total) : '—'} cupos disponibles
         </span>
       </div>
       <p className="mb-5 text-sm text-gray-500">
-        Cada estudio consume un crédito de su saldo. Los créditos se acreditan tras confirmar el pago con tarjeta.
+        Cada estudio reserva un cupo; se descuenta solo cuando la central entrega el resultado. Los cupos se suman
+        a su saldo al confirmarse el pago (tarjeta o PSE).
       </p>
 
       {loading ? (
@@ -113,6 +122,17 @@ function AdquirirEstudiosCreditoContenido() {
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-56 animate-pulse rounded-xl border border-gray-200 bg-gray-50" />
           ))}
+        </div>
+      ) : errorCarga ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700">No pudimos cargar los paquetes ni su saldo de cupos.</p>
+          <button
+            type="button"
+            onClick={cargar}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
         </div>
       ) : paquetes.length === 0 ? (
         <div className="py-8 text-center text-sm text-gray-500">

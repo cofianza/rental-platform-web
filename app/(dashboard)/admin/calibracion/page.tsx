@@ -158,8 +158,13 @@ function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'entero'>
 }
 
 /** Las descripciones citan otros parámetros por su clave («más TARIFA_IVA»): se dicen por su nombre. */
+// El mes de cobro se elige con un selector de mes: el formato AAAAMM y el
+// 209912 («nunca») no se le muestran a la persona.
 const humanizar = (texto: string) =>
-  sinReferenciasInternas(texto).replace(/\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+\b/g, (c) => (META[c] ? `«${META[c].nombre.toLowerCase()}»` : c))
+  sinReferenciasInternas(texto)
+    .replace(/\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+\b/g, (c) => (META[c] ? `«${META[c].nombre.toLowerCase()}»` : c))
+    .replace(/\s*\(AAAAMM[^)]*\)/g, '')
+    .replace(new RegExp(`\\b${MES_APAGADO}\\b`, 'g'), '«Sin activar»')
 
 const pct = (n: number, total: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : '—')
 
@@ -191,7 +196,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
   function pedirConfirmacion() {
     const n = Number(valor)
     if (valor.trim() === '' || !Number.isFinite(n)) {
-      setError('Escriba un número.')
+      setError(unidad === 'mes' ? 'Elija un mes, o «Dejar sin activar».' : 'Escriba un número.')
       return
     }
     if (n < p.min || n > p.max) {
@@ -203,7 +208,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
       return
     }
     if (unidad === 'mes' && n < MES_APAGADO && (n % 100 < 1 || n % 100 > 12)) {
-      setError('Escriba año y mes juntos, por ejemplo 202611 para noviembre de 2026.')
+      setError('Elija un mes válido.')
       return
     }
     setError(null)
@@ -269,6 +274,35 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
 
         {editando ? (
           <div className="flex w-full flex-col gap-2 sm:w-72">
+            {unidad === 'mes' ? (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-700">
+                  Nuevo mes
+                  <input
+                    type="month"
+                    value={/^\d{6}$/.test(valor) && valorNuevo < MES_APAGADO ? `${valor.slice(0, 4)}-${valor.slice(4)}` : ''}
+                    autoFocus
+                    onChange={(e) => {
+                      setValor(e.target.value.replace('-', ''))
+                      setError(null)
+                    }}
+                    aria-invalid={!!error}
+                    aria-describedby={`ayuda-${p.clave}`}
+                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm ${error ? 'border-red-400' : 'border-gray-300'}`}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValor(String(MES_APAGADO))
+                    setError(null)
+                  }}
+                  className="self-start text-xs font-medium text-primary-700 hover:underline"
+                >
+                  Dejar sin activar
+                </button>
+              </div>
+            ) : (
             <label className="text-xs font-medium text-gray-700">
               Nuevo valor
               <input
@@ -287,9 +321,10 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
                 className={`mt-1 w-full rounded-lg border px-3 py-2 text-right font-mono text-sm ${error ? 'border-red-400' : 'border-gray-300'}`}
               />
             </label>
+            )}
             <p id={`ayuda-${p.clave}`} className="-mt-1 text-xs text-gray-500">
               {unidad === 'mes'
-                ? `Año y mes juntos (202611 = noviembre 2026). ${fmt(MES_APAGADO, true)} = sin activar.`
+                ? 'Primer mes que cobra la plataforma.'
                 : `Entre ${conUnidad(p.min, p)} y ${conUnidad(p.max, p)}.`}
               {valor.trim() !== '' && Number.isFinite(valorNuevo) && cambiado && (
                 <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(valorNuevo, p)}.</span>

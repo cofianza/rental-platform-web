@@ -27,8 +27,9 @@ import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvita
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { IconUsers } from '@/components/icons'
+import { IconRefresh, IconUsers } from '@/components/icons'
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
+import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 
 interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
@@ -63,6 +64,8 @@ export function CoarrendatarioPropietarioCard({
   const version = useRefrescoExpediente()
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
   const [loading, setLoading] = useState(true)
+  // Primera carga fallida: sin esto se ofrecía invitar aunque ya hubiera uno.
+  const [errorCarga, setErrorCarga] = useState(false)
   const [estudioFull, setEstudioFull] = useState<IEstudio | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
@@ -79,6 +82,7 @@ export function CoarrendatarioPropietarioCard({
       const primeraCarga = !coaLoadedRef.current
       setCoa(data)
       coaLoadedRef.current = true
+      setErrorCarga(false)
       if (data?.estudio?.estado === 'completado' && !estudioCompletadoNotificadoRef.current) {
         estudioCompletadoNotificadoRef.current = true
         // Solo si se completó MIENTRAS se miraba (polling). Si ya venía completado,
@@ -89,7 +93,10 @@ export function CoarrendatarioPropietarioCard({
     } catch {
       // No borrar la card por un error transitorio del polling (502 / red
       // móvil): solo la dejamos en null si nunca llegó a cargar.
-      if (!coaLoadedRef.current) setCoa(null)
+      if (!coaLoadedRef.current) {
+        setCoa(null)
+        setErrorCarga(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -149,6 +156,20 @@ export function CoarrendatarioPropietarioCard({
   // que lleva el expediente. Solo con la ventana abierta (en revisión, o
   // aprobado antes del contrato para bajar la prima al 10 %); si no, no hay
   // nada que mostrar.
+  if (!coa && errorCarga) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos cargar el coarrendatario de este estudio.</p>
+        <button
+          type="button"
+          onClick={() => void fetchCoa()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
   if (!coa) {
     if (!(ventana?.puede_invitar ?? expedienteEstado === 'condicionado') || !puedeEditar) return null
     return (
@@ -199,7 +220,7 @@ export function CoarrendatarioPropietarioCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
           <InfoRow label="Nombre" value={`${coa.nombre} ${coa.apellido}`.trim()} />
           <InfoRow label="Documento" value={`${tipoLabel} ${coa.numero_documento}`} />
-          <InfoRow label="Email" value={coa.email} />
+          <InfoRow label="Correo" value={coa.email} />
           <InfoRow label="Teléfono" value={coa.telefono || '—'} />
           <InfoRow label="Invitación enviada" value={fechaInvitacion} />
           {fechaAceptacion && <InfoRow label="Aceptó el" value={fechaAceptacion} />}
@@ -292,7 +313,7 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
               sinEfecto
                 ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.'
                 : fallo === 'no_existe'
-                  ? 'si el documento está mal escrito, comuníquese con Cofianza para corregirlo.'
+                  ? `si el documento está mal escrito, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO} para corregirlo.`
                   : 'corrija el primer apellido y vuelva a consultar en el panel «Coarrendatario» de la evaluación, aquí abajo.'
             }`
           : sinEfecto

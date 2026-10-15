@@ -15,16 +15,23 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconCalendar, IconLoader } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
+import { mesTexto, primerDiaMesSiguiente } from '@/lib/tarifaCobro'
 import { tarifaCobroService } from '@/services/tarifaCobroService'
 
 export function TerminacionEfectivaTarifa({
   contratoId,
   actual,
+  fechaInicio,
+  vigente,
   onRegistrada,
 }: {
   contratoId: string
   /** AAAA-MM-DD ya registrada, o null. */
   actual: string | null
+  /** AAAA-MM-DD: el contrato no puede terminar antes de empezar. */
+  fechaInicio?: string | null
+  /** Sigue vigente en la plataforma: la efectiva igual corta la tarifa (terminó en la realidad). */
+  vigente: boolean
   onRegistrada: () => void
 }) {
   const [abierto, setAbierto] = useState(false)
@@ -41,6 +48,8 @@ export function TerminacionEfectivaTarifa({
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!fecha) return setError('Indique la fecha efectiva de terminación')
+    if (fechaInicio && fecha < fechaInicio.slice(0, 10))
+      return setError(`La fecha no puede ser anterior al inicio del contrato (${formatDate(fechaInicio.slice(0, 10))}).`)
     setError(null)
     setEnviando(true)
     try {
@@ -68,7 +77,9 @@ export function TerminacionEfectivaTarifa({
       <p className="mt-1 text-sm text-gray-600">
         {actual
           ? `Registrada: ${formatDate(actual)}. La tarifa mensual se cobra hasta ese mes, completo.`
-          : 'Si el contrato terminó en una fecha distinta a la del registro en la plataforma, regístrela: la tarifa mensual se cobra hasta ese mes, completo, y se anula la de los meses siguientes.'}
+          : vigente
+            ? 'Si el contrato ya terminó en la realidad aunque aquí siga vigente, registre la fecha: la tarifa mensual se cobra hasta ese mes, completo, y deja de cobrarse después, aunque el contrato siga vigente.'
+            : 'Si el contrato terminó en una fecha distinta a la del registro en la plataforma, regístrela: la tarifa mensual se cobra hasta ese mes, completo, y se anula la de los meses siguientes.'}
       </p>
       <button
         type="button"
@@ -82,7 +93,7 @@ export function TerminacionEfectivaTarifa({
       </button>
 
       <Modal isOpen={abierto} onClose={cerrar} title="Fecha efectiva de terminación" size="md" closeOnBackdrop={false}>
-        <form onSubmit={enviar} className="space-y-4">
+        <form onSubmit={enviar} noValidate className="space-y-4">
           <p className="text-sm text-gray-600">
             Prevalece sobre la fecha de terminación para el cobro de la tarifa mensual. Las líneas de los meses posteriores
             se anulan; si ya salieron en una factura, quedan marcadas para nota crédito.
@@ -96,10 +107,17 @@ export function TerminacionEfectivaTarifa({
               id="terminacion-efectiva"
               type="date"
               value={fecha}
+              min={fechaInicio?.slice(0, 10) || undefined}
               onChange={(e) => setFecha(e.target.value)}
               disabled={enviando}
+              aria-describedby={fecha ? 'terminacion-efectiva-efecto' : undefined}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             />
+            {fecha && (
+              <p id="terminacion-efectiva-efecto" className="mt-1 text-xs text-gray-600">
+                La tarifa se cobra hasta {mesTexto(fecha)}, completo, y se anula desde {mesTexto(primerDiaMesSiguiente(fecha))}.
+              </p>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
             <button

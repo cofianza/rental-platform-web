@@ -50,6 +50,8 @@ import {
   IconBath,
   IconRuler,
   IconCar,
+  IconAlertTriangle,
+  IconRefresh,
 } from '@/components/icons'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
@@ -122,7 +124,7 @@ export function PropiedadesInmobiliariaView() {
   const router = useRouter()
   const puedeEditar = usePuedeEditar()
   const { user } = useAuth()
-  const { inmuebles, meta, filters, isLoading, setFilters, updateInmuebleInList } = useInmuebles()
+  const { inmuebles, meta, filters, isLoading, error, fetchInmuebles, setFilters, updateInmuebleInList } = useInmuebles()
 
   const { completitud } = usePerfilCompletitud()
   const perfilIncompleto =
@@ -133,6 +135,9 @@ export function PropiedadesInmobiliariaView() {
   // Publicado real = flag + disponible; pausada = disponible fuera de vitrina
   // (visible_vitrina es NOT NULL, así que pausadas = disponibles − en vitrina).
   const [conteos, setConteos] = useState<{ total: number; enVitrina: number; disponibles: number; pausadas: number } | null>(null)
+  // Si los conteos fallan se muestra «—»: con «…» parecían cargar sin fin.
+  const [conteosError, setConteosError] = useState(false)
+  const [intentoConteos, setIntentoConteos] = useState(0)
   useEffect(() => {
     let vivo = true
     const total = (f: Partial<IInmuebleFilters>) =>
@@ -142,13 +147,29 @@ export function PropiedadesInmobiliariaView() {
       total({ visible_vitrina: true, estado: 'disponible' }),
       total({ estado: 'disponible' }),
     ])
-      .then(([t, v, d]) => vivo && setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: d - v }))
-      .catch(() => vivo && setConteos(null))
+      .then(([t, v, d]) => {
+        if (!vivo) return
+        setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: d - v })
+        setConteosError(false)
+      })
+      .catch(() => {
+        if (!vivo) return
+        setConteos(null)
+        setConteosError(true)
+      })
     return () => {
       vivo = false
     }
-  }, [])
-  const cifra = (n: number | undefined) => (n === undefined ? '…' : n)
+  }, [intentoConteos])
+  const cifra = (n: number | undefined) => (n === undefined ? (conteosError ? '—' : '…') : n)
+
+  function reintentar() {
+    fetchInmuebles()
+    if (conteosError) {
+      setConteosError(false)
+      setIntentoConteos((n) => n + 1)
+    }
+  }
 
   // Detección endurecida: los chips vitrina/pausadas setean flag + estado
   // 'disponible'; una combinación mixta (p. ej. flag=true con otro estado,
@@ -209,7 +230,7 @@ export function PropiedadesInmobiliariaView() {
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
             <IconBuilding2 size={14} />
-            {meta ? meta.total : '…'} propiedades
+            {meta ? meta.total : error ? '—' : '…'} propiedades
           </span>
           {puedeEditar && (
             <Button variante="accent" onClick={handleCreateClick}>
@@ -291,13 +312,41 @@ export function PropiedadesInmobiliariaView() {
               <IconLoader size={20} className="animate-spin text-primary-600" />
               Cargando propiedades…
             </div>
+          ) : error && !isLoading ? (
+            <div className="py-12 text-center" role="alert">
+              <IconAlertTriangle size={40} className="mx-auto mb-3 text-amber-400" />
+              <p className="text-sm font-medium text-gray-900">No pudimos cargar sus propiedades</p>
+              <p className="mt-1 text-sm text-gray-500">Inténtelo de nuevo en un momento.</p>
+              <Button variante="secondary" className="mt-4" onClick={reintentar}>
+                <IconRefresh size={16} />
+                Reintentar
+              </Button>
+            </div>
+          ) : inmuebles.length === 0 && conteos?.total === 0 ? (
+            <div className="py-12 text-center">
+              <IconBuilding2 size={44} className="mx-auto mb-3 text-gray-300" />
+              <p className="text-sm font-medium text-gray-900">Aún no tiene propiedades</p>
+              {puedeEditar ? (
+                <>
+                  <p className="mt-1 text-sm text-gray-500">Agregue la primera y publíquela en la vitrina.</p>
+                  <Button variante="accent" className="mt-4" onClick={handleCreateClick}>
+                    <IconPlus size={16} />
+                    Agregar propiedad
+                  </Button>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500">Su rol es de solo consulta.</p>
+              )}
+            </div>
           ) : inmuebles.length === 0 ? (
             <div className="py-12 text-center">
               <IconBuilding2 size={44} className="mx-auto mb-3 text-gray-300" />
               <p className="text-sm font-medium text-gray-900">No hay propiedades para este filtro</p>
-              <p className="mt-1 text-sm text-gray-500">
-                Agregue una con el botón “Agregar propiedad”.
-              </p>
+              {puedeEditar && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Agregue una con el botón “Agregar propiedad”.
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

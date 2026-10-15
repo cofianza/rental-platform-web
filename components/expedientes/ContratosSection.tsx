@@ -17,7 +17,7 @@ import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { ESTADOS_CONTRATO, etiquetaContrato, formatDateTime } from '@/lib/constants'
+import { ESTADOS_CONTRATO, etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 import type { Bloqueo } from '@/types/contratoV3'
@@ -403,7 +403,7 @@ export function ContratosSection({
                         </p>
                         {c.fecha_inicio && (
                           <p className="text-xs text-gray-500">
-                            Inicio: {c.fecha_inicio} | {c.duracion_meses || 12} meses
+                            Inicio: {formatDate(c.fecha_inicio)} · {c.duracion_meses || 12} meses
                           </p>
                         )}
                       </td>

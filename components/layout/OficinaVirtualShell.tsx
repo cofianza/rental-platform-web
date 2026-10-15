@@ -27,6 +27,13 @@ import { NotificationBell } from './NotificationBell'
 import { OficinaVirtualNav } from './OficinaVirtualNav'
 import { OficinaVirtualHero } from '@/components/dashboard/OficinaVirtualHero'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
+import { PerfilPersonalIncompletoBanner } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
+
+const SUBTITULO_MIEMBRO = {
+  owner: 'Titular',
+  miembro: 'Miembro del equipo',
+  solo_lectura: 'Solo lectura (consulta)',
+} as const
 
 interface Props {
   rol: 'propietario' | 'inmobiliaria'
@@ -86,7 +93,10 @@ export function OficinaVirtualShell({ rol, children }: Props) {
     .join('')
     .toUpperCase()
     .slice(0, 2)
-  const subtitulo = rol === 'inmobiliaria' ? 'Inmobiliaria activa' : 'Cuenta propietario'
+  const subtitulo =
+    rol === 'inmobiliaria'
+      ? (user?.rol_miembro && SUBTITULO_MIEMBRO[user.rol_miembro]) || 'Inmobiliaria'
+      : 'Cuenta propietario'
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -191,6 +201,7 @@ export function OficinaVirtualShell({ rol, children }: Props) {
       <OficinaVirtualNav rol={rol} />
 
       <main id="contenido" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 focus:outline-none">
+        <PerfilPersonalIncompletoBanner user={user} />
         <BloqueosPendientesBanner />
         {children}
       </main>

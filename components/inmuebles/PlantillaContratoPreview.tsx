@@ -11,8 +11,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { apiClient, ApiClientError } from '@/lib/api'
 import { IconLoader, IconAlertTriangle, IconRefresh } from '@/components/icons'
 
 interface Props {
@@ -30,25 +29,11 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
     setError(null)
     setErrorCode(null)
     try {
-      const token = useAuthStore.getState().accessToken
-      const res = await fetch(`${API_BASE_URL}/inmuebles/${inmuebleId}/contrato-preview`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        credentials: 'include',
-      })
-      if (!res.ok) {
-        let message = 'No se pudo cargar el preview de la plantilla'
-        try {
-          const json = await res.json()
-          message = json?.message || message
-          setErrorCode(json?.errorCode ?? null)
-        } catch {
-          // ignore — respuesta no JSON
-        }
-        throw new Error(message)
-      }
+      const res = await apiClient.raw(`/inmuebles/${inmuebleId}/contrato-preview`)
       setHtml(await res.text())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar')
+      if (err instanceof ApiClientError) setErrorCode(err.code ?? null)
+      setError(err instanceof Error ? err.message : 'No se pudo cargar la vista previa del contrato.')
     } finally {
       setLoading(false)
     }

@@ -152,18 +152,18 @@ export function PdfViewer({ url }: PdfViewerProps) {
             onClick={goToPrevPage}
             disabled={pageNumber <= 1}
             className="p-2 text-white/80 hover:text-white disabled:text-white/30 transition-colors"
-            aria-label="Pagina anterior"
+            aria-label="Página anterior"
           >
             <IconChevronLeft size={18} />
           </button>
           <span className="text-xs text-white/80 min-w-20 text-center">
-            Pagina {pageNumber} de {numPages}
+            Página {pageNumber} de {numPages}
           </span>
           <button
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
             className="p-2 text-white/80 hover:text-white disabled:text-white/30 transition-colors"
-            aria-label="Pagina siguiente"
+            aria-label="Página siguiente"
           >
             <IconChevronRight size={18} />
           </button>

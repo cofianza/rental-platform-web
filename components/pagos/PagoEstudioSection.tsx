@@ -61,19 +61,19 @@ export function textoCubierto(
     }
   }
   if (estudio?.estado === 'completado') {
-    return { titulo: 'Crédito consumido', texto: 'Se usó 1 crédito de su paquete: la central entregó el resultado.' }
+    return { titulo: 'Cupo consumido', texto: 'Se usó 1 cupo de su paquete: la central entregó el resultado.' }
   }
   if (estudio?.estado === 'fallido') {
     return {
-      titulo: 'Crédito devuelto a su saldo',
-      texto: 'La consulta no dio resultado, así que el crédito volvió a su paquete. Si vuelve a consultar, se reserva otra vez.',
+      titulo: 'Cupo devuelto a su saldo',
+      texto: 'La consulta no dio resultado, así que el cupo volvió a su paquete. Si vuelve a consultar, se reserva otra vez.',
     }
   }
   return {
-    titulo: 'Crédito reservado',
+    titulo: 'Cupo reservado',
     texto: e.autorizado
-      ? 'El prospecto ya autorizó la consulta. El crédito se consume cuando la central entregue el resultado; si no lo entrega, vuelve a su saldo.'
-      : 'Se reservó 1 crédito de su paquete. El estudio inicia cuando el prospecto autorice la consulta; si no se llega a consultar, el crédito vuelve a su saldo.',
+      ? 'El prospecto ya autorizó la consulta. El cupo se consume cuando la central entregue el resultado; si no lo entrega, vuelve a su saldo.'
+      : 'Se reservó 1 cupo de su paquete. El estudio inicia cuando el prospecto autorice la consulta; si no se llega a consultar, el cupo vuelve a su saldo.',
   }
 }
 
@@ -103,6 +103,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [confirmLiberar, setConfirmLiberar] = useState(false)
+  // Pagar con un cupo en lugar del cobro al prospecto (pendiente o fallido):
+  // anula el enlace que ya recibió y reserva un cupo. Se confirma.
+  const [confirmCancelarLiberar, setConfirmCancelarLiberar] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // No se pudo LEER el estado (la primera vez): sin esto la tarjeta desaparecía
   // y el prospecto no veía ni "Pagar" ni un error.
@@ -211,12 +214,12 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       await Promise.all([fetchEstado(), fetchSaldo()])
       toast.success(
         estado?.autorizado
-          ? 'Crédito reservado. La evaluación inicia de inmediato.'
-          : 'Crédito reservado. La evaluación inicia cuando el prospecto autorice la consulta.',
+          ? 'Cupo reservado. La evaluación inicia de inmediato.'
+          : 'Cupo reservado. La evaluación inicia cuando el prospecto autorice la consulta.',
       )
       onPagoCompletado?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al liberar el estudio con credito')
+      setError(err instanceof Error ? err.message : 'No se pudo pagar el estudio con un cupo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -291,26 +294,30 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     }
   }
 
-  // Inmobiliaria: el "cancelar" del estado pendiente cobra con crédito (no asume gratis).
+  // Inmobiliaria: el "cancelar" del estado pendiente cobra con un cupo (no asume gratis).
   const handleCancelarYLiberar = async () => {
     setIsSubmitting(true)
     setError(null)
+    const quedan = saldoUsable - 1
     try {
       await pagoEstudioService.cancelarYLiberarCredito(expedienteId)
       await Promise.all([fetchEstado(), fetchSaldo()])
+      toast.success(`Se reservó 1 cupo; le ${quedan === 1 ? 'queda 1' : `quedan ${quedan}`}.`)
       onPagoCompletado?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cancelar y liberar con crédito')
+      setError(err instanceof Error ? err.message : 'No se pudo pagar el estudio con un cupo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Inmobiliaria paga con crédito; los demás (propietario/admin) pagan ellos
+  // Inmobiliaria paga con un cupo; los demás (propietario/admin) pagan ellos
   // mismos por Mercado Pago (opción B).
   const cancelarConCredito = userRole === 'inmobiliaria'
-  const onCancelar = cancelarConCredito ? handleCancelarYLiberar : () => { void handlePagar(true) }
-  const labelCancelar = cancelarConCredito ? 'Cancelar y liberar con crédito' : 'Cancelar y pagar yo (Mercado Pago)'
+  const onCancelar = cancelarConCredito ? () => setConfirmCancelarLiberar(true) : () => { void handlePagar(true) }
+  const labelCancelar = cancelarConCredito
+    ? 'Pagar con un cupo del paquete en lugar del prospecto'
+    : 'Cancelar y pagar yo (Mercado Pago)'
 
   if (isLoading) {
     return (
@@ -385,9 +392,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                       return handleLiberarCredito()
                     }}
                     isLoading={isSubmitting}
-                    title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
-                    confirmLabel="Reservar 1 crédito"
+                    title="Pagar con un cupo"
+                    message={`Se reserva 1 cupo de su paquete (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 cupo"
                   />
                   <button
                     onClick={() => setConfirmLiberar(true)}
@@ -395,9 +402,9 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-emerald-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50 text-center"
                   >
                     <IconShieldCheck size={32} className="text-emerald-600" />
-                    <span className="text-sm font-semibold text-gray-900">Liberar con crédito</span>
-                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} estudios</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">{estado.autorizado ? 'Reserva 1 crédito y el proceso sigue de inmediato.' : 'Reserva 1 crédito; el proceso sigue cuando el prospecto autorice.'}</span>
+                    <span className="text-sm font-semibold text-gray-900">Pagar con un cupo</span>
+                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} {saldoUsable === 1 ? 'cupo' : 'cupos'}</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">{estado.autorizado ? 'Reserva 1 cupo y el proceso sigue de inmediato.' : 'Reserva 1 cupo; el proceso sigue cuando el prospecto autorice.'}</span>
                   </button>
                   </>
                 ) : (
@@ -408,12 +415,12 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                     <IconDollarSign size={32} className="text-amber-600" />
                     <span className="text-sm font-semibold text-gray-900">Comprar paquete</span>
                     <span className="text-xs text-amber-700">
-                      {creditosEnContra > 0 ? `${creditosEnContra} en contra` : 'Sin créditos disponibles'}
+                      {creditosEnContra > 0 ? `${creditosEnContra} en contra` : 'Sin cupos disponibles'}
                     </span>
                     <span className="text-[11px] text-gray-500 leading-snug">
                       {creditosEnContra > 0
                         ? 'Una compra se reversó con el banco: lo usado se descuenta de su próxima compra.'
-                        : 'Compre créditos con descuento por volumen.'}
+                        : 'Compre un paquete de cupos con descuento por volumen.'}
                     </span>
                   </Link>
                 )
@@ -470,16 +477,16 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                       return handleLiberarCredito()
                     }}
                     isLoading={isSubmitting}
-                    title="Liberar con crédito"
-                    message={`Se reserva 1 crédito de su saldo (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se gasta solo si la consulta a centrales da resultado; si no, vuelve a su saldo.`}
-                    confirmLabel="Reservar 1 crédito"
+                    title="Pagar con un cupo"
+                    message={`Se reserva 1 cupo de su paquete (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
+                    confirmLabel="Reservar 1 cupo"
                   />
                   <button
                 onClick={() => setConfirmLiberar(true)}
                 disabled={isSubmitting}
                 className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
               >
-                Liberar con crédito
+                Pagar con un cupo del paquete
               </button>
               </>
             )}
@@ -537,7 +544,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {estado.estado === 'pendiente' && pagaGestor && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-amber-800">El pago de la agencia está pendiente en Mercado Pago</p>
+            <p className="text-sm font-medium text-amber-800">Su pago está pendiente en Mercado Pago</p>
             <p className="text-xs text-amber-600">{estado.monto_formateado} COP — el estudio sigue cuando se confirme.</p>
           </div>
           {estado.pago?.payment_link_url && (
@@ -607,13 +614,20 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 Cancelar corrección
               </button>
             )}
-            <button
-              onClick={onCancelar}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              {labelCancelar}
-            </button>
+            {cancelarConCredito && !hayCreditosUsables ? (
+              // Sin saldo la API lo rechaza (SIN_CREDITOS): no se ofrece.
+              <span className="self-center text-xs text-amber-700">
+                Sin cupos disponibles para pagarlo con el paquete.
+              </span>
+            ) : (
+              <button
+                onClick={onCancelar}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {labelCancelar}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -631,7 +645,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               {/* Sin "cancelar": el PSE o el recibo de efectivo ya salió y
                   cancelarlo cobraría el estudio dos veces (el API responde 409). */}
               <p className="text-xs text-blue-600">
-                Si el pago vence, podrá {cancelarConCredito ? 'liberarlo con crédito' : 'pagarlo usted'}.
+                Si el pago vence, podrá {cancelarConCredito ? 'pagarlo con un cupo del paquete' : 'pagarlo usted'}.
               </p>
             </div>
           </div>
@@ -645,7 +659,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             <IconAlertTriangle size={20} className="text-red-600 shrink-0" />
             <div>
               <p className="text-sm font-medium text-red-800">
-                {pagaGestor ? 'El pago de la agencia en Mercado Pago falló' : 'Pago fallido'}
+                {pagaGestor ? 'Su pago en Mercado Pago falló' : 'Pago fallido'}
               </p>
               <p className="text-xs text-red-600">{estado.monto_formateado} COP</p>
             </div>
@@ -678,7 +692,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   onConfirm={handlePasarAlArrendatario}
                   isLoading={isSubmitting}
                   title="¿Pasarle el cobro al arrendatario?"
-                  message={`Se cierra el pago fallido de la agencia y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro de ${estado.monto_formateado} COP, y la evaluación corre cuando lo pague.`}
+                  message={`Se cierra su pago fallido y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro de ${estado.monto_formateado} COP, y la evaluación corre cuando lo pague.`}
                   confirmLabel="Sí, que pague el arrendatario"
                   cancelLabel="Volver"
                 />
@@ -703,19 +717,30 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 )}
               </>
             )}
-            {/* El API cierra el cobro fallido (su link seguía pagable) y descuenta el crédito. */}
+            {/* El API cierra el cobro fallido (su link seguía pagable) y reserva el cupo. */}
             {cancelarConCredito && hayCreditosUsables && (
               <button
-                onClick={handleCancelarYLiberar}
+                onClick={() => setConfirmCancelarLiberar(true)}
                 disabled={isSubmitting}
                 className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
-                Liberar con crédito
+                {labelCancelar}
               </button>
             )}
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmCancelarLiberar}
+        onClose={() => setConfirmCancelarLiberar(false)}
+        onConfirm={handleCancelarYLiberar}
+        isLoading={isSubmitting}
+        title="Pagar con un cupo"
+        message={`Se anula el enlace de pago enviado${estado.pago?.email_pagador ? ` a ${estado.pago.email_pagador}` : ' al prospecto'} y se reserva 1 cupo de su paquete (${saldoUsable} disponibles). Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
+        confirmLabel="Reservar 1 cupo"
+        cancelLabel="Volver"
+      />
 
       {/* Modal: enviar link al arrendatario */}
       <EnviarLinkModal
@@ -1276,7 +1301,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
       <p className="text-sm font-medium text-blue-800">Esperando que definan la forma de pago</p>
       <p className="text-xs text-blue-600 mt-1">
-        Su estudio ya fue habilitado. Le avisaremos por correo cuando esté listo el link de pago.
+        Su estudio ya fue habilitado. Quien tramita su arriendo está definiendo cómo se paga el estudio; le
+        avisaremos qué sigue.
       </p>
     </div>
   )

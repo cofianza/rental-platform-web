@@ -12,8 +12,10 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
-import { IconCalendar, IconLoader } from '@/components/icons'
+import { CampoPesos } from '@/components/contratos/v3/campos'
+import { IconAlertTriangle, IconCalendar, IconLoader } from '@/components/icons'
 import { formatCurrency, formatDate } from '@/lib/constants'
+import { mesTexto, periodoDesde } from '@/lib/tarifaCobro'
 import { tarifaCobroService } from '@/services/tarifaCobroService'
 
 export function RegistrarCanonReajustado({
@@ -31,27 +33,33 @@ export function RegistrarCanonReajustado({
   liquidacionActiva: boolean
 }) {
   const [abierto, setAbierto] = useState(false)
-  const [canon, setCanon] = useState('')
+  const [canon, setCanon] = useState<number | undefined>(undefined)
+  // Es la base de la tarifa mensual: antes de guardar se muestra «de $X a $Y desde {mes}».
+  const [revisando, setRevisando] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [registrado, setRegistrado] = useState(false)
+  const [registrado, setRegistrado] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const mesDesde = mesTexto(periodoDesde(aniversario))
+  const menor = canon !== undefined && !!canonActual && canon < canonActual
 
   const cerrar = () => {
     if (enviando) return
     setError(null)
+    setRevisando(false)
     setAbierto(false)
   }
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    const valor = Number(canon)
-    if (!Number.isFinite(valor) || valor <= 0) return setError('Indique el canon reajustado')
+    if (!canon) return setError('Indique el canon reajustado')
     setError(null)
+    if (!revisando) return setRevisando(true)
     setEnviando(true)
     try {
-      await tarifaCobroService.registrarCanon(contratoId, aniversario, Math.round(valor))
+      await tarifaCobroService.registrarCanon(contratoId, aniversario, canon)
       toast.success('Canon reajustado registrado.')
-      setRegistrado(true)
+      setRegistrado(canon)
+      setRevisando(false)
       setAbierto(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar el canon')
@@ -68,7 +76,7 @@ export function RegistrarCanonReajustado({
       </p>
       <p className="mt-1 text-sm text-gray-600">
         {registrado
-          ? 'Ya registró el canon reajustado. Si necesita corregirlo, regístrelo de nuevo.'
+          ? `Registró ${formatCurrency(registrado)} desde ${mesDesde}. Si necesita corregirlo, regístrelo de nuevo.`
           : `El ${formatDate(aniversario)} el contrato cumple un año más y el canon se reajusta. Mientras no registre el canon reajustado, la tarifa mensual se ${liquidacionActiva ? 'liquida' : 'liquidará'} sobre el canon actual. Si ya lo registró, no necesita hacerlo de nuevo.`}
       </p>
       <button
@@ -87,30 +95,40 @@ export function RegistrarCanonReajustado({
             que el canon actual.
           </p>
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-          <div>
-            <label htmlFor="canon-reajustado" className="block text-sm font-medium text-gray-700 mb-1">
-              Canon mensual reajustado (COP) <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="canon-reajustado"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              step={1}
+          {revisando && canon ? (
+            <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
+              <p>
+                Canon {canonActual ? <>de <strong>{formatCurrency(canonActual)}</strong> </> : ''}a{' '}
+                <strong>{formatCurrency(canon)}</strong>, desde {mesDesde}. La tarifa mensual se liquida sobre este valor.
+              </p>
+              {menor && (
+                <p className="flex items-start gap-1.5 text-amber-800">
+                  <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                  El nuevo canon es menor que el actual. Revise que el valor esté bien escrito.
+                </p>
+              )}
+            </div>
+          ) : (
+            <CampoPesos
+              label="Canon mensual reajustado (COP)"
+              requerido
               value={canon}
-              onChange={(e) => setCanon(e.target.value)}
+              onChange={(v) => {
+                setCanon(v)
+                setError(null)
+              }}
               disabled={enviando}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              placeholder="Ej.: 2.500.000"
             />
-          </div>
+          )}
           <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
             <button
               type="button"
-              onClick={cerrar}
+              onClick={revisando ? () => setRevisando(false) : cerrar}
               disabled={enviando}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Cancelar
+              {revisando ? 'Corregir' : 'Cancelar'}
             </button>
             <button
               type="submit"
@@ -118,7 +136,7 @@ export function RegistrarCanonReajustado({
               className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {enviando && <IconLoader size={16} className="animate-spin" />}
-              {enviando ? 'Registrando…' : 'Registrar canon'}
+              {enviando ? 'Registrando…' : revisando ? 'Confirmar y registrar' : 'Revisar'}
             </button>
           </div>
         </form>

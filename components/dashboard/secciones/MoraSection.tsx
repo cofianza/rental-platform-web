@@ -100,7 +100,7 @@ export function MoraSection() {
     <div>
       <SeccionHeader title="Mora" subtitle="Gestión de cobro en 3 fases" />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi
           label="Casos activos"
           value={activas.length}

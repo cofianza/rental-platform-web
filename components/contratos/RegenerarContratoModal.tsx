@@ -70,7 +70,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
     try {
       const valor = valorArriendo.trim() ? Number(valorArriendo) : undefined
       if (valor !== undefined && (Number.isNaN(valor) || valor <= 0)) {
-        toast.error('El valor del canon debe ser un numero positivo')
+        toast.error('El valor del canon debe ser un número positivo')
         setSubmitting(false)
         return
       }
@@ -184,7 +184,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
           {reasignarServicios && (
             <div className="mt-3 space-y-2">
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                Solo se actualizan los servicios que cambies; el resto conserva su asignación actual.
+                Solo se actualizan los servicios que cambie; el resto conserva su asignación actual.
               </p>
               {SERVICIOS_CONTRATO.map((s) => (
                 <div key={s.key} className="flex items-center justify-between gap-3">

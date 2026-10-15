@@ -18,6 +18,7 @@ import type { FuenteVerificacion } from '@/types/autorizacion'
 import { EVENTO_BLOQUEOS } from './BloqueosPendientesBanner'
 // Los mismos tipos con los que se registra al prospecto (sin NIT: Adenda de precios §6.1).
 import { TIPO_DOCUMENTO_OPTIONS as TIPOS } from './wizard/constants'
+import { documento } from '@/components/contratos/v3/campos'
 
 const FUENTES: { value: FuenteVerificacion; label: string }[] = [
   { value: 'documento_fisico', label: 'Documento físico' },
@@ -110,12 +111,16 @@ export function CorregirDocumentoModal({
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
             <p className="text-xs text-gray-500">Documento registrado</p>
             <p className="font-mono font-semibold text-gray-900">
-              {(tipoActual || '').toUpperCase()} {numeroActual || '—'}
+              {documento(tipoActual || '', numeroActual || '—')}
             </p>
           </div>
           <p className="text-xs text-gray-600">
             Verifique el documento con el prospecto antes de corregirlo. Solo se corrigen el tipo y el número: si la
             persona es otra, cree un estudio nuevo.
+          </p>
+          <p className="text-xs text-gray-600">
+            Si el prospecto tiene un enlace vigente, dejará de funcionar: después de corregir tendrá que reenviárselo,
+            y ese reenvío cuenta dentro de los permitidos.
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
             <div className="sm:col-span-2">
@@ -142,7 +147,7 @@ export function CorregirDocumentoModal({
               </label>
               <input
                 id="corregir-doc-numero"
-                inputMode="numeric"
+                inputMode={tipo === 'pasaporte' ? 'text' : 'numeric'}
                 autoComplete="off"
                 value={numero}
                 maxLength={20}
@@ -179,6 +184,9 @@ export function CorregirDocumentoModal({
                   ? 'Le queda 1 corrección.'
                   : `Le quedan ${restantes} correcciones.`}
             </p>
+          )}
+          {!valido && (
+            <p className="text-xs text-gray-500">Escriba al menos 5 caracteres y elija contra qué lo verificó.</p>
           )}
           <div className="flex justify-end gap-2 pt-1">
             <button

@@ -242,7 +242,7 @@ export function Paso1Confirmacion({
           checked={value.ruta === 'B'}
           onSelect={() => onChange({ ...value, ruta: 'B' })}
           titulo="Ruta B — contrato propio de la inmobiliaria"
-          descripcion="Carga su contrato en PDF: va primero y sin modificaciones, seguido de una página divisoria y del Anexo de condiciones de la fianza. En el paso 5 ubica dónde firma cada parte sobre su contrato."
+          descripcion="Cargue su contrato en PDF: va primero y sin modificaciones, seguido de una página divisoria y del Anexo de condiciones de la fianza. En el paso 5 ubique dónde firma cada parte sobre su contrato."
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}

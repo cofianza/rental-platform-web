@@ -7,11 +7,12 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { IconLoader, IconArrowRight } from '@/components/icons'
+import { IconLoader, IconArrowRight, IconCheckCircle } from '@/components/icons'
+import { ariaError, scrollToFirstError } from '@/components/auth/registro-ui'
 import { registrarInteresPublico, type PublicProperty } from '@/services/publicPropertiesService'
 import { mensajeParaProspecto } from '@/lib/errorMessages'
 import { formatCurrency } from '@/lib/constants'
@@ -46,9 +47,27 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
   const [mensaje, setMensaje] = useState('')
   const [acepta, setAcepta] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // Errores junto a cada campo (antes un solo toast que no decía cuál fallaba).
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  // Tras enviar, el diálogo queda abierto con la confirmación: un toast de
+  // segundos se perdía en el celular y el visitante no sabía si se envió.
+  const [enviado, setEnviado] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const limpiarError = (campo: string) => setErrors((e) => (e[campo] ? { ...e, [campo]: '' } : e))
 
   const cerrar = () => {
-    if (!submitting) onClose()
+    if (submitting) return
+    if (enviado) {
+      setNombre('')
+      setTelefono('')
+      setEmail('')
+      setMensaje('')
+      setAcepta(false)
+      setEnviado(false)
+    }
+    setErrors({})
+    onClose()
   }
 
   const enviar = async () => {
@@ -59,17 +78,21 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
     // PhoneInput siempre antepone el indicativo. El celular es el único contacto
     // obligatorio: en Colombia se exige completo (3 + 9 dígitos).
     const telOk = tel.startsWith('+57') ? /^\+573\d{9}$/.test(tel) : /^\+\d{8,15}$/.test(tel)
-    if (nombre.trim().length < 2 || !telOk) {
-      toast.error('Complete su nombre y celular')
-      return
-    }
     const correo = email.trim()
-    if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
-      toast.error('Ingrese un correo válido o deje el campo vacío')
-      return
+    const nuevos: Record<string, string> = {}
+    if (nombre.trim().length < 2) nuevos.nombre = 'Escriba su nombre'
+    if (!telOk) {
+      nuevos.telefono = tel.startsWith('+57')
+        ? 'Escriba el celular completo: 10 dígitos que empiezan por 3'
+        : 'Escriba un número de celular válido'
     }
-    if (!acepta) {
-      toast.error('Debe autorizar el tratamiento de sus datos para continuar')
+    if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+      nuevos.email = 'Escriba un correo válido o deje el campo vacío'
+    }
+    if (!acepta) nuevos.acepta = 'Debe autorizar el tratamiento de sus datos para continuar'
+    setErrors(nuevos)
+    if (Object.keys(nuevos).length > 0) {
+      scrollToFirstError(formRef.current)
       return
     }
 
@@ -82,13 +105,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
         mensaje: mensaje.trim() || undefined,
         acepta: true,
       })
-      toast.success('¡Listo! Lo contactarán pronto para agendar la visita.')
-      setNombre('')
-      setTelefono('')
-      setEmail('')
-      setMensaje('')
-      setAcepta(false)
-      onClose()
+      setEnviado(true)
     } catch (err) {
       // Sin red, fetch rechaza con un TypeError cuyo texto viene en inglés
       // («Failed to fetch»): mensajeParaProspecto lo cambia por el aviso de
@@ -113,7 +130,27 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
       // de la franja fija de botones, no escondido debajo de ella.
       className="[&>.overflow-y-auto]:scroll-pb-32"
     >
+      {enviado ? (
+        <div className="space-y-4 text-center py-2" role="status">
+          <IconCheckCircle size={44} className="mx-auto text-primary-600" />
+          <div>
+            <p className="text-lg font-semibold text-gray-900">Listo, recibimos su interés</p>
+            <p className="mt-1 text-sm text-gray-600">
+              El propietario o la inmobiliaria lo contactará al <strong>{telefono}</strong> para
+              agendar la visita.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={cerrar}
+            className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+          >
+            Seguir viendo inmuebles
+          </button>
+        </div>
+      ) : (
       <form
+        ref={formRef}
         noValidate
         onSubmit={(e) => {
           e.preventDefault()
@@ -132,17 +169,26 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             type="text"
             autoComplete="name"
             value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            onChange={(e) => {
+              setNombre(e.target.value)
+              limpiarError('nombre')
+            }}
             placeholder="Nombre completo"
-            className={INPUT}
+            className={`${INPUT}${errors.nombre ? ' border-red-500' : ''}`}
+            {...ariaError(errors, 'nombre')}
           />
+          {errors.nombre && <p id="error-nombre" className="mt-1.5 text-sm text-red-600">{errors.nombre}</p>}
         </div>
 
         <PhoneInput
           label="Celular / WhatsApp"
           value={telefono}
-          onChange={setTelefono}
+          onChange={(v) => {
+            setTelefono(v)
+            limpiarError('telefono')
+          }}
           placeholder="300 123 4567"
+          error={errors.telefono}
           required
         />
 
@@ -155,10 +201,15 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              limpiarError('email')
+            }}
             placeholder="nombre@email.com"
-            className={INPUT}
+            className={`${INPUT}${errors.email ? ' border-red-500' : ''}`}
+            {...ariaError(errors, 'email')}
           />
+          {errors.email && <p id="error-email" className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
         </div>
 
         <div>
@@ -176,12 +227,17 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
           />
         </div>
 
+        <div>
         <label className="flex items-start gap-2 text-xs text-gray-600">
           <input
             type="checkbox"
             checked={acepta}
-            onChange={(e) => setAcepta(e.target.checked)}
+            onChange={(e) => {
+              setAcepta(e.target.checked)
+              limpiarError('acepta')
+            }}
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            {...ariaError(errors, 'acepta')}
           />
           <span>
             Autorizo que Cofianza comparta mis datos de contacto con el anunciante de este
@@ -192,6 +248,8 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             .
           </span>
         </label>
+        {errors.acepta && <p id="error-acepta" className="mt-1.5 text-sm text-red-600">{errors.acepta}</p>}
+        </div>
 
         <p className="text-xs text-gray-500 leading-relaxed">
           El propietario o inmobiliaria lo contactará para agendar una visita. Si decide tomarlo,
@@ -223,6 +281,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
           </button>
         </div>
       </form>
+      )}
     </Modal>
   )
 }

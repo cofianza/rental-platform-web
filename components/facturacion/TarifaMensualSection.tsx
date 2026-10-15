@@ -505,11 +505,11 @@ function FilaLinea({
   // «Anular» es solo de la Gerencia General (la API responde 403 al resto de administradores).
   const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
   const acciones = accionesDeLinea(l, cuenta.estado, rol, esGerencia)
-  const numero = l.contrato?.numero ?? l.contrato_id.slice(0, 8)
+  const numero = l.contrato?.numero ?? 'Sin número'
   return (
     <tr className={l.estado === 'anulada' ? 'text-gray-400' : 'text-gray-700'}>
-      <td className="px-3 py-2 font-mono">{numero}</td>
-      <td className="px-3 py-2">{l.periodo.slice(0, 7)}</td>
+      <td className={`px-3 py-2 ${l.contrato?.numero ? 'font-mono' : ''}`}>{numero}</td>
+      <td className="px-3 py-2 capitalize">{mesTexto(l.periodo)}</td>
       <td className="px-3 py-2 capitalize">
         {l.modalidad}
         {!l.facturable && <span className="block normal-case text-gray-500">sin factura</span>}

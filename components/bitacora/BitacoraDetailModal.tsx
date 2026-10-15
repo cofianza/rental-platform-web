@@ -13,6 +13,7 @@ const ENTITY_ROUTES: Record<string, string> = {
   contrato: '/contratos',
   user: '/usuarios',
   inmueble: '/inmuebles',
+  migracion_lote: '/admin/migracion/lotes',
 }
 
 const LINK_CLASS = 'inline-flex items-center gap-1 font-mono text-xs text-primary-600 hover:underline'
@@ -31,6 +32,19 @@ function formatDateTime(dateStr: string) {
     minute: '2-digit',
     second: '2-digit',
   })
+}
+
+// El detalle es JSON libre de la API: se muestra clave → valor en palabras.
+function etiquetaClave(k: string) {
+  const t = k.replace(/_/g, ' ')
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
+
+function valorLegible(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—'
+  if (typeof v === 'boolean') return v ? 'Sí' : 'No'
+  if (typeof v === 'object') return JSON.stringify(v)
+  return String(v)
 }
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -53,13 +67,13 @@ export function BitacoraDetailModal({ log, onClose }: BitacoraDetailModalProps) 
     !rutaEntidad && typeof log.detalle?.expediente_id === 'string' ? log.detalle.expediente_id : null
 
   return (
-    <Modal isOpen={!!log} onClose={onClose} title="Detalle de registro" size="lg">
+    <Modal isOpen={!!log} onClose={onClose} title="Detalle de registro" size="lg" closeOnBackdrop>
       <div className="space-y-1">
         <DetailRow label="Fecha/Hora">{formatDateTime(log.created_at)}</DetailRow>
         <DetailRow label="Usuario">
           {log.usuario_nombre || <span className="text-gray-500">Sistema</span>}
         </DetailRow>
-        <DetailRow label="Accion">
+        <DetailRow label="Acción">
           <ActionBadge action={log.accion} />
         </DetailRow>
         <DetailRow label="Entidad">{ENTITY_LABELS[log.entidad] || log.entidad}</DetailRow>
@@ -83,16 +97,21 @@ export function BitacoraDetailModal({ log, onClose }: BitacoraDetailModalProps) 
             )}
           </DetailRow>
         )}
-        <DetailRow label="Direccion IP">
+        <DetailRow label="Dirección IP">
           <span className="font-mono">{log.ip || '-'}</span>
         </DetailRow>
 
         {log.detalle && Object.keys(log.detalle).length > 0 && (
           <div className="pt-3">
             <h4 className="text-sm font-medium text-gray-500 mb-2">Detalles</h4>
-            <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-800 overflow-x-auto max-h-64 overflow-y-auto">
-              {JSON.stringify(log.detalle, null, 2)}
-            </pre>
+            <dl className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 max-h-64 overflow-y-auto">
+              {Object.entries(log.detalle).map(([k, v]) => (
+                <div key={k} className="flex flex-col sm:flex-row gap-0.5 sm:gap-4 py-1.5 border-b border-gray-100 last:border-0">
+                  <dt className="text-xs font-medium text-gray-500 sm:w-40 shrink-0">{etiquetaClave(k)}</dt>
+                  <dd className="text-xs text-gray-800 break-words min-w-0">{valorLegible(v)}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         )}
       </div>

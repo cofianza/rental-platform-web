@@ -21,6 +21,7 @@ import {
 } from '@/components/icons'
 import { Chip, SeccionEstado, fechaCorta, useSeccion } from '@/components/dashboard/secciones/_shared'
 import { errorPdf, migracionService } from '@/services/migracionService'
+import { useAuthStore } from '@/stores/auth.store'
 import type {
   Destinacion,
   EstadoHabilitacion,
@@ -396,6 +397,8 @@ function TarjetaDestinacion({
 export default function HabilitacionMigracionPage() {
   const { orgId } = useParams<{ orgId: string }>()
   const { data, loading, error, reload } = useSeccion(() => migracionService.estadoOrg(orgId))
+  // La API responde 403 SOLO_GERENCIA_GENERAL a cualquier otro al reactivar.
+  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
   const [suspendiendo, setSuspendiendo] = useState(false)
   const [reactivando, setReactivando] = useState(false)
 
@@ -461,9 +464,11 @@ export default function HabilitacionMigracionPage() {
                 )}
               </div>
               {data.suspension ? (
-                <Button variante="secondary" onClick={() => setReactivando(true)}>
-                  <IconPower size={16} /> Reactivar
-                </Button>
+                esGerencia && (
+                  <Button variante="secondary" onClick={() => setReactivando(true)}>
+                    <IconPower size={16} /> Reactivar
+                  </Button>
+                )
               ) : (
                 <Button variante="danger" onClick={() => setSuspendiendo(true)}>
                   <IconPower size={16} /> Suspender

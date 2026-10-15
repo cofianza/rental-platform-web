@@ -11,14 +11,11 @@
  */
 
 import { apiClient } from '@/lib/api'
-import { API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
 import type {
   IFactura,
   IFacturaListResponse,
   IFacturaFilters,
   ICrearFacturaInput,
-  IAnularFacturaInput,
   IDocumentoPresignedUrl,
 } from '@/types/facturacion'
 
@@ -293,12 +290,6 @@ class FacturacionService {
     return full
   }
 
-  async anularFactura(_id: string, _input: IAnularFacturaInput): Promise<IFactura> {
-    throw new Error(
-      'Anular facturas se hace desde Factus directamente vía nota crédito. Aún no expuesto en este panel.',
-    )
-  }
-
   // ── Documentos: hoy las URLs PDF/XML las sirve Factus directamente.
   //    Mantenemos las firmas como no-op para no romper la UI.
   // ------------------------------------------
@@ -321,26 +312,8 @@ class FacturacionService {
     tipo: 'pdf' | 'xml',
     options?: { inline?: boolean },
   ): Promise<{ url: string; fileName: string }> {
-    const token = useAuthStore.getState().accessToken
     const inlineQs = options?.inline ? '?inline=true' : ''
-    const response = await fetch(
-      `${API_BASE_URL}/facturas/${facturaId}/factus/${tipo}${inlineQs}`,
-      {
-        method: 'GET',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        credentials: 'include',
-      },
-    )
-    if (!response.ok) {
-      let msg = `Error al descargar ${tipo.toUpperCase()}`
-      try {
-        const errBody = (await response.json()) as { message?: string }
-        if (errBody?.message) msg = errBody.message
-      } catch {
-        // body no JSON
-      }
-      throw new Error(msg)
-    }
+    const response = await apiClient.raw(`/facturas/${facturaId}/factus/${tipo}${inlineQs}`)
 
     // Extraer filename del Content-Disposition si esta presente
     const cd = response.headers.get('content-disposition') || ''
@@ -374,10 +347,6 @@ class FacturacionService {
   async getDownloadUrl(facturaId: string, tipo: 'pdf' | 'xml'): Promise<{ url: string; expires_in: number }> {
     const { url } = await this.descargarFactusDocumento(facturaId, tipo, { inline: true })
     return { url, expires_in: 0 }
-  }
-
-  async eliminarDocumento(_facturaId: string, _tipo: 'pdf' | 'xml'): Promise<IFactura> {
-    throw new Error('No aplica para facturas electrónicas Factus.')
   }
 
   // ── Configuración admin: tarifas de IVA por concepto ───────

@@ -29,6 +29,7 @@ import {
 import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
+import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -105,6 +106,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const [pedirMotivo, setPedirMotivo] = useState(false)
   const [confirmarReintento, setConfirmarReintento] = useState(false)
   const [pedirMotivoTerminar, setPedirMotivoTerminar] = useState(false)
+  // Terminar no cierra la mora (el cobro sigue): se avisa, como en el flujo anterior.
+  const [morasActivas, setMorasActivas] = useState(0)
   const [confirmarProrroga, setConfirmarProrroga] = useState(false)
   const actaRef = useRef<HTMLInputElement>(null)
   const visor = useVisor()
@@ -146,17 +149,29 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrá aceptarlo aquí.'
       : null
 
+  const urlContrato = async (inline: boolean) => {
+    const r = await contratoService.descargarContrato(e.id, { inline })
+    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
+    if (firmado && r.firmado === false)
+      throw new Error('La versión firmada todavía se está archivando desde Auco. Intente de nuevo en unos minutos.')
+    return r.url
+  }
+
+  const abrirTerminar = () => {
+    setMorasActivas(0)
+    setPedirMotivoTerminar(true)
+    contratoService
+      .getTransicionesDisponibles(e.id)
+      .then((t) => setMorasActivas(t.moras_activas ?? 0))
+      .catch(() => {}) // best-effort: sin el conteo, el diálogo sigue igual
+  }
+
   const docs: DocVisor[] = [
     {
       clave: 'contrato',
       etiqueta: firmado ? 'Documento firmado' : 'Documento enviado a firma',
-      cargar: async () => {
-        const r = await contratoService.descargarContrato(e.id, { inline: true })
-        // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
-        if (firmado && r.firmado === false)
-          throw new Error('La versión firmada todavía se está archivando desde Auco. Intente de nuevo en unos minutos.')
-        return r.url
-      },
+      cargar: () => urlContrato(true),
+      descargar: { etiqueta: firmado ? 'Descargar contrato firmado' : 'Descargar contrato', url: () => urlContrato(false) },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
@@ -210,7 +225,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         </div>
         {editable && activa && (
           <div className="flex flex-wrap gap-2">
-            <Button variante="secondary" onClick={() => setPedirMotivoTerminar(true)} disabled={ocupado}>
+            <Button variante="secondary" onClick={abrirTerminar} disabled={ocupado}>
               {accion === 'terminar' && <IconLoader size={16} className="animate-spin" />}
               Terminar contrato
             </Button>
@@ -419,6 +434,14 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         )}
       </section>
 
+      <CobroTarifaContrato
+        contratoId={e.id}
+        estado={e.estado}
+        fechaInicio={e.vigencia?.inicio}
+        causaTarifa={firmado}
+        editable={editable}
+      />
+
       {e.acta && (
         <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           <div>
@@ -542,7 +565,21 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           toast.success(`Contrato ${e.numero} terminado`)
         }}
         title="¿Terminar el contrato?"
-        descripcion="No se puede deshacer. La fianza deja de operar y el inmueble queda disponible (fuera de la vitrina). El estudio se cierra aparte, con el acta de entrega."
+        descripcion={
+          <>
+            <p>
+              No se puede deshacer. La fianza deja de operar y el inmueble queda disponible (fuera de la vitrina). El estudio se
+              cierra aparte, con el acta de entrega.
+            </p>
+            {morasActivas > 0 && (
+              <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-amber-800">
+                <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                Este contrato tiene {morasActivas === 1 ? 'una mora activa' : `${morasActivas} moras activas`}. Terminarlo no cierra
+                la mora: el cobro sigue su curso.
+              </p>
+            )}
+          </>
+        }
         label="Motivo de la terminación"
         confirmLabel="Terminar contrato"
         variant="danger"

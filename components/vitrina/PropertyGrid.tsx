@@ -174,6 +174,14 @@ export function PropertyGrid() {
     setPage(1)
   }
 
+  // Al cambiar de página se sube al inicio de los resultados: la paginación está
+  // al pie y, en el celular, el visitante quedaba viendo el final de la nueva.
+  const resultadosRef = useRef<HTMLDivElement>(null)
+  const irAPagina = (n: number) => {
+    setPage(n)
+    resultadosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const clearFilters = () => {
     setSearch('')
     setCiudad('')
@@ -199,7 +207,9 @@ export function PropertyGrid() {
           type="text"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Buscar por barrio, ciudad, tipo de inmueble..."
+          // El buscador separa términos por comas («Laureles, Medellín»).
+          placeholder="Ej.: Laureles, Medellín"
+          aria-label="Buscar inmuebles por barrio, ciudad o tipo"
           className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
         />
       </div>
@@ -292,7 +302,7 @@ export function PropertyGrid() {
       </div>
 
       {/* Results count */}
-      <div className="flex items-center justify-between">
+      <div ref={resultadosRef} className="flex items-center justify-between scroll-mt-24">
         <p className="text-sm text-gray-600">
           {loading ? (
             <span className="inline-block w-40 h-4 bg-gray-200 rounded animate-pulse" />
@@ -329,7 +339,9 @@ export function PropertyGrid() {
           <IconHome size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay resultados</h3>
           <p className="text-sm text-gray-500 mb-4">
-            No encontramos inmuebles con los filtros actuales. Intente ampliar su búsqueda.
+            {search.trim()
+              ? 'No encontramos inmuebles con esa búsqueda. Pruebe solo con el barrio o la ciudad, o separe las palabras con comas.'
+              : 'No encontramos inmuebles con los filtros actuales. Intente ampliar su búsqueda.'}
           </p>
           {hasActiveFilters && (
             <button
@@ -357,7 +369,7 @@ export function PropertyGrid() {
       {totalPages > 1 && !loading && (
         <div className="flex items-center justify-center gap-2 pt-4">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => irAPagina(Math.max(1, page - 1))}
             disabled={page <= 1}
             className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Página anterior"
@@ -371,7 +383,8 @@ export function PropertyGrid() {
             ) : (
               <button
                 key={p}
-                onClick={() => setPage(Number(p))}
+                onClick={() => irAPagina(Number(p))}
+                aria-current={Number(p) === page ? 'page' : undefined}
                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                   Number(p) === page
                     ? 'bg-primary-700 text-white'
@@ -384,7 +397,7 @@ export function PropertyGrid() {
           )}
 
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => irAPagina(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
             className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Página siguiente"

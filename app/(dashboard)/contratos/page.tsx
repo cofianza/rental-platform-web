@@ -6,7 +6,6 @@ import { IconSettings } from '@/components/icons'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/auth.store'
 import { ContratosPageSkeleton } from '@/components/contratos'
-import { ContratosAgrupados } from '@/components/contratos/ContratosAgrupados'
 import { ContratosInmobiliariaView } from '@/components/contratos/ContratosInmobiliariaView'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 
@@ -17,7 +16,7 @@ function ContratosContent() {
   // logo, etc.). Atajo desde la pantalla donde naturalmente miran sus contratos.
   const canEditDatosContrato = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
 
-  // KPI cards (Pendientes de generar / En proceso de firma / Activos).
+  // Total de contratos para el subtítulo.
   const [stats, setStats] = useState<IContratosStats | null>(null)
   const [statsError, setStatsError] = useState(false)
   useEffect(() => {
@@ -40,22 +39,9 @@ function ContratosContent() {
     </Link>
   ) : undefined
 
-  // Inmobiliaria y propietario: vista re-skin (mockups 13/14) con stat-cards +
-  // paneles por etapa. El listado ya viene filtrado por rol desde el backend.
-  // Admin/operador conservan la vista operativa (KPIMini + tabla).
-  if (user?.rol === 'inmobiliaria' || user?.rol === 'propietario') {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Contratos"
-          subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : statsError ? 'No se pudieron cargar los indicadores' : 'Cargando…'}
-          actions={datosContratoAction}
-        />
-        <ContratosInmobiliariaView />
-      </div>
-    )
-  }
-
+  // Una sola vista para todos los roles (el listado ya viene filtrado por rol
+  // desde el backend): stat-cards, paneles por etapa, búsqueda, paginación y
+  // los terminados y cancelados. Cofianza antes veía 100 contratos sin buscador.
   return (
     <div className="space-y-6">
       <PageHeader
@@ -63,23 +49,7 @@ function ContratosContent() {
         subtitle={stats ? `${stats.total} contrato${stats.total !== 1 ? 's' : ''}` : statsError ? 'No se pudieron cargar los indicadores' : 'Cargando…'}
         actions={datosContratoAction}
       />
-
-      {/* KPI cards (Gerencia 12-may-2026): Pendientes de generar (coral) /
-          En proceso de firma (azul) / Activos (verde). */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPIMini label="Pendientes de generar" value={stats?.pendientes_generar ?? 0} color="bg-coral-500" />
-        {/* Firma incompleta (V3) cuenta aquí: el API aún no le da contador propio (E6). */}
-        <KPIMini
-          label="En proceso de firma"
-          value={(stats?.en_proceso_firma ?? 0) + (stats?.por_estado.firma_incompleta ?? 0)}
-          color="bg-blue-500"
-        />
-        <KPIMini label="Activos" value={stats?.activos ?? 0} color="bg-primary-600" />
-      </div>
-
-      {/* Contratos agrupados por etapa (mockup 13_v2): Pendientes de generar /
-          En proceso de firma / Contratos activos. */}
-      <ContratosAgrupados />
+      <ContratosInmobiliariaView />
     </div>
   )
 }
@@ -89,16 +59,5 @@ export default function ContratosPage() {
     <Suspense fallback={<ContratosPageSkeleton />}>
       <ContratosContent />
     </Suspense>
-  )
-}
-
-// KPI card pequeno reutilizado para los stats arriba del listado.
-function KPIMini({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 relative overflow-hidden">
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${color}`} />
-      <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
   )
 }

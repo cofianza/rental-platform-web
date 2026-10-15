@@ -153,7 +153,9 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
           type="file"
           accept="application/pdf"
           onChange={handleFileChange}
-          className="hidden"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
         />
 
         {/* Optional fields */}

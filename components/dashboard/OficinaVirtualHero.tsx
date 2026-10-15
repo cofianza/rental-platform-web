@@ -14,13 +14,14 @@ import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
 
+// Formato colombiano: «$1,5 M» y «$850 mil» (antes «$1.5M» y «$850K»).
 function formatCompactCOP(monto: number): string {
   if (monto >= 1_000_000) {
     const millones = monto / 1_000_000
-    return `$${millones.toFixed(millones >= 10 ? 0 : 1)}M`
+    return `$${millones.toLocaleString('es-CO', { maximumFractionDigits: millones >= 10 ? 0 : 1 })} M`
   }
   if (monto >= 1_000) {
-    return `$${(monto / 1_000).toFixed(0)}K`
+    return `$${Math.round(monto / 1_000).toLocaleString('es-CO')} mil`
   }
   return formatCurrency(monto)
 }

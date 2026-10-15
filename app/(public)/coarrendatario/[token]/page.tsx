@@ -181,7 +181,7 @@ export default function CoarrendatarioPublicPage() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6">
-          <h1 className="text-xl font-bold mb-1">{titular} lo invita a co-arrendar</h1>
+          <h1 className="text-xl font-bold mb-1">{titular} lo invita a ser su coarrendatario</h1>
           <p className="text-primary-100 text-sm">
             {inmueble}
           </p>
@@ -193,12 +193,14 @@ export default function CoarrendatarioPublicPage() {
             {/* P4: si el documento no es el suyo, que decline en vez de autorizar una consulta ajena. */}
             {view?.documento && (
               <p className="text-xs text-gray-500 mb-2">
-                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el suyo, decline la invitación.
+                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si no es el suyo, decline la
+                invitación y avísele a {view.expediente.titular_nombre || 'quien lo invitó'} para que lo invite de nuevo con el documento correcto.
               </p>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">
-              En Cofianza <strong>rentamos sin fiador</strong>. {titular} lo invita a ser su coarrendatario para que
-              tomen el arriendo juntos: los dos firman como un solo arrendatario y nosotros los respaldamos.
+              Con Cofianza <strong>no necesita buscar un fiador</strong>: nosotros respaldamos el arriendo. {titular} lo
+              invita a ser su coarrendatario para que tomen el arriendo juntos: los dos firman como un solo
+              arrendatario y nosotros los respaldamos.
             </p>
           </div>
 
@@ -338,7 +340,7 @@ export default function CoarrendatarioPublicPage() {
           onClose={() => setConfirmandoRechazo(false)}
           onConfirm={handleRechazar}
           title="¿Declinar la invitación?"
-          message="Si declina, el estudio sigue sin usted y quien lo invitó tendrá que volver a empezar con usted desde cero. No puede deshacerlo desde aquí."
+          message="Si declina, el estudio sigue sin usted y quien lo invitó tendrá que enviarle una invitación nueva. No puede deshacerlo desde aquí."
           confirmLabel="Sí, declinar"
           cancelLabel="Volver"
           variant="danger"

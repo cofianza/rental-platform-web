@@ -190,6 +190,9 @@ interface AprobacionFilters {
 export default function AprobacionExpedientesPage() {
   const [data, setData] = useState<AprobacionData | null>(null)
   const [loading, setLoading] = useState(true)
+  // Tercer estado (como en Ingresos): sin esto un fallo se veía como «no hay
+  // datos» y, al fallar con filtros nuevos, quedaban las cifras del periodo anterior.
+  const [falloCarga, setFalloCarga] = useState(false)
   const [filters, setFilters] = useState<AprobacionFilters>({
     dateFrom: '',
     dateTo: '',
@@ -204,9 +207,12 @@ export default function AprobacionExpedientesPage() {
 
       const result = await reporteService.getAprobacionExpedientes(cleanFilters)
       setData(result)
+      setFalloCarga(false)
     } catch (err) {
       console.error('Error cargando aprobacion de estudios:', err)
       toast.error('Error al cargar el reporte de aprobación')
+      setData(null)
+      setFalloCarga(true)
     } finally {
       setLoading(false)
     }
@@ -250,10 +256,25 @@ export default function AprobacionExpedientesPage() {
         }
       />
 
+      {falloCarga && !loading && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="flex-1 text-sm text-amber-900">
+            No se pudo cargar el reporte. Las cifras de abajo no están disponibles — no son cero.
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchData(filters)}
+            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Global indicator */}
       {loading ? (
         <IndicatorSkeleton />
-      ) : (
+      ) : falloCarga ? null : (
         <div
           className={`rounded-lg border p-6 text-center ${
             tasaGlobal != null ? tasaBgColor(tasaGlobal) : 'bg-gray-50 text-gray-500 border-gray-200'
@@ -319,6 +340,8 @@ export default function AprobacionExpedientesPage() {
           <ChartSkeleton />
         ) : hasMeses ? (
           <StackedBarChart data={data.meses} />
+        ) : falloCarga ? (
+          <p className="py-12 text-center text-sm text-gray-500">No disponible</p>
         ) : (
           <EmptyChart />
         )}

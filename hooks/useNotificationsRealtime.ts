@@ -76,6 +76,7 @@ export function useNotificationsRealtime() {
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.error('[useNotificationsRealtime] fetch inicial fallo:', err)
+        if (!cancelled) useNotificationStore.getState().setError(true)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

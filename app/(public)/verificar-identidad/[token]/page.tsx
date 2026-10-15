@@ -15,10 +15,12 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { firmaService } from '@/services/firmaService'
 import { Ranura } from '@/components/public/CapturaBiometrica'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import type { IVerificacionIdentidadPublica } from '@/types/firma'
 import {
   IconAlertTriangle,
@@ -26,6 +28,7 @@ import {
   IconCheck,
   IconId,
   IconLoader,
+  IconRefresh,
   IconShieldCheck,
   IconUser,
 } from '@/components/icons'
@@ -39,13 +42,15 @@ export default function VerificarIdentidadPage() {
   const [paso, setPaso] = useState<Paso>('cargando')
   const [data, setData] = useState<IVerificacionIdentidadPublica | null>(null)
   const [error, setError] = useState('')
+  const [reintentable, setReintentable] = useState(false)
   const [opcion, setOpcion] = useState<Opcion | null>(null)
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [aviso, setAviso] = useState('')
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setPaso('cargando')
     firmaService
       .getVerificacionIdentidad(token)
       .then((d) => {
@@ -53,10 +58,15 @@ export default function VerificarIdentidadPage() {
         setPaso(d.completada ? 'listo' : 'consentimiento')
       })
       .catch((e) => {
-        setError(e instanceof Error ? e.message : 'Este enlace no es válido.')
+        setError(mensajeParaProspecto(e, 'Este enlace no es válido.'))
+        setReintentable(esErrorTransitorio(e))
         setPaso('error')
       })
   }, [token])
+
+  useEffect(() => {
+    cargar()
+  }, [cargar])
 
   // Otra pestaña ya terminó (409): no es un error para la persona.
   async function ejecutar(fn: () => Promise<void>) {
@@ -66,7 +76,7 @@ export default function VerificarIdentidadPage() {
       await fn()
     } catch (e) {
       if ((e as { code?: string }).code === 'VERIFICACION_COMPLETADA') setPaso('listo')
-      else setAviso(e instanceof Error ? e.message : 'Algo falló. Intente de nuevo.')
+      else setAviso(mensajeParaProspecto(e, 'Algo falló. Intente de nuevo.'))
     } finally {
       setEnviando(false)
     }
@@ -79,12 +89,21 @@ export default function VerificarIdentidadPage() {
       setPaso(r.completada ? 'listo' : 'fotos')
     })
 
+  // Cada cotejo se factura en Auco y la misma selfie da el mismo resultado:
+  // para reintentar se pide una nueva (como en /autorizar).
   const verificar = () =>
     ejecutar(async () => {
       if (!documento || !selfie) return
-      const r = await firmaService.biometriaIdentidad(token, { documentImage: documento, photo: selfie })
-      if (r.completada) setPaso('listo')
-      else setAviso(r.motivo ?? '')
+      try {
+        const r = await firmaService.biometriaIdentidad(token, { documentImage: documento, photo: selfie })
+        if (r.completada) return setPaso('listo')
+        setSelfie(null)
+        setAviso(r.motivo || 'No pudimos confirmar su identidad con estas fotos.')
+      } catch (e) {
+        // Sin veredicto no se sabe si Auco cobró el cotejo.
+        setSelfie(null)
+        throw e
+      }
     })
 
   const continuar = () =>
@@ -103,9 +122,21 @@ export default function VerificarIdentidadPage() {
 
   if (paso === 'error' || !data) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-8 text-center">
-        <h1 className="text-xl font-bold text-gray-900">No pudimos abrir este enlace</h1>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">{error}</p>
+      <div>
+        <div className="rounded-xl border border-red-200 bg-white p-8 text-center">
+          <h1 className="text-xl font-bold text-gray-900">No pudimos abrir este enlace</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">{error}</p>
+          {reintentable && (
+            <button
+              type="button"
+              onClick={cargar}
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800"
+            >
+              <IconRefresh size={16} /> Reintentar
+            </button>
+          )}
+        </div>
+        <ContactoCofianza />
       </div>
     )
   }
@@ -118,8 +149,9 @@ export default function VerificarIdentidadPage() {
         </div>
         <h1 className="text-xl font-extrabold tracking-tight text-gray-900">Listo, {data.nombre.split(' ')[0]}</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">
-          En unos minutos le llega por WhatsApp el enlace para firmar el contrato. Si hace falta confirmar su
-          identidad por otro medio, un analista de Cofianza se comunicará con usted; su trámite sigue igual.
+          Le llegará por WhatsApp el enlace para firmar el contrato cuando sea su turno. Si otra persona también
+          debe confirmar su identidad, el envío sale cuando ella termine. Si hace falta confirmar su identidad por
+          otro medio, un analista de Cofianza se comunicará con usted; su trámite sigue igual.
         </p>
       </div>
     )
@@ -183,7 +215,7 @@ export default function VerificarIdentidadPage() {
         <>
           <div className="space-y-3">
             <Ranura
-              titulo="Foto de su cédula"
+              titulo="Foto de su documento de identidad"
               ayuda="El lado con su foto, sobre una superficie plana"
               icono={<IconId size={22} />}
               capture="environment"
@@ -211,8 +243,11 @@ export default function VerificarIdentidadPage() {
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {enviando && <IconLoader size={20} className="animate-spin" />}
-            {enviando ? 'Verificando…' : aviso ? 'Intentar de nuevo' : 'Verificar mi identidad'}
+            {enviando ? 'Verificando…' : aviso ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
           </button>
+          {aviso && !selfie && !enviando && (
+            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie con mejor luz.</p>
+          )}
 
           {/* Siempre visible: nadie queda atrapado por una cámara mala o un
               cotejo que no coincide (Adenda 2 §9: nunca se rechaza). */}

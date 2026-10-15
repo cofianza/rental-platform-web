@@ -161,7 +161,7 @@ function BeneficioPanel({ orgId }: { orgId: string }) {
 const ROL_LABEL: Record<RolMiembro, string> = {
   owner: 'Titular',
   miembro: 'Miembro',
-  solo_lectura: 'Sólo lectura',
+  solo_lectura: 'Solo lectura',
 }
 
 function RolBadge({ rol }: { rol: RolMiembro }) {
@@ -177,7 +177,7 @@ function RolBadge({ rol }: { rol: RolMiembro }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
         <IconEye size={12} />
-        Sólo lectura
+        Solo lectura
       </span>
     )
   }
@@ -297,17 +297,18 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
                 }}
                 title="Cambiar rol"
                 aria-label={`Rol de ${m.nombre || m.email}`}
-                className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                className="text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
               >
                 <option value="owner">Titular</option>
                 <option value="miembro">Miembro</option>
-                <option value="solo_lectura">Sólo lectura</option>
+                <option value="solo_lectura">Solo lectura</option>
               </select>
               <button
                 onClick={() => setRevocarTarget(m)}
                 disabled={busyId === m.id}
                 title="Quitar miembro"
-                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                aria-label={`Quitar a ${m.nombre || m.email}`}
+                className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
               >
                 <IconTrash size={16} />
               </button>
@@ -368,7 +369,7 @@ export default function AdminInmobiliariasPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <PageHeader
-        title="Equipos de inmobiliarias"
+        title="Miembros de inmobiliarias"
         subtitle="Gestione el convenio, los miembros y los titulares de cada organización aliada."
       />
 
@@ -400,6 +401,7 @@ export default function AdminInmobiliariasPage() {
               <div key={o.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <button
                   onClick={() => setAbierta(open ? null : o.id)}
+                  aria-expanded={open}
                   className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-gray-50"
                 >
                   <div className="min-w-0">

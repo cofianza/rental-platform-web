@@ -116,14 +116,20 @@ export function esRolInterno(rol?: string | null): boolean {
  * el propietario y el prospecto. Al coarrendatario nunca se le muestra el número.
  */
 export function textoCondicionCoarrendatario(c: { puntaje_objetivo: number; vence_en: string; vencida: boolean }): string {
-  const fecha = new Date(c.vence_en).toLocaleDateString('es-CO', {
+  const fecha = fechaCondicion(c.vence_en)
+  return c.vencida
+    ? // Con un coarrendatario que aceptó, la API no rechaza: pondera o pasa a revisión manual.
+      `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario en evaluación, el estudio se cerrará como no aprobado.`
+    : // La escala evita confundirlo con el score de las centrales (0 a 950).
+      `Aprobado con condición: presente un coarrendatario con puntaje mínimo ${c.puntaje_objetivo} sobre 100 en nuestra evaluación antes del ${fecha}.`
+}
+
+/** DD/MM/AAAA en hora de Bogotá: el vencimiento de la condición, igual que en la API. */
+export function fechaCondicion(venceEn: string): string {
+  return new Date(venceEn).toLocaleDateString('es-CO', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     timeZone: 'America/Bogota',
   })
-  return c.vencida
-    ? // Con un coarrendatario que aceptó, la API no rechaza: pondera o pasa a revisión manual.
-      `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario en evaluación, el estudio se cerrará como no aprobado.`
-    : `Aprobado con condición: presente un coarrendatario con puntaje mínimo ${c.puntaje_objetivo} antes del ${fecha}.`
 }

@@ -20,27 +20,23 @@ import {
 // CONCEPTO LABELS
 // ============================================
 
+// Valores del enum concepto_pago de la API (pagos.concepto); otro valor en el
+// filtro hace fallar la consulta. Mismos nombres que Facturación.
 const CONCEPTO_LABELS: Record<string, string> = {
   estudio: 'Estudio',
-  deposito: 'Deposito',
-  mensualidad: 'Mensualidad',
-  comision: 'Comision',
-  administracion: 'Administracion',
+  garantia: 'Prima de vinculación',
+  primer_canon: 'Primer canon',
+  deposito: 'Depósito',
   otro: 'Otro',
 }
 
 function conceptoLabel(concepto: string): string {
-  return CONCEPTO_LABELS[concepto] || concepto.charAt(0).toUpperCase() + concepto.slice(1)
+  return CONCEPTO_LABELS[concepto] || concepto.charAt(0).toUpperCase() + concepto.slice(1).replace(/_/g, ' ')
 }
 
 const CONCEPTO_OPTIONS = [
   { value: '', label: 'Todos' },
-  { value: 'estudio', label: 'Estudio' },
-  { value: 'deposito', label: 'Deposito' },
-  { value: 'mensualidad', label: 'Mensualidad' },
-  { value: 'comision', label: 'Comision' },
-  { value: 'administracion', label: 'Administracion' },
-  { value: 'otro', label: 'Otro' },
+  ...Object.entries(CONCEPTO_LABELS).map(([value, label]) => ({ value, label })),
 ]
 
 // ============================================
@@ -253,7 +249,7 @@ export default function IngresosReportePage() {
       {/* Header */}
       <PageHeader
         title="Ingresos por Pagos"
-        subtitle="Ingresos totales por periodo y concepto"
+        subtitle="Pagos de estudios, primas y otros conceptos por periodo. Los estudios liberados con un cupo cuentan a precio de lista; no incluye las compras de paquetes de cupos ni la tarifa mensual."
         actions={
           <div className="flex items-center gap-2">
             <ExportButton

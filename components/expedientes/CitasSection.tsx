@@ -151,7 +151,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
     setActionLoading(cita.id)
     try {
       await citaService.cancelarCita(cita.id, {
-        motivo_cancelacion: 'El solicitante rechazo la fecha reprogramada por el propietario.',
+        motivo_cancelacion: 'El prospecto rechazó la fecha reprogramada.',
       })
       toast.success('Cita cancelada. Puede solicitar otra fecha.')
       fetchCitas()
@@ -226,9 +226,9 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               ) : completedCita.expediente?.estudio_rechazado ? (
                 <span
                   className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
-                  title={completedCita.expediente?.motivo_estudio_rechazado || 'El propietario decidio no habilitar la evaluación.'}
+                  title={completedCita.expediente?.motivo_estudio_rechazado || 'Se decidió no habilitar la evaluación.'}
                 >
-                  Estudio no habilitado
+                  Evaluación no habilitada
                 </span>
               ) : null}
             </div>
@@ -279,7 +279,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               </h4>
               <p className="text-sm text-gray-600">
                 {canManageCitas
-                  ? 'Programe una visita confirmada con el solicitante. Recibirá una notificación por correo y WhatsApp.'
+                  ? 'Programe una visita confirmada con el prospecto. Recibirá una notificación por correo y WhatsApp.'
                   : 'Antes de continuar con la evaluación crediticia, necesita conocer el inmueble. Solicite una cita y el propietario la confirmará.'}
               </p>
             </div>
@@ -327,7 +327,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
             if (c) await handleRealizar(c)
           }}
           title="Marcar la visita como realizada"
-          message="Confirme que la visita al inmueble se realizó. Con esto se habilita la evaluación crediticia del solicitante."
+          message="Confirme que la visita al inmueble se realizó. Con esto se habilita la evaluación crediticia del prospecto."
           confirmLabel="Sí, se realizó"
         />
         <ConfirmDialog
@@ -340,7 +340,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
           }}
           variant="danger"
           title="Registrar que no asistió"
-          message="La visita queda como no realizada y el solicitante deberá agendar otra."
+          message="La visita queda como no realizada y el prospecto deberá agendar otra."
           confirmLabel="No asistió"
         />
         </>
@@ -482,7 +482,7 @@ function CitaCard({
               </p>
             )}
             {cita.notas_solicitante && (
-              <p className="text-gray-500 text-xs mt-1">Notas solicitante: {cita.notas_solicitante}</p>
+              <p className="text-gray-500 text-xs mt-1">Notas del prospecto: {cita.notas_solicitante}</p>
             )}
             {cita.notas_propietario && (
               <p className="text-gray-500 text-xs">Notas propietario: {cita.notas_propietario}</p>
@@ -655,7 +655,7 @@ function CrearCitaModal({
       return
     }
     if (faltaTelefono && !telefonoValido) {
-      toast.error('Ingrese el teléfono (WhatsApp) del solicitante para enviarle la confirmación')
+      toast.error('Ingrese el teléfono (WhatsApp) del prospecto para enviarle la confirmación')
       return
     }
 
@@ -705,7 +705,7 @@ function CrearCitaModal({
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
           {isOwnerOrAgency
-            ? 'Programe una visita ya confirmada con el solicitante. Se le enviara una notificacion por correo y WhatsApp.'
+            ? 'Programe una visita ya confirmada con el prospecto. Se le enviará una notificación por correo y WhatsApp.'
             : 'Elija un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
         </p>
 
@@ -714,14 +714,14 @@ function CrearCitaModal({
         {faltaTelefono && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
             <PhoneInput
-              label="Teléfono del solicitante (WhatsApp)"
+              label="Teléfono del prospecto (WhatsApp)"
               required
               value={telefono}
               onChange={setTelefono}
               placeholder="300 123 4567"
             />
             <p className="mt-1.5 text-xs text-amber-700">
-              Este solicitante aún no tiene teléfono. Agréguelo para enviarle la confirmacion de la visita por WhatsApp.
+              Este prospecto aún no tiene teléfono. Agréguelo para enviarle la confirmación de la visita por WhatsApp.
             </p>
           </div>
         )}
@@ -757,7 +757,7 @@ function CrearCitaModal({
 
         <div>
           <label htmlFor="citas-section-campo" className="block text-sm font-medium text-gray-700 mb-1">
-            {isOwnerOrAgency ? 'Nota para el solicitante (opcional)' : 'Notas (opcional)'}
+            {isOwnerOrAgency ? 'Nota para el prospecto (opcional)' : 'Notas (opcional)'}
           </label>
           <textarea id="citas-section-campo"
             value={notas}
@@ -773,7 +773,7 @@ function CrearCitaModal({
           />
           {isOwnerOrAgency && (
             <p className="mt-1 text-xs text-gray-500">
-              Se la enviaremos al solicitante por WhatsApp y correo junto con la confirmación.
+              Se la enviaremos al prospecto por WhatsApp y correo junto con la confirmación.
             </p>
           )}
         </div>
@@ -834,7 +834,7 @@ function ConfirmarCitaModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Cita">
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Confirme la cita en la fecha y hora propuesta por el solicitante. Si necesita
+          Confirme la cita en la fecha y hora propuesta por el prospecto. Si necesita
           cambiar el horario, use el boton <strong>Reprogramar</strong>.
         </p>
 
@@ -852,7 +852,7 @@ function ConfirmarCitaModal({
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={2000}
-            placeholder="Indicaciones para el solicitante (punto de encuentro, etc.)"
+            placeholder="Indicaciones para el prospecto (punto de encuentro, etc.)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
@@ -932,7 +932,7 @@ function ReprogramarCitaModal({
       toast.success(
         isSolicitante
           ? 'Propuesta enviada — el propietario debe confirmar la nueva fecha.'
-          : 'Cita reprogramada — se notifico al solicitante',
+          : 'Cita reprogramada. Se notificó al prospecto.',
       )
       reset()
       onReprogramado()
@@ -946,12 +946,12 @@ function ReprogramarCitaModal({
 
   // Texto y placeholders adaptados al actor.
   const descripcion = isSolicitante
-    ? 'Elija un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmacion del propietario.'
-    : 'Elija un nuevo horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha por correo, WhatsApp y notificacion in-app.'
+    ? 'Elija un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmación del propietario.'
+    : 'Elija un nuevo horario disponible. Al guardar, el prospecto recibirá un aviso con la nueva fecha por correo, WhatsApp y una notificación en la plataforma.'
 
   const notasPlaceholder = isSolicitante
     ? 'Cuéntele al propietario por qué necesita cambiar el horario.'
-    : 'Cuéntele al solicitante por qué cambia el horario.'
+    : 'Cuéntele al prospecto por qué cambia el horario.'
 
   const ctaLabel = isSolicitante ? 'Enviar propuesta' : 'Enviar nueva propuesta'
 

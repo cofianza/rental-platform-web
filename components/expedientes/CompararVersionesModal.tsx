@@ -54,7 +54,7 @@ export function CompararVersionesModal({
   ) ?? []
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Comparar versiones del contrato" encima className="rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
+    <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Comparar versiones del contrato" encima closeOnBackdrop className="rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">

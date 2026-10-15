@@ -1,7 +1,8 @@
 /**
  * "Mis inmuebles" — vista principal del propietario (mockup 14).
  * 5 KPIs + tarjetas de propiedad (con inquilino/contrato/pago/garantía reales y
- * toggle de vitrina) + solicitudes de visita (Aprobar/Rechazar).
+ * toggle de vitrina) + solicitudes de visita (Confirmar/Cancelar visita, las
+ * mismas palabras que /citas).
  */
 
 'use client'
@@ -263,10 +264,10 @@ function SolicitudesVisita() {
     setBusy(c.id)
     try {
       await citaService.confirmarCita(c.id, c.fecha_propuesta ? { fecha_confirmada: c.fecha_propuesta } : {})
-      toast.success('Visita aprobada.')
+      toast.success('Visita confirmada.')
       setVersion((v) => v + 1)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo aprobar la visita.')
+      toast.error(e instanceof Error ? e.message : 'No se pudo confirmar la visita.')
     } finally {
       setBusy(null)
     }
@@ -277,10 +278,10 @@ function SolicitudesVisita() {
     try {
       await citaService.cancelarCita(c.id, { motivo_cancelacion: motivo })
       setRechazando(null)
-      toast.success('Visita rechazada.')
+      toast.success('Visita cancelada.')
       setVersion((v) => v + 1)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo rechazar la visita.')
+      toast.error(e instanceof Error ? e.message : 'No se pudo cancelar la visita.')
     } finally {
       setBusy(null)
     }
@@ -321,7 +322,7 @@ function SolicitudesVisita() {
         return (
           <div
             key={c.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-ink-200 bg-white px-4 py-3 transition-colors hover:border-primary-400"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-200 bg-white px-4 py-3 transition-colors hover:border-primary-400"
           >
             <div className="min-w-0">
               <div className="text-sm font-semibold text-ink-900">{nombre}</div>
@@ -333,21 +334,21 @@ function SolicitudesVisita() {
             </div>
             <div className="flex shrink-0 gap-2">
               <button type="button" disabled={busy === c.id} onClick={() => aprobar(c)} className={`${btnP} disabled:opacity-50`}>
-                Aprobar
+                Confirmar visita
               </button>
               <MotivoDialog
                 isOpen={rechazando?.id === c.id}
                 onClose={() => setRechazando(null)}
                 onConfirm={(motivo) => rechazar(c, motivo)}
                 isLoading={busy === c.id}
-                title="Rechazar la visita"
+                title="Cancelar la visita"
                 label="Motivo (el solicitante lo verá)"
                 placeholder="Ej.: el inmueble ya se está negociando con otra persona…"
-                confirmLabel="Rechazar visita"
+                confirmLabel="Cancelar visita"
                 variant="danger"
               />
               <button type="button" disabled={busy === c.id} onClick={() => setRechazando(c)} className={`${btnS} disabled:opacity-50`}>
-                Rechazar
+                Cancelar visita
               </button>
             </div>
           </div>

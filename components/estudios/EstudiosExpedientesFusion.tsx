@@ -19,7 +19,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { IconSearch, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
+import { IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
@@ -122,12 +122,12 @@ export function EstudiosExpedientesFusion() {
         </div>
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
-            <IconSearch size={14} />
+            <IconCheckCircle size={14} />
             {saldo
-              ? `${disponibles} ${disponibles === 1 ? 'crédito disponible' : 'créditos disponibles'}`
+              ? `${disponibles} ${disponibles === 1 ? 'cupo disponible' : 'cupos disponibles'}`
               : saldoError
-                ? '— créditos disponibles'
-                : '… créditos disponibles'}
+                ? '— cupos disponibles'
+                : '… cupos disponibles'}
           </span>
           {puedeEditar && (
             <Button variante="accent" onClick={() => router.push('/expedientes/nuevo')}>

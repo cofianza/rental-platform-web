@@ -49,7 +49,7 @@ export function SaldoCreditosCard() {
           <IconReceipt size={24} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-700">Créditos de estudios</h3>
+          <h3 className="text-sm font-semibold text-gray-700">Cupos de estudios</h3>
           {loading ? (
             <div className="flex items-center gap-2 mt-1">
               <IconLoader className="animate-spin text-gray-500" size={16} />

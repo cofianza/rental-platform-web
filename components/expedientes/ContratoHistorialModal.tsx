@@ -46,6 +46,7 @@ export function ContratoHistorialModal({
       onClose={onClose}
       title="Historial de Estados"
       size="lg"
+      closeOnBackdrop
     >
       {isLoading ? (
         <div className="flex items-center justify-center py-12">

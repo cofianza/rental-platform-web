@@ -15,15 +15,11 @@ import { facturacionService } from '@/services/facturacionService'
 import { formatCurrency } from '@/lib/constants'
 import { ESTADO_FACTURA_CONFIG } from '@/types/facturacion'
 import type { IFactura } from '@/types/facturacion'
-import { Modal } from '@/components/ui/Modal'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   IconLoader,
   IconAlertTriangle,
   IconArrowLeft,
   IconDownload,
-  IconTrash,
-  IconX,
   IconFileText,
 } from '@/components/icons'
 
@@ -71,14 +67,6 @@ export default function FacturaDetallePage() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Modal states
-  const [showAnularModal, setShowAnularModal] = useState(false)
-  const [anularMotivo, setAnularMotivo] = useState('')
-  const [anulando, setAnulando] = useState(false)
-
-  // Upload states
-  const [deleteDocTarget, setDeleteDocTarget] = useState<'pdf' | 'xml' | null>(null)
-
   // Fetch factura
   const fetchFactura = useCallback(async () => {
     setPageState('loading')
@@ -108,41 +96,6 @@ export default function FacturaDetallePage() {
       await facturacionService.descargarYGuardar(id, tipo)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : `Error al descargar ${tipo.toUpperCase()}`)
-    }
-  }
-
-  // Handle anular
-  const handleAnular = async () => {
-    if (!anularMotivo.trim()) {
-      toast.error('Ingrese un motivo de anulación')
-      return
-    }
-
-    setAnulando(true)
-    try {
-      const updated = await facturacionService.anularFactura(id, { motivo: anularMotivo })
-      setFactura(updated)
-      setShowAnularModal(false)
-      setAnularMotivo('')
-      toast.success('Factura anulada correctamente')
-    } catch {
-      toast.error('Error al anular factura')
-    } finally {
-      setAnulando(false)
-    }
-  }
-
-
-  // Handle delete document
-  const handleDeleteDocument = (tipo: 'pdf' | 'xml') => setDeleteDocTarget(tipo)
-
-  const doDeleteDocument = async (tipo: 'pdf' | 'xml') => {
-    try {
-      const updated = await facturacionService.eliminarDocumento(id, tipo)
-      setFactura(updated)
-      toast.success(`${tipo.toUpperCase()} eliminado`)
-    } catch {
-      toast.error(`Error al eliminar ${tipo.toUpperCase()}`)
     }
   }
 
@@ -238,18 +191,16 @@ export default function FacturaDetallePage() {
             {estadoConfig.label}
           </span>
         </div>
-
-        {/* Admin actions */}
-        {isAdmin && !isCancelada && (
-          <button
-            onClick={() => setShowAnularModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-          >
-            <IconX size={16} />
-            Anular Factura
-          </button>
-        )}
       </div>
+
+      {/* Una factura electrónica no se anula desde aquí: se anula con una nota
+          crédito en Factus (la API no expone la anulación). */}
+      {isAdmin && factura.estado === 'emitida' && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
+          Para anular esta factura, emita una nota crédito en Factus. Las facturas cuyo pago se
+          reembolsó aparecen en Facturas con el filtro «Nota crédito pendiente».
+        </div>
+      )}
 
       {/* Cancelation notice */}
       {isCancelada && factura.motivo_anulacion && (
@@ -372,18 +323,10 @@ export default function FacturaDetallePage() {
                         onClick={() => handleDownload('pdf')}
                         className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Descargar PDF"
+                        aria-label="Descargar PDF"
                       >
                         <IconDownload size={16} />
                       </button>
-                      {isAdmin && !isCancelada && factura.pdf_url && (
-                        <button
-                          onClick={() => handleDeleteDocument('pdf')}
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Eliminar PDF"
-                        >
-                          <IconTrash size={16} />
-                        </button>
-                      )}
                     </>
                   ) : (
                       <span className="text-xs text-gray-500">Lo emite y archiva Factus</span>
@@ -411,18 +354,10 @@ export default function FacturaDetallePage() {
                         onClick={() => handleDownload('xml')}
                         className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="Descargar XML"
+                        aria-label="Descargar XML"
                       >
                         <IconDownload size={16} />
                       </button>
-                      {isAdmin && !isCancelada && factura.xml_url && (
-                        <button
-                          onClick={() => handleDeleteDocument('xml')}
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Eliminar XML"
-                        >
-                          <IconTrash size={16} />
-                        </button>
-                      )}
                     </>
                   ) : (
                       <span className="text-xs text-gray-500">Lo emite y archiva Factus</span>
@@ -433,61 +368,6 @@ export default function FacturaDetallePage() {
           </div>
         </div>
       </div>
-
-      {/* Anular Modal */}
-      <Modal
-        isOpen={showAnularModal}
-        onClose={() => setShowAnularModal(false)}
-        title="Anular Factura"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            ¿Está seguro de anular la factura <strong>{factura.numero}</strong>?
-            Esta accion no se puede deshacer.
-          </p>
-          <div>
-            <label htmlFor="id-motivo-de-anulacion" className="block text-sm font-medium text-gray-700 mb-1">
-              Motivo de anulacion *
-            </label>
-            <textarea id="id-motivo-de-anulacion"
-              value={anularMotivo}
-              onChange={(e) => setAnularMotivo(e.target.value)}
-              rows={3}
-              placeholder="Describe el motivo de la anulacion..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-            />
-          </div>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setShowAnularModal(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleAnular}
-              disabled={anulando || !anularMotivo.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {anulando && <IconLoader size={16} className="animate-spin" />}
-              Anular Factura
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={!!deleteDocTarget}
-        onClose={() => setDeleteDocTarget(null)}
-        onConfirm={async () => {
-          if (deleteDocTarget) await doDeleteDocument(deleteDocTarget)
-        }}
-        title="Eliminar archivo"
-        message={`¿Eliminar el archivo ${deleteDocTarget?.toUpperCase() ?? ''} de la factura? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        variant="danger"
-      />
     </div>
   )
 }

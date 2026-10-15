@@ -19,6 +19,8 @@ interface NotificationState {
   items: INotificacion[]
   unreadCount: number
   isLoading: boolean
+  /** Falló la última carga de la lista: la campana no debe decir «Sin notificaciones». */
+  error: boolean
   /** created_at más reciente que había al limpiar la campana: el polling no
    *  vuelve a mostrar las leídas de hasta ese momento. */
   limpiadoEn: string | null
@@ -27,6 +29,7 @@ interface NotificationState {
   setItems: (items: INotificacion[]) => void
   setUnreadCount: (n: number) => void
   setLoading: (loading: boolean) => void
+  setError: (error: boolean) => void
 
   // Realtime push: insert nuevo o reemplaza si ya existe (UPDATE de leida_at).
   pushIncoming: (item: INotificacion) => void
@@ -44,6 +47,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   items: [],
   unreadCount: 0,
   isLoading: false,
+  error: false,
   limpiadoEn: null,
 
   setItems: (items) =>
@@ -55,12 +59,15 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       return {
         items: visibles.slice(0, MAX_KEEP),
         unreadCount: visibles.filter((n) => !n.leida_at).length,
+        error: false,
       }
     }),
 
   setUnreadCount: (unreadCount) => set({ unreadCount }),
 
   setLoading: (isLoading) => set({ isLoading }),
+
+  setError: (error) => set({ error }),
 
   pushIncoming: (item) =>
     set((state) => {
@@ -107,5 +114,5 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       limpiadoEn: state.items.reduce((m, n) => (n.created_at > m ? n.created_at : m), state.limpiadoEn ?? ''),
     })),
 
-  reset: () => set({ items: [], unreadCount: 0, isLoading: false, limpiadoEn: null }),
+  reset: () => set({ items: [], unreadCount: 0, isLoading: false, error: false, limpiadoEn: null }),
 }))
