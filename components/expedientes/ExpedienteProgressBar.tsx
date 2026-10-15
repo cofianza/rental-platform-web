@@ -10,7 +10,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { IconCheck } from '@/components/icons'
+import { IconCheck, IconX } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import { contratoService } from '@/services/contratoService'
 import type { EstadoExpediente } from '@/lib/constants'
@@ -182,9 +182,7 @@ export function ExpedienteProgressBar({
                   {isComplete ? (
                     <IconCheck size={18} />
                   ) : isFailed ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <IconX size={16} />
                   ) : (
                     idx + 1
                   )}

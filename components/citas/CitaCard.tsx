@@ -71,7 +71,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       closeModals()
       await onAction()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al ejecutar la accion'
+      const msg = err instanceof Error ? err.message : 'No se pudo completar la acción'
       toast.error(msg)
     } finally {
       setIsLoading(false)
@@ -128,7 +128,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     return runAction(
       () => expedienteService.habilitarEstudio(expediente.id),
       userRol === 'propietario'
-        ? 'Evaluación habilitada. Al solicitante le llega el enlace para autorizar la consulta'
+        ? 'Evaluación habilitada. Al prospecto le llega el enlace para autorizar la consulta'
         : 'Evaluación habilitada. Defina el pago desde el estudio',
     )
   }
@@ -250,7 +250,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               }}
               className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-300 rounded hover:bg-amber-50"
             >
-              Reprogramar
+              Proponer otro horario
             </button>
             <button
               onClick={() => setAction('cancelar')}
@@ -292,7 +292,12 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
                   <IconShieldCheck size={12} />
                   Evaluación habilitada
                 </span>
-                <PagoEstudioPill estado={pagoEstudioEstado} />
+                <PagoEstudioPill
+                  estado={pagoEstudioEstado}
+                  // Inmobiliaria/admin/operador: el pago lo define el gestor desde
+                  // el estudio; «Aún sin pago» no decía que el paso le toca a él.
+                  definirPagoHref={userRol !== 'propietario' ? `/expedientes/${expediente.id}` : undefined}
+                />
               </>
             ) : expediente.estudio_rechazado ? (
               <span
@@ -329,7 +334,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           {/* Resumen del horario propuesto por el solicitante */}
           {cita.fecha_propuesta && (
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
-              <p className="text-xs text-gray-500">El solicitante propuso:</p>
+              <p className="text-xs text-gray-500">El prospecto propuso:</p>
               <p className="font-medium text-gray-900">
                 {formatFechaCompleta(cita.fecha_propuesta)} a las {formatSlotHora(cita.fecha_propuesta)}
               </p>
@@ -362,7 +367,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           {confirmMode === 'reprogramar' && inmueble?.id && (
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                Elija un horario disponible. Al guardar, el solicitante recibira un aviso con la nueva fecha.
+                Elija un horario disponible. Al guardar, el prospecto recibirá un aviso con la nueva fecha.
               </p>
               <SlotSelector
                 inmuebleId={inmueble.id}
@@ -382,7 +387,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
 
           <div>
             <label htmlFor="cita-card-notas-para-el-solicitante-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Notas para el solicitante (opcional)
+              Notas para el prospecto (opcional)
             </label>
             <textarea id="cita-card-notas-para-el-solicitante-opcional"
               value={notasPropietario}
@@ -427,7 +432,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Por favor indica el motivo de la cancelación. El solicitante recibirá esta información.
+            Indique el motivo de la cancelación. El prospecto recibirá esta información.
           </p>
           <div>
             <label htmlFor="cita-card-motivo" className="block text-sm font-medium text-gray-700 mb-1">
@@ -479,7 +484,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleNoAsistio}
         title="Marcar no asistió"
-        message="El solicitante no se presentó a la visita. El estudio quedará registrado y podrá agendar una nueva cita si lo desea."
+        message="El prospecto no se presentó a la visita. El estudio quedará registrado y podrá agendar una nueva cita si lo desea."
         confirmLabel="Marcar no asistió"
         variant="danger"
         isLoading={isLoading}
@@ -491,7 +496,11 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         onClose={closeModals}
         onConfirm={handleHabilitarEstudio}
         title="Habilitar evaluación crediticia"
-        message="Se habilitará la evaluación y al solicitante le llegará el enlace para autorizar la consulta en centrales; el cobro va después. ¿Continuar?"
+        message={
+          userRol === 'propietario'
+            ? 'Se habilitará la evaluación y al prospecto le llegará el enlace para autorizar la consulta en centrales; el cobro va después. ¿Continuar?'
+            : 'Se habilitará la evaluación. Al prospecto no le llega nada todavía: después elija en el estudio quién paga (cupo, asumirlo o enviarle el enlace). ¿Continuar?'
+        }
         confirmLabel="Habilitar evaluación"
         isLoading={isLoading}
       />
@@ -503,7 +512,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
 // Pill del estado del pago del estudio (mini-badge en la card)
 // ============================================================
 
-function PagoEstudioPill({ estado }: { estado?: string | null }) {
+function PagoEstudioPill({ estado, definirPagoHref }: { estado?: string | null; definirPagoHref?: string }) {
   // null → aún cargando. undefined → no aplica. Skip render.
   if (estado === undefined) return null
   if (estado === null) {
@@ -553,6 +562,16 @@ function PagoEstudioPill({ estado }: { estado?: string | null }) {
   }
 
   const pill = config[estado] || config.sin_definir
+  if (pill === config.sin_definir && definirPagoHref) {
+    return (
+      <Link
+        href={definirPagoHref}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border text-amber-700 bg-amber-50 border-amber-200 hover:underline"
+      >
+        Falta definir el pago
+      </Link>
+    )
+  }
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${pill.className}`}>
       {pill.label}

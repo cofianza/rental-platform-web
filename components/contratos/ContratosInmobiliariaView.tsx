@@ -7,9 +7,10 @@
  *
  * NO inventa datos: reutiliza contratoService.getStats (KPIs reales) y
  * contratoService.getAllContratos (listado), agrupando por estado igual que
- * ContratosAgrupados. No se replican columnas ficticias del mockup (tier,
- * tipo de contrato comercial, cédula, firma por-parte) — solo campos reales.
- * Admin/operador/gerencia conservan su vista (KPIMini + ContratosAgrupados).
+ * No se replican columnas ficticias del mockup (tier, tipo de contrato
+ * comercial, cédula, firma por-parte) — solo campos reales.
+ * Es la vista de todos los roles: Cofianza también necesita buscar, paginar y
+ * encontrar los terminados y cancelados (antes veía 100 contratos sin buscador).
  */
 
 'use client'
@@ -18,21 +19,23 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
-import {
-  ESTADOS_CONTRATO,
-  etiquetaContrato,
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-  type EstadoContratoKey,
-  rutaContrato,
-} from '@/lib/constants'
+import { etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ContratosFilters } from './ContratosFilters'
-import { IconLoader, IconAlertTriangle, IconFileText, IconChevronRight, IconArrowLeft, IconArrowRight } from '@/components/icons'
+import {
+  IconLoader,
+  IconAlertTriangle,
+  IconFileText,
+  IconChevronDown,
+  IconChevronRight,
+  IconArrowLeft,
+  IconArrowRight,
+  IconRefresh,
+} from '@/components/icons'
 
-// ── Helpers de presentación (reutilizados de ContratosAgrupados) ──
+// ── Helpers de presentación ──
 
 function arrendatario(c: IContratoListItem): string {
   const s = c.expedientes?.solicitantes
@@ -127,6 +130,8 @@ const ESTADOS_PENDIENTES = 'borrador,en_revision,aprobado'
 // firma_incompleta (V3) va con "en firma": es trabajo pendiente del gestor (reenviar o cancelar).
 const ESTADOS_EN_FIRMA = 'pendiente_firma,firma_incompleta'
 const ESTADOS_ACTIVOS = 'firmado,vigente'
+// Plegado: se piden solo al abrirlo (o al filtrar por uno de estos estados).
+const ESTADOS_CERRADOS = 'finalizado,cancelado'
 
 /** Lo que devuelve cada consulta de grupo (filas + su paginación). */
 interface Grupo {
@@ -166,12 +171,17 @@ export function ContratosInmobiliariaView() {
   const [filters, setFilters] = useState<IContratoListFilters>({})
   const [search, setSearch] = useState('')
   const [pageActivos, setPageActivos] = useState(1)
+  const [verCerrados, setVerCerrados] = useState(false)
+  const [cerrados, setCerrados] = useState<Grupo>(GRUPO_VACIO)
+  const [pageCerrados, setPageCerrados] = useState(1)
+  const puedeEditar = usePuedeEditar()
 
   // Debounce de la búsqueda: sin esto cada tecla dispara 3 consultas.
   useEffect(() => {
     const t = setTimeout(() => {
       setFilters((prev) => (prev.search === (search || undefined) ? prev : { ...prev, search: search || undefined }))
       setPageActivos(1)
+      setPageCerrados(1)
     }, 300)
     return () => clearTimeout(t)
   }, [search])
@@ -191,15 +201,17 @@ export function ContratosInmobiliariaView() {
       return contratoService.getAllContratos({ ...comunes, ...extra, estado: estados })
     }
     try {
-      const [p, f, a] = await Promise.all([
+      const [p, f, a, c] = await Promise.all([
         pedir(estadosDelGrupo(ESTADOS_PENDIENTES, estadoFiltro), { limit: 50, page: 1 }),
         pedir(estadosDelGrupo(ESTADOS_EN_FIRMA, estadoFiltro), { limit: 50, page: 1 }),
         pedir(estadosDelGrupo(ESTADOS_ACTIVOS, estadoFiltro), { limit: 20, page: pageActivos }),
+        pedir(verCerrados ? estadosDelGrupo(ESTADOS_CERRADOS, estadoFiltro) : null, { limit: 20, page: pageCerrados }),
       ])
       if (n !== peticionRef.current) return
       setPendientes(p)
       setEnFirma(f)
       setActivos(a)
+      setCerrados(c)
     } catch (e) {
       if (n !== peticionRef.current) return
       setError(e instanceof Error ? e.message : 'Error al cargar contratos')
@@ -209,7 +221,7 @@ export function ContratosInmobiliariaView() {
         setPrimeraCarga(false)
       }
     }
-  }, [searchAplicado, estadoFiltro, fecha_desde, fecha_hasta, pageActivos])
+  }, [searchAplicado, estadoFiltro, fecha_desde, fecha_hasta, pageActivos, verCerrados, pageCerrados])
 
   useEffect(() => {
     cargar()
@@ -238,13 +250,6 @@ export function ContratosInmobiliariaView() {
         ).includes(plegar(searchAplicado.trim())),
       )
     : sinContrato
-  // Esta vista solo tiene paneles hasta "vigente": si se filtra por finalizado o
-  // cancelado no hay dónde pintarlos, y sin este aviso el gestor vería tres
-  // paneles vacíos sin saber por qué.
-  const estadoSinPanel =
-    !!estadoFiltro &&
-    ![ESTADOS_PENDIENTES, ESTADOS_EN_FIRMA, ESTADOS_ACTIVOS].some((g) => g.split(',').includes(estadoFiltro))
-
   const onFilterChange = (patch: Partial<IContratoListFilters>) => {
     if ('search' in patch) {
       setSearch(patch.search ?? '')
@@ -252,12 +257,16 @@ export function ContratosInmobiliariaView() {
     }
     setFilters((prev) => ({ ...prev, ...patch }))
     setPageActivos(1)
+    setPageCerrados(1)
+    // Filtrar por terminado o cancelado abre su panel: si no, la lista quedaba vacía sin explicación.
+    if (patch.estado && ESTADOS_CERRADOS.split(',').includes(patch.estado)) setVerCerrados(true)
   }
 
   const onClearFilters = () => {
     setSearch('')
     setFilters({})
     setPageActivos(1)
+    setPageCerrados(1)
   }
 
   if (primeraCarga) {
@@ -274,9 +283,17 @@ export function ContratosInmobiliariaView() {
       {/* El error va dentro de la vista, no en lugar de ella: si falla una
           búsqueda, el usuario tiene que poder quitar el filtro. */}
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
           <IconAlertTriangle size={18} className="shrink-0" />
-          {error}
+          <span className="flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => void cargar()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            <IconRefresh size={14} /> Reintentar
+          </button>
         </div>
       )}
 
@@ -289,13 +306,6 @@ export function ContratosInmobiliariaView() {
         onClearFilters={onClearFilters}
         hasActiveFilters={hasActiveFilters}
       />
-
-      {estadoSinPanel && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
-          Los contratos {ESTADOS_CONTRATO[estadoFiltro as EstadoContratoKey]?.label.toLowerCase() ?? estadoFiltro} no
-          se listan en esta vista. Quite el filtro de estado o consúltelos desde el estudio.
-        </p>
-      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -377,7 +387,7 @@ export function ContratosInmobiliariaView() {
                       href={`/expedientes/${e.id}`}
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
                     >
-                      Generar contrato
+                      {puedeEditar ? 'Generar contrato' : 'Ver estudio'}
                       <IconChevronRight size={14} />
                     </Link>
                   </td>
@@ -421,7 +431,7 @@ export function ContratosInmobiliariaView() {
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
                     >
                       {/* Un borrador V3 puede estar en el paso 1: "enviar a firma" sería prometer de más. */}
-                      {c.destinacion ? 'Continuar contrato' : 'Revisar y enviar a firma'}
+                      {!puedeEditar ? 'Ver' : c.destinacion ? 'Continuar contrato' : 'Revisar y enviar a firma'}
                       <IconChevronRight size={14} />
                     </Link>
                   </td>
@@ -500,40 +510,114 @@ export function ContratosInmobiliariaView() {
             </tbody>
           </table></div>
         )}
-        {activos.meta.totalPages > 1 && (
-          <nav
-            className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-3"
-            aria-label="Paginación de contratos activos"
-          >
-            <p className="text-xs text-gray-500">
-              Página {activos.meta.page} de {activos.meta.totalPages} · {activos.meta.total} contratos
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPageActivos((p) => Math.max(1, p - 1))}
-                disabled={activos.meta.page <= 1 || loading}
-                aria-label="Página anterior de contratos activos"
-                className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <IconArrowLeft size={14} />
-                Anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => setPageActivos((p) => p + 1)}
-                disabled={activos.meta.page >= activos.meta.totalPages || loading}
-                aria-label="Página siguiente de contratos activos"
-                className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Siguiente
-                <IconArrowRight size={14} />
-              </button>
-            </div>
-          </nav>
-        )}
+        <Paginacion meta={activos.meta} que="contratos activos" loading={loading} onPage={setPageActivos} />
       </Panel>
+
+      {/* Terminados y cancelados: plegado, se piden al abrirlo. */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <button
+          type="button"
+          onClick={() => setVerCerrados((v) => !v)}
+          aria-expanded={verCerrados}
+          className="flex w-full flex-wrap items-center justify-between gap-3 px-6 py-5 text-left hover:bg-gray-50/60"
+        >
+          <span className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+            Terminados y cancelados
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+            {verCerrados ? 'Ocultar' : 'Ver'}
+            <IconChevronDown size={14} className={cn('transition-transform', verCerrados && 'rotate-180')} />
+          </span>
+        </button>
+        {verCerrados && (
+          <div className="border-t border-gray-200">
+            {loading && cerrados.data.length === 0 ? (
+              <div className="px-6 py-8 text-center" role="status" aria-live="polite">
+                <IconLoader size={20} className="mx-auto animate-spin text-primary-600" />
+                <span className="sr-only">Cargando contratos terminados y cancelados…</span>
+              </div>
+            ) : cerrados.data.length === 0 ? (
+              <EmptyRow texto="Ningún contrato terminado ni cancelado." />
+            ) : (
+              <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
+                    <th className="px-6 py-3 font-bold">Arrendatario</th>
+                    <th className="px-6 py-3 font-bold">Propiedad</th>
+                    <th className="px-6 py-3 font-bold">Inicio</th>
+                    <th className="px-6 py-3 font-bold">Terminado</th>
+                    <th className="px-6 py-3 font-bold">Estado</th>
+                    <th className="px-6 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {cerrados.data.map((c) => (
+                    <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
+                      <td className="px-6 py-3"><Arrendatario c={c} /></td>
+                      <td className="px-6 py-3"><Propiedad c={c} /></td>
+                      <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
+                      <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_terminacion ? formatDate(c.fecha_terminacion) : '—'}</td>
+                      <td className="px-6 py-3"><EstadoBadge c={c} /></td>
+                      <td className="px-6 py-3 text-right">
+                        <VerLink c={c} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table></div>
+            )}
+            <Paginacion meta={cerrados.meta} que="contratos terminados y cancelados" loading={loading} onPage={setPageCerrados} />
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+function Paginacion({
+  meta,
+  que,
+  loading,
+  onPage,
+}: {
+  meta: IContratoMeta
+  que: string
+  loading: boolean
+  onPage: (cambio: (p: number) => number) => void
+}) {
+  if (meta.totalPages <= 1) return null
+  return (
+    <nav
+      className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-3"
+      aria-label={`Paginación de ${que}`}
+    >
+      <p className="text-xs text-gray-500">
+        Página {meta.page} de {meta.totalPages} · {meta.total} contratos
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPage((p) => Math.max(1, p - 1))}
+          disabled={meta.page <= 1 || loading}
+          aria-label={`Página anterior de ${que}`}
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <IconArrowLeft size={14} />
+          Anterior
+        </button>
+        <button
+          type="button"
+          onClick={() => onPage((p) => p + 1)}
+          disabled={meta.page >= meta.totalPages || loading}
+          aria-label={`Página siguiente de ${que}`}
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Siguiente
+          <IconArrowRight size={14} />
+        </button>
+      </div>
+    </nav>
   )
 }
 

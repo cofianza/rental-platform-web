@@ -18,7 +18,9 @@ export interface ModalProps {
   className?: string
   /** Nombre accesible cuando no hay `title` (p. ej. dialogos con titulo propio). */
   ariaLabel?: string
-  /** false en formularios: un clic fuera del panel no debe tirar lo escrito. */
+  /** Un clic fuera del panel cierra. Apagado por defecto: en un formulario
+   *  (sobre todo en el celular) tiraba lo escrito. Solo para visores y
+   *  detalles de solo lectura; Escape y la X cierran siempre. */
   closeOnBackdrop?: boolean
   /** El hijo trae su propio encabezado, cuerpo y pie: el panel no agrega
    *  título ni padding, y `className` define su tamaño y forma. */
@@ -67,7 +69,7 @@ export function Modal({
   children,
   className,
   ariaLabel,
-  closeOnBackdrop = true,
+  closeOnBackdrop = false,
   bare = false,
   encima = false,
 }: ModalProps) {

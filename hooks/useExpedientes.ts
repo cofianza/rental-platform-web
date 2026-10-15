@@ -11,7 +11,11 @@ import { toast } from 'sonner'
 import { useExpedientesStore, DEFAULT_EXPEDIENTE_FILTERS } from '@/stores/expedientesStore'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
-import type { IExpedienteFilters, EstadoExpediente } from '@/types/expediente'
+import type { IExpedienteFilters, EstadoExpediente, EstudioFiltro } from '@/types/expediente'
+
+const ESTUDIO_FILTROS: EstudioFiltro[] = [
+  'todos', 'aprobado', 'rechazado', 'condicionado', 'en_proceso', 'sin_estudio', 'requiere_accion',
+]
 
 const DEBOUNCE_DELAY = 300
 
@@ -97,11 +101,23 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
     if (limit) urlFilters.limit = parseInt(limit, 10)
     if (sortBy) urlFilters.sortBy = sortBy
     if (sortOrder) urlFilters.sortOrder = sortOrder
+    const estudioFiltro = searchParams.get('estudio_filtro') as EstudioFiltro | null
+    if (estudioFiltro && ESTUDIO_FILTROS.includes(estudioFiltro)) urlFilters.estudio_filtro = estudioFiltro
 
     if (Object.keys(urlFilters).length > 0) {
       setFilters(urlFilters)
     }
   }, [searchParams, setFilters, storeSetActiveBandeja])
+
+  // El banner de bloqueos enlaza a ?estudio_filtro=requiere_accion. El efecto
+  // de arriba corre una sola vez: con la lista ya montada, el filtro se aplica aquí.
+  const estudioFiltroUrl = searchParams.get('estudio_filtro') as EstudioFiltro | null
+  useEffect(() => {
+    if (!estudioFiltroUrl || !ESTUDIO_FILTROS.includes(estudioFiltroUrl)) return
+    if (estudioFiltroUrl !== useExpedientesStore.getState().filters.estudio_filtro) {
+      setFilters({ estudio_filtro: estudioFiltroUrl, page: 1 })
+    }
+  }, [estudioFiltroUrl, setFilters])
 
   /**
    * Actualiza URL cuando cambian los filtros
@@ -117,6 +133,9 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
       if (newFilters.analista_id) params.set('analista_id', newFilters.analista_id)
       if (newFilters.fecha_desde) params.set('fecha_desde', newFilters.fecha_desde)
       if (newFilters.fecha_hasta) params.set('fecha_hasta', newFilters.fecha_hasta)
+      if (newFilters.estudio_filtro && newFilters.estudio_filtro !== 'todos') {
+        params.set('estudio_filtro', newFilters.estudio_filtro)
+      }
       if (newFilters.page > 1) params.set('page', newFilters.page.toString())
       if (newFilters.limit !== DEFAULT_EXPEDIENTE_FILTERS.limit) {
         params.set('limit', newFilters.limit.toString())

@@ -16,6 +16,8 @@ import { IconAlertTriangle, IconCheck, IconInfo, IconShieldCheck, type IconProps
 const TIPO_DOCUMENTO: Record<string, string> = {
   cc: 'C.C.',
   ce: 'C.E.',
+  ppt: 'PPT',
+  pep: 'PEP',
   pasaporte: 'Pasaporte',
   nit: 'NIT',
   ti: 'T.I.',

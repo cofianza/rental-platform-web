@@ -23,6 +23,7 @@ import {
   IconBank,
   IconWhatsapp,
   IconCheck,
+  IconRefresh,
 } from '@/components/icons'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { expedienteService } from '@/services/expedienteService'
@@ -218,7 +219,8 @@ export function Step3Configuration({
               <label
                 key={valor}
                 className={cn(
-                  'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition',
+                  // El radio es sr-only: el foco del teclado se ve en la tarjeta.
+                  'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500',
                   seleccionada
                     ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-500'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50',
@@ -290,6 +292,16 @@ export function Step3Configuration({
             )
           })}
         </div>
+        {usaCreditos && saldoError && (
+          // Fuera de la tarjeta: un botón dentro del <label> activaría el radio.
+          <button
+            type="button"
+            onClick={cargarSaldo}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800"
+          >
+            <IconRefresh size={14} /> Reintentar la consulta del saldo de cupos
+          </button>
+        )}
         {errors.forma_pago && (
           <p className="text-sm text-red-600">{errors.forma_pago}</p>
         )}
@@ -386,7 +398,7 @@ export function Step3Configuration({
           </select>
         )}
         <p className="text-xs text-gray-500">
-          El responsable asignado recibira notificaciones del estudio
+          El responsable asignado recibirá notificaciones del estudio.
         </p>
       </div>
       )}

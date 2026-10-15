@@ -152,6 +152,9 @@ function EmptyState() {
 export default function TiemposPorEtapaPage() {
   const [data, setData] = useState<TiemposData | null>(null)
   const [loading, setLoading] = useState(true)
+  // Tercer estado (como en Ingresos): sin esto un fallo se veía como «no hay
+  // datos» y, al fallar con filtros nuevos, quedaban las cifras del periodo anterior.
+  const [falloCarga, setFalloCarga] = useState(false)
   const [filters, setFilters] = useState<{ dateFrom: string; dateTo: string }>({
     dateFrom: '',
     dateTo: '',
@@ -166,9 +169,12 @@ export default function TiemposPorEtapaPage() {
 
       const result = await reporteService.getTiemposPorEtapa(cleanFilters)
       setData(result)
+      setFalloCarga(false)
     } catch (err) {
       console.error('Error cargando tiempos por etapa:', err)
       toast.error('Error al cargar el reporte de tiempos')
+      setData(null)
+      setFalloCarga(true)
     } finally {
       setLoading(false)
     }
@@ -211,6 +217,21 @@ export default function TiemposPorEtapaPage() {
         }
       />
 
+      {falloCarga && !loading && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="flex-1 text-sm text-amber-900">
+            No se pudo cargar el reporte. Las cifras de abajo no están disponibles — no son cero.
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchData(filters)}
+            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1">
@@ -252,13 +273,13 @@ export default function TiemposPorEtapaPage() {
             </p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 mb-1">Etapa mas lenta</p>
+            <p className="text-xs font-medium text-gray-500 mb-1">Etapa más lenta</p>
             <p className="text-2xl font-bold text-red-600">
               {data.resumen.etapa_mas_lenta}
             </p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 mb-1">Etapa mas rapida</p>
+            <p className="text-xs font-medium text-gray-500 mb-1">Etapa más rápida</p>
             <p className="text-2xl font-bold text-green-600">
               {data.resumen.etapa_mas_rapida}
             </p>
@@ -294,6 +315,8 @@ export default function TiemposPorEtapaPage() {
           <ChartSkeleton />
         ) : hasEtapas ? (
           <HorizontalBarChart data={data.etapas} />
+        ) : falloCarga ? (
+          <p className="py-12 text-center text-sm text-gray-500">No disponible</p>
         ) : (
           <EmptyState />
         )}

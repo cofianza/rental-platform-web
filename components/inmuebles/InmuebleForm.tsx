@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { IconLoader, IconChevronRight, IconHome, IconX, IconImages } from '@/components/icons'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, ConfirmDialog } from '@/components/ui'
 import { ImageUploader } from './ImageUploader'
 import { PropietarioSelector } from './PropietarioSelector'
 import { GaleriaSection } from './GaleriaSection'
@@ -336,6 +336,38 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     apellido: string
   } | null>(null)
   const [fotosAdicionales, setFotosAdicionales] = useState<{ file: File; preview: string }[]>([])
+
+  // Cambios sin guardar: el formulario es largo y «Cancelar», el menú o cerrar
+  // la pestaña borraban todo sin preguntar. `tocado` lo enciende cualquier
+  // cambio que haga el usuario (los efectos que rellenan datos no cuentan).
+  const [tocado, setTocado] = useState(false)
+  const [salirA, setSalirA] = useState<string | null>(null)
+  useEffect(() => {
+    if (!tocado) return
+    const antesDeSalir = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    // La navegación interna (Link) no dispara beforeunload: se frena el clic
+    // en fase de captura, antes de que llegue a React, y se pregunta.
+    const alClic = (e: MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || a.target === '_blank' || a.hasAttribute('download')) return
+      const url = new URL(a.href, window.location.href)
+      if (url.origin !== window.location.origin) return
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return
+      e.preventDefault()
+      e.stopPropagation()
+      setSalirA(url.pathname + url.search + url.hash)
+    }
+    window.addEventListener('beforeunload', antesDeSalir)
+    document.addEventListener('click', alClic, true)
+    return () => {
+      window.removeEventListener('beforeunload', antesDeSalir)
+      document.removeEventListener('click', alClic, true)
+    }
+  }, [tocado])
 
   // Auto-asignar propietario_id si el usuario es propietario o inmobiliaria
   useEffect(() => {
@@ -728,7 +760,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       )}
 
       {/* Formulario */}
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} onChange={() => setTocado(true)} className="space-y-6">
         {/* 1. Datos generales */}
         <Seccion n={sig()} titulo="Datos generales">
           <div className={cn('grid grid-cols-1 gap-5', isPropietarioUser ? 'md:grid-cols-3' : 'md:grid-cols-2')}>
@@ -1020,7 +1052,10 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 <p className="text-sm text-gray-500 mb-4">
                   Suba, reordene, marque la foto de fachada y agregue descripciones a cada imagen.
                 </p>
-                <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
+                {/* La galería guarda cada cambio al momento: no cuenta como «sin guardar». */}
+                <div onChange={(e) => e.stopPropagation()}>
+                  <GaleriaSection inmuebleId={inmueble.id} canEdit={true} />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -1300,6 +1335,26 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={salirA !== null}
+        onClose={() => setSalirA(null)}
+        onConfirm={() => {
+          const destino = salirA
+          setTocado(false)
+          setSalirA(null)
+          if (destino) router.push(destino)
+        }}
+        title="¿Salir sin guardar?"
+        message={
+          mode === 'create'
+            ? 'Se perderán los datos y las fotos elegidas.'
+            : 'Se perderán los cambios que no ha guardado.'
+        }
+        confirmLabel="Salir sin guardar"
+        cancelLabel="Seguir editando"
+        variant="danger"
+      />
     </div>
   )
 }

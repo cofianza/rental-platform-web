@@ -153,7 +153,6 @@ export function useUsers() {
   const createUser = useCallback(
     async (data: IUserFormData): Promise<boolean> => {
       setLoading(true)
-      setError(null)
 
       try {
         await userService.createUser(data)
@@ -163,14 +162,13 @@ export function useUsers() {
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.CREATE_ERROR
-        setError(message)
         toast.error(message)
         return false
       } finally {
         setLoading(false)
       }
     },
-    [closeModal, fetchUsers, setLoading, setError]
+    [closeModal, fetchUsers, setLoading]
   )
 
   /**
@@ -179,7 +177,6 @@ export function useUsers() {
   const updateUser = useCallback(
     async (id: string, data: Partial<IUserFormData>): Promise<boolean> => {
       setLoading(true)
-      setError(null)
 
       try {
         const updated = await userService.updateUser(id, data)
@@ -189,14 +186,13 @@ export function useUsers() {
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.UPDATE_ERROR
-        setError(message)
         toast.error(message)
         return false
       } finally {
         setLoading(false)
       }
     },
-    [closeModal, updateUserInList, setLoading, setError]
+    [closeModal, updateUserInList, setLoading]
   )
 
   /**
@@ -205,7 +201,6 @@ export function useUsers() {
   const activateUser = useCallback(
     async (user: IUserProfile): Promise<boolean> => {
       setLoading(true)
-      setError(null)
 
       try {
         const updated = await userService.activateUser(user.id)
@@ -214,14 +209,13 @@ export function useUsers() {
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.ACTIVATE_ERROR
-        setError(message)
         toast.error(message)
         return false
       } finally {
         setLoading(false)
       }
     },
-    [updateUserInList, setLoading, setError]
+    [updateUserInList, setLoading]
   )
 
   /**
@@ -230,7 +224,6 @@ export function useUsers() {
   const deactivateUser = useCallback(
     async (user: IUserProfile): Promise<boolean> => {
       setLoading(true)
-      setError(null)
 
       try {
         const updated = await userService.deactivateUser(user.id)
@@ -239,14 +232,13 @@ export function useUsers() {
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : USER_MESSAGES.DEACTIVATE_ERROR
-        setError(message)
         toast.error(message)
         return false
       } finally {
         setLoading(false)
       }
     },
-    [updateUserInList, setLoading, setError]
+    [updateUserInList, setLoading]
   )
 
   /**
@@ -260,8 +252,6 @@ export function useUsers() {
       user: IUserProfile,
       options: { force?: boolean } = {},
     ): Promise<{ ok: boolean; blockers?: Record<string, number>; message?: string }> => {
-      setError(null)
-
       try {
         await userService.deleteUser(user.id, options)
         await fetchUsers()
@@ -286,7 +276,7 @@ export function useUsers() {
         return { ok: false, message }
       }
     },
-    [fetchUsers, setError],
+    [fetchUsers],
   )
 
   /**

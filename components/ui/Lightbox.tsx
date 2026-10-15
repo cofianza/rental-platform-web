@@ -158,6 +158,7 @@ export function Lightbox({
       onClose={onClose}
       bare
       encima
+      closeOnBackdrop
       ariaLabel="Visor de imágenes"
       className="h-full max-h-none bg-transparent shadow-none"
     >

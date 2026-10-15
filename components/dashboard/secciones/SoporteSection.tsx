@@ -191,7 +191,7 @@ export function SoporteSection() {
         }
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi
           label="Abiertos"
           value={abiertos}
@@ -401,7 +401,7 @@ export function SoporteSection() {
       </Modal>
 
       {/* Modal detalle + cambio de estado */}
-      <Modal isOpen={!!detail} onClose={() => setDetail(null)} title={detail ? detail.ticketNumero : ''} size="md">
+      <Modal isOpen={!!detail} onClose={() => setDetail(null)} title={detail ? detail.ticketNumero : ''} size="md" closeOnBackdrop>
         {detail && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">

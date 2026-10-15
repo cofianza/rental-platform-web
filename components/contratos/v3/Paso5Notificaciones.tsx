@@ -16,6 +16,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import {
   IconAlertTriangle,
+  IconDownload,
+  IconExternalLink,
   IconEye,
   IconFileText,
   IconLoader,
@@ -24,7 +26,7 @@ import {
   IconUpload,
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { abrirEnPestana, cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
 import type { Contacto, EstadoAsistente, MarcaFirma, NumeroPaso, Paso5 } from '@/types/contratoV3'
@@ -219,7 +221,7 @@ export function VistaPreviaContrato({
       return
     }
     if (!(await v3.subirPropio(archivo, numeroPropio.trim() || undefined))) return
-    toast.success('Contrato de la inmobiliaria cargado: ahora ubica dónde firma cada parte.')
+    toast.success('Contrato de la inmobiliaria cargado: ahora ubique dónde firma cada parte.')
   }
 
   const guardarFirmas = async () => {
@@ -472,6 +474,8 @@ export interface DocVisor {
   imagen?: boolean
   /** Pide la URL (firmada, de vida corta) del PDF al abrirlo. */
   cargar: () => Promise<string>
+  /** URL que fuerza la descarga; sin ella, el documento abierto se ofrece en otra pestaña (descargar o imprimir desde el navegador). */
+  descargar?: { etiqueta: string; url: () => Promise<string> }
 }
 
 /** Un documento abierto a la vez; su URL se pide al abrirlo (no al cargar la página). */
@@ -501,8 +505,21 @@ export function useVisor() {
 /** Botones de documento (con aria-pressed) y el visor del que esté abierto. */
 export function VisorDocumentos({ docs, visor }: { docs: DocVisor[]; visor: ReturnType<typeof useVisor> }) {
   const { abierto, abrir, cerrar } = visor
+  const [bajando, setBajando] = useState(false)
   const doc = docs.find((d) => d.clave === abierto?.clave)
   if (docs.length === 0) return null
+
+  // PdfViewer no trae descarga ni impresión: el documento abierto se baja o se abre en otra pestaña.
+  const bajar = async (d: DocVisor) => {
+    setBajando(true)
+    try {
+      if (!(await abrirEnPestana(d.descargar?.url ?? d.cargar))) toast.error('No pudimos abrir el documento.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos abrir el documento.')
+    } finally {
+      setBajando(false)
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -522,6 +539,18 @@ export function VisorDocumentos({ docs, visor }: { docs: DocVisor[]; visor: Retu
           )
         })}
       </div>
+      {abierto?.url && doc && (
+        <Button variante="secondary" tamano="sm" onClick={() => void bajar(doc)} disabled={bajando}>
+          {bajando ? (
+            <IconLoader size={14} className="animate-spin" />
+          ) : doc.descargar ? (
+            <IconDownload size={14} />
+          ) : (
+            <IconExternalLink size={14} />
+          )}
+          {doc.descargar?.etiqueta ?? 'Abrir en otra pestaña'}
+        </Button>
+      )}
       {abierto && doc &&
         (abierto.url ? (
           doc.imagen ? (

@@ -60,7 +60,7 @@ export function PropietariosSection() {
         subtitle="Arrendadores registrados, sus contratos activos y estado de cartera."
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi label="Total" value={total} Icon={IconUsers} />
         <Kpi label="Activos" value={activos} tone="green" Icon={IconCheck} />
         <Kpi label="Contratos" value={contratos} tone="blue" Icon={IconFileText} />

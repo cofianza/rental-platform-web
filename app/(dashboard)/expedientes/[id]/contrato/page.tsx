@@ -22,10 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { IconAlertTriangle, IconArrowLeft, IconFileText, IconLoader, IconRefresh } from '@/components/icons'
 import { WizardStepIndicator } from '@/components/expedientes/wizard/WizardStepIndicator'
-import {
-  PerfilPersonalIncompletoBanner,
-  miembroDebeCompletarPerfil,
-} from '@/components/expedientes/PerfilPersonalIncompletoBanner'
+import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import { AvisosContrato, BloqueosContrato } from '@/components/contratos/v3/BloqueosContrato'
 import { Paso1Confirmacion, ResumenContrato } from '@/components/contratos/v3/Paso1Confirmacion'
 import { Paso2Inmueble } from '@/components/contratos/v3/Paso2Inmueble'
@@ -151,11 +148,8 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
     )
   }
 
-  const banner = bloqueadoPorPerfil ? (
-    <PerfilPersonalIncompletoBanner user={user} />
-  ) : !puedeEditar ? (
-    <Aviso>Su acceso es de solo lectura.</Aviso>
-  ) : null
+  // El aviso del perfil incompleto ya sale arriba, en OficinaVirtualShell.
+  const banner = !puedeEditar && !bloqueadoPorPerfil ? <Aviso>Su acceso es de solo lectura.</Aviso> : null
 
   const comun = { estado, expedienteId, editable, esTitular, inmuebleAccesible, banner, v3 }
   return (
@@ -290,6 +284,7 @@ function Asistente({
   const { accion, guardarPaso, limpiarErrorPaso } = v3
   const ocupado = accion !== null
   const rol = useAuthStore((s) => s.user?.rol)
+  const bloqueadoPorPerfil = miembroDebeCompletarPerfil(useAuthStore((s) => s.user))
   // Adenda 1 de contratos, resp. 14: el exceso de cláusulas lo autoriza solo la Gerencia General.
   const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
 
@@ -531,7 +526,9 @@ function Asistente({
   // bloquea igual y es ese intento el que envía el caso a la Gerencia General.
   const bloqueosQueFrenan = bloqueos.filter((b) => b.codigo !== 'CANON_EXCEDE_TOPE')
   const motivoNoGenerar = !editable
-    ? 'Su acceso es de solo lectura.'
+    ? bloqueadoPorPerfil
+      ? 'Complete sus datos personales en Mi cuenta.'
+      : 'Su acceso es de solo lectura.'
     : pendientesSinGuardar.length > 0
       ? `Tiene cambios sin guardar en ${listaPasos(pendientesSinGuardar)}.`
       : // El paso 5 llega prellenado: sin tocar nada parece listo, pero falta guardarlo

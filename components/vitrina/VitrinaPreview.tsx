@@ -7,7 +7,7 @@
 
 'use client'
 
-import { IconBuilding2, IconHome, IconMapPin, IconCar, IconArrowRight } from '@/components/icons'
+import { IconBuilding2, IconHome, IconMapPin, IconCar, IconArrowRight, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -63,15 +63,21 @@ const CARD_WIDTH = 'w-full sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]
 export function VitrinaPreview() {
   const [items, setItems] = useState<PublicProperty[]>([])
   const [loading, setLoading] = useState(true)
+  // Una caída de la API no se pinta como «aún no hay inmuebles»: el visitante
+  // creía que la plataforma estaba vacía y se iba.
+  const [error, setError] = useState(false)
   // Inmueble sobre el que el visitante sin cuenta dijo «Me interesa».
   const [lead, setLead] = useState<{ id: string; resumen: string } | null>(null)
 
-  useEffect(() => {
+  const cargar = () => {
+    setLoading(true)
+    setError(false)
     getPublicProperties({ limit: 3, sortBy: 'created_at', sortOrder: 'desc' })
       .then((res) => setItems(res.data))
-      .catch(() => setItems([]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }
+  useEffect(cargar, [])
 
   return (
     <section id="vitrina" className="bg-white py-16 md:py-[100px] px-5 sm:px-8 lg:px-12">
@@ -101,6 +107,28 @@ export function VitrinaPreview() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 rounded-3xl border border-gray-200">
+            <IconAlertTriangle size={40} className="mx-auto text-amber-400 mb-3" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">No pudimos cargar los inmuebles</h3>
+            <p className="text-sm text-gray-500 mb-4">Inténtelo de nuevo en un momento.</p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={cargar}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+              >
+                <IconRefresh size={16} />
+                Reintentar
+              </button>
+              <Link
+                href="/vitrina"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-700 hover:underline"
+              >
+                Ver la vitrina <IconArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         ) : items.length === 0 ? (
           <VitrinaVacia>

@@ -9,7 +9,7 @@
 'use client'
 
 import { formatCurrency } from '@/lib/constants'
-import { useCallback, useEffect, useState } from 'react'
+import { Children, useCallback, useEffect, useState } from 'react'
 import type { IconProps } from '@/components/icons'
 import type { TotalesPorOrigen } from '@/services/dashboardService'
 import { IconRefresh, IconX, IconTrendingUp, IconTrendingDown } from '@/components/icons'
@@ -218,9 +218,37 @@ const KPI_ACCENT: Record<KpiAccent, string> = {
   risk: 'border-l-4 border-l-purple-500 bg-purple-50/40',
 }
 
-export function KpiRow({ children, cols = 4 }: { children: React.ReactNode; cols?: 2 | 3 | 4 | 5 }) {
+/**
+ * `loading`/`error`: el estado de la carga de la sección. Sin datos, los KPIs
+ * salían en $0 y 0 (cifras falsas y creíbles) encima del esqueleto o del
+ * «No pudimos cargar esta sección»: cargando se pinta un esqueleto y con error
+ * no se pinta la fila (el error ya se muestra debajo).
+ */
+export function KpiRow({
+  children,
+  cols = 4,
+  loading = false,
+  error = null,
+}: {
+  children: React.ReactNode
+  cols?: 2 | 3 | 4 | 5
+  loading?: boolean
+  error?: string | null
+}) {
+  if (error) return null
   const lg = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' }[cols]
-  return <div className={`dash-reveal mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 ${lg}`}>{children}</div>
+  return (
+    <div className={`dash-reveal mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 ${lg}`} aria-busy={loading || undefined}>
+      {loading
+        ? Children.toArray(children).map((_, i) => (
+            <div key={i} aria-hidden="true" className="rounded-xl border border-ink-200 bg-white p-3">
+              <SkeletonBar className="h-2.5 w-20" />
+              <SkeletonBar className="mt-2 h-5 w-16" />
+            </div>
+          ))
+        : children}
+    </div>
+  )
 }
 
 export interface KpiDelta {
@@ -250,7 +278,7 @@ export function Kpi({
   accent?: KpiAccent
   /** Indicador de tendencia opcional junto al valor. */
   delta?: KpiDelta
-  /** Atenúa la tarjeta y muestra un badge "sin data" (métrica no configurada). */
+  /** Atenúa la tarjeta y muestra un badge "sin datos" (métrica no configurada). */
   unavailable?: boolean
   /** Hace la tarjeta clicable (drill-down). */
   onClick?: () => void
@@ -275,8 +303,8 @@ export function Kpi({
   const inner = (
     <>
       {unavailable && (
-        <span className="absolute right-2 top-2 rounded bg-ink-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-ink-500">
-          sin data
+        <span className="absolute right-2 top-2 rounded bg-ink-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-500">
+          sin datos
         </span>
       )}
       <div className="flex items-center gap-2">
@@ -285,7 +313,7 @@ export function Kpi({
             <Icon size={15} />
           </span>
         )}
-        <span className="text-[9px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
       </div>
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className={`text-xl font-extrabold tracking-tight ${t.value}`}>{value}</span>
@@ -296,7 +324,7 @@ export function Kpi({
           </span>
         )}
       </div>
-      {sub && <div className="mt-0.5 text-[10px] text-ink-500">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[11px] text-ink-500">{sub}</div>}
     </>
   )
 
@@ -365,7 +393,7 @@ export function Tabla({
               <th
                 key={i}
                 scope="col"
-                className="whitespace-nowrap border-b border-ink-200 px-3 py-2.5 text-[9px] font-bold uppercase tracking-wide text-ink-500"
+                className="whitespace-nowrap border-b border-ink-200 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide text-ink-500"
               >
                 {h}
               </th>

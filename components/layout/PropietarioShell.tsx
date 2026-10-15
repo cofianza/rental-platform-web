@@ -58,7 +58,9 @@ const NAV: NavGroup[] = [
       { label: 'Visitas', href: '/citas', Icon: IconCalendar },
       // Sin esto, los horarios se quedaban en el default L-V 9-17 sin donde cambiarlos.
       { label: 'Horarios de visita', href: '/disponibilidad', Icon: IconClock },
-      { label: 'Evaluar candidato', href: '/estudios', Icon: IconSearch },
+      // Igual que el botón de cada inmueble: abre el asistente. Antes llevaba a
+      // /estudios, otra lista de lo mismo que «Estudios».
+      { label: 'Evaluar candidato', href: '/expedientes/nuevo', Icon: IconSearch },
       { label: 'Contratos', href: '/contratos', Icon: IconFileText },
     ],
   },
@@ -97,8 +99,13 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
     .toUpperCase()
     .slice(0, 2)
 
-  const isActive = (it: NavItem) =>
+  const coincide = (it: NavItem) =>
     it.exact ? pathname === it.href : pathname === it.href || pathname.startsWith(it.href + '/')
+  // Gana el enlace más específico: en /expedientes/nuevo no se encienden
+  // a la vez «Estudios» y «Evaluar candidato».
+  const isActive = (it: NavItem) =>
+    coincide(it) &&
+    !NAV.some((g) => g.items.some((o) => o !== it && o.href.startsWith(it.href + '/') && coincide(o)))
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-50/40">

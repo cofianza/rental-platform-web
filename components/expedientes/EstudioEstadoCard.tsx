@@ -13,7 +13,9 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconBuilding2, IconCheck, IconClock } from '@/components/icons'
+import { IconBuilding2, IconCheck, IconClock, IconRefresh } from '@/components/icons'
+import { documento } from '@/components/contratos/v3/campos'
+import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
@@ -83,12 +85,12 @@ const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   pago_pendiente: 'Autorizado, esperando pago',
   pagado: 'Pagado',
   autorizado: 'Autorizado, pendiente formulario',
-  formulario_enviado: 'Esperando datos del solicitante',
+  formulario_enviado: 'Esperando datos del prospecto',
   formulario_completado: 'Formulario completado',
   documentos_cargados: 'Documentos cargados',
   en_proceso: 'Consultando el buró de crédito',
   completado: 'Completado',
-  fallido: 'Fallido',
+  fallido: 'Consulta fallida',
   cancelado: 'Cancelado',
 }
 
@@ -166,7 +168,7 @@ const ACCION_BLOQUEO: Record<EstadoBloqueo, AccionGestor & { textoCofianza?: str
   },
   identidad_rechazada: {
     etiqueta: 'Identidad rechazada por el titular',
-    texto: 'Quien abrió el enlace dice que no es el titular de estos datos. Para continuar, comuníquese con Cofianza. No se consumió cupo ni se generó ningún cobro adicional.',
+    texto: `Quien abrió el enlace dice que no es el titular de estos datos. Para continuar, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO}. No se consumió cupo ni se generó ningún cobro adicional.`,
     textoCofianza: 'Quien abrió el enlace dice que no es el titular de estos datos. Revise el caso antes de reenviar el enlace.',
   },
   pendiente_reenvio: {
@@ -206,7 +208,7 @@ async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Prom
       return {
         etiqueta: 'Autorización detenida',
         texto: aut.perfil_prospecto?.identidad_reporte
-          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere su acción: corrija los datos del solicitante y reenvíele la solicitud de autorización.'
+          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere su acción: corrija los datos del prospecto y reenvíele la solicitud de autorización.'
           : 'El enlace de autorización se detuvo y el prospecto ya no puede firmarlo. Requiere su acción: corrija los datos si hace falta y reenvíele la solicitud.',
       }
     }
@@ -269,18 +271,18 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
           : texto
       }
       return esCofianza
-        ? 'Estudio condicionado. Revise las observaciones y decida si proceder.'
-        : 'Estudio condicionado. Lo revisa un analista de Cofianza.'
+        ? 'Evaluación condicionada. Revise las observaciones y decida si proceder.'
+        : 'Evaluación condicionada. La revisa un analista de Cofianza.'
     }
     if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
-    return 'Estudio completado, esperando resultado.'
+    return 'Evaluación completada, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
     const tipo = tipoFallo(estudio)
     if (tipo === 'no_existe') {
       // El documento del coarrendatario no se corrige desde aquí (solo el del titular).
       return esCoarrendatario
-        ? `La persona no aparece en ${buro}. No es un rechazo de crédito. Si el documento está mal escrito, comuníquese con Cofianza para corregirlo.`
+        ? `La persona no aparece en ${buro}. No es un rechazo de crédito. Si el documento está mal escrito, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO} para corregirlo.`
         : `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos y vuelva a consultar.`
     }
     if (tipo === 'apellido') {
@@ -289,7 +291,8 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
     return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla.`
   }
   if (estudio.estado === 'cancelado') {
-    return 'Estudio cancelado.'
+    // Se canceló la evaluación; el estudio sigue vivo.
+    return 'Evaluación cancelada.'
   }
   if (estudio.estado === 'en_proceso') {
     // Pasados 10 min la consulta se cortó (p. ej. un reinicio): la API la
@@ -310,10 +313,10 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
     return 'Pago recibido. El estudio se ejecuta en seguida.'
   }
   if (estudio.estado === 'autorizado') {
-    return 'Autorizado. Esperando que el solicitante complete el formulario con sus datos.'
+    return 'Autorizado. Esperando que el prospecto complete el formulario con sus datos.'
   }
   if (estudio.estado === 'formulario_enviado') {
-    return 'Esperando que el solicitante termine de llenar el formulario.'
+    return 'Esperando que el prospecto termine de llenar el formulario.'
   }
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
@@ -395,6 +398,7 @@ export function EstudioEstadoCard({
   const [estudioCoa, setEstudioCoa] = useState<IEstudio | null>(null)
   const [accionGestor, setAccionGestor] = useState<AccionGestor | null>(null)
   const [loading, setLoading] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   const fetchEstudios = useCallback(async () => {
@@ -418,10 +422,11 @@ export function EstudioEstadoCard({
       )
       setEstudioTitular(titular)
       setEstudioCoa(masReciente(candidatos.filter((e) => e.tipo === 'con_coarrendatario')))
+      setErrorCarga(false)
     } catch {
-      setEstudioTitular(null)
-      setEstudioCoa(null)
-      setAccionGestor(null)
+      // Se conserva lo último cargado: vaciarlo borraba la evaluación del
+      // Resumen sin aviso y, de paso, detenía el polling del «en proceso».
+      setErrorCarga(true)
     } finally {
       setLoading(false)
     }
@@ -438,8 +443,25 @@ export function EstudioEstadoCard({
     return () => clearInterval(id)
   }, [estudioTitular?.estado, estudioCoa?.estado, fetchEstudios])
 
-  if (loading) return null
-  if (!estudioTitular && !estudioCoa) return null
+  if (loading) return <div className="h-12 animate-pulse rounded-lg bg-gray-100" aria-hidden="true" />
+  if (!estudioTitular && !estudioCoa) {
+    if (!errorCarga) return null
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos cargar la evaluación crediticia de este estudio.</p>
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            void fetchEstudios()
+          }}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
 
   const titularSolicitante = solicitante ?? null
   const coaSolicitante = estudioCoa ? getCoarrendatarioFromEstudio(estudioCoa) : null
@@ -579,7 +601,8 @@ function EstudioPanel({
       : decisionAnalista === 'rechazado'
         ? 'No aprobado por el analista'
         : estudio.condicion_coarrendatario && estudio.resultado === 'condicionado'
-          ? 'Espera coarrendatario'
+          ? // Mismo nombre que la barra, la tarjeta y el encabezado (Adenda 3 §6).
+            'Aprobado con condición'
           : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
@@ -656,8 +679,9 @@ function EstudioPanel({
                 {persona.numero_documento && (
                   <>
                     {' · '}
-                    {persona.tipo_documento ? `${persona.tipo_documento} ` : ''}
-                    <span className="font-medium text-gray-800">{persona.numero_documento}</span>
+                    <span className="font-medium text-gray-800">
+                      {persona.tipo_documento ? documento(persona.tipo_documento, persona.numero_documento) : persona.numero_documento}
+                    </span>
                   </>
                 )}
               </p>

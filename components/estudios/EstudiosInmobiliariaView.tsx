@@ -24,7 +24,7 @@ import { EstudioDetailModal } from '@/components/expedientes/EstudioDetailModal'
 import { AdquirirEstudiosCredito } from '@/components/estudios/AdquirirEstudiosCredito'
 import { fechaCorta } from '@/components/dashboard/secciones/_shared'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
-import { IconSearch, IconPlus, IconLoader, IconShield, IconChevronRight } from '@/components/icons'
+import { IconCheckCircle, IconPlus, IconLoader, IconShield, IconChevronRight, IconRefresh } from '@/components/icons'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
 
@@ -91,7 +91,7 @@ interface EstudiosViewProps {
 }
 
 export function EstudiosInmobiliariaView({
-  intro = 'Inicie evaluaciones · Respuesta en segundos · Notificación inmediata a las partes',
+  intro = 'Inicie evaluaciones y consulte su resultado · Notificación a las partes',
   showSaldo = true,
   showPaquetes = true,
 }: EstudiosViewProps = {}) {
@@ -100,6 +100,8 @@ export function EstudiosInmobiliariaView({
     meta,
     filters,
     isLoading,
+    error,
+    fetchEstudios,
     activeBandeja,
     setActiveBandeja,
     setFilters,
@@ -164,8 +166,8 @@ export function EstudiosInmobiliariaView({
         <div className="flex items-center gap-2.5">
           {showSaldo && (
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
-              <IconSearch size={14} />
-              {saldo ? (saldo.saldo_efectivo ?? saldo.saldo_total) : '…'} créditos disponibles
+              <IconCheckCircle size={14} />
+              {saldo ? (saldo.saldo_efectivo ?? saldo.saldo_total) : '…'} cupos disponibles
             </span>
           )}
           <Link
@@ -201,7 +203,8 @@ export function EstudiosInmobiliariaView({
             !stats
               ? sinDato
               : stats.condicionados > 0
-              ? `${stats.condicionados} condicionado${stats.condicionados === 1 ? '' : 's'}`
+              ? // Los condicionados no están en esta cifra: van aparte.
+                `Sin contar ${stats.condicionados} condicionado${stats.condicionados === 1 ? '' : 's'}`
               : 'Sin condicionados'
           }
         />
@@ -237,6 +240,17 @@ export function EstudiosInmobiliariaView({
             <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
               <IconLoader size={20} className="animate-spin text-primary-600" />
               Cargando evaluaciones…
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <p className="text-sm text-red-700">No pudimos cargar las evaluaciones.</p>
+              <button
+                type="button"
+                onClick={() => void fetchEstudios()}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+              >
+                <IconRefresh size={16} /> Reintentar
+              </button>
             </div>
           ) : estudios.length === 0 ? (
             <div className="py-12 text-center">
@@ -277,7 +291,19 @@ export function EstudiosInmobiliariaView({
                           {esCoa ? 'Coarrendatario' : 'Individual'}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-gray-600">{formatNumeroEstudio(e.expedientes?.numero) || '—'}</td>
+                      <td className="px-6 py-3 text-gray-600">
+                        {/* El modal de «Ver» no lleva al estudio: el número sí. */}
+                        {e.expediente_id && e.expedientes?.numero ? (
+                          <Link
+                            href={`/expedientes/${e.expediente_id}`}
+                            className="font-semibold text-primary-700 underline-offset-2 hover:underline"
+                          >
+                            {formatNumeroEstudio(e.expedientes.numero)}
+                          </Link>
+                        ) : (
+                          formatNumeroEstudio(e.expedientes?.numero) || '—'
+                        )}
+                      </td>
                       <td className="px-6 py-3">
                         <span
                           className={cn(

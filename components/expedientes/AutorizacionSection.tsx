@@ -8,8 +8,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
-import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2, IconPencil } from '@/components/icons'
+import { IconShield, IconMail, IconCheck, IconClock, IconLoader, IconAlertTriangle, IconUserX, IconUsers, IconBuilding2, IconPencil, IconRefresh } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ContactoCofianzaInline } from '@/components/expedientes/ContactoCofianzaInline'
 import { autorizacionService } from '@/services/autorizacionService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { IAutorizacion, IRevocarInput } from '@/types/autorizacion'
@@ -81,7 +83,14 @@ export function AutorizacionSection({
   // solicitud le sale al prospecto cuando se confirme ese pago, no antes.
   const [faltaPagoGestor, setFaltaPagoGestor] = useState(false)
   const [loading, setLoading] = useState(true)
+  // No se pudo LEER el estado: no es «sin autorización». Pintarlo como vacío
+  // ofrecía «Enviar», que la API cuenta como reenvío y vence el enlace vivo.
+  const [errorCarga, setErrorCarga] = useState(false)
   const [sending, setSending] = useState(false)
+  // Reenviar con el enlace vivo lo vence y gasta un reenvío: se confirma.
+  const [confirmReenvio, setConfirmReenvio] = useState(false)
+  const [errCorreo, setErrCorreo] = useState('')
+  const [errDoc, setErrDoc] = useState('')
   // Revocar = registrar la solicitud que el TITULAR le hizo a Cofianza. Solo
   // Cofianza (admin/operador); el gestor no revoca por él: cancela el estudio.
   const { hasRole } = usePermissions()
@@ -118,8 +127,10 @@ export function AutorizacionSection({
       const pago = data ? null : await pagoEstudioService.getEstado(expedienteId).catch(() => null)
       const paga = pago?.paga
       setFaltaPagoGestor(!!pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido'))
+      setErrorCarga(false)
     } catch {
-      // silent — section just won't show data
+      // Con un estado ya cargado (polling) se sigue mostrando el último.
+      setErrorCarga(true)
     } finally {
       setLoading(false)
     }
@@ -151,7 +162,8 @@ export function AutorizacionSection({
     if (editContacto) {
       const emailNuevo = emailEdit.trim().toLowerCase()
       if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
-        toast.error('Ingrese un correo válido para enviar el enlace')
+        setErrCorreo('Escriba un correo válido: ahí le llega el enlace.')
+        document.getElementById('autorizacion-section-correo')?.focus()
         return
       }
       const telDigits = telEdit.replace(/\D/g, '').replace(/^57/, '')
@@ -166,7 +178,8 @@ export function AutorizacionSection({
     if (sinDocumento) {
       const numero = numDocEdit.trim()
       if (numero.length < 5) {
-        toast.error('Ingrese el número de documento del prospecto')
+        setErrDoc('Escriba el número de documento del prospecto (mínimo 5 caracteres).')
+        document.getElementById('autorizacion-section-num-doc')?.focus()
         return
       }
       contacto = { ...contacto, tipo_documento: tipoDocEdit, numero_documento: numero }
@@ -199,7 +212,7 @@ export function AutorizacionSection({
       </p>
       <div className="grid grid-cols-5 gap-2">
         <div className="col-span-2">
-          <label htmlFor="autorizacion-section-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo doc.</label>
+          <label htmlFor="autorizacion-section-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo de documento</label>
           <select id="autorizacion-section-tipo-doc"
             value={tipoDocEdit}
             onChange={(e) => setTipoDocEdit(e.target.value)}
@@ -218,10 +231,13 @@ export function AutorizacionSection({
           <input id="autorizacion-section-num-doc"
             inputMode="numeric"
             value={numDocEdit}
-            onChange={(e) => setNumDocEdit(e.target.value)}
+            onChange={(e) => { setNumDocEdit(e.target.value); setErrDoc('') }}
             disabled={sending}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+            aria-invalid={!!errDoc}
+            aria-describedby={errDoc ? 'autorizacion-section-num-doc-error' : undefined}
+            className={`w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 ${errDoc ? 'border-red-300' : 'border-gray-300'}`}
           />
+          {errDoc && <p id="autorizacion-section-num-doc-error" className="mt-1 text-xs text-red-600">{errDoc}</p>}
         </div>
       </div>
     </div>
@@ -263,11 +279,14 @@ export function AutorizacionSection({
               <input id="autorizacion-section-correo"
                 type="email"
                 value={emailEdit}
-                onChange={(e) => setEmailEdit(e.target.value)}
+                onChange={(e) => { setEmailEdit(e.target.value); setErrCorreo('') }}
                 disabled={sending}
                 placeholder="correo@ejemplo.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                aria-invalid={!!errCorreo}
+                aria-describedby={errCorreo ? 'autorizacion-section-correo-error' : undefined}
+                className={`w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 ${errCorreo ? 'border-red-300' : 'border-gray-300'}`}
               />
+              {errCorreo && <p id="autorizacion-section-correo-error" className="mt-1 text-xs text-red-600">{errCorreo}</p>}
             </div>
             <PhoneInput
               label="WhatsApp (opcional)"
@@ -282,7 +301,7 @@ export function AutorizacionSection({
             </p>
             <button
               type="button"
-              onClick={() => setEditContacto(false)}
+              onClick={() => { setEditContacto(false); setErrCorreo('') }}
               className="text-xs font-medium text-gray-500 hover:text-gray-700"
             >
               Cancelar corrección
@@ -330,7 +349,29 @@ export function AutorizacionSection({
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center gap-2 text-gray-500">
           <IconLoader size={16} className="animate-spin" />
-          <span className="text-sm">Cargando autorizacion...</span>
+          <span className="text-sm">Cargando autorización…</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (errorCarga && !autorizacion) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700">
+            No pudimos consultar la autorización de este estudio. Reintente antes de enviar nada al prospecto.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              void fetchStatus()
+            }}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
         </div>
       </div>
     )
@@ -360,17 +401,21 @@ export function AutorizacionSection({
   const bloqueo = autorizacion?.estado_bloqueo
   const reenvioSoloCofianza = bloqueo === 'identidad_rechazada' && !esCofianza
   const sinReenvios = !esCofianza && autorizacion?.reenvios_restantes === 0
-  const puedeCorregir =
+  const corregible =
     !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !reenvioSoloCofianza
+  // Pasado el límite la API no guarda la corrección: solo cierra el estudio.
+  const sinCorrecciones = corregible && autorizacion?.correcciones_restantes === 0
+  const puedeCorregir = corregible && !sinCorrecciones
 
-  // Reenviar y corregir: compartido por pendiente, revocado y expirado.
+  // Reenviar y corregir: compartido por pendiente, revocado y expirado. Con el
+  // enlace vivo (pendiente) se confirma: lo vence y gasta un reenvío.
   const acciones = (etiqueta: string, primario: boolean) =>
     !soloLectura && (
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {!reenvioSoloCofianza && (
             <button
-              onClick={handleEnviarEnlace}
+              onClick={() => (estado === 'pendiente' ? setConfirmReenvio(true) : void handleEnviarEnlace())}
               disabled={sending || sinReenvios}
               className={
                 primario
@@ -393,11 +438,17 @@ export function AutorizacionSection({
             </button>
           )}
         </div>
+        {sinCorrecciones && (
+          <p className="text-xs text-gray-600">
+            Ya usó todas las correcciones del documento en este estudio. Si el documento sigue mal, cancele este
+            estudio y cree uno nuevo.
+          </p>
+        )}
         {reenvioSoloCofianza ? (
-          <p className="text-xs text-gray-600">Para continuar, comuníquese con Cofianza.</p>
+          <p className="text-xs text-gray-600">Para continuar, <ContactoCofianzaInline />.</p>
         ) : sinReenvios ? (
           <p className="text-xs text-red-700">
-            Alcanzó el máximo de reenvíos de este estudio. Comuníquese con Cofianza.
+            Alcanzó el máximo de reenvíos de este estudio. Para continuar, <ContactoCofianzaInline />.
           </p>
         ) : (
           !esCofianza &&
@@ -462,7 +513,7 @@ export function AutorizacionSection({
             <p className="text-xs text-amber-700">
               Quien abrió el enlace dice que no es el titular de estos datos. El enlace se detuvo y no se consultó
               ninguna central de riesgo.
-              {!esCofianza && ' Para continuar, comuníquese con Cofianza.'}
+              {!esCofianza && <> Para continuar, <ContactoCofianzaInline />.</>}
             </p>
             {perfil?.identidad_reporte_detalle && (
               <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>
@@ -503,7 +554,7 @@ export function AutorizacionSection({
         </div>
       )}
 
-      {/* Sin autorizacion */}
+      {/* Sin autorizacion (la API respondió que no hay; el error va arriba) */}
       {!autorizacion && (
         <div className="space-y-3">
           {faltaPagoGestor ? (
@@ -575,11 +626,7 @@ export function AutorizacionSection({
                   Método: {METODO_LABELS[autorizacion.metodo_firma] || autorizacion.metodo_firma}
                 </p>
               )}
-              {autorizacion?.hash_documento && (
-                <p className="text-xs text-green-600 font-mono truncate max-w-xs" title={autorizacion.hash_documento}>
-                  Hash: {autorizacion.hash_documento.slice(0, 16)}...
-                </p>
-              )}
+              {/* El hash va solo en «Evidencia de la firma»: aquí era jerga. */}
             </div>
           </div>
 
@@ -874,6 +921,24 @@ export function AutorizacionSection({
           </dl>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmReenvio}
+        onClose={() => setConfirmReenvio(false)}
+        onConfirm={handleEnviarEnlace}
+        isLoading={sending}
+        title="¿Reenviar el enlace?"
+        message={`El enlace que tiene el prospecto dejará de funcionar y le llegará uno nuevo.${
+          !esCofianza && autorizacion?.reenvios_restantes != null
+            ? ` Este reenvío cuenta: ${
+                autorizacion.reenvios_restantes === 1
+                  ? 'es el último que le queda en este estudio.'
+                  : `le quedan ${autorizacion.reenvios_restantes} en este estudio.`
+              }`
+            : ''
+        }`}
+        confirmLabel="Reenviar enlace"
+      />
 
       {showCorregir && (
         <CorregirDocumentoModal

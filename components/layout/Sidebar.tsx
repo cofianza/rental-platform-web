@@ -231,11 +231,15 @@ export function Sidebar() {
                         {item.label}
                       </span>
                       {faltaFirmante && item.href === '/configuracion' && (
-                        <span
-                          className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"
-                          aria-label="Dato obligatorio pendiente"
-                          title="Dato obligatorio pendiente"
-                        />
+                        <>
+                          <span
+                            className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"
+                            aria-hidden="true"
+                            title="Dato obligatorio pendiente"
+                          />
+                          {/* aria-label en un <span> sin rol no se anuncia. */}
+                          <span className="sr-only">(dato obligatorio pendiente)</span>
+                        </>
                       )}
 
                       {/* Tooltip para modo colapsado (tablet y desktop colapsado) */}
@@ -331,13 +335,14 @@ export function Sidebar() {
           <button
             onClick={toggleSidebar}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title={sidebarExpanded ? 'Colapsar sidebar' : 'Expandir sidebar'}
+            title={sidebarExpanded ? 'Contraer menú' : 'Expandir menú'}
+            aria-label={sidebarExpanded ? 'Contraer menú' : 'Expandir menú'}
           >
             {sidebarExpanded ? (
               <>
                 <IconChevronDown size={18} className="rotate-90" />
                 <span className="hidden lg:inline text-sm font-medium">
-                  Colapsar
+                  Contraer menú
                 </span>
               </>
             ) : (

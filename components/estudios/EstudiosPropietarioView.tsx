@@ -14,7 +14,7 @@ import { EstudiosInmobiliariaView } from '@/components/estudios/EstudiosInmobili
 export function EstudiosPropietarioView() {
   return (
     <EstudiosInmobiliariaView
-      intro="Envíe a un prospecto a evaluación crediticia con respuesta en segundos."
+      intro="Las evaluaciones crediticias de sus prospectos. Para evaluar a uno nuevo, cree un estudio."
       showSaldo={false}
       showPaquetes={false}
     />

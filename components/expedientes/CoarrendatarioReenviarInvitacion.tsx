@@ -32,7 +32,24 @@ interface CoarrendatarioReenviarInvitacionProps {
 }
 
 const INPUT =
-  'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50'
+  'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50'
+
+type Campo = 'nombre' | 'apellido' | 'num-doc' | 'invitacion-correo'
+const idDe = (c: Campo) => `coarrendatario-reenviar-${c}`
+
+/** Atributos del campo con su error (borde rojo + aria) y el mensaje debajo. */
+function conError(c: Campo, error?: string) {
+  return {
+    id: idDe(c),
+    'aria-invalid': !!error,
+    'aria-describedby': error ? `${idDe(c)}-error` : undefined,
+    className: `${INPUT} ${error ? 'border-red-300' : 'border-gray-300'}`,
+  }
+}
+
+function MensajeError({ campo, error }: { campo: Campo; error?: string }) {
+  return error ? <p id={`${idDe(campo)}-error`} className="mt-1 text-xs text-red-600">{error}</p> : null
+}
 
 export function CoarrendatarioReenviarInvitacion({
   expedienteId,
@@ -47,21 +64,25 @@ export function CoarrendatarioReenviarInvitacion({
   const [telefono, setTelefono] = useState(coa.telefono ?? '')
   const [sending, setSending] = useState(false)
   const [confirmandoCancelar, setConfirmandoCancelar] = useState(false)
+  // Error junto a cada campo: un toast genérico no decía cuál.
+  const [errores, setErrores] = useState<Partial<Record<Campo, string>>>({})
+  const limpiar = (c: Campo) => { if (errores[c]) setErrores((p) => ({ ...p, [c]: undefined })) }
 
   if (coa.estado !== 'pendiente_aceptacion') return null
 
   const handleReenviar = async () => {
     const emailNorm = email.trim().toLowerCase()
-    if (!emailNorm || !/.+@.+\..+/.test(emailNorm)) {
-      toast.error('Ingrese un correo válido para reenviar la invitación')
-      return
-    }
-    if (!nombre.trim() || !apellido.trim() || !numDoc.trim()) {
-      toast.error('El nombre, el apellido y el documento no pueden quedar vacíos')
-      return
-    }
-    if (!esNombreValido(nombre.trim()) || !esNombreValido(apellido.trim())) {
-      toast.error('El nombre y el apellido solo pueden tener letras.')
+    const e: Partial<Record<Campo, string>> = {}
+    if (!nombre.trim()) e.nombre = 'Escriba el nombre.'
+    else if (!esNombreValido(nombre.trim())) e.nombre = 'El nombre solo puede tener letras.'
+    if (!apellido.trim()) e.apellido = 'Escriba el primer apellido.'
+    else if (!esNombreValido(apellido.trim())) e.apellido = 'El apellido solo puede tener letras.'
+    if (!numDoc.trim()) e['num-doc'] = 'Escriba el número de documento.'
+    if (!emailNorm || !/.+@.+\..+/.test(emailNorm)) e['invitacion-correo'] = 'Escriba un correo válido: ahí le llega la invitación.'
+    setErrores(e)
+    const primero = (Object.keys(e) as Campo[])[0]
+    if (primero) {
+      document.getElementById(idDe(primero))?.focus()
       return
     }
     setSending(true)
@@ -112,13 +133,15 @@ export function CoarrendatarioReenviarInvitacion({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
         <div>
           <label htmlFor="coarrendatario-reenviar-nombre" className="block text-[11px] font-medium text-gray-500 mb-1">Nombre</label>
-          <input id="coarrendatario-reenviar-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} disabled={sending} className={INPUT} />
+          <input {...conError('nombre', errores.nombre)} value={nombre} onChange={(e) => { setNombre(e.target.value); limpiar('nombre') }} disabled={sending} />
+          <MensajeError campo="nombre" error={errores.nombre} />
         </div>
         <div>
           <label htmlFor="coarrendatario-reenviar-apellido" className="block text-[11px] font-medium text-gray-500 mb-1">
             Primer apellido (como en la cédula)
           </label>
-          <input id="coarrendatario-reenviar-apellido" value={apellido} onChange={(e) => setApellido(e.target.value)} disabled={sending} className={INPUT} />
+          <input {...conError('apellido', errores.apellido)} value={apellido} onChange={(e) => { setApellido(e.target.value); limpiar('apellido') }} disabled={sending} />
+          <MensajeError campo="apellido" error={errores.apellido} />
         </div>
         <div>
           <label htmlFor="coarrendatario-reenviar-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo de documento</label>
@@ -127,7 +150,7 @@ export function CoarrendatarioReenviarInvitacion({
             value={tipoDoc}
             onChange={(e) => setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])}
             disabled={sending}
-            className={INPUT}
+            className={`${INPUT} border-gray-300`}
           >
             {TIPO_DOC_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -137,24 +160,25 @@ export function CoarrendatarioReenviarInvitacion({
         <div>
           <label htmlFor="coarrendatario-reenviar-num-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Número de documento</label>
           <input
-            id="coarrendatario-reenviar-num-doc"
+            {...conError('num-doc', errores['num-doc'])}
             inputMode="numeric"
             value={numDoc}
-            onChange={(e) => setNumDoc(e.target.value)}
+            onChange={(e) => { setNumDoc(e.target.value); limpiar('num-doc') }}
             disabled={sending}
-            className={INPUT}
           />
+          <MensajeError campo="num-doc" error={errores['num-doc']} />
         </div>
         <div>
           <label htmlFor="coarrendatario-reenviar-invitacion-correo" className="block text-[11px] font-medium text-gray-500 mb-1">Correo</label>
-          <input id="coarrendatario-reenviar-invitacion-correo"
+          <input
+            {...conError('invitacion-correo', errores['invitacion-correo'])}
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); limpiar('invitacion-correo') }}
             disabled={sending}
             placeholder="correo@ejemplo.com"
-            className={INPUT}
           />
+          <MensajeError campo="invitacion-correo" error={errores['invitacion-correo']} />
         </div>
         <div>
           <PhoneInput

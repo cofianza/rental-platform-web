@@ -89,7 +89,7 @@ export function RegistroTipoTabs({ activo }: { activo: 'propietario' | 'inmobili
       </div>
 
       <p className="text-[13px] font-semibold text-slate-900 mb-2.5">Soy:</p>
-      <div className="grid grid-cols-2 gap-2 mb-6">
+      <div className="grid grid-cols-2 gap-2 mb-3">
         {TIPOS_CUENTA.map(({ tipo, href, Icon, label }) => {
           const esActivo = tipo === activo
           return (
@@ -111,6 +111,15 @@ export function RegistroTipoTabs({ activo }: { activo: 'propietario' | 'inmobili
           )
         })}
       </div>
+      {/* El arrendatario no se registra aquí: si crea una cuenta de propietario
+          con su correo, luego no puede postularse a un inmueble con ese correo. */}
+      <p className="mb-6 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-normal text-slate-600">
+        ¿Busca un inmueble para arrendar? No necesita crear cuenta: elija uno en la{' '}
+        <Link href="/vitrina" className="font-semibold text-primary-700 underline hover:text-primary-800">
+          vitrina
+        </Link>{' '}
+        y toque «Me interesa».
+      </p>
     </>
   )
 }

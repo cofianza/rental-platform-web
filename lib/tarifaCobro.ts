@@ -30,10 +30,17 @@ export function contarCuentas(cuentas: Pick<ICuentaCobro, 'situacion' | 'nota_cr
 type Rol = string | undefined
 
 /** Primer día del mes siguiente a una fecha AAAA-MM-DD. */
-function primerDiaMesSiguiente(f: string): string {
+export function primerDiaMesSiguiente(f: string): string {
   const [a, m] = f.split('-').map(Number)
   return new Date(Date.UTC(a, m, 1)).toISOString().slice(0, 10)
 }
+
+/** Mes (AAAA-MM-01) desde el que rige una condición fechada: el de la fecha si cae el 1.º, si no el siguiente (periodoDesde de la API). */
+export const periodoDesde = (f: string) => (f.slice(8, 10) === '01' ? f.slice(0, 10) : primerDiaMesSiguiente(f))
+
+/** 'AAAA-MM-DD' → «octubre de 2027». */
+export const mesTexto = (f: string) =>
+  new Date(`${f.slice(0, 7)}-01T12:00:00`).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
 
 /**
  * El mes (AAAA-MM-01) ya cortado hoy (AAAA-MM-DD, Bogotá): el último día del
@@ -100,7 +107,6 @@ export function aniversarioPorConfirmar(fechaInicio: string, hoy: string): strin
     const f = `${anio}-${String(m).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
     if (f < hoy) continue
     if ((Date.parse(f) - Date.parse(hoy)) / 86_400_000 > DIAS_AVISO_ANIVERSARIO) return null
-    const desde = f.slice(8) === '01' ? f : primerDiaMesSiguiente(f)
-    return desde > mesCortado(hoy) ? f : null
+    return periodoDesde(f) > mesCortado(hoy) ? f : null
   }
 }

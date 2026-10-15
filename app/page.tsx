@@ -15,7 +15,7 @@ import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
 import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
 import { ScrollReveal } from '@/components/vitrina/ScrollReveal'
-import { IconCheck, IconX, IconArrowRight } from '@/components/icons'
+import { IconCheck, IconX, IconArrowRight, IconSearch, IconCheckCircle, IconHome } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Le pidieron fiador? Soy yo. Llámenos.',
@@ -297,34 +297,19 @@ export default function HomePage() {
             {[
               {
                 n: '01',
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.35-4.35" />
-                  </svg>
-                ),
-                title: 'Encuentra el inmueble',
+                icon: <IconSearch size={22} />,
+                title: 'Encuentre el inmueble',
                 body: 'En nuestra vitrina o con una inmobiliaria aliada. Le da "me interesa", agenda la visita y si le gusta, inicia su estudio.',
               },
               {
                 n: '02',
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                  </svg>
-                ),
+                icon: <IconCheckCircle size={22} />,
                 title: 'Lo evaluamos en segundos',
                 body: 'Paga el estudio de crédito. Lo consultamos en múltiples bases de datos. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor.',
               },
               {
                 n: '03',
-                icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                ),
+                icon: <IconHome size={22} />,
                 title: 'Firmamos y usted se muda',
                 body: 'El link de firma llega por WhatsApp. Contrato en su celular en minutos. Cofianza firma como fiador. Usted con las llaves en la mano.',
               },

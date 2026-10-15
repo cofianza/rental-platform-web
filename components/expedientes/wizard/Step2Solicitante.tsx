@@ -615,7 +615,7 @@ export function Step2Solicitante({
           <input
             type="text"
             autoFocus
-            inputMode="numeric"
+            inputMode={searchTipoDoc === 'pasaporte' ? 'text' : 'numeric'}
             value={searchNumDoc}
             onChange={(e) => setSearchNumDoc(e.target.value)}
             placeholder="Número de documento"
@@ -997,8 +997,8 @@ function SolicitanteForm({
             >
               <option value="">Seleccionar...</option>
               {DEPARTAMENTOS_COLOMBIA.map((dep) => (
-                <option key={dep} value={dep}>
-                  {dep}
+                <option key={dep.value} value={dep.value}>
+                  {dep.label}
                 </option>
               ))}
             </select>

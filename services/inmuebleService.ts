@@ -4,8 +4,6 @@
  */
 
 import { apiClient } from '@/lib/api'
-import { API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
 import type {
   IInmueble,
   IInmuebleFilters,
@@ -136,16 +134,11 @@ class InmuebleService {
   }> {
     const formData = new FormData()
     formData.append('archivo', file)
-    const token = useAuthStore.getState().accessToken
-    const response = await fetch(`${API_BASE_URL}/inmuebles/${inmuebleId}/contrato-tipo`, {
+    const response = await apiClient.raw(`/inmuebles/${inmuebleId}/contrato-tipo`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     })
     const json = await response.json()
-    if (!response.ok) {
-      throw new Error(json.message || 'Error al subir el contrato tipo')
-    }
     return json.data
   }
 
@@ -256,20 +249,10 @@ class InmuebleService {
     formData.append('file', file)
     if (inmuebleId) formData.append('inmueble_id', inmuebleId)
 
-    const { useAuthStore } = await import('@/stores/auth.store')
-    const token = useAuthStore.getState().accessToken
-    const { API_BASE_URL } = await import('@/lib/constants')
-
-    const res = await fetch(`${API_BASE_URL}/inmuebles/upload-fachada`, {
+    const res = await apiClient.raw('/inmuebles/upload-fachada', {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => null)
-      throw new Error(err?.message || 'Error al subir la imagen. Por favor, intente de nuevo.')
-    }
 
     const json = await res.json()
     return json.data?.url || json.url || ''
@@ -398,23 +381,14 @@ class InmuebleService {
     }
 
     // Upload via backend (same as fachada — avoids Supabase Storage auth issues)
-    const { useAuthStore } = await import('@/stores/auth.store')
-    const token = useAuthStore.getState().accessToken
-    const { API_BASE_URL } = await import('@/lib/constants')
-
     const formData = new FormData()
     formData.append('file', file)
     formData.append('inmueble_id', inmuebleId)
 
-    const uploadRes = await fetch(`${API_BASE_URL}/inmuebles/upload-fachada`, {
+    const uploadRes = await apiClient.raw('/inmuebles/upload-fachada', {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     })
-
-    if (!uploadRes.ok) {
-      throw new Error('Error al subir la imagen.')
-    }
 
     const uploadJson = await uploadRes.json()
     const publicUrl = uploadJson.data?.url || ''

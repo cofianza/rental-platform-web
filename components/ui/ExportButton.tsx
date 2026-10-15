@@ -8,8 +8,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { IconDownload, IconLoader, IconChevronDown } from '@/components/icons'
-import { API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { apiClient } from '@/lib/api'
 
 export interface ExportButtonProps {
   /** Endpoint relativo de exportación, e.g. '/export/expedientes' */
@@ -38,18 +37,9 @@ export function ExportButton({ endpoint, params, entityName }: ExportButtonProps
     setOpen(false)
     setLoading(true)
     try {
-      const token = useAuthStore.getState().accessToken
       const queryParams = new URLSearchParams({ format, ...params })
-      const url = `${API_BASE_URL}${endpoint}?${queryParams.toString()}`
-
-      const res = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => null)
-        throw new Error(json?.message || `Error ${res.status}`)
-      }
+      // raw: renueva el token si venció y traduce la falla de red.
+      const res = await apiClient.raw(`${endpoint}?${queryParams.toString()}`)
 
       const blob = await res.blob()
       const disposition = res.headers.get('Content-Disposition') || ''
@@ -68,15 +58,16 @@ export function ExportButton({ endpoint, params, entityName }: ExportButtonProps
       URL.revokeObjectURL(a.href)
 
       const truncated = res.headers.get('X-Export-Truncated') === 'true'
+      const total = res.headers.get('X-Export-Total-Rows')
       if (truncated) {
         toast.warning(
-          `Se exportaron los primeros 10,000 registros de ${res.headers.get('X-Export-Total-Rows')} totales`
+          `Se exportaron los primeros ${(10000).toLocaleString('es-CO')} registros${total ? ` de ${Number(total).toLocaleString('es-CO')} en total` : ''}`
         )
       } else {
-        toast.success(`${entityName} exportado correctamente`)
+        toast.success(`Exportación lista: ${entityName}`)
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al exportar')
+      toast.error(err instanceof Error ? err.message : 'No se pudo exportar. Intente de nuevo.')
     } finally {
       setLoading(false)
     }

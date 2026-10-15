@@ -172,6 +172,9 @@ function EmptyChart() {
 export default function VolumenExpedientesPage() {
   const [data, setData] = useState<VolumenData | null>(null)
   const [loading, setLoading] = useState(true)
+  // Tercer estado (como en Ingresos): sin esto un fallo se veía como «no hay
+  // datos» y, al fallar con filtros nuevos, quedaban las cifras del periodo anterior.
+  const [falloCarga, setFalloCarga] = useState(false)
   const [filters, setFilters] = useState<VolumenFilters>({
     dateFrom: '',
     dateTo: '',
@@ -190,9 +193,12 @@ export default function VolumenExpedientesPage() {
 
       const result = await reporteService.getVolumenExpedientes(cleanFilters)
       setData(result)
+      setFalloCarga(false)
     } catch (err) {
       console.error('Error cargando volumen de estudios:', err)
       toast.error('Error al cargar el reporte de volumen')
+      setData(null)
+      setFalloCarga(true)
     } finally {
       setLoading(false)
     }
@@ -235,6 +241,21 @@ export default function VolumenExpedientesPage() {
           </div>
         }
       />
+
+      {falloCarga && !loading && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="flex-1 text-sm text-amber-900">
+            No se pudo cargar el reporte. Las cifras de abajo no están disponibles — no son cero.
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchData(filters)}
+            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
@@ -297,6 +318,8 @@ export default function VolumenExpedientesPage() {
           <ChartSkeleton />
         ) : hasPeriodos ? (
           <BarChart data={data.periodos} />
+        ) : falloCarga ? (
+          <p className="py-12 text-center text-sm text-gray-500">No disponible</p>
         ) : (
           <EmptyChart />
         )}

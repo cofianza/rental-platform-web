@@ -21,7 +21,7 @@ export function PlantillaPreviewModal({
   if (!isOpen) return null
 
   return (
-    <Modal isOpen onClose={onClose} bare ariaLabel="Vista previa de la plantilla" className="rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4 flex flex-col">
+    <Modal isOpen onClose={onClose} bare ariaLabel="Vista previa de la plantilla" closeOnBackdrop className="rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
         <div>

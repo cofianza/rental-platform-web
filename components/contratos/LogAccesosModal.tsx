@@ -48,7 +48,7 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
   if (!isOpen) return null
 
   return (
-    <Modal isOpen onClose={onClose} bare ariaLabel="Registro de accesos al contrato" className="rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+    <Modal isOpen onClose={onClose} bare ariaLabel="Registro de accesos al contrato" closeOnBackdrop className="rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Log de Accesos al Documento Firmado</h2>

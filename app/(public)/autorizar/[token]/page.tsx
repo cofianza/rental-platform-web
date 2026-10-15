@@ -41,8 +41,6 @@ import { cn } from '@/lib/utils'
 import { CONTACTO_COFIANZA } from '@/lib/constants'
 import {
   IconShieldCheck,
-  IconWhatsapp,
-  IconMail,
   IconLock,
   IconActivity,
   IconSearch,
@@ -62,6 +60,7 @@ import {
   IconBuilding2,
   IconUser, IconArrowLeft, IconArrowRight, IconRefresh } from '@/components/icons'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { Modal } from '@/components/ui/Modal'
 import { buttonClasses } from '@/components/ui/Button'
 
@@ -999,8 +998,7 @@ export default function AutorizarPage() {
                   />
                   <p id="numero-documento-ayuda" className="text-xs leading-relaxed text-gray-500">
                     Lo comparamos con el que está registrado en su estudio; por su seguridad no se lo
-                    mostramos. Tiene un número limitado de intentos. Si se agotan, {quien} revisará sus datos y
-                    le enviará un enlace nuevo.
+                    mostramos.
                   </p>
                   {documentoError && (
                     <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -1307,8 +1305,9 @@ export default function AutorizarPage() {
                       del coarrendatario sí le pide la cédula. Prometemos solo
                       lo que la card cumple. */}
                   <p className="text-xs text-gray-500">
-                    Déjenos los datos de su coarrendatario. Cuando avancemos con su estudio, a usted solo le
-                    pediremos la cédula de esa persona: lo demás ya queda guardado.
+                    Déjenos los datos de su coarrendatario: nombre, apellido y su correo o su WhatsApp. Cuando
+                    avancemos con su estudio le pediremos la cédula de esa persona (y su correo, si no lo deja
+                    aquí): lo demás ya queda guardado.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -1344,7 +1343,7 @@ export default function AutorizarPage() {
                     />
                     </div>
                   </div>
-                  <label htmlFor="coa-email" className="sr-only">Correo de su coarrendatario</label>
+                  <label htmlFor="coa-email" className="block text-xs font-medium text-gray-700">Correo de su coarrendatario</label>
                   <input
                     id="coa-email"
                     type="email"
@@ -1358,7 +1357,7 @@ export default function AutorizarPage() {
                       if (coaEmailError) setCoaEmailError(false)
                       if (coaFaltan.length) setCoaFaltan([])
                     }}
-                    placeholder="Su correo"
+                    placeholder="nombre@correo.com"
                     className={cn(
                       'w-full rounded-lg border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500',
                       coaEmailError ? 'border-red-300' : 'border-gray-200',
@@ -1370,7 +1369,7 @@ export default function AutorizarPage() {
                       WhatsApp.
                     </p>
                   )}
-                  <label htmlFor="coa-telefono" className="sr-only">WhatsApp de su coarrendatario (opcional)</label>
+                  <label htmlFor="coa-telefono" className="block text-xs font-medium text-gray-700">WhatsApp de su coarrendatario</label>
                   <input
                     id="coa-telefono"
                     type="tel"
@@ -1382,7 +1381,7 @@ export default function AutorizarPage() {
                         setCoaTelefono(e.target.value)
                         if (coaFaltan.length) setCoaFaltan([])
                       }}
-                    placeholder="Su WhatsApp (opcional)"
+                    placeholder="300 123 4567"
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                   />
                   {coaFaltan.length > 0 && (
@@ -1792,30 +1791,3 @@ function Card({ children }: { children: React.ReactNode }) {
   )
 }
 
-/**
- * En TODOS los estados (también vencido, inactivo, error): quien abre el
- * enlace sin contexto necesita un canal de Cofianza, no solo «quien te lo envió».
- */
-function ContactoCofianza() {
-  return (
-    <div className="mt-4 text-center text-sm text-gray-600">
-      <p>¿Dudas sobre este mensaje? Escríbanos:</p>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-        <a
-          href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 font-medium text-primary-700 hover:bg-gray-50"
-        >
-          <IconWhatsapp size={16} /> WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
-        </a>
-        <a
-          href={`mailto:${CONTACTO_COFIANZA.email}`}
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 font-medium text-primary-700 hover:bg-gray-50"
-        >
-          <IconMail size={16} /> {CONTACTO_COFIANZA.email}
-        </a>
-      </div>
-    </div>
-  )
-}

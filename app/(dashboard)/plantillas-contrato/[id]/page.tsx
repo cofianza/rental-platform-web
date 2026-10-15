@@ -12,6 +12,7 @@ import {
   IconPower,
   IconEye,
   IconLoader,
+  IconRefresh,
 } from '@/components/icons'
 import { PlantillaFormModal, PlantillaPreviewModal } from '@/components/plantillas-contrato'
 import { ConfirmDialog } from '@/components/users'
@@ -119,12 +120,22 @@ export default function PlantillaDetallePage() {
     return (
       <div className="p-6 text-center">
         <p className="text-red-600 mb-4">{error || 'Plantilla no encontrada'}</p>
-        <button
-          onClick={() => router.push('/plantillas-contrato')}
-          className="text-primary-600 hover:underline text-sm"
-        >
-          Volver al listado
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {error && (
+            <button
+              onClick={() => fetchPlantilla()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+            >
+              <IconRefresh size={16} /> Reintentar
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/plantillas-contrato')}
+            className="text-primary-600 hover:underline text-sm"
+          >
+            Volver al listado
+          </button>
+        </div>
       </div>
     )
   }
@@ -133,7 +144,7 @@ export default function PlantillaDetallePage() {
     <div className="p-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-        <Link href="/" className="hover:text-primary-600 flex items-center gap-1">
+        <Link href="/dashboard" className="hover:text-primary-600 flex items-center gap-1">
           <IconHome size={16} />
           Inicio
         </Link>
@@ -245,10 +256,10 @@ export default function PlantillaDetallePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Informacion</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Información</h2>
             <dl className="space-y-3 text-sm">
               <div>
-                <dt className="text-gray-500">Version</dt>
+                <dt className="text-gray-500">Versión</dt>
                 <dd className="font-medium text-gray-900">{plantilla.version}</dd>
               </div>
               <div>
@@ -292,6 +303,7 @@ export default function PlantillaDetallePage() {
         title="Desactivar plantilla"
         message={`¿Está seguro de desactivar "${plantilla.nombre}"? No se podrá usar para nuevos contratos.`}
         confirmText="Desactivar"
+        variant="danger"
         isLoading={isDeactivating}
         onConfirm={handleDeactivate}
         onClose={() => setDeactivateOpen(false)}

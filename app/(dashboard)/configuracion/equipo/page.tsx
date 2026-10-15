@@ -45,7 +45,7 @@ import { authService } from '@/services/authService'
 const ROL_LABEL: Record<RolMiembro, string> = {
   owner: 'Titular',
   miembro: 'Miembro',
-  solo_lectura: 'Sólo lectura',
+  solo_lectura: 'Solo lectura',
 }
 
 function RolBadge({ rol }: { rol: RolMiembro }) {
@@ -61,7 +61,7 @@ function RolBadge({ rol }: { rol: RolMiembro }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
         <IconEye size={12} />
-        Sólo lectura
+        Solo lectura
       </span>
     )
   }
@@ -89,6 +89,7 @@ export default function EquipoPage() {
     title: string
     message: string
     confirmLabel?: string
+    cancelLabel?: string
     variant?: 'default' | 'danger'
     onConfirm: () => void | Promise<void>
   } | null>(null)
@@ -134,7 +135,7 @@ export default function EquipoPage() {
       title: value ? 'Mostrar toda la cartera a los miembros' : 'Cada miembro ve solo lo suyo',
       message: value
         ? 'Todos los miembros verán todos los inmuebles, estudios y moras de la inmobiliaria.'
-        : 'Cada miembro verá solo lo que creó o lo que le asignes. Los titulares siguen viendo todo.',
+        : 'Cada miembro verá solo lo que creó o lo que usted le asigne. Los titulares siguen viendo todo.',
       confirmLabel: 'Cambiar',
       onConfirm: () => doToggleVenTodo(value),
     })
@@ -193,6 +194,8 @@ export default function EquipoPage() {
               : ''
           } Lo que registró sigue en la cartera.`,
       confirmLabel: esInvit ? 'Cancelar invitación' : 'Quitar',
+      // «Cancelar» (cerrar) junto a «Cancelar invitación» (borrar) confundía.
+      cancelLabel: 'Volver',
       variant: 'danger',
       onConfirm: () => doRevocar(m),
     })
@@ -314,7 +317,7 @@ export default function EquipoPage() {
                   <input
                     type="email"
                     required
-                    aria-label="Correo de la persona que invita"
+                    aria-label="Correo de la persona a invitar"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="correo@ejemplo.com"
@@ -329,7 +332,7 @@ export default function EquipoPage() {
                   aria-label="Rol del miembro invitado"
                 >
                   <option value="miembro">Miembro (gestiona datos)</option>
-                  <option value="solo_lectura">Sólo lectura</option>
+                  <option value="solo_lectura">Solo lectura</option>
                 </select>
                 <button
                   type="submit"
@@ -342,7 +345,7 @@ export default function EquipoPage() {
               </form>
               <p className="text-xs text-gray-500 mt-3">
                 El miembro recibirá un enlace para unirse. Un <strong>miembro</strong> puede crear y
-                editar datos de la cartera; uno de <strong>sólo lectura</strong> solo puede
+                editar datos de la cartera; uno de <strong>solo lectura</strong> solo puede
                 consultarlos. Podrá cambiar su rol o promoverlo a titular más adelante.
               </p>
             </div>
@@ -359,7 +362,7 @@ export default function EquipoPage() {
                   <p className="text-xs text-gray-500 mt-1 max-w-xl">
                     {data.miembros_ven_todo
                       ? 'Los miembros ven TODA la cartera de la inmobiliaria (inmuebles, estudios, moras).'
-                      : 'Cada miembro ve solo lo que creó o lo que le asignes. Los titulares siempre ven todo.'}
+                      : 'Cada miembro ve solo lo que creó o lo que usted le asigne. Los titulares siempre ven todo.'}
                   </p>
                 </div>
                 <button
@@ -438,7 +441,7 @@ export default function EquipoPage() {
                       >
                         <option value="owner">Titular</option>
                         <option value="miembro">Miembro</option>
-                        <option value="solo_lectura">Sólo lectura</option>
+                        <option value="solo_lectura">Solo lectura</option>
                       </select>
                     )}
 
@@ -449,6 +452,7 @@ export default function EquipoPage() {
                           onClick={() => handleReenviar(m)}
                           disabled={busyId === m.id}
                           title="Reenviar invitación"
+                          aria-label={`Reenviar invitación a ${m.email}`}
                           className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
                         >
                           {busyId === m.id ? (
@@ -461,6 +465,7 @@ export default function EquipoPage() {
                           onClick={() => handleRevocar(m)}
                           disabled={busyId === m.id}
                           title="Cancelar invitación"
+                          aria-label={`Cancelar invitación a ${m.email}`}
                           className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
                         >
                           <IconTrash size={16} />
@@ -520,6 +525,7 @@ export default function EquipoPage() {
         title={confirm?.title ?? ''}
         message={confirm?.message ?? ''}
         confirmLabel={confirm?.confirmLabel}
+        cancelLabel={confirm?.cancelLabel}
         variant={confirm?.variant}
         isLoading={procesandoConfirm}
       />

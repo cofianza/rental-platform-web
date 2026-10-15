@@ -22,16 +22,19 @@ import { autorizacionService } from '@/services/autorizacionService'
 import { ApiClientError } from '@/lib/api'
 import { CorregirDocumentoModal } from '@/components/expedientes/CorregirDocumentoModal'
 import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
+import { documento } from '@/components/contratos/v3/campos'
 
-// Tipos soportados por TransUnion Colombia (mismo set que el backend acepta
-// en ejecutarEstudioBodySchema). Pasaporte se excluye a propósito: falla con
-// 'tercero no existe' en las centrales locales. PPT/PEP (A13, migrantes):
-// solo DataCrédito los consulta; TransUnion no tiene código para ellos.
-export type TipoDocEstudio = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti'
+// Los mismos tipos que ofrece el asistente (TIPO_DOCUMENTO_OPTIONS). El
+// pasaporte también se consulta (DataCrédito y TransUnion tienen código para
+// él); PPT/PEP (A13, migrantes) solo DataCrédito. Antes el pasaporte se
+// mostraba como «CC» y se le exigía el apellido de la Registraduría.
+export type TipoDocEstudio = 'cc' | 'nit' | 'ce' | 'ppt' | 'pep' | 'ti' | 'pasaporte'
 
 export function normalizeTipoDocEstudio(t?: string | null): TipoDocEstudio {
   const v = (t || '').toLowerCase()
-  return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ppt' || v === 'pep' || v === 'ti' ? v : 'cc'
+  return v === 'cc' || v === 'nit' || v === 'ce' || v === 'ppt' || v === 'pep' || v === 'ti' || v === 'pasaporte'
+    ? v
+    : 'cc'
 }
 
 /**
@@ -131,6 +134,8 @@ export function ReintentarEstudioForm({
   // vuelva a autorizar (Ley 1266), así que se ofrece enviarle el enlace.
   const [firmoOtroDocumento, setFirmoOtroDocumento] = useState(false)
   const [enviandoAutorizacion, setEnviandoAutorizacion] = useState(false)
+  // Sin correcciones la API no guarda nada: solo cerraría el estudio.
+  const [sinCorrecciones, setSinCorrecciones] = useState(false)
 
   // DataCrédito (la central primaria) valida el apellido contra la
   // Registraduría, y únicamente cuando el documento es CC.
@@ -139,6 +144,10 @@ export function ReintentarEstudioForm({
   const abrirCorregir = async () => {
     if (!expedienteId) return
     const aut = await autorizacionService.getStatus(expedienteId).catch(() => null)
+    if (aut?.correcciones_restantes === 0) {
+      setSinCorrecciones(true)
+      return
+    }
     setCorregir(aut?.correcciones_restantes ?? null)
   }
 
@@ -206,9 +215,9 @@ export function ReintentarEstudioForm({
           <p className="block text-[11px] font-medium text-gray-500 mb-1">Documento</p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-mono text-gray-900">
-              {tipoDoc.toUpperCase()} {numeroDoc || '—'}
+              {documento(tipoDoc, numeroDoc || '—')}
             </span>
-            {puedeCorregir && (
+            {puedeCorregir && !sinCorrecciones && (
               <button
                 type="button"
                 onClick={abrirCorregir}
@@ -255,8 +264,14 @@ export function ReintentarEstudioForm({
               : 'Reintentar consulta'}
         </button>
       </div>
+      {sinCorrecciones && (
+        <p className="text-xs text-gray-700 mt-2">
+          Ya usó todas las correcciones del documento en este estudio. Si el documento sigue mal, cancele este
+          estudio y cree uno nuevo.
+        </p>
+      )}
       <p className="text-[11px] text-gray-500 mt-2">
-        Solo se consultan documentos colombianos (CC, CE, TI, NIT).
+        Se consultan cédula de ciudadanía, cédula de extranjería, PPT, PEP y pasaporte.
         {requiereApellido
           ? ' DataCrédito valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
           : ''}

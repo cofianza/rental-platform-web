@@ -55,7 +55,7 @@ export function DatosEmpresaPendientesBanner() {
         </p>
         <Link
           href={RUTA_DATOS_EMPRESA}
-          className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700"
+          className="inline-flex min-h-11 items-center gap-1 rounded-lg bg-red-600 px-3 py-2 font-semibold text-white hover:bg-red-700"
         >
           Completar datos
           <IconArrowRight size={14} />

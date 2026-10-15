@@ -22,8 +22,19 @@ import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import { autorizacionService } from '@/services/autorizacionService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
-import { IconInfo, IconClock, IconUsers, IconCheckCircle, IconDownload } from '@/components/icons'
-import { formatDate } from '@/lib/constants'
+import {
+  IconInfo,
+  IconClock,
+  IconUsers,
+  IconCheckCircle,
+  IconDownload,
+  IconShieldCheck,
+  IconLoader,
+  IconAlertTriangle,
+  IconRefresh,
+} from '@/components/icons'
+import { CONTACTO_COFIANZA, formatDate } from '@/lib/constants'
+import { mensajeParaProspecto } from '@/lib/errorMessages'
 import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -49,7 +60,15 @@ interface EstudioSolicitanteCardProps {
  * una sola vez el banner del estudio, en esta misma pantalla.
  */
 function SinMotivo({ className }: { className: string }) {
-  return <p className={className}>Escríbanos y revisamos su caso.</p>
+  return (
+    <p className={className}>
+      Escríbanos a{' '}
+      <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium underline">
+        {CONTACTO_COFIANZA.email}
+      </a>{' '}
+      y revisamos su caso.
+    </p>
+  )
 }
 
 export function EstudioSolicitanteCard({
@@ -71,6 +90,8 @@ export function EstudioSolicitanteCard({
   // manual para no ofrecer dos caminos contradictorios.
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  // No se pudo LEER la autorización: no es «falta su autorización».
+  const [authError, setAuthError] = useState(false)
   const [descargandoCert, setDescargandoCert] = useState(false)
   // Decisión 2 (2026-09-25): el aprobado puede sumar coarrendatario antes del
   // contrato y pagar la prima del 10 %. La oferta sale solo si el API abre la
@@ -131,9 +152,13 @@ export function EstudioSolicitanteCard({
       const auth = await autorizacionService.getStatus(expedienteId)
       setAutorizacion(auth)
       authLoadedRef.current = true
+      setAuthError(false)
     } catch {
-      // Solo en el primer load asumimos "sin autorización" (deja el form manual).
-      if (!authLoadedRef.current) setAutorizacion(null)
+      // Solo en el primer load: sin dato, se dice que falló (con Reintentar).
+      if (!authLoadedRef.current) {
+        setAutorizacion(null)
+        setAuthError(true)
+      }
     } finally {
       setAuthLoading(false)
     }
@@ -244,7 +269,7 @@ export function EstudioSolicitanteCard({
     try {
       await estudioService.ejecutarEstudio(estudio.id)
       clearTimeout(safetyTimer)
-      toast.success('Estudio enviado. Le avisaremos cuando tengamos el resultado.')
+      toast.success('Evaluación iniciada. Le avisaremos cuando tengamos el resultado.')
       await fetchEstudio()
       onEjecutado?.()
     } catch (err) {
@@ -252,8 +277,13 @@ export function EstudioSolicitanteCard({
       // Aunque haya error, refrescamos: el backend puede haber procesado
       // y el error venir del HTTP layer. Si el estado ya cambió, es éxito.
       await fetchEstudio()
-      const msg = err instanceof Error ? err.message : 'No pudimos ejecutar el estudio. Intente de nuevo.'
-      toast.error(msg)
+      // El texto de la compuerta 8.4 está escrito para el gestor («reenvíe el enlace»).
+      if ((err as { code?: string }).code === 'AUTORIZACION_PREVIA_REQUERIDA') {
+        fetchAutorizacion()
+        toast.error('Primero debe firmar su autorización de consulta. Si el enlace ya no le sirve, pídale a quien tramita su arriendo que se lo reenvíe.')
+      } else {
+        toast.error(mensajeParaProspecto(err, 'No pudimos iniciar la evaluación. Intente de nuevo.'))
+      }
     } finally {
       clearTimeout(safetyTimer)
       setSubmitting(false)
@@ -296,9 +326,7 @@ export function EstudioSolicitanteCard({
   const cardFirmaAutorizacion = (
     <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
       <div className="flex items-start gap-3">
-        <svg className="h-6 w-6 text-primary-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
+        <IconShieldCheck size={24} className="text-primary-700 shrink-0 mt-0.5" />
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-1">Firme su autorización para continuar</h3>
           <p className="text-sm text-gray-700 mb-2">
@@ -309,11 +337,11 @@ export function EstudioSolicitanteCard({
             {/* Solo en la opción C paga el prospecto; en A/B ya lo cubrió la agencia. */}
             {estudio.pago_por === 'arrendatario'
               ? ' y apenas autorice le llega el enlace para pagar el estudio.'
-              : ' y apenas autorice empezamos su estudio.'}
+              : ' y apenas autorice empezamos su evaluación.'}
           </p>
           <p className="text-xs text-gray-500">
             El enlace es personal y {venceTexto}. ¿No le llegó? Revise su correo (incluido spam)
-            o pida al propietario o a su asesor que se lo reenvíe.
+            o pídale a quien tramita su arriendo que se lo reenvíe.
           </p>
         </div>
       </div>
@@ -326,17 +354,50 @@ export function EstudioSolicitanteCard({
   const cardIniciandoEstudio = (
     <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
       <div className="flex items-start gap-3">
-        <svg className="h-5 w-5 text-blue-700 shrink-0 animate-spin mt-0.5" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-        </svg>
+        <IconLoader size={20} className="text-blue-700 shrink-0 animate-spin mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-blue-900 mb-0.5">¡Autorización firmada! Iniciando su estudio…</p>
+          <p className="text-sm font-semibold text-blue-900 mb-0.5">¡Autorización firmada! Iniciando su evaluación…</p>
           <p className="text-sm text-blue-800">
             Recibimos su autorización y estamos iniciando la consulta de su historial. Esto toma unos segundos.
           </p>
         </div>
       </div>
+    </div>
+  )
+
+  // Sin autorización vigente (vencida, reemplazada, detenida por documento o
+  // sin enviar): la API rechaza la evaluación (compuerta 8.4). BLQ §8: con
+  // bloqueo el motivo real no es que «venció», y un reenvío sin corregir el
+  // documento fallaría igual; con 'identidad_rechazada' solo Cofianza reenvía.
+  const bloqueo = autorizacion?.estado_bloqueo
+  const [avisoTitulo, avisoTexto] =
+    bloqueo === 'bloqueado_documento'
+      ? [
+          'Detuvimos su autorización',
+          autorizacion?.motivo_bloqueo === 'datos_incorrectos'
+            ? 'Nos indicó que sus datos registrados no son correctos. Quien tramita su arriendo los revisará y le enviará un enlace nuevo; usted no tiene que hacer nada.'
+            : 'El número de documento no coincidió con el registrado. Quien tramita su arriendo revisará el dato y le enviará un enlace nuevo; usted no tiene que hacer nada.',
+        ]
+      : bloqueo === 'pendiente_reenvio'
+        ? ['Pronto le llega un enlace nuevo', 'Ya corregimos sus datos. Quien tramita su arriendo le enviará un enlace nuevo para autorizar la consulta.']
+        : bloqueo === 'identidad_rechazada'
+          ? [
+              'Su autorización quedó detenida',
+              `Desde el enlace nos indicaron que los datos no corresponden a quien lo abrió, así que no consultamos ninguna central de riesgo. Para continuar, escríbanos a ${CONTACTO_COFIANZA.email}.`,
+            ]
+          : autorizacion
+            ? [
+                'Su enlace de autorización ya no está vigente',
+                'El enlace para autorizar la consulta a centrales de riesgo venció o fue reemplazado sin firmarse. Pídale a quien tramita su arriendo que se lo reenvíe.',
+              ]
+            : [
+                'Falta su autorización de consulta',
+                'Para iniciar su evaluación necesitamos que firme la autorización de consulta a centrales de riesgo. Pídale a quien tramita su arriendo que le envíe el enlace.',
+              ]
+  const avisoSinAutorizacion = (
+    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+      <p className="text-sm font-semibold text-amber-900 mb-0.5">{avisoTitulo}</p>
+      <p className="text-sm text-amber-800">{avisoTexto}</p>
     </div>
   )
 
@@ -356,15 +417,7 @@ export function EstudioSolicitanteCard({
         || autorizacion?.estado === 'expirado'
         || autorizacion?.estado === 'revocado'
       ) {
-        return (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm font-semibold text-amber-900 mb-0.5">Su enlace de autorización ya no está vigente</p>
-            <p className="text-sm text-amber-800">
-              El enlace para autorizar la consulta a centrales de riesgo venció o fue reemplazado sin firmarse.
-              Pida al propietario o a su asesor que se lo reenvíe desde el estudio.
-            </p>
-          </div>
-        )
+        return avisoSinAutorizacion
       }
       // Firmó pero el estudio no avanzó (el inicio automático falló): mensaje
       // honesto en lugar de pantalla vacía — el equipo ya tiene el evento en
@@ -374,8 +427,8 @@ export function EstudioSolicitanteCard({
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Autorización recibida</p>
             <p className="text-sm text-blue-800">
-              Recibimos su autorización. Su estudio se está preparando — si no avanza en unos
-              minutos, contacte al propietario o a su asesor para iniciarlo.
+              Recibimos su autorización. Su evaluación se está preparando. Si no avanza en unos
+              minutos, escríbale a quien tramita su arriendo para iniciarla.
             </p>
           </div>
         )
@@ -404,6 +457,26 @@ export function EstudioSolicitanteCard({
     return cardFirmaAutorizacion
   }
 
+  // Sin autorización firmada la API rechaza la evaluación: no se ofrece un
+  // botón que va a fallar, se dice qué falta.
+  if (enFormulario && autorizacion?.estado !== 'autorizado') {
+    if (!autorizacion && authError) {
+      return (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700">No pudimos consultar su autorización de consulta.</p>
+          <button
+            type="button"
+            onClick={() => void fetchAutorizacion()}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            <IconRefresh size={16} /> Reintentar
+          </button>
+        </div>
+      )
+    }
+    return autorizacionPendiente ? cardFirmaAutorizacion : avisoSinAutorizacion
+  }
+
   if (enFormulario) {
     const canSubmit = !!numeroDoc.trim() && !submitting
     const esReintento = estudio.estado === 'fallido'
@@ -422,7 +495,7 @@ export function EstudioSolicitanteCard({
           {esReintento ? 'Reintente la evaluación' : 'Confirme sus datos para la evaluación crediticia'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Al hacer click en <strong>Enviar</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
+          Al tocar <strong>{esReintento ? 'Reintentar evaluación' : 'Iniciar evaluación'}</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
         </p>
 
         {/* BLQ §3.5: el documento solo lo corrige quien tramita el arriendo
@@ -442,15 +515,10 @@ export function EstudioSolicitanteCard({
           disabled={!canSubmit}
           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
         >
-          {submitting && (
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-            </svg>
-          )}
+          {submitting && <IconLoader size={16} className="animate-spin" />}
           {submitting
-            ? (esReintento ? 'Reintentando...' : 'Enviando...')
-            : (esReintento ? 'Reintentar estudio' : 'Enviar para estudio')}
+            ? (esReintento ? 'Reintentando…' : 'Iniciando…')
+            : (esReintento ? 'Reintentar evaluación' : 'Iniciar evaluación')}
         </button>
       </div>
     )
@@ -461,12 +529,9 @@ export function EstudioSolicitanteCard({
     return (
       <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
         <div className="flex items-start gap-3">
-          <svg className="h-5 w-5 text-blue-700 shrink-0 animate-spin mt-0.5" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-          </svg>
+          <IconLoader size={20} className="text-blue-700 shrink-0 animate-spin mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando su historial...</p>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando su historial…</p>
             <p className="text-sm text-blue-800">
               Estamos evaluando su historial crediticio. Esto suele tardar menos de un minuto — le avisaremos por correo cuando termine.
             </p>
@@ -594,9 +659,7 @@ export function EstudioSolicitanteCard({
       return (
         <div className="border border-green-200 bg-green-50 rounded-lg p-5">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-green-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <IconCheckCircle size={20} className="text-green-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-green-900 mb-0.5">¡Estudio aprobado!</p>
               <p className="text-sm text-green-800">
@@ -612,9 +675,7 @@ export function EstudioSolicitanteCard({
       return (
         <div className="border border-amber-200 bg-amber-50 rounded-lg p-5">
           <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.76-2.93L13.76 4a2 2 0 00-3.52 0L3.17 16.07A2 2 0 004.93 19z" />
-            </svg>
+            <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-amber-900 mb-0.5">Estudio condicionado</p>
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario

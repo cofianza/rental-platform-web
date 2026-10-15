@@ -60,7 +60,9 @@ export function ConfirmDialog({
   const bloqueado = isLoading || ocupado
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+    // Mientras dice «Procesando…» la acción ya corre: la X y Escape no cierran,
+    // para no dar a entender que se canceló.
+    <Modal isOpen={isOpen} onClose={bloqueado ? () => {} : onClose} title={title} size="sm">
       <div className="space-y-4">
         <div className="text-sm text-gray-600">{message}</div>
 

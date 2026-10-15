@@ -83,7 +83,7 @@ export function UsuariosSection() {
         subtitle="Equipo con acceso a la plataforma y actividad reciente"
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi label="Total usuarios" value={totalUsuarios} tone="blue" Icon={IconUsers} />
         <Kpi label="Activos" value={activos} tone="green" Icon={IconUserCheck} />
         <Kpi label="Acciones recientes" value={logs.length} tone="purple" Icon={IconActivity} />

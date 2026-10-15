@@ -20,16 +20,20 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario, type IVentanaCoarrendatario } from '@/services/coarrendatarioService'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { IPerfilProspecto } from '@/types/autorizacion'
+import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { IconUsers } from '@/components/icons'
+import { fechaCondicion } from './textoVisible'
 
 interface CoarrendatarioCardProps {
   expedienteId: string
   expedienteEstado: string
   userRol?: string
   onUpdate?: () => void
+  /** Adenda 3 §6: la condición del estudio del titular (null = sin condición). */
+  condicion?: ICondicionCoarrendatario | null
 }
 
 export function CoarrendatarioCard({
@@ -37,6 +41,7 @@ export function CoarrendatarioCard({
   expedienteEstado,
   userRol,
   onUpdate,
+  condicion = null,
 }: CoarrendatarioCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -127,6 +132,7 @@ export function CoarrendatarioCard({
           audience="solicitante"
           initial={intencion}
           aprobado={aprobado}
+          condicion={condicion}
           onInvited={() => { fetchCoa(); fetchVentana(); onUpdate?.() }}
         />
       </div>
@@ -148,7 +154,7 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} />
+      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} condicion={condicion} />
 
       {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
           cancelarla para invitar a otra persona (P4); con el estudio ya
@@ -172,7 +178,19 @@ function invitacionVencida(coa: ICoarrendatario): boolean {
   return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }
 
-function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEfecto: boolean; aprobado: boolean }) {
+function EstadoBadge({
+  coa,
+  sinEfecto,
+  aprobado,
+  condicion,
+}: {
+  coa: ICoarrendatario
+  sinEfecto: boolean
+  aprobado: boolean
+  condicion: ICondicionCoarrendatario | null
+}) {
+  // Con condición no decide un analista: se pondera contra el puntaje objetivo.
+  const conCondicion = !aprobado && !!condicion
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
     pendiente_aceptacion: sinEfecto
       ? {
@@ -189,14 +207,19 @@ function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEf
       : {
           color: 'bg-blue-50 border-blue-200 text-blue-900',
           label: 'Esperando respuesta',
-          mensaje: 'Le enviamos la invitación por correo. Le avisaremos cuando responda.',
+          mensaje:
+            conCondicion && condicion && !condicion.vencida
+              ? `Le enviamos la invitación por correo. Debe aceptarla antes del ${fechaCondicion(condicion.vence_en)}; si no, el estudio se cierra sin aprobarse.`
+              : 'Le enviamos la invitación por correo. Le avisaremos cuando responda.',
         },
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
       mensaje: aprobado
         ? 'Estamos procesando su evaluación crediticia. Si queda vinculado, la prima de vinculación baja al 10 % del canon; le avisamos por correo.'
-        : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide su caso con los dos resultados y le avisamos.',
+        : conCondicion
+          ? 'Estamos procesando su evaluación crediticia. Cuando termine le avisamos el resultado.'
+          : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide su caso con los dos resultados y le avisamos.',
     },
     rechazado_invitacion: {
       color: 'bg-red-50 border-red-200 text-red-900',
@@ -211,7 +234,9 @@ function EstadoBadge({ coa, sinEfecto, aprobado }: { coa: ICoarrendatario; sinEf
       // solo si quedó vinculado, y eso va por correo.
       mensaje: aprobado
         ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
-        : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
+        : conCondicion
+          ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por notificación y correo.'
+          : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
     },
   }
   const c = cfg[coa.estado]

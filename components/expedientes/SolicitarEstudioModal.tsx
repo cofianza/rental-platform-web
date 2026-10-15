@@ -187,13 +187,13 @@ export function SolicitarEstudioModal({
             ))}
             {creditos > 0 && (
               <option value="credito">
-                Inmobiliaria, con un crédito de su paquete ({creditos} disponibles)
+                Inmobiliaria, con un cupo de su paquete ({creditos} disponibles)
               </option>
             )}
           </select>
           {pagoPor === 'credito' && (
             <p className="mt-1 text-xs text-gray-500">
-              Al solicitar se reserva 1 crédito del saldo de la inmobiliaria y la evaluación queda pagada. El crédito se gasta solo si la consulta a centrales da resultado; si no, vuelve al saldo.
+              Al solicitar se reserva 1 cupo del paquete de la inmobiliaria y la evaluación queda pagada. El cupo se gasta solo si la consulta a centrales da resultado; si no, vuelve a su paquete.
             </p>
           )}
         </div>

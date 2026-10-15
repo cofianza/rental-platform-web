@@ -5,8 +5,6 @@
  */
 
 import { apiClient } from '@/lib/api'
-import { API_BASE_URL } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
 
 export type TipoDocumentoRepresentante = 'cc' | 'ce' | 'pasaporte'
 
@@ -102,21 +100,11 @@ class PerfilArrendadorService {
   }
 
   async uploadLogo(file: File): Promise<IPerfilArrendador> {
-    // multipart/form-data: usamos fetch directo porque apiClient solo
-    // soporta JSON. Auth: leemos el token del store (mismo patrón que api.ts).
+    // multipart/form-data: apiClient.raw (sin Content-Type JSON).
     const formData = new FormData()
     formData.append('logo', file)
-    const token = useAuthStore.getState().accessToken
-    const response = await fetch(`${API_BASE_URL}/perfil-arrendador/me/logo`, {
-      method: 'POST',
-      body: formData,
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      credentials: 'include',
-    })
+    const response = await apiClient.raw('/perfil-arrendador/me/logo', { method: 'POST', body: formData })
     const json = await response.json()
-    if (!response.ok) {
-      throw new Error(json?.message || 'Error al subir el logo')
-    }
     return json.data as IPerfilArrendador
   }
 

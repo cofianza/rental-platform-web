@@ -25,6 +25,7 @@ import {
   IconEdit,
   IconTrash,
   IconLock,
+  IconRefresh,
 } from '@/components/icons'
 
 const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`
@@ -37,6 +38,8 @@ interface PaqueteFormState {
   activo: boolean
   orden: string
 }
+
+type CampoObligatorio = 'nombre' | 'cantidad_estudios' | 'precio_cop'
 
 const EMPTY_FORM: PaqueteFormState = {
   nombre: '',
@@ -56,13 +59,17 @@ export default function AdminPaquetesPage() {
   const [editing, setEditing] = useState<IPaqueteCreditos | null>(null)
   const [form, setForm] = useState<PaqueteFormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  // Sin esto un fallo de carga se veía como «No hay paquetes configurados».
+  const [errorCarga, setErrorCarga] = useState<string | null>(null)
+  const [errores, setErrores] = useState<Partial<Record<CampoObligatorio, string>>>({})
 
   const fetchPaquetes = async () => {
     try {
       const data = await creditosEstudiosService.adminListPaquetes()
       setPaquetes(data)
+      setErrorCarga(null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error cargando paquetes')
+      setErrorCarga(err instanceof Error ? err.message : 'No se pudieron cargar los paquetes')
     } finally {
       setLoading(false)
     }
@@ -76,7 +83,7 @@ export default function AdminPaquetesPage() {
   if (user?.rol !== 'administrador') {
     return (
       <div className="space-y-6">
-        <PageHeader title="Paquetes de créditos" />
+        <PageHeader title="Paquetes de cupos de estudios" />
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-center gap-3">
           <IconLock className="text-red-600" size={20} />
           <p className="text-sm text-red-800">
@@ -90,6 +97,7 @@ export default function AdminPaquetesPage() {
   const openCreate = () => {
     setEditing(null)
     setForm(EMPTY_FORM)
+    setErrores({})
     setModalOpen(true)
   }
 
@@ -103,14 +111,18 @@ export default function AdminPaquetesPage() {
       activo: p.activo,
       orden: String(p.orden),
     })
+    setErrores({})
     setModalOpen(true)
   }
 
   const handleSave = async () => {
-    if (!form.nombre.trim() || !form.cantidad_estudios || !form.precio_cop) {
-      toast.error('Nombre, cantidad y precio son obligatorios')
-      return
-    }
+    const nuevos: Partial<Record<CampoObligatorio, string>> = {}
+    if (!form.nombre.trim()) nuevos.nombre = 'Escriba el nombre del paquete.'
+    if (!(parseInt(form.cantidad_estudios, 10) >= 1)) nuevos.cantidad_estudios = 'Debe ser al menos 1 estudio.'
+    if (!form.precio_cop) nuevos.precio_cop = 'Escriba el precio base.'
+    else if (parseInt(form.precio_cop, 10) < 1000) nuevos.precio_cop = 'El precio mínimo es $1.000.'
+    setErrores(nuevos)
+    if (Object.keys(nuevos).length > 0) return
     const input: ICreatePaqueteInput = {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim(), // vacía = quitarla (la API la guarda como null)
@@ -168,7 +180,7 @@ export default function AdminPaquetesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Paquetes de créditos de estudios"
+        title="Paquetes de cupos de estudios"
         subtitle="Configure los paquetes que las inmobiliarias compran para liberar estudios"
         actions={
           esGerencia ? (
@@ -195,6 +207,21 @@ export default function AdminPaquetesPage() {
         </span>
       </p>
 
+      {errorCarga ? (
+        <div className="bg-white rounded-lg border border-red-200 p-6 text-center">
+          <p className="text-sm text-red-700">{errorCarga}</p>
+          <button
+            onClick={() => {
+              setLoading(true)
+              fetchPaquetes()
+            }}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:text-primary-800"
+          >
+            <IconRefresh size={14} />
+            Reintentar
+          </button>
+        </div>
+      ) : (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -276,6 +303,7 @@ export default function AdminPaquetesPage() {
                             onClick={() => openEdit(p)}
                             className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition"
                             title="Editar"
+                            aria-label={`Editar ${p.nombre}`}
                           >
                             <IconEdit size={16} />
                           </button>
@@ -284,6 +312,7 @@ export default function AdminPaquetesPage() {
                               onClick={() => handleDelete(p)}
                               className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition"
                               title="Desactivar"
+                              aria-label={`Desactivar ${p.nombre}`}
                             >
                               <IconTrash size={16} />
                             </button>
@@ -303,6 +332,7 @@ export default function AdminPaquetesPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       <Modal
         isOpen={modalOpen}
@@ -319,9 +349,12 @@ export default function AdminPaquetesPage() {
               type="text"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              aria-invalid={!!errores.nombre}
+              aria-describedby={errores.nombre ? 'paquete-error-nombre' : undefined}
+              className={`w-full rounded-md border px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${errores.nombre ? 'border-red-400' : 'border-gray-300'}`}
               placeholder="Paquete 5 estudios"
             />
+            {errores.nombre && <p id="paquete-error-nombre" className="mt-1 text-xs text-red-600">{errores.nombre}</p>}
           </div>
 
           <div>
@@ -345,21 +378,41 @@ export default function AdminPaquetesPage() {
                 min={1}
                 value={form.cantidad_estudios}
                 onChange={(e) => setForm({ ...form, cantidad_estudios: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                aria-invalid={!!errores.cantidad_estudios}
+                aria-describedby={errores.cantidad_estudios ? 'paquete-error-cantidad' : undefined}
+                className={`w-full rounded-md border px-3 py-2 text-sm ${errores.cantidad_estudios ? 'border-red-400' : 'border-gray-300'}`}
               />
+              {errores.cantidad_estudios && (
+                <p id="paquete-error-cantidad" className="mt-1 text-xs text-red-600">{errores.cantidad_estudios}</p>
+              )}
             </div>
             <div>
               <label htmlFor="paquetes-creditos-estudios-precio-cop" className="block text-sm font-medium text-gray-700 mb-1">
                 Precio base sin IVA (COP) <span className="text-red-500">*</span>
               </label>
+              {/* Texto con separador de miles: «1.500.000» en un type=number
+                  quedaba vacío o se leía como 1,5. Se guardan solo los dígitos. */}
               <input id="paquetes-creditos-estudios-precio-cop"
-                type="number"
-                min={1000}
-                step={1000}
-                value={form.precio_cop}
-                onChange={(e) => setForm({ ...form, precio_cop: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                type="text"
+                inputMode="numeric"
+                value={form.precio_cop ? Number(form.precio_cop).toLocaleString('es-CO') : ''}
+                onChange={(e) => setForm({ ...form, precio_cop: e.target.value.replace(/\D/g, '') })}
+                aria-invalid={!!errores.precio_cop}
+                aria-describedby={errores.precio_cop ? 'paquete-error-precio' : form.precio_cop ? 'paquete-precio-vista' : undefined}
+                className={`w-full rounded-md border px-3 py-2 text-sm ${errores.precio_cop ? 'border-red-400' : 'border-gray-300'}`}
+                placeholder="350.000"
               />
+              {errores.precio_cop ? (
+                <p id="paquete-error-precio" className="mt-1 text-xs text-red-600">{errores.precio_cop}</p>
+              ) : (
+                form.precio_cop && (
+                  <p id="paquete-precio-vista" className="mt-1 text-xs text-gray-500">
+                    Quedaría en {formatCOP(Number(form.precio_cop))} + IVA
+                    {parseInt(form.cantidad_estudios, 10) >= 1 &&
+                      ` · ${formatCOP(Math.round(Number(form.precio_cop) / parseInt(form.cantidad_estudios, 10)))} por estudio`}
+                  </p>
+                )
+              )}
             </div>
           </div>
 

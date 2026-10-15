@@ -159,7 +159,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
           notas_solicitante: notas.trim() || undefined,
         })
 
-        toast.success('Solicitud enviada. El propietario revisará su cita.')
+        toast.success('Solicitud enviada. Quien publica el inmueble revisará su cita.')
         router.push(`/expedientes/${expedienteId}`)
       } catch (citaError) {
         // Expediente creado pero cita falló: no rollback. Auditoría en console
@@ -263,7 +263,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Elija un horario disponible. El propietario confirmará o ajustará la fecha.
+            Elija un horario disponible. Quien publica el inmueble confirmará o ajustará la fecha.
           </p>
 
           <SlotSelector
@@ -287,7 +287,7 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
 
           <div>
             <label htmlFor="me-interesa-c-t-a-notas-para-el-propietario-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Notas para el propietario (opcional)
+              Notas para quien publica el inmueble (opcional)
             </label>
             <textarea id="me-interesa-c-t-a-notas-para-el-propietario-opcional"
               value={notas}

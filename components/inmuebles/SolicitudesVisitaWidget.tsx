@@ -2,8 +2,9 @@
  * Widget "Solicitudes de visita recibidas" para la pantalla Propiedades y
  * Vitrina (mockup 13_v2). Tabla con las visitas recibidas (citas en estado
  * solicitada/confirmada): solicitante, celular, propiedad, comentario, fecha,
- * estado y acción ("Iniciar estudio" para las pendientes, "Ver" para el resto)
- * — cada una enlaza al expediente. Reutiliza citaService.listMisCitas.
+ * estado y acción («Confirmar visita» para las pendientes, «Ver visita» para el
+ * resto) — cada una enlaza a su tarjeta en /citas, donde están Confirmar y
+ * Proponer otro horario. Reutiliza citaService.listMisCitas.
  *
  * Si no hay solicitudes activas, no renderiza nada (no ensucia la pantalla).
  */
@@ -12,8 +13,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { IconLoader, IconArrowRight, IconPhone } from '@/components/icons'
+import { IconLoader, IconArrowRight, IconPhone, IconRefresh } from '@/components/icons'
 import { citaService } from '@/services/citaService'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ESTADO_CITA_CONFIG, type ICita } from '@/types/cita'
 
 // Estados "recibidos" y aún relevantes que mostramos en la tabla.
@@ -36,6 +38,10 @@ function formatFecha(iso: string | null): string {
 export function SolicitudesVisitaWidget() {
   const [citas, setCitas] = useState<ICita[]>([])
   const [loading, setLoading] = useState(true)
+  // Si falla la carga se dice: antes el widget desaparecía en silencio.
+  const [error, setError] = useState(false)
+  const [intento, setIntento] = useState(0)
+  const puedeEditar = usePuedeEditar()
 
   useEffect(() => {
     // Se piden solo las activas: con las 20 más recientes de cualquier estado,
@@ -46,23 +52,46 @@ export function SolicitudesVisitaWidget() {
         citaService.listMisCitas({ estado, limit: 100, page: 1 }),
       ),
     )
-      .then((rs) =>
+      .then((rs) => {
+        setError(false)
         setCitas(
           rs
             .flatMap((r) => r.data)
             .filter((c) => ESTADOS_VISIBLES.has(c.estado))
             .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-        ),
-      )
-      .catch(() => setCitas([]))
+        )
+      })
+      .catch(() => {
+        setCitas([])
+        setError(true)
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [intento])
 
   if (loading) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-2 text-sm text-gray-500">
         <IconLoader size={16} className="animate-spin" />
         Cargando solicitudes de visita…
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-wrap items-center gap-2 text-sm text-gray-600" role="alert">
+        No pudimos cargar las solicitudes de visita.
+        <button
+          type="button"
+          onClick={() => {
+            setLoading(true)
+            setIntento((n) => n + 1)
+          }}
+          className="inline-flex items-center gap-1 font-semibold text-primary-700 hover:text-primary-900"
+        >
+          <IconRefresh size={14} />
+          Reintentar
+        </button>
       </div>
     )
   }
@@ -139,10 +168,10 @@ export function SolicitudesVisitaWidget() {
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <Link
-                      href={`/expedientes/${c.expediente_id}`}
+                      href={`/citas#cita-${c.id}`}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900"
                     >
-                      {esSolicitada ? 'Iniciar estudio' : 'Ver'}
+                      {esSolicitada && puedeEditar ? 'Confirmar visita' : 'Ver visita'}
                       <IconArrowRight size={13} />
                     </Link>
                   </td>

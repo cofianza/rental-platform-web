@@ -30,6 +30,18 @@ export interface ContratoTransicionModalProps {
 
 const ESTADOS_CON_MOTIVO: EstadoContrato[] = ['cancelado', 'finalizado']
 
+/** Terminar o cancelar no se deshace: se dice qué pasa y el botón lo nombra. */
+const TERMINAL: Partial<Record<EstadoContrato, { boton: string; efecto: string }>> = {
+  finalizado: {
+    boton: 'Terminar contrato',
+    efecto: 'No se puede deshacer. La fianza deja de operar y el inmueble queda disponible (fuera de la vitrina).',
+  },
+  cancelado: {
+    boton: 'Cancelar contrato',
+    efecto: 'No se puede deshacer. El contrato queda cancelado y el inmueble se libera.',
+  },
+}
+
 export function ContratoTransicionModal({
   isOpen,
   onClose,
@@ -46,6 +58,9 @@ export function ContratoTransicionModal({
   const [error, setError] = useState<string | null>(null)
 
   const requiresMotivo = !!estadoSeleccionado && ESTADOS_CON_MOTIVO.includes(estadoSeleccionado)
+  const terminal = estadoSeleccionado ? TERMINAL[estadoSeleccionado] : undefined
+  // Terminar/cancelar piden un solo texto, el motivo; la API lo guarda también como comentario.
+  const texto = requiresMotivo ? motivo : comentario
 
   const handleClose = () => {
     if (isLoading) return
@@ -62,20 +77,15 @@ export function ContratoTransicionModal({
       return
     }
 
-    if (!comentario.trim()) {
-      setError('El comentario es obligatorio')
-      return
-    }
-
-    if (requiresMotivo && !motivo.trim()) {
-      setError('El motivo es obligatorio para esta transición')
+    if (!texto.trim()) {
+      setError(requiresMotivo ? 'Escriba el motivo' : 'El comentario es obligatorio')
       return
     }
 
     setError(null)
     const ok = await onConfirmar(
       estadoSeleccionado,
-      comentario.trim(),
+      texto.trim(),
       requiresMotivo ? motivo.trim() : undefined,
     )
     // Si la transición falló (false), NO cerrar: el usuario conserva su
@@ -90,7 +100,7 @@ export function ContratoTransicionModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Cambiar Estado del Contrato"
+      title="Cambiar estado del contrato"
       size="md"
     >
       <div className="space-y-6">
@@ -182,23 +192,10 @@ export function ContratoTransicionModal({
           </div>
         )}
 
-        {/* Campo de comentario */}
-        <div>
-          <label htmlFor="contrato-transicion-modal-comentario" className="block text-sm font-medium text-gray-700 mb-2">
-            Comentario <span className="text-red-500">*</span>
-          </label>
-          <textarea id="contrato-transicion-modal-comentario"
-            value={comentario}
-            onChange={(e) => setComentario(e.target.value)}
-            placeholder="Describa el motivo del cambio de estado..."
-            rows={3}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
-          />
-        </div>
+        {terminal && <p className="text-sm text-gray-700">{terminal.efecto}</p>}
 
-        {/* Campo de motivo (solo para cancelacion/finalizacion) */}
-        {requiresMotivo && (
+        {/* Terminar/cancelar piden solo el motivo; las demás transiciones, un comentario. */}
+        {requiresMotivo ? (
           <div>
             <label htmlFor="contrato-transicion-modal-motivo" className="block text-sm font-medium text-gray-700 mb-2">
               Motivo <span className="text-red-500">*</span>
@@ -209,9 +206,23 @@ export function ContratoTransicionModal({
               placeholder={
                 estadoSeleccionado === 'cancelado'
                   ? 'Motivo de la cancelación del contrato...'
-                  : 'Motivo de la finalización del contrato...'
+                  : 'Motivo de la terminación del contrato...'
               }
-              rows={2}
+              rows={3}
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
+            />
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="contrato-transicion-modal-comentario" className="block text-sm font-medium text-gray-700 mb-2">
+              Comentario <span className="text-red-500">*</span>
+            </label>
+            <textarea id="contrato-transicion-modal-comentario"
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder="Describa el motivo del cambio de estado..."
+              rows={3}
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
@@ -233,16 +244,18 @@ export function ContratoTransicionModal({
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            Cancelar
+            Volver
           </button>
           <button
             type="button"
             onClick={handleConfirmar}
-            disabled={isLoading || !estadoSeleccionado || !comentario.trim() || (requiresMotivo && !motivo.trim())}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            disabled={isLoading || !estadoSeleccionado || !texto.trim()}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+              terminal ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
+            }`}
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}
-            Confirmar Cambio
+            {terminal?.boton ?? 'Confirmar cambio'}
           </button>
         </div>
       </div>

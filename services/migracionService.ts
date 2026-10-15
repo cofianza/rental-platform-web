@@ -1,12 +1,10 @@
 /**
  * Migración de cartera — backoffice de Cofianza (/admin/migracion; administrador y
- * analista). Las subidas (xlsx, PDF) y las descargas de Excel van con fetch
- * directo porque apiClient solo maneja JSON; mismo token, cookie y mapeo de errores.
+ * analista). Las subidas (xlsx, PDF) y las descargas de Excel van por
+ * apiClient.raw (sin JSON); mismo token, renovación y mapeo de errores.
  */
 
-import { apiClient, ApiClientError, handleApiError, type ApiResponse } from '@/lib/api'
-import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { apiClient, type ApiResponse } from '@/lib/api'
 import type {
   AuditoriaAbierta,
   ActaEnviada,
@@ -44,22 +42,8 @@ const qs = (params: Record<string, string | undefined>) => {
   return q ? `?${q}` : ''
 }
 
-async function crudo(path: string, init: { method?: string; form?: FormData } = {}): Promise<Response> {
-  const token = useAuthStore.getState().accessToken
-  let res: Response
-  try {
-    res = await fetch(`${API_BASE_URL}${path}`, {
-      method: init.method ?? 'GET',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: init.form,
-      credentials: 'include',
-    })
-  } catch {
-    throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-  }
-  if (!res.ok) await handleApiError(res)
-  return res
-}
+const crudo = (path: string, init: { method?: string; form?: FormData } = {}): Promise<Response> =>
+  apiClient.raw(path, { method: init.method ?? 'GET', body: init.form })
 
 const json = async <T>(res: Response) => ((await res.json()) as ApiResponse<T>).data
 

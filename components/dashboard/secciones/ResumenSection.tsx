@@ -382,7 +382,7 @@ export function ResumenSection() {
         <Kpi
           Icon={IconDollarSign}
           tone="green"
-          label="Ingresos fianzas"
+          label="Tarifa mensual"
           value={money(kpis.ingresosFianzas)}
           sub={
             (config.ivaGarantiaPorcentaje > 0 ? `+ ${money(kpis.ivaRecaudado)} IVA` : 'tarifa exenta de IVA') +
@@ -493,7 +493,7 @@ export function ResumenSection() {
             <>
               <SiniestralidadChart hist={hist} />
               {/* Leyenda de umbrales */}
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-ink-500">
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-500">
                 <span className="inline-flex items-center gap-1">
                   <span className="h-1.5 w-3 rounded-full bg-primary-500" /> ≤ 5% sano
                 </span>
@@ -575,13 +575,13 @@ function SiniestralidadChart({
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-coral-400/70"
         style={{ top: `${linePct(5)}%` }}
       >
-        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[8px] font-bold text-coral-700">5%</span>
+        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[10px] font-bold text-coral-700">5%</span>
       </span>
       <span
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-red-400/70"
         style={{ top: `${linePct(20)}%` }}
       >
-        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[8px] font-bold text-red-500">20%</span>
+        <span className="absolute right-0 -top-2.5 bg-white px-1 text-[10px] font-bold text-red-500">20%</span>
       </span>
 
       <div className="flex h-full items-end gap-1">
@@ -592,7 +592,7 @@ function SiniestralidadChart({
             <div key={h.mes} className="group relative flex flex-1 flex-col items-center justify-end self-stretch">
               {/* Tooltip accesible: visible en hover Y en focus/tap */}
               <span
-                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-ink-900 px-1.5 py-0.5 text-[9px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-ink-900 px-1.5 py-0.5 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
               >
                 {h.mes}: {h.r}% ({h.mr}/{h.ct})
               </span>
@@ -608,7 +608,7 @@ function SiniestralidadChart({
       </div>
 
       {/* Etiquetas de meses */}
-      <div className="mt-2 flex justify-between text-[9px] text-ink-500">
+      <div className="mt-2 flex justify-between text-[11px] text-ink-500">
         {hist.map((h) => (
           <span key={h.mes}>{h.mes}</span>
         ))}

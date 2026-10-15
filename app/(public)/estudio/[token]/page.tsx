@@ -11,8 +11,13 @@ import { useParams } from 'next/navigation'
 import { estudioPublicService } from '@/services/estudioService'
 import type { IEstudioPublicForm, ISubmitFormularioInput } from '@/types/estudio'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
-import { IconRefresh } from '@/components/icons'
+import { IconCheck, IconRefresh, IconX } from '@/components/icons'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { TIPOS_DOCUMENTO } from '@/lib/constants'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
+
+const nombreTipoDocumento = (t: unknown) =>
+  TIPOS_DOCUMENTO[String(t ?? '').toUpperCase() as keyof typeof TIPOS_DOCUMENTO] ?? String(t ?? '')
 
 // ============================================
 // Types
@@ -68,8 +73,9 @@ export default function EstudioFormularioPage() {
         setEmail(data.solicitante?.email ?? '')
         setTelefono(data.solicitante?.telefono ?? '')
         const t = (data.solicitante?.tipo_documento ?? '').toUpperCase()
-        // Sin TI: el servicio es solo para mayores de edad.
-        const consultable = ['CC', 'CE', 'PPT', 'PEP', 'NIT'].includes(t)
+        // Sin TI: el servicio es solo para mayores de edad. Sin NIT: la Adenda
+        // de precios §6.1 no admite estudios de arrendatarios con NIT.
+        const consultable = ['CC', 'CE', 'PPT', 'PEP'].includes(t)
         // Si el tipo guardado no se puede consultar (pasaporte: los burós
         // colombianos no lo tienen), NO se degrada a CC arrastrando el
         // número. Eso dejaba un par (cc, número-de-pasaporte) que no es de
@@ -105,8 +111,12 @@ export default function EstudioFormularioPage() {
     e.preventDefault()
     setFormError(null)
 
-    if (!nombre.trim() || !numDoc.trim() || !email.trim() || !telefono.trim()) {
-      setFormError('Complete los campos obligatorios')
+    if (!numDoc.trim() || !tipoDoc) {
+      setFormError('Falta su documento. Pídale a quien tramita su arriendo que lo registre.')
+      return
+    }
+    if (!nombre.trim() || !email.trim() || !telefono.trim()) {
+      setFormError('Complete su nombre, su correo y su teléfono.')
       return
     }
 
@@ -157,9 +167,7 @@ export default function EstudioFormularioPage() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <IconX size={32} className="text-red-500" />
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
@@ -175,9 +183,10 @@ export default function EstudioFormularioPage() {
           </button>
         ) : (
           <p className="text-sm text-gray-500 mt-4">
-            Si necesita un nuevo enlace, contacte a su agente inmobiliario.
+            Si necesita un nuevo enlace, pídaselo a quien tramita su arriendo.
           </p>
         )}
+        <ContactoCofianza />
       </div>
     )
   }
@@ -186,9 +195,7 @@ export default function EstudioFormularioPage() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+          <IconCheck size={32} className="text-green-500" />
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Formulario enviado</h2>
         <p className="text-gray-500">
@@ -226,9 +233,7 @@ export default function EstudioFormularioPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <IconCheck size={20} className="text-green-600" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Formulario completado</h3>
@@ -250,12 +255,12 @@ export default function EstudioFormularioPage() {
             {datos.tipo_documento && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Documento</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.tipo_documento} {datos.numero_documento}</span>
+                <span className="text-sm text-gray-900 col-span-2">{nombreTipoDocumento(datos.tipo_documento)} {datos.numero_documento}</span>
               </div>
             )}
             {datos.email && (
               <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm text-gray-500">Email</span>
+                <span className="text-sm text-gray-500">Correo</span>
                 <span className="text-sm text-gray-900 col-span-2">{datos.email}</span>
               </div>
             )}
@@ -344,44 +349,18 @@ export default function EstudioFormularioPage() {
           />
         </div>
 
-        {/* Tipo y numero de documento */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="estudio-tipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo documento <span className="text-red-500">*</span>
-            </label>
-            <select id="estudio-tipoDoc"
-              value={tipoDoc}
-              onChange={(e) => setTipoDoc(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              {/* Vacio cuando el tipo guardado no se puede consultar: obliga a
-                  elegir en vez de asumir CC por el prospecto. */}
-              <option value="" disabled>Seleccione…</option>
-              <option value="CC">Cédula de Ciudadanía</option>
-              <option value="CE">Cédula de Extranjería</option>
-              <option value="PPT">Permiso por Protección Temporal (PPT)</option>
-              <option value="PEP">Permiso Especial de Permanencia (PEP)</option>
-              <option value="NIT">NIT</option>
-            </select>
-            <p className="text-xs text-amber-700 mt-1">
-              Solo aceptamos documentos colombianos. Si es extranjero residente, use su Cédula de Extranjería, PPT o PEP.
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="estudio-numDoc" className="block text-sm font-medium text-gray-700 mb-1">
-              Número de documento <span className="text-red-500">*</span>
-            </label>
-            <input id="estudio-numDoc"
-              type="text"
-              value={numDoc}
-              onChange={(e) => setNumDoc(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Ingrese su número de documento"
-              inputMode="numeric"
-            />
-          </div>
+        {/* BLQ §3.5: el documento solo lo corrige quien tramita el arriendo
+            (como en EstudioSolicitanteCard). Si el prospecto lo cambiaba aquí,
+            la compuerta 8.4 bloqueaba la evaluación por no coincidir con el de
+            quien firmó la autorización, muchas veces con el pago ya hecho. */}
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p className="text-sm font-medium text-gray-700 mb-1">Documento que se consultará</p>
+          <p className="text-base font-semibold text-gray-900">
+            {numDoc && tipoDoc ? `${nombreTipoDocumento(tipoDoc)} ${numDoc}` : 'Sin documento registrado'}
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Si está mal o falta, pídale a quien tramita su arriendo que lo corrija.
+          </p>
         </div>
 
         {/* Email y telefono */}

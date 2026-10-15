@@ -12,12 +12,15 @@ import { PageHeader, KPICard, Badge } from '@/components/ui'
 import {
   IconFolderOpen, IconCheck, IconClock, IconDollarSign,
   IconChevronRight, IconRefresh, IconCalendar, IconReceipt, IconX,
-  IconAlertTriangle, IconArrowRight,
+  IconAlertTriangle, IconArrowRight, IconCreditCard,
 } from '@/components/icons'
 import { dashboardService } from '@/services/dashboardService'
 import { expedienteService } from '@/services/expedienteService'
 import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
+import { estudioService } from '@/services/estudioService'
+import { fechaCondicion } from '@/components/expedientes/textoVisible'
+import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
@@ -497,6 +500,10 @@ function formatCitaFecha(iso: string | null): string {
 interface PagoEstudioInfo {
   estado: string // 'sin_definir' | 'pendiente' | 'procesando' | 'completado' | 'fallido' | 'cancelado' | 'asumido_inmobiliaria'
   linkPago: string | null // payment_link_url de Mercado Pago si existe
+  /** 'gestor' (opción B): paga quien tramita, el arrendatario no paga nada. */
+  paga: 'gestor' | 'arrendatario' | null
+  /** Total al prospecto, con el IVA incluido (Adenda de precios §1.2). */
+  monto: string
 }
 
 /**
@@ -531,6 +538,8 @@ function SolicitanteDashboard() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
   const [pagoByExpediente, setPagoByExpediente] = useState<Record<string, PagoEstudioInfo | null>>({})
+  // Adenda 3 §6: la fecha límite de la condición de coarrendatario (solo condicionados).
+  const [condicionByExpediente, setCondicionByExpediente] = useState<Record<string, ICondicionCoarrendatario | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
   // Los banners esperan citas y pagos; sin esto saldría un falso "Agendar
   // visita" mientras llegan las citas.
@@ -552,6 +561,7 @@ function SolicitanteDashboard() {
         setLoadingExp(false)
         const citasMap: Record<string, CitaActivaInfo | null> = {}
         const pagoMap: Record<string, PagoEstudioInfo | null> = {}
+        const condicionMap: Record<string, ICondicionCoarrendatario | null> = {}
         await Promise.all([
           ...res.data.map(async (exp) => {
             try {
@@ -574,14 +584,27 @@ function SolicitanteDashboard() {
               pagoMap[exp.id] = {
                 estado: estado.estado,
                 linkPago: estado.pago?.payment_link_url || null,
+                paga: estado.paga,
+                monto: `${estado.monto_formateado} COP${estado.iva > 0 ? ' (IVA incluido)' : ''}`,
               }
             } catch {
               pagoMap[exp.id] = null
             }
           }),
+          ...res.data
+            .filter((exp) => exp.estado === 'condicionado')
+            .map(async (exp) => {
+              try {
+                const { data } = await estudioService.getEstudiosForExpediente(exp.id, 1, 10)
+                condicionMap[exp.id] = data.find((e) => e.condicion_coarrendatario)?.condicion_coarrendatario ?? null
+              } catch {
+                condicionMap[exp.id] = null
+              }
+            }),
         ])
         setCitasByExpediente(citasMap)
         setPagoByExpediente(pagoMap)
+        setCondicionByExpediente(condicionMap)
       })
       .catch(() => setExpError(true))
       .finally(() => {
@@ -620,9 +643,12 @@ function SolicitanteDashboard() {
   // pagoByExpediente solo se llena cuando la cita quedo resuelta (realizada u
   // omitida/invitacion) y el estado del pago se pudo consultar — basta con el
   // estado del pago, sin re-exigir la fila de cita (que no existe al omitir).
+  // Opción B (paga === 'gestor'): el cobro es de quien tramita; el
+  // arrendatario no paga nada y el detalle se lo dice.
   const expedientesPagoPendiente = expedientes.filter(
     (exp) =>
       estadoActivo(exp) &&
+      pagoByExpediente[exp.id]?.paga !== 'gestor' &&
       (pagoByExpediente[exp.id]?.estado === 'pendiente' ||
         pagoByExpediente[exp.id]?.estado === 'fallido'),
   )
@@ -768,18 +794,16 @@ function SolicitanteDashboard() {
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
-                    <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
+                    <IconCreditCard size={28} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold mb-1">
-                      {esFallido ? 'No pudimos procesar su pago' : 'Pague su evaluación crediticia'}
+                      {esFallido ? 'No pudimos procesar su pago' : 'Pague su estudio'}
                     </h3>
                     <p className="text-sm text-white/90">
                       {esFallido
                         ? 'Hubo un problema con el pago anterior. Intente de nuevo para continuar con su estudio.'
-                        : 'Ya autorizó la consulta. Realice el pago para que ejecutemos su estudio y avancemos a la aprobación.'}
+                        : `Total: ${pago?.monto}. Al confirmarse el pago iniciamos su evaluación crediticia.`}
                     </p>
                   </div>
                   {pago?.linkPago ? (
@@ -790,9 +814,7 @@ function SolicitanteDashboard() {
                       className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-primary-700 bg-white rounded-lg hover:bg-primary-50 shadow-md transition-all shrink-0"
                     >
                       {esFallido ? 'Reintentar pago' : 'Pagar ahora'}
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
+                      <IconArrowRight size={16} />
                     </a>
                   ) : (
                     <Link
@@ -912,6 +934,7 @@ function SolicitanteDashboard() {
               : getProcessStep(exp.estado, citaRealizada)
             const isRejected = exp.estado === 'rechazado' || cerradoNoAprobable
             const isConditioned = exp.estado === 'condicionado'
+            const condicion = condicionByExpediente[exp.id]
 
             return (
               <Link
@@ -952,8 +975,19 @@ function SolicitanteDashboard() {
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm text-amber-700 font-medium">Estudio condicionado</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Invite a un coarrendatario para que los respaldemos juntos.</p>
+                    {condicion && !condicion.vencida ? (
+                      <>
+                        <p className="text-sm text-amber-800 font-medium">Aprobado con condición</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          Invite a su coarrendatario antes del {fechaCondicion(condicion.vence_en)}. Si no acepta a tiempo, el estudio se cierra sin aprobarse.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-amber-800 font-medium">Estudio condicionado</p>
+                        <p className="text-xs text-amber-700 mt-0.5">Su estudio está en revisión. Ábralo para ver qué sigue.</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -1095,7 +1129,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <svg viewBox="0 0 200 200" className="w-48 h-48" role="img" aria-label="Distribucion de estudios por estado">
+      <svg viewBox="0 0 200 200" className="w-48 h-48" role="img" aria-label="Distribución de estudios por estado">
         {segments.map((seg) => {
           const color = ESTADO_COLORS[seg.estado] || '#9ca3af'
           return (

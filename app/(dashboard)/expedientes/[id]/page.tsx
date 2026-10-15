@@ -50,7 +50,6 @@ import {
   CoarrendatarioCard,
   CoarrendatarioPropietarioCard,
   ExpedienteRechazadoBanner,
-  PerfilPersonalIncompletoBanner,
   miembroDebeCompletarPerfil,
   ContratoEstadoCard,
   EstudioEstadoCard,
@@ -72,6 +71,7 @@ import type {
   IEvaluacionRevisionManual,
 } from '@/types/expediente'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { documento } from '@/components/contratos/v3/campos'
 import { textoVisible, esRolInterno } from '@/components/expedientes/textoVisible'
 
 export default function ExpedienteDetallePage() {
@@ -480,7 +480,14 @@ export default function ExpedienteDetallePage() {
                       ? 'rechazado'
                       : expediente.estado
                   }
-                  label={user?.rol === 'solicitante' && expediente.estado === 'borrador' ? 'En preparación' : undefined}
+                  label={
+                    user?.rol === 'solicitante' && expediente.estado === 'borrador'
+                      ? 'En preparación'
+                      : // Adenda 3 §6: el mismo nombre que la barra y la tarjeta, no el «Condicionado» de la revisión manual.
+                        condicionCoa && expediente.estado === 'condicionado'
+                        ? 'Aprobado con condición'
+                        : undefined
+                  }
                 />
               )}
             </div>
@@ -611,10 +618,6 @@ export default function ExpedienteDetallePage() {
             volver no se desmontan y re-piden sus tarjetas. Se mantienen al día
             con el contador de cargas (fetchExpediente), no remontándose. */}
         <div className="p-6 space-y-6" hidden={activeTab !== 'resumen'}>
-            {/* Miembro del equipo con perfil personal incompleto: explica por
-                qué no puede administrar y enlaza a completar su perfil. */}
-            <PerfilPersonalIncompletoBanner user={user} />
-
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ||
@@ -735,6 +738,7 @@ export default function ExpedienteDetallePage() {
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onUpdate={fetchExpediente}
+                  condicion={condicionCoa}
                 />
                 <ContratoSolicitanteCard expedienteId={id} expedienteEstado={expediente.estado} />
               </div>
@@ -971,7 +975,7 @@ export default function ExpedienteDetallePage() {
                     )}
                     <InfoRow
                       label="Documento"
-                      value={`${expediente.solicitante.tipo_documento} ${expediente.solicitante.numero_documento}`}
+                      value={documento(expediente.solicitante.tipo_documento, expediente.solicitante.numero_documento)}
                     />
                     {/* 3.1: si la persona tiene más de un expediente, avisarlo
                         de forma persistente (el toast de reutilización es
@@ -983,7 +987,7 @@ export default function ExpedienteDetallePage() {
                         href={`/expedientes?search=${encodeURIComponent(expediente.solicitante.numero_documento)}`}
                       />
                     )}
-                    <InfoRow label="Email" value={expediente.solicitante.email} />
+                    <InfoRow label="Correo" value={expediente.solicitante.email} />
                     {expediente.solicitante.telefono && (
                       <InfoRow label="Teléfono" value={expediente.solicitante.telefono} />
                     )}

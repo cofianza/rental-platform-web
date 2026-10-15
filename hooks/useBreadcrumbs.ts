@@ -31,6 +31,17 @@ const ROUTE_LABELS: Record<string, string> = {
   'plantillas-contrato': 'Plantillas de contrato',
   nuevo: 'Nuevo',
   editar: 'Editar',
+  // Sin tilde ni espacios en la URL: el capitalizador sacaba «Tesoreria», «Huerfanos»…
+  '403': 'Sin acceso',
+  aprobacion: 'Aprobación',
+  tesoreria: 'Tesorería',
+  huerfanos: 'Cuentas huérfanas',
+  cuenta: 'Mi cuenta',
+  empresa: 'Datos de la empresa',
+  'creditos-estudios': 'Cupos de estudios',
+  'paquetes-creditos-estudios': 'Paquetes de cupos',
+  'cupos-vencidos': 'Cupos vencidos',
+  'datos-contrato': 'Datos para contrato',
 }
 
 /**
@@ -52,7 +63,7 @@ function buildNavLabels(rol?: UserRole): Record<string, string> {
 }
 
 /** Segmentos que no son una página: se acumulan en la ruta pero no se muestran. */
-const NO_NAVEGABLES = new Set(['admin'])
+const NO_NAVEGABLES = new Set(['admin', 'lotes', 'habilitacion'])
 
 /**
  * Hook que genera breadcrumbs automáticamente desde la ruta actual
@@ -90,6 +101,8 @@ export function useBreadcrumbs(): Breadcrumb[] {
 
       // /admin no tiene página propia: llevaba a un 404.
       if (NO_NAVEGABLES.has(segment)) return
+      // /tipos-documento/[id] tampoco (solo /editar).
+      if (segments[index - 1] === 'tipos-documento' && index < segments.length - 1) return
 
       // El arrendatario no tiene la bandeja /expedientes (es del equipo): su
       // lista de solicitudes es el inicio.

@@ -1,8 +1,8 @@
 /**
  * Banner que se muestra a un MIEMBRO del equipo (no titular) de una
  * inmobiliaria cuando su perfil personal está incompleto. Mientras tanto no
- * puede administrar el expediente que le asignaron: las acciones quedan
- * deshabilitadas (y el backend además bloquea las mutaciones).
+ * puede crear ni modificar nada: usePuedeEditar devuelve false (y el backend
+ * además bloquea las mutaciones). Se monta una sola vez, en OficinaVirtualShell.
  *
  * El gate aplica sólo a rol_miembro='miembro' (staff). El titular (owner) y
  * los demás roles no se bloquean. Renderiza null si no aplica.
@@ -35,29 +35,27 @@ interface Props {
 
 export function PerfilPersonalIncompletoBanner({ user }: Props) {
   const pathname = usePathname()
-  if (!miembroDebeCompletarPerfil(user)) return null
+  // En Mi cuenta (donde se completa) el aviso sobra.
+  if (!miembroDebeCompletarPerfil(user) || pathname === '/configuracion/cuenta') return null
 
   // Al terminar de completar el perfil, volver a donde estaba.
-  const returnTo =
-    pathname && pathname !== '/configuracion/cuenta'
-      ? `?returnTo=${encodeURIComponent(pathname)}`
-      : ''
+  const returnTo = pathname ? `?returnTo=${encodeURIComponent(pathname)}` : ''
 
   return (
-    <div className="flex items-start gap-3 p-5 bg-amber-50 border border-amber-200 rounded-lg">
+    <div role="status" className="mb-4 flex items-start gap-3 p-5 bg-amber-50 border border-amber-200 rounded-lg">
       <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900">
-          Complete sus datos personales para administrar este estudio
+          Complete sus datos personales para poder trabajar en la plataforma
         </p>
         <p className="text-xs text-amber-800 mt-1">
           Como miembro del equipo necesita tener su nombre, apellido, teléfono y
-          documento en su perfil antes de poder gestionar los estudios que le
-          asignen. Mientras tanto las acciones están deshabilitadas.
+          documento en su perfil antes de crear o modificar propiedades, estudios
+          y visitas. Mientras tanto solo puede consultar.
         </p>
         <Link
           href={`/configuracion/cuenta${returnTo}`}
-          className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
+          className="inline-flex items-center gap-1.5 mt-3 px-3 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
         >
           Completar mi perfil
           <IconArrowRight size={14} />

@@ -39,12 +39,12 @@ function getDocumentoErrorMessage(error: unknown): string {
       case 403:
         return 'No tiene permiso para ver este documento.'
       case 0:
-        return 'Error de conexion. Verifique su conexion a internet.'
+        return 'Error de conexión. Verifique su conexión a internet.'
       default:
         return error.message || 'Error al obtener el documento.'
     }
   }
-  return 'Error al obtener la URL del documento.'
+  return 'No se pudo abrir el documento. Intente de nuevo.'
 }
 
 export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerProps) {
@@ -154,6 +154,7 @@ export function DocumentViewer({ documento, isOpen, onClose }: DocumentViewerPro
       onClose={onClose}
       bare
       encima
+      closeOnBackdrop
       ariaLabel={documento.nombre_original ?? 'Visor de documento'}
       className="h-full max-h-none bg-black/90 shadow-none flex flex-col"
     >

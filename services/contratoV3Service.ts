@@ -4,9 +4,7 @@
  * Cada llamada devuelve el estado completo del asistente.
  */
 
-import { apiClient, ApiClientError, handleApiError, type ApiResponse } from '@/lib/api'
-import { API_BASE_URL, ERROR_MESSAGES } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { apiClient, ApiClientError, type ApiResponse } from '@/lib/api'
 import type { EstadoAsistente, GuardarPasoBody, MarcaFirma } from '@/types/contratoV3'
 
 const ruta = (expedienteId: string) => `/expedientes/${expedienteId}/contrato-v3`
@@ -63,28 +61,16 @@ export const contratoV3Service = {
   // ── Entrega 5: Ruta B y firma ──
 
   /**
-   * Ruta B: carga (o reemplaza) el contrato de la inmobiliaria. Multipart: apiClient
-   * solo manda JSON, así que va con fetch, pero con la cookie de sesión y el mismo
-   * mapeo de errores (422 PDF_PROPIO_INVALIDO trae el motivo en el mensaje).
+   * Ruta B: carga (o reemplaza) el contrato de la inmobiliaria. Multipart: va por
+   * apiClient.raw, con el mismo mapeo de errores (422 PDF_PROPIO_INVALIDO trae el
+   * motivo en el mensaje) y la renovación del token.
    */
   async subirPropio(expedienteId: string, archivo: File, numeroContrato?: string): Promise<EstadoAsistente> {
     const form = new FormData()
     // Opcional (P10): el número que la inmobiliaria le puso a su contrato, para el Anexo.
     if (numeroContrato) form.append('numero_contrato', numeroContrato)
     form.append('archivo', archivo)
-    const token = useAuthStore.getState().accessToken
-    let res: Response
-    try {
-      res = await fetch(`${API_BASE_URL}${ruta(expedienteId)}/propio`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: form,
-        credentials: 'include',
-      })
-    } catch {
-      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
-    }
-    if (!res.ok) await handleApiError(res)
+    const res = await apiClient.raw(`${ruta(expedienteId)}/propio`, { method: 'POST', body: form })
     return ((await res.json()) as ApiResponse<EstadoAsistente>).data
   },
   /**

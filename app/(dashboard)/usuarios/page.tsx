@@ -9,7 +9,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconLoader, IconArrowRight } from '@/components/icons'
+import { IconLoader, IconArrowRight, IconRefresh } from '@/components/icons'
 import {
   UserFilters,
   UsersTable,
@@ -37,6 +37,7 @@ function UsuariosContent() {
     modalMode,
     setFilters,
     clearFilters,
+    fetchUsers,
     openCreateModal,
     openEditModal,
     closeModal,
@@ -133,7 +134,7 @@ function UsuariosContent() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <PageHeader
           title="Usuarios"
-          subtitle={meta ? `${meta.total} usuarios registrados` : 'Cargando...'}
+          subtitle={meta ? `${meta.total} usuarios registrados` : error ? '—' : 'Cargando...'}
         />
         <Link
           href="/usuarios/huerfanos"
@@ -143,10 +144,14 @@ function UsuariosContent() {
         </Link>
       </div>
 
-      {/* Error global */}
+      {/* Error de carga de la lista (los errores de crear/editar/activar van en toast). */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+        <div role="alert" className="flex flex-wrap items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <span className="flex-1">No se pudo cargar la lista de usuarios: {error}</span>
+          <button type="button" onClick={fetchUsers} disabled={isLoading} className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100">
+            <IconRefresh size={14} />
+            Reintentar
+          </button>
         </div>
       )}
 
@@ -162,7 +167,7 @@ function UsuariosContent() {
       {/* Tabla o Skeleton */}
       {isLoading && users.length === 0 ? (
         <UsersSkeleton rows={filters.limit} />
-      ) : (
+      ) : error && users.length === 0 ? null : (
         <UsersTable
           users={users}
           meta={meta}
@@ -184,7 +189,6 @@ function UsuariosContent() {
         mode={modalMode}
         user={selectedUser}
         isLoading={isLoading}
-        error={error}
       />
 
       {/* Diálogo de confirmación */}

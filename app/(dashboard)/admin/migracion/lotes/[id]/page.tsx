@@ -119,14 +119,16 @@ function Marca({ reportable }: { reportable: boolean | null }) {
 function Dato({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">{label}</dt>
+      <dt className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</dt>
       <dd className="mt-0.5 text-sm text-ink-900">{children}</dd>
     </div>
   )
 }
 
 type Dialogo =
-  | { tipo: 'revision' | 'quitarRevision' | 'auditoria' | 'verificacion' | 'excluirNota' | 'cancelarLote' }
+  | { tipo: 'revision' | 'quitarRevision' | 'auditoria' | 'verificacion' | 'cancelarLote' }
+  // `nota`: lo ya escrito, al volver del paso 2 porque la exclusión falló.
+  | { tipo: 'excluirNota'; nota?: string }
   | { tipo: 'excluir'; nota: string }
   | { tipo: 'decision'; auditoriaId: string; resultado: ResultadoAuditoria }
   | { tipo: 'cancelarCorreccion'; correccionId: string; numero: number }
@@ -275,10 +277,10 @@ export default function LoteMigracionPage() {
               <IconArrowLeft size={16} /> Migración
             </Link>
             <Button variante="secondary" onClick={() => descargarTablero('cofianza')} disabled={!t || !!ocupado}>
-              <IconDownload size={16} /> {ocupado === 'xlsx-cofianza' ? 'Descargando…' : 'Tablero (Cofianza)'}
+              <IconDownload size={16} /> {ocupado === 'xlsx-cofianza' ? 'Descargando…' : 'Tablero Cofianza (Excel)'}
             </Button>
             <Button variante="secondary" onClick={() => descargarTablero('inmobiliaria')} disabled={!t || !!ocupado}>
-              <IconDownload size={16} /> {ocupado === 'xlsx-inmobiliaria' ? 'Descargando…' : 'Tablero (inmobiliaria)'}
+              <IconDownload size={16} /> {ocupado === 'xlsx-inmobiliaria' ? 'Descargando…' : 'Tablero inmobiliaria (Excel)'}
             </Button>
           </>
         }
@@ -582,7 +584,7 @@ export default function LoteMigracionPage() {
         </SeccionEstado>
       </section>
 
-      <Modal isOpen={!!filaId} onClose={() => setFilaId(null)} title={det ? `Contrato migrado · fila ${det.n_fila}` : 'Contrato migrado'} size="xl">
+      <Modal isOpen={!!filaId} onClose={() => setFilaId(null)} title={det ? `Contrato migrado · fila ${det.n_fila}` : 'Contrato migrado'} size="xl" closeOnBackdrop>
         {detError ? (
           <div role="alert" className="text-center">
             <p className="text-sm text-red-700">{detError}</p>
@@ -637,7 +639,7 @@ export default function LoteMigracionPage() {
               </Dato>
               <Dato label="Activación">{fechaCorta(det.contrato?.fecha_firma)}</Dato>
               <Dato label="Declaraciones">
-                Al día: {siNo(det.datos.declaraciones.al_dia)} · Mora 6 meses: {siNo(det.datos.declaraciones.mora_reciente)} · Plantilla
+                Al día: {siNo(det.datos.declaraciones.al_dia)} · Mora {t?.lote.meses_sin_mora ?? 6} meses: {siNo(det.datos.declaraciones.mora_reciente)} · Plantilla
                 entregada: {siNo(det.datos.declaraciones.plantilla_entregada)}
               </Dato>
               <Dato label="Tarifa en el acta">{pct(det.tarifa_acta_pct)}</Dato>
@@ -888,6 +890,9 @@ export default function LoteMigracionPage() {
         }}
       />
       <MotivoDialog
+        // Al volver porque la exclusión falló, se remonta con el motivo ya escrito.
+        key={dialogo?.tipo === 'excluirNota' ? (dialogo.nota ?? '') : ''}
+        valorInicial={dialogo?.tipo === 'excluirNota' ? dialogo.nota : undefined}
         isOpen={dialogo?.tipo === 'excluirNota'}
         onClose={() => setDialogo(null)}
         title="Excluir por declaración falsa"
@@ -899,14 +904,19 @@ export default function LoteMigracionPage() {
       />
       <ConfirmDialog
         isOpen={dialogo?.tipo === 'excluir'}
-        onClose={() => setDialogo(null)}
+        // Cierra solo si sigue en este paso: al fallar ya volvió al motivo.
+        onClose={() => setDialogo((d) => (d?.tipo === 'excluir' ? null : d))}
         title="Confirmar exclusión"
         variant="danger"
         confirmLabel="Excluir contrato"
         message="El contrato queda excluido de la cobertura desde el origen, se cancela y se suspenden las nuevas migraciones de la inmobiliaria hasta decisión de la Gerencia General. Esta acción no se puede deshacer."
         onConfirm={async () => {
-          if (det && dialogo?.tipo === 'excluir')
-            await accionFila('excluir', () => migracionService.excluir(det.id, dialogo.nota), 'Contrato excluido de la cobertura')
+          if (det && dialogo?.tipo === 'excluir') {
+            const nota = dialogo.nota
+            const ok = await accionFila('excluir', () => migracionService.excluir(det.id, nota), 'Contrato excluido de la cobertura')
+            // Antes el diálogo se cerraba y el motivo escrito se perdía.
+            if (!ok) setDialogo({ tipo: 'excluirNota', nota })
+          }
         }}
       />
       <ConfirmDialog

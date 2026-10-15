@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconUsers, IconArrowRight } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
+import { fechaCondicion } from './textoVisible'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
@@ -54,7 +55,13 @@ interface CoarrendatarioInviteFormProps {
   onInvited?: () => void
   /** Estudio ya aprobado (Decisión 2): el coarrendatario es opcional y baja la prima. */
   aprobado?: boolean
+  /** Adenda 3 §6: aprobado con condición de coarrendatario. Ahí NO es opcional
+   *  ni lo revisa un analista: si no acepta antes de `vence_en`, el estudio se
+   *  cierra sin aprobarse. `vence_en` falta donde la API no la manda (enlace). */
+  condicion?: { vence_en?: string; vencida?: boolean } | null
 }
+
+type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email'
 
 export function CoarrendatarioInviteForm({
   invitar,
@@ -62,8 +69,15 @@ export function CoarrendatarioInviteForm({
   initial,
   onInvited,
   aprobado = false,
+  condicion = null,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
+  const conCondicion = !esGestor && !!condicion
+  const fechaLimite = condicion?.vence_en && !condicion.vencida ? fechaCondicion(condicion.vence_en) : null
+  const uid = useId()
+  const idDe = (c: Campo) => `${uid}-${c}`
+  const [errores, setErrores] = useState<Partial<Record<Campo, string>>>({})
+  const limpiar = (c: Campo) => { if (errores[c]) setErrores((p) => ({ ...p, [c]: undefined })) }
 
   // Con datos precargados abrimos el formulario de una: esconderlo tras
   // "Agregar coarrendatario" ocultaria justo la prueba de que ya los tenemos.
@@ -77,16 +91,20 @@ export function CoarrendatarioInviteForm({
   const [telefono, setTelefono] = useState(initial?.telefono ?? '')
 
   const handleInvitar = async () => {
-    if (!nombre.trim() || !apellido.trim() || !numDoc.trim() || !email.trim()) {
-      toast.error('Llene todos los campos requeridos.')
-      return
-    }
-    if (!esNombreValido(nombre.trim()) || !esNombreValido(apellido.trim())) {
-      toast.error('El nombre y el apellido solo pueden tener letras.')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Email inválido.')
+    // Error junto a cada campo y foco en el primero: un toast genérico no
+    // decía cuál faltaba.
+    const e: Partial<Record<Campo, string>> = {}
+    if (!nombre.trim()) e.nombre = 'Escriba el nombre.'
+    else if (!esNombreValido(nombre.trim())) e.nombre = 'El nombre solo puede tener letras.'
+    if (!apellido.trim()) e.apellido = 'Escriba el primer apellido.'
+    else if (!esNombreValido(apellido.trim())) e.apellido = 'El apellido solo puede tener letras.'
+    if (!numDoc.trim()) e.numDoc = 'Escriba el número de documento.'
+    if (!email.trim()) e.email = 'Escriba el correo: ahí le llega la invitación.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Revise el correo: parece incompleto.'
+    setErrores(e)
+    const primero = (Object.keys(e) as Campo[])[0]
+    if (primero) {
+      document.getElementById(idDe(primero))?.focus()
       return
     }
     setSubmitting(true)
@@ -118,10 +136,20 @@ export function CoarrendatarioInviteForm({
         </div>
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-            {esGestor ? 'Invite a un coarrendatario' : 'Puede sumar un coarrendatario (opcional)'}
+            {esGestor
+              ? 'Invite a un coarrendatario'
+              : conCondicion
+                ? `Invite a su coarrendatario${fechaLimite ? ` antes del ${fechaLimite}` : ''}`
+                : 'Puede sumar un coarrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
-            {aprobado ? (
+            {conCondicion ? (
+              <>
+                Su estudio fue aprobado con una condición: presentar un <strong>coarrendatario</strong>
+                {fechaLimite ? ` antes del ${fechaLimite}` : ''}. Esa persona debe aceptar la invitación a tiempo; si
+                no, el estudio se cierra sin aprobarse. No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : aprobado ? (
               <>
                 {esGestor
                   ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
@@ -162,22 +190,23 @@ export function CoarrendatarioInviteForm({
             {initial?.nombre
               ? `Ya nos contó de ${initial.nombre}: complete sus datos y envíele la invitación.`
               : esGestor
-                ? 'Capture los datos del coarrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
-                : 'Capture los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
+                ? 'Escriba los datos del coarrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
+                : 'Escriba los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
+            {' '}Todos los campos son obligatorios, salvo el WhatsApp.
           </p>
 
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Nombre" value={nombre} onChange={setNombre} />
+            <FormField id={idDe('nombre')} label="Nombre" value={nombre} error={errores.nombre} onChange={(v) => { setNombre(v); limpiar('nombre') }} />
             {/* Solo el primero: DataCrédito lo contrasta contra la
                 Registraduría tal cual — con los dos apellidos la consulta
                 falla (código 10) y se factura igual. No se auto-recorta en
                 código porque hay primeros apellidos compuestos ('De La Hoz'). */}
-            <FormField label="Primer apellido (como en la cédula)" value={apellido} onChange={setApellido} />
+            <FormField id={idDe('apellido')} label="Primer apellido (como en la cédula)" value={apellido} error={errores.apellido} onChange={(v) => { setApellido(v); limpiar('apellido') }} />
           </div>
 
           <div className="grid grid-cols-5 gap-3">
             <div className="col-span-2">
-              <label htmlFor="coarrendatario-invite-form-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo doc.</label>
+              <label htmlFor="coarrendatario-invite-form-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo de documento</label>
               <select id="coarrendatario-invite-form-tipo-doc"
                 value={tipoDoc}
                 onChange={(e) => setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])}
@@ -189,11 +218,11 @@ export function CoarrendatarioInviteForm({
               </select>
             </div>
             <div className="col-span-3">
-              <FormField label="Número de documento" value={numDoc} onChange={setNumDoc} inputMode="numeric" />
+              <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(v); limpiar('numDoc') }} inputMode="numeric" />
             </div>
           </div>
 
-          <FormField label="Email" type="email" value={email} onChange={setEmail} />
+          <FormField id={idDe('email')} label="Correo electrónico" type="email" value={email} error={errores.email} onChange={(v) => { setEmail(v); limpiar('email') }} />
 
           <PhoneInput
             label="WhatsApp (opcional — le llega la invitación también por ahí)"
@@ -224,14 +253,13 @@ export function CoarrendatarioInviteForm({
 }
 
 function FormField({
-  label, value, onChange, type = 'text', inputMode,
+  id, label, value, onChange, error, type = 'text', inputMode,
 }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string
+  /** Un id por campo: el padre enfoca el primero con error. */
+  id: string
+  label: string; value: string; onChange: (v: string) => void; error?: string; type?: string
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
 }) {
-  // Un id por campo: todos compartían el mismo y tocar cualquier etiqueta
-  // enfocaba el primer campo.
-  const id = useId()
   return (
     <div>
       <label htmlFor={id} className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
@@ -240,8 +268,11 @@ function FormField({
         inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${error ? 'border-red-300' : 'border-gray-300'}`}
       />
+      {error && <p id={`${id}-error`} className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   )
 }

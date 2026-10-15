@@ -105,7 +105,7 @@ export default function ReportesPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        title="Reportes"
+        title="Analítica"
         subtitle="Estadísticas y métricas del sistema"
       />
 

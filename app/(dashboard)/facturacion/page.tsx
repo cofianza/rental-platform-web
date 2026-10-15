@@ -6,6 +6,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
 import { DatosFiscalesSection } from '@/components/facturacion/DatosFiscalesSection'
@@ -21,6 +22,8 @@ import { useAuthStore } from '@/stores/auth.store'
 export default function FacturacionPage() {
   const user = useAuthStore((s) => s.user)
   const isSolicitante = user?.rol === 'solicitante'
+  const isAdmin = user?.rol === 'administrador'
+  const esEquipoCofianza = isAdmin || user?.rol === 'operador_analista' || user?.rol === 'gerencia_consulta'
   // Tarifas de IVA son configuracion del emisor (Cofianza). Solo admin/operador
   // las gestionan — propietario e inmobiliaria no necesitan verlas y ademas el
   // endpoint GET esta gateado a esos dos roles, asi que cargarlo dispara 403.
@@ -43,9 +46,10 @@ export default function FacturacionPage() {
     user?.rol === 'inmobiliaria' ||
     user?.rol === 'propietario'
 
-  // El solicitante ahora tiene tab 'Datos Fiscales' propio (vs admin que ve
-  // los datos del emisor Cofianza). Sin esos datos completos, el backend
-  // bloquea la emision con CLIENTE_DATOS_INCOMPLETOS.
+  // El solicitante tiene tab 'Datos Fiscales' propio. El admin no ve ahí su
+  // perfil personal de arrendador (no factura con él): ve un enlace a los datos
+  // de la empresa y las tarifas de IVA. Sin datos completos del cliente, el
+  // backend bloquea la emision con CLIENTE_DATOS_INCOMPLETOS.
   // Pendientes-facturar entre Datos y Facturas: lista pagos completados sin
   // factura emitida con boton para emitirla.
   const tabs: Tab[] = isSolicitante
@@ -66,9 +70,10 @@ export default function FacturacionPage() {
         ...(esTitular ? [{ id: 'tarifa', label: 'Cuentas de cobro Cofianza' }] : []),
       ]
 
-  // El solicitante entra a pagar/facturar, no a editar datos fiscales.
+  // El solicitante entra a pagar/facturar, no a editar datos fiscales; el
+  // equipo de Cofianza, a lo que falta facturar.
   const [activeTab, setActiveTab] = useState(
-    isSolicitante || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales',
+    isSolicitante || isAdmin || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales',
   )
   // Los avisos enlazan a una pestaña (/facturacion?tab=reembolsos). Se lee en el
   // cliente, y de nuevo cuando carga el usuario (decide qué pestañas hay).
@@ -84,33 +89,48 @@ export default function FacturacionPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isSolicitante ? 'Mis pagos y facturas' : 'Facturación'}
+        title={isSolicitante ? 'Mis pagos y facturas' : 'Pagos a Cofianza'}
         subtitle={
           isSolicitante
             ? 'Complete sus datos fiscales, facture sus pagos pendientes y consulte su historial.'
-            : 'Gestione sus datos fiscales, facture pagos pendientes y consulte su historial.'
+            : esEquipoCofianza
+              ? 'Pagos pendientes de facturar, facturas electrónicas emitidas y cobros de Cofianza.'
+              : 'Gestione sus datos fiscales, facture pagos pendientes y consulte su historial.'
         }
       />
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} className="mt-6 space-y-6">
-        {activeTab === 'datos-fiscales' && (
+        {activeTab === 'datos-fiscales' && canSeeDatosFiscales && (
           <>
             {isSolicitante ? (
               <DatosFiscalesSolicitanteSection />
+            ) : isAdmin ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-base font-semibold text-gray-900">Datos de Cofianza como emisor</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  La razón social, el NIT y la dirección de Cofianza se gestionan en Configuración › Datos de la empresa.
+                </p>
+                <Link
+                  href="/configuracion/empresa"
+                  className="mt-3 inline-flex text-sm font-medium text-primary-700 hover:text-primary-800"
+                >
+                  Ir a Datos de la empresa
+                </Link>
+              </div>
             ) : (
-              <>
-                <DatosFiscalesSection />
-                {canSeeTarifasIva && <TarifasIvaSection />}
-              </>
+              <DatosFiscalesSection />
             )}
+            {canSeeTarifasIva && <TarifasIvaSection />}
           </>
         )}
         {activeTab === 'pendientes' && (
           <PendientesFacturarSection
             onFacturaEmitida={() => setFacturasReloadKey((k) => k + 1)}
-            onDatosFiscalesIncompletos={() => setActiveTab('datos-fiscales')}
+            // Solo el solicitante corrige ahí sus propios datos; para los demás
+            // los datos que faltan son de quien pagó (el aviso va en la fila).
+            onDatosFiscalesIncompletos={isSolicitante ? () => setActiveTab('datos-fiscales') : undefined}
           />
         )}
         {activeTab === 'facturas' && (

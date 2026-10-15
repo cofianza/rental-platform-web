@@ -56,10 +56,10 @@ export function MotivoDialog({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+    <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose} title={title} size="sm">
       <div className="space-y-3">
         {descripcion && <div className="text-sm text-gray-600">{descripcion}</div>}
-        <label className="block text-xs font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700">
           {label}
           <textarea
             autoFocus
@@ -80,7 +80,7 @@ export function MotivoDialog({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             {cancelLabel}
           </button>
@@ -88,7 +88,7 @@ export function MotivoDialog({
             type="button"
             onClick={confirmar}
             disabled={!valido || isLoading}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 ${
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
               variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
             }`}
           >

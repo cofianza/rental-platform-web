@@ -69,7 +69,7 @@ export function InmobiliariasSection() {
         subtitle="Inmobiliarias afiliadas y su cartera de contratos activos."
       />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi label="Total inmobiliarias" value={totalInmobiliarias} Icon={IconBuilding2} />
         <Kpi label="Activas" value={activas} tone="green" Icon={IconCheck} />
         <Kpi label="Contratos" value={contratos} tone="blue" Icon={IconFileText} />

@@ -60,7 +60,7 @@ const cargaTone = (pct: number): ChipTone => (pct > 40 ? 'red' : pct > 30 ? 'yel
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[9px] font-semibold uppercase tracking-wide text-ink-500">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</div>
       <div className="mt-0.5 text-xs text-ink-800">{children}</div>
     </div>
   )
@@ -127,7 +127,7 @@ export function InquilinosSection() {
     <div>
       <SeccionHeader title="Inquilinos" subtitle={subtitulo} />
 
-      <KpiRow>
+      <KpiRow loading={loading} error={error}>
         <Kpi
           label="Activos al día"
           value={alDia}

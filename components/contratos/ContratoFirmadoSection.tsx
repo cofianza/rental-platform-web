@@ -129,7 +129,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <IconShield size={16} className="text-primary-600" />
-        Documento Firmado
+        Documento firmado
       </h3>
 
       {tieneFirmado ? (
@@ -204,8 +204,8 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
             </div>
           )}
 
-          {/* Hash */}
-          {contrato.firmado_hash_integridad && (
+          {/* Hash y referencia OTP: datos técnicos, solo para Cofianza. */}
+          {canManage && contrato.firmado_hash_integridad && (
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500 mb-1">Hash SHA-256</p>
               <div className="flex items-center gap-2">
@@ -225,8 +225,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
             </div>
           )}
 
-          {/* OTP reference */}
-          {contrato.firmado_referencia_otp && (
+          {canManage && contrato.firmado_referencia_otp && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Ref. OTP</span>
               <span className="font-medium text-gray-900">{contrato.firmado_referencia_otp}</span>
@@ -283,13 +282,13 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-50"
                 >
                   {verificacionLoading ? <IconLoader size={14} className="animate-spin" /> : <IconShield size={14} />}
-                  Verificar Integridad
+                  Verificar integridad
                 </button>
                 <button
                   onClick={() => setLogOpen(true)}
                   className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
                 >
-                  Ver Accesos
+                  Ver accesos
                 </button>
               </>
             )}

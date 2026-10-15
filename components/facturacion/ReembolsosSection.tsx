@@ -21,7 +21,7 @@ import { formatNumeroEstudio } from '@/lib/utils'
 
 const ORIGEN: Record<string, string> = {
   manual: 'Pago registrado a mano: se devuelve por el mismo medio',
-  credito: 'Pagado con crédito del paquete',
+  credito: 'Pagado con un cupo del paquete',
 }
 
 export function ReembolsosSection() {

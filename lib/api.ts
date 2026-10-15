@@ -56,10 +56,11 @@ function getAuthToken(): string | null {
 }
 
 /**
- * Construye headers con autenticación si está disponible
+ * Construye headers con autenticación si está disponible.
+ * json=false para FormData/descargas: el navegador pone el Content-Type.
  */
-function buildHeaders(customHeaders?: HeadersInit): HeadersInit {
-  const headers = { ...DEFAULT_HEADERS, ...customHeaders }
+function buildHeaders(customHeaders?: HeadersInit, json = true): HeadersInit {
+  const headers = { ...(json ? DEFAULT_HEADERS : {}), ...customHeaders }
   const token = getAuthToken()
 
   if (token) {
@@ -173,25 +174,27 @@ export class ApiClient {
     return this.send<T>(endpoint, { method: 'DELETE', ...options })
   }
 
-  private async send<T>(endpoint: string, init: RequestInit, retried = false): Promise<ApiResponse<T>> {
-    const sentToken = getAuthToken()
+  /**
+   * Petición sin JSON (descargar un archivo, subir FormData): mismo Bearer,
+   * renovación del token ante 401 y error de red en español que get/post, pero
+   * sin Content-Type fijo y devolviendo la Response (ya verificada `ok`).
+   * Antes estas llamadas usaban fetch a mano y, tras suspender el equipo,
+   * decían «Su sesión venció» con la sesión todavía renovable.
+   */
+  async raw(endpoint: string, init: RequestInit = {}): Promise<Response> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        headers: buildHeaders(init.headers),
-        credentials: 'include', // Incluir cookies JWT
-        ...init,
-      })
+      const response = await this.fetchConRenovacion(endpoint, init, false)
+      if (!response.ok) await handleApiError(response)
+      return response
+    } catch (error) {
+      if (error instanceof ApiClientError) throw error
+      throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
+    }
+  }
 
-      // Token vencido: tras suspender el equipo o con la pestaña en segundo
-      // plano, el refresh programado llega tarde. Se renueva una vez (si otra
-      // petición ya lo hizo, basta con repetir) y se repite la petición.
-      if (response.status === 401 && sentToken && !retried && !SIN_REINTENTO_401.includes(endpoint)) {
-        const actual = getAuthToken()
-        // Importación diferida: authService importa este módulo.
-        const { authService } = require('@/services/authService')
-        const token = actual && actual !== sentToken ? actual : await authService.refreshToken()
-        if (token) return this.send<T>(endpoint, init, true)
-      }
+  private async send<T>(endpoint: string, init: RequestInit): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.fetchConRenovacion(endpoint, init, true)
 
       if (!response.ok) {
         await handleApiError(response)
@@ -210,6 +213,33 @@ export class ApiClient {
       // Error de red
       throw new ApiClientError(ERROR_MESSAGES.NETWORK_ERROR, 0, 'NETWORK_ERROR')
     }
+  }
+
+  private async fetchConRenovacion(
+    endpoint: string,
+    init: RequestInit,
+    json: boolean,
+    retried = false
+  ): Promise<Response> {
+    const sentToken = getAuthToken()
+    const { headers, ...resto } = init
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      credentials: 'include', // Incluir cookies JWT
+      ...resto,
+      headers: buildHeaders(headers, json),
+    })
+
+    // Token vencido: tras suspender el equipo o con la pestaña en segundo
+    // plano, el refresh programado llega tarde. Se renueva una vez (si otra
+    // petición ya lo hizo, basta con repetir) y se repite la petición.
+    if (response.status === 401 && sentToken && !retried && !SIN_REINTENTO_401.includes(endpoint)) {
+      const actual = getAuthToken()
+      // Importación diferida: authService importa este módulo.
+      const { authService } = require('@/services/authService')
+      const token = actual && actual !== sentToken ? actual : await authService.refreshToken()
+      if (token) return this.fetchConRenovacion(endpoint, init, json, true)
+    }
+    return response
   }
 }
 

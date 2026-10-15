@@ -10,10 +10,12 @@ import {
   IconClock,
   IconCheckCircle,
   IconAlertTriangle,
+  IconRefresh,
 } from '@/components/icons'
 import { visitaService, type IVisitaPublica, type IVisitaDia } from '@/services/visitaService'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { cn } from '@/lib/utils'
+import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 
 const TZ = 'America/Bogota'
 const DIAS_RANGO = 14
@@ -73,6 +75,8 @@ export default function GestionarVisitaPage() {
   const [visita, setVisita] = useState<IVisitaPublica | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reintentable, setReintentable] = useState(false)
+  const [intento, setIntento] = useState(0)
   const [done, setDone] = useState<'reprogramada' | 'cancelada' | 'confirmada' | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -110,7 +114,9 @@ export default function GestionarVisitaPage() {
         if (v.accionable && accion === 'reprogramar') cargarSlots()
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'No se pudo cargar la visita')
+        if (cancelled) return
+        setError(mensajeParaProspecto(e, 'No se pudo cargar la visita.'))
+        setReintentable(esErrorTransitorio(e))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -118,7 +124,12 @@ export default function GestionarVisitaPage() {
     return () => {
       cancelled = true
     }
-  }, [token, accion, cargarSlots])
+  }, [token, accion, cargarSlots, intento])
+
+  // La visita la atiende la inmobiliaria o el propietario: se nombra solo si la
+  // API trae su contacto (sin WhatsApp el nombre de respaldo es «Cofianza»).
+  const quien = visita?.contacto?.whatsapp && visita.contacto.nombre ? visita.contacto.nombre : 'quien le muestra el inmueble'
+  const Quien = quien.charAt(0).toUpperCase() + quien.slice(1)
 
   async function handleReprogramar() {
     if (!slotSel) return
@@ -177,6 +188,18 @@ export default function GestionarVisitaPage() {
           <IconAlertTriangle size={40} className="mx-auto text-amber-500 mb-3" />
           <h1 className="text-lg font-semibold text-gray-900">No pudimos abrir su visita</h1>
           <p className="text-sm text-gray-600 mt-2">{error}</p>
+          {reintentable && (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null)
+                setIntento((n) => n + 1)
+              }}
+              className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800"
+            >
+              <IconRefresh size={16} /> Reintentar
+            </button>
+          )}
         </div>
       </Card>
     )
@@ -196,10 +219,10 @@ export default function GestionarVisitaPage() {
           </h1>
           <p className="text-sm text-gray-600 mt-2">
             {done === 'reprogramada'
-              ? 'Enviamos su nueva fecha al propietario para que la confirme. Le avisaremos cuando quede lista.'
+              ? `Le enviamos su nueva fecha a ${quien} para que la confirme. Le avisaremos cuando quede lista.`
               : done === 'cancelada'
-                ? 'Avisamos al propietario que no asistirá. Gracias por avisar a tiempo.'
-                : 'Le avisamos al propietario que asistirá. ¡Lo esperamos puntual!'}
+                ? `Le avisamos a ${quien} que no asistirá. Gracias por avisar a tiempo.`
+                : `Le avisamos a ${quien} que asistirá. ¡Lo esperamos puntual!`}
           </p>
         </div>
       </Card>
@@ -285,8 +308,8 @@ export default function GestionarVisitaPage() {
             // 'solicitada' (reprogramada) el confirmar fallaba SIEMPRE.
             <div className="text-center py-4">
               <p className="text-sm text-gray-700">
-                El propietario aún no ha confirmado la fecha de esta visita. En cuanto lo haga le
-                avisamos y podrá confirmar su asistencia.
+                {Quien} aún no ha confirmado la fecha de esta visita. En cuanto lo haga le avisamos y
+                podrá confirmar su asistencia.
               </p>
               <Link
                 href={`/visita/reprogramar/${token}`}
@@ -298,7 +321,7 @@ export default function GestionarVisitaPage() {
           ) : (
             <>
               <p className="text-sm text-gray-700">
-                ¿Confirma que asistirá a esta visita? Le avisaremos al propietario para que lo espere.
+                ¿Confirma que asistirá a esta visita? Le avisaremos a {quien} para que lo espere.
               </p>
               {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
               <button
@@ -329,7 +352,7 @@ export default function GestionarVisitaPage() {
             onChange={(e) => setMotivo(e.target.value)}
             rows={3}
             maxLength={500}
-            placeholder="Cuéntele al propietario por qué cancela (opcional)"
+            placeholder={`Cuéntele a ${quien} por qué cancela (opcional)`}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
