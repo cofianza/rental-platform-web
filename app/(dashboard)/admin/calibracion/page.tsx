@@ -63,6 +63,15 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   USAR_PISOS_FACTUALES: { nombre: 'Pisos de ingreso compiten al elegir el ingreso', grupo: 'evaluacion', unidad: 'onoff' },
   UMBRAL_DIFERENCIA_INGRESO: { nombre: 'Diferencia entre ingreso declarado y estimado que manda a revisión', grupo: 'evaluacion', unidad: 'pct' },
   UMBRAL_SIMILITUD_BIOMETRICA: { nombre: 'Similitud mínima del reconocimiento facial', grupo: 'evaluacion', unidad: 'pct' },
+  // Aprobación con condición de coarrendatario (Adenda 3 §6)
+  CUARTO_DESENLACE: { nombre: 'Aprobar con condición de presentar un coarrendatario', grupo: 'condicion', unidad: 'onoff' },
+  VIGENCIA_CONDICION_COARRENDATARIO_DIAS: { nombre: 'Plazo para presentar el coarrendatario', grupo: 'condicion', unidad: 'dias' },
+  OBJETIVO_COA_PUNTAJE_HASTA_5: { nombre: 'Puntaje del coarrendatario si al solicitante le faltan hasta 5 puntos', grupo: 'condicion', unidad: 'puntos' },
+  OBJETIVO_COA_PUNTAJE_HASTA_10: { nombre: 'Puntaje del coarrendatario si le faltan de 6 a 10 puntos', grupo: 'condicion', unidad: 'puntos' },
+  OBJETIVO_COA_PUNTAJE_MAS_10: { nombre: 'Puntaje del coarrendatario si le faltan más de 10 puntos', grupo: 'condicion', unidad: 'puntos' },
+  OBJETIVO_COA_INGRESO_HASTA_5: { nombre: 'Puntaje del coarrendatario si endeudamiento o canon se pasan hasta 5 puntos %', grupo: 'condicion', unidad: 'puntos' },
+  OBJETIVO_COA_INGRESO_HASTA_10: { nombre: 'Puntaje del coarrendatario si se pasan de 5 a 10 puntos %', grupo: 'condicion', unidad: 'puntos' },
+  OBJETIVO_COA_INGRESO_MAS_10: { nombre: 'Puntaje del coarrendatario si se pasan más de 10 puntos %', grupo: 'condicion', unidad: 'puntos' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
@@ -100,10 +109,15 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   DIAS_VIGENCIA_LOTE_SIN_FIRMA: { nombre: 'Plazo para firmar el Acta de Migración', grupo: 'migracion', unidad: 'dias' },
 }
 
-type Grupo = 'evaluacion' | 'canon' | 'precios' | 'autorizacion' | 'contratos' | 'cobro' | 'migracion' | 'otros'
+type Grupo = 'evaluacion' | 'condicion' | 'canon' | 'precios' | 'autorizacion' | 'contratos' | 'cobro' | 'migracion' | 'otros'
 
 const GRUPOS: { id: Grupo; titulo: string; ayuda: string }[] = [
   { id: 'evaluacion', titulo: 'Evaluación del prospecto', ayuda: 'Puntajes con los que el motor aprueba, rechaza o manda a revisión manual.' },
+  {
+    id: 'condicion',
+    titulo: 'Aprobación con condición de coarrendatario',
+    ayuda: 'Cuándo el motor aprueba con la condición de presentar un coarrendatario, con qué puntaje mínimo y en qué plazo. Nunca menos de 80.',
+  },
   { id: 'canon', titulo: 'Topes de canon', ayuda: 'Hasta qué canon se afianza y cuánto puede cambiar al hacer el contrato.' },
   { id: 'precios', titulo: 'Precios y paquetes', ayuda: 'Lo que se cobra por el estudio y las reglas de los paquetes de cupos.' },
   { id: 'autorizacion', titulo: 'Autorización del prospecto', ayuda: 'Plazos, intentos y reenvíos del enlace que firma el prospecto.' },

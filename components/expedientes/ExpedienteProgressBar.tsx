@@ -33,6 +33,8 @@ export interface ExpedienteProgressBarProps {
   sinInfoBuro?: boolean
   /** Lo mira el propio solicitante: textos de su ruta (§10/§13), en segunda persona. */
   esProspecto?: boolean
+  /** Adenda 3 §6: aprobado con condición de coarrendatario (no lo revisa un analista). */
+  conCondicion?: boolean
   className?: string
 }
 
@@ -43,6 +45,7 @@ export function ExpedienteProgressBar({
   citaOmitida,
   sinInfoBuro,
   esProspecto,
+  conCondicion,
   className,
 }: ExpedienteProgressBarProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -118,12 +121,14 @@ export function ExpedienteProgressBar({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : 'Estamos revisando su estudio'}
+          {isRejected ? 'No aprobable por ahora' : conCondicion ? 'Aprobado con condición' : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
-            : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
+            : conCondicion
+              ? 'Para continuar, invite a un coarrendatario. Abajo ve el puntaje mínimo y el plazo.'
+              : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
     )
@@ -142,11 +147,11 @@ export function ExpedienteProgressBar({
   if (isConditioned) {
     return (
       <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
-        <p className="text-sm font-semibold text-amber-700">Estudio condicionado</p>
+        <p className="text-sm font-semibold text-amber-700">{conCondicion ? 'Aprobado con condición' : 'Estudio condicionado'}</p>
         <p className="text-xs text-amber-600 mt-0.5">
           {/* Adenda 2 §5: decide solo un analista de Cofianza. */}
-          {sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
-          Lo decide un analista de Cofianza. En «Resumen» ve qué sigue y qué se puede hacer mientras tanto.
+          {conCondicion ? 'Espera coarrendatario. En «Resumen» ve el puntaje mínimo y el plazo.' : <>{sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
+          Lo decide un analista de Cofianza. En «Resumen» ve qué sigue y qué se puede hacer mientras tanto.</>}
         </p>
       </div>
     )

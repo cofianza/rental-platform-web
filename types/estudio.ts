@@ -38,6 +38,14 @@ export interface IEstudio {
   /** Expiracion del §12. Igual que `ruta`: detalle + listado por expediente. */
   expiracion?: IExpiracionEstudio
   /**
+   * Adenda 3 §6 (cuarto desenlace): aprobado con condición de presentar un
+   * coarrendatario con `puntaje_objetivo` antes de `vence_en`. Solo en el
+   * estudio del titular con resultado 'condicionado' y la condición en pie;
+   * null en cualquier otro caso. Con condición el caso NO está en revisión del
+   * analista: aprobar, pedir soportes y reasignar responden 409.
+   */
+  condicion_coarrendatario?: ICondicionCoarrendatario | null
+  /**
    * Background check de Auco (listas restrictivas, antecedentes, afiliacion).
    * Solo gestores: la API lo manda null al prospecto. null = no se consulto.
    */
@@ -97,6 +105,14 @@ export interface IEstudio {
     apellido: string
   } | null
   documentos?: IEstudioDocumento[] | null
+}
+
+export interface ICondicionCoarrendatario {
+  puntaje_objetivo: number
+  /** ISO timestamptz. */
+  vence_en: string
+  /** vence_en <= ahora: el barrido de la API lo rechaza en breve. */
+  vencida: boolean
 }
 
 export interface IEstudioDocumento {
@@ -334,6 +350,8 @@ export interface IVerificacionCertificado {
   fecha_vencimiento: string
   empresa: string
   numero_documento_masked: string
+  /** Adenda 3 §6: «Condicionado a coarrendatario: puntaje mínimo N, vence DD/MM/AAAA». */
+  condicion?: string | null
 }
 
 // ============================================================

@@ -29,7 +29,7 @@ import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 import type { EstadoBloqueo } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
+import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario } from './textoVisible'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -260,6 +260,13 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
       }
       if (expedienteEstado === 'rechazado') {
         return 'Un analista de Cofianza revisó el caso y no lo aprobó. El estudio no avanza al contrato.'
+      }
+      // Adenda 3 §6: aprobado con condición. No está en revisión del analista.
+      if (estudio.condicion_coarrendatario) {
+        const texto = textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
+        return esCofianza && !estudio.condicion_coarrendatario.vencida
+          ? `${texto} No requiere decisión del analista mientras la condición esté vigente.`
+          : texto
       }
       return esCofianza
         ? 'Estudio condicionado. Revise las observaciones y decida si proceder.'
@@ -545,7 +552,10 @@ function EstudioPanel({
   // ejecutado", y el pago lo verifica la API contra `pagos` (fallando cerrado).
   // Esconder el boton por una condicion que aqui no se puede comprobar dejaria
   // al gestor sin saber por que no aparece.
-  const puedeReasignar = esGestor && onReasignado != null && estudio.estado === 'completado'
+  // Adenda 3 §6: con la condición en pie la API responde 409 (el puntaje
+  // objetivo depende del canon de este inmueble).
+  const puedeReasignar =
+    esGestor && onReasignado != null && estudio.estado === 'completado' && !estudio.condicion_coarrendatario
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   // Va antes que el «expirado» del reloj: un enlace detenido no espera plazo.
@@ -568,7 +578,9 @@ function EstudioPanel({
       ? 'Aprobado por el analista'
       : decisionAnalista === 'rechazado'
         ? 'No aprobado por el analista'
-        : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
+        : estudio.condicion_coarrendatario && estudio.resultado === 'condicionado'
+          ? 'Espera coarrendatario'
+          : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />

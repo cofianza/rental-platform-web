@@ -17,6 +17,9 @@
  * coarrendatario hasta el Convenio, así que no se ofrece y, sin historial en
  * ninguna central (Política §15, que lo exige), el caso no puede aprobarse:
  * se cierra con motivo.
+ * Adenda 3 §6 (cuarto desenlace): con `condicion` el caso NO está en revisión
+ * del analista: falta el coarrendatario con el puntaje mínimo. La API responde
+ * 409 a aprobar a mano y a pedir soportes, así que esos botones no se ofrecen.
  */
 
 'use client'
@@ -27,7 +30,8 @@ import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
-import type { IMotivosElegidos } from '@/types/estudio'
+import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
+import { textoCondicionCoarrendatario } from './textoVisible'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
@@ -44,6 +48,8 @@ interface AprobarCondicionadoCardProps {
   estudioSinCentrales?: string | null
   /** Inmueble sin inmobiliaria: el coarrendatario no existe en este canal (Decisión 4). */
   canalPropietario?: boolean
+  /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
+  condicion?: ICondicionCoarrendatario | null
   onAprobado?: () => void
 }
 
@@ -54,6 +60,7 @@ export function AprobarCondicionadoCard({
   sinInfoBuro,
   estudioSinCentrales,
   canalPropietario,
+  condicion,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -78,6 +85,47 @@ export function AprobarCondicionadoCard({
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
+
+  if (condicion) {
+    return (
+      <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <IconShieldCheck size={20} className="text-amber-700" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-gray-900 mb-0.5">Aprobado con condición: qué sigue</h3>
+            <p className="text-sm text-gray-700">{textoCondicionCoarrendatario(condicion)}</p>
+            {!condicion.vencida && (
+              <ol className="mt-4 space-y-4">
+                <Paso n={1} titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'Invite al coarrendatario (en el recuadro de abajo)'}>
+                  <p>
+                    Es la persona con quien vivirá el solicitante. No necesita finca raíz: basta con que tenga ingresos
+                    propios. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
+                  </p>
+                </Paso>
+                <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
+                  <p>
+                    Si alcanza el puntaje mínimo y no hay otros puntos por revisar, el estudio queda aprobado sin pasar por
+                    un analista. Si no lo alcanza o hay algo por revisar, lo decide un analista de Cofianza. Si queda por
+                    debajo de 70 puntos o tiene un impedimento que no admite excepciones, el estudio queda no aprobable.
+                  </p>
+                </Paso>
+                <Paso n={3} titulo="Si vence el plazo">
+                  <p>El estudio se cierra como no aprobado, sin repetir la consulta a las centrales.</p>
+                </Paso>
+              </ol>
+            )}
+            <p className="mt-4 text-xs text-gray-600">
+              Mientras la condición esté vigente no se puede aprobar el estudio a mano, pedir soportes al solicitante ni
+              reasignarlo a otra propiedad: lo que falta es el coarrendatario.
+              {esCofianza && ' Para no aprobarlo, use «Cambiar estado», arriba.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleEnviarEnlace = async () => {
     setEnviandoEnlace(true)

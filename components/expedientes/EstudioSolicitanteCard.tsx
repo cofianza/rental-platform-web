@@ -28,7 +28,7 @@ import type { IEstudio } from '@/types/estudio'
 import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { abrirEnPestana } from '@/lib/utils'
-import { textoVisible } from './textoVisible'
+import { textoVisible, textoCondicionCoarrendatario } from './textoVisible'
 
 interface EstudioSolicitanteCardProps {
   expedienteId: string
@@ -566,6 +566,23 @@ export function EstudioSolicitanteCard({
                   </a>
                 </div>
               )}
+              {/* Adenda 3 §6: aprobado con condición. El mensaje de la ruta ya
+                  trae el puntaje mínimo y la fecha; el formulario es la tarjeta
+                  del coarrendatario, debajo. */}
+              {estudio.condicion_coarrendatario && !estudio.condicion_coarrendatario.vencida && (
+                <a
+                  href="#coarrendatario"
+                  className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <IconUsers size={14} />
+                  Invitar a mi coarrendatario
+                </a>
+              )}
+              {estudio.condicion_coarrendatario?.vencida && (
+                <p className={`mt-3 text-sm ${tono.texto}`}>
+                  {textoCondicionCoarrendatario(estudio.condicion_coarrendatario)}
+                </p>
+              )}
               {botonCertificado}
             </div>
           </div>
@@ -603,7 +620,9 @@ export function EstudioSolicitanteCard({
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">
-                Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.
+                {estudio.condicion_coarrendatario
+                  ? textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
+                  : 'Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.'}
               </p>
               {botonCertificado}
             </div>

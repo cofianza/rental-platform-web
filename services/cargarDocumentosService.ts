@@ -19,6 +19,8 @@ export interface ContextoCargaDocumentos {
   inmueble: { direccion: string; ciudad: string }
   estado: string
   puede_subir: boolean
+  /** Adenda 3 §6: aprobado con condición de coarrendatario; null = no se pudo leer (ausente en un API anterior). */
+  condicion_coarrendatario?: boolean | null
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
   /** Su coarrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {
