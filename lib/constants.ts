@@ -663,7 +663,10 @@ export function formatCurrency(value: number): string {
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value)
+  })
+    .format(value)
+    // Intl es-CO pone un espacio duro tras el «$» («$ 1.500.000»); el formato de la casa va sin él.
+    .replace(/\u00a0/g, '')
 }
 
 /**

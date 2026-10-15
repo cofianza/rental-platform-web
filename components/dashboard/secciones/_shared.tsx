@@ -27,6 +27,10 @@ export const moneyCompact = (n: number | null | undefined) => {
   return money(v)
 }
 
+/** Porcentaje con coma decimal y un decimal: «12,5 %» (espacio duro: no se parte en dos líneas). */
+export const pct = (n: number | null | undefined) =>
+  `${Number(n ?? 0).toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}\u00a0%`
+
 export const fechaCorta = (iso: string | null | undefined) => {
   if (!iso) return '—'
   // Una fecha sin hora (YYYY-MM-DD) se lee como dia calendario de Bogota;
@@ -236,9 +240,15 @@ export function KpiRow({
   error?: string | null
 }) {
   if (error) return null
-  const lg = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' }[cols]
+  // En `sm` las columnas siguen al número de tarjetas: con 4 en una grilla de 3 quedaba una huérfana.
+  const grid = {
+    2: 'sm:grid-cols-2 lg:grid-cols-2',
+    3: 'sm:grid-cols-3 lg:grid-cols-3',
+    4: 'sm:grid-cols-2 lg:grid-cols-4',
+    5: 'sm:grid-cols-3 lg:grid-cols-5',
+  }[cols]
   return (
-    <div className={`dash-reveal mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 ${lg}`} aria-busy={loading || undefined}>
+    <div className={`dash-reveal mb-4 grid grid-cols-2 gap-2.5 ${grid}`} aria-busy={loading || undefined}>
       {loading
         ? Children.toArray(children).map((_, i) => (
             <div key={i} aria-hidden="true" className="rounded-xl border border-ink-200 bg-white p-3">
@@ -268,17 +278,20 @@ export function Kpi({
   unavailable = false,
   onClick,
   active = false,
+  hint,
 }: {
   label: string
   value: string | number
   sub?: string
+  /** Definición de una línea para quien no conoce la métrica (tooltip nativo). */
+  hint?: string
   tone?: KpiTone
   Icon?: React.ComponentType<IconProps>
   /** Franja lateral + fondo tenue para resaltar alertas (danger/warning/risk). */
   accent?: KpiAccent
   /** Indicador de tendencia opcional junto al valor. */
   delta?: KpiDelta
-  /** Atenúa la tarjeta y muestra un badge "sin datos" (métrica no configurada). */
+  /** Borde punteado y badge "sin datos" (métrica no configurada), sin bajar el contraste del texto. */
   unavailable?: boolean
   /** Hace la tarjeta clicable (drill-down). */
   onClick?: () => void
@@ -291,10 +304,11 @@ export function Kpi({
     delta?.tone === 'good' ? 'text-primary-600' : delta?.tone === 'bad' ? 'text-red-600' : 'text-ink-500'
 
   const className = [
-    'relative rounded-xl border bg-white p-3 text-left',
+    'relative min-w-0 rounded-xl border p-3 text-left',
     active ? 'border-primary-500 ring-[3px] ring-primary-600/10' : 'border-ink-200',
     KPI_ACCENT[accent],
-    unavailable ? 'opacity-60' : '',
+    // El fondo del acento no compite con bg-white (dos bg-* en la misma tarjeta: gana el orden del CSS, no el de la clase).
+    unavailable ? 'border-dashed bg-ink-50' : accent === 'none' ? 'bg-white' : '',
     onClick ? 'w-full cursor-pointer transition hover:border-ink-300 hover:shadow-sm' : '',
   ]
     .filter(Boolean)
@@ -307,16 +321,18 @@ export function Kpi({
           sin datos
         </span>
       )}
-      <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${unavailable ? 'pr-14' : ''}`}>
         {Icon && (
           <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${t.iconBg}`}>
             <Icon size={15} />
           </span>
         )}
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
+        <span className="line-clamp-2 text-xs font-semibold text-ink-500">{label}</span>
       </div>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <span className={`text-xl font-extrabold tracking-tight ${t.value}`}>{value}</span>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
+        <span className={`min-w-0 break-words text-lg font-extrabold tabular-nums tracking-tight sm:text-xl ${t.value}`}>
+          {typeof value === 'number' ? value.toLocaleString('es-CO') : value}
+        </span>
         {delta && (
           <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${deltaColor}`}>
             <DeltaArrow size={12} />
@@ -324,18 +340,22 @@ export function Kpi({
           </span>
         )}
       </div>
-      {sub && <div className="mt-0.5 text-[11px] text-ink-500">{sub}</div>}
+      {sub && <div className="mt-0.5 text-xs text-ink-500">{sub}</div>}
     </>
   )
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={className}>
+      <button type="button" onClick={onClick} className={className} title={hint}>
         {inner}
       </button>
     )
   }
-  return <div className={className}>{inner}</div>
+  return (
+    <div className={className} title={hint}>
+      {inner}
+    </div>
+  )
 }
 
 // ── Chip / badge ─────────────────────────────────────────────
@@ -422,7 +442,7 @@ export function TotalesPorOrigenTabla({ porOrigen }: { porOrigen?: TotalesPorOri
   return (
     <div className="mb-4">
       <Tabla
-        head={['Cartera', 'Contratos activos', 'Canon', 'Tarifa del mes', 'IVA', 'Mora activa', 'Siniestralidad', 'Exposición máx.']}
+        head={['Cartera', 'Contratos activos', 'Canon', 'Tarifa del mes', 'IVA', 'Mora activa', 'Siniestralidad', 'Canon en riesgo']}
         density="compact"
       >
         {filas.map(([label, t]) => (
@@ -434,7 +454,7 @@ export function TotalesPorOrigenTabla({ porOrigen }: { porOrigen?: TotalesPorOri
             <Td>{money(t.iva)}</Td>
             {/* §9.5: el riesgo de cada cartera por separado. */}
             <Td>{t.moraActivaCount != null ? `${t.moraActivaCount} · ${money(t.moraActivaMonto ?? 0)}` : '—'}</Td>
-            <Td>{t.siniestralidad != null ? `${t.siniestralidad.toFixed(1)}%` : '—'}</Td>
+            <Td>{t.siniestralidad != null ? pct(t.siniestralidad) : '—'}</Td>
             <Td>{t.exposicionMaxima != null ? money(t.exposicionMaxima) : '—'}</Td>
           </tr>
         ))}
