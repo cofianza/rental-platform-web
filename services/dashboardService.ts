@@ -13,6 +13,8 @@ export interface DashboardSummary {
   tasaAprobacion: number
   tiempoPromedioResolucionDias: number
   ingresosDelPeriodo: number
+  /** Estudios con decisión en el periodo (backends viejos no lo mandan). */
+  decididosDelPeriodo?: number
 }
 
 export interface ExpedientePorEstado {
@@ -109,6 +111,8 @@ export interface AdminOverviewActividadItem {
   usuario: string
   accion: string
   entidad: string
+  /** Para enlazar la fila al estudio o contrato (backends viejos no lo mandan). */
+  entidadId?: string | null
   fecha: string
 }
 
@@ -131,6 +135,8 @@ export interface AdminOverview {
   actividadReciente: AdminOverviewActividadItem[]
   meta: {
     metricasNoDisponibles: string[]
+    /** Cuándo calculó la API las cifras (las guarda 5 min). */
+    generadoEn?: string
   }
 }
 
@@ -435,8 +441,9 @@ class DashboardService {
     return res.data
   }
 
-  async getAdminOverview(): Promise<AdminOverview> {
-    const res = await apiClient.get<AdminOverview>('/dashboard/admin/overview')
+  /** `refrescar`: se salta la caché de 5 min de la API (botón «Actualizar»). */
+  async getAdminOverview(refrescar = false): Promise<AdminOverview> {
+    const res = await apiClient.get<AdminOverview>(`/dashboard/admin/overview${refrescar ? '?refrescar=1' : ''}`)
     return res.data
   }
 
