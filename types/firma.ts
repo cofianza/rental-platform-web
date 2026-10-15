@@ -66,6 +66,8 @@ export interface IConsentimientoFirma {
 export interface IVerificacionIdentidadPublica {
   nombre: string
   inmueble: string
+  /** Solo el tipo (cc, ce, ppt, pep, pasaporte) para nombrar el documento de la foto. Ausente en APIs viejas. */
+  tipo_documento?: string | null
   completada: boolean
   consentimiento: IConsentimientoFirma
 }

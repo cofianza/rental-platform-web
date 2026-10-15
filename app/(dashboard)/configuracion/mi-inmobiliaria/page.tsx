@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   IconLoader,
   IconCheck,
@@ -460,25 +461,19 @@ function DocumentoCard({
     }
   }
 
-  const handleDelete = () => {
-    toast(`¿Eliminar el documento ${config.titulo}?`, {
-      action: {
-        label: 'Eliminar',
-        onClick: async () => {
-          setRemoving(true)
-          try {
-            await documentosLegalesService.remove(config.tipo)
-            toast.success(`${config.titulo} eliminado`)
-            onChange()
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al eliminar')
-          } finally {
-            setRemoving(false)
-          }
-        },
-      },
-      cancel: { label: 'Cancelar', onClick: () => {} },
-    })
+  const [confirmarBorrar, setConfirmarBorrar] = useState(false)
+  const handleDelete = () => setConfirmarBorrar(true)
+  const borrar = async () => {
+    setRemoving(true)
+    try {
+      await documentosLegalesService.remove(config.tipo)
+      toast.success(`${config.titulo} eliminado`)
+      onChange()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el documento')
+    } finally {
+      setRemoving(false)
+    }
   }
 
   const Icon = config.icon
@@ -593,6 +588,15 @@ function DocumentoCard({
           className="hidden"
         />
       </div>
+      <ConfirmDialog
+        isOpen={confirmarBorrar}
+        onClose={() => setConfirmarBorrar(false)}
+        onConfirm={borrar}
+        title={`¿Eliminar el documento ${config.titulo}?`}
+        message="Podrá cargarlo de nuevo cuando quiera."
+        confirmLabel="Eliminar documento"
+        variant="danger"
+      />
     </div>
   )
 }

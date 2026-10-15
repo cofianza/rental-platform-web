@@ -59,7 +59,7 @@ import {
   IconUserX,
   IconBuilding2,
   IconUser, IconArrowLeft, IconArrowRight, IconRefresh } from '@/components/icons'
-import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
+import { CapturaBiometrica, nombreDocumento } from '@/components/public/CapturaBiometrica'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { Modal } from '@/components/ui/Modal'
 import { buttonClasses } from '@/components/ui/Button'
@@ -201,6 +201,9 @@ export default function AutorizarPage() {
   const [documento, setDocumento] = useState('')
   const [verificandoDoc, setVerificandoDoc] = useState(false)
   const [documentoError, setDocumentoError] = useState('')
+  // BLQ §1: lo que dijo el último cotejo; antes, lo que trajo el GET (API vieja: null).
+  const [intentosRestantes, setIntentosRestantes] = useState<number | null>(null)
+  const intentos = intentosRestantes ?? data?.intentos_restantes ?? null
   // A3: un dedazo en el número detiene el enlace (la API no da otro intento),
   // así que antes de enviarlo se le muestra lo que escribió para que lo revise.
   const [repasoDoc, setRepasoDoc] = useState(false)
@@ -231,6 +234,9 @@ export default function AutorizarPage() {
   // M9: qué le falta al coarrendatario para poder guardarlo. Antes, con datos
   // a medias, se descartaban en silencio y el prospecto creía haberlos dejado.
   const [coaFaltan, setCoaFaltan] = useState<string[]>([])
+  // UX #4: escribió su propio correo o WhatsApp como el del coarrendatario (lo dice la API).
+  const [coaContactoError, setCoaContactoError] = useState<{ campo: 'email' | 'telefono'; mensaje: string } | null>(null)
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false)
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
   // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
@@ -395,7 +401,7 @@ export default function AutorizarPage() {
       }
     }
     setCoaFaltan([])
-    irAPaso(3)
+    setCoaContactoError(null)
     const ingresoNum = Number(ingreso.replace(/\D/g, ''))
     const perfil: IPerfilProspectoInput = {
       ...(situacion ? { situacion_laboral: situacion } : {}),
@@ -414,17 +420,33 @@ export default function AutorizarPage() {
           }
         : {}),
     }
+    // Sin coarrendatario se avanza sin esperar. Con él se espera la respuesta:
+    // si escribió su propio correo o WhatsApp, se queda aquí con el error junto
+    // al campo. Un fallo de red avanza igual (nunca bloquea la firma).
+    const conCoa = !!perfil.coarrendatario
+    if (!conCoa) irAPaso(3)
+    else setGuardandoPerfil(true)
     // UN reintento: un corte de datos móviles no debería perder en silencio lo
     // que el prospecto acaba de contar. Sigue sin bloquear la firma.
+    let r: Awaited<ReturnType<typeof autorizacionPublicService.guardarPerfil>> | null = null
     try {
-      await autorizacionPublicService.guardarPerfil(token, perfil)
+      r = await autorizacionPublicService.guardarPerfil(token, perfil)
     } catch {
       try {
-        await autorizacionPublicService.guardarPerfil(token, perfil)
+        r = await autorizacionPublicService.guardarPerfil(token, perfil)
       } catch {
         // Silencioso y deliberado: ver el comentario de arriba.
       }
     }
+    if (!conCoa) return
+    setGuardandoPerfil(false)
+    const errorCoa = r?.coarrendatario_error
+    if (errorCoa) {
+      setCoaContactoError(errorCoa)
+      requestAnimationFrame(() => document.getElementById(errorCoa.campo === 'email' ? 'coa-email' : 'coa-telefono')?.focus())
+      return
+    }
+    irAPaso(3)
   }
 
   // §8.1: "Se muestran el nombre y el documento registrados para que el
@@ -447,6 +469,7 @@ export default function AutorizarPage() {
 
   // BLQ §1: le quedan intentos en este enlace. Vuelve al campo sin revelar el número registrado.
   function volverAlDocumento(restantes: number) {
+    setIntentosRestantes(restantes)
     setIdentidadOk(false)
     setRepasoDoc(false)
     setPaso(1)
@@ -946,14 +969,14 @@ export default function AutorizarPage() {
               ) : repasoDoc ? (
                 <div className="mt-4 space-y-3" role="group" aria-labelledby="repaso-doc-titulo">
                   <p id="repaso-doc-titulo" className="text-sm text-gray-700">
-                    Escribió este número de {tipoDocumentoLabel(data.solicitante.tipo_documento)}:
+                    Escribió este número de {nombreDocumento(data.solicitante.tipo_documento)}:
                   </p>
                   <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-center font-mono text-2xl font-bold tracking-wide text-gray-900">
                     {formatearDocumento(documento, data.solicitante.tipo_documento)}
                   </p>
                   <p className="text-sm font-bold text-gray-900">¿Es correcto?</p>
                   <p className="text-xs leading-relaxed text-gray-500">
-                    Revíselo bien: tiene un número limitado de intentos. Si se agotan, {quien} revisará sus datos
+                    Revíselo bien: {intentos != null ? textoIntentos(intentos).toLowerCase() : 'tiene un número limitado de intentos'}. Si se agotan, {quien} revisará sus datos
                     y le enviará un enlace nuevo.
                   </p>
                   <button
@@ -977,7 +1000,7 @@ export default function AutorizarPage() {
               ) : (
                 <form onSubmit={handleRepasarDocumento} className="mt-4 space-y-2" noValidate>
                   <label htmlFor="numero-documento" className="block text-sm font-bold text-gray-900">
-                    Escriba su número de {tipoDocumentoLabel(data.solicitante.tipo_documento)}
+                    Escriba su número de {nombreDocumento(data.solicitante.tipo_documento)}
                   </label>
                   <input
                     id="numero-documento"
@@ -998,7 +1021,7 @@ export default function AutorizarPage() {
                   />
                   <p id="numero-documento-ayuda" className="text-xs leading-relaxed text-gray-500">
                     Lo comparamos con el que está registrado en su estudio; por su seguridad no se lo
-                    mostramos.
+                    mostramos.{intentos != null && !documentoError ? ` ${textoIntentos(intentos)}.` : ''}
                   </p>
                   {documentoError && (
                     <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -1348,26 +1371,29 @@ export default function AutorizarPage() {
                     id="coa-email"
                     type="email"
                     autoComplete="off"
-                    aria-invalid={coaEmailError}
-                    aria-describedby={coaEmailError ? 'coa-email-error' : undefined}
+                    aria-invalid={coaEmailError || coaContactoError?.campo === 'email'}
+                    aria-describedby={coaEmailError || coaContactoError?.campo === 'email' ? 'coa-email-error' : undefined}
                     value={coaEmail}
                     maxLength={120}
                     onChange={(e) => {
                       setCoaEmail(e.target.value)
                       if (coaEmailError) setCoaEmailError(false)
+                      if (coaContactoError?.campo === 'email') setCoaContactoError(null)
                       if (coaFaltan.length) setCoaFaltan([])
                     }}
                     placeholder="nombre@correo.com"
                     className={cn(
                       'w-full rounded-lg border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500',
-                      coaEmailError ? 'border-red-300' : 'border-gray-200',
+                      coaEmailError || coaContactoError?.campo === 'email' ? 'border-red-300' : 'border-gray-200',
                     )}
                   />
-                  {coaEmailError && (
+                  {coaEmailError ? (
                     <p id="coa-email-error" role="alert" className="text-xs text-red-600">
                       Revise este correo: parece incompleto. También puede borrarlo y dejarnos solo su
                       WhatsApp.
                     </p>
+                  ) : coaContactoError?.campo === 'email' && (
+                    <p id="coa-email-error" role="alert" className="text-xs text-red-600">{coaContactoError.mensaje}</p>
                   )}
                   <label htmlFor="coa-telefono" className="block text-xs font-medium text-gray-700">WhatsApp de su coarrendatario</label>
                   <input
@@ -1377,13 +1403,22 @@ export default function AutorizarPage() {
                     autoComplete="off"
                     value={coaTelefono}
                     maxLength={20}
+                    aria-invalid={coaContactoError?.campo === 'telefono'}
+                    aria-describedby={coaContactoError?.campo === 'telefono' ? 'coa-telefono-error' : undefined}
                     onChange={(e) => {
                         setCoaTelefono(e.target.value)
+                        if (coaContactoError?.campo === 'telefono') setCoaContactoError(null)
                         if (coaFaltan.length) setCoaFaltan([])
                       }}
                     placeholder="300 123 4567"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                    className={cn(
+                      'w-full rounded-lg border bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+                      coaContactoError?.campo === 'telefono' ? 'border-red-300' : 'border-gray-200',
+                    )}
                   />
+                  {coaContactoError?.campo === 'telefono' && (
+                    <p id="coa-telefono-error" role="alert" className="text-xs text-red-600">{coaContactoError.mensaje}</p>
+                  )}
                   {coaFaltan.length > 0 && (
                     <div role="alert" className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                       <p className="text-sm text-amber-900">
@@ -1408,9 +1443,11 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => guardarPerfilYSeguir()}
+              disabled={guardandoPerfil}
               className={buttonClasses('primary', 'lg', 'w-full')}
             >
-              Continuar <IconArrowRight size={16} />
+              {guardandoPerfil ? <IconLoader size={18} className="animate-spin" /> : null}
+              Continuar {!guardandoPerfil && <IconArrowRight size={16} />}
             </button>
             {/* M13: salida explícita para quien no quiere contestar nada. No
                 guarda lo que haya escrito en este paso, y B5: si escribió algo, lo dice. */}
@@ -1522,7 +1559,7 @@ export default function AutorizarPage() {
           <CapturaBiometrica
             token={token}
             estadoPrevio={data?.biometria?.estado ?? null}
-            documentoNombre={tipoDocumentoLabel(data?.solicitante.tipo_documento)}
+            documentoNombre={nombreDocumento(data?.solicitante.tipo_documento)}
             onContinuar={irAFirma}
             onVolver={volverPaso}
             onResultado={(estado) =>
@@ -1722,16 +1759,6 @@ function Toggle({
 }
 
 // "Escribe tu número de …" del paso 1 (enum tipo_documento de la API).
-const TIPO_DOCUMENTO_TEXTO: Record<string, string> = {
-  cc: 'cédula de ciudadanía',
-  ce: 'cédula de extranjería',
-  ti: 'tarjeta de identidad',
-  pasaporte: 'pasaporte',
-  ppt: 'PPT',
-  pep: 'PEP',
-  nit: 'NIT',
-}
-
 // B1: el título dice lo mismo que el cuerpo de la pantalla de «ya firmaste».
 function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, esperaAgotada: boolean): string {
   if (!pagoRequerido || pago?.estado === 'completado' || pago?.estado === 'sin_enlace') return '¡Autorización firmada!'
@@ -1744,6 +1771,10 @@ function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, espe
 // Siempre va al inicio de la frase: así el nombre no choca con «a»/«al».
 function quienTramita(solicitadoPor: string | null): string {
   return solicitadoPor?.trim() || 'Quien tramita su arriendo'
+}
+
+function textoIntentos(n: number): string {
+  return n === 1 ? 'Tiene 1 intento' : `Tiene ${n} intentos`
 }
 
 function mensajeIntentosRestantes(n: number): string {
@@ -1759,10 +1790,6 @@ function enlaceNoActivo(quien: string): string {
 // «su nombre, su apellido y su correo o su WhatsApp»
 function unirConY(partes: string[]): string {
   return partes.length < 2 ? (partes[0] ?? '') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
-}
-
-function tipoDocumentoLabel(tipo: string | null | undefined): string {
-  return TIPO_DOCUMENTO_TEXTO[tipo ?? ''] ?? 'documento'
 }
 
 // Pantalla de repaso (A3): el número como se lee en el documento físico.

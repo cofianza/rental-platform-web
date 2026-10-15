@@ -61,7 +61,15 @@ interface CoarrendatarioInviteFormProps {
   condicion?: { vence_en?: string; vencida?: boolean } | null
 }
 
-type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email'
+type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
+
+// Errores de la API que van junto a un campo (UX #4): el correo, el WhatsApp o
+// el documento del titular. El mensaje no trae el dato del titular.
+const CAMPO_DEL_ERROR: Record<string, Campo> = {
+  COARRENDATARIO_MISMO_EMAIL: 'email',
+  COARRENDATARIO_MISMO_TELEFONO: 'telefono',
+  COARRENDATARIO_MISMO_DOCUMENTO: 'numDoc',
+}
 
 export function CoarrendatarioInviteForm({
   invitar,
@@ -122,7 +130,13 @@ export function CoarrendatarioInviteForm({
       setNombre(''); setApellido(''); setNumDoc(''); setEmail(''); setTelefono('')
       onInvited?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar la invitación.')
+      const campo = CAMPO_DEL_ERROR[(err as { code?: string })?.code ?? '']
+      if (campo && err instanceof Error) {
+        setErrores({ [campo]: err.message })
+        document.getElementById(idDe(campo))?.focus()
+      } else {
+        toast.error(err instanceof Error ? err.message : 'No se pudo enviar la invitación.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -227,7 +241,8 @@ export function CoarrendatarioInviteForm({
           <PhoneInput
             label="WhatsApp (opcional — le llega la invitación también por ahí)"
             value={telefono}
-            onChange={setTelefono}
+            onChange={(v) => { setTelefono(v); limpiar('telefono') }}
+            error={errores.telefono}
           />
 
           <div className="flex flex-wrap gap-2 pt-1">

@@ -6,6 +6,22 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
 import { useEffect, useCallback, useState, useRef } from 'react'
+import {
+  IconAlignCenter,
+  IconAlignJustify,
+  IconAlignLeft,
+  IconAlignRight,
+  IconBold,
+  IconChevronDown,
+  IconItalic,
+  IconList,
+  IconListOrdered,
+  IconMinus,
+  IconPlus,
+  IconRedo,
+  IconUnderline,
+  IconUndo,
+} from '@/components/icons'
 
 // ============================================================
 // Standard variables available for contract templates
@@ -139,13 +155,9 @@ function VariableDropdown({ onInsert }: { onInsert: (variable: string) => void }
         onClick={handleToggle}
         className="flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        <IconPlus size={14} />
         Variable
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <IconChevronDown size={12} />
       </button>
 
       {isOpen && (
@@ -230,21 +242,21 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         isActive={editor.isActive('bold')}
         title="Negrita (Ctrl+B)"
       >
-        <span className="font-bold">B</span>
+        <IconBold size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
         isActive={editor.isActive('italic')}
         title="Cursiva (Ctrl+I)"
       >
-        <span className="italic">I</span>
+        <IconItalic size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         isActive={editor.isActive('underline')}
         title="Subrayado (Ctrl+U)"
       >
-        <span className="underline">U</span>
+        <IconUnderline size={16} />
       </ToolbarButton>
 
       <div className="w-px h-5 bg-gray-300 mx-1" />
@@ -255,22 +267,14 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         isActive={editor.isActive('bulletList')}
         title="Lista con viñetas"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-          <circle cx="3" cy="6" r="1" fill="currentColor" /><circle cx="3" cy="12" r="1" fill="currentColor" /><circle cx="3" cy="18" r="1" fill="currentColor" />
-        </svg>
+        <IconList size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive('orderedList')}
         title="Lista numerada"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="10" y1="6" x2="21" y2="6" /><line x1="10" y1="12" x2="21" y2="12" /><line x1="10" y1="18" x2="21" y2="18" />
-          <text x="1" y="8" fontSize="8" fill="currentColor" stroke="none" fontFamily="sans-serif">1</text>
-          <text x="1" y="14" fontSize="8" fill="currentColor" stroke="none" fontFamily="sans-serif">2</text>
-          <text x="1" y="20" fontSize="8" fill="currentColor" stroke="none" fontFamily="sans-serif">3</text>
-        </svg>
+        <IconListOrdered size={16} />
       </ToolbarButton>
 
       <div className="w-px h-5 bg-gray-300 mx-1" />
@@ -281,36 +285,28 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         isActive={editor.isActive({ textAlign: 'left' })}
         title="Alinear izquierda"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="15" y2="12" /><line x1="3" y1="18" x2="18" y2="18" />
-        </svg>
+        <IconAlignLeft size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
         isActive={editor.isActive({ textAlign: 'center' })}
         title="Centrar"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="6" y1="12" x2="18" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-        </svg>
+        <IconAlignCenter size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
         isActive={editor.isActive({ textAlign: 'right' })}
         title="Alinear derecha"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="9" y1="12" x2="21" y2="12" /><line x1="6" y1="18" x2="21" y2="18" />
-        </svg>
+        <IconAlignRight size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setTextAlign('justify').run()}
         isActive={editor.isActive({ textAlign: 'justify' })}
         title="Justificar"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
+        <IconAlignJustify size={16} />
       </ToolbarButton>
 
       <div className="w-px h-5 bg-gray-300 mx-1" />
@@ -320,9 +316,7 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
         title="Línea horizontal"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="3" y1="12" x2="21" y2="12" />
-        </svg>
+        <IconMinus size={16} />
       </ToolbarButton>
 
       {/* Undo / Redo */}
@@ -331,18 +325,14 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         disabled={!editor.can().undo()}
         title="Deshacer (Ctrl+Z)"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-        </svg>
+        <IconUndo size={16} />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
         title="Rehacer (Ctrl+Shift+Z)"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 7v6h-6" /><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
-        </svg>
+        <IconRedo size={16} />
       </ToolbarButton>
 
       <div className="flex-1" />

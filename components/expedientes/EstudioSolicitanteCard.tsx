@@ -632,8 +632,8 @@ export function EstudioSolicitanteCard({
                 </div>
               )}
               {/* Adenda 3 §6: aprobado con condición. El mensaje de la ruta ya
-                  trae el puntaje mínimo y la fecha; el formulario es la tarjeta
-                  del coarrendatario, debajo. */}
+                  trae la fecha (sin el puntaje: el perfil se lo dice su
+                  inmobiliaria); el formulario es la tarjeta del coarrendatario, debajo. */}
               {estudio.condicion_coarrendatario && !estudio.condicion_coarrendatario.vencida && (
                 <a
                   href="#coarrendatario"

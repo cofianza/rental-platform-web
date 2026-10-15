@@ -22,6 +22,7 @@ import {
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { rutaInterna } from '@/lib/utils'
 import { problemaNit } from '@/lib/nit'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
@@ -200,27 +201,19 @@ export default function DatosContratoPage() {
     }
   }
 
-  const handleLogoDelete = () => {
-    toast('¿Eliminar el logo?', {
-      description: 'Los próximos contratos saldrán sin logo hasta que suba uno nuevo.',
-      duration: 10000,
-      action: {
-        label: 'Eliminar',
-        onClick: async () => {
-          setDeletingLogo(true)
-          try {
-            const updated = await perfilArrendadorService.deleteLogo()
-            setPerfil(updated)
-            toast.success('Logo eliminado')
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al eliminar')
-          } finally {
-            setDeletingLogo(false)
-          }
-        },
-      },
-      cancel: { label: 'Cancelar', onClick: () => {} },
-    })
+  const [confirmarBorrarLogo, setConfirmarBorrarLogo] = useState(false)
+  const handleLogoDelete = () => setConfirmarBorrarLogo(true)
+  const borrarLogo = async () => {
+    setDeletingLogo(true)
+    try {
+      const updated = await perfilArrendadorService.deleteLogo()
+      setPerfil(updated)
+      toast.success('Logo eliminado')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el logo')
+    } finally {
+      setDeletingLogo(false)
+    }
   }
 
   if (loading) {
@@ -589,6 +582,15 @@ export default function DatosContratoPage() {
         </div>
       )}
       </fieldset>
+      <ConfirmDialog
+        isOpen={confirmarBorrarLogo}
+        onClose={() => setConfirmarBorrarLogo(false)}
+        onConfirm={borrarLogo}
+        title="¿Eliminar el logo?"
+        message="Los próximos contratos saldrán sin logo hasta que suba uno nuevo."
+        confirmLabel="Eliminar logo"
+        variant="danger"
+      />
     </div>
   )
 }

@@ -164,6 +164,8 @@ export interface IAutorizacionPublicData {
   solicitado_por?: string | null
   /** A2: si al prospecto le toca pagar el estudio y cuánto. Ausente en APIs viejas. */
   pago?: { requerido: boolean; monto_formateado: string | null } | null
+  /** BLQ §1: intentos que le quedan para escribir su documento. null/ausente = no se sabe. */
+  intentos_restantes?: number | null
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
@@ -253,6 +255,12 @@ export interface IPerfilProspectoInput {
     email?: string
     telefono?: string
   }
+}
+
+export interface IGuardarPerfilResponse {
+  guardado: boolean
+  /** UX #4: escribió su propio correo o WhatsApp; el coarrendatario no se guardó. Ausente en APIs viejas. */
+  coarrendatario_error?: { campo: 'email' | 'telefono'; mensaje: string }
 }
 
 export interface IReportarIdentidadInput {

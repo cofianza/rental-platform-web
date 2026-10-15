@@ -23,23 +23,36 @@ export function RegistrarCanonReajustado({
   aniversario,
   canonActual,
   liquidacionActiva,
+  confirmado,
+  propuesto,
+  onRegistrado,
 }: {
   contratoId: string
   /** AAAA-MM-DD: el aniversario en que se reajusta el canon. */
   aniversario: string
-  /** El canon con que se liquida hoy la tarifa (el último reajuste registrado), el mismo piso que valida la API. */
+  /** El canon con que se liquida la tarifa este mes, el mismo piso que valida la API. */
   canonActual: number | null
   /** TARIFA_LIQUIDACION_ENABLED: si no, la tarifa todavía no se liquida en la plataforma. */
   liquidacionActiva: boolean
+  /** El canon que ya está registrado para este aniversario (la API lo manda al recargar la página). */
+  confirmado: { valor: number; desde: string } | null
+  /** V3: la propuesta con IPC; en migrados no hay. */
+  propuesto: { valor: number; ipc_anual: number } | null
+  onRegistrado: () => void
 }) {
   const [abierto, setAbierto] = useState(false)
   const [canon, setCanon] = useState<number | undefined>(undefined)
   // Es la base de la tarifa mensual: antes de guardar se muestra «de $X a $Y desde {mes}».
   const [revisando, setRevisando] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [registrado, setRegistrado] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Lo recién registrado mientras llega la recarga (y con la API anterior, que no manda `confirmado`).
+  const [registrado, setRegistrado] = useState<{ valor: number; desde: string } | null>(null)
+  const hecho = registrado ?? confirmado
   const mesDesde = mesTexto(periodoDesde(aniversario))
+  const textoPropuesta = propuesto
+    ? `Con la variación del IPC de ${propuesto.ipc_anual.toLocaleString('es-CO')} %, el canon reajustado sería de hasta ${formatCurrency(propuesto.valor)}.`
+    : null
   const menor = canon !== undefined && !!canonActual && canon < canonActual
 
   const cerrar = () => {
@@ -58,7 +71,8 @@ export function RegistrarCanonReajustado({
     try {
       await tarifaCobroService.registrarCanon(contratoId, aniversario, canon)
       toast.success('Canon reajustado registrado.')
-      setRegistrado(canon)
+      setRegistrado({ valor: canon, desde: periodoDesde(aniversario) })
+      onRegistrado()
       setRevisando(false)
       setAbierto(false)
     } catch (err) {
@@ -75,16 +89,17 @@ export function RegistrarCanonReajustado({
         Reajuste anual del canon
       </p>
       <p className="mt-1 text-sm text-gray-600">
-        {registrado
-          ? `Registró ${formatCurrency(registrado)} desde ${mesDesde}. Si necesita corregirlo, regístrelo de nuevo.`
-          : `El ${formatDate(aniversario)} el contrato cumple un año más y el canon se reajusta. Mientras no registre el canon reajustado, la tarifa mensual se ${liquidacionActiva ? 'liquida' : 'liquidará'} sobre el canon actual. Si ya lo registró, no necesita hacerlo de nuevo.`}
+        {hecho
+          ? `Registrado: ${formatCurrency(hecho.valor)} desde ${mesTexto(hecho.desde)}. Si necesita corregirlo, regístrelo de nuevo.`
+          : `El ${formatDate(aniversario)} el contrato cumple un año más y el canon se reajusta. Mientras no registre el canon reajustado, la tarifa mensual se ${liquidacionActiva ? 'liquida' : 'liquidará'} sobre el canon actual.`}
       </p>
+      {!hecho && textoPropuesta && <p className="mt-1 text-sm text-gray-600">{textoPropuesta}</p>}
       <button
         type="button"
         onClick={() => setAbierto(true)}
         className="mt-3 px-3 py-1.5 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800"
       >
-        Registrar canon reajustado
+        {hecho ? 'Corregir canon reajustado' : 'Registrar canon reajustado'}
       </button>
 
       <Modal isOpen={abierto} onClose={cerrar} title="Registrar canon reajustado" size="md" closeOnBackdrop={false}>
@@ -92,7 +107,7 @@ export function RegistrarCanonReajustado({
           <p className="text-sm text-gray-600">
             Canon actual: {canonActual ? formatCurrency(canonActual) : '—'}. El nuevo canon rige desde el aniversario (
             {formatDate(aniversario)}); si cae a mitad de mes, la tarifa lo toma desde el mes siguiente. No puede ser menor
-            que el canon actual.
+            que el canon actual.{textoPropuesta && ` ${textoPropuesta}`}
           </p>
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
           {revisando && canon ? (

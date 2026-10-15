@@ -53,6 +53,9 @@ export function CobroTarifaContrato({
           aniversario={aniversario}
           canonActual={cobro.canon_vigente}
           liquidacionActiva={cobro.liquidacion_activa}
+          confirmado={cobro.canon_confirmado_aniversario ?? null}
+          propuesto={cobro.canon_propuesto ?? null}
+          onRegistrado={recargar}
         />
       )}
       {/* A5: Cofianza registra la fecha efectiva de terminación. */}
