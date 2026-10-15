@@ -199,6 +199,9 @@ export default function ExpedienteDetallePage() {
   // Política §14 caso L: ninguna central respondió; Cofianza puede volver a consultar.
   const estudioSinCentrales =
     titularCondicionado?.sin_centrales && titularCondicionado.estado === 'completado' ? titularCondicionado.id : null
+  // Adenda 3 §6: aprobado con condición de coarrendatario (la API responde 409
+  // a aprobarlo a mano, pedir soportes y reasignar).
+  const condicionCoa = titularCondicionado?.condicion_coarrendatario ?? null
 
   // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
@@ -570,6 +573,7 @@ export default function ExpedienteDetallePage() {
           citaOmitida={expediente.cita_omitida}
           sinInfoBuro={condicionadoSinInfo}
           esProspecto={user?.rol === 'solicitante'}
+          conCondicion={!!condicionCoa}
         />
       </div>
 
@@ -773,6 +777,7 @@ export default function ExpedienteDetallePage() {
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
                         estudioSinCentrales={estudioSinCentrales}
+                        condicion={condicionCoa}
                         canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                         onAprobado={fetchExpediente}
                       />
@@ -1094,6 +1099,7 @@ export default function ExpedienteDetallePage() {
                     userRol={user?.rol}
                     sinInfoBuro={condicionadoSinInfo}
                     estudioSinCentrales={estudioSinCentrales}
+                    condicion={condicionCoa}
                     canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
                     onAprobado={fetchExpediente}
                   />
@@ -1150,7 +1156,7 @@ export default function ExpedienteDetallePage() {
         isOpen={showTransicionModal}
         onClose={() => setShowTransicionModal(false)}
         estadoActual={expediente.estado}
-        transicionesDisponibles={transiciones ?? []}
+        transicionesDisponibles={(transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))}
         onConfirmar={handleEjecutarTransicion}
         isLoading={isExecutingTransicion}
         expedienteId={id}

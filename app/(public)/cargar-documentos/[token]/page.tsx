@@ -178,7 +178,12 @@ export default function CargarDocumentosPage() {
   // Decisión 2: aprobado antes del contrato, el enlace sirve para sumar al coarrendatario (no para soportes).
   const aprobado = ctx.estado === 'aprobado'
   const vigente = ctx.coarrendatario?.vigente ?? ctx.estado === 'condicionado'
-  const soloCoarrendatario = aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado)
+  // Adenda 3 §6: aprobado con condición de coarrendatario (campo explícito: un
+  // error de lectura llega como null y se muestra la revisión de hoy). La API
+  // cierra la carga de soportes y solo falta invitar al coarrendatario.
+  const conCondicion = ctx.estado === 'condicionado' && ctx.condicion_coarrendatario === true
+  const soloCoarrendatario =
+    conCondicion || (aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado))
 
   return (
     <div>
@@ -191,7 +196,8 @@ export default function CargarDocumentosPage() {
             {soloCoarrendatario ? (
               <>
                 Hola {ctx.solicitante}, su estudio de arriendo
-                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} fue aprobado.
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
+                {conCondicion ? ' fue aprobado con la condición de presentar un coarrendatario.' : ' fue aprobado.'}
               </>
             ) : (
               <>

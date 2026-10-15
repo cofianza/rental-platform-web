@@ -171,6 +171,8 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
           <InfoRow label="Documento" value={data.numero_documento_masked} />
           <InfoRow label="Fecha emisión" value={formatDate(data.fecha_emision)} />
           <InfoRow label="Fecha vencimiento" value={formatDate(data.fecha_vencimiento)} />
+          {/* Adenda 3 §6: aprobado con condición de coarrendatario. */}
+          {!sinEfecto && data.condicion && <InfoRow label="Condición" value={data.condicion} />}
         </div>
 
         {/* Footer */}

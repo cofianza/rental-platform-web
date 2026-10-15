@@ -110,3 +110,19 @@ export function tipoFallo(e: { observaciones?: string | null; desenlace_consulta
 export function esRolInterno(rol?: string | null): boolean {
   return rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
 }
+
+/**
+ * Adenda 3 §6 (cuarto desenlace): el texto de la condición para la inmobiliaria,
+ * el propietario y el prospecto. Al coarrendatario nunca se le muestra el número.
+ */
+export function textoCondicionCoarrendatario(c: { puntaje_objetivo: number; vence_en: string; vencida: boolean }): string {
+  const fecha = new Date(c.vence_en).toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Bogota',
+  })
+  return c.vencida
+    ? `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio se cerrará como no aprobado.`
+    : `Aprobado con condición: presente un coarrendatario con puntaje mínimo ${c.puntaje_objetivo} antes del ${fecha}.`
+}
