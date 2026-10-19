@@ -56,7 +56,8 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   UMBRAL_CASCADA_RECHAZO: { nombre: 'Rechazo sin consultar la segunda central (por debajo de)', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_CASCADA_APROBACION: { nombre: 'Aprobación sin consultar la segunda central (desde)', grupo: 'evaluacion', unidad: 'puntos' },
   FACTOR_AJUSTE_INGRESO: { nombre: 'Factor de ajuste del ingreso', grupo: 'evaluacion', unidad: 'num' },
-  ADENDA3_INGRESO: { nombre: 'Nuevo cálculo del ingreso (dos factores)', grupo: 'evaluacion', unidad: 'onoff' },
+  ADENDA3_V2: { nombre: 'Reglas nuevas de coarrendatarios e ingreso', grupo: 'evaluacion', unidad: 'onoff' },
+  ADENDA3_INGRESO: { nombre: 'Nuevo cálculo del ingreso (versión anterior)', grupo: 'evaluacion', unidad: 'onoff' },
   FACTOR_AJUSTE_INGRESO_CANON: { nombre: 'Factor de ajuste del ingreso para el canon', grupo: 'evaluacion', unidad: 'num' },
   FACTOR_AJUSTE_INGRESO_DTI: { nombre: 'Factor de ajuste del ingreso para el endeudamiento', grupo: 'evaluacion', unidad: 'num' },
   CRITERIO_SELECCION_INGRESO: { nombre: 'Estimación de ingreso que se toma entre las centrales', grupo: 'evaluacion', unidad: 'criterio' },
@@ -64,7 +65,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   UMBRAL_DIFERENCIA_INGRESO: { nombre: 'Diferencia entre ingreso declarado y estimado que manda a revisión', grupo: 'evaluacion', unidad: 'pct' },
   UMBRAL_SIMILITUD_BIOMETRICA: { nombre: 'Similitud mínima del reconocimiento facial', grupo: 'evaluacion', unidad: 'pct' },
   // Aprobación con condición de coarrendatario (Adenda 3 §6)
-  CUARTO_DESENLACE: { nombre: 'Aprobar con condición de presentar un coarrendatario', grupo: 'condicion', unidad: 'onoff' },
+  CUARTO_DESENLACE: { nombre: 'Aprobar con condición de coarrendatario (versión anterior)', grupo: 'condicion', unidad: 'onoff' },
   VIGENCIA_CONDICION_COARRENDATARIO_DIAS: { nombre: 'Plazo para presentar el coarrendatario', grupo: 'condicion', unidad: 'dias' },
   OBJETIVO_COA_PUNTAJE_HASTA_5: { nombre: 'Puntaje del coarrendatario si al solicitante le faltan hasta 5 puntos', grupo: 'condicion', unidad: 'puntos' },
   OBJETIVO_COA_PUNTAJE_HASTA_10: { nombre: 'Puntaje del coarrendatario si le faltan de 6 a 10 puntos', grupo: 'condicion', unidad: 'puntos' },
@@ -379,7 +380,14 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
             ) : (
               <span className="text-right text-xl font-bold text-gray-900">{conUnidad(p.valor, p)}</span>
             )}
-            {p.editable === false ? (
+            {p.min === p.max ? (
+              // Rango de un solo valor: el API no deja moverlo (p. ej. un
+              // interruptor que espera la certificación de despliegue).
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <IconLock size={14} />
+                Bloqueado
+              </span>
+            ) : p.editable === false ? (
               <span className="flex items-center gap-1 text-xs text-gray-500" title="Solo la Gerencia General puede cambiarlo">
                 <IconLock size={14} />
                 Solo lectura

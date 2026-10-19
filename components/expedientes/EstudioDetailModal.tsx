@@ -20,8 +20,8 @@ import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroError
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 
-/** La API agrega `nota_interna` solo para administrador, operador y gerencia. */
-type IEstudioConNota = IEstudio & { nota_interna?: string | null }
+/** La API agrega `nota_interna` y `version_politica` solo para administrador, operador y gerencia. */
+type IEstudioConNota = IEstudio & { nota_interna?: string | null; version_politica?: string | null }
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
@@ -356,6 +356,14 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   {(estudio as IEstudioConNota).nota_interna}
                 </p>
               </div>
+            )}
+
+            {/* Versión de la política con que se decidió. La API solo la manda a Cofianza. */}
+            {(estudio as IEstudioConNota).version_politica && (
+              <p className="text-xs text-gray-500">
+                Versión de la política con que se decidió:{' '}
+                <span className="font-mono">{(estudio as IEstudioConNota).version_politica}</span>
+              </p>
             )}
 
             {/* Motivo de rechazo */}
