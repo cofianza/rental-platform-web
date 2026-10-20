@@ -59,6 +59,8 @@ interface CoarrendatarioInviteFormProps {
    *  ni lo revisa un analista: si no acepta antes de `vence_en`, el estudio se
    *  cierra sin aprobarse. `vence_en` falta donde la API no la manda (enlace). */
   condicion?: { vence_en?: string; vencida?: boolean } | null
+  /** Adenda 3 V2 §6.1: el titular todavía no se evalúa (coarrendatario desde el inicio). */
+  antesDeLaDecision?: boolean
 }
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
@@ -78,6 +80,7 @@ export function CoarrendatarioInviteForm({
   onInvited,
   aprobado = false,
   condicion = null,
+  antesDeLaDecision = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
   const conCondicion = !esGestor && !!condicion
@@ -171,6 +174,12 @@ export function CoarrendatarioInviteForm({
                 <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
                 vinculación baja del 20 % al 10 % del canon; la evaluación del coarrendatario no tiene costo adicional.{' '}
                 No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : esGestor && antesDeLaDecision ? (
+              <>
+                Puede agregar a la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>. No se
+                consulta a nadie hasta que los dos autoricen, y primero se evalúa al titular; el estudio se decide con
+                los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : esGestor ? (
               <>
@@ -267,7 +276,7 @@ export function CoarrendatarioInviteForm({
   )
 }
 
-function FormField({
+export function FormField({
   id, label, value, onChange, error, type = 'text', inputMode,
 }: {
   /** Un id por campo: el padre enfoca el primero con error. */

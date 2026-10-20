@@ -257,6 +257,8 @@ export function Step1InmuebleSelection({
         inmueble,
         hasActiveExpediente: result.hasActiveExpediente,
         excedeTope: excedeElTope(inmueble),
+        // Decisión 4: el canal del propietario directo no admite coarrendatario.
+        coarrendatarioDesdeInicio: result.coarrendatarioDesdeInicio && !!inmueble.inmobiliaria_id,
       })
     } catch (err) {
       console.warn('Error al verificar estudio activo:', err)
@@ -265,6 +267,7 @@ export function Step1InmuebleSelection({
         inmueble,
         hasActiveExpediente: false,
         excedeTope: excedeElTope(inmueble),
+        coarrendatarioDesdeInicio: false,
       })
     } finally {
       setIsCheckingExpediente(false)

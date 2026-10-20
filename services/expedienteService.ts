@@ -402,6 +402,8 @@ class ExpedienteService {
   async checkActiveExpediente(inmuebleId: string): Promise<{
     hasActiveExpediente: boolean
     expediente: { id: string; numero: string; estado: string } | null
+    /** Adenda 3 V2 §6.1: el asistente ofrece el coarrendatario desde el inicio. */
+    coarrendatarioDesdeInicio: boolean
   }> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.get(
@@ -411,6 +413,7 @@ class ExpedienteService {
     return {
       hasActiveExpediente: response.data?.hasActiveExpediente || false,
       expediente: response.data?.expediente || null,
+      coarrendatarioDesdeInicio: response.data?.coarrendatario_desde_inicio === true,
     }
   }
 

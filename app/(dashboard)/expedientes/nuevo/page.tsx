@@ -18,6 +18,7 @@ import {
 } from '@/components/expedientes/wizard'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useExpedienteWizard } from '@/hooks/useExpedienteWizard'
+import { CoarrendatarioInicio } from '@/components/expedientes/wizard/CoarrendatarioInicio'
 import { inmuebleService } from '@/services/inmuebleService'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
@@ -65,6 +66,10 @@ function NuevoExpedienteContent() {
     updateStep3,
     canProceed,
     submitExpediente,
+    coarrendatario,
+    setCoarrendatario,
+    coaErrors,
+    setCoaErrors,
   } = useExpedienteWizard()
 
   // Salir del asistente borra todo lo diligenciado: pedimos confirmación en vez
@@ -96,14 +101,16 @@ function NuevoExpedienteContent() {
           estudioService.getTopeCanon().then((t) => t.tope_cop).catch(() => null),
         ])
         let hasActiveExpediente = false
+        let coarrendatarioDesdeInicio = false
         try {
           const check = await expedienteService.checkActiveExpediente(inmueble.id)
           hasActiveExpediente = !!check.hasActiveExpediente
+          coarrendatarioDesdeInicio = check.coarrendatarioDesdeInicio && !!inmueble.inmobiliaria_id
         } catch {
           // Falla no bloqueante: el step 1 ya valida.
         }
         const excedeTope = topeCanon !== null && Number(inmueble.valor_arriendo ?? 0) > topeCanon
-        updateStep1({ inmueble, hasActiveExpediente, excedeTope })
+        updateStep1({ inmueble, hasActiveExpediente, excedeTope, coarrendatarioDesdeInicio })
 
         // Si venimos de un INTERESADO de la vitrina, pre-llenar el solicitante
         // (nuevo) con sus datos de contacto: /expedientes/nuevo?inmueble_id=..&
@@ -198,13 +205,23 @@ function NuevoExpedienteContent() {
         )
       case 2:
         return (
-          <Step2Solicitante
-            data={data.step2}
-            errors={errors.step2}
-            onUpdate={updateStep2}
-            onUpdateField={updateStep2Field}
-            onEditingDirtyChange={setStep2EditDirty}
-          />
+          <>
+            <Step2Solicitante
+              data={data.step2}
+              errors={errors.step2}
+              onUpdate={updateStep2}
+              onUpdateField={updateStep2Field}
+              onEditingDirtyChange={setStep2EditDirty}
+            />
+            {data.step1.coarrendatarioDesdeInicio && (
+              <CoarrendatarioInicio
+                value={coarrendatario}
+                errors={coaErrors}
+                onChange={setCoarrendatario}
+                onClearError={(c) => setCoaErrors((prev) => ({ ...prev, [c]: '' }))}
+              />
+            )}
+          </>
         )
       case 3:
         return (
@@ -218,6 +235,7 @@ function NuevoExpedienteContent() {
         return (
           <Step4Confirmation
             data={data}
+            coarrendatario={data.step1.coarrendatarioDesdeInicio ? coarrendatario : null}
             isSubmitting={isSubmitting}
             submitError={submitError}
             existingExpediente={existingExpediente}
