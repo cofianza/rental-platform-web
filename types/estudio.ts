@@ -45,6 +45,8 @@ export interface IEstudio {
    * analista: aprobar, pedir soportes y reasignar responden 409.
    */
   condicion_coarrendatario?: ICondicionCoarrendatario | null
+  /** Adenda 3 V2 §7: coincidencia en listas (solo la reciben los roles de Cofianza). */
+  listas?: { estado: 'por_confirmar' | 'confirmada' | 'descartada'; motivo?: string } | null
   /**
    * Background check de Auco (listas restrictivas, antecedentes, afiliacion).
    * Solo gestores: la API lo manda null al prospecto. null = no se consulto.
