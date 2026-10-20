@@ -11,17 +11,18 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { IconFileText, IconLoader, IconCheck } from '@/components/icons'
-import { estudioService } from '@/services/estudioService'
+import { estudioService, type IListasEstudio } from '@/services/estudioService'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { ScoreGauge } from '@/components/estudios/ScoreGauge'
 import { TransUnionReportDetail } from '@/components/estudios/TransUnionReportDetail'
 import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReportDetail'
 import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
+import { ListasPorConfirmar } from '@/components/estudios/ListasPorConfirmar'
 import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
 
-/** La API agrega `nota_interna` y `version_politica` solo para administrador, operador y gerencia. */
-type IEstudioConNota = IEstudio & { nota_interna?: string | null; version_politica?: string | null }
+/** La API agrega `nota_interna`, `version_politica` y `listas` solo para administrador, operador y gerencia. */
+type IEstudioConNota = IEstudio & { nota_interna?: string | null; version_politica?: string | null; listas?: IListasEstudio | null }
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
@@ -346,6 +347,17 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   {textoVisible(estudio.observaciones, { externo })}
                 </p>
               </div>
+            )}
+
+            {/* Adenda 3 V2 §7: coincidencia en listas por confirmar (solo Cofianza). */}
+            {(estudio as IEstudioConNota).listas && (
+              <ListasPorConfirmar
+                estudioId={estudio.id}
+                listas={(estudio as IEstudioConNota).listas!}
+                onResuelto={() => {
+                  void estudioService.getEstudioById(estudio.id).then(setEstudio).catch(() => undefined)
+                }}
+              />
             )}
 
             {/* Nota interna: cifras, umbrales y centrales. La API solo la manda a Cofianza. */}

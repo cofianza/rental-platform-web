@@ -166,6 +166,18 @@ export const estudioService = {
     return res.data
   },
 
+  /** Adenda 3 V2 §7: Cofianza confirma una coincidencia en listas (rechazo sin apelación). */
+  async confirmarListas(estudioId: string, motivo: string): Promise<{ expediente_estado: 'rechazado' }> {
+    const res = await apiClient.post<{ expediente_estado: 'rechazado' }>(`/estudios/${estudioId}/listas/confirmar`, { motivo })
+    return res.data
+  },
+
+  /** Adenda 3 V2 §7: Cofianza descarta la coincidencia (homónimo); el caso sigue en revisión. */
+  async descartarListas(estudioId: string, motivo: string): Promise<{ listas: 'descartada' }> {
+    const res = await apiClient.post<{ listas: 'descartada' }>(`/estudios/${estudioId}/listas/descartar`, { motivo })
+    return res.data
+  },
+
   /**
    * Registra el resultado de un estudio (irreversible)
    */
@@ -382,4 +394,12 @@ export const estudioPublicService = {
     )
     return res.data
   },
+}
+
+/** Adenda 3 V2 §7: estudios.cascada.listas (solo la reciben los roles de Cofianza). */
+export interface IListasEstudio {
+  estado: 'por_confirmar' | 'confirmada' | 'descartada'
+  por?: string
+  en?: string
+  motivo?: string
 }

@@ -263,6 +263,10 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
       if (expedienteEstado === 'rechazado') {
         return 'Un analista de Cofianza revisó el caso y no lo aprobó. El estudio no avanza al contrato.'
       }
+      // Adenda 3 V2 §7: lo primero que tiene que hacer Cofianza.
+      if (esCofianza && estudio.listas?.estado === 'por_confirmar') {
+        return 'Coincidencia en listas restrictivas por confirmar. Ábrala en «Ver detalle» para confirmarla o descartarla antes de decidir.'
+      }
       // Adenda 3 §6: aprobado con condición. No está en revisión del analista.
       if (estudio.condicion_coarrendatario) {
         const texto = textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
