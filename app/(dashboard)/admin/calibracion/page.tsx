@@ -50,7 +50,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   // Evaluación del prospecto
   UMBRAL_APROBACION_AUTOMATICA: { nombre: 'Puntaje para aprobar automáticamente', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_ZONA_GRIS: { nombre: 'Puntaje mínimo para no rechazar (inicio de la zona gris)', grupo: 'evaluacion', unidad: 'puntos' },
-  UMBRAL_COARRENDATARIO: { nombre: 'Puntaje mínimo del coarrendatario', grupo: 'evaluacion', unidad: 'puntos' },
+  UMBRAL_COARRENDATARIO: { nombre: 'Puntaje mínimo del coarrendatario (reglas anteriores)', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_SCORE_RECHAZO: { nombre: 'Score de la central por debajo del cual se rechaza', grupo: 'evaluacion', unidad: 'num' },
   UMBRAL_SCORE_REVISION: { nombre: 'Score de la central hasta el que va a revisión manual', grupo: 'evaluacion', unidad: 'num' },
   UMBRAL_CASCADA_RECHAZO: { nombre: 'Rechazo sin consultar la segunda central (por debajo de)', grupo: 'evaluacion', unidad: 'puntos' },
@@ -67,12 +67,12 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   // Aprobación con condición de coarrendatario (Adenda 3 §6)
   CUARTO_DESENLACE: { nombre: 'Aprobar con condición de coarrendatario (versión anterior)', grupo: 'condicion', unidad: 'onoff' },
   VIGENCIA_CONDICION_COARRENDATARIO_DIAS: { nombre: 'Plazo para presentar el coarrendatario', grupo: 'condicion', unidad: 'dias' },
-  OBJETIVO_COA_PUNTAJE_HASTA_5: { nombre: 'Puntaje del coarrendatario si al solicitante le faltan hasta 5 puntos', grupo: 'condicion', unidad: 'puntos' },
-  OBJETIVO_COA_PUNTAJE_HASTA_10: { nombre: 'Puntaje del coarrendatario si le faltan de 6 a 10 puntos', grupo: 'condicion', unidad: 'puntos' },
-  OBJETIVO_COA_PUNTAJE_MAS_10: { nombre: 'Puntaje del coarrendatario si le faltan más de 10 puntos', grupo: 'condicion', unidad: 'puntos' },
-  OBJETIVO_COA_INGRESO_HASTA_5: { nombre: 'Puntaje del coarrendatario si endeudamiento o canon se pasan hasta 5 puntos %', grupo: 'condicion', unidad: 'puntos' },
-  OBJETIVO_COA_INGRESO_HASTA_10: { nombre: 'Puntaje del coarrendatario si se pasan de 5 a 10 puntos %', grupo: 'condicion', unidad: 'puntos' },
-  OBJETIVO_COA_INGRESO_MAS_10: { nombre: 'Puntaje del coarrendatario si se pasan más de 10 puntos %', grupo: 'condicion', unidad: 'puntos' },
+  PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO: { nombre: 'Puntaje mínimo del solicitante para ofrecerle un coarrendatario', grupo: 'condicion', unidad: 'puntos' },
+  PUNTAJE_MINIMO_COARRENDATARIO: { nombre: 'Puntaje mínimo para que un coarrendatario cuente', grupo: 'condicion', unidad: 'puntos' },
+  BONO_COARRENDATARIO_70_79: { nombre: 'Puntos que suma un coarrendatario de 70 a 79', grupo: 'condicion', unidad: 'puntos' },
+  BONO_COARRENDATARIO_80_89: { nombre: 'Puntos que suma un coarrendatario de 80 a 89', grupo: 'condicion', unidad: 'puntos' },
+  BONO_COARRENDATARIO_90_100: { nombre: 'Puntos que suma un coarrendatario de 90 a 100', grupo: 'condicion', unidad: 'puntos' },
+  INGRESO_COARRENDATARIO_COMPUTABLE: { nombre: 'Parte del ingreso del coarrendatario que se suma', grupo: 'condicion', unidad: 'pct' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
@@ -117,7 +117,7 @@ const GRUPOS: { id: Grupo; titulo: string; ayuda: string }[] = [
   {
     id: 'condicion',
     titulo: 'Aprobación con condición de coarrendatario',
-    ayuda: 'Cuándo el motor aprueba con la condición de presentar un coarrendatario, con qué puntaje mínimo y en qué plazo. Nunca menos de 80.',
+    ayuda: 'Cuándo el motor dice «Está cerca» y pide un coarrendatario, en qué plazo, y cuánto suma el coarrendatario en puntos y en ingreso. Rigen con las reglas nuevas de coarrendatarios e ingreso encendidas.',
   },
   { id: 'canon', titulo: 'Topes de canon', ayuda: 'Hasta qué canon se afianza y cuánto puede cambiar al hacer el contrato.' },
   { id: 'precios', titulo: 'Precios y paquetes', ayuda: 'Lo que se cobra por el estudio y las reglas de los paquetes de cupos.' },

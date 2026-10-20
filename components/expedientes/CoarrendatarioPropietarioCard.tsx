@@ -361,7 +361,12 @@ function ResultadoEstudioBlock({
     pendiente: { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'Pendiente' },
   }
   const resultado = estudio.resultado || 'pendiente'
-  const c = cfg[resultado] ?? cfg.pendiente
+  // Adenda 3 V2 §7: un coarrendatario que no cuenta «no califica»; nunca
+  // «rechazado» ni «no aprobable». No tumba el estudio: sigue con el titular.
+  const noCalifica = resultado === 'rechazado' && /no califica como coarrendatario/i.test(estudio.observaciones ?? '')
+  const c = noCalifica
+    ? { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'No califica' }
+    : (cfg[resultado] ?? cfg.pendiente)
 
   return (
     <div className={`mt-3 border rounded-md p-3 ${c.color}`}>
@@ -377,7 +382,9 @@ function ResultadoEstudioBlock({
           {/* P2: solo cuenta con la evaluación terminada y no rechazada. */}
           {resultado === 'rechazado' && (
             <p className="text-xs mt-1 font-medium">
-              Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.
+              {noCalifica
+                ? 'No aporta puntos ni ingreso, y el estudio sigue con el titular. No entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
+                : 'Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'}
             </p>
           )}
           {textoVisible(estudio.observaciones, { externo }) && (

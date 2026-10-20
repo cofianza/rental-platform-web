@@ -111,17 +111,36 @@ export function esRolInterno(rol?: string | null): boolean {
   return rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
 }
 
+/** «$1.250.000», como formatCurrency (aquí sin dependencias). */
+const pesos = (n: number) =>
+  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n).replace(/\s/g, '')
+
+/** Adenda 3 V2 §6.7: la advertencia que acompaña siempre a la cifra (igual que en la API). */
+export const ADVERTENCIA_INGRESO_ADICIONAL =
+  'La cifra supone que el coarrendatario no tiene deudas reportadas: si tiene cuotas, esas cuotas se suman a lo que se necesita.'
+
 /**
- * Adenda 3 §6 (cuarto desenlace): el texto de la condición para la inmobiliaria,
- * el propietario y el prospecto. Al coarrendatario nunca se le muestra el número.
+ * Adenda 3 V2 §6 (cuarto desenlace, «Está cerca»): el texto de la condición
+ * para la inmobiliaria, el propietario y el prospecto. Sin puntaje objetivo
+ * (§6.8); con el ingreso incumplido, la cifra del §6.7 con su advertencia.
  */
-export function textoCondicionCoarrendatario(c: { puntaje_objetivo: number; vence_en: string; vencida: boolean }): string {
+export function textoCondicionCoarrendatario(c: {
+  vence_en: string
+  vencida: boolean
+  ingreso_adicional_requerido?: number | null
+  reglas_ingreso?: string[]
+}): string {
   const fecha = fechaCondicion(c.vence_en)
-  return c.vencida
-    ? // Con un coarrendatario que aceptó, la API no rechaza: pondera o pasa a revisión manual.
-      `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario en evaluación, el estudio se cerrará como no aprobado.`
-    : // La escala evita confundirlo con el score de las centrales (0 a 950).
-      `Aprobado con condición: presente un coarrendatario con puntaje mínimo ${c.puntaje_objetivo} sobre 100 en nuestra evaluación antes del ${fecha}.`
+  if (c.vencida) {
+    // Solo espera a un coarrendatario cuya consulta sigue en curso.
+    return (c.reglas_ingreso?.length ?? 0) > 0
+      ? `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario que cumpla el ingreso, el estudio se cerrará como no aprobado.`
+      : `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio pasa a revisión de un analista de Cofianza.`
+  }
+  const cifra = c.ingreso_adicional_requerido && c.ingreso_adicional_requerido > 0
+    ? ` Para cumplir con el ingreso, entre los dos necesitan ${pesos(c.ingreso_adicional_requerido)} de ingreso mensual adicional. ${ADVERTENCIA_INGRESO_ADICIONAL}`
+    : ''
+  return `Está cerca: aprobado con condición de presentar un coarrendatario antes del ${fecha}.${cifra}`
 }
 
 /** DD/MM/AAAA en hora de Bogotá: el vencimiento de la condición, igual que en la API. */

@@ -20,8 +20,8 @@ export interface IEstudioVigente {
   expirado?: boolean
   /** BLQ §8: por qué se detuvo el enlace (mismo estado que el detalle). Ausente con una API anterior. */
   estado_bloqueo?: EstadoBloqueo | null
-  /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
-  condicion_coarrendatario?: { puntaje_objetivo: number; vence_en: string } | null
+  /** Adenda 3 V2 §6: aprobado con condición de presentar un coarrendatario («Está cerca»). */
+  condicion_coarrendatario?: { vence_en: string; ingreso_adicional_requerido: number | null } | null
 }
 
 /** Filtro de la vista fusionada por el estado del estudio vigente. */
