@@ -39,6 +39,13 @@ export interface IAutorizacion {
   correcciones_restantes?: number | null
   /** Límite de la inmobiliaria y el propietario; Cofianza no lo tiene. */
   reenvios_restantes?: number | null
+  /**
+   * Adenda 3 V2 §9, solo tras «no soy yo»: 'una_vez' = la inmobiliaria corrige
+   * el contacto y reenvía una vez; 'solo_cofianza' = solo Cofianza reenvía.
+   */
+  reenvio_no_soy_yo?: 'libre' | 'una_vez' | 'solo_cofianza' | null
+  /** Registro permanente de la cédula del titular (solo Cofianza). */
+  historial_cedula?: Array<{ tipo: 'no_soy_yo' | 'listas_restrictivas'; ocurrencia: number; created_at: string; expediente_id: string | null }>
 }
 
 export type EstadoBloqueo = 'bloqueado_documento' | 'identidad_rechazada' | 'pendiente_reenvio'

@@ -399,10 +399,14 @@ export function AutorizacionSection({
     )
   // BLQ §8. undefined = API anterior al bloque 2: queda el banner del §12.
   const bloqueo = autorizacion?.estado_bloqueo
-  const reenvioSoloCofianza = bloqueo === 'identidad_rechazada' && !esCofianza
+  // Adenda 3 V2 §9: la primera vez sobre la cédula, la inmobiliaria corrige el
+  // contacto y reenvía una vez; el documento no (otra cédula es otra persona).
+  const identidadRechazadaExterno = bloqueo === 'identidad_rechazada' && !esCofianza
+  const reenvioUnaVez = identidadRechazadaExterno && autorizacion?.reenvio_no_soy_yo === 'una_vez'
+  const reenvioSoloCofianza = identidadRechazadaExterno && !reenvioUnaVez
   const sinReenvios = !esCofianza && autorizacion?.reenvios_restantes === 0
   const corregible =
-    !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !reenvioSoloCofianza
+    !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !identidadRechazadaExterno
   // Pasado el límite la API no guarda la corrección: solo cierra el estudio.
   const sinCorrecciones = corregible && autorizacion?.correcciones_restantes === 0
   const puedeCorregir = corregible && !sinCorrecciones
@@ -505,6 +509,21 @@ export function AutorizacionSection({
           </div>
         </div>
       )}
+      {/* Adenda 3 V2 §9: el registro permanente de la cédula, en cualquier estudio (solo Cofianza). */}
+      {esCofianza && (autorizacion?.historial_cedula?.length ?? 0) > 0 && (
+        <p className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+          <IconUserX size={14} className="mt-0.5 shrink-0" />
+          <span>
+            Esta cédula tiene registro:{' '}
+            {(['no_soy_yo', 'listas_restrictivas'] as const)
+              .map((t) => [t, autorizacion!.historial_cedula!.filter((h) => h.tipo === t).length] as const)
+              .filter(([, n]) => n > 0)
+              .map(([t, n]) => `${n} ${t === 'no_soy_yo' ? '«no soy yo»' : 'coincidencia en listas restrictivas'}`)
+              .join(' y ')}
+            , el último el {new Date(autorizacion!.historial_cedula![0].created_at).toLocaleDateString('es-CO')}.
+          </span>
+        </p>
+      )}
       {bloqueo === 'identidad_rechazada' && (
         <div role="alert" className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
           <IconUserX size={18} className="text-amber-600 mt-0.5 shrink-0" />
@@ -513,7 +532,11 @@ export function AutorizacionSection({
             <p className="text-xs text-amber-700">
               Quien abrió el enlace dice que no es el titular de estos datos. El enlace se detuvo y no se consultó
               ninguna central de riesgo.
-              {!esCofianza && <> Para continuar, <ContactoCofianzaInline />.</>}
+              {reenvioUnaVez ? (
+                <> Puede corregir el celular o el correo y reenviar el enlace una sola vez. Si el documento está mal, <ContactoCofianzaInline />.</>
+              ) : (
+                !esCofianza && <> Para continuar, <ContactoCofianzaInline />.</>
+              )}
             </p>
             {perfil?.identidad_reporte_detalle && (
               <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>

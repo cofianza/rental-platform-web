@@ -133,6 +133,14 @@ export interface AdminOverview {
   contratosZonaRiesgo: AdminOverviewContratoItem[]
   moraActiva: AdminOverviewMoraItem[]
   actividadReciente: AdminOverviewActividadItem[]
+  /** Adenda 3 V2 §9: contadores de «no soy yo». null o ausente = sin dato. */
+  noSoyYo?: {
+    total30d: number
+    escalados30d: number
+    porAsesor: Array<{ id: string; nombre: string; total: number }>
+    porInmobiliaria: Array<{ id: string; nombre: string; total: number }>
+    cedulasReincidentes: number
+  } | null
   meta: {
     metricasNoDisponibles: string[]
     /** Cuándo calculó la API las cifras (las guarda 5 min). */

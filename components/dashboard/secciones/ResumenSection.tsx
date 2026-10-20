@@ -58,6 +58,7 @@ import {
   IconUsers,
   IconChevronDown,
   IconArrowRight,
+  IconUserX,
 } from '@/components/icons'
 import type { IconProps } from '@/components/icons'
 
@@ -292,7 +293,7 @@ export function ResumenSection() {
 
   if (!data) return null
 
-  const { kpis, config, histSiniestralidad, contratosPorVencer, contratosZonaRiesgo, moraActiva, actividadReciente, meta } = data
+  const { kpis, config, histSiniestralidad, contratosPorVencer, contratosZonaRiesgo, moraActiva, actividadReciente, meta, noSoyYo } = data
   const noData = new Set(meta.metricasNoDisponibles)
 
   const fechaActual = new Date().toLocaleString('es-CO', { month: 'long', year: 'numeric' })
@@ -487,6 +488,36 @@ export function ResumenSection() {
           )}
         </div>
       </Bloque>
+
+      {/* Adenda 3 V2 §9: «no soy yo» por asesor e inmobiliaria (solo Cofianza). Solo si hay algo que mirar. */}
+      {noSoyYo && (noSoyYo.total30d > 0 || noSoyYo.cedulasReincidentes > 0) && (
+        <Bloque titulo="«No soy yo» en los últimos 30 días">
+          <div className="space-y-2 rounded-xl border border-ink-200 bg-white px-3 py-3 text-sm text-ink-800">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <IconUserX size={16} className="shrink-0 text-coral-700" />
+              <span>
+                <strong className="tabular-nums">{noSoyYo.total30d}</strong> en 30 días
+              </span>
+              <span>
+                <strong className="tabular-nums">{noSoyYo.escalados30d}</strong> escalados a la Gerencia
+              </span>
+              <span>
+                <strong className="tabular-nums">{noSoyYo.cedulasReincidentes}</strong> cédulas con más de uno
+              </span>
+            </p>
+            {noSoyYo.porAsesor.length > 0 && (
+              <p className="text-xs text-ink-600">
+                Por asesor: {noSoyYo.porAsesor.map((a) => `${a.nombre} (${a.total})`).join(', ')}
+              </p>
+            )}
+            {noSoyYo.porInmobiliaria.length > 0 && (
+              <p className="text-xs text-ink-600">
+                Por inmobiliaria: {noSoyYo.porInmobiliaria.map((i) => `${i.nombre} (${i.total})`).join(', ')}
+              </p>
+            )}
+          </div>
+        </Bloque>
+      )}
 
       {/* Alertas agrupadas (o una línea compacta si no hay ninguna) */}
       {totalAlertas === 0 ? (
