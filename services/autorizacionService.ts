@@ -59,6 +59,18 @@ export const autorizacionService = {
     return res.data
   },
 
+  /** Adenda 3 V2 §9: tras «no soy yo», la cédula correcta es otra persona (estudio nuevo con el mismo pago). */
+  async otraPersona(
+    expedienteId: string,
+    input: { nombre: string; apellido: string; tipo_documento: string; numero_documento: string; email: string; telefono: string; fuente_verificacion: string },
+  ): Promise<{ expediente_nuevo: { id: string; numero: string } }> {
+    const res = await apiClient.post<{ expediente_nuevo: { id: string; numero: string } }>(
+      `/expedientes/${expedienteId}/autorizacion-riesgo/otra-persona`,
+      input,
+    )
+    return res.data
+  },
+
   /** BLQ §7: solo Cofianza (lleva lo digitado por el prospecto). */
   async getTraza(expedienteId: string): Promise<ITrazaAutorizacion> {
     const res = await apiClient.get<ITrazaAutorizacion>(`/expedientes/${expedienteId}/autorizacion-riesgo/traza`)

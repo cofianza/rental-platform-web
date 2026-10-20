@@ -17,6 +17,7 @@ import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { IAutorizacion, IRevocarInput } from '@/types/autorizacion'
 import { usePermissions } from '@/hooks/usePermissions'
 import { CorregirDocumentoModal } from '@/components/expedientes/CorregirDocumentoModal'
+import { OtraPersonaModal } from '@/components/expedientes/OtraPersonaModal'
 import { TrazaAutorizacion } from '@/components/expedientes/TrazaAutorizacion'
 import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -98,6 +99,7 @@ export function AutorizacionSection({
   // BLQ §4.5 y §8.2: Cofianza no tiene límite de reenvíos y es quien reenvía tras «no soy yo».
   const esCofianza = puedeRegistrarRevocacion
   const [showCorregir, setShowCorregir] = useState(false)
+  const [showOtraPersona, setShowOtraPersona] = useState(false)
   // BLQ §7: la traza (con lo digitado por el prospecto) es solo de Cofianza.
   const veTraza = hasRole(['administrador', 'operador_analista', 'gerencia_consulta'])
   const [showRevocar, setShowRevocar] = useState(false)
@@ -533,11 +535,21 @@ export function AutorizacionSection({
               Quien abrió el enlace dice que no es el titular de estos datos. El enlace se detuvo y no se consultó
               ninguna central de riesgo.
               {reenvioUnaVez ? (
-                <> Puede corregir el celular o el correo y reenviar el enlace una sola vez. Si el documento está mal, <ContactoCofianzaInline />.</>
+                <> Puede corregir el celular o el correo y reenviar el enlace una sola vez. Si la cédula es de otra persona, abra un estudio para ella.</>
               ) : (
                 !esCofianza && <> Para continuar, <ContactoCofianzaInline />.</>
               )}
             </p>
+            {/* Adenda 3 V2 §9: otra cédula es otra persona (estudio nuevo con el mismo pago). */}
+            {!soloLectura && (reenvioUnaVez || (esCofianza && autorizacion?.reenvio_no_soy_yo)) && (
+              <button
+                type="button"
+                onClick={() => setShowOtraPersona(true)}
+                className="mt-1 inline-flex min-h-10 items-center rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-100"
+              >
+                La cédula es de otra persona
+              </button>
+            )}
             {perfil?.identidad_reporte_detalle && (
               <p className="text-xs italic text-amber-700">«{perfil.identidad_reporte_detalle}»</p>
             )}
@@ -962,6 +974,8 @@ export function AutorizacionSection({
         }`}
         confirmLabel="Reenviar enlace"
       />
+
+      {showOtraPersona && <OtraPersonaModal isOpen onClose={() => setShowOtraPersona(false)} expedienteId={expedienteId} />}
 
       {showCorregir && (
         <CorregirDocumentoModal
