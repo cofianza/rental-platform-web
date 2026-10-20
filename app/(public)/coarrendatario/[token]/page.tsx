@@ -19,7 +19,7 @@ import {
 } from '@/services/coarrendatarioService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 
-type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'error'
+type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'error'
 
 export default function CoarrendatarioPublicPage() {
   const params = useParams<{ token: string }>()
@@ -31,6 +31,7 @@ export default function CoarrendatarioPublicPage() {
   // Sin conexión / 5xx / 429: el enlace está bien, lo que falló fue el camino.
   const [reintentable, setReintentable] = useState(false)
   const [confirmandoRechazo, setConfirmandoRechazo] = useState(false)
+  const [confirmandoNoSoyYo, setConfirmandoNoSoyYo] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (errorMsg) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -130,6 +131,21 @@ export default function CoarrendatarioPublicPage() {
     }
   }
 
+  // Adenda 3 V2 §9: «No soy esa persona». Cierra esta invitación sin consultar a nadie.
+  const handleNoSoyYo = async () => {
+    if (!token) return
+    setConfirmandoNoSoyYo(false)
+    setErrorMsg(null)
+    setPhase('reportando')
+    try {
+      await coarrendatarioService.reportarNoSoyEsaPersona(token)
+      setPhase('no_soy_yo')
+    } catch (err) {
+      setErrorMsg(mensajeParaProspecto(err, 'No pudimos registrar su respuesta. Intente de nuevo.'))
+      setPhase('lista')
+    }
+  }
+
   // ── Renders ──────────────────────────────────────────────────────
 
   if (phase === 'cargando') {
@@ -167,6 +183,19 @@ export default function CoarrendatarioPublicPage() {
         <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
         <p className="text-sm text-gray-600 mb-4">
           Le avisamos a {view?.expediente.titular_nombre} que no continuará como coarrendatario.
+        </p>
+        <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+      </div>
+    )
+  }
+
+  if (phase === 'no_soy_yo') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Gracias por avisarnos</h1>
+        <p className="text-sm text-gray-600 mb-4">
+          Cerramos esta invitación. No consultamos ninguna central de riesgo con estos datos y le avisamos a quien tramita
+          el arriendo para que invite a la persona correcta.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
       </div>
@@ -238,6 +267,16 @@ export default function CoarrendatarioPublicPage() {
                 >
                   {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
                 </button>
+                {view.permite_no_soy_yo && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmandoNoSoyYo(true)}
+                    disabled={procesando}
+                    className="mt-2 ml-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    No soy {view.nombre}
+                  </button>
+                )}
               </div>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">
@@ -378,6 +417,15 @@ export default function CoarrendatarioPublicPage() {
           </div>
         </div>
 
+        <ConfirmDialog
+          isOpen={confirmandoNoSoyYo}
+          onClose={() => setConfirmandoNoSoyYo(false)}
+          onConfirm={handleNoSoyYo}
+          title={`¿No es ${view?.nombre ?? 'esa persona'}?`}
+          message="Cerraremos esta invitación sin consultar ninguna central de riesgo, y le avisaremos a quien tramita el arriendo para que invite a la persona correcta."
+          confirmLabel="Sí, no soy esa persona"
+          isLoading={phase === 'reportando'}
+        />
         <ConfirmDialog
           isOpen={confirmandoRechazo}
           onClose={() => setConfirmandoRechazo(false)}

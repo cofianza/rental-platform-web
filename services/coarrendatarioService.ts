@@ -82,6 +82,8 @@ export interface ICoarrendatarioPublicView {
     titular_nombre: string
   }
   expira_en: string
+  /** Adenda 3 V2 §9: ofrecer «No soy esa persona» (solo con las reglas nuevas encendidas). */
+  permite_no_soy_yo?: boolean
   /**
    * Texto integro de la autorizacion de tratamiento de datos que el invitado
    * acepta, con su version. Flujo del modulo de estudios §8.4: debe estar
@@ -166,6 +168,14 @@ export const coarrendatarioService = {
   /** «Mi documento está mal»: avisa a quien puede corregirlo; la invitación sigue abierta. */
   async reportarDocumentoIncorrecto(token: string): Promise<{ ok: true }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/documento-incorrecto`, {})) as unknown as {
+      data: { ok: true }
+    }
+    return res.data
+  },
+
+  /** Adenda 3 V2 §9: «No soy esa persona». Cierra esta invitación; el estudio del titular sigue. */
+  async reportarNoSoyEsaPersona(token: string): Promise<{ ok: true }> {
+    const res = (await apiClient.post(`/public/coarrendatario/${token}/no-soy-yo`, {})) as unknown as {
       data: { ok: true }
     }
     return res.data
