@@ -38,8 +38,8 @@ export interface IEstudio {
   /** Expiracion del §12. Igual que `ruta`: detalle + listado por expediente. */
   expiracion?: IExpiracionEstudio
   /**
-   * Adenda 3 §6 (cuarto desenlace): aprobado con condición de presentar un
-   * coarrendatario con `puntaje_objetivo` antes de `vence_en`. Solo en el
+   * Adenda 3 V2 §6 (cuarto desenlace, «Está cerca»): aprobado con condición de
+   * presentar un coarrendatario antes de `vence_en`. Solo en el
    * estudio del titular con resultado 'condicionado' y la condición en pie;
    * null en cualquier otro caso. Con condición el caso NO está en revisión del
    * analista: aprobar, pedir soportes y reasignar responden 409.
@@ -108,11 +108,14 @@ export interface IEstudio {
 }
 
 export interface ICondicionCoarrendatario {
-  puntaje_objetivo: number
   /** ISO timestamptz. */
   vence_en: string
-  /** vence_en <= ahora: el barrido de la API lo rechaza en breve. */
+  /** vence_en <= ahora: el barrido de la API la resuelve en breve. */
   vencida: boolean
+  /** Adenda 3 V2 §6.7: ingreso mensual adicional que falta; null si la condición es solo por puntaje. */
+  ingreso_adicional_requerido: number | null
+  /** Reglas de ingreso incumplidas; vacío = solo por puntaje (al vencer va a revisión, no a rechazo). */
+  reglas_ingreso: string[]
 }
 
 export interface IEstudioDocumento {
