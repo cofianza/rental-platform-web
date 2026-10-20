@@ -20,6 +20,8 @@ export interface ConfirmDialogProps {
   cancelLabel?: string
   variant?: 'default' | 'danger'
   isLoading?: boolean
+  /** Falta algo que se pide dentro del mensaje (p. ej. un motivo obligatorio). */
+  confirmDisabled?: boolean
 }
 
 export function ConfirmDialog({
@@ -32,6 +34,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancelar',
   variant = 'default',
   isLoading = false,
+  confirmDisabled = false,
 }: ConfirmDialogProps) {
   // Esperamos a que onConfirm termine antes de cerrar. Asi:
   //   - Si el padre setea isLoading=true al inicio de la accion, el boton
@@ -86,7 +89,7 @@ export function ConfirmDialog({
             type="button"
             autoFocus={variant !== 'danger'}
             onClick={handleConfirm}
-            disabled={bloqueado}
+            disabled={bloqueado || confirmDisabled}
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               'text-white',

@@ -46,7 +46,8 @@ type Unidad = 'cop' | 'pct' | 'puntos' | 'dias' | 'dias_habiles' | 'meses' | 'me
  * su clave de código y los mostraba en una sola lista larga sin unidades:
  * Gerencia tenía que adivinar si «15» eran días, meses o por ciento.
  */
-const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
+// `motivo`: el API exige escribirlo (queda en el historial como constancia).
+const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motivo?: boolean }> = {
   // Evaluación del prospecto
   UMBRAL_APROBACION_AUTOMATICA: { nombre: 'Puntaje para aprobar automáticamente', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_ZONA_GRIS: { nombre: 'Puntaje mínimo para no rechazar (inicio de la zona gris)', grupo: 'evaluacion', unidad: 'puntos' },
@@ -56,7 +57,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad }> = {
   UMBRAL_CASCADA_RECHAZO: { nombre: 'Rechazo sin consultar la segunda central (por debajo de)', grupo: 'evaluacion', unidad: 'puntos' },
   UMBRAL_CASCADA_APROBACION: { nombre: 'Aprobación sin consultar la segunda central (desde)', grupo: 'evaluacion', unidad: 'puntos' },
   FACTOR_AJUSTE_INGRESO: { nombre: 'Factor de ajuste del ingreso', grupo: 'evaluacion', unidad: 'num' },
-  ADENDA3_V2: { nombre: 'Reglas nuevas de coarrendatarios e ingreso', grupo: 'evaluacion', unidad: 'onoff' },
+  ADENDA3_V2: { nombre: 'Reglas nuevas de coarrendatarios e ingreso', grupo: 'evaluacion', unidad: 'onoff', motivo: true },
   ADENDA3_INGRESO: { nombre: 'Nuevo cálculo del ingreso (versión anterior)', grupo: 'evaluacion', unidad: 'onoff' },
   FACTOR_AJUSTE_INGRESO_CANON: { nombre: 'Factor de ajuste del ingreso para el canon', grupo: 'evaluacion', unidad: 'num' },
   FACTOR_AJUSTE_INGRESO_DTI: { nombre: 'Factor de ajuste del ingreso para el endeudamiento', grupo: 'evaluacion', unidad: 'num' },
@@ -190,6 +191,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
   const [confirmar, setConfirmar] = useState(false)
 
   const unidad = metaDe(p.clave).unidad
+  const exigeMotivo = !!metaDe(p.clave).motivo
   const cambiado = Number(valor) !== p.valor
   const modificado = p.valor !== p.valorDefault
   const descripcion = humanizar(p.descripcion)
@@ -332,7 +334,7 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
               )}
             </p>
             <label className="text-xs font-medium text-gray-700">
-              Motivo (opcional, queda en el historial)
+              Motivo ({exigeMotivo ? 'obligatorio' : 'opcional'}, queda en el historial)
               <input
                 type="text"
                 value={motivo}
@@ -413,11 +415,32 @@ function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado
         isOpen={confirmar}
         onClose={() => {
           setConfirmar(false)
-          if (!editando) setValor(String(p.valor))
+          if (!editando) {
+            setValor(String(p.valor))
+            setMotivo('')
+          }
         }}
         onConfirm={guardar}
         title={nombreDe(p.clave)}
-        message={`Pasa de ${conUnidad(p.valor, p)} a ${conUnidad(valorNuevo, p)}. Aplica desde ya a los estudios y contratos que se procesen de aquí en adelante.`}
+        message={
+          <>
+            <p>{`Pasa de ${conUnidad(p.valor, p)} a ${conUnidad(valorNuevo, p)}. Aplica desde ya a los estudios y contratos que se procesen de aquí en adelante.`}</p>
+            {/* Un interruptor se cambia desde aquí, sin formulario: el motivo va en el diálogo. */}
+            {!editando && (
+              <label className="mt-3 block text-xs font-medium text-gray-700">
+                Motivo ({exigeMotivo ? 'obligatorio' : 'opcional'}, queda en el historial)
+                <input
+                  type="text"
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  maxLength={500}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
+              </label>
+            )}
+          </>
+        }
+        confirmDisabled={exigeMotivo && !motivo.trim()}
         confirmLabel="Guardar cambio"
         isLoading={guardando}
       />
