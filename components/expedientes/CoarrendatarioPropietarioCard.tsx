@@ -12,6 +12,8 @@
  *     ventana: en revisión o, desde la Decisión 2 (2026-09-25), aprobado antes
  *     del contrato (prima del 10 %); nunca en el canal del propietario directo
  *     (Decisión 4). Si no, no se muestra.
+ *   - Adenda 3 V2 §6.1: también antes de la decisión del titular, si el API
+ *     abre la ventana (coarrendatario desde el inicio).
  */
 
 'use client'
@@ -43,6 +45,9 @@ interface CoarrendatarioPropietarioCardProps {
    */
   onEstudioCompletado?: () => void
 }
+
+/** Antes de que se decida al titular (Adenda 3 V2 §6.1). */
+const PREVIOS_A_LA_DECISION = ['borrador', 'en_revision', 'informacion_incompleta']
 
 const TIPO_DOC_LABEL: Record<string, string> = {
   cc: 'CC',
@@ -111,7 +116,8 @@ export function CoarrendatarioPropietarioCard({
   const fetchVentana = useCallback(() => {
     coarrendatarioService.getVentana(expedienteId).then(setVentana, () => setVentana(null))
   }, [expedienteId])
-  const ventanaAplica = expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado'
+  const antesDeLaDecision = PREVIOS_A_LA_DECISION.includes(expedienteEstado)
+  const ventanaAplica = expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado' || antesDeLaDecision
   useEffect(() => {
     if (ventanaAplica) fetchVentana()
     else setVentana(null)
@@ -141,9 +147,10 @@ export function CoarrendatarioPropietarioCard({
 
   if (loading || ventana === undefined) return null
   if (!esRolValido) return null
-  // Solo aparece de la fase 'condicionado' en adelante. Mientras el expediente
-  // sigue en borrador / en_revision no tiene sentido mostrar al coarrendatario.
+  // Aparece de la fase 'condicionado' en adelante y, con el coarrendatario desde
+  // el inicio (el API abre la ventana), también antes de decidir al titular.
   if (
+    !(antesDeLaDecision && ventana?.vigente) &&
     expedienteEstado !== 'condicionado' &&
     expedienteEstado !== 'aprobado' &&
     expedienteEstado !== 'rechazado' &&
@@ -177,6 +184,7 @@ export function CoarrendatarioPropietarioCard({
         invitar={(input) => coarrendatarioService.invitar(expedienteId, input)}
         audience="gestor"
         aprobado={expedienteEstado === 'aprobado'}
+        antesDeLaDecision={antesDeLaDecision}
         onInvited={() => { fetchCoa(); fetchVentana() }}
       />
     )
@@ -227,7 +235,7 @@ export function CoarrendatarioPropietarioCard({
         </div>
 
         {/* Estado de la invitación + evaluación */}
-        <EstadoBlock coa={coa} sinEfecto={!vigente} />
+        <EstadoBlock coa={coa} sinEfecto={!vigente} antesDeLaDecision={antesDeLaDecision} />
 
         {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
             otra persona (P4). Con la ventana cerrada ya no rige (P3). El key
@@ -281,7 +289,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: boolean }) {
+function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatario; sinEfecto: boolean; antesDeLaDecision: boolean }) {
   const fallida = coa.estudio?.estado === 'fallido'
   const fallo = coa.estudio ? tipoFallo(coa.estudio) : 'tecnico'
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
@@ -301,7 +309,9 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
       : {
           color: 'bg-blue-50 border-blue-200 text-blue-900',
           label: 'Esperando respuesta',
-          mensaje: 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
+          mensaje: antesDeLaDecision
+            ? 'La invitación fue enviada. La evaluación del titular espera a que esta persona autorice: si no lo va a hacer, cancele la invitación.'
+            : 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
         },
     aceptado: {
       color: fallida ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900',
@@ -321,6 +331,8 @@ function EstadoBlock({ coa, sinEfecto }: { coa: ICoarrendatario; sinEfecto: bool
           : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
+          : antesDeLaDecision
+          ? 'Autorizó. Su evaluación corre después de la del titular, y el estudio se decide con los dos.'
           : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {

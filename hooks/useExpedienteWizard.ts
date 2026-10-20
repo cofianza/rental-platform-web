@@ -11,6 +11,8 @@ import type { IInmueble } from '@/types/inmueble'
 import type { ISolicitante, ISolicitanteCreateData } from '@/types/solicitante'
 import { solicitanteService } from '@/services/solicitanteService'
 import { expedienteService } from '@/services/expedienteService'
+import { coarrendatarioService, type IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
+import { esNombreValido } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { ApiClientError } from '@/lib/api'
 import { esPersonaJuridica } from '@/components/expedientes/wizard/constants'
 
@@ -23,7 +25,12 @@ export interface WizardStep1Data {
   hasActiveExpediente: boolean
   /** El canon supera el tope: solo avisa (Adenda de precios §7.1; antes bloqueaba, Flujo §4.4). */
   excedeTope?: boolean
+  /** Adenda 3 V2 §6.1: se puede agregar el coarrendatario desde el asistente. */
+  coarrendatarioDesdeInicio?: boolean
 }
+
+/** Coarrendatario desde el inicio: todos los campos obligatorios, también el celular. */
+export type CoarrendatarioWizard = Required<IInvitarCoarrendatarioInput>
 
 export interface WizardStep2Data {
   solicitante: ISolicitante | null
@@ -246,6 +253,28 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
   return errors
 }
 
+/** Mismos criterios que la invitación del panel, más el celular (le llega por WhatsApp). */
+export function validateCoarrendatario(
+  c: CoarrendatarioWizard,
+  titular: { email?: string | null; numero_documento?: string | null } | null,
+): Record<string, string> {
+  const errors: Record<string, string> = {}
+  if (!c.nombre.trim()) errors.nombre = 'Escriba el nombre.'
+  else if (!esNombreValido(c.nombre.trim())) errors.nombre = 'El nombre solo puede tener letras.'
+  if (!c.apellido.trim()) errors.apellido = 'Escriba el primer apellido.'
+  else if (!esNombreValido(c.apellido.trim())) errors.apellido = 'El apellido solo puede tener letras.'
+  if (!c.numero_documento.trim()) errors.numero_documento = 'Escriba el número de documento.'
+  else if (titular?.numero_documento && c.numero_documento.replace(/\D/g, '') === titular.numero_documento.replace(/\D/g, ''))
+    errors.numero_documento = 'Es el documento del solicitante: escriba el del coarrendatario.'
+  if (!c.email.trim()) errors.email = 'Escriba el correo: ahí le llega la invitación.'
+  else if (!EMAIL_REGEX.test(c.email.trim())) errors.email = 'Revise el correo: parece incompleto.'
+  else if (titular?.email && c.email.trim().toLowerCase() === titular.email.trim().toLowerCase())
+    errors.email = 'Es el correo del solicitante: escriba el del coarrendatario.'
+  if (!c.telefono.trim()) errors.telefono = 'Escriba el celular: ahí le llega la invitación por WhatsApp.'
+  else if (!isValidPhone(c.telefono)) errors.telefono = 'Celular colombiano (3XXXXXXXXX) o internacional con código de país'
+  return errors
+}
+
 function validateStep3(data: WizardStep3Data): Record<string, string> {
   const errors: Record<string, string> = {}
 
@@ -276,6 +305,12 @@ export function useExpedienteWizard() {
   // 3.1: si el solicitante ya tiene un expediente activo para este inmueble, el
   // backend devuelve el expediente existente para que ofrezcamos "Ver expediente".
   const [existingExpediente, setExistingExpediente] = useState<{ id: string; numero: string | null } | null>(null)
+  // Adenda 3 V2 §6.1: coarrendatario desde el inicio (null = sin coarrendatario).
+  // Fuera de `data` a propósito: no va al borrador del navegador (datos de un tercero).
+  const [coarrendatario, setCoarrendatario] = useState<CoarrendatarioWizard | null>(null)
+  const [coaErrors, setCoaErrors] = useState<Record<string, string>>({})
+  const conCoarrendatario = !!data.step1.coarrendatarioDesdeInicio && !!coarrendatario
+  const titularDelPaso2 = data.step2.solicitante ?? data.step2.formData
 
   // ============================================
   // Borrador (anti-pérdida de datos)
@@ -351,6 +386,9 @@ export function useExpedienteWizard() {
     } else if (currentStep === 2) {
       stepErrors = validateStep2(data.step2)
       setErrors(prev => ({ ...prev, step2: stepErrors }))
+      const errCoa = conCoarrendatario ? validateCoarrendatario(coarrendatario!, titularDelPaso2) : {}
+      setCoaErrors(errCoa)
+      if (Object.keys(errCoa).length > 0) return false
     } else if (currentStep === 3) {
       stepErrors = validateStep3(data.step3)
       setErrors(prev => ({ ...prev, step3: stepErrors }))
@@ -382,7 +420,7 @@ export function useExpedienteWizard() {
       return true
     }
     return false
-  }, [currentStep, data])
+  }, [currentStep, data, conCoarrendatario, coarrendatario, titularDelPaso2])
 
   const prevStep = useCallback(() => {
     if (currentStep > 1) {
@@ -482,6 +520,8 @@ export function useExpedienteWizard() {
       return !!data.step1.inmueble
     }
     if (currentStep === 2) {
+      // El coarrendatario, si se agregó, con todos sus campos (el formato se valida al pulsar «Siguiente»).
+      if (conCoarrendatario && Object.values(coarrendatario!).some((v) => !v.trim())) return false
       // §5.1: un solicitante ya registrado también necesita celular y correo,
       // y si se escribió otro contacto hay que decidir cuál vale.
       if (data.step2.solicitante) {
@@ -512,7 +552,7 @@ export function useExpedienteWizard() {
       return !!data.step3.forma_pago
     }
     return true
-  }, [currentStep, data])
+  }, [currentStep, data, conCoarrendatario, coarrendatario])
 
   // ============================================
   // Submit
@@ -561,6 +601,33 @@ export function useExpedienteWizard() {
         miembro_responsable_id: data.step3.miembro_responsable_id || undefined,
         notas: data.step3.notas || undefined,
       })
+
+      // Adenda 3 V2 §6.1: el coarrendatario se invita ANTES de pedir la
+      // autorización del titular, así nadie se consulta hasta que los dos
+      // autoricen. Si no se pudo, no se inicia: el gestor lo corrige en el
+      // estudio y elige ahí la forma de pago (el titular no se consulta solo).
+      if (conCoarrendatario) {
+        const c = coarrendatario!
+        try {
+          await coarrendatarioService.invitar(expediente.id, {
+            nombre: c.nombre.trim(),
+            apellido: c.apellido.trim(),
+            tipo_documento: c.tipo_documento,
+            numero_documento: c.numero_documento.trim(),
+            email: c.email.trim(),
+            telefono: c.telefono.trim(),
+          })
+        } catch (coaErr) {
+          const detalle = coaErr instanceof ApiClientError ? coaErr.message : 'Error desconocido'
+          toast.warning(
+            `Creamos el estudio, pero no pudimos invitar al coarrendatario: ${detalle} Invítelo desde el estudio y luego elija ahí la forma de pago.`,
+            { duration: 12000 },
+          )
+          clearDraft()
+          router.push(`/expedientes/${expediente.id}`)
+          return expediente.id
+        }
+      }
 
       // §7 "PASO 4 — CONFIRMACIÓN": "Al enviar, el sistema genera un enlace
       // único e irrepetible y lo remite por WhatsApp al celular registrado,
@@ -639,7 +706,7 @@ export function useExpedienteWizard() {
     } finally {
       setIsSubmitting(false)
     }
-  }, [data, router, clearDraft])
+  }, [data, router, clearDraft, conCoarrendatario, coarrendatario])
 
   // ============================================
   // Reset
@@ -652,6 +719,8 @@ export function useExpedienteWizard() {
     setIsSubmitting(false)
     setSubmitError(null)
     setExistingExpediente(null)
+    setCoarrendatario(null)
+    setCoaErrors({})
     clearDraft()
   }, [clearDraft])
 
@@ -689,6 +758,12 @@ export function useExpedienteWizard() {
     // Validacion
     validateCurrentStep,
     canProceed,
+
+    // Coarrendatario desde el inicio (Adenda 3 V2 §6.1)
+    coarrendatario,
+    setCoarrendatario,
+    coaErrors,
+    setCoaErrors,
 
     // Submit
     submitExpediente,

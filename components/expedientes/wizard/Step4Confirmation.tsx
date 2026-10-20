@@ -22,16 +22,19 @@ import {
   IconPencil,
   IconArrowRight,
   IconCreditCard,
+  IconUsers,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
 import { estudioService } from '@/services/estudioService'
-import type { WizardData } from '@/hooks/useExpedienteWizard'
+import type { WizardData, CoarrendatarioWizard } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 
 interface Step4ConfirmationProps {
   data: WizardData
+  /** Adenda 3 V2 §6.1: coarrendatario agregado en el paso 2 (null = sin él). */
+  coarrendatario?: CoarrendatarioWizard | null
   isSubmitting: boolean
   submitError: string | null
   /** 3.1: si el solicitante ya tiene un expediente activo para este inmueble,
@@ -44,6 +47,7 @@ interface Step4ConfirmationProps {
 
 export function Step4Confirmation({
   data,
+  coarrendatario = null,
   isSubmitting,
   submitError,
   existingExpediente,
@@ -251,6 +255,36 @@ export function Step4Confirmation({
           )}
         </div>
       </div>
+
+      {coarrendatario && (
+        <div className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
+              <IconUsers size={16} className="text-gray-500" />
+              Coarrendatario
+            </h3>
+            <button
+              type="button"
+              onClick={() => onEditStep(2)}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 disabled:opacity-50"
+            >
+              <IconPencil size={13} /> Editar
+            </button>
+          </div>
+          <div className="space-y-2 p-4 text-sm text-gray-600">
+            <p className="font-medium text-gray-900">{coarrendatario.nombre} {coarrendatario.apellido}</p>
+            <p><span className="uppercase font-medium">{coarrendatario.tipo_documento}:</span> {coarrendatario.numero_documento}</p>
+            <div className="flex flex-wrap gap-4">
+              <span className="flex items-center gap-1"><IconMail size={14} className="text-gray-500" />{coarrendatario.email}</span>
+              <span className="flex items-center gap-1"><IconPhone size={14} className="text-gray-500" />{coarrendatario.telefono}</span>
+            </div>
+            <p className="text-xs text-gray-500">
+              Le enviamos su invitación al confirmar. La evaluación del titular espera a que esta persona autorice.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Resumen de Configuracion */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
