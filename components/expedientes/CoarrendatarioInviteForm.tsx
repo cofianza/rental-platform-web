@@ -162,9 +162,11 @@ export function CoarrendatarioInviteForm({
           <p className="text-sm text-gray-700">
             {conCondicion ? (
               <>
-                Su estudio fue aprobado con una condición: presentar un <strong>coarrendatario</strong>
-                {fechaLimite ? ` antes del ${fechaLimite}` : ''}. Esa persona debe aceptar la invitación a tiempo; si
-                no, el estudio se cierra sin aprobarse. No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                {/* Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
+                    presentarlo como una condición negativa; solo se le suma el plazo. */}
+                Está cerca. ¿Alguien más va a vivir con usted en el inmueble? Si esa persona tiene ingresos propios,
+                agréguela como coarrendatario: volvemos a evaluar con los dos y le damos respuesta en segundos. Solo
+                necesitamos su cédula y su autorización.{fechaLimite ? ` Plazo para agregarlo: hasta el ${fechaLimite}.` : ''}
               </>
             ) : aprobado ? (
               <>

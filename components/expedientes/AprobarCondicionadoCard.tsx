@@ -106,13 +106,17 @@ export function AprobarCondicionadoCard({
                 </Paso>
                 <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
                   <p>
-                    Si alcanza el puntaje mínimo y no hay otros puntos por revisar, el estudio queda aprobado sin pasar por
-                    un analista. Si no lo alcanza o hay algo por revisar, lo decide un analista de Cofianza. Si queda por
-                    debajo de 70 puntos o tiene un impedimento que no admite excepciones, el estudio queda no aprobable.
+                    Si califica, mejora el puntaje del estudio y su ingreso se suma al del solicitante. Con eso, si el
+                    estudio cumple y no hay nada por revisar, queda aprobado sin pasar por un analista; si no, lo decide un
+                    analista de Cofianza. Si no califica, no suma nada y el estudio sigue con el solicitante.
                   </p>
                 </Paso>
                 <Paso n={3} titulo="Si vence el plazo">
-                  <p>El estudio se cierra como no aprobado, sin repetir la consulta a las centrales.</p>
+                  <p>
+                    {(condicion.reglas_ingreso?.length ?? 0) > 0
+                      ? 'Sin un coarrendatario que cumpla el ingreso, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
+                      : 'El estudio pasa a revisión de un analista de Cofianza, sin repetir la consulta a las centrales.'}
+                  </p>
                 </Paso>
               </ol>
             )}

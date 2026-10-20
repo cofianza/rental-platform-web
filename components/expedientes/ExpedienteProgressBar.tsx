@@ -150,7 +150,7 @@ export function ExpedienteProgressBar({
         <p className="text-sm font-semibold text-amber-700">{conCondicion ? 'Aprobado con condición' : 'Estudio condicionado'}</p>
         <p className="text-xs text-amber-600 mt-0.5">
           {/* Adenda 2 §5: decide solo un analista de Cofianza. */}
-          {conCondicion ? 'Espera coarrendatario. En «Resumen» ve el puntaje mínimo y el plazo.' : <>{sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
+          {conCondicion ? 'Espera coarrendatario. En «Resumen» ve qué sigue y el plazo.' : <>{sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
           Lo decide un analista de Cofianza. En «Resumen» ve qué sigue y qué se puede hacer mientras tanto.</>}
         </p>
       </div>
