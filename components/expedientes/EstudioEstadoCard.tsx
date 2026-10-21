@@ -245,6 +245,12 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
     return 'El prospecto no autorizó dentro del plazo — puede reenviarle la solicitud.'
   }
 
+  if (estudio.estado === 'completado' && esCoarrendatario) {
+    // Adenda 3 V2 §7: la evaluación del coarrendatario no decide el estudio: suma o no suma.
+    if (estudio.resultado === 'aprobado') return 'El coarrendatario es válido: suma su puntaje y su ingreso. El estudio se decide con los dos.'
+    if (estudio.resultado === 'rechazado') return 'El coarrendatario no califica: no aporta puntos ni ingreso, y el estudio sigue con el titular.'
+    return 'La evaluación del coarrendatario la revisa un analista de Cofianza.'
+  }
   if (estudio.estado === 'completado') {
     // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta
     // ("Aprobado automático (87 puntos)"). Cofianza ve el puntaje; la
@@ -324,6 +330,13 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
   }
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
+  // Adenda 3 V2 §6.1: nadie se consulta hasta que todos autoricen; primero el titular.
+  if (estudio.espera_consulta === 'coarrendatario_sin_autorizar') {
+    return 'Ya autorizó. La consulta espera a que el coarrendatario autorice: si no lo va a hacer, reenvíele la invitación o cancélela.'
+  }
+  if (estudio.espera_consulta === 'titular_sin_decidir') {
+    return 'Autorizó. Su evaluación corre después de la del titular.'
+  }
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
     return `Listo para consultar a ${buro}. Si la consulta no arrancó sola, ejecútela desde aquí.`
   }
@@ -607,7 +620,10 @@ function EstudioPanel({
         : estudio.condicion_coarrendatario && estudio.resultado === 'condicionado'
           ? // Mismo nombre que la barra, la tarjeta y el encabezado (Adenda 3 §6).
             'Aprobado con condición'
-          : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
+          : estudio.estado === 'completado' && etiqueta === 'Coarrendatario'
+            ? // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
+              estudio.resultado === 'aprobado' ? 'Válido' : estudio.resultado === 'rechazado' ? 'No califica' : 'En revisión'
+            : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />

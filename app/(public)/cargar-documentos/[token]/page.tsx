@@ -16,7 +16,7 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
-import { fechaCondicion } from '@/components/expedientes/textoVisible'
+import { fechaCondicion, lineaIngresoAdicional, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import {
   cargarDocumentosService,
@@ -208,7 +208,10 @@ export default function CargarDocumentosPage() {
                 Hola {ctx.solicitante}, su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
                 {conCondicion
-                  ? ` fue aprobado con la condición de presentar un coarrendatario${plazo ? ` antes del ${fechaCondicion(plazo)}` : ''}.`
+                  ? // Adenda 3 V2 §6.9: el texto literal, el plazo y la cifra con su advertencia (§6.7).
+                    `: está cerca. ${MENSAJE_ESTA_CERCA}${plazo ? ` Plazo para agregarlo: hasta el ${fechaCondicion(plazo)}.` : ''}${
+                      lineaIngresoAdicional(ctx.condicion_ingreso_adicional_requerido) ? ` ${lineaIngresoAdicional(ctx.condicion_ingreso_adicional_requerido)}` : ''
+                    }`
                   : ' fue aprobado.'}
               </>
             ) : (

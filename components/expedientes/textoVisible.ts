@@ -115,6 +115,16 @@ export function esRolInterno(rol?: string | null): boolean {
 const pesos = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n).replace(/\s/g, '')
 
+/** Adenda 3 V2 §6.9: el texto literal de «Está cerca» (igual que en la API; no se cambia sin la Gerencia). */
+export const MENSAJE_ESTA_CERCA =
+  '¿Alguien más va a vivir con usted en el inmueble? Si esa persona tiene ingresos propios, agréguela como coarrendatario: volvemos a evaluar con los dos y le damos respuesta en segundos. Solo necesitamos su cédula y su autorización.'
+
+/** La línea de la cifra del §6.7 con su advertencia, o null (como lineaIngresoAdicional de la API). */
+export const lineaIngresoAdicional = (cifra: number | null | undefined): string | null =>
+  cifra && cifra > 0
+    ? `Para cumplir con el ingreso, entre los dos necesitan ${pesos(cifra)} de ingreso mensual adicional. ${ADVERTENCIA_INGRESO_ADICIONAL}`
+    : null
+
 /** Adenda 3 V2 §6.7: la advertencia que acompaña siempre a la cifra (igual que en la API). */
 export const ADVERTENCIA_INGRESO_ADICIONAL =
   'La cifra supone que el coarrendatario no tiene deudas reportadas: si tiene cuotas, esas cuotas se suman a lo que se necesita.'

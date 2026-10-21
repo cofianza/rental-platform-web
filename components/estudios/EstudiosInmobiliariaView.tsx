@@ -45,9 +45,15 @@ const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
 }
 
 function estadoBadge(e: IEstudioListItem): { kind: BadgeKind; label: string } {
+  // Adenda 3 V2 §7: la evaluación del coarrendatario es válida o no califica; nunca «no aprobable».
+  if (e.tipo === 'con_coarrendatario' && e.estado === 'completado') {
+    if (e.resultado === 'aprobado') return { kind: 'aprobado', label: 'Coarrendatario válido' }
+    if (e.resultado === 'rechazado') return { kind: 'esperando', label: 'Coarrendatario no califica' }
+  }
   if (e.resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
   if (e.resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
-  if (e.resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
+  // Adenda 3 V2 §6: «Está cerca» no es una revisión.
+  if (e.resultado === 'condicionado') return { kind: 'condicionado', label: e.condicion_coarrendatario ? 'Está cerca' : 'Condicionado' }
   switch (e.estado) {
     case 'en_proceso':
     case 'pagado':

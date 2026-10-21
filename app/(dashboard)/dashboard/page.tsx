@@ -19,7 +19,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { estudioService } from '@/services/estudioService'
-import { fechaCondicion } from '@/components/expedientes/textoVisible'
+import { fechaCondicion, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
@@ -977,9 +977,9 @@ function SolicitanteDashboard() {
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     {condicion && !condicion.vencida ? (
                       <>
-                        <p className="text-sm text-amber-800 font-medium">Aprobado con condición</p>
+                        <p className="text-sm text-amber-800 font-medium">Está cerca</p>
                         <p className="text-xs text-amber-700 mt-0.5">
-                          Invite a su coarrendatario antes del {fechaCondicion(condicion.vence_en)}. Si no acepta a tiempo, el estudio se cierra sin aprobarse.
+                          {MENSAJE_ESTA_CERCA} Plazo para agregarlo: hasta el {fechaCondicion(condicion.vence_en)}.
                         </p>
                       </>
                     ) : (

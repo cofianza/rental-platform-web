@@ -217,9 +217,9 @@ export function CoarrendatarioPropietarioCard({
             <IconUsers size={20} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">Coarrendatario invitado</h3>
+            <h3 className="text-base font-semibold text-gray-900">Coarrendatario</h3>
             <p className="text-xs text-gray-500">
-              El solicitante invitó a esta persona como coarrendatario para respaldar el arrendamiento.
+              Persona registrada como coarrendatario en este estudio. Si califica, suma puntaje e ingreso al del solicitante.
             </p>
           </div>
         </div>
