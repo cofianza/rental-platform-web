@@ -362,9 +362,11 @@ export function Step2Solicitante({
               : ''}
             Le quedan {estudioVigente.dias_restantes}{' '}
             {estudioVigente.dias_restantes === 1 ? 'día' : 'días'} de vigencia.{' '}
-            {reutilizable
-              ? 'Puede reutilizarlo para esta propiedad sin volver a cobrarlo: ábralo y use «Reasignar a otra propiedad».'
-              : estudioVigente.motivo_no_reutilizable ?? 'Ábrelo para revisar si sirve para esta propiedad.'}
+            {!data.inmuebleId
+              ? 'Ábralo en lugar de crear otro: si necesita otro inmueble, se vincula o se reasigna desde ese estudio.'
+              : reutilizable
+                ? 'Puede reutilizarlo para esta propiedad sin volver a cobrarlo: ábralo y use «Reasignar a otra propiedad».'
+                : estudioVigente.motivo_no_reutilizable ?? 'Ábralo para revisar si sirve para esta propiedad.'}
           </p>
           {estudioVigente.expediente_id && (
             <Link

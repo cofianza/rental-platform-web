@@ -318,7 +318,8 @@ export function useExpedienteWizard() {
   // Fuera de `data` a propósito: no va al borrador del navegador (datos de un tercero).
   const [coarrendatario, setCoarrendatario] = useState<CoarrendatarioWizard | null>(null)
   const [coaErrors, setCoaErrors] = useState<Record<string, string>>({})
-  const conCoarrendatario = !!data.step1.coarrendatarioDesdeInicio && !!coarrendatario
+  // Sin propiedad no hay coarrendatario en v1 (canal sin inmobiliaria).
+  const conCoarrendatario = !!data.step1.coarrendatarioDesdeInicio && !data.step1.sinInmueble && !!coarrendatario
   const titularDelPaso2 = data.step2.solicitante ?? data.step2.formData
 
   // ============================================

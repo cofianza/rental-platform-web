@@ -69,6 +69,9 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
 function mapExpediente<T>(raw: any): T {
   if (!raw) return raw
   const { numero, ...rest } = raw
+  // El listado (RPC) arma el inmueble aunque no exista: un estudio sin propiedad
+  // llega con un objeto de campos null. Se normaliza a null, como en el detalle.
+  if (rest.inmueble && !rest.inmueble.id) rest.inmueble = null
   return { ...rest, numero_expediente: numero } as T
 }
 

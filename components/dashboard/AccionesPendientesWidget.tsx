@@ -179,7 +179,7 @@ function CitaItemRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
             <span className="font-mono text-primary-700">{expediente?.numero ? `Estudio ${formatNumeroEstudio(expediente.numero)}` : '—'}</span>
-            {inmueble && (
+            {inmueble?.direccion && (
               <span className="text-gray-600 truncate" title={inmueble.direccion}>
                 · {inmueble.direccion}
               </span>
@@ -248,7 +248,7 @@ function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
             <span className="font-mono text-primary-700">{expediente.numero_expediente ? `Estudio ${formatNumeroEstudio(expediente.numero_expediente)}` : '—'}</span>
-            {inmueble && (
+            {inmueble?.direccion && (
               <span className="text-gray-600 truncate" title={inmueble.direccion}>
                 · {inmueble.direccion}
               </span>

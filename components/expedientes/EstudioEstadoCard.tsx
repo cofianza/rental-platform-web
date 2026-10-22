@@ -60,6 +60,8 @@ interface EstudioEstadoCardProps {
   onReasignado?: () => void
   /** Estudio sin propiedad: hasta qué canon queda aprobado (el botón pasa a «Vincular inmueble»). */
   canonAprobado?: number | null
+  /** Estudio sin propiedad: destinación evaluada (vivienda o comercial). */
+  destinacion?: string | null
   /**
    * false = la API no lo va a trasladar (estudio cerrado o rechazado, o ya
    * reservó el inmueble para su contrato): no se ofrece el botón.
@@ -403,6 +405,7 @@ export function EstudioEstadoCard({
   inmuebleActualId,
   onReasignado,
   canonAprobado,
+  destinacion,
   reasignable = true,
   coarrendatarioVigente = true,
   expedienteEstado,
@@ -501,6 +504,7 @@ export function EstudioEstadoCard({
           onRetried={fetchEstudios}
           inmuebleActualId={inmuebleActualId}
           canonAprobado={canonAprobado}
+          destinacion={destinacion}
           onReasignado={reasignable ? () => {
             fetchEstudios()
             onReasignado?.()
@@ -544,6 +548,7 @@ interface EstudioPanelProps {
   /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
   inmuebleActualId?: string | null
   canonAprobado?: number | null
+  destinacion?: string | null
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
@@ -563,6 +568,7 @@ function EstudioPanel({
   onRetried,
   inmuebleActualId,
   canonAprobado,
+  destinacion,
   onReasignado,
   expedienteId,
   sinReintento,
@@ -635,10 +641,15 @@ function EstudioPanel({
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
-  const siguientePaso =
+  const siguientePasoBase =
     sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
       : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario')
+  // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
+  const siguientePaso =
+    destinacion && !inmuebleActualId
+      ? siguientePasoBase.replace('Siguiente paso: generar contrato.', 'Siguiente paso: vincular el inmueble.')
+      : siguientePasoBase
   // Texto de la API: sin citas a documentos para nadie, y sin datos internos
   // del modelo para quien no es de Cofianza.
   const interno = esRolInterno(userRol)
@@ -807,6 +818,8 @@ function EstudioPanel({
           inmuebleActualId={inmuebleActualId}
           canonEvaluado={estudio.canon_evaluado}
           canonAprobado={canonAprobado}
+          destinacion={destinacion}
+          expedienteId={expedienteId}
           onReasignado={onReasignado}
         />
       )}

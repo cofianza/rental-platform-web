@@ -942,7 +942,7 @@ export default function AutorizarPage() {
                         {data.expediente.inmueble.ciudad ? `, ${data.expediente.inmueble.ciudad}` : ''}
                       </>
                     ) : data.expediente.canon_objetivo_cop ? (
-                      ` para un arriendo de hasta ${formatCurrency(data.expediente.canon_objetivo_cop)} (el inmueble se define después)`
+                      ` para un arriendo con un canon de ${formatCurrency(data.expediente.canon_objetivo_cop)} (el inmueble se define después)`
                     ) : (
                       ' para un arriendo (el inmueble se define después)'
                     )}

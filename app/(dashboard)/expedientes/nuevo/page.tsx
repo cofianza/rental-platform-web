@@ -213,7 +213,7 @@ function NuevoExpedienteContent() {
               onUpdateField={updateStep2Field}
               onEditingDirtyChange={setStep2EditDirty}
             />
-            {data.step1.coarrendatarioDesdeInicio && (
+            {data.step1.coarrendatarioDesdeInicio && !data.step1.sinInmueble && (
               <CoarrendatarioInicio
                 value={coarrendatario}
                 errors={coaErrors}
@@ -236,7 +236,7 @@ function NuevoExpedienteContent() {
         return (
           <Step4Confirmation
             data={data}
-            coarrendatario={data.step1.coarrendatarioDesdeInicio ? coarrendatario : null}
+            coarrendatario={data.step1.coarrendatarioDesdeInicio && !data.step1.sinInmueble ? coarrendatario : null}
             isSubmitting={isSubmitting}
             submitError={submitError}
             existingExpediente={existingExpediente}

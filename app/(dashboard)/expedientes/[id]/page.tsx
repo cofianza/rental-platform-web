@@ -727,6 +727,7 @@ export default function ExpedienteDetallePage() {
             {user?.rol === 'solicitante' && (
               <div className="space-y-4">
                 <PagoEstudioSection
+                  sinInmueble={!expediente.inmueble}
                   expedienteId={id}
                   userRole={user?.rol}
                   onPagoCompletado={fetchExpediente}
@@ -798,7 +799,7 @@ export default function ExpedienteDetallePage() {
                         sinInfoBuro={condicionadoSinInfo}
                         estudioSinCentrales={estudioSinCentrales}
                         condicion={condicionCoa}
-                        canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
+                        canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                         onAprobado={fetchExpediente}
                       />
                     )}
@@ -826,14 +827,17 @@ export default function ExpedienteDetallePage() {
                   // la pagina entera (la seccion Inmueble de aqui abajo es lo
                   // primero que queda desactualizado).
                   inmuebleActualId={expediente.inmueble?.id}
-                  canonAprobado={expediente.sin_inmueble?.canonAprobadoCop ?? null}
+                  canonAprobado={expediente.estado === 'aprobado' ? (expediente.sin_inmueble?.canonAprobadoCop ?? null) : null}
+                  destinacion={expediente.destinacion_objetivo ?? null}
                   onReasignado={fetchExpediente}
                   // Mismos guards de la API (reasignacion.service): cerrado o
                   // rechazado, o titular de la reserva del inmueble (su contrato).
                   reasignable={
                     expediente.estado !== 'cerrado' &&
                     expediente.estado !== 'rechazado' &&
-                    expediente.inmueble?.reservado_por_expediente_id !== id
+                    expediente.inmueble?.reservado_por_expediente_id !== id &&
+                    // Sin propiedad, el inmueble se vincula solo con el estudio aprobado.
+                    (!!expediente.inmueble || expediente.estado === 'aprobado')
                   }
                   coarrendatarioVigente={coarrendatarioVigente}
                   expedienteEstado={expediente.estado}
@@ -879,6 +883,7 @@ export default function ExpedienteDetallePage() {
                   (expediente.estudio_habilitado ?? false) &&
                   !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
                   <PagoEstudioSection
+                    sinInmueble={!expediente.inmueble}
                     expedienteId={id}
                     userRole={user?.rol}
                     onPagoCompletado={fetchExpediente}
@@ -910,7 +915,9 @@ export default function ExpedienteDetallePage() {
             )}
 
             {/* Sección Cita Previa — al tope para que el solicitante vea
-                de un vistazo la fecha/hora y si fue reprogramada. */}
+                de un vistazo la fecha/hora y si fue reprogramada. Sin
+                propiedad no hay inmueble que visitar. */}
+            {expediente.inmueble && (
             <div className="border border-gray-200 rounded-lg p-5">
               <CitasSection
                 expedienteId={id}
@@ -923,6 +930,7 @@ export default function ExpedienteDetallePage() {
                 onCitaRealizada={fetchExpediente}
               />
             </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Sección Inmueble */}
@@ -984,7 +992,11 @@ export default function ExpedienteDetallePage() {
                       />
                     )}
                     <p className="text-xs text-gray-500">
-                      Cuando tenga el inmueble, vincúlelo con «Vincular inmueble» en la evaluación (estudio completado).
+                      {user?.rol === 'solicitante'
+                        ? 'Cuando elija el inmueble, Cofianza lo vincula a su estudio.'
+                        : puedeEditar && expediente.estado === 'aprobado'
+                          ? 'Cuando la persona elija el inmueble, use «Vincular inmueble» en la evaluación.'
+                          : 'El inmueble se vincula cuando el estudio quede aprobado.'}{' '}
                       La aprobación está sujeta a que el inmueble quede dentro del canon aprobado y a que el propietario
                       o la inmobiliaria firmen convenio con Cofianza.
                     </p>
@@ -1142,7 +1154,7 @@ export default function ExpedienteDetallePage() {
                     sinInfoBuro={condicionadoSinInfo}
                     estudioSinCentrales={estudioSinCentrales}
                     condicion={condicionCoa}
-                    canalPropietario={expediente.inmueble?.inmobiliaria_id === null}
+                    canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                     onAprobado={fetchExpediente}
                   />
                 )}
@@ -1164,6 +1176,7 @@ export default function ExpedienteDetallePage() {
               expedienteId={id}
               expedienteEstado={expediente.estado}
               contratosV3={expediente.contratos_v3}
+              sinInmueble={!expediente.inmueble}
               inmuebleReservadoPorOtro={reservadoPorOtro}
               conComision={!!expediente.inmueble?.inmobiliaria_id}
               onContratoActualizado={handleContratoActualizado}

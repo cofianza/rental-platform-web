@@ -54,6 +54,15 @@ import {
 } from '@/components/inmuebles/constants'
 import type { IInmueble } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
+import { ApiClientError } from '@/lib/api'
+import { EvaluarEnEstudioNuevo } from './EvaluarEnEstudioNuevo'
+
+/** Misma regla que la API (inmuebles/destinacion.ts): mixto o desconocido no tiene destinación. */
+function destinacionDeUso(uso: string | null | undefined): 'vivienda' | 'comercial' | null {
+  if (uso === 'vivienda') return 'vivienda'
+  if (uso === 'comercial' || uso === 'local_comercial') return 'comercial'
+  return null
+}
 
 interface ReasignarEstudioModalProps {
   isOpen: boolean
@@ -72,6 +81,10 @@ interface ReasignarEstudioModalProps {
    * amparado del CRC). Con él, el modal VINCULA el primer inmueble.
    */
   canonAprobado?: number | null
+  /** Estudio sin propiedad: destinación evaluada (solo se vinculan inmuebles del mismo tipo). */
+  destinacion?: string | null
+  /** Para ofrecer la evaluación nueva cuando el inmueble no cabe. */
+  expedienteId?: string
   /** Se llama tras una reasignacion exitosa, para refrescar el expediente. */
   onReasignado?: () => void
 }
@@ -92,9 +105,13 @@ export function ReasignarEstudioModal({
   inmuebleActualId,
   canonEvaluado,
   canonAprobado,
+  destinacion,
+  expedienteId,
   onReasignado,
 }: ReasignarEstudioModalProps) {
   const vincular = !inmuebleActualId
+  // El inmueble elegido no cupo (409 ESTUDIO_NO_PORTABLE): se ofrece evaluar de nuevo.
+  const [noCabe, setNoCabe] = useState(false)
   const [inmuebles, setInmuebles] = useState<IInmueble[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [seleccionado, setSeleccionado] = useState<IInmueble | null>(null)
@@ -158,6 +175,7 @@ export function ReasignarEstudioModal({
     if (!isOpen) return
     setSeleccionado(null)
     setError(null)
+    setNoCabe(false)
     setCarteraActual(null)
     cargarInmuebles()
   }, [isOpen, cargarInmuebles])
@@ -234,6 +252,7 @@ export function ReasignarEstudioModal({
       // maximo tolerado, relacion canon/ingreso, tope) y ofrece la salida.
       // Reescribirlo aqui solo lo empeoraria.
       const msg = err instanceof Error ? err.message : 'No se pudo reasignar el estudio'
+      setNoCabe(err instanceof ApiClientError && err.code === 'ESTUDIO_NO_PORTABLE')
       setError(msg)
       toast.error(msg)
     } finally {
@@ -297,6 +316,11 @@ export function ReasignarEstudioModal({
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
+            {noCabe && vincular && expedienteId && seleccionado && (
+              <div className="mt-3">
+                <EvaluarEnEstudioNuevo expedienteId={expedienteId} inmuebleDestinoId={seleccionado.id} />
+              </div>
+            )}
           </div>
         )}
 
@@ -327,14 +351,17 @@ export function ReasignarEstudioModal({
             <div className="p-6 text-center text-sm text-gray-500">
               {search
                 ? 'Ninguna propiedad de esta cartera coincide con la búsqueda.'
-                : 'No hay otras propiedades disponibles para reasignar este estudio.'}
+                : vincular
+                  ? 'No hay propiedades disponibles para vincular.'
+                  : 'No hay otras propiedades disponibles para reasignar este estudio.'}
             </div>
           )}
 
           {!isLoading &&
             ordenados.map((inm) => {
               const otraCartera = esDeOtraCartera(inm)
-              const seleccionable = esSeleccionable(inm) && !otraCartera
+              const otraDestinacion = vincular && !!destinacion && destinacionDeUso(inm.uso) !== destinacion
+              const seleccionable = esSeleccionable(inm) && !otraCartera && !otraDestinacion
               const fueraDeTolerancia =
                 canonMaximo !== null && inm.valor_arriendo > canonMaximo
               const activo = seleccionado?.id === inm.id
@@ -343,7 +370,11 @@ export function ReasignarEstudioModal({
                   key={inm.id}
                   type="button"
                   disabled={!seleccionable || isSaving}
-                  onClick={() => setSeleccionado(inm)}
+                  onClick={() => {
+                    setSeleccionado(inm)
+                    setError(null)
+                    setNoCabe(false)
+                  }}
                   className={cn(
                     'flex w-full items-start gap-3 px-3 py-3 text-left transition-colors',
                     seleccionable ? 'hover:bg-gray-50' : 'cursor-not-allowed opacity-60',
@@ -369,7 +400,13 @@ export function ReasignarEstudioModal({
                         agencia o del mismo propietario.
                       </p>
                     )}
-                    {!seleccionable && !otraCartera && (
+                    {otraDestinacion && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        No es {destinacion === 'comercial' ? 'comercial' : 'de vivienda'}: para otro tipo de inmueble se
+                        requiere una evaluación nueva.
+                      </p>
+                    )}
+                    {!seleccionable && !otraCartera && !otraDestinacion && (
                       <p className="mt-1 text-xs text-gray-500">{motivoNoSeleccionable(inm)}</p>
                     )}
                     {seleccionable && fueraDeTolerancia && (
@@ -388,7 +425,11 @@ export function ReasignarEstudioModal({
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm">
             <div className="flex flex-wrap items-center gap-2 text-gray-800">
               <span className="font-medium">
-                {canonOrigen !== null ? formatCurrency(canonOrigen) : 'Canon no registrado'}
+                {vincular && canonAprobado
+                  ? `Aprobado hasta ${formatCurrency(canonAprobado)}`
+                  : canonOrigen !== null
+                    ? formatCurrency(canonOrigen)
+                    : 'Canon no registrado'}
               </span>
               <IconArrowRight size={14} className="text-gray-500" />
               <span className="font-medium">
@@ -418,7 +459,7 @@ export function ReasignarEstudioModal({
             className="inline-flex items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50"
           >
             {isSaving && <IconLoader size={14} className="animate-spin" />}
-            Reasignar sin costo
+            {vincular ? 'Vincular inmueble' : 'Reasignar sin costo'}
           </button>
         </div>
       </div>

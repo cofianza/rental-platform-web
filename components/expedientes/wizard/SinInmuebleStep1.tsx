@@ -7,11 +7,12 @@
 
 'use client'
 
+import { useEffect } from 'react'
 import { IconAlertTriangle, IconBuilding2, IconHome } from '@/components/icons'
 import { CampoPesos, OpcionTarjeta } from '@/components/contratos/v3/campos'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
-import { USOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
+import { USOS_NO_AFIANZABLES } from './constants'
 
 interface Props {
   data: WizardStep1Data
@@ -25,6 +26,11 @@ const COMERCIAL_NO_DISPONIBLE = USOS_NO_AFIANZABLES.includes('comercial')
 
 export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
   const canon = data.canonObjetivo
+  // Mientras comercial no esté disponible, vivienda es la única opción: va marcada.
+  const faltaDestinacion = !data.destinacion
+  useEffect(() => {
+    if (COMERCIAL_NO_DISPONIBLE && faltaDestinacion) onUpdate({ destinacion: 'vivienda' })
+  }, [faltaDestinacion, onUpdate])
   const excede = topeCanon !== null && canon !== undefined && canon > topeCanon
 
   return (
@@ -63,7 +69,6 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
           />
         </div>
         {errors.destinacion && <p className="mt-1 text-xs text-red-600">{errors.destinacion}</p>}
-        {COMERCIAL_NO_DISPONIBLE && <p className="mt-2 text-xs text-gray-500">{MSG_USO_NO_AFIANZABLE}</p>}
       </fieldset>
 
       {excede && (
@@ -77,9 +82,9 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
       )}
 
       <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-        Sin propiedad, el estudio solo lo ven Cofianza y la persona estudiada. Lo paga la persona con el enlace o Cofianza
-        por la pasarela (no se usan cupos de paquete). Cuando tenga el inmueble, vincúlelo desde el estudio: su canon debe
-        caber en el canon aprobado y debe ser de la misma destinación.
+        Sin propiedad, el estudio solo lo ven Cofianza y la persona estudiada, y lo paga la persona con el enlace de pago.
+        Cuando el estudio esté aprobado y la persona elija el inmueble, vincúlelo desde el estudio: su canon debe caber en
+        el canon aprobado y debe ser de la misma destinación.
       </p>
     </div>
   )

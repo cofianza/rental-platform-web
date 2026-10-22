@@ -310,7 +310,7 @@ export function ExpedientesTable({
                       </p>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-500">Sin inmueble</span>
+                    <span className="text-sm text-gray-500">Inmueble por definir</span>
                   )}
                 </td>
                 <td className="px-4 py-3">

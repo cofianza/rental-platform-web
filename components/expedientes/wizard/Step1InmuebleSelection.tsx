@@ -283,6 +283,7 @@ export function Step1InmuebleSelection({
     onUpdate({
       inmueble: null,
       hasActiveExpediente: false,
+      coarrendatarioDesdeInicio: false,
     })
   }
 
@@ -292,17 +293,19 @@ export function Step1InmuebleSelection({
       <div>
         <h2 className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight text-gray-900">
           <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
-          {WIZARD_MESSAGES.STEP1_TITLE}
+          {data.sinInmueble && puedeSinInmueble ? 'Estudio sin propiedad' : WIZARD_MESSAGES.STEP1_TITLE}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {WIZARD_MESSAGES.STEP1_SUBTITLE}
+          {data.sinInmueble && puedeSinInmueble
+            ? 'Indique el canon con el que se evalúa y si es vivienda o comercial.'
+            : WIZARD_MESSAGES.STEP1_SUBTITLE}
         </p>
       </div>
 
       {saldoCupos && <SaldoCuposAviso saldo={saldoCupos} />}
 
       {puedeSinInmueble && !data.inmueble && (
-        <div role="radiogroup" aria-label="¿El estudio tiene propiedad?" className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm">
+        <div role="group" aria-label="¿El estudio tiene propiedad?" className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm">
           {[
             { sin: false, label: 'Con propiedad' },
             { sin: true, label: 'Sin propiedad todavía' },
@@ -310,9 +313,8 @@ export function Step1InmuebleSelection({
             <button
               key={o.label}
               type="button"
-              role="radio"
-              aria-checked={!!data.sinInmueble === o.sin}
-              onClick={() => onUpdate({ sinInmueble: o.sin, excedeTope: false })}
+              aria-pressed={!!data.sinInmueble === o.sin}
+              onClick={() => onUpdate({ sinInmueble: o.sin, excedeTope: false, coarrendatarioDesdeInicio: false })}
               className={cn(
                 'rounded-md px-3 py-1.5 font-medium transition',
                 !!data.sinInmueble === o.sin ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900',
@@ -324,7 +326,7 @@ export function Step1InmuebleSelection({
         </div>
       )}
 
-      {data.sinInmueble ? (
+      {data.sinInmueble && puedeSinInmueble ? (
         <SinInmuebleStep1 data={data} errors={errors} onUpdate={onUpdate} topeCanon={topeCanon} />
       ) : (
       <>
