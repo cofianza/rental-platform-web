@@ -229,6 +229,7 @@ function NuevoExpedienteContent() {
             data={data.step3}
             errors={errors.step3}
             onUpdate={updateStep3}
+            sinInmueble={!!data.step1.sinInmueble}
           />
         )
       case 4:

@@ -38,7 +38,7 @@ import { autorizacionPublicService } from '@/services/autorizacionService'
 import type { IAutorizacionPublicData, IPagoProspecto, IPerfilProspectoInput } from '@/types/autorizacion'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { cn } from '@/lib/utils'
-import { CONTACTO_COFIANZA } from '@/lib/constants'
+import { CONTACTO_COFIANZA, formatCurrency } from '@/lib/constants'
 import {
   IconShieldCheck,
   IconLock,
@@ -936,9 +936,17 @@ export default function AutorizarPage() {
                       `solicitado_por` (API vieja) cae a un sujeto genérico. */}
                   <p className="mt-2 text-sm leading-relaxed text-gray-700">
                     <strong>{quien}</strong> está haciendo su estudio
-                    para arrendar el inmueble en {data.expediente.inmueble.direccion}
-                    {data.expediente.inmueble.ciudad ? `, ${data.expediente.inmueble.ciudad}` : ''}. Cofianza es la
-                    empresa que respalda ese arriendo como fiadora.
+                    {data.expediente.inmueble ? (
+                      <>
+                        {' '}para arrendar el inmueble en {data.expediente.inmueble.direccion}
+                        {data.expediente.inmueble.ciudad ? `, ${data.expediente.inmueble.ciudad}` : ''}
+                      </>
+                    ) : data.expediente.canon_objetivo_cop ? (
+                      ` para un arriendo de hasta ${formatCurrency(data.expediente.canon_objetivo_cop)} (el inmueble se define después)`
+                    ) : (
+                      ' para un arriendo (el inmueble se define después)'
+                    )}
+                    . Cofianza es la empresa que respalda ese arriendo como fiadora.
                   </p>
                   {/* A2: el cobro se dice aquí, no después de firmar. */}
                   {data.pago?.requerido && (

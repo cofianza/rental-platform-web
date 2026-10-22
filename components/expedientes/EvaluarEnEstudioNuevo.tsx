@@ -41,7 +41,12 @@ export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador }: Props) {
         comentario: MOTIVO,
       })
       toast.success('Estudio cancelado. Cree el estudio nuevo.')
-      router.push(`/expedientes/nuevo?inmueble_id=${exp.inmueble_id}&solicitante_id=${exp.solicitante_id}`)
+      // Estudio sin propiedad: el nuevo se arma desde el paso 1 (canon objetivo).
+      router.push(
+        exp.inmueble_id
+          ? `/expedientes/nuevo?inmueble_id=${exp.inmueble_id}&solicitante_id=${exp.solicitante_id}`
+          : '/expedientes/nuevo',
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo cancelar el estudio.')
     }

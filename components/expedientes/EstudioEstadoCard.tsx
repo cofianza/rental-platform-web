@@ -58,6 +58,8 @@ interface EstudioEstadoCardProps {
   inmuebleActualId?: string | null
   /** Se llama tras reasignar, para que el expediente se recargue. */
   onReasignado?: () => void
+  /** Estudio sin propiedad: hasta qué canon queda aprobado (el botón pasa a «Vincular inmueble»). */
+  canonAprobado?: number | null
   /**
    * false = la API no lo va a trasladar (estudio cerrado o rechazado, o ya
    * reservó el inmueble para su contrato): no se ofrece el botón.
@@ -400,6 +402,7 @@ export function EstudioEstadoCard({
   solicitante,
   inmuebleActualId,
   onReasignado,
+  canonAprobado,
   reasignable = true,
   coarrendatarioVigente = true,
   expedienteEstado,
@@ -497,6 +500,7 @@ export function EstudioEstadoCard({
           userRol={userRol}
           onRetried={fetchEstudios}
           inmuebleActualId={inmuebleActualId}
+          canonAprobado={canonAprobado}
           onReasignado={reasignable ? () => {
             fetchEstudios()
             onReasignado?.()
@@ -539,6 +543,7 @@ interface EstudioPanelProps {
   onRetried?: () => void
   /** Presente solo en el panel del titular: habilita la reasignacion (§4.3). */
   inmuebleActualId?: string | null
+  canonAprobado?: number | null
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
@@ -557,6 +562,7 @@ function EstudioPanel({
   userRol,
   onRetried,
   inmuebleActualId,
+  canonAprobado,
   onReasignado,
   expedienteId,
   sinReintento,
@@ -776,7 +782,7 @@ function EstudioPanel({
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <IconBuilding2 size={14} />
-                  Reasignar a otra propiedad
+                  {inmuebleActualId ? 'Reasignar a otra propiedad' : 'Vincular inmueble'}
                 </button>
               )}
               {onVerEstudios && (
@@ -800,6 +806,7 @@ function EstudioPanel({
           estudioId={estudio.id}
           inmuebleActualId={inmuebleActualId}
           canonEvaluado={estudio.canon_evaluado}
+          canonAprobado={canonAprobado}
           onReasignado={onReasignado}
         />
       )}

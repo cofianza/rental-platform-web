@@ -151,11 +151,13 @@ export interface IAutorizacionPublicData {
   }
   expediente: {
     numero_expediente: string
+    /** null en un estudio creado sin propiedad (Cofianza lo pide con un canon objetivo). */
     inmueble: {
       direccion: string
       ciudad: string
       barrio: string | null
-    }
+    } | null
+    canon_objetivo_cop?: number | null
   }
   /**
    * Política V4.1, Anexo A ("cédula validada vía biometría AUCO") + §14.

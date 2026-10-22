@@ -494,6 +494,12 @@ export default function ExpedienteDetallePage() {
 
             {/* Info del inmueble y solicitante */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+              {!expediente.inmueble && expediente.canon_objetivo_cop && (
+                <span>
+                  <span className="text-gray-500">Inmueble:</span> por definir · canon de{' '}
+                  {formatCurrency(expediente.canon_objetivo_cop)}
+                </span>
+              )}
               {expediente.inmueble && (
                 <span>
                   <span className="text-gray-500">Inmueble:</span>{' '}
@@ -758,7 +764,17 @@ export default function ExpedienteDetallePage() {
                     (expediente aprobado sin contrato). Se auto-oculta en el
                     resto de estados, así que solo aparece encima del estudio
                     justo cuando es el siguiente paso. */}
-                {puedeEditar && (
+                {/* Sin propiedad no hay contrato que generar: primero se vincula el inmueble. */}
+                {puedeEditar && !expediente.inmueble && expediente.estado === 'aprobado' && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <p className="font-semibold">Siguiente paso: vincular el inmueble</p>
+                    <p className="mt-1">
+                      El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble»
+                      en la evaluación de abajo; después podrá generar el contrato.
+                    </p>
+                  </div>
+                )}
+                {puedeEditar && expediente.inmueble && (
                   <AccionContratoPendienteCard
                     expedienteId={id}
                     expedienteEstado={expediente.estado}
@@ -810,6 +826,7 @@ export default function ExpedienteDetallePage() {
                   // la pagina entera (la seccion Inmueble de aqui abajo es lo
                   // primero que queda desactualizado).
                   inmuebleActualId={expediente.inmueble?.id}
+                  canonAprobado={expediente.sin_inmueble?.canonAprobadoCop ?? null}
                   onReasignado={fetchExpediente}
                   // Mismos guards de la API (reasignacion.service): cerrado o
                   // rechazado, o titular de la reserva del inmueble (su contrato).
@@ -950,6 +967,27 @@ export default function ExpedienteDetallePage() {
                         value={`${expediente.inmueble.area_construida} m²`}
                       />
                     )}
+                  </div>
+                ) : expediente.canon_objetivo_cop ? (
+                  <div className="space-y-3 text-sm">
+                    <InfoRow label="Inmueble" value="Por definir" />
+                    <InfoRow
+                      label="Destinación"
+                      value={expediente.destinacion_objetivo === 'comercial' ? 'Comercial' : 'Vivienda'}
+                    />
+                    <InfoRow label="Canon objetivo" value={formatCurrency(expediente.canon_objetivo_cop)} />
+                    {expediente.estado === 'aprobado' && expediente.sin_inmueble?.canonAprobadoCop && (
+                      <InfoRow
+                        label="Aprobado hasta"
+                        value={formatCurrency(expediente.sin_inmueble.canonAprobadoCop)}
+                        highlight
+                      />
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Cuando tenga el inmueble, vincúlelo con «Vincular inmueble» en la evaluación (estudio completado).
+                      La aprobación está sujeta a que el inmueble quede dentro del canon aprobado y a que el propietario
+                      o la inmobiliaria firmen convenio con Cofianza.
+                    </p>
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">Sin inmueble asociado</p>

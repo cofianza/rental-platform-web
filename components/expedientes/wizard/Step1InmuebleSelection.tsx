@@ -33,6 +33,7 @@ import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
+import { SinInmuebleStep1 } from './SinInmuebleStep1'
 
 interface Step1InmuebleSelectionProps {
   data: WizardStep1Data
@@ -92,6 +93,8 @@ export function Step1InmuebleSelection({
   // Propietario/inmobiliaria ven dropdown directo con sus propios inmuebles.
   // Admin/operador siempre usan el buscador (catalogo completo).
   const usaDropdownPropios = userRol === 'propietario' || userRol === 'inmobiliaria'
+  // Estudio sin propiedad: solo Cofianza (el API lo exige igual).
+  const puedeSinInmueble = userRol === 'administrador' || userRol === 'operador_analista'
   // CORR §4: el saldo de cupos se ve desde el paso 1. Solo la inmobiliaria
   // tiene paquete: el administrador no tiene lotes propios (vería «no le
   // quedan cupos») ni puede gastar los de la inmobiliaria.
@@ -297,6 +300,34 @@ export function Step1InmuebleSelection({
       </div>
 
       {saldoCupos && <SaldoCuposAviso saldo={saldoCupos} />}
+
+      {puedeSinInmueble && !data.inmueble && (
+        <div role="radiogroup" aria-label="¿El estudio tiene propiedad?" className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm">
+          {[
+            { sin: false, label: 'Con propiedad' },
+            { sin: true, label: 'Sin propiedad todavía' },
+          ].map((o) => (
+            <button
+              key={o.label}
+              type="button"
+              role="radio"
+              aria-checked={!!data.sinInmueble === o.sin}
+              onClick={() => onUpdate({ sinInmueble: o.sin, excedeTope: false })}
+              className={cn(
+                'rounded-md px-3 py-1.5 font-medium transition',
+                !!data.sinInmueble === o.sin ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900',
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {data.sinInmueble ? (
+        <SinInmuebleStep1 data={data} errors={errors} onUpdate={onUpdate} topeCanon={topeCanon} />
+      ) : (
+      <>
 
       {/* Si no hay inmueble seleccionado, mostrar selector */}
       {!data.inmueble ? (
@@ -654,6 +685,8 @@ export function Step1InmuebleSelection({
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )

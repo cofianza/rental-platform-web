@@ -37,6 +37,8 @@ interface Step3ConfigurationProps {
   data: WizardStep3Data
   errors: Record<string, string>
   onUpdate: (data: Partial<WizardStep3Data>) => void
+  /** Estudio sin propiedad: no hay inmobiliaria, así que no se usan cupos de paquete. */
+  sinInmueble?: boolean
 }
 
 interface Analista {
@@ -81,6 +83,7 @@ export function Step3Configuration({
   data,
   errors,
   onUpdate,
+  sinInmueble = false,
 }: Step3ConfigurationProps) {
   // "Asignar responsable" (analista) es asignación INTERNA de Cofianza — no
   // aplica a inmobiliaria/propietario, así que para ellos se oculta el bloque
@@ -91,7 +94,7 @@ export function Step3Configuration({
   const esInmobiliaria = userRol === 'inmobiliaria'
   // Solo la inmobiliaria (y el administrador) tienen paquetes de créditos: al
   // propietario la consulta del saldo le da 403 y la opción salía deshabilitada.
-  const usaCreditos = esInmobiliaria || userRol === 'administrador'
+  const usaCreditos = (esInmobiliaria || userRol === 'administrador') && !sinInmueble
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)

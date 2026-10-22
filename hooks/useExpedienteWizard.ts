@@ -27,6 +27,10 @@ export interface WizardStep1Data {
   excedeTope?: boolean
   /** Adenda 3 V2 §6.1: se puede agregar el coarrendatario desde el asistente. */
   coarrendatarioDesdeInicio?: boolean
+  /** Estudio sin propiedad (solo Cofianza): canon objetivo y destinación en lugar del inmueble. */
+  sinInmueble?: boolean
+  canonObjetivo?: number
+  destinacion?: 'vivienda' | 'comercial'
 }
 
 /** Coarrendatario desde el inicio: todos los campos obligatorios, también el celular. */
@@ -193,6 +197,11 @@ export function step2ConFicha(
 function validateStep1(data: WizardStep1Data): Record<string, string> {
   const errors: Record<string, string> = {}
 
+  if (data.sinInmueble) {
+    if (!data.canonObjetivo || data.canonObjetivo <= 0) errors.canonObjetivo = 'Indique el canon objetivo'
+    if (!data.destinacion) errors.destinacion = 'Elija vivienda o comercial'
+    return errors
+  }
   if (!data.inmueble) {
     errors.inmueble = 'Debe seleccionar un inmueble'
   }
@@ -318,7 +327,7 @@ export function useExpedienteWizard() {
 
   // "Hay algo que perder": inmueble elegido, solicitante elegido o formulario
   // de solicitante nuevo empezado.
-  const hayDatos = !!data.step1.inmueble || !!data.step2.solicitante || !!data.step2.formData
+  const hayDatos = !!data.step1.inmueble || !!data.step1.canonObjetivo || !!data.step2.solicitante || !!data.step2.formData
 
   const clearDraft = useCallback(() => {
     try {
@@ -443,7 +452,7 @@ export function useExpedienteWizard() {
           : prev.step2,
     }))
     // Limpiar errores del campo actualizado
-    if (newData.inmueble !== undefined) {
+    if (newData.inmueble !== undefined || newData.canonObjetivo !== undefined || newData.destinacion !== undefined || newData.sinInmueble !== undefined) {
       setErrors(prev => ({ ...prev, step1: {} }))
     }
   }, [])
@@ -517,7 +526,9 @@ export function useExpedienteWizard() {
       // crear nada. Antes se validaba solo al enviar: el gestor recorria los
       // cuatro pasos para chocar al final con un expediente ya creado.
       // Adenda de precios §7.1: el canon sobre el tope ya no detiene el paso 1 (solo avisa).
-      return !!data.step1.inmueble
+      return data.step1.sinInmueble
+        ? !!data.step1.canonObjetivo && data.step1.canonObjetivo > 0 && !!data.step1.destinacion
+        : !!data.step1.inmueble
     }
     if (currentStep === 2) {
       // El coarrendatario, si se agregó, con todos sus campos (el formato se valida al pulsar «Siguiente»).
@@ -595,7 +606,9 @@ export function useExpedienteWizard() {
 
       // Crear expediente
       const expediente = await expedienteService.createExpediente({
-        inmueble_id: data.step1.inmueble!.id,
+        ...(data.step1.sinInmueble
+          ? { canon_objetivo_cop: data.step1.canonObjetivo, destinacion_objetivo: data.step1.destinacion }
+          : { inmueble_id: data.step1.inmueble!.id }),
         solicitante_id: solicitanteId,
         analista_id: data.step3.analista_id || undefined,
         miembro_responsable_id: data.step3.miembro_responsable_id || undefined,

@@ -67,6 +67,11 @@ interface ReasignarEstudioModalProps {
    * puede estimar nada aqui y se avisa antes de gastarle el clic al gestor.
    */
   canonEvaluado?: number | string | null
+  /**
+   * Estudio sin propiedad: el «canon aprobado» que calculó la API (el máximo
+   * amparado del CRC). Con él, el modal VINCULA el primer inmueble.
+   */
+  canonAprobado?: number | null
   /** Se llama tras una reasignacion exitosa, para refrescar el expediente. */
   onReasignado?: () => void
 }
@@ -86,8 +91,10 @@ export function ReasignarEstudioModal({
   estudioId,
   inmuebleActualId,
   canonEvaluado,
+  canonAprobado,
   onReasignado,
 }: ReasignarEstudioModalProps) {
+  const vincular = !inmuebleActualId
   const [inmuebles, setInmuebles] = useState<IInmueble[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [seleccionado, setSeleccionado] = useState<IInmueble | null>(null)
@@ -111,7 +118,8 @@ export function ReasignarEstudioModal({
   // Mismo calculo que la API (canon * (100 + pct) / 100 y no * 1.15): con
   // enteros el borde del +15% es exacto, y asi la estimacion no contradice al
   // backend justo en la frontera.
-  const canonMaximo = canonOrigen === null ? null : (canonOrigen * (100 + TOLERANCIA_PCT)) / 100
+  const canonMaximo =
+    canonAprobado ?? (canonOrigen === null ? null : (canonOrigen * (100 + TOLERANCIA_PCT)) / 100)
 
   const cargarInmuebles = useCallback(async () => {
     setIsLoading(true)
@@ -203,7 +211,9 @@ export function ReasignarEstudioModal({
       // sin cambiar es como el gestor comprueba que no se extendio.
       const vigencia = res.vigencia_hasta ? ` Vigencia hasta ${formatDate(res.vigencia_hasta)}.` : ''
       toast.success(
-        `Estudio reasignado a ${seleccionado.codigo} sin costo adicional.${vigencia}`,
+        vincular
+          ? `Inmueble ${seleccionado.codigo} vinculado al estudio.${vigencia}`
+          : `Estudio reasignado a ${seleccionado.codigo} sin costo adicional.${vigencia}`,
       )
       // El certificado emitido nombra la propiedad en el PDF, que es inmutable.
       // La API lo regenera con la propiedad nueva; si no pudo, el gestor tiene
@@ -232,16 +242,36 @@ export function ReasignarEstudioModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Reasignar estudio a otra propiedad" size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={vincular ? 'Vincular inmueble al estudio' : 'Reasignar estudio a otra propiedad'}
+      size="lg"
+    >
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
-          El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
-          <span className="font-medium text-gray-800">sin costo adicional</span>. Conserva su
-          vigencia original — reasignarlo no la extiende. Solo se traslada dentro de la misma
-          cartera, y no si el estudio ya generó contrato o tiene una visita agendada.
+          {vincular ? (
+            <>
+              El estudio se creó sin propiedad. Elija el inmueble que la persona va a arrendar: su canon debe caber en
+              el canon aprobado y debe ser de la misma destinación (vivienda o comercial). Desde ese momento el estudio
+              pasa a la cartera del dueño del inmueble. Conserva su vigencia original.
+            </>
+          ) : (
+            <>
+              El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
+              <span className="font-medium text-gray-800">sin costo adicional</span>. Conserva su
+              vigencia original — reasignarlo no la extiende. Solo se traslada dentro de la misma
+              cartera, y no si el estudio ya generó contrato o tiene una visita agendada.
+            </>
+          )}
         </p>
 
-        {canonOrigen !== null ? (
+        {vincular && canonAprobado ? (
+          <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            Aprobado hasta un canon de <span className="font-semibold">{formatCurrency(canonAprobado)}</span>. Si el
+            inmueble cuesta más, se requiere una evaluación nueva.
+          </div>
+        ) : canonOrigen !== null ? (
           <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
             Se evaluó con un canon de{' '}
             <span className="font-semibold">{formatCurrency(canonOrigen)}</span>. Sin una evaluación
