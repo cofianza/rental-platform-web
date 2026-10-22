@@ -487,9 +487,12 @@ export default function AdminCalibracionPage() {
   }, [user])
 
   const q = busqueda.trim().toLowerCase()
+  // Adenda 3 V2 §1: con las reglas nuevas encendidas, el factor único ya no decide nada: no se muestra.
+  const v2 = params.some((p) => p.clave === 'ADENDA3_V2' && p.valor === 1)
+  const vigentes = v2 ? params.filter((p) => p.clave !== 'FACTOR_AJUSTE_INGRESO') : params
   const visibles = q
-    ? params.filter((p) => `${nombreDe(p.clave)} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q))
-    : params
+    ? vigentes.filter((p) => `${nombreDe(p.clave)} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q))
+    : vigentes
   const grupos = GRUPOS.map((g) => ({ ...g, items: visibles.filter((p) => metaDe(p.clave).grupo === g.id) })).filter(
     (g) => g.items.length > 0,
   )

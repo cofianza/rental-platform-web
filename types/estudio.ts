@@ -45,6 +45,8 @@ export interface IEstudio {
    * analista: aprobar, pedir soportes y reasignar responden 409.
    */
   condicion_coarrendatario?: ICondicionCoarrendatario | null
+  /** Adenda 3 V2 §6.1: por qué espera una evaluación lista (solo en el listado del estudio). */
+  espera_consulta?: 'coarrendatario_sin_autorizar' | 'titular_sin_decidir' | null
   /** Adenda 3 V2 §7: coincidencia en listas (solo la reciben los roles de Cofianza). */
   listas?: { estado: 'por_confirmar' | 'confirmada' | 'descartada'; motivo?: string } | null
   /**

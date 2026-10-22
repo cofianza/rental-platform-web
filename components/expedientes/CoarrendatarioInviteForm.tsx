@@ -112,6 +112,8 @@ export function CoarrendatarioInviteForm({
     if (!numDoc.trim()) e.numDoc = 'Escriba el número de documento.'
     if (!email.trim()) e.email = 'Escriba el correo: ahí le llega la invitación.'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Revise el correo: parece incompleto.'
+    // CORR §3.1.3: obligatorio, porque la invitación también le llega por WhatsApp.
+    if (telefono.replace(/\D/g, '').length < 10) e.telefono = 'Escriba el celular: ahí le llega la invitación por WhatsApp.'
     setErrores(e)
     const primero = (Object.keys(e) as Campo[])[0]
     if (primero) {
@@ -126,7 +128,7 @@ export function CoarrendatarioInviteForm({
         tipo_documento: tipoDoc,
         numero_documento: numDoc.trim(),
         email: email.trim(),
-        telefono: telefono.trim() || undefined,
+        telefono: telefono.trim(),
       })
       toast.success(`Invitación enviada a ${email}`)
       setShowForm(false)
@@ -217,7 +219,7 @@ export function CoarrendatarioInviteForm({
               : esGestor
                 ? 'Escriba los datos del coarrendatario. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'
                 : 'Escriba los datos de la persona. Le enviaremos una invitación a su correo para que acepte y autorice su evaluación crediticia.'}
-            {' '}Todos los campos son obligatorios, salvo el WhatsApp.
+            {' '}Todos los campos son obligatorios.
           </p>
 
           <div className="grid grid-cols-2 gap-3">
@@ -250,7 +252,7 @@ export function CoarrendatarioInviteForm({
           <FormField id={idDe('email')} label="Correo electrónico" type="email" value={email} error={errores.email} onChange={(v) => { setEmail(v); limpiar('email') }} />
 
           <PhoneInput
-            label="WhatsApp (opcional — le llega la invitación también por ahí)"
+            label="Celular (WhatsApp): le llega la invitación también por ahí"
             value={telefono}
             onChange={(v) => { setTelefono(v); limpiar('telefono') }}
             error={errores.telefono}

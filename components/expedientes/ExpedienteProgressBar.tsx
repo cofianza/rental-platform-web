@@ -17,6 +17,7 @@ import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 
 export interface ExpedienteProgressBarProps {
   expedienteId: string
@@ -121,13 +122,13 @@ export function ExpedienteProgressBar({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : conCondicion ? 'Aprobado con condición' : 'Estamos revisando su estudio'}
+          {isRejected ? 'No aprobable por ahora' : conCondicion ? 'Está cerca' : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
             : conCondicion
-              ? 'Para continuar, invite a un coarrendatario antes de la fecha que ve abajo. Su inmobiliaria le indicará qué perfil debe tener.'
+              ? MENSAJE_ESTA_CERCA
               : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>

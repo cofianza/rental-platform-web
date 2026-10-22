@@ -502,7 +502,7 @@ export function ResumenSection() {
                 <strong className="tabular-nums">{noSoyYo.escalados30d}</strong> escalados a la Gerencia
               </span>
               <span>
-                <strong className="tabular-nums">{noSoyYo.cedulasReincidentes}</strong> cédulas con más de uno
+                <strong className="tabular-nums">{noSoyYo.cedulasReincidentes}</strong> repetidos sobre una misma cédula
               </span>
             </p>
             {noSoyYo.porAsesor.length > 0 && (
