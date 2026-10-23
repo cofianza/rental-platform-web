@@ -46,7 +46,7 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
           <span className="mt-1 block text-sm text-gray-600">
             La persona con quien vivirá el solicitante. No es fiador: firma el contrato como arrendatario, junto con el
             titular, y responde solidariamente. Le enviamos su propia invitación para que autorice la consulta. Cada uno
-            se consulta apenas autoriza, y el estudio se decide con los dos.
+            se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos.
           </span>
         </span>
       </label>

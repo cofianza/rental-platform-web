@@ -182,7 +182,7 @@ export function CoarrendatarioInviteForm({
             ) : esGestor && antesDeLaDecision ? (
               <>
                 Puede agregar a la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>. Cada uno
-                se consulta apenas autoriza, y el estudio se decide con los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : esGestor ? (
               <>
