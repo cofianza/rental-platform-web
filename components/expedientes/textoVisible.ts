@@ -86,6 +86,8 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
     ? limpio
         .replace(/\b(?:DataCr[eé]dito|TransUnion|Experian|CIFIN|SIFIN)\b(?:\s+HDC\+?)?/gi, 'la central de riesgo')
         .replace(/la central de riesgo (y|o) la central de riesgo/g, 'las centrales de riesgo')
+        // «DataCredito Experian», «… tampoco respondió. DataCrédito no está…»
+        .replace(/(la central de riesgo)(\s+la central de riesgo)+/gi, '$1')
     : limpio
 
   const vistas = new Set<string>()

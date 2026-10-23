@@ -486,7 +486,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 <h4 className="text-sm font-medium text-gray-700 mb-2">{externo ? 'Reporte de la central de riesgo' : 'Reporte DataCrédito'}</h4>
                 {datacreditoData?.ReportHDCplus ? (
                   <ReporteBuroErrorBoundary>
-                    <DataCreditoReportDetail data={datacreditoData} />
+                    <DataCreditoReportDetail data={datacreditoData} externo={externo} />
                   </ReporteBuroErrorBoundary>
                 ) : (
                   <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">

@@ -21,6 +21,8 @@ import type {
 
 interface DataCreditoReportDetailProps {
   data: DataCreditoResponse
+  /** Inmobiliaria o propietario: sin el nombre de la central (reunión con Gerencia 23-oct). */
+  externo?: boolean
 }
 
 // ── Constantes del proveedor ────────────────────────────────
@@ -336,7 +338,7 @@ function EstadoPill({ texto, tono }: { texto: string; tono: 'green' | 'red' | 'g
 
 // ── Main Component ──────────────────────────────────────────
 
-export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) {
+export function DataCreditoReportDetail({ data, externo = false }: DataCreditoReportDetailProps) {
   // El provider persiste la respuesta con su envoltura: { ReportHDCplus: {...} }.
   // Se tolera tambien el reporte pelado por si algun dia se guarda desenvuelto.
   const report: DcReport = data?.ReportHDCplus ?? (data as DcReport) ?? {}
@@ -370,7 +372,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
   const badgeEndeudamiento =
     fuentesEndeudamiento
       .map((fuente) =>
-        fuente === 'S' ? 'Superintendencia Financiera' : fuente === 'DC' ? 'DataCrédito' : fuente
+        fuente === 'S' ? 'Superintendencia Financiera' : fuente === 'DC' ? (externo ? 'Central de riesgo' : 'DataCrédito') : fuente
       )
       .join(' y ') || 'Origen no reportado'
 
@@ -519,7 +521,7 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
           <IconInfo size={16} className="text-blue-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-xs font-medium text-blue-900">
-              La consulta fue efectiva, pero DataCrédito no reporta información crediticia de esta persona.
+              La consulta fue efectiva, pero {externo ? 'la central de riesgo' : 'DataCrédito'} no reporta información crediticia de esta persona.
             </p>
             <p className="text-[10px] text-blue-800 mt-1">
               No es un rechazo del buró: significa que la persona no está bancarizada o no tiene historia por
@@ -700,7 +702,9 @@ export function DataCreditoReportDetail({ data }: DataCreditoReportDetailProps) 
           <p className="text-[10px] text-gray-500 mt-2">
             Montos consolidados convertidos desde miles de pesos, como los entrega el proveedor.
             {score !== null
-              ? ' Los cortes de puntaje del modelo son provisionales: Experian no publica el rango oficial.'
+              ? externo
+                ? ' Los cortes de puntaje del modelo son provisionales.'
+                : ' Los cortes de puntaje del modelo son provisionales: Experian no publica el rango oficial.'
               : ''}
           </p>
         </AccordionSection>

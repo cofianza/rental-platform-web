@@ -235,10 +235,17 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
-function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string, esCoarrendatario = false): string {
+function getSiguientePaso(
+  estudio: IEstudio,
+  esCofianza: boolean,
+  expedienteEstado?: string,
+  esCoarrendatario = false,
+  /** Roles de Cofianza (también Gerencia): ven el nombre de la central. */
+  verCentral = esCofianza,
+): string {
   // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
   // dice en qué central se consultó («reserva del sumario»).
-  const buro = esCofianza ? BURO_LABELS[estudio.proveedor] || 'el buró de crédito' : 'la central de riesgo'
+  const buro = verCentral ? BURO_LABELS[estudio.proveedor] || 'el buró de crédito' : 'la central de riesgo'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
   // definido. El solicitante puede reenviar la solicitud sin costo adicional
@@ -264,7 +271,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
     // etiqueta (redacción por rol en la API).
     const etiqueta = estudio.ruta?.etiquetaGestor
     if (estudio.resultado === 'aprobado') {
-      const base = `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.`
+      const base = verCentral ? `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.` : 'Evaluación aprobada. Siguiente paso: generar contrato.'
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
@@ -660,7 +667,7 @@ function EstudioPanel({
     ? 'Ya autorizó. Su evaluación corre cuando termine la del titular, sin pagos adicionales. Si el titular no queda descartado, se consulta y suma al estudio.'
     : sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario')
+      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario', esRolInterno(userRol))
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
   const siguientePaso =
     destinacion && !inmuebleActualId
