@@ -332,7 +332,7 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
           : antesDeLaDecision
-          ? 'Autorizó. Su evaluación corre después de la del titular, y el estudio se decide con los dos.'
+          ? 'Autorizó. Su evaluación corre apenas el estudio esté pagado, y el estudio se decide con los dos.'
           : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {
