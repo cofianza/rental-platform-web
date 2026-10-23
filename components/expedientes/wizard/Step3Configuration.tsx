@@ -105,10 +105,13 @@ export function Step3Configuration({
       : !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito'),
   )
   // Si la forma elegida dejó de ofrecerse (p. ej. se cambió a «Sin propiedad»), se vuelve a elegir.
+  // Con una sola opción (sin propiedad, o inmobiliaria sin paquete) va marcada.
   const formaPagoInvisible = !!data.forma_pago && !opcionesVisibles.some((o) => o.valor === data.forma_pago)
+  const unicaOpcion = opcionesVisibles.length === 1 ? opcionesVisibles[0].valor : null
   useEffect(() => {
-    if (formaPagoInvisible) onUpdate({ forma_pago: '' })
-  }, [formaPagoInvisible, onUpdate])
+    if (unicaOpcion && data.forma_pago !== unicaOpcion) onUpdate({ forma_pago: unicaOpcion })
+    else if (formaPagoInvisible) onUpdate({ forma_pago: '' })
+  }, [unicaOpcion, data.forma_pago, formaPagoInvisible, onUpdate])
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
@@ -222,10 +225,29 @@ export function Step3Configuration({
       </div>
 
       {/* §6 — la decisión del paso: forma de pago del estudio */}
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium text-gray-700">
-          ¿Quién paga el estudio?
-        </legend>
+      <fieldset
+        className={cn(
+          'space-y-3 rounded-2xl border-2 p-4 sm:p-5',
+          errors.forma_pago ? 'border-red-300 bg-red-50/40' : 'border-primary-200 bg-primary-50/30',
+        )}
+      >
+        <legend className="sr-only">¿Quién paga el estudio?</legend>
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white">
+            <IconCreditCard size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-2 font-display text-base font-bold text-gray-900">
+              ¿Quién paga el estudio?
+              <span className="rounded-full bg-coral-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-coral-700">
+                Obligatorio
+              </span>
+            </p>
+            <p className="mt-0.5 text-sm text-gray-600">
+              Define a quién se le cobra la evaluación. Sin esta elección el estudio no puede iniciar.
+            </p>
+          </div>
+        </div>
         <div className="space-y-2.5">
           {opcionesVisibles.map(({ valor, titulo, descripcion, Icono }) => {
             const seleccionada = data.forma_pago === valor
