@@ -993,6 +993,7 @@ export function AutorizacionSection({
           numeroActual={solicitanteDocumento}
           nombreActual={solicitanteNombre}
           apellidoActual={solicitanteApellido}
+          esCofianza={esCofianza}
           correccionesRestantes={autorizacion?.correcciones_restantes}
           onCorregido={() => {
             void fetchStatus()
