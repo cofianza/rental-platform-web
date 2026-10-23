@@ -27,9 +27,11 @@ interface Props {
   expedienteId: string
   /** Hay un borrador de contrato: también se cancela (y se libera el inmueble). */
   conBorrador?: boolean
+  /** Estudio sin propiedad: el inmueble elegido al vincular, que no cupo en el canon aprobado. */
+  inmuebleDestinoId?: string
 }
 
-export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador }: Props) {
+export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador, inmuebleDestinoId }: Props) {
   const router = useRouter()
   const [abierto, setAbierto] = useState(false)
 
@@ -41,7 +43,14 @@ export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador }: Props) {
         comentario: MOTIVO,
       })
       toast.success('Estudio cancelado. Cree el estudio nuevo.')
-      router.push(`/expedientes/nuevo?inmueble_id=${exp.inmueble_id}&solicitante_id=${exp.solicitante_id}`)
+      // Estudio sin propiedad: el nuevo va con el inmueble que no cupo (si lo hay)
+      // o se arma desde el paso 1 con un canon objetivo nuevo.
+      const inmuebleId = inmuebleDestinoId ?? exp.inmueble_id
+      router.push(
+        inmuebleId
+          ? `/expedientes/nuevo?inmueble_id=${inmuebleId}&solicitante_id=${exp.solicitante_id}`
+          : '/expedientes/nuevo',
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo cancelar el estudio.')
     }
@@ -65,7 +74,11 @@ export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador }: Props) {
               {conBorrador && (
                 <li>El borrador del contrato también se cancela y el inmueble se libera. Lo que diligenció no pasa al estudio nuevo.</li>
               )}
-              <li>Se abre el estudio nuevo con el mismo inmueble y el mismo arrendatario.</li>
+              <li>
+                {inmuebleDestinoId
+                  ? 'Se abre el estudio nuevo con el inmueble elegido y el mismo arrendatario.'
+                  : 'Se abre el estudio nuevo con el mismo inmueble y el mismo arrendatario.'}
+              </li>
             </ul>
           </div>
         }

@@ -132,7 +132,7 @@ export function Step4Confirmation({
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconHome size={16} className="text-gray-500" />
-            Inmueble Seleccionado
+            {data.step1.sinInmueble ? 'Sin propiedad todavía' : 'Inmueble Seleccionado'}
           </h3>
           <button
             type="button"
@@ -144,6 +144,19 @@ export function Step4Confirmation({
           </button>
         </div>
         <div className="p-4">
+          {data.step1.sinInmueble && (
+            <div className="text-sm text-gray-700">
+              <p>
+                Se evalúa con un canon de{' '}
+                <strong className="text-primary-700">{formatCurrency(data.step1.canonObjetivo ?? 0)}</strong>
+                {' '}({data.step1.destinacion === 'comercial' ? 'comercial' : 'vivienda'}).
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                El certificado dirá que la aprobación está sujeta a que el inmueble quede dentro del canon aprobado y a
+                que el propietario o la inmobiliaria firmen convenio con Cofianza.
+              </p>
+            </div>
+          )}
           {inmueble && (
             <div className="flex gap-4">
               {/* Imagen */}

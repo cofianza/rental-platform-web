@@ -959,7 +959,7 @@ function SolicitanteDashboard() {
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      {exp.inmueble?.direccion || exp.inmueble?.titulo || 'Inmueble'}
+                      {exp.inmueble?.direccion || exp.inmueble?.titulo || 'Inmueble por definir'}
                       {exp.inmueble?.ciudad ? `, ${exp.inmueble.ciudad}` : ''}
                     </p>
                   </div>

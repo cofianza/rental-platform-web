@@ -37,6 +37,8 @@ interface Step3ConfigurationProps {
   data: WizardStep3Data
   errors: Record<string, string>
   onUpdate: (data: Partial<WizardStep3Data>) => void
+  /** Estudio sin propiedad: no hay inmobiliaria, así que no se usan cupos de paquete. */
+  sinInmueble?: boolean
 }
 
 interface Analista {
@@ -81,6 +83,7 @@ export function Step3Configuration({
   data,
   errors,
   onUpdate,
+  sinInmueble = false,
 }: Step3ConfigurationProps) {
   // "Asignar responsable" (analista) es asignación INTERNA de Cofianza — no
   // aplica a inmobiliaria/propietario, así que para ellos se oculta el bloque
@@ -91,7 +94,21 @@ export function Step3Configuration({
   const esInmobiliaria = userRol === 'inmobiliaria'
   // Solo la inmobiliaria (y el administrador) tienen paquetes de créditos: al
   // propietario la consulta del saldo le da 403 y la opción salía deshabilitada.
-  const usaCreditos = esInmobiliaria || userRol === 'administrador'
+  const usaCreditos = (esInmobiliaria || userRol === 'administrador') && !sinInmueble
+
+  // Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
+  // (paquete o prospecto); el API responde 403. Sin cupos, sin la opción del paquete.
+  // Estudio sin propiedad (decisión del 22-oct): lo paga solo la persona estudiada.
+  const opcionesVisibles = OPCIONES_PAGO.filter((o) =>
+    sinInmueble
+      ? o.valor === 'prospecto'
+      : !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito'),
+  )
+  // Si la forma elegida dejó de ofrecerse (p. ej. se cambió a «Sin propiedad»), se vuelve a elegir.
+  const formaPagoInvisible = !!data.forma_pago && !opcionesVisibles.some((o) => o.valor === data.forma_pago)
+  useEffect(() => {
+    if (formaPagoInvisible) onUpdate({ forma_pago: '' })
+  }, [formaPagoInvisible, onUpdate])
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
@@ -210,9 +227,7 @@ export function Step3Configuration({
           ¿Quién paga el estudio?
         </legend>
         <div className="space-y-2.5">
-          {/* Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
-              (paquete o prospecto); el API responde 403. */}
-          {OPCIONES_PAGO.filter((o) => !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito')).map(({ valor, titulo, descripcion, Icono }) => {
+          {opcionesVisibles.map(({ valor, titulo, descripcion, Icono }) => {
             const seleccionada = data.forma_pago === valor
             const sinSaldo = valor === 'credito' && (saldoError || saldo === 0)
             return (

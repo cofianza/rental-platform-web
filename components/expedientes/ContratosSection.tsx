@@ -40,6 +40,8 @@ interface ContratosSectionProps {
   /** Contratos V3: el contrato se crea y edita en el asistente
    *  (/expedientes/:id/contrato), no con GenerarContratoModal. */
   contratosV3?: boolean
+  /** Estudio sin propiedad: no hay contrato hasta vincular el inmueble. */
+  sinInmueble?: boolean
   /** El contrato de otro estudio reservó el inmueble: no se ofrece "Crear contrato". */
   inmuebleReservadoPorOtro?: boolean
   /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
@@ -51,6 +53,7 @@ export function ContratosSection({
   expedienteEstado,
   onContratoActualizado,
   contratosV3,
+  sinInmueble = false,
   inmuebleReservadoPorOtro,
   conComision,
 }: ContratosSectionProps) {
@@ -311,13 +314,13 @@ export function ContratosSection({
         <h3 className="text-lg font-semibold text-gray-900">
           Contratos ({contratos.length})
         </h3>
-        {canCreate && expedienteAprobado && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
+        {canCreate && expedienteAprobado && !sinInmueble && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
           <Link href={rutaAsistente} className={buttonClasses('primary', 'md')}>
             <IconPlus size={16} />
             Crear contrato
           </Link>
         )}
-        {canCreate && expedienteAprobado && !contratosV3 && (
+        {canCreate && expedienteAprobado && !sinInmueble && !contratosV3 && (
           <button
             onClick={() => setGenerarOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
@@ -346,6 +349,10 @@ export function ContratosSection({
             <p className="text-sm text-gray-500">
               El contrato se podrá generar cuando el estudio del arrendatario
               esté aprobado.
+            </p>
+          ) : sinInmueble ? (
+            <p className="text-sm text-gray-500">
+              El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.
             </p>
           ) : canCreate && contratosV3 ? (
             <p className="text-sm text-gray-500">

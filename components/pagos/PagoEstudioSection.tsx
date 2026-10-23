@@ -94,9 +94,11 @@ interface PagoEstudioSectionProps {
   solicitanteNombre?: string
   solicitanteEmail?: string
   solicitanteTelefono?: string | null
+  /** Estudio sin propiedad: lo paga solo la persona estudiada (sin pasarela del gestor ni cupos). */
+  sinInmueble?: boolean
 }
 
-export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono }: PagoEstudioSectionProps) {
+export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, hideIfNoAction, solicitanteNombre, solicitanteEmail, solicitanteTelefono, sinInmueble = false }: PagoEstudioSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
@@ -112,11 +114,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const [errorCarga, setErrorCarga] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [saldoCreditos, setSaldoCreditos] = useState<ISaldoCreditos | null>(null)
-  const puedeUsarCreditos = userRole === 'inmobiliaria'
+  const puedeUsarCreditos = userRole === 'inmobiliaria' && !sinInmueble
   // Opción B (Adenda 2 §7): el gestor paga él mismo por Mercado Pago. Ya no
   // existe "el costo queda a mi cargo" (a cuenta): no se aprobó. Adenda de
   // precios §1.4: la inmobiliaria no paga estudios sueltos (paquete o prospecto).
-  const puedePagarSuelto = userRole !== 'inmobiliaria'
+  const puedePagarSuelto = userRole !== 'inmobiliaria' && !sinInmueble
   const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (puedePagarSuelto ? 1 : 0) + 1
   // El checkout pendiente es de la agencia (opción B), no un enlace enviado al
   // prospecto: se ofrece reabrirlo en vez de "reenviar correo". Lo dice el API

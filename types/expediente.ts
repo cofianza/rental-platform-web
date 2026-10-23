@@ -69,7 +69,8 @@ export interface IExpedienteAnalista {
 export interface IExpediente {
   id: string
   numero_expediente: string
-  inmueble_id: string
+  /** null en un estudio creado sin propiedad (solo Cofianza). */
+  inmueble_id: string | null
   inmueble: IExpedienteInmueble | null
   solicitante_id: string
   solicitante: IExpedienteSolicitante | null
@@ -288,6 +289,11 @@ export interface IExpedienteDetalle extends Omit<IExpediente, 'inmueble' | 'soli
   cierre_sin_acta?: ICierreSinActa | null
   /** Adenda de precios §7: canon, tope y excepción de la Gerencia General. Solo roles de Cofianza. */
   tope_canon?: ITopeCanonDetalle | null
+  /** Estudio creado sin propiedad: canon con el que se evalúa y destinación. */
+  canon_objetivo_cop?: number | null
+  destinacion_objetivo?: 'vivienda' | 'comercial' | null
+  /** Solo mientras no tenga inmueble: hasta qué canon queda aprobado (el «máximo amparado» del CRC). */
+  sin_inmueble?: { canonAprobadoCop: number | null; destinacion: string | null } | null
 }
 
 export interface ITopeCanonDetalle {
