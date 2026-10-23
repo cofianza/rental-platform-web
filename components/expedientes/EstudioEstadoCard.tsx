@@ -236,7 +236,9 @@ const BURO_LABELS: Record<string, string> = {
 }
 
 function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string, esCoarrendatario = false): string {
-  const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
+  // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
+  // dice en qué central se consultó («reserva del sumario»).
+  const buro = esCofianza ? BURO_LABELS[estudio.proveedor] || 'el buró de crédito' : 'la central de riesgo'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
   // definido. El solicitante puede reenviar la solicitud sin costo adicional
@@ -300,7 +302,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
         : `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos y vuelva a consultar.`
     }
     if (tipo === 'apellido') {
-      return `${buro} encontró el documento, pero el primer apellido no coincide. Escriba el primer apellido tal como figura en la Registraduría en el campo «Primer apellido» del reintento y vuelva a consultar.`
+      return `${buro.charAt(0).toUpperCase()}${buro.slice(1)} encontró el documento, pero el primer apellido no coincide. Escriba el primer apellido tal como figura en la Registraduría en el campo «Primer apellido» del reintento y vuelva a consultar.`
     }
     return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla.`
   }
@@ -738,7 +740,7 @@ function EstudioPanel({
               </p>
             )}
             <p className="text-xs text-gray-600">
-              {!esperaTitular && (
+              {!esperaTitular && interno && (
                 <>
                   Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
                   {' · '}

@@ -309,7 +309,8 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* Info principal */}
             <div className="bg-gray-50 rounded-lg p-4">
               <DetailRow label="Tipo" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
-              <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />
+              {/* Reunión con Gerencia 23-oct: la central consultada es reserva de Cofianza. */}
+              {!externo && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
               {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
                 <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
               )}
@@ -317,7 +318,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 label="Pago por"
                 value={paga ? PAGO_LABELS[paga === 'gestor' ? 'inmobiliaria' : 'arrendatario'] : PAGO_LABELS[estudio.pago_por] || estudio.pago_por}
               />
-              {estudio.referencia_proveedor && (
+              {!externo && estudio.referencia_proveedor && (
                 <DetailRow label="Referencia proveedor" value={estudio.referencia_proveedor} />
               )}
             </div>
@@ -464,7 +465,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* TransUnion Report Detail */}
             {isTransUnionCompleted && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte TransUnion</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">{externo ? 'Reporte de la central de riesgo' : 'Reporte TransUnion'}</h4>
                 {transunionData ? (
                   <ReporteBuroErrorBoundary>
                     <TransUnionReportDetail data={transunionData} />
@@ -482,7 +483,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* DataCredito Report Detail */}
             {isDataCreditoCompleted && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Reporte DataCrédito</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">{externo ? 'Reporte de la central de riesgo' : 'Reporte DataCrédito'}</h4>
                 {datacreditoData?.ReportHDCplus ? (
                   <ReporteBuroErrorBoundary>
                     <DataCreditoReportDetail data={datacreditoData} />
