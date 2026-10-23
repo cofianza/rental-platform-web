@@ -628,9 +628,9 @@ export function useExpedienteWizard() {
       })
 
       // Adenda 3 V2 §6.1: el coarrendatario se invita ANTES de pedir la
-      // autorización del titular, así nadie se consulta hasta que los dos
-      // autoricen. Si no se pudo, no se inicia: el gestor lo corrige en el
-      // estudio y elige ahí la forma de pago (el titular no se consulta solo).
+      // autorización del titular (cada uno se consulta apenas autoriza). Si no
+      // se pudo, no se inicia: el gestor lo corrige en el estudio y elige ahí
+      // la forma de pago.
       if (conCoarrendatario) {
         const c = coarrendatario!
         try {

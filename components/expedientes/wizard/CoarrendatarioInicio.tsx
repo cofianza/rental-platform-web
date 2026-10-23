@@ -2,7 +2,7 @@
  * Coarrendatario desde el asistente (Adenda 3 V2 §6.1, pedido de Gerencia):
  * opcional, con todos los datos obligatorios si se agrega. Al enviar el
  * asistente, se le manda su propia invitación antes de pedir la autorización
- * del titular. Nadie se consulta hasta que los dos autoricen; primero el titular.
+ * del titular. Cada uno se consulta apenas autoriza (reunión con Gerencia 23-oct).
  */
 
 'use client'
@@ -45,8 +45,8 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
           </span>
           <span className="mt-1 block text-sm text-gray-600">
             La persona con quien vivirá el solicitante. No es fiador: firma el contrato como arrendatario, junto con el
-            titular, y responde solidariamente. Le enviamos su propia invitación para que autorice la consulta. No se
-            consulta a nadie hasta que los dos autoricen, y primero se evalúa al titular.
+            titular, y responde solidariamente. Le enviamos su propia invitación para que autorice la consulta. Cada uno
+            se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos.
           </span>
         </span>
       </label>
