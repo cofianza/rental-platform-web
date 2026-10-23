@@ -114,7 +114,7 @@ export function SelectorMotivos({
                 {/* El catálogo lo escribe la API; sin «(§14)» ni «Anexo A» en pantalla. */}
                 <span className="block text-gray-900">{textoVisible(m.interno)}</span>
                 {m.interno !== m.visible && (
-                  <span className="block text-xs text-gray-500">La inmobiliaria ve: «{textoVisible(m.visible)}»</span>
+                  <span className="block text-xs text-gray-500">La inmobiliaria ve: «{textoVisible(m.visible, { externo: true })}»</span>
                 )}
               </span>
             </label>
