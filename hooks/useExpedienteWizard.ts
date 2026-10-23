@@ -559,6 +559,17 @@ export function useExpedienteWizard() {
   // ============================================
 
   const submitExpediente = useCallback(async (): Promise<string | null> => {
+    // El estudio se crea antes de iniciarlo: sin forma de pago válida quedaba
+    // creado (y el coarrendatario invitado) pero sin habilitar. Se revisa antes
+    // de crear nada.
+    const errores3 = validateStep3(data.step3)
+    if (Object.keys(errores3).length > 0) {
+      setErrors(prev => ({ ...prev, step3: errores3 }))
+      setCurrentStep(3)
+      toast.error(Object.values(errores3)[0])
+      return null
+    }
+
     setIsSubmitting(true)
     setSubmitError(null)
     setExistingExpediente(null)
