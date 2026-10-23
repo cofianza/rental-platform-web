@@ -39,8 +39,6 @@ interface Props {
   /** Sin nombre (undefined): solo se corrige el documento. */
   nombreActual?: string | null
   apellidoActual?: string | null
-  /** Cofianza: puede cambiar nombre y documento a la vez (para la inmobiliaria es otra persona). */
-  esCofianza?: boolean
   /** null/undefined = la API no lo pudo contar (o es anterior al bloque 2). */
   correccionesRestantes?: number | null
   onCorregido?: () => void
@@ -54,7 +52,6 @@ export function CorregirDocumentoModal({
   numeroActual,
   nombreActual,
   apellidoActual,
-  esCofianza = false,
   correccionesRestantes,
   onCorregido,
 }: Props) {
@@ -87,10 +84,7 @@ export function CorregirDocumentoModal({
   const docValido = !cambiaDoc || numero.trim().length >= 5
   // Solo se exige si se cambia el nombre (una ficha vieja sin apellido no bloquea corregir el documento).
   const nombreCompleto = !cambiaNombre || (!!nombre.trim() && !!apellido.trim())
-  // La API lo rechaza (CAMBIO_DE_PERSONA): se avisa antes de enviar. (También
-  // si ya se corrigió el documento antes; eso lo responde la API.)
-  const cambioDePersona = !esCofianza && cambiaNombre && cambiaDoc
-  const valido = !!fuente && (cambiaNombre || cambiaDoc) && docValido && nombreCompleto && !cambioDePersona
+  const valido = !!fuente && (cambiaNombre || cambiaDoc) && docValido && nombreCompleto
 
   const guardar = async () => {
     if (!fuente) return
@@ -254,12 +248,7 @@ export function CorregirDocumentoModal({
               {conNombre && 'Corregir solo el nombre no gasta corrección.'}
             </p>
           )}
-          {cambioDePersona && (
-            <p className="text-xs font-medium text-red-700">
-              Cambiar el nombre y el documento es cambiar de persona: cree un estudio nuevo o comuníquese con Cofianza.
-            </p>
-          )}
-          {!valido && !cambioDePersona && (
+          {!valido && (
             <p className="text-xs text-gray-500">
               {!nombreCompleto
                 ? 'Escriba nombres y apellidos.'
