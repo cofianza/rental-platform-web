@@ -64,6 +64,8 @@ export interface IUpdatePerfilArrendadorInput {
   matricula_fecha?: string | null
   whatsapp_recaudo?: string | null
   email_recaudo?: string | null
+  /** Teléfono de la organización (factura electrónica de sus compras). */
+  telefono?: string | null
   cuenta_recaudo_banco?: string | null
   cuenta_recaudo_tipo?: 'ahorros' | 'corriente' | null
   cuenta_recaudo_numero?: string | null

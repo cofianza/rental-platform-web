@@ -19,8 +19,12 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { perfilArrendadorService } from '@/services/perfilArrendadorService'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
+import { problemaNit } from '@/lib/nit'
 import {
   creditosEstudiosService,
+  type IDatosFacturacion,
   type IPaqueteCreditos,
   type ISaldoCreditos,
   type IMovimientoCredito,
@@ -74,16 +78,23 @@ export default function CreditosEstudiosPage() {
   const [loading, setLoading] = useState(true)
   const [comprando, setComprando] = useState<string | null>(null)
 
-  // Facturacion de compras
+  // Facturación de compras. Reunión con Gerencia 23-oct: la factura DIAN del
+  // paquete sale sola tras el pago; los datos que falten se piden antes de
+  // comprar. `compraId` null = completar datos (titular) antes de comprar.
+  const [datosFact, setDatosFact] = useState<IDatosFacturacion | null>(null)
+  const esTitular = user?.rol === 'inmobiliaria' && user?.rol_miembro === 'owner'
   const [facturaModal, setFacturaModal] = useState<{
-    compraId: string
+    compraId: string | null
     faltantes: string[]
     datos: IDatosFiscalesFactura
+    /** Paquete que se compra al guardar (completar antes de comprar). */
+    paqueteId?: string
   } | null>(null)
   const [facturando, setFacturando] = useState<string | null>(null)
 
   const fetchAll = async () => {
     try {
+      creditosEstudiosService.getDatosFacturacion().then(setDatosFact).catch(() => setDatosFact(null))
       const [s, p, m, c, d] = await Promise.all([
         creditosEstudiosService.getMiSaldo(),
         creditosEstudiosService.listPaquetes(),
@@ -160,8 +171,44 @@ export default function CreditosEstudiosPage() {
     }
   }
 
+  // Antes de comprar (titular): se guardan en «Datos para contrato» y la
+  // factura de la compra sale sola.
+  const guardarDatosFacturacion = async (d: IDatosFiscalesFactura) => {
+    const v = (x?: string) => x?.trim() || undefined
+    await perfilArrendadorService.updateMe({
+      ...(v(d.razon_social) ? { razon_social: v(d.razon_social) } : {}),
+      ...(v(d.nit) ? { nit: v(d.nit) } : {}),
+      ...(v(d.direccion) ? { domicilio_direccion: v(d.direccion) } : {}),
+      ...(v(d.email) ? { email_recaudo: v(d.email) } : {}),
+      ...(v(d.telefono) ? { telefono: v(d.telefono) } : {}),
+      ...(v(d.municipio_codigo) ? { municipio_codigo: v(d.municipio_codigo), municipio_nombre: v(d.municipio_nombre) } : {}),
+    })
+  }
+
   const handleSubmitFacturaModal = async () => {
     if (!facturaModal) return
+    if (facturaModal.compraId === null) {
+      setFacturando('datos')
+      try {
+        await guardarDatosFacturacion(facturaModal.datos)
+        const nuevos = await creditosEstudiosService.getDatosFacturacion()
+        setDatosFact(nuevos)
+        if (nuevos.faltantes.length > 0) {
+          setFacturaModal({ ...facturaModal, faltantes: nuevos.faltantes })
+          toast.error('Todavía faltan datos para la factura.')
+          return
+        }
+        const paqueteId = facturaModal.paqueteId
+        setFacturaModal(null)
+        toast.success('Datos de facturación guardados.')
+        if (paqueteId) await iniciarCompra(paqueteId)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'No se pudieron guardar los datos')
+      } finally {
+        setFacturando(null)
+      }
+      return
+    }
     setFacturando(facturaModal.compraId)
     try {
       await tryFacturarCompra(facturaModal.compraId, facturaModal.datos)
@@ -171,6 +218,17 @@ export default function CreditosEstudiosPage() {
   }
 
   const handleComprar = async (paqueteId: string) => {
+    if (datosFact && datosFact.faltantes.length > 0) {
+      if (esTitular) {
+        setFacturaModal({ compraId: null, faltantes: datosFact.faltantes, datos: {}, paqueteId })
+        return
+      }
+      toast.info('La factura de esta compra quedará pendiente hasta que el titular complete los datos de facturación.')
+    }
+    await iniciarCompra(paqueteId)
+  }
+
+  const iniciarCompra = async (paqueteId: string) => {
     setComprando(paqueteId)
     try {
       const { checkout_url } = await creditosEstudiosService.comprarPaquete(paqueteId)
@@ -450,6 +508,46 @@ export default function CreditosEstudiosPage() {
         </div>
       )}
 
+      {/* Facturación electrónica del paquete */}
+      {datosFact && (
+        datosFact.faltantes.length === 0 ? (
+          <div className="flex gap-3 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700">
+            <IconReceipt size={18} className="mt-0.5 shrink-0 text-primary-700" />
+            <p>
+              Cofianza le envía la factura electrónica de cada compra a <strong>{datosFact.email}</strong>, a nombre
+              de <strong>{datosFact.razon_social}</strong> ({datosFact.juridica ? 'NIT' : 'documento'} {datosFact.nit}).{' '}
+              {esTitular && (
+                <Link href="/configuracion/datos-contrato" className="font-medium text-primary-700 underline">
+                  Cambiar datos
+                </Link>
+              )}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Faltan datos para su factura electrónica</p>
+              <p className="mt-1 text-xs">
+                Falta: {datosFact.faltantes.map((f) => CAMPO_LABEL[f] ?? f).join(', ')}.{' '}
+                {esTitular
+                  ? 'Complételos una vez y la factura de cada compra le llegará sola al correo.'
+                  : 'Pídale al titular de la inmobiliaria que los complete en Configuración › Datos para contrato.'}
+              </p>
+            </div>
+            {esTitular && (
+              <button
+                type="button"
+                onClick={() => setFacturaModal({ compraId: null, faltantes: datosFact.faltantes, datos: {} })}
+                className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-amber-100"
+              >
+                Completar ahora
+              </button>
+            )}
+          </div>
+        )
+      )}
+
       {/* Historial */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {comprasPendientes.length > 0 && (
@@ -562,8 +660,10 @@ export default function CreditosEstudiosPage() {
                             {m.factura.factus_number || 'Ver factura'}
                           </Link>
                         ) : !puedeEditar ? (
-                          <span className="text-gray-300 text-xs">—</span>
+                          <span className="text-xs text-amber-700">Pendiente</span>
                         ) : (
+                          // La factura sale sola tras el pago; esto queda para cuando
+                          // faltaban datos o la emisión falló.
                           <button
                             onClick={() => handleFacturarClick(m.compra_id!)}
                             disabled={facturando === m.compra_id}
@@ -574,7 +674,7 @@ export default function CreditosEstudiosPage() {
                             ) : (
                               <IconReceipt size={12} />
                             )}
-                            Facturar
+                            Pedir mi factura
                           </button>
                         )
                       ) : (
@@ -593,7 +693,7 @@ export default function CreditosEstudiosPage() {
       <Modal
         isOpen={!!facturaModal}
         onClose={() => !facturando && setFacturaModal(null)}
-        title="Datos fiscales para la factura"
+        title="Datos para su factura electrónica"
         size="md"
       >
         {facturaModal && (
@@ -603,7 +703,9 @@ export default function CreditosEstudiosPage() {
             onChange={(datos) => setFacturaModal({ ...facturaModal, datos })}
             onSubmit={handleSubmitFacturaModal}
             onCancel={() => setFacturaModal(null)}
-            loading={facturando === facturaModal.compraId}
+            loading={facturando === (facturaModal.compraId ?? 'datos')}
+            accion={facturaModal.compraId === null ? (facturaModal.paqueteId ? 'Guardar y comprar' : 'Guardar') : 'Pedir mi factura'}
+            esTitular={esTitular}
           />
         )}
       </Modal>
@@ -621,7 +723,7 @@ const CAMPO_LABEL: Record<string, string> = {
   direccion: 'Dirección',
   email: 'Email',
   telefono: 'Teléfono',
-  municipio_codigo: 'Código DANE del municipio',
+  municipio_codigo: 'Municipio',
   municipio_nombre: 'Municipio',
 }
 
@@ -632,9 +734,12 @@ interface FacturaDatosFormProps {
   onSubmit: () => void
   onCancel: () => void
   loading: boolean
+  accion: string
+  esTitular: boolean
 }
 
-function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading }: FacturaDatosFormProps) {
+function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading, accion, esTitular }: FacturaDatosFormProps) {
+  const errorNit = faltantes.includes('nit') && datos.nit?.trim() ? problemaNit(datos.nit) : null
   const set = (key: keyof IDatosFiscalesFactura, value: string) => {
     onChange({ ...datos, [key]: value })
   }
@@ -642,12 +747,19 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
   return (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
-        Necesitamos completar sus datos fiscales para emitir la factura electrónica ante la DIAN.
-        Estos datos se aplican solo a esta factura — para que queden guardados en su perfil vaya a{' '}
-        <Link href="/configuracion/datos-contrato" className="underline font-medium">
-          Datos para contrato
-        </Link>
-        .
+        Cofianza le emite la factura electrónica (DIAN) de sus compras y se la envía por correo. Para eso necesitamos
+        estos datos de su inmobiliaria.{' '}
+        {esTitular ? (
+          <>
+            Se guardan en{' '}
+            <Link href="/configuracion/datos-contrato" className="underline font-medium">
+              Datos para contrato
+            </Link>{' '}
+            y no se le vuelven a pedir.
+          </>
+        ) : (
+          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Datos para contrato.'
+        )}
       </div>
 
       {faltantes.includes('razon_social') && (
@@ -675,8 +787,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
             value={datos.nit || ''}
             onChange={(e) => set('nit', e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder="900123456-7 o cédula"
+            placeholder="900123456-7"
+            aria-invalid={!!errorNit}
           />
+          {errorNit && <p className="mt-1 text-xs text-red-600">{errorNit}</p>}
         </div>
       )}
 
@@ -729,20 +843,11 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
 
       {faltantes.includes('municipio_codigo') && (
         <div>
-          <label htmlFor="creditos-estudios-municipio" className="block text-sm font-medium text-gray-700 mb-1">
-            Municipio <span className="text-red-500">*</span>
-          </label>
-          <input id="creditos-estudios-municipio"
-            type="text"
-            value={datos.municipio_codigo || ''}
-            onChange={(e) => set('municipio_codigo', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder="11001 (Bogotá)"
-            maxLength={5}
+          <MunicipioCombobox
+            value={datos.municipio_codigo ? { codigo: datos.municipio_codigo, nombre: datos.municipio_nombre ?? '' } : null}
+            onChange={(m) => onChange({ ...datos, municipio_codigo: m?.codigo ?? '', municipio_nombre: m?.nombre ?? '' })}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Código DANE de 5 dígitos. Bogotá = 11001, Medellín = 05001, Cali = 76001.
-          </p>
+          <p className="text-xs text-gray-500 mt-1">El municipio de la sede de su inmobiliaria (lo exige la DIAN).</p>
         </div>
       )}
 
@@ -756,11 +861,11 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
         </button>
         <button
           onClick={onSubmit}
-          disabled={loading}
+          disabled={loading || !!errorNit}
           className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && <IconLoader className="animate-spin" size={14} />}
-          Emitir factura
+          {accion}
         </button>
       </div>
     </div>
