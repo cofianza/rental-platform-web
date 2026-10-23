@@ -54,8 +54,10 @@ export type MotivoBloqueo = 'intentos' | 'datos_incorrectos'
 export type FuenteVerificacion = 'documento_fisico' | 'copia_documento' | 'confirmacion_telefonica'
 
 export interface ICorregirDocumentoInput {
-  tipo_documento: string
-  numero_documento: string
+  tipo_documento?: string
+  numero_documento?: string
+  nombre?: string
+  apellido?: string
   fuente_verificacion: FuenteVerificacion
 }
 

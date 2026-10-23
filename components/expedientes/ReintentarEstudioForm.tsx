@@ -154,7 +154,7 @@ export function ReintentarEstudioForm({
   const handleReintentar = async () => {
     const apellido = primerApellido.trim()
     if (requiereApellido && apellido.length < 2) {
-      toast.error('DataCrédito requiere el primer apellido para validar la identidad')
+      toast.error('La central de riesgo requiere el primer apellido para validar la identidad')
       return
     }
     setReintentando(true)
@@ -273,7 +273,7 @@ export function ReintentarEstudioForm({
       <p className="text-[11px] text-gray-500 mt-2">
         Se consultan cédula de ciudadanía, cédula de extranjería, PPT, PEP y pasaporte.
         {requiereApellido
-          ? ' DataCrédito valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
+          ? ' La central de riesgo valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
           : ''}
         {puedeCorregir
           ? ' Si el documento está mal, corríjalo y reenvíe el enlace: el prospecto debe autorizar con el dato correcto.'

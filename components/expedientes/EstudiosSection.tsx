@@ -393,6 +393,7 @@ export function EstudiosSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <>
+                          {esRolInterno(user?.rol) && (
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
                               estudio.proveedor === 'transunion'
@@ -404,6 +405,7 @@ export function EstudiosSection({
                           >
                             {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
                           </span>
+                          )}
                           <Badge estado={estudio.estado} />
                           <Badge estado={estudio.resultado} />
                         </>

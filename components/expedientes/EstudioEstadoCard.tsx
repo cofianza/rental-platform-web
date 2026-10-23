@@ -235,8 +235,17 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
-function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEstado?: string, esCoarrendatario = false): string {
-  const buro = BURO_LABELS[estudio.proveedor] || 'el buró de crédito'
+function getSiguientePaso(
+  estudio: IEstudio,
+  esCofianza: boolean,
+  expedienteEstado?: string,
+  esCoarrendatario = false,
+  /** Roles de Cofianza (también Gerencia): ven el nombre de la central. */
+  verCentral = esCofianza,
+): string {
+  // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
+  // dice en qué central se consultó («reserva del sumario»).
+  const buro = verCentral ? BURO_LABELS[estudio.proveedor] || 'el buró de crédito' : 'la central de riesgo'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
   // definido. El solicitante puede reenviar la solicitud sin costo adicional
@@ -262,7 +271,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
     // etiqueta (redacción por rol en la API).
     const etiqueta = estudio.ruta?.etiquetaGestor
     if (estudio.resultado === 'aprobado') {
-      const base = `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.`
+      const base = verCentral ? `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.` : 'Evaluación aprobada. Siguiente paso: generar contrato.'
       return etiqueta ? `${etiqueta}. ${base}` : base
     }
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
@@ -300,7 +309,7 @@ function getSiguientePaso(estudio: IEstudio, esCofianza: boolean, expedienteEsta
         : `La persona no aparece en ${buro}. No es un rechazo de crédito: revise que el tipo y el número de documento estén bien escritos y vuelva a consultar.`
     }
     if (tipo === 'apellido') {
-      return `${buro} encontró el documento, pero el primer apellido no coincide. Escriba el primer apellido tal como figura en la Registraduría en el campo «Primer apellido» del reintento y vuelva a consultar.`
+      return `${buro.charAt(0).toUpperCase()}${buro.slice(1)} encontró el documento, pero el primer apellido no coincide. Escriba el primer apellido tal como figura en la Registraduría en el campo «Primer apellido» del reintento y vuelva a consultar.`
     }
     return `La consulta a ${buro} falló por un problema técnico (no es un rechazo de crédito). Vuelva a intentarla.`
   }
@@ -636,7 +645,7 @@ function EstudioPanel({
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario')
+      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario', esRolInterno(userRol))
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
   const siguientePaso =
     destinacion && !inmuebleActualId
@@ -716,8 +725,12 @@ function EstudioPanel({
               </p>
             )}
             <p className="text-xs text-gray-600">
-              Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
-              {' · '}
+              {interno && (
+                <>
+                  Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
+                  {' · '}
+                </>
+              )}
               Tipo: <span className="font-medium text-gray-800">{estudio.tipo === 'con_coarrendatario' ? 'con coarrendatario' : 'individual'}</span>
             </p>
             <p className="text-xs text-gray-600">
