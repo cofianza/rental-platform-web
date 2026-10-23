@@ -32,8 +32,11 @@ interface AutorizacionSectionProps {
   /** Documento de la ficha. Vacío = auto-registro liviano (H43): se pide aquí
    *  porque la API no emite la autorización sin él. */
   solicitanteDocumento?: string | null
-  /** Tipo del documento de la ficha (se muestra en «Corregir documento»). */
+  /** Tipo del documento de la ficha (se muestra en «Corregir datos»). */
   solicitanteTipoDocumento?: string | null
+  /** Nombre de la ficha, editable en «Corregir datos» (reunión con Gerencia 23-oct). */
+  solicitanteNombre?: string | null
+  solicitanteApellido?: string | null
   /** Refresca el expediente padre cuando el contacto del solicitante cambió. */
   onContactoActualizado?: () => void
   /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
@@ -72,6 +75,8 @@ export function AutorizacionSection({
   expedienteId,
   solicitanteEmail,
   solicitanteTelefono,
+  solicitanteNombre,
+  solicitanteApellido,
   solicitanteDocumento,
   solicitanteTipoDocumento,
   onContactoActualizado,
@@ -411,7 +416,8 @@ export function AutorizacionSection({
     !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !identidadRechazadaExterno
   // Pasado el límite la API no guarda la corrección: solo cierra el estudio.
   const sinCorrecciones = corregible && autorizacion?.correcciones_restantes === 0
-  const puedeCorregir = corregible && !sinCorrecciones
+  // Sin correcciones del documento, el nombre se sigue pudiendo corregir.
+  const puedeCorregir = corregible
 
   // Reenviar y corregir: compartido por pendiente, revocado y expirado. Con el
   // enlace vivo (pendiente) se confirma: lo vence y gasta un reenvío.
@@ -440,14 +446,14 @@ export function AutorizacionSection({
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               <IconPencil size={14} />
-              Corregir documento
+              Corregir datos
             </button>
           )}
         </div>
         {sinCorrecciones && (
           <p className="text-xs text-gray-600">
-            Ya usó todas las correcciones del documento en este estudio. Si el documento sigue mal, cancele este
-            estudio y cree uno nuevo.
+            Ya usó todas las correcciones del documento en este estudio (el nombre todavía se puede corregir). Si el
+            documento sigue mal, cancele este estudio y cree uno nuevo.
           </p>
         )}
         {reenvioSoloCofianza ? (
@@ -984,6 +990,8 @@ export function AutorizacionSection({
           expedienteId={expedienteId}
           tipoActual={solicitanteTipoDocumento}
           numeroActual={solicitanteDocumento}
+          nombreActual={solicitanteNombre}
+          apellidoActual={solicitanteApellido}
           correccionesRestantes={autorizacion?.correcciones_restantes}
           onCorregido={() => {
             void fetchStatus()
