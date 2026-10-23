@@ -521,6 +521,10 @@ export function EstudioEstadoCard({
           onRetried={fetchEstudios}
           sinReintento={!coarrendatarioVigente}
           expedienteEstado={expedienteEstado}
+          esperaTitular={
+            !['en_proceso', 'completado', 'fallido', 'cancelado'].includes(estudioCoa.estado) &&
+            estudioTitular?.estado !== 'completado'
+          }
           // La reasignacion NO se ofrece desde el panel del coarrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
@@ -557,6 +561,12 @@ interface EstudioPanelProps {
   /** Solo titular: enlace detenido u opción B sin pagar — le toca al gestor. */
   accionGestor?: AccionGestor | null
   expedienteEstado?: string
+  /**
+   * Coarrendatario: su evaluación corre después de la del titular (Adenda 3 V2
+   * §6.1). Mientras espera, su estado interno ('pago_pendiente' si autorizó
+   * antes del pago) y su central (se fija al ejecutar) confunden.
+   */
+  esperaTitular?: boolean
 }
 
 function EstudioPanel({
@@ -574,6 +584,7 @@ function EstudioPanel({
   sinReintento,
   accionGestor,
   expedienteEstado,
+  esperaTitular,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
@@ -623,7 +634,9 @@ function EstudioPanel({
         ? 'danger'
         : getTone(estudio)
   const styles = TONE_STYLES[tone]
-  const estadoLabel = accionGestor?.etiqueta ?? ESTADO_LABEL[estudio.estado] ?? estudio.estado
+  const estadoLabel = esperaTitular
+    ? 'Espera al titular'
+    : (accionGestor?.etiqueta ?? ESTADO_LABEL[estudio.estado] ?? estudio.estado)
   const resultadoLabel =
     decisionAnalista === 'aprobado'
       ? 'Aprobado por el analista'
@@ -637,12 +650,13 @@ function EstudioPanel({
               estudio.resultado === 'aprobado' ? 'Válido' : estudio.resultado === 'rechazado' ? 'No califica' : 'En revisión'
             : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
 
-  const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
+  const iconNode = esperaTitular || estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />
     : <IconCheck size={16} />
 
-  const siguientePasoBase =
-    sinReintento && estudio.estado === 'fallido'
+  const siguientePasoBase = esperaTitular
+    ? 'Ya autorizó. Su evaluación corre cuando termine la del titular, sin pagos adicionales. Si el titular no queda descartado, se consulta y suma al estudio.'
+    : sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
       : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario')
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
@@ -724,8 +738,12 @@ function EstudioPanel({
               </p>
             )}
             <p className="text-xs text-gray-600">
-              Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
-              {' · '}
+              {!esperaTitular && (
+                <>
+                  Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
+                  {' · '}
+                </>
+              )}
               Tipo: <span className="font-medium text-gray-800">{estudio.tipo === 'con_coarrendatario' ? 'con coarrendatario' : 'individual'}</span>
             </p>
             <p className="text-xs text-gray-600">
