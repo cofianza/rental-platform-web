@@ -124,6 +124,8 @@ export interface IDatosFacturacion {
   razon_social: string
   /** Con el DV («900123456-7»). */
   nit: string
+  /** Con NIT es persona jurídica; si no, `nit` es su documento. */
+  juridica: boolean
   direccion_fiscal: string
   email: string
   municipio_nombre: string

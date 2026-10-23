@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { perfilArrendadorService } from '@/services/perfilArrendadorService'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
+import { problemaNit } from '@/lib/nit'
 import {
   creditosEstudiosService,
   type IDatosFacturacion,
@@ -179,7 +180,7 @@ export default function CreditosEstudiosPage() {
       ...(v(d.nit) ? { nit: v(d.nit) } : {}),
       ...(v(d.direccion) ? { domicilio_direccion: v(d.direccion) } : {}),
       ...(v(d.email) ? { email_recaudo: v(d.email) } : {}),
-      ...(v(d.telefono) ? { whatsapp_recaudo: v(d.telefono) } : {}),
+      ...(v(d.telefono) ? { telefono: v(d.telefono) } : {}),
       ...(v(d.municipio_codigo) ? { municipio_codigo: v(d.municipio_codigo), municipio_nombre: v(d.municipio_nombre) } : {}),
     })
   }
@@ -514,7 +515,7 @@ export default function CreditosEstudiosPage() {
             <IconReceipt size={18} className="mt-0.5 shrink-0 text-primary-700" />
             <p>
               Cofianza le envía la factura electrónica de cada compra a <strong>{datosFact.email}</strong>, a nombre
-              de <strong>{datosFact.razon_social}</strong> (NIT {datosFact.nit}).{' '}
+              de <strong>{datosFact.razon_social}</strong> ({datosFact.juridica ? 'NIT' : 'documento'} {datosFact.nit}).{' '}
               {esTitular && (
                 <Link href="/configuracion/datos-contrato" className="font-medium text-primary-700 underline">
                   Cambiar datos
@@ -673,7 +674,7 @@ export default function CreditosEstudiosPage() {
                             ) : (
                               <IconReceipt size={12} />
                             )}
-                            Emitir factura
+                            Pedir mi factura
                           </button>
                         )
                       ) : (
@@ -703,7 +704,8 @@ export default function CreditosEstudiosPage() {
             onSubmit={handleSubmitFacturaModal}
             onCancel={() => setFacturaModal(null)}
             loading={facturando === (facturaModal.compraId ?? 'datos')}
-            accion={facturaModal.compraId === null ? (facturaModal.paqueteId ? 'Guardar y comprar' : 'Guardar') : 'Emitir factura'}
+            accion={facturaModal.compraId === null ? (facturaModal.paqueteId ? 'Guardar y comprar' : 'Guardar') : 'Pedir mi factura'}
+            esTitular={esTitular}
           />
         )}
       </Modal>
@@ -733,9 +735,11 @@ interface FacturaDatosFormProps {
   onCancel: () => void
   loading: boolean
   accion: string
+  esTitular: boolean
 }
 
-function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading, accion }: FacturaDatosFormProps) {
+function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading, accion, esTitular }: FacturaDatosFormProps) {
+  const errorNit = faltantes.includes('nit') && datos.nit?.trim() ? problemaNit(datos.nit) : null
   const set = (key: keyof IDatosFiscalesFactura, value: string) => {
     onChange({ ...datos, [key]: value })
   }
@@ -744,11 +748,18 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
         Cofianza le emite la factura electrónica (DIAN) de sus compras y se la envía por correo. Para eso necesitamos
-        estos datos de su inmobiliaria; se guardan en{' '}
-        <Link href="/configuracion/datos-contrato" className="underline font-medium">
-          Datos para contrato
-        </Link>{' '}
-        y no se le vuelven a pedir.
+        estos datos de su inmobiliaria.{' '}
+        {esTitular ? (
+          <>
+            Se guardan en{' '}
+            <Link href="/configuracion/datos-contrato" className="underline font-medium">
+              Datos para contrato
+            </Link>{' '}
+            y no se le vuelven a pedir.
+          </>
+        ) : (
+          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Datos para contrato.'
+        )}
       </div>
 
       {faltantes.includes('razon_social') && (
@@ -776,8 +787,10 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
             value={datos.nit || ''}
             onChange={(e) => set('nit', e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder="900123456-7 o cédula"
+            placeholder="900123456-7"
+            aria-invalid={!!errorNit}
           />
+          {errorNit && <p className="mt-1 text-xs text-red-600">{errorNit}</p>}
         </div>
       )}
 
@@ -848,7 +861,7 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
         </button>
         <button
           onClick={onSubmit}
-          disabled={loading}
+          disabled={loading || !!errorNit}
           className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
         >
           {loading && <IconLoader className="animate-spin" size={14} />}
