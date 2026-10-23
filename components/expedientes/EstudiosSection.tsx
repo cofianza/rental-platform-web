@@ -365,6 +365,13 @@ export function EstudiosSection({
           {estudios.map((estudio) => {
             const cardClickable = canViewDetail
             const persona = getPersonaEvaluada(estudio, solicitante)
+            // Adenda 3 V2 §6.1: la del coarrendatario corre después de la del
+            // titular. Mientras tanto su estado interno ('pago_pendiente' si
+            // autorizó antes del pago) y su central (se fija al ejecutar) confunden.
+            const esperaTitular =
+              estudio.tipo === 'con_coarrendatario' &&
+              !['en_proceso', 'completado', 'fallido', 'cancelado'].includes(estudio.estado) &&
+              !estudios.some((e) => e.tipo !== 'con_coarrendatario' && e.estado === 'completado')
             return (
               <div
                 key={estudio.id}
@@ -392,19 +399,27 @@ export function EstudiosSection({
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                          estudio.proveedor === 'transunion'
-                            ? 'bg-blue-100 text-blue-700'
-                            : estudio.proveedor === 'manual'
-                              ? 'bg-gray-100 text-gray-600'
-                              : 'bg-purple-100 text-purple-700'
-                        }`}
-                      >
-                        {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
-                      </span>
-                      <Badge estado={estudio.estado} />
-                      <Badge estado={estudio.resultado} />
+                      {esperaTitular ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                          Espera al titular
+                        </span>
+                      ) : (
+                        <>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                              estudio.proveedor === 'transunion'
+                                ? 'bg-blue-100 text-blue-700'
+                                : estudio.proveedor === 'manual'
+                                  ? 'bg-gray-100 text-gray-600'
+                                  : 'bg-purple-100 text-purple-700'
+                            }`}
+                          >
+                            {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
+                          </span>
+                          <Badge estado={estudio.estado} />
+                          <Badge estado={estudio.resultado} />
+                        </>
+                      )}
                       {persona?.etiqueta === 'Coarrendatario' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                           Coarrendatario
