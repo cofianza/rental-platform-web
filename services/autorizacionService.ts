@@ -2,6 +2,7 @@
  * Servicio de Autorizacion Habeas Data (HP-334)
  */
 
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import { apiClient, ApiClient } from '@/lib/api'
 import type {
   IAutorizacion,
@@ -31,10 +32,13 @@ import type {
 
 export const autorizacionService = {
   async getStatus(expedienteId: string): Promise<IAutorizacion | null> {
-    const res = await apiClient.get<IAutorizacion | null>(
-      `/expedientes/${expedienteId}/autorizacion-riesgo`
-    )
-    return res.data
+    // Coalescing: en el detalle la etapa y la tarjeta lo piden a la vez.
+    return coalesceRequest(`autorizacion:${expedienteId}`, async () => {
+      const res = await apiClient.get<IAutorizacion | null>(
+        `/expedientes/${expedienteId}/autorizacion-riesgo`
+      )
+      return res.data
+    })
   },
 
   /** Envía/reenvía el enlace. `contacto` corrige email/teléfono (o el

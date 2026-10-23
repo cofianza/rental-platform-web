@@ -2,6 +2,7 @@
  * Servicio Pago Estudio - HP-353
  */
 
+import { coalesceRequest } from '@/lib/requestCoalesce'
 import { apiClient } from '@/lib/api'
 import type { IPago } from './pagoService'
 
@@ -64,8 +65,11 @@ export interface IPagoResultadoPublico {
 
 class PagoEstudioService {
   async getEstado(expedienteId: string): Promise<IPagoEstudioEstado> {
-    const response = await apiClient.get<IPagoEstudioEstado>(`/expedientes/${expedienteId}/pago-estudio/estado`)
-    return response.data
+    // Coalescing: en el detalle la etapa y la tarjeta del pago lo piden a la vez.
+    return coalesceRequest(`pago-estudio:${expedienteId}`, async () => {
+      const response = await apiClient.get<IPagoEstudioEstado>(`/expedientes/${expedienteId}/pago-estudio/estado`)
+      return response.data
+    })
   }
 
   /** Opción B (Adenda 2 §7): el gestor paga ahora por la pasarela. Devuelve el

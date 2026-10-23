@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
+import { PASOS_DETALLE, PASO_DE_ETAPA, type EtapaEstudio } from '@/hooks/useEtapaEstudio'
 
 export interface ExpedienteProgressBarProps {
   expedienteId: string
@@ -36,6 +37,12 @@ export interface ExpedienteProgressBarProps {
   esProspecto?: boolean
   /** Adenda 3 §6: aprobado con condición de coarrendatario (no lo revisa un analista). */
   conCondicion?: boolean
+  /**
+   * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
+   * autorización y el pago, según la etapa real. undefined = la barra de
+   * siempre (prospecto); null = la etapa todavía se está leyendo.
+   */
+  etapa?: EtapaEstudio | null
   className?: string
 }
 
@@ -47,8 +54,92 @@ export function ExpedienteProgressBar({
   sinInfoBuro,
   esProspecto,
   conCondicion,
+  etapa,
   className,
 }: ExpedienteProgressBarProps) {
+  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} className={className} />
+  return (
+    <BarraPorEstado
+      expedienteId={expedienteId}
+      estadoActual={estadoActual}
+      estadoPreCancelacion={estadoPreCancelacion}
+      citaOmitida={citaOmitida}
+      sinInfoBuro={sinInfoBuro}
+      esProspecto={esProspecto}
+      conCondicion={conCondicion}
+      className={className}
+    />
+  )
+}
+
+function BarraPorEtapa({ etapa, className }: { etapa: EtapaEstudio | null; className?: string }) {
+  // Mientras se lee la etapa: el espacio de la barra, sin pasos que luego cambien.
+  if (etapa === null) return <div className={cn('h-14', className)} aria-hidden="true" />
+  if (etapa === 'cancelado') {
+    return (
+      <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
+        <p className="text-sm font-semibold text-red-700">Estudio cancelado</p>
+        <p className="text-xs text-red-600 mt-0.5">Se cerró antes de terminar.</p>
+      </div>
+    )
+  }
+  const actual = PASO_DE_ETAPA[etapa]
+  const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'decision' ? 'ambar' : 'normal'
+  return (
+    <div className={cn('w-full', className)}>
+      <div className="flex items-center gap-1">
+        {PASOS_DETALLE.map((label, idx) => {
+          const isComplete = idx < actual
+          const isCurrent = idx === actual
+          const isFailed = isCurrent && tono === 'rojo'
+          return (
+            <div key={label} className="flex items-center flex-1">
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={cn(
+                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    isComplete && 'bg-primary-700 text-white',
+                    isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
+                    isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
+                    !isComplete && !isCurrent && 'bg-gray-100 text-gray-500',
+                  )}
+                  aria-current={isCurrent ? 'step' : undefined}
+                >
+                  {isComplete ? <IconCheck size={18} /> : isFailed ? <IconX size={16} /> : idx + 1}
+                </div>
+                <span
+                  className={cn(
+                    'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    isFailed ? 'text-red-600 font-semibold'
+                      : isCurrent ? 'text-amber-700 font-semibold'
+                      : isComplete ? 'text-primary-700 font-medium'
+                      : 'text-gray-500',
+                  )}
+                >
+                  {isCurrent && etapa === 'decision' ? 'En revisión' : isFailed ? 'No aprobado' : label}
+                </span>
+              </div>
+              {idx < PASOS_DETALLE.length - 1 && (
+                <div className={cn('h-0.5 flex-1 mx-1 mt-[-18px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function BarraPorEstado({
+  expedienteId,
+  estadoActual,
+  estadoPreCancelacion,
+  citaOmitida,
+  sinInfoBuro,
+  esProspecto,
+  conCondicion,
+  className,
+}: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const [citaRealizada, setCitaRealizada] = useState(false)

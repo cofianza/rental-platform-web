@@ -41,7 +41,7 @@ interface AutorizacionSectionProps {
   onContactoActualizado?: () => void
   /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
   soloLectura?: boolean
-  /** Estudio cerrado o rechazado: sin acciones. Ya decidido: la autorización firmada se pliega. */
+  /** Estudio cerrado o rechazado: sin acciones. */
   expedienteEstado?: string
 }
 
@@ -484,12 +484,8 @@ export function AutorizacionSection({
       perfil.ingreso_declarado_cop != null ||
       perfil.presentacion != null)
 
-  // Ya firmada y con el estudio decidido es dato de consulta: va plegada.
-  const plegada =
-    estado === 'autorizado' && ['aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
-
-  const contenido = (
-    <div className={plegada ? 'p-6' : 'bg-white border border-gray-200 rounded-lg p-6'}>
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
@@ -1010,19 +1006,5 @@ export function AutorizacionSection({
         />
       )}
     </div>
-  )
-
-  if (!plegada) return contenido
-  return (
-    <details className="rounded-lg border border-gray-200 bg-white">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-6 py-4 text-sm hover:bg-gray-50">
-        <span className="flex items-center gap-2 font-medium text-gray-800">
-          <IconShield size={18} className="text-primary-600" />
-          Autorización Habeas Data
-        </span>
-        <span className="text-xs text-gray-500">Autorizada el {formatDate(autorizacion?.autorizado_en)} · Ver</span>
-      </summary>
-      <div className="border-t border-gray-200">{contenido}</div>
-    </details>
   )
 }
