@@ -11,7 +11,7 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { ExcepcionTopeBlock } from '@/components/expedientes/ExcepcionTopeBlock'
 import { ApiClientError } from '@/lib/api'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { ExpedienteRefrescoContext } from '@/components/expedientes/ExpedienteRefresco'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -55,8 +55,10 @@ import {
   EstudioEstadoCard,
 } from '@/components/expedientes'
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
+import { ResumenPorEtapa } from '@/components/expedientes/ResumenPorEtapa'
 import { PagosSection, PagoEstudioSection } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
+import { useEtapaEstudio, ETAPA_LABEL } from '@/hooks/useEtapaEstudio'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -133,6 +135,8 @@ export default function ExpedienteDetallePage() {
   // Sube en cada carga correcta; las tarjetas lo leen por contexto y se
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
+  // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
+  const etapa = useEtapaEstudio(user?.rol === 'solicitante' ? null : expediente, user?.rol !== 'gerencia_consulta', cargas)
   const expedienteCargadoRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -483,7 +487,11 @@ export default function ExpedienteDetallePage() {
                       : expediente.estado
                   }
                   label={
-                    user?.rol === 'solicitante' && expediente.estado === 'borrador'
+                    etapa && user?.rol !== 'solicitante'
+                      ? etapa === 'decision' && condicionCoa
+                        ? 'Aprobado con condición'
+                        : ETAPA_LABEL[etapa]
+                      : user?.rol === 'solicitante' && expediente.estado === 'borrador'
                       ? 'En preparación'
                       : // Adenda 3 §6: el mismo nombre que la barra y la tarjeta, no el «Condicionado» de la revisión manual.
                         condicionCoa && expediente.estado === 'condicionado'
@@ -589,6 +597,7 @@ export default function ExpedienteDetallePage() {
           sinInfoBuro={condicionadoSinInfo}
           esProspecto={user?.rol === 'solicitante'}
           conCondicion={!!condicionCoa}
+          etapa={user?.rol === 'solicitante' ? undefined : etapa}
         />
       </div>
 
@@ -753,47 +762,40 @@ export default function ExpedienteDetallePage() {
               </div>
             )}
 
-            {/* Propietario/inmobiliaria/admin/operador. ORDEN: primero las
-                tarjetas de ACCIÓN REQUERIDA (lo que hay que hacer AHORA: habilitar
-                estudio / definir pago / aprobar condicionado / generar contrato),
-                y debajo las INFORMATIVAS (estado del estudio/contrato). Cada
-                tarjeta se auto-oculta si no aplica, así la acción vigente queda
-                siempre arriba del todo.
-                Un miembro con perfil incompleto ve las tarjetas pero no las
-                acciones (el banner de arriba le explica cómo desbloquearse). */}
+            {/* Propietario, inmobiliaria y Cofianza (revisión del Resumen, 23-oct):
+                1) «Siguiente paso»: lo que toca ahora según la etapa del estudio;
+                2) el detalle del paso actual;
+                3) lo que ya pasó, plegado (autorización, pago, visita, coarrendatario).
+                Las tarjetas se siguen ocultando solas si no aplican. Un miembro
+                con el perfil incompleto ve las tarjetas sin las acciones. */}
             {user?.rol !== 'solicitante' && (
-              <>
-                {/* Acción requerida: generar contrato — AL TOPE cuando aplica
-                    (expediente aprobado sin contrato). Se auto-oculta en el
-                    resto de estados, así que solo aparece encima del estudio
-                    justo cuando es el siguiente paso. */}
-                {/* Sin propiedad no hay contrato que generar: primero se vincula el inmueble. */}
-                {puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <p className="font-semibold">Siguiente paso: vincular el inmueble</p>
-                    <p className="mt-1">
-                      El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble»
-                      en la evaluación de abajo; después podrá generar el contrato.
-                    </p>
-                  </div>
-                )}
-                {puedeActuar && expediente.inmueble && (
-                  <AccionContratoPendienteCard
-                    expedienteId={id}
-                    expedienteEstado={expediente.estado}
-                    userRol={user?.rol}
-                    contratosV3={expediente.contratos_v3}
-                    inmuebleReservadoPorOtro={reservadoPorOtro}
-                    conComision={!!expediente.inmueble?.inmobiliaria_id}
-                    onGenerated={fetchExpediente}
-                  />
-                )}
-
-                {/* Condicionado: la guía de "qué sigue" y el coarrendatario van
-                    ARRIBA de la evaluación — es lo que hay que resolver ahora. */}
-                {esCondicionado && (
-                  <>
-                    {puedeActuar && (
+              <ResumenPorEtapa
+                etapa={etapa}
+                bloques={{
+                  vincular:
+                    puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' ? (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <p className="font-semibold">Siguiente paso: vincular el inmueble</p>
+                        <p className="mt-1">
+                          El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble»
+                          en la evaluación de abajo; después podrá generar el contrato.
+                        </p>
+                      </div>
+                    ) : null,
+                  contrato:
+                    puedeActuar && expediente.inmueble ? (
+                      <AccionContratoPendienteCard
+                        expedienteId={id}
+                        expedienteEstado={expediente.estado}
+                        userRol={user?.rol}
+                        contratosV3={expediente.contratos_v3}
+                        inmuebleReservadoPorOtro={reservadoPorOtro}
+                        conComision={!!expediente.inmueble?.inmobiliaria_id}
+                        onGenerated={fetchExpediente}
+                      />
+                    ) : null,
+                  decision:
+                    esCondicionado && puedeActuar ? (
                       <AprobarCondicionadoCard
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -804,144 +806,109 @@ export default function ExpedienteDetallePage() {
                         canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                         onAprobado={fetchExpediente}
                       />
-                    )}
+                    ) : null,
+                  habilitar: puedeActuar ? (
+                    <AccionHabilitarEstudioCard
+                      expedienteId={id}
+                      estudioHabilitado={expediente.estudio_habilitado ?? false}
+                      estudioRechazado={expediente.estudio_rechazado}
+                      citaOmitida={expediente.cita_omitida}
+                      expedienteEstado={expediente.estado}
+                      userRol={user?.rol}
+                      onAction={fetchExpediente}
+                    />
+                  ) : null,
+                  evaluacion: (
+                    <EstudioEstadoCard
+                      expedienteId={id}
+                      onVerEstudios={() => setActiveTab('estudios')}
+                      userRol={user?.rol}
+                      solicitante={expediente.solicitante}
+                      // Portabilidad §4.3: al llevar el estudio a otra propiedad cambia el
+                      // inmueble del expediente; se recarga la página entera.
+                      inmuebleActualId={expediente.inmueble?.id}
+                      canonAprobado={expediente.estado === 'aprobado' ? (expediente.sin_inmueble?.canonAprobadoCop ?? null) : null}
+                      destinacion={expediente.destinacion_objetivo ?? null}
+                      onReasignado={fetchExpediente}
+                      // Mismos guards de la API (reasignacion.service).
+                      reasignable={
+                        expediente.estado !== 'cerrado' &&
+                        expediente.estado !== 'rechazado' &&
+                        expediente.inmueble?.reservado_por_expediente_id !== id &&
+                        (!!expediente.inmueble || expediente.estado === 'aprobado')
+                      }
+                      coarrendatarioVigente={coarrendatarioVigente}
+                      expedienteEstado={expediente.estado}
+                    />
+                  ),
+                  // §6.3: primero la autorización, después el cobro.
+                  autorizacion:
+                    expediente.estudio_habilitado ?? false ? (
+                      <AutorizacionSection
+                        expedienteId={id}
+                        solicitanteEmail={expediente.solicitante?.email}
+                        solicitanteTelefono={expediente.solicitante?.telefono}
+                        solicitanteDocumento={expediente.solicitante ? expediente.solicitante.numero_documento ?? '' : undefined}
+                        solicitanteTipoDocumento={expediente.solicitante?.tipo_documento}
+                        solicitanteNombre={expediente.solicitante?.nombre}
+                        solicitanteApellido={expediente.solicitante?.apellido}
+                        onContactoActualizado={fetchExpediente}
+                        soloLectura={!puedeActuar}
+                        expedienteEstado={expediente.estado}
+                      />
+                    ) : null,
+                  // Solo mientras el estudio no haya corrido (después pedir pago no tiene sentido).
+                  pago:
+                    puedeActuar &&
+                    (expediente.estudio_habilitado ?? false) &&
+                    !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) ? (
+                      <PagoEstudioSection
+                        sinInmueble={!expediente.inmueble}
+                        expedienteId={id}
+                        userRole={user?.rol}
+                        onPagoCompletado={fetchExpediente}
+                        solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
+                        solicitanteEmail={expediente.solicitante?.email}
+                        solicitanteTelefono={expediente.solicitante?.telefono}
+                      />
+                    ) : null,
+                  contratoEstado: (
+                    <ContratoEstadoCard
+                      expedienteId={id}
+                      onVerContratos={() => setActiveTab('contratos')}
+                      cierreSinActa={expediente.cierre_sin_acta ?? null}
+                    />
+                  ),
+                  coarrendatario: (
                     <CoarrendatarioPropietarioCard
                       expedienteId={id}
                       expedienteEstado={expediente.estado}
                       userRol={user?.rol}
+                      // La ponderación puede mover el expediente sola al completar el
+                      // estudio del coarrendatario: se recarga.
                       onEstudioCompletado={fetchExpediente}
                     />
-                  </>
-                )}
-
-                {/* Acción: visita y habilitar la evaluación (antes del resultado). */}
-                {puedeActuar && (
-                  <AccionHabilitarEstudioCard
-                    expedienteId={id}
-                    estudioHabilitado={expediente.estudio_habilitado ?? false}
-                    estudioRechazado={expediente.estudio_rechazado}
-                    citaOmitida={expediente.cita_omitida}
-                    expedienteEstado={expediente.estado}
-                    userRol={user?.rol}
-                    onAction={fetchExpediente}
-                  />
-                )}
-                {/* Estado del estudio: es el centro del expediente.
-                    Se auto-oculta si aún no hay estudio (entonces manda la
-                    acción de habilitar). Si la consulta a TransUnion falló,
-                    aquí mismo está el botón para reintentarla. */}
-                <EstudioEstadoCard
-                  expedienteId={id}
-                  onVerEstudios={() => setActiveTab('estudios')}
-                  userRol={user?.rol}
-                  solicitante={expediente.solicitante}
-                  // Portabilidad §4.3: el gestor puede llevar un estudio ya
-                  // ejecutado a otra propiedad sin volver a cobrar. Al hacerlo
-                  // cambia el inmueble del expediente, asi que hay que recargar
-                  // la pagina entera (la seccion Inmueble de aqui abajo es lo
-                  // primero que queda desactualizado).
-                  inmuebleActualId={expediente.inmueble?.id}
-                  canonAprobado={expediente.estado === 'aprobado' ? (expediente.sin_inmueble?.canonAprobadoCop ?? null) : null}
-                  destinacion={expediente.destinacion_objetivo ?? null}
-                  onReasignado={fetchExpediente}
-                  // Mismos guards de la API (reasignacion.service): cerrado o
-                  // rechazado, o titular de la reserva del inmueble (su contrato).
-                  reasignable={
-                    expediente.estado !== 'cerrado' &&
-                    expediente.estado !== 'rechazado' &&
-                    expediente.inmueble?.reservado_por_expediente_id !== id &&
-                    // Sin propiedad, el inmueble se vincula solo con el estudio aprobado.
-                    (!!expediente.inmueble || expediente.estado === 'aprobado')
-                  }
-                  coarrendatarioVigente={coarrendatarioVigente}
-                  expedienteEstado={expediente.estado}
-                />
-
-                {/* §6.3 — INVERSIÓN DEL ORDEN: primero la autorización, después
-                    el cobro. Hasta 2026-09-04 esta card vivía escondida en el
-                    tab Estudios y detrás de un gate `estudioPagado`; con el
-                    orden nuevo la firma es la PRIMERA acción requerida (y la
-                    que dispara el cobro), así que va donde el gestor mira. */}
-                {(expediente.estudio_habilitado ?? false) && (
-                  <AutorizacionSection
-                    expedienteId={id}
-                    solicitanteEmail={expediente.solicitante?.email}
-                    solicitanteTelefono={expediente.solicitante?.telefono}
-                    solicitanteDocumento={expediente.solicitante ? expediente.solicitante.numero_documento ?? '' : undefined}
-                    solicitanteTipoDocumento={expediente.solicitante?.tipo_documento}
-                    solicitanteNombre={expediente.solicitante?.nombre}
-                    solicitanteApellido={expediente.solicitante?.apellido}
-                    onContactoActualizado={fetchExpediente}
-                    soloLectura={!puedeActuar}
-                    expedienteEstado={expediente.estado}
-                  />
-                )}
-                {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
-                    estudio, la inmobiliaria/propietario decide aquí quién
-                    asume el costo (crédito / Mercado Pago / link al arrendatario)
-                    sin tener que descubrir el tab Pagos.
-                    Solo mientras el estudio NO haya corrido: una vez el
-                    expediente pasa a revisión/aprobado/cerrado, el estudio ya
-                    se ejecutó y pedir pago no tiene sentido (era el bug del
-                    expediente cerrado mostrando "define quién paga"). */}
-                {puedeActuar &&
-                  (expediente.estudio_habilitado ?? false) &&
-                  !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
-                  <PagoEstudioSection
-                    sinInmueble={!expediente.inmueble}
-                    expedienteId={id}
-                    userRole={user?.rol}
-                    onPagoCompletado={fetchExpediente}
-                    solicitanteNombre={`${expediente.solicitante?.nombre ?? ''} ${expediente.solicitante?.apellido ?? ''}`.trim()}
-                    solicitanteEmail={expediente.solicitante?.email}
-                    solicitanteTelefono={expediente.solicitante?.telefono}
-                  />
-                )}
-                {/* ── Estado / informativo (debajo de las acciones) ── */}
-                <ContratoEstadoCard
-                  expedienteId={id}
-                  onVerContratos={() => setActiveTab('contratos')}
-                  cierreSinActa={expediente.cierre_sin_acta ?? null}
-                />
-                {/* Fuera del condicionado queda como rastro de quién acompañó (arriba ya se pintó). */}
-                {!esCondicionado && (
-                <CoarrendatarioPropietarioCard
-                  expedienteId={id}
-                  expedienteEstado={expediente.estado}
-                  userRol={user?.rol}
-                  // La ponderación del backend puede mover el expediente a
-                  // aprobado/rechazado sola cuando completa el estudio del
-                  // coarrendatario — sin esto, la página quedaba ofreciendo
-                  // "Aprobar expediente" sobre un estado que ya no existe.
-                  onEstudioCompletado={fetchExpediente}
-                />
-                )}
-              </>
+                  ),
+                  visita: expediente.inmueble ? (
+                    <div className="rounded-lg border border-gray-200 p-5">
+                      <CitasSection
+                        expedienteId={id}
+                        expedienteEstado={expediente.estado}
+                        citaOmitida={expediente.cita_omitida}
+                        inmuebleId={expediente.inmueble?.id}
+                        solicitanteId={expediente.solicitante?.id}
+                        solicitanteTelefono={expediente.solicitante?.telefono}
+                        onSolicitanteUpdated={fetchExpediente}
+                        onCitaRealizada={fetchExpediente}
+                      />
+                    </div>
+                  ) : null,
+                }}
+              />
             )}
 
-            {/* Sección Cita Previa — al tope para que el solicitante vea
-                de un vistazo la fecha/hora y si fue reprogramada. Sin
-                propiedad no hay inmueble que visitar. */}
-            {expediente.inmueble && (expediente.estudio_habilitado ?? false) ? (
-              <details className="rounded-lg border border-gray-200 bg-white">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm hover:bg-gray-50">
-                  <span className="font-medium text-gray-800">Visita al inmueble</span>
-                  <span className="text-xs text-gray-500">{expediente.cita_omitida ? 'Omitida' : 'Realizada'} · Ver</span>
-                </summary>
-                <div className="border-t border-gray-200 p-5">
-                  <CitasSection
-                    expedienteId={id}
-                    expedienteEstado={expediente.estado}
-                    citaOmitida={expediente.cita_omitida}
-                    inmuebleId={expediente.inmueble?.id}
-                    solicitanteId={expediente.solicitante?.id}
-                    solicitanteTelefono={expediente.solicitante?.telefono}
-                    onSolicitanteUpdated={fetchExpediente}
-                    onCitaRealizada={fetchExpediente}
-                  />
-                </div>
-              </details>
-            ) : expediente.inmueble && (
+            {/* El prospecto ve su cita arriba de los datos (al gestor se la ordena la etapa). */}
+            {user?.rol === 'solicitante' && expediente.inmueble && (
             <div className="border border-gray-200 rounded-lg p-5">
               <CitasSection
                 expedienteId={id}
@@ -956,6 +923,8 @@ export default function ExpedienteDetallePage() {
             </div>
             )}
 
+            {/* Datos de consulta: al prospecto, a la vista; a quien gestiona, plegados al final. */}
+            <DatosPlegables plegar={user?.rol !== 'solicitante'}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Sección Inmueble */}
               <div className="border border-gray-200 rounded-lg p-5">
@@ -1109,16 +1078,10 @@ export default function ExpedienteDetallePage() {
                       value={`${expediente.creador.nombre} ${expediente.creador.apellido}`.trim()}
                     />
                   )}
-                  {isInternalRole && (
-                    <InfoRow
-                      label="Responsable"
-                      value={nombreAnalista || 'Sin asignar'}
-                    />
-                  )}
                 </div>
                 {expediente.notas && user?.rol !== 'solicitante' && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-2">Notas internas</p>
+                    <p className="text-xs text-gray-500 mb-2">Notas del estudio</p>
                     <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
                       {expediente.notas}
                     </p>
@@ -1126,6 +1089,7 @@ export default function ExpedienteDetallePage() {
                 )}
               </div>
             </div>
+            </DatosPlegables>
         </div>
 
         {/* Tab: Documentos (HP-295). Montado desde el inicio (oculto) para que
@@ -1339,5 +1303,19 @@ function ExpedienteDetalleSkeleton() {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Inmueble, solicitante y datos del estudio: plegados para quien gestiona (revisión del Resumen, 23-oct). */
+function DatosPlegables({ plegar, children }: { plegar: boolean; children: ReactNode }) {
+  if (!plegar) return <>{children}</>
+  return (
+    <details className="rounded-lg border border-gray-200 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm hover:bg-gray-50">
+        <span className="font-medium text-gray-800">Datos del estudio</span>
+        <span className="text-xs text-gray-500">Inmueble · Solicitante · Notas · Ver</span>
+      </summary>
+      <div className="border-t border-gray-200 p-4">{children}</div>
+    </details>
   )
 }
