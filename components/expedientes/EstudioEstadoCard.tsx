@@ -17,8 +17,7 @@ import { IconBuilding2, IconCheck, IconClock, IconRefresh } from '@/components/i
 import { documento } from '@/components/contratos/v3/campos'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
-import { autorizacionService } from '@/services/autorizacionService'
-import { pagoEstudioService } from '@/services/pagoEstudioService'
+import { contratoService } from '@/services/contratoService'
 import { formatDate } from '@/lib/constants'
 import {
   ReintentarEstudioForm,
@@ -29,7 +28,6 @@ import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
-import type { EstadoBloqueo } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario } from './textoVisible'
 
@@ -149,85 +147,10 @@ function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>, esCofia
 }
 
 /**
- * Lo que el estudio solo no dice y cambia de quién depende (revisión 2026-09-25):
- *  - el enlace de autorización se DETUVO antes del plazo («No soy yo», el
- *    documento escrito no coincidió, revocado): el prospecto ya no puede
- *    firmar, le toca al gestor corregir y reenviar;
- *  - opción B sin pagar: la solicitud no sale hasta que la inmobiliaria pague.
- * Mismo criterio que list_expedientes_with_relations (migración 20261001000011).
+ * Estados del titular antes de la consulta (esperan autorización o pago): lo
+ * que hay que hacer ahí lo dicen la autorización y el pago, no esta tarjeta.
  */
-interface AccionGestor {
-  etiqueta: string
-  texto: string
-}
-
-/** Estados del estudio que esperan la autorización o el pago (sin ejecutar). */
 const ESTADOS_EN_ESPERA: EstadoEstudio[] = ['solicitado', 'pago_pendiente', 'formulario_enviado']
-
-const ACCION_BLOQUEO: Record<EstadoBloqueo, AccionGestor & { textoCofianza?: string }> = {
-  bloqueado_documento: {
-    etiqueta: 'Bloqueado por documento',
-    texto:
-      'El prospecto agotó los intentos para confirmar su documento. Requiere su acción: verifique el documento, corríjalo si hace falta y reenvíe el enlace. No se consumió cupo ni se generó ningún cobro adicional.',
-  },
-  identidad_rechazada: {
-    etiqueta: 'Identidad rechazada por el titular',
-    texto: `Quien abrió el enlace dice que no es el titular de estos datos. Para continuar, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO}. No se consumió cupo ni se generó ningún cobro adicional.`,
-    textoCofianza: 'Quien abrió el enlace dice que no es el titular de estos datos. Revise el caso antes de reenviar el enlace.',
-  },
-  pendiente_reenvio: {
-    etiqueta: 'Pendiente de reenvío',
-    texto: 'Se corrigió el documento del prospecto. Requiere su acción: reenvíe el enlace de autorización.',
-  },
-}
-
-/** «Soy yo, pero los datos están mal»: no digitó nada ni agotó intentos. */
-const TEXTO_DATOS_INCORRECTOS =
-  'El prospecto indicó que sus datos registrados no son correctos. Requiere su acción: verifíquelos con él, corrija el documento si hace falta y reenvíe el enlace. No se consumió cupo ni se generó ningún cobro adicional.'
-
-async function leerAccionGestor(expedienteId: string, esCofianza: boolean): Promise<AccionGestor | null> {
-  const [aut, pago] = await Promise.all([
-    // undefined = no se pudo leer: entonces no se afirma nada.
-    autorizacionService.getStatus(expedienteId).catch(() => undefined),
-    pagoEstudioService.getEstado(expedienteId).catch(() => null),
-  ])
-  // BLQ §8: estados derivados por la API (ausentes en APIs anteriores).
-  const bloqueo = aut?.estado_bloqueo ? ACCION_BLOQUEO[aut.estado_bloqueo] : null
-  if (bloqueo) {
-    return {
-      etiqueta: bloqueo.etiqueta,
-      texto:
-        aut?.estado_bloqueo === 'identidad_rechazada' && esCofianza
-          ? bloqueo.textoCofianza ?? bloqueo.texto
-          : aut?.motivo_bloqueo === 'datos_incorrectos'
-            ? TEXTO_DATOS_INCORRECTOS
-            : bloqueo.texto,
-    }
-  }
-  if (aut && (aut.estado === 'revocado' || aut.estado === 'expirado')) {
-    // Vencido por el reloj lo cuenta ya `expiracion` (mensaje del §12); aquí
-    // solo lo detenido ANTES del plazo.
-    const vencio = !!aut.token_expiracion && Date.parse(aut.token_expiracion) <= Date.now()
-    if (aut.estado === 'revocado' || !vencio) {
-      return {
-        etiqueta: 'Autorización detenida',
-        texto: aut.perfil_prospecto?.identidad_reporte
-          ? 'El prospecto indicó que los datos registrados no son suyos o no coinciden. Requiere su acción: corrija los datos del prospecto y reenvíele la solicitud de autorización.'
-          : 'El enlace de autorización se detuvo y el prospecto ya no puede firmarlo. Requiere su acción: corrija los datos si hace falta y reenvíele la solicitud.',
-      }
-    }
-  }
-  const paga = pago?.paga
-  if (aut === null && pago && paga === 'gestor' && (pago.estado === 'pendiente' || pago.estado === 'fallido')) {
-    return {
-      etiqueta: esCofianza ? 'Falta el pago de la inmobiliaria' : 'Falta su pago',
-      texto: esCofianza
-        ? 'Falta el pago del estudio de la inmobiliaria (Mercado Pago). La solicitud de autorización le llega al prospecto cuando se confirme.'
-        : 'Falta su pago del estudio (Mercado Pago): complételo en la sección de pago de este estudio. La solicitud de autorización le llega al prospecto cuando se confirme.',
-    }
-  }
-  return null
-}
 
 const BURO_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
@@ -421,14 +344,18 @@ export function EstudioEstadoCard({
   // titular sobre el score del coarrendatario y se confundian.
   const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
   const [estudioCoa, setEstudioCoa] = useState<IEstudio | null>(null)
-  const [accionGestor, setAccionGestor] = useState<AccionGestor | null>(null)
+  const [tieneContrato, setTieneContrato] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
-  const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   const fetchEstudios = useCallback(async () => {
     try {
-      const res = await estudioService.getEstudiosForExpediente(expedienteId, 1, 10)
+      const [res, contratos] = await Promise.all([
+        estudioService.getEstudiosForExpediente(expedienteId, 1, 10),
+        // Los mismos parámetros que ContratoEstadoCard: comparten la petición.
+        contratoService.getContratosForExpediente(expedienteId, { limit: 20 }).catch(() => null),
+      ])
+      setTieneContrato(!!contratos?.data.some((c) => c.estado !== 'cancelado'))
       const activos = res.data.filter((e) => e.estado !== 'cancelado')
       const candidatos = activos.length > 0 ? activos : res.data
 
@@ -439,12 +366,6 @@ export function EstudioEstadoCard({
           ?? null
 
       const titular = masReciente(candidatos.filter((e) => e.tipo !== 'con_coarrendatario'))
-      // Solo mientras espera: dos lecturas más, no en cada estudio ya corrido.
-      setAccionGestor(
-        titular && ESTADOS_EN_ESPERA.includes(titular.estado)
-          ? await leerAccionGestor(expedienteId, esCofianza)
-          : null,
-      )
       setEstudioTitular(titular)
       setEstudioCoa(masReciente(candidatos.filter((e) => e.tipo === 'con_coarrendatario')))
       setErrorCarga(false)
@@ -455,7 +376,7 @@ export function EstudioEstadoCard({
     } finally {
       setLoading(false)
     }
-  }, [expedienteId, esCofianza])
+  }, [expedienteId])
 
   useEffect(() => { fetchEstudios() }, [fetchEstudios, version])
 
@@ -468,8 +389,11 @@ export function EstudioEstadoCard({
     return () => clearInterval(id)
   }, [estudioTitular?.estado, estudioCoa?.estado, fetchEstudios])
 
-  if (loading) return <div className="h-12 animate-pulse rounded-lg bg-gray-100" aria-hidden="true" />
-  if (!estudioTitular && !estudioCoa) {
+  // Sin marcador gris: la tarjeta aparece cuando hay algo que decir.
+  if (loading) return null
+  // Antes de la consulta, la autorización y el pago dicen qué falta (debajo).
+  const titularVisible = !!estudioTitular && !ESTADOS_EN_ESPERA.includes(estudioTitular.estado)
+  if (!titularVisible && !estudioCoa) {
     if (!errorCarga) return null
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -493,12 +417,12 @@ export function EstudioEstadoCard({
 
   return (
     <div className="space-y-3">
-      {estudioTitular && (
+      {estudioTitular && titularVisible && (
         <EstudioPanel
           estudio={estudioTitular}
           etiqueta="Titular"
           persona={titularSolicitante}
-          accionGestor={accionGestor}
+          tieneContrato={tieneContrato}
           expedienteId={expedienteId}
           expedienteEstado={expedienteEstado}
           onVerEstudios={onVerEstudios}
@@ -556,8 +480,8 @@ interface EstudioPanelProps {
   onReasignado?: () => void
   /** Coarrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
   sinReintento?: boolean
-  /** Solo titular: enlace detenido u opción B sin pagar — le toca al gestor. */
-  accionGestor?: AccionGestor | null
+  /** Solo titular: ya hay contrato (o el estudio se cerró): no se dice «generar contrato». */
+  tieneContrato?: boolean
   expedienteEstado?: string
 }
 
@@ -574,7 +498,7 @@ function EstudioPanel({
   onReasignado,
   expedienteId,
   sinReintento,
-  accionGestor,
+  tieneContrato = false,
   expedienteEstado,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
@@ -617,15 +541,13 @@ function EstudioPanel({
     (expedienteEstado === 'aprobado' || expedienteEstado === 'rechazado')
       ? expedienteEstado
       : null
-  const tone = accionGestor
-    ? 'warning'
-    : decisionAnalista === 'aprobado'
+  const tone = decisionAnalista === 'aprobado'
       ? 'success'
       : decisionAnalista === 'rechazado'
         ? 'danger'
         : getTone(estudio)
   const styles = TONE_STYLES[tone]
-  const estadoLabel = accionGestor?.etiqueta ?? ESTADO_LABEL[estudio.estado] ?? estudio.estado
+  const estadoLabel = ESTADO_LABEL[estudio.estado] ?? estudio.estado
   const resultadoLabel =
     decisionAnalista === 'aprobado'
       ? 'Aprobado por el analista'
@@ -645,12 +567,15 @@ function EstudioPanel({
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : accionGestor?.texto ?? getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario', esRolInterno(userRol))
+      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario', esRolInterno(userRol))
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
+  // Con contrato o con el estudio cerrado ya no es el siguiente paso.
   const siguientePaso =
-    destinacion && !inmuebleActualId
-      ? siguientePasoBase.replace('Siguiente paso: generar contrato.', 'Siguiente paso: vincular el inmueble.')
-      : siguientePasoBase
+    tieneContrato || expedienteEstado === 'cerrado'
+      ? siguientePasoBase.replace(' Siguiente paso: generar contrato.', '')
+      : destinacion && !inmuebleActualId
+        ? siguientePasoBase.replace('Siguiente paso: generar contrato.', 'Siguiente paso: vincular el inmueble.')
+        : siguientePasoBase
   // Texto de la API: sin citas a documentos para nadie, y sin datos internos
   // del modelo para quien no es de Cofianza.
   const interno = esRolInterno(userRol)
@@ -683,7 +608,7 @@ function EstudioPanel({
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
               {estadoLabel}
             </span>
-            {estudio.expiracion?.expirado && !accionGestor && (
+            {estudio.expiracion?.expirado && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
                 Expirado
               </span>

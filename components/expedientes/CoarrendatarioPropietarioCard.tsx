@@ -324,11 +324,11 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
                 ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.'
                 : fallo === 'no_existe'
                   ? `si el documento está mal escrito, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO} para corregirlo.`
-                  : 'corrija el primer apellido y vuelva a consultar en el panel «Coarrendatario» de la evaluación, aquí abajo.'
+                  : 'corrija el primer apellido y vuelva a consultar en el panel «Coarrendatario» de la evaluación crediticia.'
             }`
           : sinEfecto
           ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
-          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación, aquí abajo.'
+          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación crediticia.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
           : coa.estudio?.estado === 'pago_pendiente'
@@ -369,9 +369,10 @@ function ResultadoEstudioBlock({
   externo: boolean
 }) {
   const cfg: Record<string, { color: string; label: string }> = {
-    aprobado: { color: 'bg-green-50 border-green-200 text-green-900', label: 'Aprobado' },
-    condicionado: { color: 'bg-amber-50 border-amber-200 text-amber-900', label: 'Condicionado' },
-    rechazado: { color: 'bg-red-50 border-red-200 text-red-900', label: 'No aprobable' },
+    // Mismas palabras que la evaluación (Adenda 3 V2 §7): válido, en revisión o no califica.
+    aprobado: { color: 'bg-green-50 border-green-200 text-green-900', label: 'Válido' },
+    condicionado: { color: 'bg-amber-50 border-amber-200 text-amber-900', label: 'En revisión' },
+    rechazado: { color: 'bg-red-50 border-red-200 text-red-900', label: 'No califica' },
     pendiente: { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'Pendiente' },
   }
   const resultado = estudio.resultado || 'pendiente'

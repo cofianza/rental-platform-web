@@ -41,6 +41,8 @@ interface AutorizacionSectionProps {
   onContactoActualizado?: () => void
   /** Gerencia o miembro solo lectura: ve el estado pero no envía ni corrige. */
   soloLectura?: boolean
+  /** Estudio cerrado o rechazado: sin acciones. Ya decidido: la autorización firmada se pliega. */
+  expedienteEstado?: string
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -80,8 +82,11 @@ export function AutorizacionSection({
   solicitanteDocumento,
   solicitanteTipoDocumento,
   onContactoActualizado,
-  soloLectura = false,
+  soloLectura: soloLecturaProp = false,
+  expedienteEstado,
 }: AutorizacionSectionProps) {
+  // Con el estudio cerrado o rechazado no se reenvía ni se corrige (la API lo rechaza).
+  const soloLectura = soloLecturaProp || expedienteEstado === 'cerrado' || expedienteEstado === 'rechazado'
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const [autorizacion, setAutorizacion] = useState<IAutorizacion | null>(null)
@@ -479,8 +484,12 @@ export function AutorizacionSection({
       perfil.ingreso_declarado_cop != null ||
       perfil.presentacion != null)
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+  // Ya firmada y con el estudio decidido es dato de consulta: va plegada.
+  const plegada =
+    estado === 'autorizado' && ['aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
+
+  const contenido = (
+    <div className={plegada ? 'p-6' : 'bg-white border border-gray-200 rounded-lg p-6'}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
@@ -954,8 +963,8 @@ export function AutorizacionSection({
                 </dd>
                 {perfil.presentacion === 'acompanado' && (
                   <p className="text-[11px] text-gray-500 mt-1">
-                    Es una intención, no una invitación: la invitación real se emite desde la sección de
-                    coarrendatario cuando el estudio quede condicionado.
+                    Es una intención, no una invitación: la invitación real se envía desde la sección
+                    Coarrendatario del estudio.
                   </p>
                 )}
               </div>
@@ -1001,5 +1010,19 @@ export function AutorizacionSection({
         />
       )}
     </div>
+  )
+
+  if (!plegada) return contenido
+  return (
+    <details className="rounded-lg border border-gray-200 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-6 py-4 text-sm hover:bg-gray-50">
+        <span className="flex items-center gap-2 font-medium text-gray-800">
+          <IconShield size={18} className="text-primary-600" />
+          Autorización Habeas Data
+        </span>
+        <span className="text-xs text-gray-500">Autorizada el {formatDate(autorizacion?.autorizado_en)} · Ver</span>
+      </summary>
+      <div className="border-t border-gray-200">{contenido}</div>
+    </details>
   )
 }
