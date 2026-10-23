@@ -65,6 +65,7 @@ export function CorregirDocumentoModal({
   const [guardando, setGuardando] = useState(false)
 
   const cerrar = () => {
+    setTipo(TIPOS.some((t) => t.value === tipoActual) ? tipoActual! : 'cc')
     setNumero('')
     setNombre(nombreActual ?? '')
     setApellido(apellidoActual ?? '')
@@ -77,9 +78,12 @@ export function CorregirDocumentoModal({
   const sinCorreccionesDoc = restantes === 0
   const cambiaNombre =
     conNombre && (nombre.trim() !== (nombreActual ?? '').trim() || apellido.trim() !== (apellidoActual ?? '').trim())
-  const cambiaDoc = numero.trim().length > 0
+  // Cambiar solo el tipo también es corregir el documento: exige el número.
+  const tipoInicial = TIPOS.some((t) => t.value === tipoActual) ? tipoActual! : 'cc'
+  const cambiaDoc = numero.trim().length > 0 || tipo !== tipoInicial
   const docValido = !cambiaDoc || numero.trim().length >= 5
-  const nombreCompleto = !conNombre || (!!nombre.trim() && !!apellido.trim())
+  // Solo se exige si se cambia el nombre (una ficha vieja sin apellido no bloquea corregir el documento).
+  const nombreCompleto = !cambiaNombre || (!!nombre.trim() && !!apellido.trim())
   const valido = !!fuente && (cambiaNombre || cambiaDoc) && docValido && nombreCompleto
 
   const guardar = async () => {
@@ -176,7 +180,9 @@ export function CorregirDocumentoModal({
           <p className="text-xs text-gray-600">
             {sinCorreccionesDoc
               ? 'Ya usó todas las correcciones del documento en este estudio: aquí solo puede corregir el nombre.'
-              : 'Si el documento está bien, deje el número vacío. Verifíquelo con el prospecto antes de corregirlo: si la persona es otra, cree un estudio nuevo.'}
+              : conNombre
+                ? 'Si el documento está bien, deje el número vacío. Verifíquelo con el prospecto antes de corregirlo: si la persona es otra, cree un estudio nuevo.'
+                : 'Verifique el documento con el prospecto antes de corregirlo: si la persona es otra, cree un estudio nuevo.'}
           </p>
           <p className="text-xs text-gray-600">
             Si el prospecto tiene un enlace vigente, dejará de funcionar: después de corregir tendrá que reenviárselo,
@@ -249,9 +255,11 @@ export function CorregirDocumentoModal({
                 : !docValido
                   ? 'El número de documento debe tener al menos 5 caracteres.'
                   : !cambiaNombre && !cambiaDoc
-                    ? conNombre
-                      ? 'Cambie el nombre o escriba el documento correcto.'
-                      : 'Escriba el documento correcto.'
+                    ? !conNombre
+                      ? 'Escriba el documento correcto.'
+                      : sinCorreccionesDoc
+                        ? 'Cambie el nombre.'
+                        : 'Cambie el nombre o escriba el documento correcto.'
                     : 'Elija contra qué verificó los datos.'}
             </p>
           )}

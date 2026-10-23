@@ -416,8 +416,9 @@ export function AutorizacionSection({
     !soloLectura && !sinDocumento && !!autorizacion && estado !== 'autorizado' && !identidadRechazadaExterno
   // Pasado el límite la API no guarda la corrección: solo cierra el estudio.
   const sinCorrecciones = corregible && autorizacion?.correcciones_restantes === 0
-  // Sin correcciones del documento, el nombre se sigue pudiendo corregir.
-  const puedeCorregir = corregible
+  // Sin correcciones del documento, el nombre se sigue pudiendo corregir. Sin
+  // reenvíos no: corregir vence el enlace y ya no habría cómo mandar otro.
+  const puedeCorregir = corregible && !sinReenvios
 
   // Reenviar y corregir: compartido por pendiente, revocado y expirado. Con el
   // enlace vivo (pendiente) se confirma: lo vence y gasta un reenvío.
