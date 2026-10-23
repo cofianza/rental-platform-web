@@ -105,10 +105,13 @@ export function Step3Configuration({
       : !(esInmobiliaria && o.valor === 'inmobiliaria') && (usaCreditos || o.valor !== 'credito'),
   )
   // Si la forma elegida dejó de ofrecerse (p. ej. se cambió a «Sin propiedad»), se vuelve a elegir.
+  // Con una sola opción (sin propiedad, o inmobiliaria sin paquete) va marcada.
   const formaPagoInvisible = !!data.forma_pago && !opcionesVisibles.some((o) => o.valor === data.forma_pago)
+  const unicaOpcion = opcionesVisibles.length === 1 ? opcionesVisibles[0].valor : null
   useEffect(() => {
-    if (formaPagoInvisible) onUpdate({ forma_pago: '' })
-  }, [formaPagoInvisible, onUpdate])
+    if (unicaOpcion && data.forma_pago !== unicaOpcion) onUpdate({ forma_pago: unicaOpcion })
+    else if (formaPagoInvisible) onUpdate({ forma_pago: '' })
+  }, [unicaOpcion, data.forma_pago, formaPagoInvisible, onUpdate])
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
