@@ -867,6 +867,8 @@ export default function ExpedienteDetallePage() {
                     solicitanteTelefono={expediente.solicitante?.telefono}
                     solicitanteDocumento={expediente.solicitante ? expediente.solicitante.numero_documento ?? '' : undefined}
                     solicitanteTipoDocumento={expediente.solicitante?.tipo_documento}
+                    solicitanteNombre={expediente.solicitante?.nombre}
+                    solicitanteApellido={expediente.solicitante?.apellido}
                     onContactoActualizado={fetchExpediente}
                     soloLectura={!puedeEditar}
                   />
