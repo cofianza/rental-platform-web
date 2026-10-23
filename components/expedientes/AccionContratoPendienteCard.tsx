@@ -31,7 +31,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Bloqueo } from '@/types/contratoV3'
 import { Button, buttonClasses } from '@/components/ui/Button'
-import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconFileText, IconLoader } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconFileText } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
@@ -260,20 +260,8 @@ export function AccionContratoPendienteCard({
     )
   }
 
-  // Otros roles (solicitante, gerencia_consulta) — informativo.
-  return (
-    <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
-      <div className="flex items-start gap-3">
-        <IconLoader size={20} className="text-blue-700 shrink-0 mt-0.5 animate-spin" />
-        <div>
-          <p className="text-sm font-semibold text-blue-900 mb-0.5">Esperando generación del contrato</p>
-          <p className="text-sm text-blue-800">
-            El estudio del solicitante fue aprobado. La inmobiliaria o el operador de Cofianza están preparando el contrato — recibirá una notificación cuando esté listo.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+  // Solo se monta para quien puede generar el contrato (la página filtra el rol).
+  return null
 }
 
 function CardAccion({ titulo, texto, children }: { titulo: string; texto: string; children: ReactNode }) {

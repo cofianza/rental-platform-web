@@ -50,6 +50,23 @@ function montoProspecto(e: IPagoEstudioEstado): string {
 export function textoCubierto(
   e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago'>,
   estudio: Pick<IEstudio, 'estado'> | null,
+  /** Cofianza mira el paquete de la inmobiliaria, no el suyo. */
+  deLaInmobiliaria = false,
+): { titulo: string; texto: string } {
+  const r = textoCubiertoParaLaInmobiliaria(e, estudio)
+  if (!deLaInmobiliaria) return r
+  return {
+    titulo: r.titulo.replace('a su saldo', 'al saldo de la inmobiliaria'),
+    texto: r.texto
+      .replace(/de su paquete/g, 'del paquete de la inmobiliaria')
+      .replace(/a su paquete/g, 'al paquete de la inmobiliaria')
+      .replace(/a su saldo/g, 'al saldo de la inmobiliaria'),
+  }
+}
+
+function textoCubiertoParaLaInmobiliaria(
+  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago'>,
+  estudio: Pick<IEstudio, 'estado'> | null,
 ): { titulo: string; texto: string } {
   const conCredito = /cr[eé]dito|cupo/i.test(`${e.pago?.descripcion ?? ''} ${e.pago?.notas ?? ''}`)
   if (!conCredito) {
@@ -118,7 +135,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   // Opción B (Adenda 2 §7): el gestor paga él mismo por Mercado Pago. Ya no
   // existe "el costo queda a mi cargo" (a cuenta): no se aprobó. Adenda de
   // precios §1.4: la inmobiliaria no paga estudios sueltos (paquete o prospecto).
-  const puedePagarSuelto = userRole !== 'inmobiliaria' && !sinInmueble
+  // Cofianza no se paga a sí misma por la pasarela: el pago suelto es del propietario.
+  const puedePagarSuelto = userRole === 'propietario' && !sinInmueble
   const numOpcionesPago = (puedeUsarCreditos ? 1 : 0) + (puedePagarSuelto ? 1 : 0) + 1
   // El checkout pendiente es de la agencia (opción B), no un enlace enviado al
   // prospecto: se ofrece reabrirlo en vez de "reenviar correo". Lo dice el API
@@ -507,7 +525,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
 
       {/* Asumido por inmobiliaria */}
       {estado.estado === 'asumido_inmobiliaria' && (() => {
-        const { titulo, texto } = textoCubierto(estado, estudioTitular)
+        const { titulo, texto } = textoCubierto(estado, estudioTitular, userRole !== 'inmobiliaria')
         return (
           <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
             <IconCheckCircle size={20} className="text-green-600 shrink-0" />

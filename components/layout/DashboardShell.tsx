@@ -102,7 +102,8 @@ export function DashboardShell({ children }: Props) {
         <Header />
         <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-hidden focus:outline-none">
           {/* BLQ §2.1: Cofianza también envía enlaces y corrige documentos. */}
-          {rol === 'administrador' && <DatosEmpresaPendientesBanner />}
+          {/* Dentro de un estudio distrae del caso: ya lo dicen el menú y el aviso de la sesión. */}
+          {rol === 'administrador' && !pathname.startsWith('/expedientes/') && <DatosEmpresaPendientesBanner />}
           {(rol === 'administrador' || rol === 'operador_analista') && <BloqueosPendientesBanner />}
           {children}
         </main>

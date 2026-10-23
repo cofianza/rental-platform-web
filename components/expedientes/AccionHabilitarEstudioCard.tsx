@@ -207,8 +207,9 @@ export function AccionHabilitarEstudioCard({
                 Primero, la visita al inmueble
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Agende la visita desde la sección de citas de este estudio. Cuando se realice,
-                aquí podrá habilitar la evaluación crediticia.
+                {userRol === 'operador_analista'
+                  ? 'La inmobiliaria o el propietario agendan la visita. Cuando se realice, aquí podrá habilitar la evaluación crediticia.'
+                  : 'Agende la visita desde la sección de citas de este estudio. Cuando se realice, aquí podrá habilitar la evaluación crediticia.'}
               </p>
               <p className="text-sm text-gray-500 mb-2">¿La visita ya se hizo por fuera (WhatsApp u otro medio)?</p>
               <button

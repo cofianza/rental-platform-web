@@ -107,6 +107,8 @@ export default function ExpedienteDetallePage() {
   // Gerencia y el miembro solo lectura ven el estudio completo, pero sin las
   // tarjetas de acción: el API les rechaza cualquier cambio.
   const puedeEditar = usePuedeEditar()
+  // Miembro con el perfil incompleto: ve el estudio, pero las acciones esperan a que lo complete.
+  const puedeActuar = puedeEditar && !bloqueadoPorPerfil
 
   const tabs: Tab[] = user?.rol === 'solicitante'
     ? [{ id: 'resumen', label: 'Resumen' }]
@@ -757,16 +759,16 @@ export default function ExpedienteDetallePage() {
                 y debajo las INFORMATIVAS (estado del estudio/contrato). Cada
                 tarjeta se auto-oculta si no aplica, así la acción vigente queda
                 siempre arriba del todo.
-                Un miembro con perfil incompleto no ve estas acciones (el banner
-                de arriba le explica por qué y cómo desbloquearse). */}
-            {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
+                Un miembro con perfil incompleto ve las tarjetas pero no las
+                acciones (el banner de arriba le explica cómo desbloquearse). */}
+            {user?.rol !== 'solicitante' && (
               <>
                 {/* Acción requerida: generar contrato — AL TOPE cuando aplica
                     (expediente aprobado sin contrato). Se auto-oculta en el
                     resto de estados, así que solo aparece encima del estudio
                     justo cuando es el siguiente paso. */}
                 {/* Sin propiedad no hay contrato que generar: primero se vincula el inmueble. */}
-                {puedeEditar && !expediente.inmueble && expediente.estado === 'aprobado' && (
+                {puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     <p className="font-semibold">Siguiente paso: vincular el inmueble</p>
                     <p className="mt-1">
@@ -775,7 +777,7 @@ export default function ExpedienteDetallePage() {
                     </p>
                   </div>
                 )}
-                {puedeEditar && expediente.inmueble && (
+                {puedeActuar && expediente.inmueble && (
                   <AccionContratoPendienteCard
                     expedienteId={id}
                     expedienteEstado={expediente.estado}
@@ -791,7 +793,7 @@ export default function ExpedienteDetallePage() {
                     ARRIBA de la evaluación — es lo que hay que resolver ahora. */}
                 {esCondicionado && (
                   <>
-                    {puedeEditar && (
+                    {puedeActuar && (
                       <AprobarCondicionadoCard
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -812,6 +814,18 @@ export default function ExpedienteDetallePage() {
                   </>
                 )}
 
+                {/* Acción: visita y habilitar la evaluación (antes del resultado). */}
+                {puedeActuar && (
+                  <AccionHabilitarEstudioCard
+                    expedienteId={id}
+                    estudioHabilitado={expediente.estudio_habilitado ?? false}
+                    estudioRechazado={expediente.estudio_rechazado}
+                    citaOmitida={expediente.cita_omitida}
+                    expedienteEstado={expediente.estado}
+                    userRol={user?.rol}
+                    onAction={fetchExpediente}
+                  />
+                )}
                 {/* Estado del estudio: es el centro del expediente.
                     Se auto-oculta si aún no hay estudio (entonces manda la
                     acción de habilitar). Si la consulta a TransUnion falló,
@@ -843,18 +857,6 @@ export default function ExpedienteDetallePage() {
                   expedienteEstado={expediente.estado}
                 />
 
-                {/* ── Acciones requeridas (arriba) ── */}
-                {puedeEditar && (
-                  <AccionHabilitarEstudioCard
-                    expedienteId={id}
-                    estudioHabilitado={expediente.estudio_habilitado ?? false}
-                    estudioRechazado={expediente.estudio_rechazado}
-                    citaOmitida={expediente.cita_omitida}
-                    expedienteEstado={expediente.estado}
-                    userRol={user?.rol}
-                    onAction={fetchExpediente}
-                  />
-                )}
                 {/* §6.3 — INVERSIÓN DEL ORDEN: primero la autorización, después
                     el cobro. Hasta 2026-09-04 esta card vivía escondida en el
                     tab Estudios y detrás de un gate `estudioPagado`; con el
@@ -870,7 +872,8 @@ export default function ExpedienteDetallePage() {
                     solicitanteNombre={expediente.solicitante?.nombre}
                     solicitanteApellido={expediente.solicitante?.apellido}
                     onContactoActualizado={fetchExpediente}
-                    soloLectura={!puedeEditar}
+                    soloLectura={!puedeActuar}
+                    expedienteEstado={expediente.estado}
                   />
                 )}
                 {/* Pago del estudio EN EL RESUMEN: apenas se habilita el
@@ -881,7 +884,7 @@ export default function ExpedienteDetallePage() {
                     expediente pasa a revisión/aprobado/cerrado, el estudio ya
                     se ejecutó y pedir pago no tiene sentido (era el bug del
                     expediente cerrado mostrando "define quién paga"). */}
-                {puedeEditar &&
+                {puedeActuar &&
                   (expediente.estudio_habilitado ?? false) &&
                   !['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expediente.estado) && (
                   <PagoEstudioSection
@@ -919,7 +922,26 @@ export default function ExpedienteDetallePage() {
             {/* Sección Cita Previa — al tope para que el solicitante vea
                 de un vistazo la fecha/hora y si fue reprogramada. Sin
                 propiedad no hay inmueble que visitar. */}
-            {expediente.inmueble && (
+            {expediente.inmueble && (expediente.estudio_habilitado ?? false) ? (
+              <details className="rounded-lg border border-gray-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm hover:bg-gray-50">
+                  <span className="font-medium text-gray-800">Visita al inmueble</span>
+                  <span className="text-xs text-gray-500">{expediente.cita_omitida ? 'Omitida' : 'Realizada'} · Ver</span>
+                </summary>
+                <div className="border-t border-gray-200 p-5">
+                  <CitasSection
+                    expedienteId={id}
+                    expedienteEstado={expediente.estado}
+                    citaOmitida={expediente.cita_omitida}
+                    inmuebleId={expediente.inmueble?.id}
+                    solicitanteId={expediente.solicitante?.id}
+                    solicitanteTelefono={expediente.solicitante?.telefono}
+                    onSolicitanteUpdated={fetchExpediente}
+                    onCitaRealizada={fetchExpediente}
+                  />
+                </div>
+              </details>
+            ) : expediente.inmueble && (
             <div className="border border-gray-200 rounded-lg p-5">
               <CitasSection
                 expedienteId={id}
@@ -1138,28 +1160,10 @@ export default function ExpedienteDetallePage() {
               coarrendatarioVigente={coarrendatarioVigente}
             />
 
-            {/* Decisión sobre un estudio condicionado, también aquí y no solo en
-                el Resumen: cuando el gestor entra a esta pestaña ya está viendo
-                el resultado y su motivo, y tener que volver al Resumen para
-                actuar rompe el hilo. Ambas cards se auto-ocultan si el
-                expediente no está condicionado o el rol no puede decidir.
-                Mismo guard de perfil que el Resumen: un miembro con el perfil
-                incompleto no debe poder aprobar desde esta pestaña lo que el
-                Resumen le bloquea con banner explicativo. */}
+            {/* La decisión del condicionado vive en el Resumen (un solo lugar);
+                aquí queda el coarrendatario, que es parte de la evaluación. */}
             {!bloqueadoPorPerfil && (
               <>
-                {puedeEditar && (
-                  <AprobarCondicionadoCard
-                    expedienteId={id}
-                    expedienteEstado={expediente.estado}
-                    userRol={user?.rol}
-                    sinInfoBuro={condicionadoSinInfo}
-                    estudioSinCentrales={estudioSinCentrales}
-                    condicion={condicionCoa}
-                    canalPropietario={!expediente.inmueble?.inmobiliaria_id}
-                    onAprobado={fetchExpediente}
-                  />
-                )}
                 <CoarrendatarioPropietarioCard
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
