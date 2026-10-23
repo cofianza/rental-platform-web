@@ -120,6 +120,17 @@ export interface ISaldoInmobiliariaExpediente {
   pago_estudio_existente: boolean
 }
 
+export interface IDatosFacturacion {
+  razon_social: string
+  /** Con el DV («900123456-7»). */
+  nit: string
+  direccion_fiscal: string
+  email: string
+  municipio_nombre: string
+  /** Campos del modal: razon_social, nit, direccion, email, telefono, municipio_codigo. */
+  faltantes: string[]
+}
+
 export interface IDatosFiscalesFactura {
   razon_social?: string
   nit?: string
@@ -222,6 +233,12 @@ class CreditosEstudiosService {
    */
   async getMisCompras(): Promise<ICompraCredito[]> {
     const res = await apiClient.get<ICompraCredito[]>('/creditos-estudios/me/compras')
+    return res.data
+  }
+
+  /** A nombre de quién y a qué correo sale la factura del paquete, y qué falta. */
+  async getDatosFacturacion(): Promise<IDatosFacturacion> {
+    const res = (await apiClient.get('/creditos-estudios/me/datos-facturacion')) as unknown as { data: IDatosFacturacion }
     return res.data
   }
 
