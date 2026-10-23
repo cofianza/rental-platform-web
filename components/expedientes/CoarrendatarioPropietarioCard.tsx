@@ -310,7 +310,7 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
           color: 'bg-blue-50 border-blue-200 text-blue-900',
           label: 'Esperando respuesta',
           mensaje: antesDeLaDecision
-            ? 'La invitación fue enviada. La evaluación del titular espera a que esta persona autorice: si no lo va a hacer, cancele la invitación.'
+            ? 'La invitación fue enviada. Su evaluación corre apenas autorice (con el estudio pagado); si no lo va a hacer, cancele la invitación.'
             : 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
         },
     aceptado: {
@@ -331,8 +331,10 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
           : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación, aquí abajo.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
+          : coa.estudio?.estado === 'pago_pendiente'
+          ? 'Autorizó. Su evaluación corre apenas el estudio esté pagado, y el estudio se decide con los dos.'
           : antesDeLaDecision
-          ? 'Autorizó. Su evaluación corre después de la del titular, y el estudio se decide con los dos.'
+          ? 'Autorizó. Su evaluación está por correr, y el estudio se decide con los dos.'
           : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {
