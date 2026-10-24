@@ -5,6 +5,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
@@ -181,7 +183,8 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
           <IconCalendar size={16} />
-          Cita Previa
+          Visita al inmueble
+          <InfoTip texto={AYUDA.visita} lado="derecha" />
         </h3>
         {/* Mostrar boton compacto solo cuando hay historial (canceladas/no_asistio)
             pero NO hay cita activa ni realizada — caso "rebote" tras cancelacion. */}

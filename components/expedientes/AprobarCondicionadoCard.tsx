@@ -24,6 +24,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
@@ -94,7 +96,10 @@ export function AprobarCondicionadoCard({
             <IconShieldCheck size={20} className="text-amber-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 mb-0.5">Aprobado con condición: qué sigue</h3>
+            <h3 className="mb-0.5 inline-flex items-center gap-1 text-base font-semibold text-gray-900">
+              Aprobado con condición: qué sigue
+              <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+            </h3>
             <p className="text-sm text-gray-700">{textoCondicionCoarrendatario(condicion)}</p>
             {!condicion.vencida && (
               <ol className="mt-4 space-y-4">
@@ -201,7 +206,10 @@ export function AprobarCondicionadoCard({
           <IconShieldCheck size={20} className="text-amber-700" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">Estudio condicionado: qué sigue</h3>
+          <h3 className="mb-0.5 inline-flex items-center gap-1 text-base font-semibold text-gray-900">
+            Estudio condicionado: qué sigue
+            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+          </h3>
           <p className="text-sm text-gray-700">
             {estudioSinCentrales
               ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'

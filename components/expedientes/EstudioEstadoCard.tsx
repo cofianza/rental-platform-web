@@ -12,6 +12,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { useCallback, useEffect, useState } from 'react'
 import { IconBuilding2, IconCheck, IconClock, IconRefresh } from '@/components/icons'
 import { documento } from '@/components/contratos/v3/campos'
@@ -585,8 +587,9 @@ function EstudioPanel({
   return (
     <div className={`border rounded-lg p-4 ${styles.card}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+        <h3 className="inline-flex items-center gap-1 text-sm font-semibold text-gray-500 uppercase tracking-wider">
           Evaluación crediticia
+          <InfoTip texto={AYUDA.evaluacion} lado="derecha" />
         </h3>
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${
