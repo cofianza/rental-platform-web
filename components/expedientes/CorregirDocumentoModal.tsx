@@ -42,6 +42,8 @@ interface Props {
   /** null/undefined = la API no lo pudo contar (o es anterior al bloque 2). */
   correccionesRestantes?: number | null
   onCorregido?: () => void
+  /** Reenvía el enlace desde el aviso de éxito (la corrección vence el anterior). */
+  onReenviar?: () => void
 }
 
 export function CorregirDocumentoModal({
@@ -54,6 +56,7 @@ export function CorregirDocumentoModal({
   apellidoActual,
   correccionesRestantes,
   onCorregido,
+  onReenviar,
 }: Props) {
   const conNombre = nombreActual !== undefined
   const [nombre, setNombre] = useState(nombreActual ?? '')
@@ -105,6 +108,7 @@ export function CorregirDocumentoModal({
               ? ' Le queda 1 corrección.'
               : ` Le quedan ${r.correcciones_restantes} correcciones.`
         }`,
+        onReenviar ? { duration: 10000, action: { label: 'Reenviar enlace', onClick: onReenviar } } : undefined,
       )
       window.dispatchEvent(new Event(EVENTO_BLOQUEOS))
       cerrar()
