@@ -5,6 +5,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
@@ -320,8 +322,9 @@ export function EstudiosSection({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="inline-flex items-center gap-1.5 text-lg font-semibold text-gray-900">
           Evaluaciones crediticias
+          <InfoTip texto={AYUDA.evaluaciones} lado="derecha" />
         </h3>
         {canManage && (
           <button

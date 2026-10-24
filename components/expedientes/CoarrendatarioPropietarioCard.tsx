@@ -18,6 +18,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { toast } from 'sonner'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -217,7 +219,10 @@ export function CoarrendatarioPropietarioCard({
             <IconUsers size={20} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">Coarrendatario</h3>
+            <h3 className="inline-flex items-center gap-1 text-base font-semibold text-gray-900">
+              Coarrendatario
+              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+            </h3>
             <p className="text-xs text-gray-500">
               Persona registrada como coarrendatario en este estudio. Si califica, suma puntaje e ingreso al del solicitante.
             </p>

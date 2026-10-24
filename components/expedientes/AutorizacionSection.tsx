@@ -5,6 +5,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
@@ -455,6 +457,7 @@ export function AutorizacionSection({
               Corregir datos
             </button>
           )}
+          {!reenvioSoloCofianza && <InfoTip texto={puedeCorregir ? `${AYUDA.reenviar} ${AYUDA.corregir}` : AYUDA.reenviar} />}
         </div>
         {puedeCorregir && estado === 'pendiente' && (
           <p className="text-xs text-gray-600">
@@ -496,6 +499,7 @@ export function AutorizacionSection({
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
           <h3 className="text-base font-semibold text-gray-900">Autorización Habeas Data</h3>
+          <InfoTip texto={AYUDA.autorizacion} lado="derecha" />
         </div>
         {estado && <Badge estado={estado} />}
       </div>

@@ -6,6 +6,8 @@
 
 'use client'
 
+import { AYUDA, AYUDA_ETAPA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { Button } from '@/components/ui/Button'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { ExcepcionTopeBlock } from '@/components/expedientes/ExcepcionTopeBlock'
@@ -504,6 +506,9 @@ export default function ExpedienteDetallePage() {
                   }
                 />
               )}
+              {etapa && user?.rol !== 'solicitante' && !expediente.cancelado_at && (
+                <InfoTip texto={AYUDA_ETAPA[etapa]} etiqueta="Qué significa esta etapa" lado="derecha" />
+              )}
             </div>
 
             {/* Info del inmueble y solicitante */}
@@ -540,7 +545,10 @@ export default function ExpedienteDetallePage() {
                 "Responsable del expediente" (miembro) del tab Resumen. */}
             {puedeAsignar && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Responsable:</span>
+                <span className="inline-flex items-center gap-1 text-sm text-gray-500">
+                  Responsable:
+                  <InfoTip texto={AYUDA.responsable} lado="derecha" />
+                </span>
                 {nombreAnalista ? (
                   <button
                     onClick={() => setShowAsignacionModal(true)}

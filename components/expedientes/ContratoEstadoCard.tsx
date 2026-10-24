@@ -9,6 +9,8 @@
 
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar } from '@/components/icons'
@@ -111,6 +113,7 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
         <IconCalendar size={16} />
         Contrato
+        <InfoTip texto={AYUDA.contrato} lado="derecha" />
       </h3>
 
       <div className="flex items-start gap-3">

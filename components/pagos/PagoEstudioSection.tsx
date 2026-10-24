@@ -1,5 +1,7 @@
 'use client'
 
+import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import {
   IconAlertTriangle,
   IconArrowRight,
@@ -390,6 +392,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             <div>
               <h3 className="text-base font-bold text-gray-900">
                 Acción requerida: defina quién paga el estudio
+                <InfoTip texto={AYUDA.pago} className="ml-1" />
                 <span className="ml-2 inline-flex px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-200 text-amber-900">paso obligatorio</span>
               </h3>
               <p className="text-sm text-gray-600 mt-0.5">
@@ -530,7 +533,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
             <IconCheckCircle size={20} className="text-green-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-green-800">{titulo}</p>
+              <p className="inline-flex items-center gap-1 text-sm font-medium text-green-800">
+                {titulo}
+                <InfoTip texto={/cupo/i.test(titulo) ? AYUDA.cupo : AYUDA.pago} lado="derecha" />
+              </p>
               <p className="text-xs text-green-600">{texto}</p>
             </div>
           </div>
