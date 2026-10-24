@@ -395,6 +395,11 @@ export function Step4Confirmation({
             </>
           )}
         </button>
+        {/* Reunión con Gerencia 23-oct: un nombre mal escrito tiene arreglo. */}
+        <p className="mt-2 text-center text-xs text-gray-500">
+          Revise el nombre y el documento: la consulta a las centrales los coteja. Si después nota un error, lo corrige
+          desde el estudio con «Corregir datos» mientras la persona no haya autorizado.
+        </p>
       </div>
     </div>
   )

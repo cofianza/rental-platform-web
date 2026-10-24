@@ -456,6 +456,12 @@ export function AutorizacionSection({
             </button>
           )}
         </div>
+        {puedeCorregir && estado === 'pendiente' && (
+          <p className="text-xs text-gray-600">
+            ¿Quedó mal escrito el nombre o el documento? Corríjalo con «Corregir datos» antes de que la persona
+            autorice y reenvíele el enlace: autoriza con los datos correctos.
+          </p>
+        )}
         {sinCorrecciones && (
           <p className="text-xs text-gray-600">
             Ya usó todas las correcciones del documento en este estudio (el nombre todavía se puede corregir). Si el
@@ -999,6 +1005,7 @@ export function AutorizacionSection({
           nombreActual={solicitanteNombre}
           apellidoActual={solicitanteApellido}
           correccionesRestantes={autorizacion?.correcciones_restantes}
+          onReenviar={sinReenvios ? undefined : () => void handleEnviarEnlace()}
           onCorregido={() => {
             void fetchStatus()
             onContactoActualizado?.()
