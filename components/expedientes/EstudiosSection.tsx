@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
+import { ESTADO_LABEL } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -40,6 +41,8 @@ const PROVEEDOR_LABELS: Record<string, string> = {
 
 const ESTADOS_FINALIZADOS = ['completado', 'fallido', 'cancelado']
 const ESTADOS_PERMITIDOS_RESULTADO = ['solicitado', 'en_proceso']
+/** La central se decide al consultar (cascada): antes de eso no se muestra. */
+const CENTRAL_DEFINIDA = ['en_proceso', 'completado', 'fallido']
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -327,15 +330,23 @@ export function EstudiosSection({
           <InfoTip texto={AYUDA.evaluaciones} lado="derecha" />
         </h3>
         {canManage && (
+          <span className="inline-flex items-center gap-1.5">
+          {hasActiveEstudio && (
+            <InfoTip
+              texto="Ya hay una evaluación en curso en este estudio. Para pedir otra, primero termine o cancele la que está activa."
+              etiqueta="Por qué no se puede solicitar otra evaluación"
+              lado="izquierda"
+            />
+          )}
           <button
             onClick={() => setShowSolicitar(true)}
             disabled={hasActiveEstudio || actionLoading}
-            title={hasActiveEstudio ? 'Ya hay una evaluación activa' : undefined}
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IconPlus size={16} />
             Solicitar evaluación
           </button>
+          </span>
         )}
       </div>
 
@@ -396,7 +407,8 @@ export function EstudiosSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <>
-                          {esRolInterno(user?.rol) && (
+                          {esRolInterno(user?.rol) &&
+                            (CENTRAL_DEFINIDA.includes(estudio.estado) || estudio.proveedor === 'manual') && (
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
                               estudio.proveedor === 'transunion'
@@ -409,8 +421,9 @@ export function EstudiosSection({
                             {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
                           </span>
                           )}
-                          <Badge estado={estudio.estado} />
-                          <Badge estado={estudio.resultado} />
+                          {/* Mismas palabras que el Resumen; el resultado, solo cuando lo hay. */}
+                          <Badge estado={estudio.estado} label={ESTADO_LABEL[estudio.estado]} />
+                          {estudio.resultado !== 'pendiente' && <Badge estado={estudio.resultado} />}
                         </>
                       {persona?.etiqueta === 'Coarrendatario' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
@@ -494,7 +507,11 @@ export function EstudiosSection({
                       className="flex items-center gap-1 shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) && estudio.resultado === 'pendiente' && (
+                      {/* Cargar el resultado a mano: la evaluación manual, o una consulta
+                          que quedó en curso. No mientras se espera la autorización. */}
+                      {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
+                        estudio.resultado === 'pendiente' &&
+                        (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso') && (
                         <button
                           onClick={() => setResultadoTarget(estudio)}
                           disabled={actionLoading}
@@ -513,21 +530,21 @@ export function EstudiosSection({
                             setSendLinkTarget(estudio)
                           }}
                           disabled={actionLoading}
-                          title="Enviar enlace al solicitante"
-                          className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg disabled:opacity-50"
+                          title="Envía a la persona el enlace del formulario de la evaluación"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-50"
                         >
-                          <IconMail size={18} />
+                          <IconMail size={16} />
+                          Enviar formulario
                         </button>
                       )}
                       {estudio.estado !== 'en_proceso' && (
                         <button
                           onClick={() => setCancelTarget(estudio)}
                           disabled={actionLoading}
-                          title="Cancelar evaluación"
-                          aria-label="Cancelar evaluación"
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                         >
-                          <IconX size={18} />
+                          <IconX size={16} />
+                          Cancelar evaluación
                         </button>
                       )}
                     </div>
