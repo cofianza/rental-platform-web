@@ -84,7 +84,7 @@ interface EstudioEstadoCardProps {
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
 // pagado, autorizado, formulario_*, documentos_*) se agrupan para no saturar
 // la card; el tab Estudios tiene el detalle fino.
-const ESTADO_LABEL: Record<EstadoEstudio, string> = {
+export const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   solicitado: 'Esperando autorización',
   pago_pendiente: 'Autorizado, esperando pago',
   pagado: 'Pagado',
