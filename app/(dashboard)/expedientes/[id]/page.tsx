@@ -213,8 +213,12 @@ export default function ExpedienteDetallePage() {
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
   // su evaluación fallida se reintenta. Sin leerla (cargando o error) manda
   // «condicionado», la regla de antes. Solo quien puede reintentar la pide.
+  // Desde el 23-oct el coarrendatario se consulta también antes de la decisión
+  // (sin esperar al titular): su evaluación lista se puede ejecutar ya.
   const ventanaCoaAplica =
-    puedeEditar && user?.rol !== 'solicitante' && (estadoExpediente === 'condicionado' || estadoExpediente === 'aprobado')
+    puedeEditar &&
+    user?.rol !== 'solicitante' &&
+    ['borrador', 'en_revision', 'informacion_incompleta', 'condicionado', 'aprobado'].includes(estadoExpediente ?? '')
   const [coaVigenteApi, setCoaVigenteApi] = useState<boolean | null>(null)
   useEffect(() => {
     if (!ventanaCoaAplica) return
