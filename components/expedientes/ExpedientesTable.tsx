@@ -359,8 +359,9 @@ export function ExpedientesTable({
                           : 'border-gray-200 bg-gray-50 text-gray-600'
                       }`}
                     >
+                      {/* A Cofianza «Su turno» le decía que actuara ella. */}
                       {expediente.depende_de === 'gestor'
-                        ? 'Su turno'
+                        ? interno ? 'Turno del gestor' : 'Su turno'
                         : expediente.depende_de === 'prospecto'
                           ? 'Esperando al prospecto'
                           : 'Cofianza procesando'}
