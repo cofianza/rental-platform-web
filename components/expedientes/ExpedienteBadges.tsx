@@ -55,6 +55,8 @@ export interface ProcessStepBadgeProps {
    *  mostramos el paso donde se detuvo el proceso entre parentesis. */
   cancelado?: boolean
   estadoPreCancelacion?: EstadoExpediente | null
+  /** Estado del último contrato no cancelado (lista): el aprobado avanza a Firma o Listo. */
+  contratoEstado?: string | null
 }
 
 /**
@@ -68,7 +70,7 @@ export interface ProcessStepBadgeProps {
  * - condicionado → pill amber "Condicionado".
  * - cualquier otro → "Paso N · Label" con tinte segun avance.
  */
-export function ProcessStepBadge({ estado, citaRealizada, className, cancelado = false, estadoPreCancelacion }: ProcessStepBadgeProps) {
+export function ProcessStepBadge({ estado, citaRealizada, className, cancelado = false, estadoPreCancelacion, contratoEstado }: ProcessStepBadgeProps) {
   if (cancelado) {
     // Si tenemos estadoPreCancelacion, mostramos en que paso se detuvo
     // ("Cancelado en Contrato"). Sin esa info, solo "Cancelado".
@@ -119,7 +121,7 @@ export function ProcessStepBadge({ estado, citaRealizada, className, cancelado =
     )
   }
 
-  const idx = getProcessStep(estado, citaRealizada)
+  const idx = getProcessStep(estado, citaRealizada, contratoEstado)
   const step = PROCESS_STEPS[idx]
   if (!step) return null
 

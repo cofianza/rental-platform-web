@@ -24,6 +24,8 @@ export interface IEstudioVigente {
   condicion_coarrendatario?: { vence_en: string; ingreso_adicional_requerido: number | null } | null
   /** Autorizó y está pagada, pero la consulta no arrancó sola: hay que lanzarla desde el detalle. */
   sin_ejecutar?: boolean
+  /** La última consulta del coarrendatario falló: reintentarla le toca al gestor. */
+  coarrendatario_fallido?: boolean
 }
 
 /** Filtro de la vista fusionada por el estado del estudio vigente. */
@@ -96,6 +98,8 @@ export interface IExpediente {
   requiere_accion?: boolean
   /** De quién depende ahora mismo el estudio. */
   depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
+  /** Lista (RPC): estado del último contrato no cancelado, para el paso de la fila. */
+  contrato_estado?: string | null
   /** Adenda de precios §8.2: prioridad en la cola del analista (el caso R2 va 'baja'). */
   prioridad_revision?: 'baja' | 'normal' | 'alta'
   /** Solo si se pidió con_contrato_vivo: ya tiene un contrato no cancelado. */

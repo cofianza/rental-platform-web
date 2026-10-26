@@ -160,6 +160,31 @@ function EstadoExpedienteFila({ expediente }: { expediente: IExpediente }) {
   )
 }
 
+/** De quién es el turno. En la tabla y en las tarjetas del móvil, que no lo decían. */
+function TurnoPill({ expediente, interno }: { expediente: IExpediente; interno: boolean }) {
+  // Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
+  if (!expediente.depende_de || (!interno && expediente.estudio_vigente?.estado_bloqueo === 'identidad_rechazada')) return null
+  return (
+    <span
+      className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+        expediente.depende_de === 'gestor'
+          ? 'border-coral-200 bg-coral-50 text-coral-700'
+          : 'border-gray-200 bg-gray-50 text-gray-600'
+      }`}
+    >
+      {/* A Cofianza «Su turno» le decía que actuara ella. */}
+      {expediente.depende_de === 'gestor'
+        ? interno ? 'Turno del gestor' : 'Su turno'
+        : expediente.depende_de === 'prospecto'
+          ? 'Esperando al prospecto'
+          // El condicionado lo decide un analista (Adenda 2 §5): no es una consulta en curso.
+          : expediente.estado === 'condicionado'
+            ? interno ? 'Revisión del analista' : 'En revisión de Cofianza'
+            : 'Cofianza procesando'}
+    </span>
+  )
+}
+
 export function ExpedientesTable({
   expedientes,
   meta,
@@ -334,6 +359,7 @@ export function ExpedientesTable({
                       citaRealizada={expediente.cita_realizada ?? false}
                       cancelado={!!expediente.cancelado_at}
                       estadoPreCancelacion={expediente.estado_pre_cancelacion}
+                      contratoEstado={expediente.contrato_estado}
                     />
                     <EstadoExpedienteFila expediente={expediente} />
                     <PrioridadBaja expediente={expediente} rol={rol} />
@@ -348,25 +374,10 @@ export function ExpedientesTable({
                     estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
                     esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
                     sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
+                    coarrendatarioFallido={expediente.estudio_vigente?.coarrendatario_fallido}
                     rolInterno={interno}
                   />
-                  {/* Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra. */}
-                  {expediente.depende_de && (interno || expediente.estudio_vigente?.estado_bloqueo !== 'identidad_rechazada') && (
-                    <span
-                      className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                        expediente.depende_de === 'gestor'
-                          ? 'border-coral-200 bg-coral-50 text-coral-700'
-                          : 'border-gray-200 bg-gray-50 text-gray-600'
-                      }`}
-                    >
-                      {/* A Cofianza «Su turno» le decía que actuara ella. */}
-                      {expediente.depende_de === 'gestor'
-                        ? interno ? 'Turno del gestor' : 'Su turno'
-                        : expediente.depende_de === 'prospecto'
-                          ? 'Esperando al prospecto'
-                          : 'Cofianza procesando'}
-                    </span>
-                  )}
+                  <TurnoPill expediente={expediente} interno={interno} />
                 </td>
                 <td className="px-4 py-3">
                   {(() => {
@@ -447,6 +458,7 @@ export function ExpedientesTable({
                   citaRealizada={expediente.cita_realizada ?? false}
                   cancelado={!!expediente.cancelado_at}
                   estadoPreCancelacion={expediente.estado_pre_cancelacion}
+                  contratoEstado={expediente.contrato_estado}
                 />
                 <EstadoExpedienteFila expediente={expediente} />
                 <PrioridadBaja expediente={expediente} rol={rol} />
@@ -458,8 +470,10 @@ export function ExpedientesTable({
                   estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
                   esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
                   sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
+                  coarrendatarioFallido={expediente.estudio_vigente?.coarrendatario_fallido}
                   rolInterno={interno}
                 />
+                <TurnoPill expediente={expediente} interno={interno} />
               </div>
             </div>
 
