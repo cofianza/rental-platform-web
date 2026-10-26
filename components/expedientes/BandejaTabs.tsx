@@ -8,6 +8,7 @@
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { IExpedientesStats } from '@/types/expediente'
 import { cn } from '@/lib/utils'
+import { IconX } from '@/components/icons'
 
 // Definición de bandejas en orden de prioridad operativa
 const BANDEJAS: Array<{
@@ -96,6 +97,19 @@ export function BandejaTabs({
                 )}
               >
                 Requieren mi acción
+              </button>
+            )}
+            {/* Cofianza no tiene esa pestaña: llega al filtro por el enlace del aviso
+                de bloqueos, y sin este chip quedaba activo sin decirlo ni poder quitarse. */}
+            {!vistaGestor && requiereAccionActivo && (
+              <button
+                type="button"
+                onClick={() => onBandejaChange(null)}
+                aria-label="Quitar el filtro Turno del gestor"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border bg-coral-50 text-coral-700 border-coral-300 hover:bg-coral-100"
+              >
+                Turno del gestor
+                <IconX size={14} />
               </button>
             )}
             {BANDEJAS.map((bandeja) => {
