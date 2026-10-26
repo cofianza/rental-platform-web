@@ -179,8 +179,12 @@ function getSiguientePaso(
   // "esperando al prospecto" cuando ya no va a responder lo deja esperando a él.
   // El reenvío es la tarjeta "Autorización" (AutorizacionSection), que vive en
   // el mismo tab Resumen: un segundo botón aquí sería el mismo envío dos veces.
+  // Sin prometerlo aquí: según el bloqueo y el rol lo reenvía el equipo, solo
+  // Cofianza o nadie (Gerencia, solo lectura); esa tarjeta dice cuál.
   if (estudio.expiracion?.expirado) {
-    return 'El prospecto no autorizó dentro del plazo — puede reenviarle la solicitud.'
+    return estudio.expiracion.detenida
+      ? 'El enlace de autorización se detuvo y la persona ya no puede firmarlo. No se consultó ninguna central de riesgo.'
+      : 'La persona no autorizó dentro del plazo y el enlace venció. No se consultó ninguna central de riesgo.'
   }
 
   if (estudio.estado === 'completado' && esCoarrendatario) {
@@ -613,7 +617,7 @@ function EstudioPanel({
             </span>
             {estudio.expiracion?.expirado && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
-                Expirado
+                {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
               </span>
             )}
             {resultadoLabel && (

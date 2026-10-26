@@ -429,6 +429,8 @@ export interface IRutaResultado {
  */
 export interface IExpiracionEstudio {
   expirado: boolean
+  /** true = el enlace se detuvo antes del plazo («no soy yo», documento que no coincide), no el reloj. */
+  detenida?: boolean
   /** Negativo cuando ya expiro. null cuando el reloj no corre. */
   diasRestantes: number | null
   expiraEn: string | null

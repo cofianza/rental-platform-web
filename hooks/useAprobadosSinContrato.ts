@@ -19,13 +19,13 @@ import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente } from '@/types/expediente'
 
 /**
- * Aprobados sin contrato activo (un contrato cancelado no cuenta). ÚNICA fuente
+ * Aprobados con inmueble y sin contrato activo (un contrato cancelado no cuenta). ÚNICA fuente
  * de este cálculo (H23): la usan esta vista y el widget de acciones pendientes.
  * Si el API marca `tiene_contrato_vivo` basta una consulta; si no, se piden los
  * contratos de todos los candidatos de una vez.
  */
 export async function cargarAprobadosSinContrato(limit: number): Promise<IExpediente[]> {
-  const { data: candidatos } = await expedienteService.getExpedientes({
+  const { data: aprobados } = await expedienteService.getExpedientes({
     estado: ['aprobado'],
     page: 1,
     limit,
@@ -33,6 +33,8 @@ export async function cargarAprobadosSinContrato(limit: number): Promise<IExpedi
     sortOrder: 'desc',
     con_contrato_vivo: true,
   })
+  // Aprobado sin propiedad: antes del contrato va «Vincular inmueble» (lo pide el detalle).
+  const candidatos = aprobados.filter((e) => e.inmueble)
   if (candidatos.length === 0) return []
   if (candidatos[0].tiene_contrato_vivo !== undefined) return candidatos.filter((e) => !e.tiene_contrato_vivo)
 

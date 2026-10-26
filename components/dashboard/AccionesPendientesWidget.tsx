@@ -1,7 +1,8 @@
 /**
  * Widget de acciones pendientes — dashboard del propietario/inmobiliaria.
  * Muestra 4 categorias: confirmar cita, realizar cita, habilitar estudio,
- * generar contrato. Cada item lleva al sitio exacto de SU accion, no al
+ * generar contrato (más el total de «Requieren mi acción» de la lista, con
+ * enlace al filtro). Cada item lleva al sitio exacto de SU accion, no al
  * tablero completo (antes todas las filas apuntaban a /citas a secas):
  *   - Confirmar / marcar realizada → /citas#cita-[id] (la tarjeta del kanban)
  *   - Habilitar evaluacion → /expedientes/[id] (detalle del estudio)
@@ -55,7 +56,8 @@ function AccionesPendientes() {
     )
   }
 
-  if (data.total === 0) {
+  // «Todo al día» solo si tampoco hay filas en «Requieren mi acción».
+  if (data.total === 0 && data.requierenAccion === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200">
         <EmptyState
@@ -79,6 +81,21 @@ function AccionesPendientes() {
           <IconChevronRight size={14} />
         </Link>
       </div>
+
+      {data.requierenAccion > 0 && (
+        <Link
+          href="/expedientes?estudio_filtro=requiere_accion"
+          className="flex items-center justify-between gap-3 rounded-lg border border-coral-200 bg-coral-50 px-3 py-2.5 text-sm text-coral-700 hover:bg-coral-100 transition-colors"
+        >
+          <span>
+            <span className="font-semibold">
+              {data.requierenAccion === 1 ? '1 estudio requiere' : `${data.requierenAccion} estudios requieren`} su acción
+            </span>{' '}
+            en la lista de estudios
+          </span>
+          <IconChevronRight size={14} className="shrink-0" />
+        </Link>
+      )}
 
       {data.porConfirmar.length > 0 && (
         <CitaSection

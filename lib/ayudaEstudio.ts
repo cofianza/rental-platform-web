@@ -36,10 +36,16 @@ export const AYUDA = {
 /** Qué significa la etapa del chip del encabezado. */
 export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   visita: 'Falta la visita al inmueble, o marcarla como omitida si se hizo por fuera.',
-  habilitar: 'La visita ya se resolvió: falta habilitar la evaluación para enviarle el enlace de autorización a la persona.',
+  // Neutro: con la inmobiliaria, al habilitar a la persona no le llega nada todavía (antes se elige quién paga).
+  habilitar: 'La visita ya se resolvió: falta decidir si se habilita la evaluación crediticia de la persona.',
+  no_habilitada: 'Después de la visita se decidió no habilitar la evaluación: no se consultó a las centrales de riesgo y el estudio no continúa.',
   autorizacion: 'Se envió el enlace: falta que la persona autorice la consulta a las centrales de riesgo.',
+  // Sin prometer reenvío: según el bloqueo, lo reenvía el equipo o solo Cofianza.
+  enlace: 'El enlace de autorización venció o se detuvo y la persona ya no puede firmarlo. En «Autorización Habeas Data» está cómo seguir.',
   pago: 'Falta el pago del estudio: sin él no se consulta a las centrales de riesgo.',
-  consulta: 'La evaluación está lista o en curso: el resultado llega en minutos.',
+  consulta: 'La consulta a las centrales de riesgo está en curso o por arrancar: el resultado llega en minutos.',
+  sin_ejecutar: 'La persona autorizó y el estudio está pagado, pero la consulta a las centrales de riesgo no arrancó. Se ejecuta desde la tarjeta de la evaluación.',
+  fallida: 'La consulta a las centrales de riesgo no se completó (no es un rechazo de crédito). En la tarjeta de la evaluación está cómo seguir.',
   decision: 'El estudio no se aprobó solo: espera un coarrendatario o la decisión de un analista de Cofianza.',
   contrato: 'Estudio aprobado: el siguiente paso es crear el contrato.',
   firma: 'El contrato está enviado a firma electrónica: falta que firmen todas las partes.',
@@ -48,3 +54,7 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   no_aprobado: 'Con la información disponible el estudio no quedó aprobable.',
   cancelado: 'El estudio se cerró antes de terminar.',
 }
+
+/** Adenda 3 §6: la etapa «decision» con condición de coarrendatario (no la decide un analista). */
+export const AYUDA_CON_CONDICION =
+  'Aprobado con condición: la persona tiene un plazo para sumar un coarrendatario. Mientras la condición esté vigente no lo decide un analista.'

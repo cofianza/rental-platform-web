@@ -30,6 +30,20 @@ test('habilitado: quién paga, autorización, pago y consulta', () => {
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'en_proceso' }), 'consulta')
 })
 
+test('revisión 26-oct: no habilitada, enlace vencido, opción B, Gerencia y consulta detenida', () => {
+  assert.equal(calcularEtapa({ ...base, habilitado: false, estudioRechazado: true }), 'no_habilitada')
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'expirado', enlaceVencido: true }), 'enlace')
+  assert.equal(
+    calcularEtapa({ ...base, autorizacionEstado: null, pago: { estado: 'pendiente', puede_avanzar: false, paga: 'gestor' } }),
+    'pago',
+  )
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'pago_pendiente' }), 'pago')
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'fallido' }), 'fallida')
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'formulario_completado' }), 'sin_ejecutar')
+  // Pagada antes de firmar (vitrina): espera al prospecto, no la consulta.
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'pendiente', titularEstado: 'formulario_completado' }), 'autorizacion')
+})
+
 test('después de la consulta: decisión, contrato, firma y cierre', () => {
   assert.equal(calcularEtapa({ ...base, estado: 'condicionado' }), 'decision')
   assert.equal(calcularEtapa({ ...base, estado: 'aprobado' }), 'contrato')

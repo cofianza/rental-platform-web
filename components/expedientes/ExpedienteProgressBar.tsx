@@ -57,7 +57,7 @@ export function ExpedienteProgressBar({
   etapa,
   className,
 }: ExpedienteProgressBarProps) {
-  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} className={className} />
+  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} conCondicion={conCondicion} className={className} />
   return (
     <BarraPorEstado
       expedienteId={expedienteId}
@@ -72,14 +72,27 @@ export function ExpedienteProgressBar({
   )
 }
 
-function BarraPorEtapa({ etapa, className }: { etapa: EtapaEstudio | null; className?: string }) {
+function BarraPorEtapa({
+  etapa,
+  conCondicion,
+  className,
+}: {
+  etapa: EtapaEstudio | null
+  conCondicion?: boolean
+  className?: string
+}) {
   // Mientras se lee la etapa: el espacio de la barra, sin pasos que luego cambien.
   if (etapa === null) return <div className={cn('h-14', className)} aria-hidden="true" />
-  if (etapa === 'cancelado') {
+  // «No habilitar» tras la visita: no hay paso en curso que pintar.
+  if (etapa === 'cancelado' || etapa === 'no_habilitada') {
     return (
       <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
-        <p className="text-sm font-semibold text-red-700">Estudio cancelado</p>
-        <p className="text-xs text-red-600 mt-0.5">Se cerró antes de terminar.</p>
+        <p className="text-sm font-semibold text-red-700">
+          {etapa === 'cancelado' ? 'Estudio cancelado' : 'Evaluación no habilitada'}
+        </p>
+        <p className="text-xs text-red-600 mt-0.5">
+          {etapa === 'cancelado' ? 'Se cerró antes de terminar.' : 'Después de la visita se decidió no continuar.'}
+        </p>
       </div>
     )
   }
@@ -116,7 +129,10 @@ function BarraPorEtapa({ etapa, className }: { etapa: EtapaEstudio | null; class
                       : 'text-gray-500',
                   )}
                 >
-                  {isCurrent && etapa === 'decision' ? 'En revisión' : isFailed ? 'No aprobado' : label}
+                  {/* Adenda 3 §6: el mismo nombre que el encabezado («Aprobado con condición»). */}
+                  {isCurrent && etapa === 'decision'
+                    ? conCondicion ? 'Con condición' : 'En revisión'
+                    : isFailed ? 'No aprobable' : label}
                 </span>
               </div>
               {idx < PASOS_DETALLE.length - 1 && (

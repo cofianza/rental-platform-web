@@ -458,7 +458,9 @@ type CitaActivaEstado = 'solicitada' | 'confirmada' | 'realizada'
 interface CitaActivaInfo {
   estado: CitaActivaEstado
   fecha: string | null // fecha_confirmada || fecha_propuesta, ISO
-  estudioHabilitado: boolean // para banner "esperando que el propietario habilite el estudio"
+  estudioHabilitado: boolean // para banner "esperando que habiliten su evaluación"
+  /** «No habilitar» tras la visita: el estudio no continúa (aviso «Estudio no continúa»). */
+  estudioRechazado: boolean
 }
 
 /** Elige la cita más relevante para mostrar: prioriza realizada > confirmada > solicitada. */
@@ -467,7 +469,7 @@ function resolverCitaActiva(
     estado: string
     fecha_propuesta: string | null
     fecha_confirmada: string | null
-    expediente?: { estudio_habilitado: boolean } | null
+    expediente?: { estudio_habilitado: boolean; estudio_rechazado?: boolean } | null
   }>,
 ): CitaActivaInfo | null {
   const activas = citas.filter((c) => c.estado === 'realizada' || c.estado === 'confirmada' || c.estado === 'solicitada')
@@ -479,6 +481,7 @@ function resolverCitaActiva(
     estado: pick.estado as CitaActivaEstado,
     fecha: pick.fecha_confirmada || pick.fecha_propuesta,
     estudioHabilitado: pick.expediente?.estudio_habilitado ?? false,
+    estudioRechazado: !!pick.expediente?.estudio_rechazado,
   }
 }
 
@@ -631,13 +634,15 @@ function SolicitanteDashboard() {
   const expedientesCitaConfirmada = expedientes.filter(
     (exp) => estadoActivo(exp) && !exp.cita_realizada && citasByExpediente[exp.id]?.estado === 'confirmada',
   )
-  // Cita realizada pero el propietario aún no habilita el estudio: el solicitante
-  // depende de una acción externa — mostramos banner ámbar sutil.
+  // Cita realizada pero aún no habilitan la evaluación: el solicitante
+  // depende de una acción externa — mostramos banner ámbar sutil. Si ya
+  // decidieron no habilitarla, no hay nada que esperar (lo dice su tarjeta).
   const expedientesEsperandoHabilitacion = expedientes.filter(
     (exp) =>
       estadoActivo(exp) &&
       citasByExpediente[exp.id]?.estado === 'realizada' &&
-      citasByExpediente[exp.id]?.estudioHabilitado === false,
+      citasByExpediente[exp.id]?.estudioHabilitado === false &&
+      !citasByExpediente[exp.id]?.estudioRechazado,
   )
   // Estudio habilitado + pago pendiente: acción activa del solicitante.
   // pagoByExpediente solo se llena cuando la cita quedo resuelta (realizada u
@@ -708,7 +713,7 @@ function SolicitanteDashboard() {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold mb-1">Tiene una visita pendiente por agendar</h3>
                   <p className="text-sm text-white/90">
-                    Antes de continuar con su evaluación crediticia, agende una visita al inmueble. El propietario deberá confirmar la fecha.
+                    Antes de continuar con su evaluación crediticia, agende una visita al inmueble. Quien administra el inmueble confirmará la fecha.
                   </p>
                 </div>
                 <Link
@@ -739,7 +744,7 @@ function SolicitanteDashboard() {
                       Solicitud de visita enviada
                     </h3>
                     <p className="text-sm text-blue-800">
-                      El propietario revisará su fecha propuesta. Le notificaremos cuando la confirme.
+                      Quien administra el inmueble revisará su fecha propuesta. Le notificaremos cuando la confirme.
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
                       Fecha propuesta: <strong>{formatCitaFecha(cita.fecha)}</strong>
@@ -838,10 +843,10 @@ function SolicitanteDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-semibold text-amber-900 mb-0.5">
-                    Esperando que el propietario habilite su estudio
+                    Esperando que habiliten su evaluación
                   </h3>
                   <p className="text-sm text-amber-800">
-                    Su visita ya se realizó. En cuanto el propietario habilite el siguiente paso, le llegará el enlace para autorizar la consulta y continuar con su estudio.
+                    Su visita ya se realizó. Cuando quien administra el inmueble habilite su evaluación, le escribiremos con el siguiente paso.
                   </p>
                 </div>
                 <Link
@@ -935,6 +940,8 @@ function SolicitanteDashboard() {
             const isRejected = exp.estado === 'rechazado' || cerradoNoAprobable
             const isConditioned = exp.estado === 'condicionado'
             const condicion = condicionByExpediente[exp.id]
+            // Decidieron no habilitar la evaluación: el stepper «en curso» mentía.
+            const noContinua = estadoActivo(exp) && !!citasByExpediente[exp.id]?.estudioRechazado
 
             return (
               <Link
@@ -954,7 +961,7 @@ function SolicitanteDashboard() {
                       ) : (
                         <Badge
                           estado={cerradoNoAprobable ? 'rechazado' : exp.estado}
-                          label={exp.estado === 'borrador' ? 'En preparación' : undefined}
+                          label={noContinua ? 'No continúa' : exp.estado === 'borrador' ? 'En preparación' : undefined}
                         />
                       )}
                     </div>
@@ -972,6 +979,13 @@ function SolicitanteDashboard() {
                     <p className="text-sm text-slate-900 font-medium">No aprobable por ahora</p>
                     <p className="text-xs text-slate-700 mt-0.5">No es una decisión definitiva sobre usted: puede volver a solicitarlo más adelante o escribirnos para revisar su caso.</p>
                     <NotaApelacion className="mt-1.5" />
+                  </div>
+                ) : noContinua ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <p className="text-sm text-slate-900 font-medium">Su estudio no continúa</p>
+                    <p className="text-xs text-slate-700 mt-0.5">
+                      Después de la visita, quien administra el inmueble decidió no habilitar su evaluación. No se consultó ninguna central de riesgo.
+                    </p>
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -1059,7 +1073,7 @@ function SolicitanteDashboard() {
           <IconReceipt size={20} className="text-primary-600" />
           <div>
             <p className="text-sm font-medium text-gray-900">Mis pagos y facturas</p>
-            <p className="text-xs text-gray-500">El pago de su evaluación y sus facturas</p>
+            <p className="text-xs text-gray-500">El pago de su estudio y sus facturas</p>
           </div>
         </Link>
         <Link href="/vitrina" className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-primary-300 transition-colors">

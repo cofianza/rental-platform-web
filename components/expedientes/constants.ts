@@ -9,8 +9,8 @@ import type { EstadoExpediente } from '@/lib/constants'
  */
 export const ESTADO_OPTIONS: { value: EstadoExpediente; label: string }[] = [
   { value: 'borrador', label: 'Borrador' },
-  { value: 'en_revision', label: 'En Revisión' },
-  { value: 'informacion_incompleta', label: 'Info. Incompleta' },
+  { value: 'en_revision', label: 'En revisión' },
+  { value: 'informacion_incompleta', label: 'Info. incompleta' },
   { value: 'aprobado', label: 'Aprobado' },
   { value: 'rechazado', label: 'No aprobable' },
   { value: 'condicionado', label: 'Condicionado' },
