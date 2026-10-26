@@ -16,6 +16,10 @@
  * Categoría 4 la calcula cargarAprobadosSinContrato (useAprobadosSinContrato),
  * la misma función que la vista de Contratos: un solo criterio (H23).
  *
+ * Además, el total de «Requieren mi acción» de la lista (mismo criterio del
+ * API): sin él el inicio decía «Todo al día» con estudios esperando al gestor
+ * (consulta fallida, enlace vencido, condicionado…).
+ *
  * TODO: si el dataset supera 50 en producción, paginar por categoría.
  */
 
@@ -24,6 +28,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { citaService } from '@/services/citaService'
 import { cargarAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
+import { expedienteService } from '@/services/expedienteService'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
 
@@ -33,6 +38,8 @@ export interface AccionesPendientes {
   porHabilitar: ICita[]            // estado=realizada && expediente.estudio_habilitado===false
   porGenerarContrato: IExpediente[] // estado=aprobado/condicionado sin contrato activo
   total: number
+  /** Total del filtro «Requieren mi acción» de /expedientes (0 si no se pudo leer). */
+  requierenAccion: number
 }
 
 const EMPTY: AccionesPendientes = {
@@ -41,6 +48,7 @@ const EMPTY: AccionesPendientes = {
   porHabilitar: [],
   porGenerarContrato: [],
   total: 0,
+  requierenAccion: 0,
 }
 
 export function useAccionesPendientes() {
@@ -55,11 +63,13 @@ export function useAccionesPendientes() {
       // Citas y expedientes-aprobados en paralelo. Errores aislados: si el
       // listado de expedientes falla por permisos, igual mostramos las 3
       // categorias de citas (degradacion suave).
-      const [citasRes, expedientesRes] = await Promise.allSettled([
+      const [citasRes, expedientesRes, requierenRes] = await Promise.allSettled([
         citaService.listMisCitas({ limit: 50 }),
         // Solo aprobados: un condicionado todavía no admite contrato (lo decide
         // Cofianza) y salía como «Estudio aprobado · Generar contrato».
         cargarAprobadosSinContrato(20),
+        // Solo el total (limit 1).
+        expedienteService.getExpedientes({ estudio_filtro: 'requiere_accion', page: 1, limit: 1 }),
       ])
 
       const today = new Date()
@@ -80,8 +90,12 @@ export function useAccionesPendientes() {
             return new Date(f).getTime() <= today.getTime()
           })
           .slice(0, 5)
+        // «No habilitar» deja estudio_habilitado en false: ya se decidió, no es pendiente.
         porHabilitar = citas
-          .filter((c) => c.estado === 'realizada' && c.expediente?.estudio_habilitado === false)
+          .filter(
+            (c) =>
+              c.estado === 'realizada' && c.expediente?.estudio_habilitado === false && !c.expediente.estudio_rechazado,
+          )
           .slice(0, 5)
       }
 
@@ -99,6 +113,7 @@ export function useAccionesPendientes() {
           porRealizar.length +
           porHabilitar.length +
           porGenerarContrato.length,
+        requierenAccion: requierenRes.status === 'fulfilled' ? requierenRes.value.meta.total : 0,
       })
 
       // Si AMBAS llamadas fallaron, exponemos error visible. Si solo falla

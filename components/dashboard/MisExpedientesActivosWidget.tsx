@@ -1,7 +1,9 @@
 /**
  * MisExpedientesActivosWidget — dashboard del propietario / inmobiliaria.
  * Lista los expedientes activos (no terminales) de los inmuebles del usuario,
- * con un texto breve de "que sigue" segun el estado actual. Da visibilidad
+ * con el estado de la evaluación y de quién es el turno, igual que la lista
+ * (antes un «qué sigue» fijo por estado: «Cita previa pendiente» a todo
+ * borrador, «Genere el contrato» con el contrato ya en firma). Da visibilidad
  * pasiva: incluso cuando no hay accion del propietario, deberia ver donde
  * va cada solicitud.
  *
@@ -17,8 +19,9 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui'
-import { IconLoader, IconFolderOpen, IconChevronRight } from '@/components/icons'
+import { EstudioResultadoBadge } from '@/components/estudios/EstudioResultadoBadge'
+import { ProcessStepBadge } from '@/components/expedientes/ExpedienteBadges'
+import { IconLoader, IconFolderOpen, IconChevronRight, IconRefresh } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente, EstadoExpediente } from '@/types/expediente'
 import { formatNumeroEstudio } from '@/lib/utils'
@@ -31,27 +34,18 @@ const ESTADOS_ACTIVOS: EstadoExpediente[] = [
   'condicionado',
 ]
 
-// Texto guia segun estado: que paso del flujo es y de quien es la siguiente
-// accion. Mantener corto (cabe en una linea).
-const SIGUIENTE_PASO: Record<string, { label: string; tone: 'gray' | 'amber' | 'primary' | 'green' }> = {
-  borrador: { label: 'Cita previa pendiente', tone: 'gray' },
-  en_revision: { label: 'Evaluación crediticia en curso', tone: 'amber' },
-  informacion_incompleta: { label: 'Solicitante completando documentacion', tone: 'amber' },
-  aprobado: { label: 'Genere el contrato para continuar', tone: 'primary' },
-  condicionado: { label: 'Revise documentos del coarrendatario', tone: 'primary' },
-}
-
-const TONE_CLASSES: Record<string, string> = {
-  gray: 'text-gray-600',
-  amber: 'text-amber-700',
-  primary: 'text-primary-700 font-semibold',
-  green: 'text-green-700',
+// Mismos textos que la pastilla de la lista (depende_de lo calcula el API).
+const TURNO: Record<NonNullable<IExpediente['depende_de']>, string> = {
+  gestor: 'Su turno',
+  prospecto: 'Esperando al prospecto',
+  cofianza: 'Cofianza procesando',
 }
 
 export function MisExpedientesActivosWidget() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -79,7 +73,7 @@ export function MisExpedientesActivosWidget() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [intento])
 
   if (loading) {
     return (
@@ -93,8 +87,20 @@ export function MisExpedientesActivosWidget() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-        {error}
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 flex flex-wrap items-center justify-between gap-3">
+        <span>{error}</span>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null)
+            setLoading(true)
+            setIntento((n) => n + 1)
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={14} />
+          Reintentar
+        </button>
       </div>
     )
   }
@@ -118,7 +124,7 @@ export function MisExpedientesActivosWidget() {
 
       <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
         {expedientes.map((exp) => {
-          const paso = SIGUIENTE_PASO[exp.estado] || { label: 'En proceso', tone: 'gray' }
+          const ev = exp.estudio_vigente
           const inmueble = exp.inmueble
           const solicitante = exp.solicitante
           return (
@@ -135,14 +141,35 @@ export function MisExpedientesActivosWidget() {
                     <span className="text-sm font-mono font-medium text-primary-700">
                       {formatNumeroEstudio(exp.numero_expediente) || '—'}
                     </span>
-                    <Badge estado={exp.estado} />
+                    {/* El paso, como en la lista (el estado formal decía «Borrador»). */}
+                    <ProcessStepBadge estado={exp.estado} citaRealizada={exp.cita_realizada ?? false} />
                   </div>
                   <div className="text-xs text-gray-600 truncate">
-                    {inmueble?.direccion || 'Sin inmueble'}
+                    {inmueble?.direccion || 'Inmueble por definir'}
                     {solicitante ? ` · ${solicitante.nombre}` : ''}
                   </div>
-                  <div className={`text-xs mt-1 ${TONE_CLASSES[paso.tone]}`}>
-                    → {paso.label}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <EstudioResultadoBadge
+                      estado={ev?.estado}
+                      resultado={ev?.resultado}
+                      score={ev?.score}
+                      expirado={ev?.expirado}
+                      estadoBloqueo={ev?.estado_bloqueo}
+                      esperaCoarrendatario={!!ev?.condicion_coarrendatario}
+                      sinEjecutar={ev?.sin_ejecutar}
+                    />
+                    {/* Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza). */}
+                    {exp.depende_de && ev?.estado_bloqueo !== 'identidad_rechazada' && (
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                          exp.depende_de === 'gestor'
+                            ? 'border-coral-200 bg-coral-50 text-coral-700'
+                            : 'border-gray-200 bg-gray-50 text-gray-600'
+                        }`}
+                      >
+                        {TURNO[exp.depende_de]}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <IconChevronRight size={16} className="text-gray-500 shrink-0" />

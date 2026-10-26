@@ -6,7 +6,7 @@
 
 'use client'
 
-import { AYUDA, AYUDA_ETAPA } from '@/lib/ayudaEstudio'
+import { AYUDA, AYUDA_ETAPA, AYUDA_CON_CONDICION } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { Button } from '@/components/ui/Button'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
@@ -507,7 +507,11 @@ export default function ExpedienteDetallePage() {
                 />
               )}
               {etapa && user?.rol !== 'solicitante' && !expediente.cancelado_at && (
-                <InfoTip texto={AYUDA_ETAPA[etapa]} etiqueta="Qué significa esta etapa" lado="derecha" />
+                <InfoTip
+                  texto={etapa === 'decision' && condicionCoa ? AYUDA_CON_CONDICION : AYUDA_ETAPA[etapa]}
+                  etiqueta="Qué significa esta etapa"
+                  lado="derecha"
+                />
               )}
             </div>
 

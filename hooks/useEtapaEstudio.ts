@@ -30,6 +30,7 @@ interface ExpedienteEtapa {
   estado: EstadoExpediente
   estado_pre_cancelacion?: EstadoExpediente | null
   estudio_habilitado?: boolean
+  estudio_rechazado?: boolean | null
   cita_omitida?: boolean
   inmueble?: { id: string } | null
 }
@@ -45,6 +46,7 @@ export function useEtapaEstudio(expediente: ExpedienteEtapa | null, conPago: boo
   const estado = expediente?.estado
   const pre = expediente?.estado_pre_cancelacion ?? null
   const habilitado = expediente?.estudio_habilitado ?? false
+  const rechazado = !!expediente?.estudio_rechazado
   const citaOmitida = expediente?.cita_omitida ?? false
   const tieneInmueble = !!expediente?.inmueble
 
@@ -70,10 +72,13 @@ export function useEtapaEstudio(expediente: ExpedienteEtapa | null, conPago: boo
           estado,
           estadoPreCancelacion: pre,
           habilitado,
+          estudioRechazado: rechazado,
           citaResuelta: citaOmitida || citas.some((c) => c.estado === 'realizada'),
           tieneInmueble,
           autorizacionEstado: aut?.estado ?? null,
-          pago: pago ? { estado: pago.estado, puede_avanzar: pago.puede_avanzar } : null,
+          // Mismo veredicto que la lista (vencido por el reloj o detenido).
+          enlaceVencido: !!titular?.expiracion?.expirado,
+          pago: pago ? { estado: pago.estado, puede_avanzar: pago.puede_avanzar, paga: pago.paga } : null,
           titularEstado: titular?.estado ?? null,
           contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
         }),
@@ -82,7 +87,7 @@ export function useEtapaEstudio(expediente: ExpedienteEtapa | null, conPago: boo
     return () => {
       cancel = true
     }
-  }, [id, estado, pre, habilitado, citaOmitida, tieneInmueble, conPago, version])
+  }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, conPago, version])
 
   return etapa
 }

@@ -59,8 +59,8 @@ function timeAgo(dateStr: string): string {
 
 const ESTADO_LABELS: Record<string, string> = {
   borrador: 'Borrador',
-  en_revision: 'En Revisión',
-  informacion_incompleta: 'Info. Incompleta',
+  en_revision: 'En revisión',
+  informacion_incompleta: 'Info. incompleta',
   aprobado: 'Aprobado',
   rechazado: 'No aprobable',
   condicionado: 'Condicionado',

@@ -332,14 +332,14 @@ export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
     borderColor: 'border-gray-300',
   },
   en_revision: {
-    label: 'En Revisión',
+    label: 'En revisión',
     color: 'amber',
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-700',
     borderColor: 'border-amber-300',
   },
   informacion_incompleta: {
-    label: 'Información Incompleta',
+    label: 'Información incompleta',
     color: 'orange',
     bgColor: 'bg-orange-100',
     textColor: 'text-orange-700',
@@ -432,7 +432,7 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     borderColor: 'border-gray-300',
   },
   en_revision: {
-    label: 'En Revisión',
+    label: 'En revisión',
     color: 'amber',
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-700',

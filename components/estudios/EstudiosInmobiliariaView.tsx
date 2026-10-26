@@ -67,8 +67,9 @@ function estadoBadge(e: IEstudioListItem): { kind: BadgeKind; label: string } {
       return { kind: 'rechazado', label: 'Fallido' }
     case 'cancelado':
       return { kind: 'esperando', label: 'Cancelado' }
+    // Hay fila de evaluación = ya se habilitó: falta la firma del prospecto (o venció el enlace).
     case 'solicitado':
-      return { kind: 'esperando', label: 'Sin habilitar' }
+      return { kind: 'esperando', label: e.expiracion?.expirado ? 'Enlace vencido o detenido' : 'Esperando autorización' }
     case 'pago_pendiente':
       return { kind: 'esperando', label: 'Falta el pago' }
     case 'formulario_enviado':
