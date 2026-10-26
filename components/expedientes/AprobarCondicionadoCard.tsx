@@ -31,6 +31,7 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
 import { textoCondicionCoarrendatario } from './textoVisible'
@@ -69,6 +70,9 @@ export function AprobarCondicionadoCard({
   const [reconsultando, setReconsultando] = useState(false)
   const aprobando = useRef(false)
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
+  const [recordando, setRecordando] = useState(false)
+  // El miembro de solo lectura no envía nada (la API se lo niega).
+  const puedeEditar = usePuedeEditar()
   const [confirmAprobarOpen, setConfirmAprobarOpen] = useState(false)
   // Adenda 2 §5.1: fundamento escrito y documentos consultados de la decisión.
   const [fundamento, setFundamento] = useState('')
@@ -145,6 +149,18 @@ export function AprobarCondicionadoCard({
       toast.error(err instanceof Error ? err.message : 'No se pudo enviar el enlace.')
     } finally {
       setEnviandoEnlace(false)
+    }
+  }
+
+  const handleRecordar = async () => {
+    setRecordando(true)
+    try {
+      const res = await expedienteService.recordarAnalista(expedienteId)
+      toast.success(res.enviado_a === 1 ? 'Recordatorio enviado al analista asignado.' : 'Recordatorio enviado a los analistas de Cofianza.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el recordatorio.')
+    } finally {
+      setRecordando(false)
     }
   }
 
@@ -253,10 +269,21 @@ export function AprobarCondicionadoCard({
                   </button>
                 </>
               ) : (
-                <p>
-                  Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
-                  notificación y correo cuando decida.
-                </p>
+                <>
+                  <p>
+                    Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
+                    notificación y correo cuando decida. Si se demora, puede enviarle un recordatorio (uno cada 2 horas).
+                  </p>
+                  {puedeEditar && (
+                    <button
+                      onClick={handleRecordar}
+                      disabled={recordando}
+                      className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50 transition-colors"
+                    >
+                      {recordando ? 'Enviando…' : 'Enviar recordatorio al analista'}
+                    </button>
+                  )}
+                </>
               )}
             </Paso>
 
