@@ -28,13 +28,15 @@ interface Detalle {
   esperaCoarrendatario?: boolean
   /** Cofianza: la identidad rechazada la resuelve ella, no se le pide comunicarse. */
   rolInterno?: boolean
+  /** Lista para consultar y no arrancó sola: no está «Consultando buró». */
+  sinEjecutar?: boolean
 }
 
 function resolveBadge(
   estado?: EstadoEstudio | null,
   resultado?: ResultadoEstudio | null,
   expirado?: boolean,
-  { estadoBloqueo, esperaCoarrendatario, rolInterno }: Detalle = {},
+  { estadoBloqueo, esperaCoarrendatario, rolInterno, sinEjecutar }: Detalle = {},
 ): { kind: BadgeKind; label: string } {
   if (!estado && !resultado) return { kind: 'sin', label: 'Sin evaluación' }
   // Flujo §11/§12: el prospecto no autorizó dentro del plazo. Sin esto seguía
@@ -51,6 +53,7 @@ function resolveBadge(
     return { kind: 'expirado', label: 'Enlace vencido o detenido' }
   }
   if (esperaCoarrendatario) return { kind: 'condicionado', label: 'Espera coarrendatario' }
+  if (sinEjecutar) return { kind: 'expirado', label: 'Consulta sin ejecutar' }
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
   if (resultado === 'rechazado') return { kind: 'rechazado', label: 'No aprobable' }
   if (resultado === 'condicionado') return { kind: 'condicionado', label: 'Condicionado' }
