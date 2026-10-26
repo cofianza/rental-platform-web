@@ -50,7 +50,7 @@ function montoProspecto(e: IPagoEstudioEstado): string {
  * «liberado con credito de inmobiliaria» (creditos-estudios.service del API).
  */
 export function textoCubierto(
-  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago'>,
+  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago' | 'cupo'>,
   estudio: Pick<IEstudio, 'estado'> | null,
   /** Cofianza mira el paquete de la inmobiliaria, no el suyo. */
   deLaInmobiliaria = false,
@@ -67,10 +67,10 @@ export function textoCubierto(
 }
 
 function textoCubiertoParaLaInmobiliaria(
-  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago'>,
+  e: Pick<IPagoEstudioEstado, 'autorizado' | 'monto_formateado' | 'pago' | 'cupo'>,
   estudio: Pick<IEstudio, 'estado'> | null,
 ): { titulo: string; texto: string } {
-  const conCredito = /cr[eé]dito|cupo/i.test(`${e.pago?.descripcion ?? ''} ${e.pago?.notas ?? ''}`)
+  const conCredito = !!e.cupo || /cr[eé]dito|cupo/i.test(`${e.pago?.descripcion ?? ''} ${e.pago?.notas ?? ''}`)
   if (!conCredito) {
     return {
       titulo: 'Cubierto por la inmobiliaria',
@@ -79,10 +79,12 @@ function textoCubiertoParaLaInmobiliaria(
         : `${e.monto_formateado} COP. El enlace de autorización ya se envió al prospecto; el estudio inicia cuando lo firme.`,
     }
   }
-  if (estudio?.estado === 'completado') {
+  // La API dice el estado real del cupo; sin él (API anterior) se deduce del estudio del titular.
+  const fase = e.cupo ?? (estudio?.estado === 'completado' ? 'consumido' : estudio?.estado === 'fallido' ? 'liberado' : 'reservado')
+  if (fase === 'consumido') {
     return { titulo: 'Cupo consumido', texto: 'Se usó 1 cupo de su paquete: la central entregó el resultado.' }
   }
-  if (estudio?.estado === 'fallido') {
+  if (fase === 'liberado') {
     return {
       titulo: 'Cupo devuelto a su saldo',
       texto: 'La consulta no dio resultado, así que el cupo volvió a su paquete. Si vuelve a consultar, se reserva otra vez.',

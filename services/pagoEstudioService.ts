@@ -39,6 +39,8 @@ export interface IPagoEstudioEstado {
   /** A10: quién paga el cobro según el API (quienPaga) — 'gestor' en la opción B
    *  y con crédito, 'arrendatario' en la C; null si nadie lo ha definido. */
   paga: 'gestor' | 'arrendatario' | null
+  /** Estado real del cupo (también lo consume la consulta del coarrendatario). null por pasarela; ausente con una API anterior. */
+  cupo?: 'reservado' | 'consumido' | 'liberado' | null
   pago: IPago | null
 }
 
