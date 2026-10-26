@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { estudioService } from '@/services/estudioService'
+import { expedienteService } from '@/services/expedienteService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { listMiembros } from '@/services/miembrosService'
 import type { IEstudiosStats } from '@/types/estudio'
@@ -67,8 +68,19 @@ export function EstudiosExpedientesFusion() {
   // columna "Responsable" el miembro al que se asignó cada expediente.
   const [miembrosById, setMiembrosById] = useState<Record<string, string>>({})
 
+  // Aprobados / En proceso / No aprobables cuentan ESTUDIOS con el mismo filtro
+  // que su chip: contadas por evaluación (coarrendatarios, reevaluaciones,
+  // canceladas) decían 9 y al pulsarlas la lista traía 5.
+  const [conteos, setConteos] = useState<Partial<Record<EstudioFiltro, number>> | null>(null)
   useEffect(() => {
     estudioService.getStats().then(setStats).catch(() => setStatsError(true))
+    Promise.all(
+      (['aprobado', 'en_proceso', 'rechazado'] as const).map((f) =>
+        expedienteService.getExpedientes({ estudio_filtro: f, page: 1, limit: 1 }).then((r) => [f, r.meta.total] as const),
+      ),
+    )
+      .then((rs) => setConteos(Object.fromEntries(rs)))
+      .catch(() => setStatsError(true))
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
       .then((res) => {
@@ -82,12 +94,15 @@ export function EstudiosExpedientesFusion() {
       .catch(() => {})
   }, [])
 
-  // Tasa de aprobación honesta: aprobados / decididos.
-  const decididos = stats ? stats.aprobados + stats.rechazados + stats.condicionados : 0
-  const tasa = decididos > 0 ? Math.round((stats!.aprobados / decididos) * 1000) / 10 : null
-  const tasaNoAprobable = decididos > 0 ? Math.round((stats!.rechazados / decididos) * 1000) / 10 : null
+  // Tasa de aprobación honesta: aprobados / decididos (el condicionado aún no está decidido).
+  const aprobados = conteos?.aprobado ?? 0
+  const rechazados = conteos?.rechazado ?? 0
+  const decididos = aprobados + rechazados
+  const tasa = decididos > 0 ? Math.round((aprobados / decididos) * 1000) / 10 : null
+  const tasaNoAprobable = decididos > 0 ? Math.round((rechazados / decididos) * 1000) / 10 : null
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
   const cifra = (n: number | undefined) => (stats ? (n ?? 0) : statsError ? '—' : '…')
+  const conteo = (f: EstudioFiltro) => (conteos ? (conteos[f] ?? 0) : statsError ? '—' : '…')
   const sinDato = statsError ? 'No se pudo cargar' : 'Cargando…'
 
   if (error) {
@@ -138,22 +153,22 @@ export function EstudiosExpedientesFusion() {
         </div>
       </div>
 
-      {/* Tarjetas: cuentan EVALUACIONES. Las que tienen chip equivalente lo
-          activan al hacer clic, para no tener dos controles que parecen
-          filtrar y solo uno lo hace. */}
+      {/* Tarjetas: «Este mes» cuenta evaluaciones; las que tienen chip
+          equivalente cuentan estudios con su mismo filtro y lo activan al hacer
+          clic, para no tener dos controles que parecen filtrar y solo uno lo hace. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Este mes" value={cifra(stats?.este_mes)} sub="Evaluaciones iniciadas" />
         <StatCard
           label="Aprobados"
-          value={cifra(stats?.aprobados)}
+          value={conteo('aprobado')}
           color="text-primary-600"
-          sub={!stats ? sinDato : tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
+          sub={!conteos ? sinDato : tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
           activo={activeChip === 'aprobado'}
           onClick={() => setFilters({ estudio_filtro: 'aprobado', page: 1 })}
         />
         <StatCard
           label="En proceso"
-          value={cifra(stats?.por_resultado?.pendiente ?? stats?.en_proceso)}
+          value={conteo('en_proceso')}
           color="text-blue-600"
           sub="Esperando al prospecto o al buró"
           activo={activeChip === 'en_proceso'}
@@ -161,9 +176,9 @@ export function EstudiosExpedientesFusion() {
         />
         <StatCard
           label="No aprobables"
-          value={cifra(stats?.rechazados)}
+          value={conteo('rechazado')}
           color="text-red-500"
-          sub={!stats ? sinDato : tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
+          sub={!conteos ? sinDato : tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
           activo={activeChip === 'rechazado'}
           onClick={() => setFilters({ estudio_filtro: 'rechazado', page: 1 })}
         />

@@ -30,6 +30,8 @@ export type ProcessStepId = (typeof PROCESS_STEPS)[number]['id']
 export function getProcessStep(
   estado: EstadoExpediente,
   citaRealizada: boolean,
+  /** Último contrato no cancelado: con él, el aprobado está en Firma o Listo, no en Contrato. */
+  contratoEstado?: string | null,
 ): number {
   // Pre-cita: cualquier estado inicial sin cita realizada esta en paso 1
   if (
@@ -43,7 +45,10 @@ export function getProcessStep(
     case 'borrador': return 2
     case 'en_revision': return 2
     case 'informacion_incompleta': return 2
-    case 'aprobado': return 4
+    case 'aprobado':
+      if (contratoEstado && ['firmado', 'vigente', 'finalizado'].includes(contratoEstado)) return 6
+      if (contratoEstado && ['pendiente_firma', 'firma_incompleta'].includes(contratoEstado)) return 5
+      return 4
     case 'condicionado': return 3
     case 'rechazado': return 3
     // 'cerrado' = expediente finalizado: TODOS los pasos completados,

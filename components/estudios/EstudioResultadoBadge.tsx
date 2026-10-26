@@ -30,13 +30,15 @@ interface Detalle {
   rolInterno?: boolean
   /** Lista para consultar y no arrancó sola: no está «Consultando buró». */
   sinEjecutar?: boolean
+  /** La última consulta del coarrendatario falló: la fila muestra al titular y no se veía. */
+  coarrendatarioFallido?: boolean
 }
 
 function resolveBadge(
   estado?: EstadoEstudio | null,
   resultado?: ResultadoEstudio | null,
   expirado?: boolean,
-  { estadoBloqueo, esperaCoarrendatario, rolInterno, sinEjecutar }: Detalle = {},
+  { estadoBloqueo, esperaCoarrendatario, rolInterno, sinEjecutar, coarrendatarioFallido }: Detalle = {},
 ): { kind: BadgeKind; label: string } {
   if (!estado && !resultado) return { kind: 'sin', label: 'Sin evaluación' }
   // Flujo §11/§12: el prospecto no autorizó dentro del plazo. Sin esto seguía
@@ -52,6 +54,7 @@ function resolveBadge(
     if (estadoBloqueo === 'pendiente_reenvio') return { kind: 'expirado', label: 'Pendiente de reenvío' }
     return { kind: 'expirado', label: 'Enlace vencido o detenido' }
   }
+  if (coarrendatarioFallido) return { kind: 'expirado', label: 'Falló la consulta del coarrendatario' }
   if (esperaCoarrendatario) return { kind: 'condicionado', label: 'Espera coarrendatario' }
   if (sinEjecutar) return { kind: 'expirado', label: 'Consulta sin ejecutar' }
   if (resultado === 'aprobado') return { kind: 'aprobado', label: 'Aprobado' }
