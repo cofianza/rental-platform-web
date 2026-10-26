@@ -131,7 +131,7 @@ function BarraPorEtapa({
                 >
                   {/* Adenda 3 §6: el mismo nombre que el encabezado («Aprobado con condición»). */}
                   {isCurrent && etapa === 'decision'
-                    ? conCondicion ? 'Con condición' : 'En revisión'
+                    ? conCondicion ? 'Con condición' : 'Condicionado'
                     : isFailed ? 'No aprobable' : label}
                 </span>
               </div>

@@ -34,7 +34,8 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   consulta: 'En evaluación',
   sin_ejecutar: 'Consulta sin ejecutar',
   fallida: 'Consulta fallida',
-  decision: 'En revisión',
+  // Mismo nombre que la lista y la pestaña «Condicionados» (la pestaña «En revisión» es otro estado).
+  decision: 'Condicionado',
   contrato: 'Aprobado',
   firma: 'En firma',
   vigente: 'Contrato vigente',
