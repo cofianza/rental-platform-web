@@ -28,7 +28,7 @@ import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
-import { textoVisible, esRolInterno } from './textoVisible'
+import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -310,7 +310,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             <div className="bg-gray-50 rounded-lg p-4">
               <DetailRow label="Tipo" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
               {/* Reunión con Gerencia 23-oct: la central consultada es reserva de Cofianza. */}
-              {!externo && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
+              {!externo && centralDefinida(estudio) && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
               {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
                 <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
               )}

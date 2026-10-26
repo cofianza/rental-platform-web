@@ -31,7 +31,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario } from './textoVisible'
+import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida } from './textoVisible'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -269,7 +269,7 @@ function getSiguientePaso(
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
-    return `Listo para consultar a ${buro}. Si la consulta no arrancó sola, ejecútela desde aquí.`
+    return 'Listo para consultar a las centrales de riesgo. Si la consulta no arrancó sola, ejecútela desde aquí.'
   }
   return ''
 }
@@ -653,7 +653,7 @@ function EstudioPanel({
               </p>
             )}
             <p className="text-xs text-gray-600">
-              {interno && (
+              {interno && centralDefinida(estudio) && (
                 <>
                   Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
                   {' · '}

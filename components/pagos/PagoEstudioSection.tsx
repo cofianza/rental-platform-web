@@ -98,6 +98,54 @@ function textoCubiertoParaLaInmobiliaria(
 
 const ESTUDIO_CERRADO = ['completado', 'fallido', 'cancelado']
 
+/**
+ * Quién cubrió el estudio, siempre a la vista bajo el encabezado (revisión del
+ * 26-oct): pasada la consulta, la tarjeta del pago se pliega en «Pasos
+ * anteriores» o deja de mostrarse. Solo con el pago resuelto; antes lo dice la
+ * tarjeta del Resumen.
+ */
+export function LineaPagoEstudio({
+  expedienteId,
+  estudioTitular,
+  gestor,
+  deLaInmobiliaria,
+  version,
+}: {
+  expedienteId: string
+  estudioTitular: Pick<IEstudio, 'estado'> | null
+  /** Quien gestiona, como lo lee quien mira: «usted», «la inmobiliaria», «el propietario». */
+  gestor: string
+  deLaInmobiliaria: boolean
+  /** Contador de cargas del detalle: se relee con cada cambio. */
+  version: number
+}) {
+  const [estado, setEstado] = useState<IPagoEstudioEstado | null>(null)
+  useEffect(() => {
+    let cancel = false
+    pagoEstudioService.getEstado(expedienteId).then(
+      (e) => { if (!cancel) setEstado(e) },
+      () => {},
+    )
+    return () => { cancel = true }
+  }, [expedienteId, version])
+
+  const texto = !estado
+    ? null
+    : estado.estado === 'asumido_inmobiliaria'
+      ? textoCubierto(estado, estudioTitular, deLaInmobiliaria).titulo.toLowerCase()
+      : estado.estado === 'completado'
+        ? estado.paga === 'arrendatario' ? 'lo pagó el prospecto' : estado.paga === 'gestor' ? `lo pagó ${gestor}` : 'confirmado'
+        : estado.estado === 'reembolsado'
+          ? 'evaluación devuelta'
+          : null
+  if (!texto) return null
+  return (
+    <span>
+      <span className="text-gray-500">Pago:</span> {texto}
+    </span>
+  )
+}
+
 interface PagoEstudioSectionProps {
   expedienteId: string
   onPagoCompletado?: () => void

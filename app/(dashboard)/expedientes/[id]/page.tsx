@@ -58,7 +58,7 @@ import {
 } from '@/components/expedientes'
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa } from '@/components/expedientes/ResumenPorEtapa'
-import { PagosSection, PagoEstudioSection } from '@/components/pagos'
+import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEtapaEstudio, ETAPA_LABEL } from '@/hooks/useEtapaEstudio'
 import { expedienteService } from '@/services/expedienteService'
@@ -536,6 +536,18 @@ export default function ExpedienteDetallePage() {
                   <span className="text-gray-500">Solicitante:</span>{' '}
                   {`${expediente.solicitante.nombre} ${expediente.solicitante.apellido}`.trim()}
                 </span>
+              )}
+              {/* Gerencia no lee el pago; el prospecto tiene su propia tarjeta. */}
+              {user && user.rol !== 'solicitante' && user.rol !== 'gerencia_consulta' && (expediente.estudio_habilitado ?? false) && (
+                <LineaPagoEstudio
+                  expedienteId={id}
+                  estudioTitular={titular}
+                  gestor={
+                    !isInternalRole ? 'usted' : expediente.inmueble?.inmobiliaria_id ? 'la inmobiliaria' : 'el propietario'
+                  }
+                  deLaInmobiliaria={user.rol !== 'inmobiliaria'}
+                  version={cargas}
+                />
               )}
             </div>
 

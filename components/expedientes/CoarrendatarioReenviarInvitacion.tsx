@@ -75,7 +75,7 @@ export function CoarrendatarioReenviarInvitacion({
     const e: Partial<Record<Campo, string>> = {}
     if (!nombre.trim()) e.nombre = 'Escriba el nombre.'
     else if (!esNombreValido(nombre.trim())) e.nombre = 'El nombre solo puede tener letras.'
-    if (!apellido.trim()) e.apellido = 'Escriba el primer apellido.'
+    if (!apellido.trim()) e.apellido = 'Escriba los apellidos.'
     else if (!esNombreValido(apellido.trim())) e.apellido = 'El apellido solo puede tener letras.'
     if (!numDoc.trim()) e['num-doc'] = 'Escriba el número de documento.'
     if (!emailNorm || !/.+@.+\..+/.test(emailNorm)) e['invitacion-correo'] = 'Escriba un correo válido: ahí le llega la invitación.'
@@ -138,7 +138,7 @@ export function CoarrendatarioReenviarInvitacion({
         </div>
         <div>
           <label htmlFor="coarrendatario-reenviar-apellido" className="block text-[11px] font-medium text-gray-500 mb-1">
-            Primer apellido (como en la cédula)
+            Apellidos (como en la cédula)
           </label>
           <input {...conError('apellido', errores.apellido)} value={apellido} onChange={(e) => { setApellido(e.target.value); limpiar('apellido') }} disabled={sending} />
           <MensajeError campo="apellido" error={errores.apellido} />

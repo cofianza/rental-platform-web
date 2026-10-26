@@ -121,6 +121,15 @@ export function esRolInterno(rol?: string | null): boolean {
   return rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
 }
 
+/**
+ * La central se decide al consultar (cascada, DataCrédito primaria): antes de
+ * eso `proveedor` es solo el valor por defecto y nombrarla engaña, también a
+ * Cofianza.
+ */
+export function centralDefinida(e: { estado: string; proveedor?: string | null }): boolean {
+  return ['en_proceso', 'completado', 'fallido'].includes(e.estado) || e.proveedor === 'manual'
+}
+
 /** «$1.250.000», como formatCurrency (aquí sin dependencias). */
 const pesos = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n).replace(/\s/g, '')

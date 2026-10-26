@@ -107,7 +107,7 @@ export function CoarrendatarioInviteForm({
     const e: Partial<Record<Campo, string>> = {}
     if (!nombre.trim()) e.nombre = 'Escriba el nombre.'
     else if (!esNombreValido(nombre.trim())) e.nombre = 'El nombre solo puede tener letras.'
-    if (!apellido.trim()) e.apellido = 'Escriba el primer apellido.'
+    if (!apellido.trim()) e.apellido = 'Escriba los apellidos.'
     else if (!esNombreValido(apellido.trim())) e.apellido = 'El apellido solo puede tener letras.'
     if (!numDoc.trim()) e.numDoc = 'Escriba el número de documento.'
     if (!email.trim()) e.email = 'Escriba el correo: ahí le llega la invitación.'
@@ -223,11 +223,10 @@ export function CoarrendatarioInviteForm({
 
           <div className="grid grid-cols-2 gap-3">
             <FormField id={idDe('nombre')} label="Nombre" value={nombre} error={errores.nombre} onChange={(v) => { setNombre(v); limpiar('nombre') }} />
-            {/* Solo el primero: DataCrédito lo contrasta contra la
-                Registraduría tal cual — con los dos apellidos la consulta
-                falla (código 10) y se factura igual. No se auto-recorta en
-                código porque hay primeros apellidos compuestos ('De La Hoz'). */}
-            <FormField id={idDe('apellido')} label="Primer apellido (como en la cédula)" value={apellido} error={errores.apellido} onChange={(v) => { setApellido(v); limpiar('apellido') }} />
+            {/* Los dos, como en la cédula: van al contrato. A DataCrédito la API
+                le manda solo el primero (primerApellidoDe, respeta los
+                compuestos como «De La Hoz»). */}
+            <FormField id={idDe('apellido')} label="Apellidos (como en la cédula)" value={apellido} error={errores.apellido} onChange={(v) => { setApellido(v); limpiar('apellido') }} />
           </div>
 
           <div className="grid grid-cols-5 gap-3">
