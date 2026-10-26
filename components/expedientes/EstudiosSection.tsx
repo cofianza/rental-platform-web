@@ -423,7 +423,17 @@ export function EstudiosSection({
                           )}
                           {/* Mismas palabras que el Resumen; el resultado, solo cuando lo hay. */}
                           <Badge estado={estudio.estado} label={ESTADO_LABEL[estudio.estado]} />
-                          {estudio.resultado !== 'pendiente' && <Badge estado={estudio.resultado} />}
+                          {estudio.resultado !== 'pendiente' && (
+                            <Badge
+                              estado={estudio.resultado}
+                              // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
+                              label={
+                                estudio.tipo === 'con_coarrendatario'
+                                  ? ({ aprobado: 'Válido', rechazado: 'No califica', condicionado: 'En revisión' } as Record<string, string>)[estudio.resultado]
+                                  : undefined
+                              }
+                            />
+                          )}
                         </>
                       {persona?.etiqueta === 'Coarrendatario' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
