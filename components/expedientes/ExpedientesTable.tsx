@@ -150,9 +150,11 @@ function EstadoExpedienteFila({ expediente }: { expediente: IExpediente }) {
   if (expediente.cancelado_at || expediente.estado === 'rechazado' || expediente.estado === 'condicionado') {
     return null
   }
+  // Cerrado tras un rechazo: «No aprobable», como el detalle (no «Finalizado», que es el cierre exitoso).
+  const cerradoTrasRechazo = expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
   return (
     <ExpedienteBadge
-      estado={expediente.estado}
+      estado={cerradoTrasRechazo ? 'rechazado' : expediente.estado}
       size="sm"
       cancelado={!!expediente.cancelado_at}
       label={esBorrador ? 'Sin enviar' : undefined}
