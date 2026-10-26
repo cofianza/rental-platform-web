@@ -520,6 +520,12 @@ class ExpedienteService {
    * Tarea 3.2: marca la cita como omitida (visita ya coordinada por fuera),
    * lo que permite habilitar el estudio sin exigir una cita 'realizada'.
    */
+  /** El gestor le recuerda a Cofianza un estudio condicionado (uno cada 2 horas). */
+  async recordarAnalista(expedienteId: string): Promise<{ enviado_a: number }> {
+    const response = await apiClient.post<{ enviado_a: number }>(`/expedientes/${expedienteId}/recordatorio-analista`, {})
+    return response.data
+  }
+
   async omitirCita(
     expedienteId: string,
     motivo?: string,
