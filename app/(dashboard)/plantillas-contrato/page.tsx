@@ -158,7 +158,7 @@ export default function PlantillasContratoPage() {
             className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800"
           >
             <IconPlus size={18} />
-            Nueva Plantilla
+            Nueva plantilla
           </button>
         )}
       </div>

@@ -311,7 +311,7 @@ export default function HomePage() {
                 n: '03',
                 icon: <IconHome size={22} />,
                 title: 'Firmamos y usted se muda',
-                body: 'El link de firma llega por WhatsApp. Contrato en su celular en minutos. Cofianza firma como fiador. Usted con las llaves en la mano.',
+                body: 'El enlace de firma llega por WhatsApp. Contrato en su celular en minutos. Cofianza firma como fiador. Usted con las llaves en la mano.',
               },
             ].map((c) => (
               <div

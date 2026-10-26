@@ -345,7 +345,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const handleReenviar = async () => {
     const emailNuevo = reenviarEmail?.trim().toLowerCase()
     if (reenviarEmail !== null && (!emailNuevo || !/.+@.+\..+/.test(emailNuevo))) {
-      setError('Ingrese un correo válido para reenviar el link')
+      setError('Ingrese un correo válido para reenviar el enlace')
       return
     }
     setIsSubmitting(true)
@@ -360,7 +360,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       setReenviarEmail(null)
       await fetchEstado()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al reenviar link')
+      setError(err instanceof Error ? err.message : 'No se pudo reenviar el enlace')
     } finally {
       setIsSubmitting(false)
     }
@@ -780,7 +780,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   disabled={isSubmitting}
                   className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
                 >
-                  Reenviar link
+                  Reenviar enlace
                 </button>
                 {puedePagarSuelto && (
                 <button
@@ -909,7 +909,7 @@ function EnviarLinkModal({
       resetForm()
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al enviar link')
+      setError(err instanceof Error ? err.message : 'No se pudo enviar el enlace')
     } finally {
       setIsSubmitting(false)
     }
@@ -1307,7 +1307,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <p className="text-sm font-medium text-amber-800">Preparando su link de pago</p>
         <p className="text-xs text-amber-600 mt-1">
-          El link llegará a su correo en unos momentos. También aparecerá aquí en su panel.
+          El enlace llegará a su correo en unos momentos. También aparecerá aquí en su panel.
         </p>
       </div>
     )

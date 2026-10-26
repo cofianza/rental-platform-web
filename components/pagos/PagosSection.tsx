@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { pagoService, type IPago } from '@/services/pagoService'
 import { facturacionService } from '@/services/facturacionService'
 import { PagoManualModal } from './PagoManualModal'
@@ -96,12 +97,15 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
   const user = useAuthStore((s) => s.user)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Facturar tiene un permiso más amplio: admin, operador, inmobiliaria y
-  // propietario pueden disparar la creación de la factura electrónica.
+  // propietario pueden disparar la creación de la factura electrónica; el
+  // miembro solo lectura no (el API le da 403).
+  const puedeEditar = usePuedeEditar()
   const canFacturar =
-    user?.rol === 'administrador' ||
-    user?.rol === 'operador_analista' ||
-    user?.rol === 'inmobiliaria' ||
-    user?.rol === 'propietario'
+    puedeEditar &&
+    (user?.rol === 'administrador' ||
+      user?.rol === 'operador_analista' ||
+      user?.rol === 'inmobiliaria' ||
+      user?.rol === 'propietario')
 
   // Data state
   const [pagos, setPagos] = useState<IPago[]>([])
@@ -185,9 +189,9 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
     if (!pago.payment_link_url) return
     try {
       await navigator.clipboard.writeText(pago.payment_link_url)
-      toast.success('Link copiado al portapapeles')
+      toast.success('Enlace copiado al portapapeles')
     } catch {
-      toast.error('Error al copiar el link')
+      toast.error('No se pudo copiar el enlace')
     }
   }, [])
 
@@ -195,7 +199,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
     setActionLoading(pagoId)
     try {
       await pagoService.reenviarLink(pagoId)
-      toast.success('Link reenviado por email')
+      toast.success('Enlace reenviado por correo')
       onPagoActualizado?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al reenviar')
@@ -308,7 +312,9 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         <IconDollarSign size={48} className="mx-auto text-gray-300 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Sin pagos registrados</h3>
         <p className="text-sm text-gray-500 mb-6">
-          Aún no hay pagos en este estudio. Puede generar un link de pago o registrar un pago manual.
+          Aún no hay pagos en este estudio.
+          {/* Solo quien ve los botones de abajo puede generarlos. */}
+          {canManage && ' Puede generar un enlace de pago o registrar un pago manual.'}
         </p>
         {canManage && (
           <div className="flex justify-center gap-3">
@@ -317,14 +323,14 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
-              Generar Link de Pago
+              Generar enlace de pago
             </button>
             <button
               onClick={() => setShowManualModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <IconPlus size={18} />
-              Registrar Pago Manual
+              Registrar pago manual
             </button>
           </div>
         )}
@@ -441,14 +447,14 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
-              Generar Link
+              Generar enlace
             </button>
             <button
               onClick={() => setShowManualModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <IconPlus size={18} />
-              Pago Manual
+              Pago manual
             </button>
           </div>
         )}
@@ -675,7 +681,7 @@ function PagoTableRow({
                   <button
                     onClick={() => onCopyLink(pago)}
                     className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                    title="Copiar link"
+                    title="Copiar enlace"
                   >
                     <IconCopy size={16} />
                   </button>
@@ -683,7 +689,7 @@ function PagoTableRow({
                     <button
                       onClick={() => onReenviarLink(pago.id)}
                       className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Reenviar link"
+                      title="Reenviar enlace"
                     >
                       <IconMail size={16} />
                     </button>
@@ -814,7 +820,7 @@ function PagoCard({
                   onClick={() => onCopyLink(pago)}
                   className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Copiar link
+                  Copiar enlace
                 </button>
                 {canManage && (
                   <button

@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { IconLoader, IconRefresh, IconMoreVertical, IconEdit, IconTrash, IconX, IconCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IComentarioExpediente } from '@/types/expediente'
 
 // ============================================
@@ -137,6 +138,8 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
   // Permissions
   const isAdmin = user?.rol === 'administrador'
   const currentUserId = user?.id
+  // Gerencia lee los comentarios pero no escribe (el API le niega el POST).
+  const puedeComentar = usePuedeEditar()
 
   // ============================================
   // Fetch
@@ -325,32 +328,36 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
   return (
     <div className="space-y-6">
       {/* Formulario para nuevo comentario */}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <textarea
-          value={nuevoComentario}
-          onChange={(e) => setNuevoComentario(e.target.value)}
-          placeholder="Escriba un comentario interno..."
-          rows={3}
-          disabled={isSending}
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
-        />
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={!nuevoComentario.trim() || isSending}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isSending && <IconLoader size={16} className="animate-spin" />}
-            Agregar comentario
-          </button>
-        </div>
-      </form>
+      {puedeComentar && (
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <textarea
+            value={nuevoComentario}
+            onChange={(e) => setNuevoComentario(e.target.value)}
+            placeholder="Escriba un comentario interno..."
+            rows={3}
+            disabled={isSending}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
+          />
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={!nuevoComentario.trim() || isSending}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSending && <IconLoader size={16} className="animate-spin" />}
+              Agregar comentario
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Lista de comentarios */}
       {comentarios.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p className="text-sm">No hay comentarios aun</p>
-          <p className="text-xs mt-1">Sea el primero en agregar un comentario interno</p>
+          <p className="text-sm">No hay comentarios aún</p>
+          {puedeComentar && (
+            <p className="text-xs mt-1">Sea el primero en agregar un comentario interno</p>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

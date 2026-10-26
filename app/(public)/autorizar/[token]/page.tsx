@@ -1287,8 +1287,8 @@ export default function AutorizarPage() {
               <p className="mt-2 flex gap-2 rounded-lg bg-primary-50 p-3 text-xs leading-relaxed text-primary-800">
                 <IconLock size={14} className="mt-0.5 shrink-0 text-primary-600" />
                 <span>
-                  Nos ayuda a encontrar la mejor opción para usted. <strong>Esta cifra no se la mostramos a la
-                  inmobiliaria</strong>: la ve solo el equipo de Cofianza.
+                  Nos ayuda a encontrar la mejor opción para usted. <strong>Esta cifra no se la mostramos a quien
+                  tramita su arriendo</strong>: la ve solo el equipo de Cofianza.
                 </span>
               </p>
             </div>

@@ -71,7 +71,7 @@ export function ExpedientesSection({
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={16} />
-            Crear Estudio
+            Crear estudio
           </Link>
         )}
       </div>

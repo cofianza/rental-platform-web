@@ -97,9 +97,10 @@ export default function ExpedienteDetallePage() {
   // Tabs por rol:
   // - solicitante: solo Resumen (concentra todo el "siguiente paso").
   // - propietario / inmobiliaria: gestion del expediente sin las herramientas
-  //   internas del operador (Comentarios y Timeline son notas/eventos que
-  //   el backend restringe a administrador/operador_analista).
-  // - admin/operador/gerencia: todas las pestañas.
+  //   internas del operador (Comentarios e Historial son notas/eventos que
+  //   el backend restringe a los roles internos).
+  // - admin/operador/gerencia: todas las pestañas (Gerencia solo lee los
+  //   comentarios: el API le abre el GET, no el POST).
   const isInternalRole =
     user?.rol === 'administrador'
     || user?.rol === 'operador_analista'
@@ -125,7 +126,7 @@ export default function ExpedienteDetallePage() {
         ...(isInternalRole
           ? [
               { id: 'comentarios', label: 'Comentarios' },
-              { id: 'timeline', label: 'Timeline' },
+              { id: 'timeline', label: 'Historial' },
             ]
           : []),
       ]

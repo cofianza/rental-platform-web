@@ -823,7 +823,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   const handleComparisonApprove = useCallback(async (documentoId: string) => {
     try {
       await documentoService.aprobarDocumento(documentoId)
-      toast.success('Selfie aprobado')
+      toast.success('Selfie aprobada')
       fetchData() // Refresh documents
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al aprobar selfie'
@@ -835,7 +835,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   const handleComparisonReject = useCallback(async (documentoId: string, motivo: string) => {
     try {
       await documentoService.rechazarDocumento(documentoId, motivo)
-      toast.success('Selfie rechazado')
+      toast.success('Selfie rechazada')
       fetchData() // Refresh documents
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al rechazar selfie'

@@ -18,6 +18,7 @@ import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } fro
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { fechaCondicion, lineaIngresoAdicional, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import {
   cargarDocumentosService,
   type ContextoCargaDocumentos,
@@ -167,7 +168,8 @@ export default function CargarDocumentosPage() {
           <h1 className="text-lg font-semibold text-gray-900 mb-2">
             {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
           </h1>
-          <p className="text-sm text-gray-600">{error || 'El enlace no es válido o expiró. Pida uno nuevo a la inmobiliaria.'}</p>
+          {/* Lo pudo enviar una inmobiliaria o un propietario directo: no se nombra a ninguno. */}
+          <p className="text-sm text-gray-600">{error || 'El enlace no es válido o expiró. Pídale uno nuevo a quien tramita su arriendo.'}</p>
           {reintentable && (
             <button
               type="button"
@@ -177,6 +179,7 @@ export default function CargarDocumentosPage() {
               <IconRefresh size={16} /> Reintentar
             </button>
           )}
+          <ContactoCofianza />
         </div>
       </div>
     )
@@ -300,7 +303,9 @@ export default function CargarDocumentosPage() {
           </form>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center text-sm text-gray-600">
-            Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tiene dudas, contacte a la inmobiliaria.
+            Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tiene dudas, escríbale a quien
+            tramita su arriendo.
+            <ContactoCofianza />
           </div>
         )}
 

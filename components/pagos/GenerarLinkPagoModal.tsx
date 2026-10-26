@@ -157,7 +157,7 @@ export function GenerarLinkPagoModal({
       onSuccess()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al generar el link de pago')
+      setError(err instanceof Error ? err.message : 'No se pudo generar el enlace de pago')
     } finally {
       setIsSubmitting(false)
     }
@@ -171,7 +171,7 @@ export function GenerarLinkPagoModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Generar Link de Pago" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Generar enlace de pago" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -297,14 +297,14 @@ export function GenerarLinkPagoModal({
             disabled={isSubmitting}
           />
           <label htmlFor="enviarEmail" className="text-sm text-gray-700">
-            Enviar link por email automáticamente
+            Enviar el enlace por correo automáticamente
           </label>
         </div>
 
         {/* Info box */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            Se generara un link de pago seguro que el cliente podra usar para pagar con tarjeta de credito/debito o PSE.
+            Se generará un enlace de pago seguro que el cliente podrá usar para pagar con tarjeta de crédito/débito o PSE.
           </p>
         </div>
 
@@ -326,7 +326,7 @@ export function GenerarLinkPagoModal({
             {isSubmitting && (
               <IconLoader size={16} className="animate-spin" />
             )}
-            {isSubmitting ? 'Generando...' : 'Generar Link'}
+            {isSubmitting ? 'Generando...' : 'Generar enlace'}
           </button>
         </div>
       </form>

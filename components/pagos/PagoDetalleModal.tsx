@@ -74,8 +74,8 @@ const EVENTO_ICONS: Record<string, { icon: typeof IconCheck; color: string }> = 
 
 const EVENTO_LABELS: Record<string, string> = {
   created: 'Pago creado',
-  link_sent: 'Link enviado por email',
-  link_resent: 'Link reenviado',
+  link_sent: 'Enlace enviado por correo',
+  link_resent: 'Enlace reenviado',
   payment_started: 'Pago iniciado',
   payment_completed: 'Pago completado',
   payment_failed: 'Pago fallido',

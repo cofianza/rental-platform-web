@@ -18,6 +18,7 @@ import {
   type ICoarrendatarioPublicView,
 } from '@/services/coarrendatarioService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'error'
 
@@ -170,9 +171,7 @@ export default function CoarrendatarioPublicPage() {
             <IconRefresh size={16} /> Reintentar
           </button>
         )}
-        <p className="text-xs text-gray-500 mt-4">
-          Si cree que es un error, escriba a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>.
-        </p>
+        <ContactoCofianza />
       </div>
     )
   }
@@ -185,6 +184,7 @@ export default function CoarrendatarioPublicPage() {
           Le avisamos a {view?.expediente.titular_nombre} que no continuará como coarrendatario.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+        <ContactoCofianza />
       </div>
     )
   }
@@ -198,6 +198,7 @@ export default function CoarrendatarioPublicPage() {
           el arriendo para que invite a la persona correcta.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+        <ContactoCofianza />
       </div>
     )
   }
@@ -211,6 +212,7 @@ export default function CoarrendatarioPublicPage() {
           invitación nueva y este enlace dejará de funcionar.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+        <ContactoCofianza />
       </div>
     )
   }
@@ -230,6 +232,7 @@ export default function CoarrendatarioPublicPage() {
             ? `Le enviamos el resultado a ${view.email}.`
             : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
         </p>
+        <ContactoCofianza />
       </div>
     )
   }

@@ -17,6 +17,7 @@ import { ESTADO_LABEL } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { RegistrarResultadoModal } from './RegistrarResultadoModal'
@@ -156,7 +157,10 @@ export function EstudiosSection({
   // y necesitan evaluar al solicitante. No pueden gestionarlo (cancelar,
   // reenviar enlace, registrar resultado): eso queda gateado a canManage.
   const isStakeholder = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
-  const canViewDetail = canManage || isStakeholder
+  // Gerencia también abre el detalle (el modal le llega en solo lectura).
+  const canViewDetail = canManage || isStakeholder || user?.rol === 'gerencia_consulta'
+  // El miembro solo lectura ve la evaluación pero no la ejecuta (el API le da 403).
+  const puedeEditar = usePuedeEditar()
 
   const [estudios, setEstudios] = useState<IEstudio[]>([])
   const [loading, setLoading] = useState(true)
@@ -565,6 +569,7 @@ export function EstudiosSection({
                     el backend autoriza a ambos en /ejecutar. stopPropagation
                     para no abrir el modal de detalle al interactuar. */}
                 {(canManage || isStakeholder) &&
+                  puedeEditar &&
                   puedeRelanzarEstudio(estudio) &&
                   (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario') && (
                   <div
