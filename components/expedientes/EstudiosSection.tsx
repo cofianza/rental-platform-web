@@ -27,7 +27,7 @@ import {
 } from './ReintentarEstudioForm'
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { textoVisible, esRolInterno } from './textoVisible'
+import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 
 // ============================================
 // Constants
@@ -41,8 +41,6 @@ const PROVEEDOR_LABELS: Record<string, string> = {
 
 const ESTADOS_FINALIZADOS = ['completado', 'fallido', 'cancelado']
 const ESTADOS_PERMITIDOS_RESULTADO = ['solicitado', 'en_proceso']
-/** La central se decide al consultar (cascada): antes de eso no se muestra. */
-const CENTRAL_DEFINIDA = ['en_proceso', 'completado', 'fallido']
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -408,7 +406,7 @@ export function EstudiosSection({
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <>
                           {esRolInterno(user?.rol) &&
-                            (CENTRAL_DEFINIDA.includes(estudio.estado) || estudio.proveedor === 'manual') && (
+                            centralDefinida(estudio) && (
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
                               estudio.proveedor === 'transunion'

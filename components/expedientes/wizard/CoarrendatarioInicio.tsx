@@ -55,8 +55,8 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
         <div className="mt-4 space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField id={`${uid}-nombre`} label="Nombre" value={value.nombre} error={errors.nombre} onChange={set('nombre')} />
-            {/* Solo el primero: DataCrédito lo contrasta tal cual con la Registraduría. */}
-            <FormField id={`${uid}-apellido`} label="Primer apellido (como en la cédula)" value={value.apellido} error={errors.apellido} onChange={set('apellido')} />
+            {/* Los dos, como en la cédula: van al contrato. A DataCrédito la API le manda solo el primero. */}
+            <FormField id={`${uid}-apellido`} label="Apellidos (como en la cédula)" value={value.apellido} error={errors.apellido} onChange={set('apellido')} />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
             <div className="sm:col-span-2">
