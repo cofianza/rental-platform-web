@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
-import { IconFileText, IconLoader, IconCheck } from '@/components/icons'
+import { IconFileText, IconLoader, IconCheck, IconAlertTriangle } from '@/components/icons'
 import { estudioService, type IListasEstudio } from '@/services/estudioService'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { ScoreGauge } from '@/components/estudios/ScoreGauge'
@@ -114,10 +114,14 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly = false, solicitante }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
+  const rol = useAuthStore((s) => s.user?.rol)
   // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
-  const externo = !esRolInterno(useAuthStore((s) => s.user?.rol))
+  const externo = !esRolInterno(rol)
+  // Solo admin/operador escriben aquí (certificado, re-evaluación, listas); Gerencia
+  // y los demás roles ven el modal en solo lectura aunque el llamador no lo pida.
+  const readOnly = readOnlyProp || !(rol === 'administrador' || rol === 'operador_analista')
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
@@ -351,15 +355,22 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             )}
 
             {/* Adenda 3 V2 §7: coincidencia en listas por confirmar (solo Cofianza). */}
-            {(estudio as IEstudioConNota).listas && (
-              <ListasPorConfirmar
-                estudioId={estudio.id}
-                listas={(estudio as IEstudioConNota).listas!}
-                onResuelto={() => {
-                  void estudioService.getEstudioById(estudio.id).then(setEstudio).catch(() => undefined)
-                }}
-              />
-            )}
+            {(estudio as IEstudioConNota).listas &&
+              (readOnly && (estudio as IEstudioConNota).listas!.estado === 'por_confirmar' ? (
+                // Gerencia la ve, pero confirmar o descartar es del equipo de análisis.
+                <p role="status" className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                  <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                  Coincidencia en listas restrictivas (OFAC u ONU) por confirmar: la revisa el equipo de análisis de Cofianza.
+                </p>
+              ) : (
+                <ListasPorConfirmar
+                  estudioId={estudio.id}
+                  listas={(estudio as IEstudioConNota).listas!}
+                  onResuelto={() => {
+                    void estudioService.getEstudioById(estudio.id).then(setEstudio).catch(() => undefined)
+                  }}
+                />
+              ))}
 
             {/* Nota interna: cifras, umbrales y centrales. La API solo la manda a Cofianza. */}
             {(estudio as IEstudioConNota).nota_interna && (
@@ -415,7 +426,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                       ) : (
                         <IconFileText size={16} />
                       )}
-                      Descargar Certificado
+                      Descargar certificado
                     </button>
                     {/* Sin efecto (P32), la API no lo regenera. */}
                     {!readOnly && !estudio.certificado_sin_efecto && (
@@ -454,7 +465,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                     ) : (
                       <>
                         <IconFileText size={16} />
-                        Generar Certificado
+                        Generar certificado
                       </>
                     )}
                   </button>

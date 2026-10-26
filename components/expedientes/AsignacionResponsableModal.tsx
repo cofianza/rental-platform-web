@@ -109,7 +109,7 @@ export function AsignacionResponsableModal({
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Asignar Responsable"
+        title="Asignar responsable"
         size="md"
       >
         <div className="space-y-6">

@@ -347,7 +347,7 @@ export function TransicionModal({
             }`}
           >
             {isLoading && <IconLoader size={16} className="animate-spin" />}
-            Confirmar Cambio
+            Confirmar cambio
           </button>
         </div>
       </div>

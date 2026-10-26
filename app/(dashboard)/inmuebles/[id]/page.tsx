@@ -399,7 +399,7 @@ export default function InmuebleDetailPage() {
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlay size={16} />
-              Iniciar Estudio
+              Iniciar estudio
             </Link>
           )
         }
@@ -427,7 +427,7 @@ export default function InmuebleDetailPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
               >
                 <IconExternalLink size={16} />
-                Ver Contrato
+                Ver contrato
               </Link>
             )
             actions.push(

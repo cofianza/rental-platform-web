@@ -153,7 +153,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar Pago Manual" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar pago manual" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -352,7 +352,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
             {isSubmitting && (
               <IconLoader size={16} className="animate-spin" />
             )}
-            {isSubmitting ? 'Registrando...' : 'Registrar Pago'}
+            {isSubmitting ? 'Registrando...' : 'Registrar pago'}
           </button>
         </div>
       </form>

@@ -14,6 +14,7 @@ import { apiClient } from '@/lib/api'
 import { getResultadoPagoPublico, type IPagoResultadoPublico } from '@/services/pagoEstudioService'
 import { IconCheck, IconClock, IconX } from '@/components/icons'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -259,20 +260,26 @@ function PagoResultadoContent() {
           fallback a redirect al expediente. */}
       {isSuccess && (
         <div className="mt-6 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              window.close()
-              setTimeout(() => {
-                if (typeof window !== 'undefined' && !window.closed && isAuthenticated) {
-                  window.location.href = expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'
-                }
-              }, 300)
-            }}
-            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
-          >
-            {isAuthenticated ? 'Cerrar y volver al estudio' : 'Cerrar ventana'}
-          </button>
+          {/* Sin sesión el navegador no deja cerrar por script la pestaña que
+              abrió el enlace: el botón no hacía nada. Se dice en texto. */}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={() => {
+                window.close()
+                setTimeout(() => {
+                  if (typeof window !== 'undefined' && !window.closed) {
+                    window.location.href = expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'
+                  }
+                }, 300)
+              }}
+              className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
+            >
+              Cerrar y volver al estudio
+            </button>
+          ) : (
+            <p className="text-sm font-medium text-gray-700">Ya puede cerrar esta página.</p>
+          )}
           {isAuthenticated ? (
             <p className="text-xs text-gray-500">
               {secondsLeft > 0
@@ -338,6 +345,7 @@ function PagoResultadoContent() {
             : 'Puede cerrar esta ventana de forma segura.'}
         </p>
       )}
+      <ContactoCofianza />
     </div>
   )
 }

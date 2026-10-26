@@ -64,7 +64,7 @@ export function PlantillasTable({
                 onClick={() => onSort('version')}
               >
                 <span className="flex items-center">
-                  Version <SortIcon field="version" />
+                  Versión <SortIcon field="version" />
                 </span>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

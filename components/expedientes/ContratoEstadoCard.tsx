@@ -12,8 +12,8 @@
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
-import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar } from '@/components/icons'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar, IconRefresh } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
@@ -52,6 +52,8 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
   // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
   const [actaPendiente, setActaPendiente] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
+  const cargadoRef = useRef(false)
 
   const fetchContrato = useCallback(async () => {
     try {
@@ -64,6 +66,8 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
       })
       const elegido = ordered[0] ?? null
       setContrato(elegido)
+      cargadoRef.current = true
+      setErrorCarga(false)
       if (elegido?.destinacion && (elegido.estado === 'vigente' || elegido.estado === 'finalizado')) {
         const archivos = await contratoService.listarArchivos(elegido.id).catch(() => null)
         setActaPendiente(!!archivos && !archivos.some((a) => a.tipo_archivo === 'acta_entrega'))
@@ -71,7 +75,11 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
         setActaPendiente(false)
       }
     } catch {
-      setContrato(null)
+      // Un refresco que falla no borra la tarjeta; sin ninguna carga, se avisa.
+      if (!cargadoRef.current) {
+        setContrato(null)
+        setErrorCarga(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -80,6 +88,20 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
   useEffect(() => { fetchContrato() }, [fetchContrato, version])
 
   if (loading) return null
+  if (!contrato && errorCarga) {
+    return (
+      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos cargar el contrato de este estudio.</p>
+        <button
+          type="button"
+          onClick={() => void fetchContrato()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
   if (!contrato) return null
 
   // Respaldo: un estado que esta web todavía no conoce no tumba el detalle del estudio.

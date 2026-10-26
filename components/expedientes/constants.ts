@@ -40,6 +40,6 @@ export const EXPEDIENTE_UI_MESSAGES = {
   LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',
-  NEW_EXPEDIENTE: 'Nuevo Estudio',
+  NEW_EXPEDIENTE: 'Nuevo estudio',
   SEARCH_PLACEHOLDER: 'Buscar por código, inmueble o solicitante...',
 } as const

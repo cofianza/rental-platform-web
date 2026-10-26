@@ -37,7 +37,7 @@ export function GarantiaIvaAyuda({
   prima: IPrimaSugerida | null
   onUsar?: (total: number) => void
 }) {
-  const aMano = 'La prima de vinculación lleva IVA: escribe el valor con el IVA incluido.'
+  const aMano = 'La prima de vinculación lleva IVA: escriba el valor con el IVA incluido.'
   if (!prima) return <p className="mt-1 text-xs text-gray-500">{aMano}</p>
   const { prima_vinculacion_pct: pct, prima_vinculacion_cop: base, iva_pct: iva, prima_vinculacion_con_iva_cop: total } = prima
   const baseCobrada = Math.round(monto / (1 + iva / 100))

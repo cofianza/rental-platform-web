@@ -267,7 +267,48 @@ export function EstudiosInmobiliariaView({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
+            <>
+            {/* Móvil: tarjetas, para que «Ver» no quede fuera de la pantalla. */}
+            <ul className="divide-y divide-gray-100 md:hidden">
+              {estudios.map((e) => {
+                const badge = estadoBadge(e)
+                const bs = BADGE_STYLE[badge.kind]
+                return (
+                  <li key={e.id} className="space-y-2 px-4 py-3 text-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-medium text-gray-900">{prospecto(e)}</span>
+                      <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
+                        <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
+                        {badge.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-xs text-gray-600">
+                      <span>
+                        {e.expediente_id && e.expedientes?.numero ? (
+                          <Link href={`/expedientes/${e.expediente_id}`} className="font-semibold text-primary-700 underline-offset-2 hover:underline">
+                            {formatNumeroEstudio(e.expedientes.numero)}
+                          </Link>
+                        ) : (
+                          formatNumeroEstudio(e.expedientes?.numero) || '—'
+                        )}
+                        {' · '}
+                        {fechaCorta(e.fecha_solicitud ?? e.created_at)}
+                        {e.score != null && ` · Score ${e.score}`}
+                      </span>
+                      <button
+                        onClick={() => verEstudio(e.id)}
+                        disabled={cargandoDetalle}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border-[1.5px] border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700 disabled:opacity-50"
+                      >
+                        Ver
+                        <IconChevronRight size={14} />
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+            <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-max text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
                   <th className="px-6 py-3 font-bold">Prospecto</th>
@@ -340,6 +381,7 @@ export function EstudiosInmobiliariaView({
                 })}
               </tbody>
             </table></div>
+            </>
           )}
         </div>
 

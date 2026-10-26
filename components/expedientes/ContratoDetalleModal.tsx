@@ -114,7 +114,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Version</dt>
+              <dt className="text-gray-500">Versión</dt>
               <dd className="font-medium text-gray-900 mt-0.5">v{contrato.version}</dd>
             </div>
             <div>

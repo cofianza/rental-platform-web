@@ -207,7 +207,7 @@ export function InmueblesTable({
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
-            Nuevo Inmueble
+            Nuevo inmueble
           </button>
         )}
       </div>

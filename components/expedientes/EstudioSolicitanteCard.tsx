@@ -102,6 +102,7 @@ export function EstudioSolicitanteCard({
   // de un tick del polling NO debe poner estudio=null (dejaría la card en
   // blanco y mataría el polling sin recuperación).
   const estudioLoadedRef = useRef(false)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   const fetchEstudio = useCallback(async () => {
     try {
@@ -112,6 +113,7 @@ export function EstudioSolicitanteCard({
       const elegido = activos[0] ?? null
       setEstudio(elegido)
       estudioLoadedRef.current = true
+      setErrorCarga(false)
 
       // Documento que se consultará (solo lectura): el del estudio, que la
       // corrección actualiza, o el de la ficha. Se relee en cada refresco.
@@ -120,8 +122,11 @@ export function EstudioSolicitanteCard({
       setTipoDoc((deDatos ? datos.tipo_documento : prefillTipoDocumento) || '')
       setNumeroDoc((deDatos ? datos.numero_documento : prefillNumeroDocumento)?.trim() || '')
     } catch {
-      // Solo en el primer load tratamos el error como "sin estudio".
-      if (!estudioLoadedRef.current) setEstudio(null)
+      // Solo en el primer load: sin dato, se dice que falló (con Reintentar).
+      if (!estudioLoadedRef.current) {
+        setEstudio(null)
+        setErrorCarga(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -306,6 +311,22 @@ export function EstudioSolicitanteCard({
   }
 
   if (loading || authLoading) return null
+
+  // Sin leer la evaluación, la tarjeta no desaparece en silencio.
+  if (!estudio && errorCarga) {
+    return (
+      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos cargar su evaluación.</p>
+        <button
+          type="button"
+          onClick={() => void fetchEstudio()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
 
   // Antes del pago (solicitado / pago_pendiente) NO mostramos nada — el
   // PagoEstudioSection se encarga de ese paso. Con el §6.3 'pago_pendiente' es

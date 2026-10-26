@@ -24,7 +24,7 @@ import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { IconUsers } from '@/components/icons'
+import { IconRefresh, IconUsers } from '@/components/icons'
 import { fechaCondicion } from './textoVisible'
 
 interface CoarrendatarioCardProps {
@@ -47,6 +47,7 @@ export function CoarrendatarioCard({
   const version = useRefrescoExpediente()
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
   const [loading, setLoading] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   const coaLoadedRef = useRef(false)
   const fetchCoa = useCallback(async () => {
@@ -54,10 +55,14 @@ export function CoarrendatarioCard({
       const data = await coarrendatarioService.getDelExpediente(expedienteId)
       setCoa(data)
       coaLoadedRef.current = true
+      setErrorCarga(false)
     } catch {
       // No borrar la card por un error transitorio del polling: solo dejamos
       // null si nunca llegó a cargar.
-      if (!coaLoadedRef.current) setCoa(null)
+      if (!coaLoadedRef.current) {
+        setCoa(null)
+        setErrorCarga(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -117,6 +122,22 @@ export function CoarrendatarioCard({
   if (loading || ventana === undefined) return null
   if (userRol !== 'solicitante') return null
   if (!vigente && coa?.estado !== 'pendiente_aceptacion') return null
+
+  // Sin leer la invitación no se ofrece invitar a otro: podría ya tener una.
+  if (!coa && errorCarga) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">No pudimos cargar la información de su coarrendatario.</p>
+        <button
+          type="button"
+          onClick={() => void fetchCoa()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        >
+          <IconRefresh size={16} /> Reintentar
+        </button>
+      </div>
+    )
+  }
 
   // ── Sin coarrendatario: invitar ────────────────────────────────────
   if (!coa) {

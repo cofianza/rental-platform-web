@@ -286,6 +286,111 @@ export function ContratosSection({
     }
   }
 
+  // Acciones de una fila: las comparten la tabla (escritorio) y las tarjetas (móvil).
+  const accionesContrato = (c: IContrato, esV3: boolean) => (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {esV3 && contratosV3 && canCreate && c.estado === 'borrador' && (
+        <Link
+          href={rutaAsistente}
+          className={buttonClasses('primary', 'sm')}
+          title="Continuar el contrato en el asistente"
+        >
+          <IconArrowRight size={14} />
+          Continuar
+        </Link>
+      )}
+      {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta
+          de entrega), también con el flag apagado: el API sigue mostrando los contratos ya enviados. */}
+      {esV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
+        <Link
+          href={rutaAsistente}
+          className={buttonClasses('secondary', 'sm')}
+          title="Ver el estado de la firma en el asistente"
+        >
+          <IconArrowRight size={14} />
+          Abrir
+        </Link>
+      )}
+      {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+        <button
+          onClick={() => handleEnviarAFirma(c)}
+          disabled={enviandoFirmaId === c.id}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-900 bg-coral-500 rounded-md hover:bg-coral-400 disabled:opacity-50"
+          title="Llevar a firma y enviar al/los firmante(s)"
+        >
+          {enviandoFirmaId === c.id ? (
+            <IconLoader size={14} className="animate-spin" />
+          ) : (
+            <IconMail size={14} />
+          )}
+          {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
+        </button>
+      )}
+      {/* La fila entera ya navega al detalle: el ojo solo
+          se conserva para roles internos. */}
+      {!esV3 && !esDuenio && (
+        <button
+          onClick={() => router.push(`/contratos/${c.id}`)}
+          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
+          title="Ver detalle"
+          aria-label="Ver detalle del contrato"
+        >
+          <IconEye size={16} />
+        </button>
+      )}
+      <button
+        onClick={() => handleDownload(c)}
+        disabled={downloadingId === c.id || !c.storage_key}
+        className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+        title="Descargar PDF"
+        aria-label="Descargar PDF del contrato"
+      >
+        {downloadingId === c.id ? (
+          <IconLoader size={16} className="animate-spin" />
+        ) : (
+          <IconDownload size={16} />
+        )}
+      </button>
+      {!esV3 && canRegenerate && c.estado === 'borrador' && (
+        <button
+          onClick={() => setRegenerarTarget(c)}
+          className="p-1.5 text-gray-500 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
+          title="Editar y regenerar (fecha, plazo, canon, servicios)"
+          aria-label="Editar y regenerar el contrato"
+        >
+          <IconRefresh size={16} />
+        </button>
+      )}
+      {!esV3 && canRegenerate && c.estado === 'pendiente_firma' && (
+        <button
+          onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmaContratoId === c.id ? null : c.id) }}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
+          title="Ver y gestionar las firmas de este contrato (reenviar / cancelar)"
+        >
+          <IconMail size={14} />
+          {firmaContratoId === c.id ? 'Ocultar firmas' : 'Ver firmas'}
+        </button>
+      )}
+      {/* Antes de la firma, "Cambiar estado" solo le ofrece
+          "Cancelar" al dueño: lo escondemos ahí y se lo
+          dejamos en pendiente_firma / vigente, donde sí sirve
+          para terminar o cancelar el contrato. */}
+      {!esV3 &&
+        canRegenerate &&
+        !TERMINAL_STATES.includes(c.estado) &&
+        !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
+        <button
+          onClick={() => handleOpenTransicion(c)}
+          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
+          title="Cambiar estado"
+          aria-label="Cambiar el estado del contrato"
+        >
+          <IconArrowRight size={16} />
+        </button>
+      )}
+    </div>
+  )
+
   // Loading state
   if (isLoading) {
     return (
@@ -326,7 +431,7 @@ export function ContratosSection({
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             <IconPlus size={16} />
-            Generar Contrato
+            Generar contrato
           </button>
         )}
       </div>
@@ -360,7 +465,7 @@ export function ContratosSection({
             </p>
           ) : canCreate ? (
             <p className="text-sm text-gray-500">
-              Pulse &quot;Generar Contrato&quot; para crear uno con la plantilla activa.
+              Pulse «Generar contrato» para crear uno con la plantilla activa.
             </p>
           ) : (
             <p className="text-sm text-gray-500">
@@ -370,8 +475,9 @@ export function ContratosSection({
           )}
         </div>
       ) : (
-        /* Table */
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <>
+        {/* Table */}
+        <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -380,7 +486,7 @@ export function ContratosSection({
                     Archivo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Version
+                    Versión
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Estado
@@ -431,107 +537,7 @@ export function ContratosSection({
                         className="px-6 py-4 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-2">
-                          {esV3 && contratosV3 && canCreate && c.estado === 'borrador' && (
-                            <Link
-                              href={rutaAsistente}
-                              className={buttonClasses('primary', 'sm')}
-                              title="Continuar el contrato en el asistente"
-                            >
-                              <IconArrowRight size={14} />
-                              Continuar
-                            </Link>
-                          )}
-                          {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta
-                              de entrega), también con el flag apagado: el API sigue mostrando los contratos ya enviados. */}
-                          {esV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
-                            <Link
-                              href={rutaAsistente}
-                              className={buttonClasses('secondary', 'sm')}
-                              title="Ver el estado de la firma en el asistente"
-                            >
-                              <IconArrowRight size={14} />
-                              Abrir
-                            </Link>
-                          )}
-                          {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
-                            <button
-                              onClick={() => handleEnviarAFirma(c)}
-                              disabled={enviandoFirmaId === c.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-900 bg-coral-500 rounded-md hover:bg-coral-400 disabled:opacity-50"
-                              title="Llevar a firma y enviar al/los firmante(s)"
-                            >
-                              {enviandoFirmaId === c.id ? (
-                                <IconLoader size={14} className="animate-spin" />
-                              ) : (
-                                <IconMail size={14} />
-                              )}
-                              {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
-                            </button>
-                          )}
-                          {/* La fila entera ya navega al detalle: el ojo solo
-                              se conserva para roles internos. */}
-                          {!esV3 && !esDuenio && (
-                            <button
-                              onClick={() => router.push(`/contratos/${c.id}`)}
-                              className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
-                              title="Ver detalle"
-                              aria-label="Ver detalle del contrato"
-                            >
-                              <IconEye size={16} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDownload(c)}
-                            disabled={downloadingId === c.id || !c.storage_key}
-                            className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                            title="Descargar PDF"
-                            aria-label="Descargar PDF del contrato"
-                          >
-                            {downloadingId === c.id ? (
-                              <IconLoader size={16} className="animate-spin" />
-                            ) : (
-                              <IconDownload size={16} />
-                            )}
-                          </button>
-                          {!esV3 && canRegenerate && c.estado === 'borrador' && (
-                            <button
-                              onClick={() => setRegenerarTarget(c)}
-                              className="p-1.5 text-gray-500 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-                              title="Editar y regenerar (fecha, plazo, canon, servicios)"
-                              aria-label="Editar y regenerar el contrato"
-                            >
-                              <IconRefresh size={16} />
-                            </button>
-                          )}
-                          {!esV3 && canRegenerate && c.estado === 'pendiente_firma' && (
-                            <button
-                              onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmaContratoId === c.id ? null : c.id) }}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
-                              title="Ver y gestionar las firmas de este contrato (reenviar / cancelar)"
-                            >
-                              <IconMail size={14} />
-                              {firmaContratoId === c.id ? 'Ocultar firmas' : 'Ver firmas'}
-                            </button>
-                          )}
-                          {/* Antes de la firma, "Cambiar estado" solo le ofrece
-                              "Cancelar" al dueño: lo escondemos ahí y se lo
-                              dejamos en pendiente_firma / vigente, donde sí sirve
-                              para terminar o cancelar el contrato. */}
-                          {!esV3 &&
-                            canRegenerate &&
-                            !TERMINAL_STATES.includes(c.estado) &&
-                            !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
-                            <button
-                              onClick={() => handleOpenTransicion(c)}
-                              className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
-                              title="Cambiar estado"
-                              aria-label="Cambiar el estado del contrato"
-                            >
-                              <IconArrowRight size={16} />
-                            </button>
-                          )}
-                        </div>
+                        {accionesContrato(c, esV3)}
                       </td>
                     </tr>
                   )
@@ -540,6 +546,37 @@ export function ContratosSection({
             </table>
           </div>
         </div>
+
+        {/* Móvil: tarjetas, para que las acciones no queden fuera de la pantalla. */}
+        <div className="md:hidden space-y-3">
+          {contratos.map((c) => {
+            const estadoStyle = ESTADOS_CONTRATO[c.estado] ?? ESTADOS_CONTRATO.borrador
+            const esV3 = !!c.destinacion
+            return (
+              <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => router.push(esV3 ? rutaAsistente : `/contratos/${c.id}`)}
+                  className="w-full text-left"
+                >
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      {esV3 ? `Contrato ${c.numero ?? ''}` : c.nombre_archivo || 'contrato.pdf'}
+                    </span>
+                    <span className={`inline-flex shrink-0 items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoStyle.bgColor} ${estadoStyle.textColor}`}>
+                      {etiquetaContrato(c.estado, esV3)}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-gray-500">
+                    Versión {c.version} · {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
+                  </span>
+                </button>
+                {accionesContrato(c, esV3)}
+              </div>
+            )
+          })}
+        </div>
+        </>
       )}
 
       {/* Firma Solicitudes */}

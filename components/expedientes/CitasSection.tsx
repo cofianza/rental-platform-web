@@ -834,7 +834,7 @@ function ConfirmarCitaModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Cita">
+    <Modal isOpen={isOpen} onClose={onClose} title="Confirmar cita">
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
           Confirme la cita en la fecha y hora propuesta por el prospecto. Si necesita

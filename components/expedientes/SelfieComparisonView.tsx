@@ -248,7 +248,7 @@ export function SelfieComparisonView({
             Comparacion de Identidad
           </h2>
           <p className="text-xs md:text-sm text-gray-400">
-            Verifique que la persona del selfie coincida con la identificacion
+            Verifique que la persona de la selfie coincida con la identificacion
           </p>
         </div>
         <button
@@ -318,7 +318,7 @@ export function SelfieComparisonView({
             <textarea id="selfie-comparison-view-motivo-del-rechazo"
               value={rejectMotivo}
               onChange={(e) => setRejectMotivo(e.target.value)}
-              placeholder="Describa por que rechazas el selfie..."
+              placeholder="Describa por qué rechaza la selfie..."
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={2}
             />
@@ -350,7 +350,7 @@ export function SelfieComparisonView({
             <ul className="list-disc list-inside space-y-1 text-xs md:text-sm">
               <li>Los rasgos faciales coinciden entre ambas imagenes</li>
               <li>La foto del documento no presenta alteraciones visibles</li>
-              <li>El selfie fue tomado recientemente (verificar metadatos)</li>
+              <li>La selfie fue tomada recientemente (verificar metadatos)</li>
             </ul>
           </div>
 

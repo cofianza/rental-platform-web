@@ -311,6 +311,9 @@ export default function EstudioFormularioPage() {
   // Form
   // ============================================
 
+  // Pasaporte, TI, NIT o sin documento: se dice desde el principio, no al enviar.
+  const sinDocumento = !numDoc.trim() || !tipoDoc
+
   return (
     <div className="space-y-6">
       {/* Info banner */}
@@ -356,11 +359,23 @@ export default function EstudioFormularioPage() {
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
           <p className="text-sm font-medium text-gray-700 mb-1">Documento que se consultará</p>
           <p className="text-base font-semibold text-gray-900">
-            {numDoc && tipoDoc ? `${nombreTipoDocumento(tipoDoc)} ${numDoc}` : 'Sin documento registrado'}
+            {sinDocumento ? 'Sin un documento que se pueda consultar' : `${nombreTipoDocumento(tipoDoc)} ${numDoc}`}
           </p>
-          <p className="text-xs text-gray-500 mt-2">
-            Si está mal o falta, pídale a quien tramita su arriendo que lo corrija.
-          </p>
+          {sinDocumento ? (
+            <>
+              {/* Los mismos que acepta la evaluación (CC, CE, PPT, PEP): TI y NIT no aplican y el pasaporte no está en las centrales. */}
+              <p role="alert" className="mt-2 text-sm text-amber-800">
+                Las centrales de riesgo solo consultan cédula de ciudadanía, cédula de extranjería, PPT o PEP.
+                Pídale a quien tramita su arriendo que registre uno de ellos; mientras tanto no podemos recibir
+                este formulario.
+              </p>
+              <ContactoCofianza />
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 mt-2">
+              Si está mal o falta, pídale a quien tramita su arriendo que lo corrija.
+            </p>
+          )}
         </div>
 
         {/* Email y telefono */}
@@ -500,7 +515,7 @@ export default function EstudioFormularioPage() {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || sinDocumento}
             className="w-full py-3 px-4 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? 'Enviando...' : 'Enviar formulario'}

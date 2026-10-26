@@ -106,8 +106,10 @@ export function ExpedientesListado() {
                 ...(filters.search ? { search: filters.search } : {}),
                 ...(filters.estado.length > 0 ? { estado: filters.estado.join(',') } : {}),
                 ...(filters.analista_id ? { analista_id: filters.analista_id } : {}),
-                ...(filters.fecha_desde ? { dateFrom: filters.fecha_desde } : {}),
-                ...(filters.fecha_hasta ? { dateTo: filters.fecha_hasta } : {}),
+                ...(filters.miembro_responsable_id ? { miembro_responsable_id: filters.miembro_responsable_id } : {}),
+                // El API de exportar lee fecha_desde/fecha_hasta (dateFrom es de los reportes).
+                ...(filters.fecha_desde ? { fecha_desde: filters.fecha_desde } : {}),
+                ...(filters.fecha_hasta ? { fecha_hasta: filters.fecha_hasta } : {}),
               }}
               entityName="Estudios"
             />
