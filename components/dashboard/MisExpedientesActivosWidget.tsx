@@ -167,7 +167,8 @@ export function MisExpedientesActivosWidget() {
                             : 'border-gray-200 bg-gray-50 text-gray-600'
                         }`}
                       >
-                        {TURNO[exp.depende_de]}
+                        {/* El condicionado lo decide un analista: no es una consulta en curso (igual que la lista). */}
+                        {exp.estado === 'condicionado' && exp.depende_de === 'cofianza' ? 'En revisión de Cofianza' : TURNO[exp.depende_de]}
                       </span>
                     )}
                   </div>

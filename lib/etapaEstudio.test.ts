@@ -40,6 +40,8 @@ test('revisión 26-oct: no habilitada, enlace vencido, opción B, Gerencia y con
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'pago_pendiente' }), 'pago')
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'fallido' }), 'fallida')
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'formulario_completado' }), 'sin_ejecutar')
+  // Pagada antes de firmar (vitrina): espera al prospecto, no la consulta.
+  assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'pendiente', titularEstado: 'formulario_completado' }), 'autorizacion')
 })
 
 test('después de la consulta: decisión, contrato, firma y cierre', () => {

@@ -101,7 +101,8 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   if (d.estudioRechazado) return 'no_habilitada'
   if (!d.habilitado) return d.citaResuelta || !d.tieneInmueble ? 'habilitar' : 'visita'
   if (d.titularEstado === 'fallido') return 'fallida'
-  if (d.titularEstado && SIN_EJECUTAR.includes(d.titularEstado)) return 'sin_ejecutar'
+  // Sin la firma del titular (pagado antes de autorizar) no falta la consulta: falta el prospecto.
+  if (d.titularEstado && SIN_EJECUTAR.includes(d.titularEstado) && d.autorizacionEstado === 'autorizado') return 'sin_ejecutar'
   if (d.titularEstado && CONSULTA_INICIADA.includes(d.titularEstado)) return 'consulta'
   if (d.enlaceVencido) return 'enlace'
   if (d.pago?.estado === 'sin_definir') return 'pago'
