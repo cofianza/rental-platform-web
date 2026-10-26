@@ -347,6 +347,7 @@ export function ExpedientesTable({
                     expirado={expediente.estudio_vigente?.expirado}
                     estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
                     esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
+                    sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
                     rolInterno={interno}
                   />
                   {/* Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra. */}
@@ -455,6 +456,7 @@ export function ExpedientesTable({
                   expirado={expediente.estudio_vigente?.expirado}
                   estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
                   esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
+                  sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
                   rolInterno={interno}
                 />
               </div>

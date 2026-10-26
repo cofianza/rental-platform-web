@@ -22,6 +22,8 @@ export interface IEstudioVigente {
   estado_bloqueo?: EstadoBloqueo | null
   /** Adenda 3 V2 §6: aprobado con condición de presentar un coarrendatario («Está cerca»). */
   condicion_coarrendatario?: { vence_en: string; ingreso_adicional_requerido: number | null } | null
+  /** Autorizó y está pagada, pero la consulta no arrancó sola: hay que lanzarla desde el detalle. */
+  sin_ejecutar?: boolean
 }
 
 /** Filtro de la vista fusionada por el estado del estudio vigente. */
