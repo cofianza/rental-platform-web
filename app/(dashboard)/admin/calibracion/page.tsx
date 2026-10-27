@@ -83,6 +83,8 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   PUNTOS_DTI_COMPORTAMIENTO_ALTO: { nombre: 'Puntos de endeudamiento con el puntaje alto', grupo: 'capacidad', unidad: 'puntos' },
   PUNTOS_DTI_COMPORTAMIENTO_MEDIO: { nombre: 'Puntos de endeudamiento con el puntaje medio', grupo: 'capacidad', unidad: 'puntos' },
   FACTOR_CUOTA_MINIMA_TARJETA: { nombre: 'Parte del saldo que cuenta como cuota de una tarjeta', grupo: 'capacidad', unidad: 'num' },
+  DIAS_VIGENCIA_INGRESO_VERIFICADO: { nombre: 'Vigencia de un ingreso verificado (desde la fecha del soporte)', grupo: 'capacidad', unidad: 'dias' },
+  DIAS_VIGENCIA_CERTIFICACION_LABORAL: { nombre: 'Antigüedad máxima de la certificación laboral', grupo: 'capacidad', unidad: 'dias' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
