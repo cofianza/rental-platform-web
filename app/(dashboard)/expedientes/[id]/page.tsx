@@ -146,6 +146,8 @@ export default function ExpedienteDetallePage() {
 
   // Estado de tabs
   const [activeTab, setActiveTab] = useState('resumen')
+  // Cada clic en «Reevaluar con documentos» del banner abre la apelación del titular.
+  const [pedidoReevaluar, setPedidoReevaluar] = useState(0)
   // Documentos queda montado (oculto) por el contador de pendientes; al abrir
   // la pestaña se remonta para traer lo último, como antes.
   const [visitasDocumentos, setVisitasDocumentos] = useState(0)
@@ -677,6 +679,14 @@ export default function ExpedienteDetallePage() {
               <ExpedienteRechazadoBanner
                 motivo={textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                 esProspecto={user?.rol === 'solicitante'}
+                onReevaluar={
+                  user?.rol === 'administrador' || user?.rol === 'operador_analista'
+                    ? () => {
+                        setActiveTab('estudios')
+                        setPedidoReevaluar((n) => n + 1)
+                      }
+                    : undefined
+                }
               />
             ) : expediente.estado === 'cerrado' && expediente.cancelado_at ? (
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
@@ -1151,6 +1161,7 @@ export default function ExpedienteDetallePage() {
               solicitante={expediente.solicitante}
               onEstudioActualizado={fetchExpediente}
               coarrendatarioVigente={coarrendatarioVigente}
+              pedidoReevaluar={pedidoReevaluar}
             />
 
             {/* La decisión del condicionado vive en el Resumen (un solo lugar);
