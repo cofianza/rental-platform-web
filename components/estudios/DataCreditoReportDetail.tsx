@@ -638,7 +638,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             />
             {cargaIngreso !== null && (
               <InfoRow
-                label="Cuota sobre ingreso estimado"
+                label="Cuota sobre ingreso, según la central"
                 value={
                   <span className="text-gray-900">
                     {cargaIngreso}%
@@ -648,6 +648,10 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                         · entre {cargaIngresoPiso}% y {cargaIngresoTecho}% según el rango del ingreso
                       </span>
                     )}
+                    {/* 27-oct: se leía como el endeudamiento con que decide Cofianza. */}
+                    <span className="block ml-auto max-w-xs text-[10px] text-gray-500 font-normal">
+                      Dato del reporte. No es el endeudamiento que evalúa Cofianza: ese ajusta el ingreso estimado y suma la cuota de la fianza.
+                    </span>
                   </span>
                 }
               />
