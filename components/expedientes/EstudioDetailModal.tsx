@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
@@ -48,6 +48,8 @@ interface EstudioDetailModalProps {
     tipo_documento?: string | null
     numero_documento?: string | null
   } | null
+  /** Abre desplazado a la reevaluación (apelación): viene del banner del rechazo. */
+  irAReevaluacion?: boolean
 }
 
 const PROVEEDOR_LABELS: Record<string, string> = {
@@ -114,7 +116,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
   const rol = useAuthStore((s) => s.user?.rol)
   // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
@@ -125,6 +127,13 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const [generatingCert, setGeneratingCert] = useState(false)
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
+  const reevaluacionRef = useRef<HTMLDivElement>(null)
+  // Con el historial ya pintado la sección tiene su alto final.
+  useEffect(() => {
+    if (!isOpen || !irAReevaluacion || !historial) return
+    const t = setTimeout(() => reevaluacionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
+    return () => clearTimeout(t)
+  }, [isOpen, irAReevaluacion, historial])
   // Quién paga según el cobro real (A10). `estudios.pago_por` se quedaba en
   // 'arrendatario' si el gestor eligió enviar el link y después pagó él. El
   // cobro del expediente es el del titular: el estudio del coarrendatario
@@ -533,12 +542,14 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
             {/* Re-evaluacion section — solo gestores (admin/operador) */}
             {isReevaluable && !readOnly && (
-              <ReEvaluacionSection
-                estudio={estudio}
-                historial={historial}
-                onReEvaluacionCreated={handleReEvaluacionCreated}
-                onDocumentoAdded={handleDocumentoAdded}
-              />
+              <div ref={reevaluacionRef} className="scroll-mt-4">
+                <ReEvaluacionSection
+                  estudio={estudio}
+                  historial={historial}
+                  onReEvaluacionCreated={handleReEvaluacionCreated}
+                  onDocumentoAdded={handleDocumentoAdded}
+                />
+              </div>
             )}
         </div>
 

@@ -7,7 +7,7 @@
 
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -140,6 +140,8 @@ interface EstudiosSectionProps {
   onEstudioActualizado?: () => void
   /** P3 y Decisión 2: la evaluación del coarrendatario se reintenta mientras su invitación siga en pie. */
   coarrendatarioVigente?: boolean
+  /** Sube con cada «Reevaluar con documentos» del banner: abre el detalle del titular en la apelación. */
+  pedidoReevaluar?: number
 }
 
 export function EstudiosSection({
@@ -147,6 +149,7 @@ export function EstudiosSection({
   solicitante,
   onEstudioActualizado,
   coarrendatarioVigente = true,
+  pedidoReevaluar = 0,
 }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -169,6 +172,9 @@ export function EstudiosSection({
   // Modals
   const [showSolicitar, setShowSolicitar] = useState(false)
   const [showDetail, setShowDetail] = useState<IEstudio | null>(null)
+  const [irAReevaluacion, setIrAReevaluacion] = useState(false)
+  // La lista se vuelve a pedir sola: sin esto el modal se reabría en cada recarga.
+  const pedidoAtendido = useRef(0)
   const [cancelTarget, setCancelTarget] = useState<IEstudio | null>(null)
   const [resultadoTarget, setResultadoTarget] = useState<IEstudio | null>(null)
   // Enviar enlace: modal con el email visible y corregible ANTES de enviar
@@ -198,6 +204,18 @@ export function EstudiosSection({
   useEffect(() => {
     fetchEstudios()
   }, [fetchEstudios, version])
+
+  // Banner del rechazo: abre la evaluación más reciente del titular, ya en la apelación.
+  useEffect(() => {
+    if (!pedidoReevaluar || pedidoReevaluar === pedidoAtendido.current) return
+    const titular = estudios
+      .filter((e) => e.tipo !== 'con_coarrendatario' && e.estado === 'completado' && e.resultado !== 'aprobado')
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    if (!titular) return
+    pedidoAtendido.current = pedidoReevaluar
+    setShowDetail(titular)
+    setIrAReevaluacion(true)
+  }, [pedidoReevaluar, estudios])
 
   // Tras una acción: con padre, recarga el estudio (y esta lista con él);
   // sin padre, solo la lista.
@@ -607,7 +625,11 @@ export function EstudiosSection({
 
       <EstudioDetailModal
         isOpen={!!showDetail}
-        onClose={() => setShowDetail(null)}
+        onClose={() => {
+          setShowDetail(null)
+          setIrAReevaluacion(false)
+        }}
+        irAReevaluacion={irAReevaluacion}
         estudio={showDetail}
         readOnly={!canManage}
         solicitante={showDetail ? getSolicitanteParaModal(showDetail, solicitante) : solicitante}

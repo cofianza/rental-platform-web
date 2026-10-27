@@ -31,6 +31,8 @@ interface ExpedienteRechazadoBannerProps {
   motivo?: string | null
   /** true cuando quien mira es el propio solicitante (rol 'solicitante'). */
   esProspecto?: boolean
+  /** Analista o administrador: abre la reevaluación (apelación, Política §11) del titular. */
+  onReevaluar?: () => void
 }
 
 // Neutro (P34): no culpa a la evaluación crediticia cuando pudo decidirlo un analista.
@@ -54,7 +56,7 @@ export function NotaApelacion({ className = '' }: { className?: string }) {
   )
 }
 
-export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRechazadoBannerProps) {
+export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar }: ExpedienteRechazadoBannerProps) {
   if (esProspecto) {
     return (
       <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
@@ -88,9 +90,33 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto }: ExpedienteRec
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio no aprobable</h3>
           <p className="text-sm text-red-800">{motivo || MOTIVO_FALLBACK}</p>
-          <p className="text-xs text-red-700 mt-2">
-            El flujo termina aquí. Si tiene dudas sobre esta decisión, escríbanos.
-          </p>
+          {/* 27-oct: «El flujo termina aquí» escondía la apelación (Política §11). */}
+          {onReevaluar ? (
+            <div className="mt-3">
+              <p className="text-xs text-red-800">
+                ¿Llegaron documentos que cambian el resultado, por ejemplo el ingreso real del
+                solicitante? Se puede reevaluar dentro de los 15 días hábiles siguientes a esta
+                decisión, sin volver a consultar la central.
+              </p>
+              <button
+                type="button"
+                onClick={onReevaluar}
+                className="mt-2 inline-flex items-center rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100"
+              >
+                Reevaluar con documentos
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-red-700 mt-2">
+              ¿Tiene documentos que cambian el resultado, por ejemplo el ingreso real del
+              solicitante? Puede apelar enviándolos a{' '}
+              <a href="mailto:hola@cofianza.co" className="font-medium underline">
+                hola@cofianza.co
+              </a>{' '}
+              dentro de los 15 días hábiles siguientes a esta decisión. Cofianza responde en máximo
+              10 días hábiles.
+            </p>
+          )}
         </div>
       </div>
     </div>
