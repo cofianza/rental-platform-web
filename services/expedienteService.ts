@@ -520,6 +520,12 @@ class ExpedienteService {
    * Tarea 3.2: marca la cita como omitida (visita ya coordinada por fuera),
    * lo que permite habilitar el estudio sin exigir una cita 'realizada'.
    */
+  /** Lo que impide aprobar el condicionado ahora; null si nada lo impide. */
+  async bloqueoAprobacion(expedienteId: string): Promise<{ codigo: string; motivo: string } | null> {
+    const response = await apiClient.get<{ bloqueo: { codigo: string; motivo: string } | null }>(`/expedientes/${expedienteId}/aprobacion-bloqueo`)
+    return response.data.bloqueo
+  }
+
   /** El administrador le recuerda al analista un estudio condicionado (uno cada 2 horas). */
   async recordarAnalista(expedienteId: string): Promise<{ enviado_a: number }> {
     const response = await apiClient.post<{ enviado_a: number }>(`/expedientes/${expedienteId}/recordatorio-analista`, {})
