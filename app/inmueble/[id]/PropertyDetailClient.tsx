@@ -220,7 +220,11 @@ export function PropertyDetailClient({ property, similares }: Props) {
                 )}
                 <SpecItem icon={IconBed} label="Habitaciones" value={String(property.habitaciones)} />
                 <SpecItem icon={IconBath} label="Baños" value={String(property.banos)} />
-                <SpecItem icon={IconCar} label="Parqueadero" value={property.parqueadero ? 'Sí' : 'No'} />
+                <SpecItem
+                  icon={IconCar}
+                  label="Parqueadero"
+                  value={property.parqueadero && property.parqueadero_moto ? 'Carro y moto' : property.parqueadero ? 'Carro' : property.parqueadero_moto ? 'Moto' : 'No'}
+                />
               </div>
 
               {/* Published date */}
