@@ -61,9 +61,12 @@ export function CambiosCorreccion({ campos }: { campos: Pick<CampoCorregido, 'ca
 
 // ── Modal «Corregir con acta» ──
 
-type Entrada = 'text' | 'number' | 'date' | 'email' | 'tipo'
+type Entrada = 'text' | 'number' | 'date' | 'tipo'
 
-/** Columnas de la plantilla que se corrigen por acta, con su valor actual (mismo orden y regla que la API). */
+/**
+ * Columnas de la plantilla que se corrigen por acta, con su valor actual (mismo orden y regla que la API).
+ * Adenda 1: el nombre va completo y el contacto ya no es dato de migración.
+ */
 const CAMPOS: { campo: CampoCorregible; etiqueta: string; entrada: Entrada; actual: (d: DatosFilaMigrada) => string | number | null }[] = [
   { campo: 'direccion', etiqueta: 'Dirección', entrada: 'text', actual: (d) => d.direccion },
   { campo: 'municipio', etiqueta: 'Municipio', entrada: 'text', actual: (d) => d.municipio },
@@ -71,12 +74,15 @@ const CAMPOS: { campo: CampoCorregible; etiqueta: string; entrada: Entrada; actu
   { campo: 'canon', etiqueta: 'Canon sin IVA', entrada: 'number', actual: (d) => d.canon },
   { campo: 'fecha_inicio', etiqueta: 'Fecha de inicio', entrada: 'date', actual: (d) => d.fecha_inicio },
   { campo: 'fecha_vencimiento', etiqueta: 'Fecha de vencimiento', entrada: 'date', actual: (d) => d.fecha_vencimiento },
-  { campo: 'arrendatario_nombre', etiqueta: 'Nombre del arrendatario', entrada: 'text', actual: (d) => d.arrendatario.nombre },
-  { campo: 'arrendatario_apellido', etiqueta: 'Apellido del arrendatario', entrada: 'text', actual: (d) => d.arrendatario.apellido || null },
+  // En un lote anterior a la Adenda 1, nombres y apellidos iban aparte: se muestran juntos.
+  {
+    campo: 'arrendatario_nombre',
+    etiqueta: 'Nombre completo del arrendatario',
+    entrada: 'text',
+    actual: (d) => [d.arrendatario.nombre, d.arrendatario.apellido].filter(Boolean).join(' ') || null,
+  },
   { campo: 'arrendatario_tipo_documento', etiqueta: 'Tipo de documento', entrada: 'tipo', actual: (d) => d.arrendatario.tipo_documento },
   { campo: 'arrendatario_numero_documento', etiqueta: 'Número de documento', entrada: 'text', actual: (d) => d.arrendatario.numero_documento },
-  { campo: 'arrendatario_celular', etiqueta: 'Celular', entrada: 'text', actual: (d) => d.arrendatario.celular },
-  { campo: 'arrendatario_email', etiqueta: 'Correo', entrada: 'email', actual: (d) => d.arrendatario.email },
 ]
 
 interface Item {

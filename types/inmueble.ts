@@ -35,10 +35,12 @@ export interface IInmueble {
   ciudad: string
   barrio?: string | null
   departamento: string
-  tipo: TipoInmueble
+  /** null en inmuebles creados por migración de cartera (Adenda 1 §2). */
+  tipo: TipoInmueble | null
   uso: UsoInmueble
   destinacion?: string | null
-  estrato: number
+  /** null en inmuebles creados por migración de cartera (Adenda 1 §2). */
+  estrato: number | null
   valor_arriendo: number
   valor_comercial?: number | null
   administracion: number

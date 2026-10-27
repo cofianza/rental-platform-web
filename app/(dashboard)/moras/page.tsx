@@ -917,7 +917,13 @@ function MoraDetalleModal({
                         ? 'Sin definir'
                         : mora.reportable_centrales.reportable
                           ? 'REPORTABLE'
-                          : `NO REPORTABLE${mora.reportable_centrales.motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
+                          : `NO REPORTABLE${
+                              mora.reportable_centrales.motivo === 'formato_anterior'
+                                ? ' (formato anterior)'
+                                : mora.reportable_centrales.motivo === 'sin_autorizacion_reporte'
+                                  ? ' (el contrato no lo autoriza)'
+                                  : ''
+                            }`
                     }
                   />
                 )}

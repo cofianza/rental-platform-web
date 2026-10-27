@@ -117,7 +117,7 @@ function AuditoriasAbiertas() {
 const INPUT =
   'rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50'
 
-/** Reportes en Excel: liquidación mensual de la tarifa (§4.7) y contratos sobre formato anterior (§8.5). */
+/** Reportes en Excel: liquidación mensual de la tarifa (§4.7) y contratos NO REPORTABLES por su texto (§8.5, Adenda 1 §4.6). */
 function Reportes({ orgs }: { orgs: { id: string; nombre: string }[] }) {
   const [mes, setMes] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }).slice(0, 7))
   const [orgId, setOrgId] = useState('')
@@ -159,7 +159,7 @@ function Reportes({ orgs }: { orgs: { id: string; nombre: string }[] }) {
         <IconDownload size={16} /> {ocupado === 'liquidacion' ? 'Descargando…' : 'Liquidación mensual'}
       </Button>
       <Button variante="secondary" onClick={() => bajar('formato')} disabled={!!ocupado}>
-        <IconDownload size={16} /> {ocupado === 'formato' ? 'Descargando…' : 'Contratos sobre formato anterior'}
+        <IconDownload size={16} /> {ocupado === 'formato' ? 'Descargando…' : 'Contratos sin autorización de reporte'}
       </Button>
     </div>
   )
@@ -320,7 +320,7 @@ export default function MigracionPage() {
       <section>
         <SeccionHeader
           title="Reportes"
-          subtitle="Liquidación de la tarifa mensual de la cartera migrada y contratos firmados sobre un formato anterior al revisado (quedan NO REPORTABLES salvo verificación)."
+          subtitle="Liquidación de la tarifa mensual de la cartera migrada y contratos que no autorizan el reporte a centrales o se firmaron sobre un formato anterior al revisado (quedan NO REPORTABLES salvo verificación)."
         />
         {!loading && !error && <Reportes orgs={orgs} />}
       </section>

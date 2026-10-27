@@ -141,6 +141,7 @@ export default function CargaMigracionPage() {
   }
 
   const resumen = validacion?.resumen
+  const lote = validacion?.declaracion_lote
   const usables = resumen ? resumen.aceptadas + resumen.advertencias : 0
   const filas = (validacion?.filas ?? []).filter((f) => !filtro || f.resultado === filtro)
   const repCompleto = Object.values(rep).every((v) => v.trim().length > 0)
@@ -270,6 +271,14 @@ export default function CargaMigracionPage() {
               </Button>
             }
           />
+          {/* Adenda 1 §4.5: lo que el archivo declara para el lote; las columnas vacías toman estos valores. */}
+          {lote && (
+            <p className="mb-3 text-sm text-gray-700">
+              <span className="font-semibold">Datos del lote (hoja Instrucciones):</span> municipio {lote.municipio ?? 'sin indicar'} · tipo de
+              documento {lote.tipo_documento ?? 'sin indicar'} · autoriza el reporte a centrales:{' '}
+              {lote.autoriza_reporte == null ? 'sin indicar (cada contrato debe traer su respuesta)' : lote.autoriza_reporte ? 'Sí' : 'No'}.
+            </p>
+          )}
           <KpiRow cols={4}>
             <Kpi label="Filas" value={resumen.total} onClick={() => setFiltro('')} active={!filtro} />
             <Kpi label="Aceptadas" value={resumen.aceptadas} tone="green" Icon={IconCheckCircle} onClick={() => toggle('aceptada')} active={filtro === 'aceptada'} />
@@ -300,7 +309,7 @@ export default function CargaMigracionPage() {
                   </Td>
                   <Td className="whitespace-nowrap">{f.canon == null ? '—' : money(f.canon)}</Td>
                   <Td>{f.reportable == null ? '—' : f.reportable ? 'Sí' : 'No'}</Td>
-                  <Td className="whitespace-nowrap">{f.tarifa_pct == null ? '—' : `${f.tarifa_pct} %`}</Td>
+                  <Td className="whitespace-nowrap">{f.tarifa_pct == null ? '—' : `${f.tarifa_pct.toLocaleString('es-CO')} %`}</Td>
                   <Td className="min-w-64">
                     {f.motivos.length === 0 && f.advertencias.length === 0 && '—'}
                     <ul className="space-y-0.5">

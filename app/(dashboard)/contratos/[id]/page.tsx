@@ -869,7 +869,13 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
       ? '—'
       : m.reportable
         ? 'Se reporta'
-        : `No se reporta${m.reportable_motivo === 'formato_anterior' ? ' (formato anterior)' : ''}`
+        : `No se reporta${
+            m.reportable_motivo === 'formato_anterior'
+              ? ' (formato anterior)'
+              : m.reportable_motivo === 'sin_autorizacion_reporte'
+                ? ' (el contrato no lo autoriza)'
+                : ''
+          }`
 
   async function abrirActa(url: () => Promise<string>, clave = 'migracion') {
     setAbriendo(clave)
