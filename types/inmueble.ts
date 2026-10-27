@@ -47,6 +47,8 @@ export interface IInmueble {
   banos: number
   parqueadero: boolean
   parqueaderos: number
+  /** Parqueadero de moto (`parqueadero` es el de carro). */
+  parqueadero_moto?: boolean | null
   piso?: string | null
   latitud?: number | null
   longitud?: number | null
@@ -117,6 +119,7 @@ export interface IInmuebleCreateData {
   banos?: number
   parqueadero?: boolean
   parqueaderos?: number
+  parqueadero_moto?: boolean
   piso?: string
   latitud?: number
   longitud?: number
@@ -149,6 +152,7 @@ export interface IInmuebleUpdateData {
   banos?: number
   parqueadero?: boolean
   parqueaderos?: number | null
+  parqueadero_moto?: boolean
   piso?: string | null
   latitud?: number | null
   longitud?: number | null

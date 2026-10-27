@@ -19,6 +19,7 @@ export interface PublicProperty {
   banos: number
   parqueadero: boolean
   parqueaderos: number
+  parqueadero_moto?: boolean | null
   valor_arriendo: number
   administracion: number
   descripcion: string | null

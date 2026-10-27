@@ -216,6 +216,7 @@ interface FormData {
   banos: number | ''
   parqueadero: boolean
   parqueaderos: number | ''
+  parqueadero_moto: boolean
   piso: string
   descripcion: string
   notas_internas: string
@@ -265,6 +266,7 @@ const initialFormData: FormData = {
   banos: '',
   parqueadero: false,
   parqueaderos: '',
+  parqueadero_moto: false,
   piso: '',
   descripcion: '',
   notas_internas: '',
@@ -413,6 +415,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         banos: inmueble.banos || '',
         parqueadero: inmueble.parqueadero,
         parqueaderos: inmueble.parqueaderos || '',
+        parqueadero_moto: inmueble.parqueadero_moto ?? false,
         piso: inmueble.piso || '',
         descripcion: inmueble.descripcion || '',
         notas_internas: inmueble.notas_internas || '',
@@ -537,6 +540,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           banos: formData.banos ? Number(formData.banos) : undefined,
           parqueadero: formData.parqueadero,
           parqueaderos: formData.parqueaderos ? Number(formData.parqueaderos) : undefined,
+          parqueadero_moto: formData.parqueadero_moto,
           piso: formData.piso || undefined,
           descripcion: formData.descripcion || undefined,
           notas_internas: formData.notas_internas || undefined,
@@ -607,6 +611,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           banos: Number(formData.banos || 0),
           parqueadero: formData.parqueadero,
           parqueaderos: formData.parqueaderos ? Number(formData.parqueaderos) : null,
+          parqueadero_moto: formData.parqueadero_moto,
           piso: formData.piso || null,
           descripcion: formData.descripcion || null,
           notas_internas: formData.notas_internas || null,
@@ -955,10 +960,10 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               />
             </Campo>
 
-            {/* Parqueadero: la casilla y la cantidad comparten celda para no correr la grilla. */}
+            {/* Parqueadero: de carro (con cantidad) y de moto, en la misma celda para no correr la grilla. */}
             <div>
               <span className="block text-sm font-medium text-gray-700 mb-1">Parqueadero</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label
                   htmlFor="parqueadero"
                   className="flex items-center gap-2 h-[38px] px-3 border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 has-[:checked]:border-primary-400 has-[:checked]:bg-primary-50"
@@ -971,13 +976,13 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     disabled={isSubmitting}
                     className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  Tiene
+                  Carro
                 </label>
                 {formData.parqueadero && (
                   <input
                     type="number"
                     id="parqueaderos"
-                    aria-label="Cantidad de parqueaderos"
+                    aria-label="Cantidad de parqueaderos de carro"
                     value={formData.parqueaderos}
                     onChange={(e) => handleChange('parqueaderos', e.target.value ? Number(e.target.value) : '')}
                     disabled={isSubmitting}
@@ -988,6 +993,20 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     className={cn(inputClasses(!!errors.parqueaderos), 'w-20')}
                   />
                 )}
+                <label
+                  htmlFor="parqueadero_moto"
+                  className="flex items-center gap-2 h-[38px] px-3 border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 has-[:checked]:border-primary-400 has-[:checked]:bg-primary-50"
+                >
+                  <input
+                    type="checkbox"
+                    id="parqueadero_moto"
+                    checked={formData.parqueadero_moto}
+                    onChange={(e) => handleChange('parqueadero_moto', e.target.checked)}
+                    disabled={isSubmitting}
+                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  Moto
+                </label>
               </div>
               {errors.parqueaderos && <p className="mt-1 text-xs text-red-600">{errors.parqueaderos}</p>}
             </div>

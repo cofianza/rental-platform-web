@@ -705,7 +705,7 @@ export default function InmuebleDetailPage() {
                           <p className="text-sm font-medium text-gray-900">
                             {inmueble.parqueadero ? inmueble.parqueaderos || 1 : 0}
                           </p>
-                          <p className="text-xs text-gray-500">Parqueaderos</p>
+                          <p className="text-xs text-gray-500">{inmueble.parqueadero_moto ? 'Parqueaderos de carro · con parqueadero de moto' : 'Parqueaderos de carro'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
