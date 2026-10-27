@@ -26,10 +26,10 @@
 
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
-import { IconShieldCheck } from '@/components/icons'
+import { IconShieldCheck, IconAlertTriangle } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
@@ -85,6 +85,18 @@ export function AprobarCondicionadoCard({
   const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
+  // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
+  // se dice antes del formulario, no al final después de llenarlo.
+  const [bloqueo, setBloqueo] = useState<{ codigo: string; motivo: string } | null>(null)
+  useEffect(() => {
+    if (!esCofianza || expedienteEstado !== 'condicionado' || condicion) return
+    let cancel = false
+    expedienteService.bloqueoAprobacion(expedienteId).then(
+      (b) => { if (!cancel) setBloqueo(b) },
+      () => {},
+    )
+    return () => { cancel = true }
+  }, [esCofianza, expedienteEstado, condicion, expedienteId])
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
@@ -257,9 +269,19 @@ export function AprobarCondicionadoCard({
                     Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
+                  {bloqueo && (
+                    <div role="status" className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Todavía no se puede aprobar</p>
+                        <p>{bloqueo.motivo}</p>
+                        <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
+                      </div>
+                    </div>
+                  )}
                   <button
                     onClick={() => setConfirmAprobarOpen(true)}
-                    disabled={loading || enviandoEnlace}
+                    disabled={loading || enviandoEnlace || !!bloqueo}
                     className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
                   >
                     {loading ? 'Aprobando…' : 'Aprobar estudio'}
