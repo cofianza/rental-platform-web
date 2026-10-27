@@ -398,8 +398,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         direccion: inmueble.direccion,
         ciudad: inmueble.ciudad,
         departamento: inmueble.departamento,
-        tipo: inmueble.tipo,
-        estrato: inmueble.estrato,
+        // Un inmueble migrado puede no traerlos: el formulario los sigue exigiendo.
+        tipo: inmueble.tipo ?? '',
+        estrato: inmueble.estrato ?? '',
         valor_arriendo: inmueble.valor_arriendo,
         propietario_id: inmueble.propietario_id,
         foto_fachada_url: inmueble.foto_fachada_url || '',

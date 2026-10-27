@@ -6,7 +6,8 @@
 import { cn } from '@/lib/utils'
 
 interface EstratoIndicatorProps {
-  estrato: number
+  /** null: inmueble migrado sin estrato (Adenda 1 de migración §2). */
+  estrato: number | null
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
 }
@@ -36,8 +37,9 @@ export function EstratoIndicator({
   size = 'md',
   showLabel = true
 }: EstratoIndicatorProps) {
-  const validEstrato = Math.min(Math.max(estrato, 1), ESTRATO_MAX)
   const config = SIZE_CONFIG[size]
+  if (estrato == null) return <span className={cn('text-gray-500', config.text)}>—</span>
+  const validEstrato = Math.min(Math.max(estrato, 1), ESTRATO_MAX)
 
   return (
     <div className="flex flex-col gap-1">

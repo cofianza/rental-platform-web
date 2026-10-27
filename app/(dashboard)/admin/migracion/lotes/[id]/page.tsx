@@ -608,6 +608,7 @@ export default function LoteMigracionPage() {
               <Chip tone={ESTADO[det.estado].tone}>{det.estado_etiqueta}</Chip>
               <Marca reportable={det.reportable} />
               {det.reportable_motivo === 'formato_anterior' && <Chip tone="gray">Firmado sobre formato anterior</Chip>}
+              {det.reportable_motivo === 'sin_autorizacion_reporte' && <Chip tone="gray">El contrato no autoriza el reporte</Chip>}
               {det.contrato && (
                 <Link href={`/contratos/${det.contrato.id}`} className="text-xs font-semibold text-primary-700 hover:underline">
                   Ver contrato {det.contrato.numero ?? ''}
@@ -645,8 +646,16 @@ export default function LoteMigracionPage() {
               </Dato>
               <Dato label="Activación">{fechaCorta(det.contrato?.fecha_firma)}</Dato>
               <Dato label="Declaraciones">
-                Al día: {siNo(det.datos.declaraciones.al_dia)} · Mora {t?.lote.meses_sin_mora ?? 6} meses: {siNo(det.datos.declaraciones.mora_reciente)} · Plantilla
-                entregada: {siNo(det.datos.declaraciones.plantilla_entregada)}
+                Al día: {siNo(det.datos.declaraciones.al_dia)} · Mora {t?.lote.meses_sin_mora ?? 6} meses: {siNo(det.datos.declaraciones.mora_reciente)} ·{' '}
+                {/* Adenda 1 §4: la autorización de reporte reemplaza a «plantilla entregada» (lotes anteriores). */}
+                {'autoriza_reporte' in det.datos.declaraciones ? (
+                  <>
+                    Autoriza el reporte: {siNo(det.datos.declaraciones.autoriza_reporte ?? null)}
+                    {det.datos.declaraciones.autoriza_reporte_excepcion && ' (excepción al lote)'}
+                  </>
+                ) : (
+                  <>Plantilla entregada: {siNo(det.datos.declaraciones.plantilla_entregada ?? null)}</>
+                )}
               </Dato>
               <Dato label="Tarifa en el acta">{pct(det.tarifa_acta_pct)}</Dato>
               <Dato label="Tarifa vigente">
@@ -679,7 +688,7 @@ export default function LoteMigracionPage() {
                       Marcar en revisión
                     </Button>
                   ))}
-                {vigente && det.reportable === false && det.reportable_motivo === 'formato_anterior' && (
+                {vigente && det.reportable === false && ['formato_anterior', 'sin_autorizacion_reporte'].includes(det.reportable_motivo ?? '') && (
                   <Button variante="secondary" tamano="sm" onClick={() => setDialogo({ tipo: 'verificacion' })} disabled={!!ocupado}>
                     <IconFileCheck size={14} /> Verificación individual
                   </Button>
@@ -939,7 +948,7 @@ export default function LoteMigracionPage() {
         isOpen={dialogo?.tipo === 'verificacion'}
         onClose={() => setDialogo(null)}
         title="Registrar verificación individual"
-        message="Confirme que un analista revisó este contrato firmado sobre un formato anterior y que autoriza el reporte a centrales al acreedor o subrogatario. El contrato pasa a REPORTABLE y la tarifa baja a la base desde el mes siguiente."
+        message="Confirme que un analista revisó el texto de este contrato y que autoriza el reporte a centrales de riesgo al acreedor o subrogatario. El contrato pasa a REPORTABLE y la tarifa baja a la base desde el mes siguiente."
         confirmLabel="Registrar"
         onConfirm={async () => {
           if (det)

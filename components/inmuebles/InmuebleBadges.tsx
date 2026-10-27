@@ -83,13 +83,15 @@ export function EstudiosActivosBadge({ count, reservado, arrendado }: EstudiosAc
 }
 
 interface TipoBadgeProps {
-  tipo: TipoInmueble
+  /** null: inmueble migrado sin tipo (Adenda 1 de migración §2). */
+  tipo: TipoInmueble | null
 }
 
 /**
  * Badge de tipo de inmueble
  */
 export function TipoBadge({ tipo }: TipoBadgeProps) {
+  if (!tipo) return <span className="text-xs text-gray-500">—</span>
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${TIPO_BADGE_CLASSES[tipo]}`}
@@ -100,13 +102,15 @@ export function TipoBadge({ tipo }: TipoBadgeProps) {
 }
 
 interface EstratoBadgeProps {
-  estrato: number
+  /** null: inmueble migrado sin estrato (Adenda 1 de migración §2). */
+  estrato: number | null
 }
 
 /**
  * Badge de estrato socioeconómico
  */
 export function EstratoBadge({ estrato }: EstratoBadgeProps) {
+  if (estrato == null) return <span className="text-xs text-gray-500">—</span>
   const colors: Record<number, string> = {
     1: 'bg-red-100 text-red-800',
     2: 'bg-orange-100 text-orange-800',

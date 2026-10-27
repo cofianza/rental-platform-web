@@ -392,7 +392,7 @@ export function ReasignarEstudioModal({
                       <IconMapPin size={12} />
                       {inm.direccion}, {inm.ciudad}
                       {' · '}
-                      {TIPO_LABELS[inm.tipo] ?? inm.tipo}
+                      {inm.tipo ? TIPO_LABELS[inm.tipo] ?? inm.tipo : '—'}
                     </p>
                     {otraCartera && (
                       <p className="mt-1 text-xs text-gray-500">

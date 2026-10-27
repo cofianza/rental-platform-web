@@ -608,7 +608,7 @@ export default function InmuebleDetailPage() {
                       <div>
                         <dt className="text-gray-500">Tipo</dt>
                         <dd className="text-gray-900 font-medium">
-                          {TIPO_LABELS[inmueble.tipo]}
+                          {inmueble.tipo ? TIPO_LABELS[inmueble.tipo] : '—'}
                         </dd>
                       </div>
                       <div>

@@ -111,8 +111,19 @@ export interface FilaValidacion {
   tarifa_pct: number | null
 }
 
+/** Adenda 1 §4.3: lo declarado una vez para el lote en la hoja Instrucciones. */
+export interface DeclaracionLote {
+  al_dia: boolean
+  mora_reciente: boolean
+  /** null = el lote no declaró una respuesta común (cada contrato trae la suya). */
+  autoriza_reporte: boolean | null
+  municipio: string | null
+  tipo_documento: string | null
+}
+
 export interface ValidacionResultado {
   resumen: ResumenValidacion
+  declaracion_lote: DeclaracionLote
   filas: FilaValidacion[]
 }
 
@@ -269,11 +280,11 @@ export interface DatosFilaMigrada {
   codigo_interno: string | null
   inmueble_id?: string
   destinacion: Destinacion | null
+  /** Adenda 1 §2: opcionales, null desde la plantilla nueva. */
   tipo_inmueble: string | null
   estrato: number | null
   canon: number | null
   iva_canon_pct: number
-  cuota_administracion: number | null
   tarifa_base_pct?: number
   fecha_inicio: string | null
   fecha_vencimiento: string | null
@@ -288,10 +299,22 @@ export interface DatosFilaMigrada {
     email: string | null
   }
   coarrendatarios: PersonaMigrada[]
-  paga_servicios: string | null
-  paga_administracion: string | null
-  declaraciones: { al_dia: boolean | null; mora_reciente: boolean | null; plantilla_entregada: boolean | null }
+  /**
+   * Adenda 1 §4: autoriza_reporte (con excepción = difiere del lote) desde la plantilla nueva;
+   * plantilla_entregada en los lotes anteriores.
+   */
+  declaraciones: {
+    al_dia: boolean | null
+    mora_reciente: boolean | null
+    autoriza_reporte?: boolean | null
+    autoriza_reporte_excepcion?: boolean
+    plantilla_entregada?: boolean | null
+  }
   observaciones: string | null
+  /** Solo lotes anteriores a la Adenda 1 (§2: ya no se piden). */
+  cuota_administracion?: number | null
+  paga_servicios?: string | null
+  paga_administracion?: string | null
 }
 
 export interface AuditoriaMigracion {
@@ -330,7 +353,7 @@ export interface DetalleFilaMigrada {
   motivos: string[]
   advertencias: string[]
   reportable: boolean | null
-  /** Incluye 'formato_anterior' además de los MotivoReportable. */
+  /** Incluye 'sin_autorizacion_reporte' (Adenda 1) y 'formato_anterior' además de los MotivoReportable. */
   reportable_motivo: string | null
   tarifa_acta_pct: number | string | null
   tarifa_pct: number | string | null
@@ -361,7 +384,10 @@ export interface DetalleFilaMigrada {
 
 export type EstadoCorreccion = 'en_firma' | 'firmada' | 'aplicada' | 'sin_efecto'
 
-/** Columnas de la plantilla que se corrigen por acta (ni la destinación ni la inmobiliaria). */
+/**
+ * Datos que puede traer una corrección. Desde la Adenda 1 se proponen solo los de la plantilla
+ * nueva; apellidos, celular y correo quedan por las actas de lotes anteriores.
+ */
 export type CampoCorregible =
   | 'direccion'
   | 'municipio'
