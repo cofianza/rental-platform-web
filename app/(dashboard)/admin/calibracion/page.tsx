@@ -74,6 +74,15 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   BONO_COARRENDATARIO_80_89: { nombre: 'Puntos que suma un coarrendatario de 80 a 89', grupo: 'condicion', unidad: 'puntos' },
   BONO_COARRENDATARIO_90_100: { nombre: 'Puntos que suma un coarrendatario de 90 a 100', grupo: 'condicion', unidad: 'puntos' },
   INGRESO_COARRENDATARIO_COMPUTABLE: { nombre: 'Parte del ingreso del coarrendatario que se suma', grupo: 'condicion', unidad: 'pct' },
+  // Capacidad de pago sin ingreso verificado
+  ADENDA4: { nombre: 'Reglas de capacidad de pago sin ingreso verificado', grupo: 'capacidad', unidad: 'onoff', motivo: true },
+  MIN_CREDITOS_VIGENTES_COHERENCIA: { nombre: 'Créditos vigentes mínimos para «paga al día»', grupo: 'capacidad', unidad: 'num' },
+  MESES_VENTANA_COMPORTAMIENTO: { nombre: 'Meses sin mora de más de 30 días para «paga al día»', grupo: 'capacidad', unidad: 'meses' },
+  RATIO_COBERTURA_ALTA: { nombre: 'Veces el canon en cuotas para el puntaje alto', grupo: 'capacidad', unidad: 'num' },
+  RATIO_COBERTURA_MEDIA: { nombre: 'Veces el canon en cuotas para el puntaje medio', grupo: 'capacidad', unidad: 'num' },
+  PUNTOS_DTI_COMPORTAMIENTO_ALTO: { nombre: 'Puntos de endeudamiento con el puntaje alto', grupo: 'capacidad', unidad: 'puntos' },
+  PUNTOS_DTI_COMPORTAMIENTO_MEDIO: { nombre: 'Puntos de endeudamiento con el puntaje medio', grupo: 'capacidad', unidad: 'puntos' },
+  FACTOR_CUOTA_MINIMA_TARJETA: { nombre: 'Parte del saldo que cuenta como cuota de una tarjeta', grupo: 'capacidad', unidad: 'num' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
@@ -111,7 +120,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   DIAS_VIGENCIA_LOTE_SIN_FIRMA: { nombre: 'Plazo para firmar el Acta de Migración', grupo: 'migracion', unidad: 'dias' },
 }
 
-type Grupo = 'evaluacion' | 'condicion' | 'canon' | 'precios' | 'autorizacion' | 'contratos' | 'cobro' | 'migracion' | 'otros'
+type Grupo = 'evaluacion' | 'condicion' | 'capacidad' | 'canon' | 'precios' | 'autorizacion' | 'contratos' | 'cobro' | 'migracion' | 'otros'
 
 const GRUPOS: { id: Grupo; titulo: string; ayuda: string }[] = [
   { id: 'evaluacion', titulo: 'Evaluación del prospecto', ayuda: 'Puntajes con los que el motor aprueba, rechaza o manda a revisión manual.' },
@@ -119,6 +128,11 @@ const GRUPOS: { id: Grupo; titulo: string; ayuda: string }[] = [
     id: 'condicion',
     titulo: 'Aprobación con condición de coarrendatario',
     ayuda: 'Cuándo el motor dice «Está cerca» y pide un coarrendatario, en qué plazo, y cuánto suma el coarrendatario en puntos y en ingreso. Rigen con las reglas nuevas de coarrendatarios e ingreso encendidas.',
+  },
+  {
+    id: 'capacidad',
+    titulo: 'Capacidad de pago sin ingreso verificado',
+    ayuda: 'Cuando el ingreso es una estimación de la central, el endeudamiento y el canon sobre ingreso no rechazan: el caso va al analista y el endeudamiento se puntúa por cómo paga la persona. También corrige las tarjetas que reportan el saldo como cuota.',
   },
   { id: 'canon', titulo: 'Topes de canon', ayuda: 'Hasta qué canon se afianza y cuánto puede cambiar al hacer el contrato.' },
   { id: 'precios', titulo: 'Precios y paquetes', ayuda: 'Lo que se cobra por el estudio y las reglas de los paquetes de cupos.' },
