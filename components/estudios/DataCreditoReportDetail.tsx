@@ -636,7 +636,9 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                 )
               }
             />
-            {cargaIngreso !== null && (
+            {/* Adenda 4 §13 (C4): a la inmobiliaria y al propietario no se les muestra la línea cruda,
+                y la del motor es solo de Cofianza. */}
+            {cargaIngreso !== null && !externo && (
               <InfoRow
                 label="Cuota sobre ingreso, según la central"
                 value={
