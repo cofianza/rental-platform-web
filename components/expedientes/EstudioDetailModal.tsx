@@ -50,6 +50,11 @@ interface EstudioDetailModalProps {
   } | null
   /** Abre desplazado a la reevaluación (apelación): viene del banner del rechazo. */
   irAReevaluacion?: boolean
+  /**
+   * La apelación cambió desde este detalle (soporte, fecha de radicación o
+   * reevaluación creada): el banner del rechazo de la página ya no la refleja.
+   */
+  onApelacionCambiada?: () => void
 }
 
 const PROVEEDOR_LABELS: Record<string, string> = {
@@ -116,7 +121,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false, onApelacionCambiada }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
   const rol = useAuthStore((s) => s.user?.rol)
   // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
@@ -128,10 +133,21 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const [estudio, setEstudio] = useState<IEstudio | null>(initialEstudio)
   const [historial, setHistorial] = useState<IEstudioHistorial | null>(null)
   const reevaluacionRef = useRef<HTMLDivElement>(null)
+  // Una sola vez por apertura: el historial se recarga con cada soporte y con
+  // la fecha de radicación, y cada recarga devolvía la vista a la sección.
+  const desplazado = useRef(false)
   // Con el historial ya pintado la sección tiene su alto final.
   useEffect(() => {
-    if (!isOpen || !irAReevaluacion || !historial) return
-    const t = setTimeout(() => reevaluacionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
+    if (!isOpen) {
+      desplazado.current = false
+      return
+    }
+    if (!irAReevaluacion || !historial || desplazado.current) return
+    const t = setTimeout(() => {
+      if (!reevaluacionRef.current) return
+      desplazado.current = true
+      reevaluacionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 150)
     return () => clearTimeout(t)
   }, [isOpen, irAReevaluacion, historial])
   // Quién paga según el cobro real (A10). `estudios.pago_por` se quedaba en
@@ -271,10 +287,13 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   const handleReEvaluacionCreated = (nuevoEstudio: IEstudio) => {
     setEstudio(nuevoEstudio)
     fetchHistorial(nuevoEstudio.id)
+    onApelacionCambiada?.()
   }
 
+  // Soporte subido o fecha de radicación guardada: también mueven el plazo de la apelación.
   const handleDocumentoAdded = () => {
     if (estudio?.id) fetchHistorial(estudio.id)
+    onApelacionCambiada?.()
   }
 
   return (
@@ -572,35 +591,76 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
 const pesos = (n: number | null) => (n === null ? 'sin dato' : formatCurrency(n))
 
-/** Adenda 4 §13: cómo salió el endeudamiento con que decide Cofianza. Solo Cofianza (la API no lo manda a externos). */
+/**
+ * Adenda 4 §13: cómo salió el endeudamiento con que decide Cofianza. Con
+ * coarrendatarios válidos el máximo se mide con el del conjunto (Adenda 3 V2
+ * §6.6); el del solicitante solo, que fijó sus puntos de endeudamiento, va
+ * aparte y rotulado (sin dato si su central no estimó el ingreso). Solo
+ * Cofianza (la API no lo manda a externos).
+ */
 function EndeudamientoMotor({ e }: { e: IEndeudamientoMotor }) {
-  const supera = e.dti_pct > e.maximo_pct
+  const c = e.conjunto ?? null
+  // Sin el del conjunto la API siempre manda el del solicitante.
+  const decide = c ? c.dti_pct : e.dti_pct
+  if (decide === null) return null
+  const supera = decide > e.maximo_pct
+  const superaSolicitante = e.dti_pct !== null && e.dti_pct > e.maximo_pct
   const verificado = e.fuente === 'VERIFICADO_DOCUMENTAL'
+  // La fianza entra una sola vez, también en el conjunto.
+  const fianza = e.cuota_fianza_cop !== null ? ` + fianza ${pesos(e.cuota_fianza_cop)}` : ''
   const ingreso =
-    verificado || e.factor === null || e.factor === 1
+    verificado || e.factor === null || e.factor === 1 || e.ingreso_base_cop === null
       ? `ingreso ${verificado ? 'verificado' : 'estimado'} ${pesos(e.ingreso_ajustado_cop)}`
       : `ingreso estimado ${pesos(e.ingreso_base_cop)} × ${e.factor.toLocaleString('es-CO')} = ${pesos(e.ingreso_ajustado_cop)}`
+  const delSolicitante = (
+    <>
+      <p className="text-xs mt-1">
+        (cuotas {pesos(e.cuotas_cop)}
+        {fianza}) / {ingreso}
+      </p>
+      {/* Adenda 4 R1: sin ingreso verificado no rechaza, pero el resultado puede ser cualquiera (rechazo por puntaje u otra regla, condición de coarrendatario, analista). */}
+      {superaSolicitante && e.rama === 'sin_rechazo' && (
+        <p className="text-xs mt-1">
+          Supera el máximo sin ingreso verificado
+          {e.puntos_por_comportamiento !== null ? ` (paga al día: ${e.puntos_por_comportamiento} de 15 puntos de endeudamiento)` : ''}: por sí solo no
+          rechaza; el resultado sale del puntaje y de las demás reglas.
+        </p>
+      )}
+      {superaSolicitante && e.rama === 'regla_dura' && <p className="text-xs mt-1">Supera el máximo con un ingreso verificado: es una condición obligatoria.</p>}
+    </>
+  )
+  const losCoarrendatarios = c && c.coarrendatarios_validos > 1 ? 'los coarrendatarios' : 'el coarrendatario'
   return (
     <div>
-      <h4 className="text-sm font-medium text-gray-700 mb-1">Endeudamiento con el que decide Cofianza</h4>
+      <h4 className="text-sm font-medium text-gray-700 mb-1">
+        Endeudamiento con el que decide Cofianza{c ? ` (con ${losCoarrendatarios})` : ''}
+      </h4>
       <div className={`text-sm p-3 rounded-lg border ${supera ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-700'}`}>
         <p className="font-semibold">
-          {e.dti_pct.toLocaleString('es-CO')} % <span className="font-normal">(máximo {e.maximo_pct} %)</span>
+          {decide.toLocaleString('es-CO')} % <span className="font-normal">(máximo {e.maximo_pct} %)</span>
         </p>
-        <p className="text-xs mt-1">
-          (cuotas {pesos(e.cuotas_cop)}
-          {e.cuota_fianza_cop !== null ? ` + fianza ${pesos(e.cuota_fianza_cop)}` : ''}) / {ingreso}
-        </p>
-        {supera && e.rama === 'sin_rechazo' && (
+        {c ? (
           <p className="text-xs mt-1">
-            Supera el máximo con un ingreso estimado: no rechaza, lo decide un analista
-            {e.puntos_por_comportamiento !== null ? ` (paga al día: ${e.puntos_por_comportamiento} de 15 puntos de endeudamiento)` : ''}.
+            (cuotas {pesos(c.cuotas_cop)}
+            {fianza}) / ingreso {pesos(c.ingreso_ajustado_cop)}, con las cuotas y el ingreso{' '}
+            {c.coarrendatarios_validos === 1 ? 'del coarrendatario válido' : `de los ${c.coarrendatarios_validos} coarrendatarios válidos`}
           </p>
+        ) : (
+          delSolicitante
         )}
-        {supera && e.rama === 'regla_dura' && <p className="text-xs mt-1">Supera el máximo con un ingreso verificado: es una condición obligatoria.</p>}
         <p className="text-[11px] mt-1 text-gray-500">
           Es la cifra que cuenta para la decisión. La «cuota sobre ingreso» del reporte de la central es un dato crudo, sin el ajuste del ingreso ni la fianza.
         </p>
+        {c && (
+          <div className="mt-2 pt-2 border-t border-gray-200 text-gray-700">
+            <p className="text-xs font-medium">
+              {e.dti_pct === null
+                ? `Del solicitante sin ${losCoarrendatarios}: sin dato.`
+                : `Del solicitante sin ${losCoarrendatarios}: ${e.dti_pct.toLocaleString('es-CO')} %. El máximo del ${e.maximo_pct} % se mide con el del conjunto; este fijó sus puntos de endeudamiento.`}
+            </p>
+            {delSolicitante}
+          </div>
+        )}
       </div>
     </div>
   )

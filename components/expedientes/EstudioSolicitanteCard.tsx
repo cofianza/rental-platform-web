@@ -334,6 +334,25 @@ export function EstudioSolicitanteCard({
   // así que la card que corresponde ahí es la del cobro, no ésta.
   if (!estudio) return null
 
+  // La reevaluación (apelación) la decide un analista de Cofianza con los
+  // documentos: no se autoriza, no se paga ni se inicia desde aquí (la API
+  // responde 409). Antes caía en «Iniciar evaluación», una consulta nueva.
+  if (estudio.estudio_padre_id && estudio.estado !== 'completado' && estudio.estado !== 'cancelado') {
+    return (
+      <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
+        <div className="flex items-start gap-3">
+          <IconClock size={20} className="text-blue-700 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-blue-900 mb-0.5">Estamos revisando de nuevo su evaluación</p>
+            <p className="text-sm text-blue-800">
+              Un analista de Cofianza la revisa con los documentos adicionales. Le avisaremos el resultado.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Card "Firma tu autorización": el camino correcto cuando hay un enlace de
   // habeas data pendiente — al firmar, el estudio corre automáticamente
   // (orchestrator.onHabeasDataAutorizado). Vence con fecha real del token; si

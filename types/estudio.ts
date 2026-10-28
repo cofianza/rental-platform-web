@@ -307,6 +307,12 @@ export interface IEstudioHistorial {
   responder_hasta?: string | null
   /** 'AAAA-MM-DD': día en que el prospecto apeló por correo u otro canal, registrado por el analista. */
   fecha_radicacion_apelacion?: string | null
+  /**
+   * 'AAAA-MM-DD': último día en que el reporte de la central (la consulta del estudio original)
+   * sirve para decidir la apelación (Política §8: 30 días desde la consulta). Pasado ese día
+   * la reevaluación ya no se puede registrar.
+   */
+  reporte_vence_el?: string | null
   historial: IEstudioHistorialItem[]
 }
 
@@ -508,7 +514,11 @@ export interface ITarifaOverrideInput {
 }
 
 export interface IEndeudamientoMotor {
-  dti_pct: number
+  /**
+   * El del titular solo. null si su central no dio con qué calcularlo (sin estimador
+   * de ingreso): solo llega así cuando decidió el del conjunto.
+   */
+  dti_pct: number | null
   maximo_pct: number
   cuotas_cop: number | null
   cuota_fianza_cop: number | null
@@ -519,4 +529,14 @@ export interface IEndeudamientoMotor {
   /** 'regla_dura' (ingreso verificado) / 'sin_rechazo' (estimado) cuando supera el máximo. */
   rama: string | null
   puntos_por_comportamiento: number | null
+  /**
+   * Adenda 3 V2 §6.6: el endeudamiento del titular junto con sus coarrendatarios válidos.
+   * Cuando existe, el máximo se mide con él; el del titular fijó sus puntos de endeudamiento.
+   */
+  conjunto?: {
+    dti_pct: number
+    cuotas_cop: number | null
+    ingreso_ajustado_cop: number | null
+    coarrendatarios_validos: number
+  } | null
 }
