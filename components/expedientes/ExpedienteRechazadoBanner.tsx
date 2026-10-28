@@ -29,7 +29,7 @@ import { IconAlertTriangle, IconInfo } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudioHistorial } from '@/types/estudio'
-import { ESTUDIO_NUEVO, MAX_REEVALUACIONES, plazoEfectivoApelacion } from './ReEvaluacionSection'
+import { ESTUDIO_NUEVO, MAX_REEVALUACIONES, plazoEfectivoApelacion, reporteQueLimita } from './ReEvaluacionSection'
 
 interface ExpedienteRechazadoBannerProps {
   motivo?: string | null
@@ -63,7 +63,8 @@ const MOVIENDO_MS = 10 * 60_000
  */
 function leerApelacion(h: IEstudioHistorial) {
   const ultima = h.historial[h.historial.length - 1]
-  const reporte = h.reporte_vence_el ?? null
+  // Con la consulta adicional disponible (Adenda 4 V3 §15) el reporte no cierra la apelación.
+  const reporte = reporteQueLimita(h)
   const reporteVencido = !!reporte && hoyBogota() > reporte
   if (ultima?.estudio_padre_id) {
     // Aprobada, el estudio sale del rechazo en segundo plano y esta lectura pudo

@@ -313,6 +313,12 @@ export interface IEstudioHistorial {
    * la reevaluación ya no se puede registrar.
    */
   reporte_vence_el?: string | null
+  /**
+   * Adenda 4 V3 §15: vencido el reporte, Cofianza vuelve a consultar la central
+   * una vez por estudio, sin cobro ni cupo. Mientras esté disponible, el reporte
+   * no cierra la apelación. `resumen` solo llega a Cofianza.
+   */
+  consulta_apelacion?: { disponible: boolean; consultada_en: string | null; resumen: string | null }
   historial: IEstudioHistorialItem[]
 }
 

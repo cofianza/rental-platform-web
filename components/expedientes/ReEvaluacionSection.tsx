@@ -18,6 +18,7 @@ import {
   IconAlertTriangle,
   IconCheck,
   IconEye,
+  IconSearch,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { estudioService } from '@/services/estudioService'
@@ -68,9 +69,17 @@ function formatDate(dateStr: string): string {
  * central (§8: la reevaluación se registra contra él), el que llegue primero.
  */
 export function plazoEfectivoApelacion(
-  h: Pick<IEstudioHistorial, 'apelar_hasta' | 'responder_hasta' | 'reporte_vence_el'>,
+  h: Pick<IEstudioHistorial, 'apelar_hasta' | 'responder_hasta' | 'reporte_vence_el' | 'consulta_apelacion'>,
 ): string | null {
-  return [h.responder_hasta ?? h.apelar_hasta, h.reporte_vence_el].filter((d): d is string => !!d).sort()[0] ?? null
+  return [h.responder_hasta ?? h.apelar_hasta, reporteQueLimita(h)].filter((d): d is string => !!d).sort()[0] ?? null
+}
+
+/**
+ * El día en que el reporte de la central cierra la apelación. Con la consulta
+ * adicional disponible (Adenda 4 V3 §15) no la cierra: Cofianza vuelve a consultar.
+ */
+export function reporteQueLimita(h: Pick<IEstudioHistorial, 'reporte_vence_el' | 'consulta_apelacion'>): string | null {
+  return h.consulta_apelacion?.disponible ? null : (h.reporte_vence_el ?? null)
 }
 
 // ============================================
@@ -101,6 +110,7 @@ export function ReEvaluacionSection({
   const esAnalista = usePermissions().hasRole(['administrador', 'operador_analista'])
   const [fechaEditada, setFechaEditada] = useState<string | null>(null)
   const [guardandoFecha, setGuardandoFecha] = useState(false)
+  const [consultando, setConsultando] = useState(false)
 
   // Todos los hooks van antes de la salida temprana: con el return null
   // primero, si isReevaluable cambiaba con la sección montada React veía
@@ -180,8 +190,14 @@ export function ReEvaluacionSection({
   const dia = (d: string) => formatDate(`${d}T12:00:00`)
   const apelarHasta = historial?.apelar_hasta
   const responderHasta = historial?.responder_hasta
-  const reporteVence = historial?.reporte_vence_el ?? null
+  const reporteVence = historial ? reporteQueLimita(historial) : null
   const reporteVencido = !!reporteVence && hoyBogota() > reporteVence
+  // Adenda 4 V3 §15: la hija por decidir con el reporte vencido vuelve a consultar la central.
+  const consulta = historial?.consulta_apelacion
+  const reporteOriginal = historial?.reporte_vence_el ?? null
+  const pideConsulta =
+    !!hija && hija.resultado === 'pendiente' && hija.estado !== 'cancelado' &&
+    !!consulta?.disponible && !!reporteOriginal && hoyBogota() > reporteOriginal
   const hasta = historial ? plazoEfectivoApelacion(historial) : null
   const porReporte = !!hasta && hasta === reporteVence && hasta !== (responderHasta ?? apelarHasta)
   const sinReporte = reporteVence ? `el reporte de la central venció el ${dia(reporteVence)} (30 días desde la consulta).` : ''
@@ -198,7 +214,9 @@ export function ReEvaluacionSection({
         ? `La reevaluación de esta evaluación se canceló: la apelación quedó cerrada sin cambiar el resultado. ${ESTUDIO_NUEVO}`
         : hija.resultado !== 'pendiente'
           ? 'La reevaluación de esta evaluación ya se decidió: su resultado está en la lista de evaluaciones.'
-          : reporteVencido
+          : pideConsulta
+            ? `El reporte de la central venció el ${dia(reporteOriginal!)}. ${esAnalista ? 'Vuelva a consultarla con el botón de abajo y después registre la reevaluación: la consulta la asume Cofianza, sin cobro ni cupo.' : 'Cofianza vuelve a consultar la central para decidir, sin costo para usted.'}`
+            : reporteVencido
             ? `La reevaluación ya no se puede registrar: ${sinReporte} Cancélela con «Cancelar evaluación» en la lista de evaluaciones para cerrar la apelación. ${ESTUDIO_NUEVO}`
             : `La reevaluación está por decidir: regístrela con «Registrar resultado» en la lista de evaluaciones${reporteVence ? ` a más tardar el ${dia(reporteVence)}, cuando vence el reporte de la central` : ''}.`
       : agotadas
@@ -269,6 +287,20 @@ export function ReEvaluacionSection({
     }
   }
 
+  const handleConsultar = async () => {
+    if (!hija) return
+    setConsultando(true)
+    try {
+      await estudioService.consultarCentralApelacion(hija.id)
+      toast.success('Consulta hecha: ya puede registrar la reevaluación')
+      onDocumentoAdded()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo consultar la central')
+    } finally {
+      setConsultando(false)
+    }
+  }
+
   const handleViewDoc = async (doc: IDocumentoSoporte) => {
     if (doc.archivo_url) {
       window.open(doc.archivo_url, '_blank')
@@ -290,6 +322,24 @@ export function ReEvaluacionSection({
           </p>
         </div>
       </div>
+
+      {/* Adenda 4 V3 §15: consulta adicional que asume Cofianza (solo analistas). */}
+      {pideConsulta && esAnalista && (
+        <button
+          onClick={handleConsultar}
+          disabled={consultando}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+        >
+          <IconSearch size={16} />
+          {consultando ? 'Consultando…' : 'Consultar la central de nuevo'}
+        </button>
+      )}
+      {consulta?.consultada_en && esAnalista && (
+        <p className="text-sm text-gray-600">
+          <span className="font-medium text-gray-700">Consulta adicional del {formatDate(consulta.consultada_en)} (la asumió Cofianza):</span>{' '}
+          {consulta.resumen ?? 'sin resumen'}
+        </p>
+      )}
 
       {/* Política §11: apelación radicada fuera de la plataforma (solo Cofianza). */}
       {mostrarFecha && (
