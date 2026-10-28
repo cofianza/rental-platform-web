@@ -94,6 +94,8 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   // Precios y paquetes
   PRECIO_ESTUDIO_INDIVIDUAL: { nombre: 'Precio del estudio (sin IVA)', grupo: 'precios', unidad: 'cop' },
   TARIFA_IVA: { nombre: 'Tarifa de IVA', grupo: 'precios', unidad: 'pct' },
+  TARIFA_VIA_AUTOMATICA: { nombre: 'Tarifa mensual de la fianza, aprobación automática', grupo: 'precios', unidad: 'pct' },
+  TARIFA_VIA_NO_AUTOMATICA: { nombre: 'Tarifa mensual de la fianza, aprobación por el analista', grupo: 'precios', unidad: 'pct' },
   VIGENCIA_PAQUETE_MESES: { nombre: 'Vigencia de un paquete de estudios', grupo: 'precios', unidad: 'meses' },
   ALERTA_SALDO_MINIMO_CUPOS: { nombre: 'Avisar a la inmobiliaria cuando le queden menos de', grupo: 'precios', unidad: 'num' },
   PORCENTAJE_BENEFICIO_TRADICIONAL: { nombre: 'Beneficio de la inmobiliaria en modalidad Tradicional', grupo: 'precios', unidad: 'pct' },
