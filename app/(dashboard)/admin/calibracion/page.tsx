@@ -69,6 +69,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   CUARTO_DESENLACE: { nombre: 'Aprobar con condición de coarrendatario (versión anterior)', grupo: 'condicion', unidad: 'onoff' },
   VIGENCIA_CONDICION_COARRENDATARIO_DIAS: { nombre: 'Plazo para presentar el coarrendatario', grupo: 'condicion', unidad: 'dias' },
   PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO: { nombre: 'Puntaje mínimo del solicitante para ofrecerle un coarrendatario', grupo: 'condicion', unidad: 'puntos' },
+  PUNTAJE_PISO_COARRENDATARIO: { nombre: 'Puntaje mínimo para exigir coarrendatario (bajo 70 solo por el endeudamiento)', grupo: 'condicion', unidad: 'puntos' },
   PUNTAJE_MINIMO_COARRENDATARIO: { nombre: 'Puntaje mínimo para que un coarrendatario cuente', grupo: 'condicion', unidad: 'puntos' },
   BONO_COARRENDATARIO_70_79: { nombre: 'Puntos que suma un coarrendatario de 70 a 79', grupo: 'condicion', unidad: 'puntos' },
   BONO_COARRENDATARIO_80_89: { nombre: 'Puntos que suma un coarrendatario de 80 a 89', grupo: 'condicion', unidad: 'puntos' },
