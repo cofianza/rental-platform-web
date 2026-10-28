@@ -39,7 +39,7 @@ const fmt = (n: number, entero: boolean) => n.toLocaleString('es-CO', { maximumF
 
 // 'criterio': 1 = el mayor, 0 = el menor (CRITERIO_SELECCION_INGRESO). Como
 // 'onoff', es de dos valores: se cambia al contrario y se confirma.
-type Unidad = 'cop' | 'pct' | 'puntos' | 'dias' | 'dias_habiles' | 'meses' | 'mes' | 'onoff' | 'criterio' | 'num'
+type Unidad = 'cop' | 'pct' | 'puntos' | 'horas' | 'dias' | 'dias_habiles' | 'meses' | 'mes' | 'onoff' | 'criterio' | 'num'
 
 /**
  * Nombre humano, grupo y unidad de cada parámetro. La pantalla los titulaba con
@@ -85,6 +85,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   FACTOR_CUOTA_MINIMA_TARJETA: { nombre: 'Parte del saldo que cuenta como cuota de una tarjeta', grupo: 'capacidad', unidad: 'num' },
   DIAS_VIGENCIA_INGRESO_VERIFICADO: { nombre: 'Vigencia de un ingreso verificado (desde la fecha del soporte)', grupo: 'capacidad', unidad: 'dias' },
   DIAS_VIGENCIA_CERTIFICACION_LABORAL: { nombre: 'Antigüedad máxima de la certificación laboral', grupo: 'capacidad', unidad: 'dias' },
+  HORAS_ESPERA_AUTORIZACION: { nombre: 'Espera a que autoricen los coarrendatarios antes de evaluar', grupo: 'capacidad', unidad: 'horas' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
@@ -160,6 +161,7 @@ function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'entero'>
     case 'cop': return `$${v}`
     case 'pct': return `${v} %`
     case 'puntos': return `${v} pts`
+    case 'horas': return `${v} ${n === 1 ? 'hora' : 'horas'}`
     case 'dias': return `${v} ${n === 1 ? 'día' : 'días'}`
     case 'dias_habiles': return `${v} ${n === 1 ? 'día hábil' : 'días hábiles'}`
     case 'meses': return `${v} ${n === 1 ? 'mes' : 'meses'}`

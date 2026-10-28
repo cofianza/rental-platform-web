@@ -56,6 +56,8 @@ export interface IEstudio {
   score?: number | null
   /** Política §14 caso L: ninguna central respondió. Solo en el listado por expediente. */
   sin_centrales?: boolean
+  /** Adenda 4 §12: la evaluación del titular espera a que autoricen sus coarrendatarios (hasta esa hora). */
+  espera_autorizacion?: { hasta: string; pendientes: string[] } | null
   observaciones?: string | null
   duracion_contrato_meses: number
   pago_por: PagoPor

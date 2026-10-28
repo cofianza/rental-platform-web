@@ -272,6 +272,11 @@ function getSiguientePaso(
   }
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
+  // Adenda 4 §12: no se decide al titular solo mientras un coarrendatario no autorice.
+  if (estudio.espera_autorizacion) {
+    const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+    return `Espera a que ${estudio.espera_autorizacion.pendientes.join(' y ')} autorice, hasta el ${hasta}. Después se evalúa con quienes hayan autorizado. Si no lo va a hacer, reenvíele la invitación o cancélela.`
+  }
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
     return 'Listo para consultar a las centrales de riesgo. Si la consulta no arrancó sola, ejecútela desde aquí.'
   }
@@ -518,7 +523,7 @@ function EstudioPanel({
     userRol === 'administrador' ||
     userRol === 'operador_analista') &&
     puedeEditar
-  const puedeReintentar = esGestor && !sinReintento && puedeRelanzarEstudio(estudio)
+  const puedeReintentar = esGestor && !sinReintento && !estudio.espera_autorizacion && puedeRelanzarEstudio(estudio)
   // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
   // otra propiedad sin volver a cobrar. El caso natural es el candidato que
   // perdio el inmueble porque otro fue aprobado primero (§4.2 ya se lo avisa
