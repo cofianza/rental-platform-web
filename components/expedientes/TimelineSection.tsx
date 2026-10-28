@@ -18,6 +18,8 @@ import {
   IconClock,
   IconDollarSign,
   IconPencil,
+  IconSearch,
+  IconX,
 } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
@@ -94,6 +96,38 @@ const EVENTO_CONFIG: Record<
   cita: { icon: IconClock, color: 'text-cyan-600', bgColor: 'bg-cyan-100' },
 }
 
+type ConfigEvento = (typeof EVENTO_CONFIG)[string]
+const ESTUDIO_NEGATIVO: ConfigEvento = { icon: IconX, color: 'text-red-600', bgColor: 'bg-red-100' }
+const ESTUDIO_POSITIVO: ConfigEvento = { icon: IconCheck, color: 'text-green-600', bgColor: 'bg-green-100' }
+const ESTUDIO_NEUTRO: ConfigEvento = { icon: IconSearch, color: 'text-amber-600', bgColor: 'bg-amber-100' }
+
+/** El ícono de un evento de evaluación dice cómo salió: un ✓ en un rechazo engañaba. */
+function configEvento(evento: ITimelineEvento): ConfigEvento {
+  if (evento.tipo !== 'estudio') return EVENTO_CONFIG[evento.tipo] || EVENTO_CONFIG.comentario
+  const d = evento.descripcion.toLowerCase()
+  if (/no aprobad|rechazad|sin efecto|no califica/.test(d)) return ESTUDIO_NEGATIVO
+  if (/aprobad|autoriz/.test(d)) return ESTUDIO_POSITIVO
+  return ESTUDIO_NEUTRO
+}
+
+/** Filas viejas del orquestador: «Estado cambiado automaticamente: "a" → "b"» (el detalle ya trae los estados). */
+function descripcionEvento(descripcion: string): string {
+  return /^Estado cambiado automaticamente/.test(descripcion) ? 'Cambio automático de estado' : textoVisible(descripcion)
+}
+
+/**
+ * «Resultado de estudio registrado: x» (lo escribe la base) repite el evento de
+ * la evaluación que llega en el mismo segundo; solo se muestra si va solo.
+ */
+function esResultadoRepetido(evento: ITimelineEvento, eventos: ITimelineEvento[]): boolean {
+  if (!evento.descripcion.startsWith('Resultado de estudio registrado')) return false
+  const t = new Date(evento.created_at).getTime()
+  return eventos.some(
+    (o) => o.id !== evento.id && o.tipo === 'estudio' && !o.descripcion.startsWith('Resultado de estudio registrado') &&
+      Math.abs(new Date(o.created_at).getTime() - t) < 10_000,
+  )
+}
+
 const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
   { value: 'todos', label: 'Todos' },
   { value: 'transicion', label: 'Transiciones' },
@@ -102,6 +136,7 @@ const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
   { value: 'cita', label: 'Citas' },
   // Eventos del contrato (activado / finalizado / cancelado).
   { value: 'contrato', label: 'Contrato' },
+  { value: 'pago', label: 'Pagos' },
   { value: 'creacion', label: 'Creación' },
 ]
 
@@ -227,8 +262,8 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
         {/* Eventos */}
         <div className="space-y-6">
-          {eventos.map((evento, index) => {
-            const config = EVENTO_CONFIG[evento.tipo] || EVENTO_CONFIG.comentario
+          {eventos.filter((e) => !esResultadoRepetido(e, eventos)).map((evento, index) => {
+            const config = configEvento(evento)
             const Icon = config.icon
             const nombreCompleto = `${evento.usuario.nombre} ${evento.usuario.apellido}`.trim()
             const isFirst = index === 0
@@ -252,7 +287,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <p className="text-sm font-medium text-gray-900">
-                        {textoVisible(evento.descripcion)}
+                        {descripcionEvento(evento.descripcion)}
                       </p>
                       <span
                         className="text-xs text-gray-500 whitespace-nowrap"
