@@ -104,6 +104,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   ALERTA_MEZCLA_TRADICIONAL_PAQUETE_25: { nombre: 'Alerta: % de contratos Tradicional con paquete de 25', grupo: 'precios', unidad: 'pct' },
   // Autorización del prospecto
   DIAS_EXPIRACION_ESTUDIO: { nombre: 'Plazo del prospecto para autorizar', grupo: 'autorizacion', unidad: 'dias' },
+  DIAS_CADUCIDAD_ESTUDIO: { nombre: 'Días para que el titular autorice antes de cerrar el estudio', grupo: 'autorizacion', unidad: 'dias' },
   VIGENCIA_CRC_DIAS: { nombre: 'Vigencia del certificado de riesgo', grupo: 'autorizacion', unidad: 'dias' },
   MAX_INTENTOS_DOCUMENTO: { nombre: 'Intentos para digitar el documento', grupo: 'autorizacion', unidad: 'num' },
   MAX_CORRECCIONES_DOCUMENTO: { nombre: 'Correcciones de documento por estudio', grupo: 'autorizacion', unidad: 'num' },
