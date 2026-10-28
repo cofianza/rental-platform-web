@@ -20,7 +20,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
 import type { Tab } from '@/components/ui/Tabs'
-import type { IEstudio, IMotivosElegidos } from '@/types/estudio'
+import type { IEstudio, IEstudioHistorial, IMotivosElegidos } from '@/types/estudio'
 import {
   IconArrowLeft,
   IconEdit,
@@ -146,8 +146,10 @@ export default function ExpedienteDetallePage() {
 
   // Estado de tabs
   const [activeTab, setActiveTab] = useState('resumen')
-  // Cada clic en «Reevaluar con documentos» del banner abre la apelación del titular.
+  // Cada clic en «Reevaluar con documentos» del banner abre la apelación del
+  // titular una vez: EstudiosSection lo devuelve a 0 al atenderlo (F5).
   const [pedidoReevaluar, setPedidoReevaluar] = useState(0)
+  const pedidoAtendido = useCallback(() => setPedidoReevaluar(0), [])
   // Documentos queda montado (oculto) por el contador de pendientes; al abrir
   // la pestaña se remonta para traer lo último, como antes.
   const [visitasDocumentos, setVisitasDocumentos] = useState(0)
@@ -184,6 +186,11 @@ export default function ExpedienteDetallePage() {
   // También da el "Reasignado desde …" del Flujo §11 (lo trae el listado de
   // estudios, que la tarjeta del estudio ya pide: la petición se comparte).
   const [titular, setTitular] = useState<(IEstudio & { reasignado_desde?: string | null }) | null>(null)
+  // La evaluación del titular cuya apelación muestra el banner: la última
+  // decidida o una reevaluación (hija). Una evaluación nueva sin correr no es
+  // de esa cadena. Si la lista no se pudo leer, el banner ofrece la apelación genérica.
+  const [apelableId, setApelableId] = useState<string | null>(null)
+  const [listaFallo, setListaFallo] = useState(false)
   const [reasignadoDesde, setReasignadoDesde] = useState<string | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
@@ -197,13 +204,40 @@ export default function ExpedienteDetallePage() {
         const vigente = filas
           .filter((e) => e.estado !== 'cancelado' && e.tipo !== 'con_coarrendatario')
           .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+        const apelable = filas
+          .filter((e) => e.tipo !== 'con_coarrendatario' && (e.estado === 'completado' || !!e.estudio_padre_id))
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
         if (cancel) return
         setTitular(vigente ?? null)
+        setApelableId(apelable?.id ?? null)
+        setListaFallo(false)
         setReasignadoDesde(filas.find((e) => e.reasignado_desde)?.reasignado_desde ?? null)
       })
-      .catch(() => { if (!cancel) setTitular(null) })
+      .catch(() => {
+        if (cancel) return
+        setTitular(null)
+        setApelableId(null)
+        setListaFallo(true)
+      })
     return () => { cancel = true }
   }, [id, estadoExpediente, actualizadoEn])
+  // F6/F3: el banner del rechazo ofrece la apelación solo si la API la admite,
+  // con su último día real. El historial de cualquier evaluación de la cadena
+  // la trae entera: se relee con cada carga del estudio (en un rechazado son
+  // pocas), nunca en otro estado ni para el prospecto.
+  const enRechazo = estadoExpediente === 'rechazado' && !!user && user.rol !== 'solicitante'
+  const leerApelacion = enRechazo && !!apelableId
+  const [apelacion, setApelacion] = useState<{ de: string; h: IEstudioHistorial | null } | null>(null)
+  useEffect(() => {
+    if (!leerApelacion || !apelableId) return
+    let cancel = false
+    estudioService.getHistorial(apelableId).then(
+      (h) => { if (!cancel) setApelacion({ de: apelableId, h }) },
+      () => { if (!cancel) setApelacion({ de: apelableId, h: null }) },
+    )
+    return () => { cancel = true }
+  }, [leerApelacion, apelableId, cargas])
+  const apelacionTitular = enRechazo && listaFallo ? null : apelacion && apelacion.de === apelableId ? apelacion.h : undefined
   const titularCondicionado = estadoExpediente === 'condicionado' ? titular : null
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
@@ -679,6 +713,7 @@ export default function ExpedienteDetallePage() {
               <ExpedienteRechazadoBanner
                 motivo={textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                 esProspecto={user?.rol === 'solicitante'}
+                apelacion={apelacionTitular}
                 onReevaluar={
                   user?.rol === 'administrador' || user?.rol === 'operador_analista'
                     ? () => {
@@ -1162,6 +1197,7 @@ export default function ExpedienteDetallePage() {
               onEstudioActualizado={fetchExpediente}
               coarrendatarioVigente={coarrendatarioVigente}
               pedidoReevaluar={pedidoReevaluar}
+              onPedidoAtendido={pedidoAtendido}
             />
 
             {/* La decisión del condicionado vive en el Resumen (un solo lugar);

@@ -648,6 +648,8 @@ export const expedienteService = new ExpedienteService()
 export type EvaluadoIngreso = 'empleado' | 'independiente' | 'pensionado'
 
 export interface IIngresoVerificado {
+  /** false con ADENDA4 apagado: el bloque no rige y la sección no se muestra. */
+  habilitado: boolean
   vigente: { monto: number; tipo_soporte: string; fecha_soporte: string; vence_el: string } | null
   evaluacion: { dti_pct: number | null; canon_ingreso_pct: number | null; cumple: boolean } | null
   situacion_laboral: string | null

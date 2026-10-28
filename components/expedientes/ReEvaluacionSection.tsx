@@ -41,7 +41,12 @@ const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
 
 const MIME_TYPES_ALLOWED = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const MAX_REEVALUACIONES = 2
+export const MAX_REEVALUACIONES = 2
+/**
+ * Cerrada la apelación, la salida es otro estudio: en un estudio no aprobable
+ * la API no deja habilitar otra evaluación. Mismo texto aquí y en el banner.
+ */
+export const ESTUDIO_NUEVO = 'Para volver a evaluar al solicitante hace falta un estudio nuevo.'
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -55,6 +60,17 @@ function formatDate(dateStr: string): string {
     month: 'short',
     day: 'numeric',
   })
+}
+
+/**
+ * Último día real de la apelación ('AAAA-MM-DD'): el plazo de la Política §11
+ * (radicar o, ya radicada, responder) o el día en que vence el reporte de la
+ * central (§8: la reevaluación se registra contra él), el que llegue primero.
+ */
+export function plazoEfectivoApelacion(
+  h: Pick<IEstudioHistorial, 'apelar_hasta' | 'responder_hasta' | 'reporte_vence_el'>,
+): string | null {
+  return [h.responder_hasta ?? h.apelar_hasta, h.reporte_vence_el].filter((d): d is string => !!d).sort()[0] ?? null
 }
 
 // ============================================
@@ -149,28 +165,60 @@ export function ReEvaluacionSection({
   const plazoVencido = historial?.plazo_vencido ?? false
   const totalEnCadena = historial?.total_en_cadena ?? 1
 
-  // Check if a child re-evaluation already exists
-  const hasChildReeval = historial?.historial.some(
-    (h) => h.estudio_padre_id === estudio.id,
-  ) ?? false
+  // La reevaluación de esta evaluación, si ya se pidió.
+  const hija = historial?.historial.find((h) => h.estudio_padre_id === estudio.id)
+  const hasChildReeval = !!hija
+  const agotadas = totalEnCadena > MAX_REEVALUACIONES
 
   // Política §11: 15 días hábiles desde la notificación del rechazo para
   // radicar la apelación (la fecha que registra el analista o, sin ella, el
-  // primer soporte); radicada a tiempo, Cofianza
-  // responde en 10 aunque ya haya pasado el día 15. Fechas 'AAAA-MM-DD':
-  // al mediodía local para que no se corran un día.
+  // primer soporte); radicada a tiempo, Cofianza responde en 10 aunque ya haya
+  // pasado el día 15. Política §8: la reevaluación se registra contra el
+  // reporte de la central de la evaluación original, que sirve 30 días; el
+  // plazo que corre es el menor. Fechas 'AAAA-MM-DD': al mediodía local para
+  // que no se corran un día.
   const dia = (d: string) => formatDate(`${d}T12:00:00`)
   const apelarHasta = historial?.apelar_hasta
   const responderHasta = historial?.responder_hasta
-  const avisoPlazo = hasChildReeval
-    ? 'Puede subir documentos adicionales para solicitar una reevaluación.'
-    : plazoVencido
-      ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. Para volver a evaluar al solicitante, habilite una evaluación nueva.${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registre abajo la fecha en que lo hizo.' : ''}`
-      : responderHasta
-        ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(responderHasta)}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
-        : apelarHasta
-          ? `El solicitante puede apelar hasta el ${dia(apelarHasta)} (15 días hábiles desde la notificación del rechazo). Suba los documentos soporte para radicar la apelación.`
-          : 'Puede subir documentos adicionales para solicitar una reevaluación.'
+  const reporteVence = historial?.reporte_vence_el ?? null
+  const reporteVencido = !!reporteVence && hoyBogota() > reporteVence
+  const hasta = historial ? plazoEfectivoApelacion(historial) : null
+  const porReporte = !!hasta && hasta === reporteVence && hasta !== (responderHasta ?? apelarHasta)
+  const sinReporte = reporteVence ? `el reporte de la central venció el ${dia(reporteVence)} (30 días desde la consulta).` : ''
+  // Sin plazo calculado el resultado no se apela (la API solo lo calcula si se
+  // puede; con listas confirmadas, no): eso va antes que el reporte vencido.
+  const noAdmite = !puedeReevaluar && !apelarHasta
+  // Una hija por decidir con el reporte vencido ya no se registra y, mientras
+  // siga en pie, el prospecto ve «Estamos revisando de nuevo su evaluación»:
+  // cancelarla cierra la apelación.
+  const avisoPlazo = !historial
+    ? null
+    : hija
+      ? hija.estado === 'cancelado'
+        ? `La reevaluación de esta evaluación se canceló: la apelación quedó cerrada sin cambiar el resultado. ${ESTUDIO_NUEVO}`
+        : hija.resultado !== 'pendiente'
+          ? 'La reevaluación de esta evaluación ya se decidió: su resultado está en la lista de evaluaciones.'
+          : reporteVencido
+            ? `La reevaluación ya no se puede registrar: ${sinReporte} Cancélela con «Cancelar evaluación» en la lista de evaluaciones para cerrar la apelación. ${ESTUDIO_NUEVO}`
+            : `La reevaluación está por decidir: regístrela con «Registrar resultado» en la lista de evaluaciones${reporteVence ? ` a más tardar el ${dia(reporteVence)}, cuando vence el reporte de la central` : ''}.`
+      : agotadas
+        ? `Ya se usaron las ${MAX_REEVALUACIONES} reevaluaciones que admite esta evaluación. ${ESTUDIO_NUEVO}`
+        : noAdmite
+          ? 'Esta evaluación no admite apelación.'
+          : reporteVencido
+            ? `La apelación ya no se puede decidir: ${sinReporte} ${ESTUDIO_NUEVO}`
+            : plazoVencido
+              ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. ${ESTUDIO_NUEVO}${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registre abajo la fecha en que lo hizo.' : ''}`
+              : !puedeReevaluar
+                ? 'Esta evaluación no admite apelación.'
+                : responderHasta && hasta
+                  ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(hasta)}${porReporte ? ', cuando vence el reporte de la central' : ''}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
+                  : hasta
+                    ? `El solicitante puede apelar hasta el ${dia(hasta)} (${porReporte ? 'ese día vence el reporte de la central con que se decide' : '15 días hábiles desde la notificación del rechazo'}). Suba los documentos soporte para radicar la apelación.`
+                    : 'Suba los documentos soporte para solicitar la reevaluación.'
+  // La fecha de radicación solo cambia algo si la apelación sigue abierta o
+  // la cerró el plazo: con listas, sin reevaluaciones o sin reporte, no.
+  const mostrarFecha = esAnalista && !hija && !agotadas && !reporteVencido && (puedeReevaluar || plazoVencido)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -244,7 +292,7 @@ export function ReEvaluacionSection({
       </div>
 
       {/* Política §11: apelación radicada fuera de la plataforma (solo Cofianza). */}
-      {esAnalista && !hasChildReeval && (
+      {mostrarFecha && (
         <div className="space-y-2">
           <label htmlFor="fecha-radicacion-apelacion" className="block text-sm font-medium text-gray-700">
             Fecha en que el prospecto apeló (si fue por correo u otro canal)

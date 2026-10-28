@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
-import { ESTADO_LABEL } from './EstudioEstadoCard'
+import { etiquetaEstado } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -142,6 +142,8 @@ interface EstudiosSectionProps {
   coarrendatarioVigente?: boolean
   /** Sube con cada «Reevaluar con documentos» del banner: abre el detalle del titular en la apelación. */
   pedidoReevaluar?: number
+  /** Ya se abrió el detalle por el pedido: la página lo vuelve a 0 (al volver a la pestaña no se reabre). */
+  onPedidoAtendido?: () => void
 }
 
 export function EstudiosSection({
@@ -150,6 +152,7 @@ export function EstudiosSection({
   onEstudioActualizado,
   coarrendatarioVigente = true,
   pedidoReevaluar = 0,
+  onPedidoAtendido,
 }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -173,8 +176,8 @@ export function EstudiosSection({
   const [showSolicitar, setShowSolicitar] = useState(false)
   const [showDetail, setShowDetail] = useState<IEstudio | null>(null)
   const [irAReevaluacion, setIrAReevaluacion] = useState(false)
-  // La lista se vuelve a pedir sola: sin esto el modal se reabría en cada recarga.
-  const pedidoAtendido = useRef(0)
+  // El detalle movió la apelación: al cerrarlo se relee el estudio entero (el banner del rechazo cambia).
+  const apelacionCambiada = useRef(false)
   const [cancelTarget, setCancelTarget] = useState<IEstudio | null>(null)
   const [resultadoTarget, setResultadoTarget] = useState<IEstudio | null>(null)
   // Enviar enlace: modal con el email visible y corregible ANTES de enviar
@@ -205,17 +208,19 @@ export function EstudiosSection({
     fetchEstudios()
   }, [fetchEstudios, version])
 
-  // Banner del rechazo: abre la evaluación más reciente del titular, ya en la apelación.
+  // Banner del rechazo: abre la evaluación más reciente del titular, ya en la
+  // apelación, una sola vez. El pedido vive en la página (esta sección se
+  // desmonta al cambiar de pestaña): ella lo vuelve a 0 al atenderlo.
   useEffect(() => {
-    if (!pedidoReevaluar || pedidoReevaluar === pedidoAtendido.current) return
+    if (!pedidoReevaluar) return
     const titular = estudios
       .filter((e) => e.tipo !== 'con_coarrendatario' && e.estado === 'completado' && e.resultado !== 'aprobado')
       .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
     if (!titular) return
-    pedidoAtendido.current = pedidoReevaluar
+    onPedidoAtendido?.()
     setShowDetail(titular)
     setIrAReevaluacion(true)
-  }, [pedidoReevaluar, estudios])
+  }, [pedidoReevaluar, estudios, onPedidoAtendido])
 
   // Tras una acción: con padre, recarga el estudio (y esta lista con él);
   // sin padre, solo la lista.
@@ -442,7 +447,7 @@ export function EstudiosSection({
                           </span>
                           )}
                           {/* Mismas palabras que el Resumen; el resultado, solo cuando lo hay. */}
-                          <Badge estado={estudio.estado} label={ESTADO_LABEL[estudio.estado]} />
+                          <Badge estado={estudio.estado} label={etiquetaEstado(estudio)} />
                           {estudio.resultado !== 'pendiente' && (
                             <Badge
                               estado={estudio.resultado}
@@ -537,11 +542,13 @@ export function EstudiosSection({
                       className="flex items-center gap-1 shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {/* Cargar el resultado a mano: la evaluación manual, o una consulta
-                          que quedó en curso. No mientras se espera la autorización. */}
+                      {/* Cargar el resultado a mano: la evaluación manual, una consulta
+                          que quedó en curso o la reevaluación (apelación), que nace
+                          'solicitado' con la central del padre y solo se decide aquí.
+                          No mientras se espera la autorización. */}
                       {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
                         estudio.resultado === 'pendiente' &&
-                        (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso') && (
+                        (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso' || !!estudio.estudio_padre_id) && (
                         <button
                           onClick={() => setResultadoTarget(estudio)}
                           disabled={actionLoading}
@@ -552,8 +559,9 @@ export function EstudiosSection({
                         </button>
                       )}
                       {/* Esperando el pago o consultando el buró, el enlace sacaría a la
-                          evaluación de su estado; y en consulta tampoco se cancela. */}
-                      {estudio.estado !== 'pago_pendiente' && estudio.estado !== 'en_proceso' && (
+                          evaluación de su estado; y en consulta tampoco se cancela. La
+                          reevaluación no lleva formulario: la decide un analista. */}
+                      {estudio.estado !== 'pago_pendiente' && estudio.estado !== 'en_proceso' && !estudio.estudio_padre_id && (
                         <button
                           onClick={() => {
                             setSendLinkEmail(solicitante?.email ?? '')
@@ -588,6 +596,8 @@ export function EstudiosSection({
                     para no abrir el modal de detalle al interactuar. */}
                 {(canManage || isStakeholder) &&
                   puedeEditar &&
+                  // La reevaluación no se ejecuta: la API responde 409 (no vuelve a consultar la central).
+                  !estudio.estudio_padre_id &&
                   puedeRelanzarEstudio(estudio) &&
                   (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario') && (
                   <div
@@ -628,6 +638,20 @@ export function EstudiosSection({
         onClose={() => {
           setShowDetail(null)
           setIrAReevaluacion(false)
+          // Con la apelación movida (reevaluación nueva, soporte o fecha) la
+          // página relee el estudio: el banner del rechazo seguía con el plazo
+          // viejo. La lista se relee con él.
+          if (apelacionCambiada.current) {
+            apelacionCambiada.current = false
+            trasCambio()
+            return
+          }
+          // Lo demás que cambia el detalle (certificado, listas) se ve en la
+          // lista: se relee en silencio, sin el spinner.
+          estudioService.getEstudiosForExpediente(expedienteId).then((r) => setEstudios(r.data), () => undefined)
+        }}
+        onApelacionCambiada={() => {
+          apelacionCambiada.current = true
         }}
         irAReevaluacion={irAReevaluacion}
         estudio={showDetail}

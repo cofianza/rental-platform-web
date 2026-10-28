@@ -98,6 +98,13 @@ export const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   cancelado: 'Cancelado',
 }
 
+/** La reevaluación (estudio hijo) nace 'solicitado' y la decide un analista de Cofianza: no espera ninguna autorización. */
+export function etiquetaEstado(estudio: Pick<IEstudio, 'estado' | 'estudio_padre_id'>): string {
+  return estudio.estudio_padre_id && estudio.estado === 'solicitado'
+    ? 'Reevaluación por decidir'
+    : ESTADO_LABEL[estudio.estado] ?? estudio.estado
+}
+
 const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
   pendiente: 'Pendiente',
   aprobado: 'Aprobado',
@@ -558,7 +565,7 @@ function EstudioPanel({
         ? 'danger'
         : getTone(estudio)
   const styles = TONE_STYLES[tone]
-  const estadoLabel = ESTADO_LABEL[estudio.estado] ?? estudio.estado
+  const estadoLabel = etiquetaEstado(estudio)
   const resultadoLabel =
     decisionAnalista === 'aprobado'
       ? 'Aprobado por el analista'

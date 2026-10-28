@@ -5,6 +5,7 @@
  * revisión manual, el ingreso que comprobó con documentos. Con uno vigente,
  * el endeudamiento y el canon sobre ingreso vuelven a ser obligatorios: si no
  * se cumplen, el estudio no se puede aprobar (el bloqueo lo dice el API).
+ * Con ADENDA4 apagado (habilitado = false) la sección no se muestra.
  */
 
 import { useEffect, useState } from 'react'
@@ -50,7 +51,7 @@ export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { exped
     }
   }, [expedienteId])
 
-  if (!datos) return null
+  if (!datos?.habilitado) return null
   const tipos = datos.tipos.filter((t) => t.evaluado === evaluado)
   const etiquetaSoporte = (clave: string) => datos.tipos.find((t) => t.clave === clave)?.etiqueta ?? clave
   const montoNum = Number(monto.replace(/\D/g, ''))
