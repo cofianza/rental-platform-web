@@ -27,6 +27,7 @@
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { IngresoVerificadoSection } from './IngresoVerificadoSection'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck, IconAlertTriangle } from '@/components/icons'
@@ -88,6 +89,8 @@ export function AprobarCondicionadoCard({
   // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
   // se dice antes del formulario, no al final después de llenarlo.
   const [bloqueo, setBloqueo] = useState<{ codigo: string; motivo: string } | null>(null)
+  // Sube al registrar un ingreso verificado: el bloqueo se vuelve a pedir.
+  const [versionBloqueo, setVersionBloqueo] = useState(0)
   useEffect(() => {
     if (!esCofianza || expedienteEstado !== 'condicionado' || condicion) return
     let cancel = false
@@ -96,7 +99,7 @@ export function AprobarCondicionadoCard({
       () => {},
     )
     return () => { cancel = true }
-  }, [esCofianza, expedienteEstado, condicion, expedienteId])
+  }, [esCofianza, expedienteEstado, condicion, expedienteId, versionBloqueo])
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
@@ -269,6 +272,7 @@ export function AprobarCondicionadoCard({
                     Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
+                  <IngresoVerificadoSection expedienteId={expedienteId} onRegistrado={() => setVersionBloqueo((n) => n + 1)} />
                   {bloqueo && (
                     <div role="status" className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                       <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />

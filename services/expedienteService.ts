@@ -526,6 +526,21 @@ class ExpedienteService {
     return response.data.bloqueo
   }
 
+  /** Adenda 4 §10: el ingreso verificado vigente, su efecto en las dos reglas y los soportes admitidos. */
+  async leerIngresoVerificado(expedienteId: string): Promise<IIngresoVerificado> {
+    const response = await apiClient.get<IIngresoVerificado>(`/expedientes/${expedienteId}/ingreso-verificado`)
+    return response.data
+  }
+
+  /** Adenda 4 §10: el analista registra el ingreso verificado en la revisión manual. */
+  async registrarIngresoVerificado(
+    expedienteId: string,
+    body: { monto: number; tipo_soporte: string; fecha_soporte: string },
+  ): Promise<IIngresoVerificado> {
+    const response = await apiClient.post<IIngresoVerificado>(`/expedientes/${expedienteId}/ingreso-verificado`, body)
+    return response.data
+  }
+
   /** El administrador le recuerda al analista un estudio condicionado (uno cada 2 horas). */
   async recordarAnalista(expedienteId: string): Promise<{ enviado_a: number }> {
     const response = await apiClient.post<{ enviado_a: number }>(`/expedientes/${expedienteId}/recordatorio-analista`, {})
@@ -629,3 +644,12 @@ class ExpedienteService {
 
 // Instancia singleton
 export const expedienteService = new ExpedienteService()
+
+export type EvaluadoIngreso = 'empleado' | 'independiente' | 'pensionado'
+
+export interface IIngresoVerificado {
+  vigente: { monto: number; tipo_soporte: string; fecha_soporte: string; vence_el: string } | null
+  evaluacion: { dti_pct: number | null; canon_ingreso_pct: number | null; cumple: boolean } | null
+  situacion_laboral: string | null
+  tipos: Array<{ clave: string; evaluado: EvaluadoIngreso; etiqueta: string }>
+}
