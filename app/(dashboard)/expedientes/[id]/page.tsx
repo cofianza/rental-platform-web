@@ -351,6 +351,7 @@ export default function ExpedienteDetallePage() {
     evaluacion?: IEvaluacionRevisionManual,
     motivo?: string,
     motivos?: IMotivosElegidos,
+    condicionAdicional?: boolean,
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -362,6 +363,7 @@ export default function ExpedienteDetallePage() {
         evaluacion,
         motivo,
         ...motivos,
+        ...(condicionAdicional ? { condicion_adicional: true } : {}),
       })
       setExpediente(expedienteActualizado)
 

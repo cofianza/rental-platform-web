@@ -247,6 +247,7 @@ class ExpedienteService {
         ...(data.motivo ? { motivo: data.motivo } : {}),
         ...(data.motivos?.length ? { motivos: data.motivos } : {}),
         ...(data.motivo_detalle ? { motivo_detalle: data.motivo_detalle } : {}),
+        ...(data.condicion_adicional ? { condicion_adicional: true } : {}),
       }
     )) as any
 
@@ -592,6 +593,8 @@ class ExpedienteService {
       evaluacion: IEvaluacionRevisionManual
       /** Política §15: sin historial en ninguna central, el analista verificó una fuente de capacidad. */
       fuente_capacidad_verificada?: boolean
+      /** Adenda 4 §9: aprobó exigiendo algo más (tarifa no automática). */
+      condicion_adicional?: boolean
     },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
