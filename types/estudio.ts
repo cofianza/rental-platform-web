@@ -58,6 +58,8 @@ export interface IEstudio {
   sin_centrales?: boolean
   /** Adenda 4 §12: la evaluación del titular espera a que autoricen sus coarrendatarios (hasta esa hora). */
   espera_autorizacion?: { hasta: string; pendientes: string[] } | null
+  /** Adenda 4 §13: el endeudamiento con que decidió el motor. Solo Cofianza, en el detalle. */
+  endeudamiento_motor?: IEndeudamientoMotor | null
   observaciones?: string | null
   duracion_contrato_meses: number
   pago_por: PagoPor
@@ -503,4 +505,18 @@ export interface ITarifaOverrideInput {
   cashback_pct?: number
   /** Opcional por decisión de Gerencia (2026-09-09): queda el registro de quién y cuándo. */
   motivo?: string
+}
+
+export interface IEndeudamientoMotor {
+  dti_pct: number
+  maximo_pct: number
+  cuotas_cop: number | null
+  cuota_fianza_cop: number | null
+  ingreso_base_cop: number | null
+  factor: number | null
+  ingreso_ajustado_cop: number | null
+  fuente: string | null
+  /** 'regla_dura' (ingreso verificado) / 'sin_rechazo' (estimado) cuando supera el máximo. */
+  rama: string | null
+  puntos_por_comportamiento: number | null
 }

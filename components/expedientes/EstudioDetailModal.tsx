@@ -19,7 +19,7 @@ import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReport
 import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { ListasPorConfirmar } from '@/components/estudios/ListasPorConfirmar'
-import type { IEstudio, IEstudioHistorial } from '@/types/estudio'
+import type { IEstudio, IEstudioHistorial, IEndeudamientoMotor } from '@/types/estudio'
 
 /** La API agrega `nota_interna`, `version_politica` y `listas` solo para administrador, operador y gerencia. */
 type IEstudioConNota = IEstudio & { nota_interna?: string | null; version_politica?: string | null; listas?: IListasEstudio | null }
@@ -391,6 +391,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               </div>
             )}
 
+            {/* Adenda 4 §13: el endeudamiento que decide (el del motor), no la línea cruda del reporte. */}
+            {estudio.endeudamiento_motor && <EndeudamientoMotor e={estudio.endeudamiento_motor} />}
+
             {/* Versión de la política con que se decidió. La API solo la manda a Cofianza. */}
             {(estudio as IEstudioConNota).version_politica && (
               <p className="text-xs text-gray-500">
@@ -564,5 +567,41 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
         </div>
       </div>
     </Modal>
+  )
+}
+
+const pesos = (n: number | null) => (n === null ? 'sin dato' : formatCurrency(n))
+
+/** Adenda 4 §13: cómo salió el endeudamiento con que decide Cofianza. Solo Cofianza (la API no lo manda a externos). */
+function EndeudamientoMotor({ e }: { e: IEndeudamientoMotor }) {
+  const supera = e.dti_pct > e.maximo_pct
+  const verificado = e.fuente === 'VERIFICADO_DOCUMENTAL'
+  const ingreso =
+    verificado || e.factor === null || e.factor === 1
+      ? `ingreso ${verificado ? 'verificado' : 'estimado'} ${pesos(e.ingreso_ajustado_cop)}`
+      : `ingreso estimado ${pesos(e.ingreso_base_cop)} × ${e.factor.toLocaleString('es-CO')} = ${pesos(e.ingreso_ajustado_cop)}`
+  return (
+    <div>
+      <h4 className="text-sm font-medium text-gray-700 mb-1">Endeudamiento con el que decide Cofianza</h4>
+      <div className={`text-sm p-3 rounded-lg border ${supera ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-700'}`}>
+        <p className="font-semibold">
+          {e.dti_pct.toLocaleString('es-CO')} % <span className="font-normal">(máximo {e.maximo_pct} %)</span>
+        </p>
+        <p className="text-xs mt-1">
+          (cuotas {pesos(e.cuotas_cop)}
+          {e.cuota_fianza_cop !== null ? ` + fianza ${pesos(e.cuota_fianza_cop)}` : ''}) / {ingreso}
+        </p>
+        {supera && e.rama === 'sin_rechazo' && (
+          <p className="text-xs mt-1">
+            Supera el máximo con un ingreso estimado: no rechaza, lo decide un analista
+            {e.puntos_por_comportamiento !== null ? ` (paga al día: ${e.puntos_por_comportamiento} de 15 puntos de endeudamiento)` : ''}.
+          </p>
+        )}
+        {supera && e.rama === 'regla_dura' && <p className="text-xs mt-1">Supera el máximo con un ingreso verificado: es una condición obligatoria.</p>}
+        <p className="text-[11px] mt-1 text-gray-500">
+          Es la cifra que cuenta para la decisión. La «cuota sobre ingreso» del reporte de la central es un dato crudo, sin el ajuste del ingreso ni la fianza.
+        </p>
+      </div>
+    </div>
   )
 }
