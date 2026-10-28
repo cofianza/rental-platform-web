@@ -254,6 +254,11 @@ function getSiguientePaso(
     return 'Evaluación cancelada.'
   }
   if (estudio.estado === 'en_proceso') {
+    // Adenda 4 V3 §12: ya consultado, no se decide al titular solo mientras un coarrendatario no autorice.
+    if (estudio.espera_autorizacion) {
+      const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+      return `Ya se consultaron las centrales. La decisión espera a que ${estudio.espera_autorizacion.pendientes.join(' y ')} autorice, hasta el ${hasta}; después se decide con quienes hayan autorizado. Si no lo va a hacer, reenvíele la invitación o cancélela.`
+    }
     // Pasados 10 min la consulta se cortó (p. ej. un reinicio): la API la
     // recoge en su barrido; no seguir prometiendo "minutos".
     return Date.now() - new Date(estudio.updated_at).getTime() > 10 * 60 * 1000
@@ -279,11 +284,6 @@ function getSiguientePaso(
   }
   // El arranque automático tras la firma y el pago pudo fallar (el timeline lo
   // dice): el gestor la ejecuta desde el formulario de abajo.
-  // Adenda 4 §12: no se decide al titular solo mientras un coarrendatario no autorice.
-  if (estudio.espera_autorizacion) {
-    const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
-    return `Espera a que ${estudio.espera_autorizacion.pendientes.join(' y ')} autorice, hasta el ${hasta}. Después se evalúa con quienes hayan autorizado. Si no lo va a hacer, reenvíele la invitación o cancélela.`
-  }
   if (estudio.estado === 'formulario_completado' || estudio.estado === 'documentos_cargados') {
     return 'Listo para consultar a las centrales de riesgo. Si la consulta no arrancó sola, ejecútela desde aquí.'
   }
