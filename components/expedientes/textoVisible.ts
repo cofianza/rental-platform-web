@@ -54,6 +54,8 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
     .replace(/\bPol[ií]tica(?: de Evaluaci[oó]n)? V\d(?:\.\d)?/g, 'política de riesgo')
     // Versión del modelo («Fuente: transunion, modelo V4.1.») y rótulos de casos
     // de la matriz («Caso G: », «Caso R2: »).
+    // «, versión del modelo v4.1-adenda3v2» entera: sola, la de abajo dejaba «versión del-adenda3v2».
+    .replace(/,?\s*versi[oó]n del modelo\s+v[\w.-]*\w/gi, '')
     .replace(/,?\s*modelo\s+V\d(?:\.\d)?/gi, '')
     .replace(/\bCaso [A-Z]\d?\s*:\s*/g, '')
     .replace(/\bV1 = promedio\b/g, 'el score usado es el promedio')
