@@ -21,7 +21,7 @@ function sumarMeses(iso: string, meses: number): string {
   const t = anio * 12 + (mes - 1) + meses
   const [a, m] = [Math.floor(t / 12), (t % 12) + 1]
   const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate()
-  return `${a}-${String(m).padStart(2, '0')}-${String(Math.min(dia, ultimo)).padStart(2, '0')}`
+  return `${String(a).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(Math.min(dia, ultimo)).padStart(2, '0')}`
 }
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/
@@ -47,7 +47,8 @@ export function Paso3Condiciones({ value, onChange, errores, propiedadHorizontal
 
   const vigencia = value.vigenciaMeses
   const vencimiento =
-    value.fechaInicio && FECHA.test(value.fechaInicio) && vigencia && Number.isInteger(vigencia) && vigencia >= 2
+    // Fuera del rango permitido (p. ej. a medio escribir el año) no se calcula.
+    value.fechaInicio && FECHA.test(value.fechaInicio) && value.fechaInicio >= hoy && vigencia && Number.isInteger(vigencia) && vigencia >= 2
       ? formatDate(sumarMeses(value.fechaInicio, vigencia))
       : '—'
   const comision = value.comisionPct

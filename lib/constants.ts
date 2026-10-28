@@ -689,6 +689,9 @@ export function formatDate(date: Date | string): string {
   } else {
     d = typeof date === 'string' ? new Date(date) : date
   }
+  // Una fecha a medio escribir (el año «0020» mientras se teclea 2025) es
+  // inválida, e Intl lanza RangeError y tumbaba la pantalla entera.
+  if (Number.isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     day: '2-digit',
@@ -708,6 +711,7 @@ export function formatDate(date: Date | string): string {
  */
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
+  if (Number.isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     day: '2-digit',
