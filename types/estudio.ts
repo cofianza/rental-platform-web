@@ -123,6 +123,8 @@ export interface ICondicionCoarrendatario {
   ingreso_adicional_requerido: number | null
   /** Reglas de ingreso incumplidas; vacío = solo por puntaje (al vencer va a revisión, no a rechazo). */
   reglas_ingreso: string[]
+  /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento: al vencer sin coarrendatario válido, rechazo. */
+  obligatoria?: boolean
 }
 
 export interface IEstudioDocumento {

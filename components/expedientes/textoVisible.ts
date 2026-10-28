@@ -160,11 +160,13 @@ export function textoCondicionCoarrendatario(c: {
   vencida: boolean
   ingreso_adicional_requerido?: number | null
   reglas_ingreso?: string[]
+  /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento; sin coarrendatario válido, rechazo. */
+  obligatoria?: boolean
 }): string {
   const fecha = fechaCondicion(c.vence_en)
   if (c.vencida) {
     // Solo espera a un coarrendatario cuya consulta sigue en curso.
-    return (c.reglas_ingreso?.length ?? 0) > 0
+    return (c.reglas_ingreso?.length ?? 0) > 0 || c.obligatoria
       ? `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario que cumpla el ingreso, el estudio se cerrará como no aprobado.`
       : `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio pasa a revisión de un analista de Cofianza.`
   }
