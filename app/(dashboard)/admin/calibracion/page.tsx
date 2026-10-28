@@ -86,6 +86,7 @@ const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motiv
   DIAS_VIGENCIA_INGRESO_VERIFICADO: { nombre: 'Vigencia de un ingreso verificado (desde la fecha del soporte)', grupo: 'capacidad', unidad: 'dias' },
   DIAS_VIGENCIA_CERTIFICACION_LABORAL: { nombre: 'Antigüedad máxima de la certificación laboral', grupo: 'capacidad', unidad: 'dias' },
   HORAS_ESPERA_AUTORIZACION: { nombre: 'Espera a que autoricen los coarrendatarios antes de evaluar', grupo: 'capacidad', unidad: 'horas' },
+  CONSULTAS_APELACION_ASUMIDAS: { nombre: 'Consultas a la central que Cofianza asume en la apelación, por estudio', grupo: 'capacidad', unidad: 'num' },
   // Topes de canon
   CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
   TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
