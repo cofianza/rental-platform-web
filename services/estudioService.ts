@@ -276,6 +276,11 @@ export const estudioService = {
     await apiClient.patch(`/estudios/${estudioId}/apelacion`, { fecha_radicacion_apelacion: fecha })
   },
 
+  /** Adenda 4 V3 §15: la reevaluación con el reporte vencido vuelve a consultar la central (la asume Cofianza). */
+  async consultarCentralApelacion(estudioId: string): Promise<void> {
+    await apiClient.post(`/estudios/${estudioId}/consulta-apelacion`, {})
+  },
+
   // ── Adenda §5: tarifa del estudio ──
   async getTarifa(estudioId: string): Promise<ITarifaEstudio> {
     const res = await apiClient.get<ITarifaEstudio>(`/estudios/${estudioId}/tarifa`)
