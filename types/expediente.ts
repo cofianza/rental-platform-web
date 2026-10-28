@@ -346,6 +346,8 @@ export interface IEjecutarTransicion {
   documentos_consultados?: string[]
   /** Adenda 2 §4.3: obligatoria al aprobar un condicionado. */
   evaluacion?: IEvaluacionRevisionManual
+  /** Adenda 4 §9: al aprobar un condicionado, exigió algo más (tarifa no automática). */
+  condicion_adicional?: boolean
   /** P34: obligatorio al rechazar; es lo que ve la inmobiliaria o el propietario. */
   motivo?: string
   /** H58/H103: motivos de lista; el API arma con ellos motivo y comentario. */

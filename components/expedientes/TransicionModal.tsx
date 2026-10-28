@@ -18,6 +18,7 @@ import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, mot
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
+import { CondicionAdicional } from './CondicionAdicional'
 
 /** transitionBodySchema del API exige el comentario con al menos 10 caracteres. */
 const MIN_MOTIVO = 10
@@ -37,6 +38,8 @@ export interface TransicionModalProps {
     motivo?: string,
     /** H58/H103: motivos de lista (rechazar, o aprobar una revisión manual). */
     motivos?: IMotivosElegidos,
+    /** Adenda 4 §9: al aprobar una revisión manual, exigió algo más. */
+    condicionAdicional?: boolean,
   ) => Promise<void>
   isLoading?: boolean
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
@@ -63,6 +66,7 @@ export function TransicionModal({
   const [motivoGestor, setMotivoGestor] = useState('')
   const [documentos, setDocumentos] = useState<string[]>([])
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
+  const [condicionAdicional, setCondicionAdicional] = useState(false)
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
   const { userRole } = usePermissions()
   const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
@@ -153,6 +157,7 @@ export function TransicionModal({
         pideEvaluacion && evaluacionCompleta(evaluacion) ? evaluacion : undefined,
         pideMotivoGestor ? motivoGestor.trim() : undefined,
         tipoLista && catalogo ? motivosParaEnviar(tipoLista, motivos, catalogo) : undefined,
+        pideEvaluacion && condicionAdicional ? true : undefined,
       )
     } finally {
       enviando.current = false
@@ -318,7 +323,10 @@ export function TransicionModal({
         )}
 
         {pideEvaluacion && (
-          <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={isLoading} />
+          <>
+            <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={isLoading} />
+            <CondicionAdicional checked={condicionAdicional} onChange={setCondicionAdicional} disabled={isLoading} />
+          </>
         )}
 
         {/* Mensaje de error */}

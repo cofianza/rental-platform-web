@@ -40,6 +40,7 @@ import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } fro
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
+import { CondicionAdicional } from './CondicionAdicional'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -84,6 +85,7 @@ export function AprobarCondicionadoCard({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
   const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
+  const [condicionAdicional, setCondicionAdicional] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
   // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
@@ -203,6 +205,7 @@ export function AprobarCondicionadoCard({
         documentos_consultados: documentos,
         evaluacion,
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
+        ...(condicionAdicional ? { condicion_adicional: true } : {}),
       })
       setConfirmAprobarOpen(false)
       // El puntaje del modelo es interno: solo se le muestra a Cofianza, en
@@ -390,6 +393,7 @@ export function AprobarCondicionadoCard({
         )}
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
+        <CondicionAdicional checked={condicionAdicional} onChange={setCondicionAdicional} disabled={loading} />
         {sinInfoBuro && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-700">
             <p>
