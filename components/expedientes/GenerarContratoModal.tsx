@@ -21,6 +21,7 @@ import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio } from '@/types/contrato'
+import { fechaCompleta } from '@/lib/constants'
 
 // La modalidad ya no fija el precio ni la cobertura: la comisión mensual y la
 // prima son las del certificado CRC (Adendas 1 §5 y 2 §6) y la fianza cubre
@@ -235,7 +236,7 @@ export function GenerarContratoModal({
         </button>
         <button
           onClick={handleGenerar}
-          disabled={generating || !fechaInicio || !duracionMeses || comisionInvalida}
+          disabled={generating || !fechaCompleta(fechaInicio) || !duracionMeses || comisionInvalida}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
         >
           {generating ? <IconLoader size={16} className="animate-spin" /> : <IconFileText size={16} />}

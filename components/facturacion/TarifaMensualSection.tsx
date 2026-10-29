@@ -29,7 +29,7 @@ import {
   IconLoader,
   IconRefresh,
 } from '@/components/icons'
-import { formatCurrency, formatDate } from '@/lib/constants'
+import { formatCurrency, formatDate, fechaCompleta } from '@/lib/constants'
 import { accionesDeCuenta, accionesDeLinea, contarCuentas, SITUACION_LABELS, SITUACIONES_FILTRO } from '@/lib/tarifaCobro'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { useCuentaCobro, useCuentasCobro } from '@/hooks/useTarifaCobro'
@@ -579,7 +579,7 @@ function PagoTarifaModal({
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!referencia.trim()) return setError('Indique la referencia del pago')
-    if (!fecha) return setError('Seleccione la fecha de pago')
+    if (!fechaCompleta(fecha)) return setError('Seleccione una fecha de pago válida')
     if (fecha > hoyBogota()) return setError('La fecha de pago no puede ser futura')
     setError(null)
     setEnviando(true)

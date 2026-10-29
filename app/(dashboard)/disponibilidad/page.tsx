@@ -27,6 +27,7 @@ import {
   type IHorarioDia,
   type IFechaBloqueada,
 } from '@/services/disponibilidadService'
+import { fechaCompleta } from '@/lib/constants'
 
 const ALLOWED_ROLES = ['propietario', 'inmobiliaria', 'administrador'] as const
 
@@ -317,7 +318,7 @@ export default function DisponibilidadPage() {
   }
 
   function agregarFechaBloqueada() {
-    if (!nuevaFecha) return
+    if (!fechaCompleta(nuevaFecha)) return
     if (nuevaFecha < hoyBogotaISO()) {
       toast.error('No puede bloquear una fecha pasada.')
       return
