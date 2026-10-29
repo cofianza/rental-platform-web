@@ -275,7 +275,11 @@ export function AprobarCondicionadoCard({
                     Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
-                  <IngresoVerificadoSection expedienteId={expedienteId} onRegistrado={() => setVersionBloqueo((n) => n + 1)} />
+                  {/* Si con el ingreso el estudio quedó no aprobado, se recarga (onAprobado recarga el estudio). */}
+                  <IngresoVerificadoSection
+                    expedienteId={expedienteId}
+                    onRegistrado={(rechazado) => (rechazado ? onAprobado?.() : setVersionBloqueo((n) => n + 1))}
+                  />
                   {bloqueo && (
                     <div role="status" className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                       <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
