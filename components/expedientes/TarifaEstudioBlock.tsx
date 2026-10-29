@@ -21,9 +21,9 @@ import { formatCurrency, formatDate } from '@/lib/constants'
 import type { IEstudio, ITarifaEstudio, ITarifaOverrideInput, ViaAprobacion } from '@/types/estudio'
 
 const VIA_LABEL: Record<ViaAprobacion, string> = {
-  automatica: 'aprobación automática',
-  condicionada_coarrendatario: 'condicionada con coarrendatario',
-  revision_manual: 'revisión manual',
+  automatica: 'automática',
+  condicionada_coarrendatario: 'con coarrendatario (tarifa anterior)',
+  revision_manual: 'no automática',
 }
 
 const INPUT_CLASS =
@@ -66,6 +66,9 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
   if (!aplica || !data) return null
   const t = data.tarifas
   const o = data.override
+  // Condicionado sin decidir: la tarifa depende de cómo lo apruebe el analista.
+  // Negado o cerrado sin aprobarse ya está decidido: no se promete una decisión.
+  const provisional = estudio.resultado === 'condicionado' && (estudio.decision_cofianza ?? 'en_curso') === 'en_curso'
 
   const quitar = async () => {
     setQuitando(true)
@@ -88,7 +91,7 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
   return (
     <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800 space-y-1.5">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tarifa</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{provisional ? 'Tarifa prevista' : 'Tarifa'}</span>
         {o && (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
             Condiciones especiales
@@ -114,7 +117,14 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
           <dd className="font-semibold">{t.cashback_pct}%</dd>
         </div>
       </dl>
-      <p className="text-xs text-gray-500">Vía: {VIA_LABEL[t.via]}</p>
+      <p className="text-xs text-gray-500">Tipo de aprobación: {VIA_LABEL[t.via]}</p>
+      {provisional && (
+        <p className="text-xs text-gray-500">
+          {t.via === 'automatica'
+            ? 'Se confirma cuando Cofianza decida. Si el analista exige una condición adicional al aprobar, pasa a la tarifa de aprobación no automática.'
+            : 'Se confirma cuando Cofianza decida el estudio.'}
+        </p>
+      )}
       {o && (
         <p className="text-xs text-amber-700">
           Autorizadas por {o.autorizado_por_nombre || 'Gerencia'} el {formatDate(o.autorizado_en)}

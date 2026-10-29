@@ -537,6 +537,8 @@ export interface IEndeudamientoMotor {
   /** 'regla_dura' (ingreso verificado) / 'sin_rechazo' (estimado) cuando supera el máximo. */
   rama: string | null
   puntos_por_comportamiento: number | null
+  /** Adenda 4 §10: con un ingreso verificado vigente, la cifra que daba el estimado (la de arriba ya es la verificada). */
+  estimado_pct?: number | null
   /**
    * Adenda 3 V2 §6.6: el endeudamiento del titular junto con sus coarrendatarios válidos.
    * Cuando existe, el máximo se mide con él; el del titular fijó sus puntos de endeudamiento.
