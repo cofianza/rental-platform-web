@@ -533,10 +533,15 @@ class ExpedienteService {
     return response.data
   }
 
-  /** Adenda 4 §10: el analista registra el ingreso verificado en la revisión manual. */
+  /**
+   * Adenda 4 §10: el analista registra el ingreso verificado en la revisión
+   * manual. Si con él el estudio no cumple, la API responde 409
+   * INGRESO_VERIFICADO_RECHAZA (details: IRechazoIngresoVerificado) sin guardar;
+   * con `confirmar_rechazo` lo guarda y el estudio queda no aprobado (§4 y §7).
+   */
   async registrarIngresoVerificado(
     expedienteId: string,
-    body: { monto: number; tipo_soporte: string; fecha_soporte: string },
+    body: { monto: number; tipo_soporte: string; fecha_soporte: string; confirmar_rechazo?: boolean },
   ): Promise<IIngresoVerificado> {
     const response = await apiClient.post<IIngresoVerificado>(`/expedientes/${expedienteId}/ingreso-verificado`, body)
     return response.data
@@ -649,6 +654,13 @@ class ExpedienteService {
 export const expedienteService = new ExpedienteService()
 
 export type EvaluadoIngreso = 'empleado' | 'independiente' | 'pensionado'
+
+/** details del 409 INGRESO_VERIFICADO_RECHAZA: solo lo que no se cumple, y los máximos. */
+export interface IRechazoIngresoVerificado {
+  dti_pct?: number
+  canon_ingreso_pct?: number
+  maximos: { dti_pct: number; canon_ingreso_pct: number }
+}
 
 export interface IIngresoVerificado {
   /** false con ADENDA4 apagado: el bloque no rige y la sección no se muestra. */
