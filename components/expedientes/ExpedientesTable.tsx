@@ -289,8 +289,8 @@ export function ExpedientesTable({
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  // Solo la fila: Enter sobre un botón o enlace interno
-                  // («Tomar», «Abrir estudio») hace lo suyo, no abre la fila.
+                  // Solo la fila: Enter sobre un botón interno («Tomar»)
+                  // hace lo suyo, no abre la fila.
                   if (e.target !== e.currentTarget) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
