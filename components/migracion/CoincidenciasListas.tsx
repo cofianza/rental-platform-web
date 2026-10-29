@@ -27,7 +27,7 @@ export function CoincidenciasListas({
   inmobiliariaId: string
   persona: { documento: string | null; nombre: string; n_fila?: number }
   listas: ListasFila
-  onDecidida: () => void
+  onDecidida: (decision: 'confirmada' | 'descartada') => void
   /** Qué pasa con el contrato si se confirma. Por defecto, el de la carga: no se migra ni figura en el Acta. */
   consecuencia?: string
 }) {
@@ -54,7 +54,7 @@ export function CoincidenciasListas({
       await migracionService.decidirListas(inmobiliariaId, { ...persona, decision, motivo })
       toast.success(decision === 'confirmada' ? `Coincidencia confirmada. ${efecto} Se avisó a los administradores.` : 'Coincidencia descartada.')
       setDialogo(null)
-      onDecidida()
+      onDecidida(decision)
     } catch (e) {
       toast.error((e instanceof Error && e.message) || 'No se pudo guardar la decisión.')
       return false

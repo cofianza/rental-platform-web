@@ -647,9 +647,10 @@ export default function LoteMigracionPage() {
                 persona={{ documento: listasIdent.documento, nombre: listasIdent.nombre, n_fila: det.n_fila }}
                 listas={listasIdent}
                 consecuencia="El contrato sigue sin cobertura."
-                onDecidida={() => {
+                onDecidida={(decision) => {
                   setListasIdent(null)
-                  toast.info('Registre de nuevo el documento.')
+                  // Confirmada: registrarlo de nuevo vuelve a negarse (409); el caso queda con los administradores.
+                  if (decision === 'descartada') toast.info('Registre de nuevo el documento.')
                 }}
               />
             )}

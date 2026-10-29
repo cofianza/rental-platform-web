@@ -324,9 +324,10 @@ export function CorreccionModal({
                       persona={{ documento: f.listas.documento, nombre: f.listas.nombre, n_fila: f.n_fila ?? undefined }}
                       listas={f.listas}
                       consecuencia="Esta corrección no se puede hacer por acta; el contrato sigue activo hasta que los administradores decidan."
-                      onDecidida={() => {
+                      onDecidida={(decision) => {
                         setFallas([])
-                        toast.info('Envíe de nuevo el acta de corrección.')
+                        // Confirmada: esta corrección ya no se puede hacer por acta (422 si se envía de nuevo).
+                        if (decision === 'descartada') toast.info('Envíe de nuevo el acta de corrección.')
                       }}
                     />
                   )}
