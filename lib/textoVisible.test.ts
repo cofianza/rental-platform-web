@@ -17,7 +17,7 @@ test('seCierraSiVence: obligatoria o reglas de ingreso; solo por puntaje, revisi
 
 test('obligatoria: no dice «aprobado con condición»; el prospecto y el gestor con su texto', () => {
   const c = { ...base, obligatoria: true }
-  assert.equal(textoCondicionCoarrendatario(c, { prospecto: true }), 'Está cerca: para continuar, su estudio necesita un coarrendatario antes del 03/11/2026.')
+  assert.equal(textoCondicionCoarrendatario(c, { prospecto: true }), 'Para continuar, su estudio necesita un coarrendatario antes del 03/11/2026.')
   const gestor = textoCondicionCoarrendatario(c)
   assert.match(gestor, /^Sin un coarrendatario que califique antes del 03\/11\/2026, el estudio se cierra como no aprobado\./)
   assert.doesNotMatch(gestor, /aprobado con condición/)

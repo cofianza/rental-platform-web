@@ -991,7 +991,7 @@ function SolicitanteDashboard() {
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     {condicion && !condicion.vencida ? (
                       <>
-                        <p className="text-sm text-amber-800 font-medium">Está cerca</p>
+                        <p className="text-sm text-amber-800 font-medium">{condicion.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'}</p>
                         <p className="text-xs text-amber-700 mt-0.5">
                           {/* Adenda 4 V3 §8: con la obligatoria el literal no aplica (decide un analista). */}
                           {condicion.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA} Plazo para agregarlo: hasta el {fechaCondicion(condicion.vence_en)}.

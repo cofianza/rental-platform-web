@@ -22,7 +22,7 @@ import type { IEstudio, ITarifaEstudio, ITarifaOverrideInput, ViaAprobacion } fr
 
 const VIA_LABEL: Record<ViaAprobacion, string> = {
   automatica: 'automática',
-  condicionada_coarrendatario: 'con coarrendatario (tarifa anterior)',
+  condicionada_coarrendatario: 'automática (con coarrendatario)',
   revision_manual: 'no automática',
 }
 

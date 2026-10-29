@@ -509,7 +509,7 @@ export default function ExpedienteDetallePage() {
         expediente.estado === 'borrador'
         ? 'En preparación'
         : expediente.estado === 'condicionado'
-          ? condicionCoa ? 'Está cerca' : 'En revisión'
+          ? condicionCoa ? (condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'En revisión'
           : undefined
       : coaFallidaVive
         ? 'Falló la consulta del coarrendatario'
@@ -709,7 +709,6 @@ export default function ExpedienteDetallePage() {
                 esperaHasta,
                 sinInmueble: !expediente.inmueble,
                 // Propietario directo: la API no admite coarrendatario (espera el Convenio).
-                sinCoarrendatario: !!expediente.inmueble && !expediente.inmueble.inmobiliaria_id,
               })}
             </p>
           </div>

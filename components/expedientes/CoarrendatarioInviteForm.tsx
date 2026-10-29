@@ -183,7 +183,7 @@ export function CoarrendatarioInviteForm({
               // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
               // presentarlo como una condición negativa. El plazo va en la lista de abajo.
               // Con la obligatoria (Adenda 4 V3 §8) no aplica: decide un analista.
-              `Está cerca. ${condicion?.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA}`
+              condicion?.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : `Está cerca. ${MENSAJE_ESTA_CERCA}`
             ) : aprobado ? (
               <>
                 {esGestor
