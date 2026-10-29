@@ -394,7 +394,7 @@ function ResultadoEstudioBlock({
         <div className="min-w-0">
           <p className="text-sm font-semibold">Resultado de la evaluación: {c.label}</p>
           {estudio.score !== null && estudio.score !== undefined && (
-            <p className="text-xs mt-1 opacity-90">Score: <strong>{estudio.score}</strong></p>
+            <p className="text-xs mt-1 opacity-90">Puntaje de la central: <strong>{estudio.score}</strong></p>
           )}
           {estudio.fecha_completado && (
             <p className="text-xs mt-1 opacity-90">Completado el {formatFecha(estudio.fecha_completado)}</p>

@@ -29,6 +29,7 @@ import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
+import { rotuloEvaluacion } from './EstudioEstadoCard'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -64,8 +65,8 @@ const PROVEEDOR_LABELS: Record<string, string> = {
 }
 
 const TIPO_LABELS: Record<string, string> = {
-  individual: 'Individual',
-  con_coarrendatario: 'Con coarrendatario',
+  individual: 'Titular',
+  con_coarrendatario: 'Coarrendatario',
 }
 
 const PAGO_LABELS: Record<string, string> = {
@@ -284,6 +285,16 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     }
   }
 
+  // Por qué salió así: un solo bloque, sin repetir un texto que ya dijo otro campo.
+  const porQue = [
+    textoVisible(estudio.observaciones, { externo }),
+    estudio.resultado === 'rechazado' ? textoVisible(estudio.motivo_rechazo, { externo }) : '',
+    estudio.resultado === 'condicionado' ? textoVisible(estudio.condiciones, { externo }) : '',
+  ].filter((t, i, todos) => t && todos.indexOf(t) === i)
+  const aprobadoSinTexto = estudio.estado === 'completado' && estudio.resultado === 'aprobado'
+  // Regla del 30-sep: sin citas a documentos, también para Cofianza.
+  const nota = textoVisible((estudio as IEstudioConNota).nota_interna, { externo: false })
+
   const handleReEvaluacionCreated = (nuevoEstudio: IEstudio) => {
     setEstudio(nuevoEstudio)
     fetchHistorial(nuevoEstudio.id)
@@ -299,86 +310,34 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle de la evaluación" size="lg" closeOnBackdrop>
       <div className="space-y-4">
-        {/* Estado y resultado */}
-        {isBuroCompleted ? (
-          <div className="flex flex-col items-center py-2">
-            <ScoreGauge score={estudio.score} resultado={estudio.resultado} size="md" />
-            <div className="flex items-center gap-2 mt-3">
-              <Badge estado={estudio.estado} />
-              <Badge estado={estudio.resultado} />
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <Badge estado={estudio.estado} />
-            <Badge estado={estudio.resultado} />
-            {estudio.score != null && (
-              <span className="text-sm font-semibold text-gray-700">
-                Score: {estudio.score}
-              </span>
+        {/* a. Resultado: de lo que más se entiende a lo más técnico. */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-1">Resultado</h4>
+          <div className="flex flex-col items-center gap-2 py-2">
+            <Badge estado={estudio.resultado !== 'pendiente' ? estudio.resultado : estudio.estado} label={rotuloEvaluacion(estudio)} />
+            {/* La API la manda sin puntaje a los externos. Como en el Resumen: solo
+                con resultado y en el titular (sin resultado la ruta dice «En revisión manual»). */}
+            {estudio.estado === 'completado' && estudio.tipo !== 'con_coarrendatario' && estudio.ruta?.etiquetaGestor && (
+              <p className="text-sm text-gray-700 text-center">{estudio.ruta.etiquetaGestor}</p>
             )}
+            {(isBuroCompleted || estudio.score != null) && <ScoreGauge score={estudio.score} size="md" leyenda={!externo} />}
           </div>
-        )}
+        </div>
 
-        {/* Información del estudio */}
         <div className="space-y-4">
-            {/* Persona evaluada — primero por relevancia */}
-            {solicitante && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <DetailRow
-                  label="Persona evaluada"
-                  value={`${solicitante.nombre} ${solicitante.apellido}`.trim() || '—'}
-                />
-                {solicitante.numero_documento && (
-                  <DetailRow
-                    label="Documento"
-                    value={`${solicitante.tipo_documento || ''} ${solicitante.numero_documento}`.trim()}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Info principal */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <DetailRow label="Tipo" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
-              {/* Reunión con Gerencia 23-oct: la central consultada es reserva de Cofianza. */}
-              {!externo && centralDefinida(estudio) && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
-              {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
-                <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
-              )}
-              <DetailRow
-                label="Pago por"
-                value={paga ? PAGO_LABELS[paga === 'gestor' ? 'inmobiliaria' : 'arrendatario'] : PAGO_LABELS[estudio.pago_por] || estudio.pago_por}
-              />
-              {!externo && estudio.referencia_proveedor && (
-                <DetailRow label="Referencia proveedor" value={estudio.referencia_proveedor} />
-              )}
-            </div>
-
-            {/* Fechas */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <DetailRow label="Fecha solicitud" value={formatDate(estudio.fecha_solicitud)} />
-              <DetailRow label="Fecha completado" value={formatDate(estudio.fecha_completado)} />
-              <DetailRow label="Creado" value={formatDate(estudio.created_at)} />
-            </div>
-
-            {/* Solicitado por */}
-            {estudio.solicitado_por && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <DetailRow
-                  label="Solicitado por"
-                  value={`${estudio.solicitado_por.nombre} ${estudio.solicitado_por.apellido}`}
-                />
-              </div>
-            )}
-
-            {/* Observaciones */}
-            {textoVisible(estudio.observaciones, { externo }) && (
+            {/* b. Por qué salió así: observaciones, motivo de rechazo y condiciones en un solo bloque. */}
+            {(porQue.length > 0 || aprobadoSinTexto) && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Observaciones</h4>
-                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
-                  {textoVisible(estudio.observaciones, { externo })}
-                </p>
+                <h4 className="text-sm font-medium text-gray-700 mb-1">Por qué salió así</h4>
+                <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                  {porQue.length > 0
+                    ? porQue.map((t) => (
+                        <p key={t} className="whitespace-pre-wrap">
+                          {t}
+                        </p>
+                      ))
+                    : <p>Cumplió las condiciones de la política de riesgo de Cofianza.</p>}
+                </div>
               </div>
             )}
 
@@ -399,47 +358,6 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   }}
                 />
               ))}
-
-            {/* Nota interna: cifras, umbrales y centrales. La API solo la manda a Cofianza. */}
-            {(estudio as IEstudioConNota).nota_interna && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Nota interna (solo Cofianza)</h4>
-                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
-                  {(estudio as IEstudioConNota).nota_interna}
-                </p>
-              </div>
-            )}
-
-            {/* Adenda 4 §13: el endeudamiento que decide (el del motor), no la línea cruda del reporte. */}
-            {estudio.endeudamiento_motor && <EndeudamientoMotor e={estudio.endeudamiento_motor} />}
-
-            {/* Versión de la política con que se decidió. La API solo la manda a Cofianza. */}
-            {(estudio as IEstudioConNota).version_politica && (
-              <p className="text-xs text-gray-500">
-                Versión de la política con que se decidió:{' '}
-                <span className="font-mono">{(estudio as IEstudioConNota).version_politica}</span>
-              </p>
-            )}
-
-            {/* Motivo de rechazo */}
-            {estudio.resultado === 'rechazado' && textoVisible(estudio.motivo_rechazo, { externo }) && (
-              <div>
-                <h4 className="text-sm font-medium text-red-700 mb-1">Motivo de rechazo</h4>
-                <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg border border-red-200 whitespace-pre-wrap">
-                  {textoVisible(estudio.motivo_rechazo, { externo })}
-                </p>
-              </div>
-            )}
-
-            {/* Condiciones */}
-            {estudio.resultado === 'condicionado' && textoVisible(estudio.condiciones, { externo }) && (
-              <div>
-                <h4 className="text-sm font-medium text-yellow-700 mb-1">Condiciones</h4>
-                <p className="text-sm text-yellow-700 bg-yellow-50 p-3 rounded-lg border border-yellow-200 whitespace-pre-wrap">
-                  {textoVisible(estudio.condiciones, { externo })}
-                </p>
-              </div>
-            )}
 
             {/* Certificado */}
             {isCertificable && (
@@ -504,64 +422,6 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               </div>
             )}
 
-            {/* TransUnion Report Detail */}
-            {isTransUnionCompleted && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">{externo ? 'Reporte de la central de riesgo' : 'Reporte TransUnion'}</h4>
-                {transunionData ? (
-                  <ReporteBuroErrorBoundary>
-                    <TransUnionReportDetail data={transunionData} />
-                  </ReporteBuroErrorBoundary>
-                ) : (
-                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                    El reporte detallado del buró no se persistió para este estudio.
-                    Las consultas más recientes incluyen el detalle completo;
-                    para este caso, las observaciones del estudio resumen el resultado.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* DataCredito Report Detail */}
-            {isDataCreditoCompleted && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">{externo ? 'Reporte de la central de riesgo' : 'Reporte DataCrédito'}</h4>
-                {datacreditoData?.ReportHDCplus ? (
-                  <ReporteBuroErrorBoundary>
-                    <DataCreditoReportDetail data={datacreditoData} externo={externo} />
-                  </ReporteBuroErrorBoundary>
-                ) : (
-                  <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                    El reporte detallado del buró no se persistió para este estudio.
-                    Las consultas más recientes incluyen el detalle completo;
-                    para este caso, las observaciones del estudio resumen el resultado.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Datos formulario — fallback cuando no hay reporte de buró con
-                contenido financiero (manual, SIFIN, no completados, código 14
-                de DataCrédito o `respuesta_proveedor` no persistida). No debe
-                suplantar al reporte, pero tampoco desaparecer cuando el reporte
-                no trae historia crediticia: es el único insumo que queda. */}
-            {estudio.datos_formulario && !hayReporteFinanciero && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  {Object.entries(estudio.datos_formulario)
-                    .filter(([key, value]) => key !== 'acepta_terminos' && value != null && value !== '')
-                    .map(([key, value]) => (
-                      <DetailRow
-                        key={key}
-                        label={CAMPOS_FORMULARIO[key] ?? key.replace(/_/g, ' ')}
-                        value={valorFormulario(key, value)}
-                      />
-                    ))}
-                </div>
-              </div>
-            )}
-
             {/* Re-evaluacion section — solo gestores (admin/operador) */}
             {isReevaluable && !readOnly && (
               <div ref={reevaluacionRef} className="scroll-mt-4">
@@ -573,6 +433,117 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 />
               </div>
             )}
+
+            {/* d. Cómo lo calculó Cofianza: nota interna, endeudamiento y versión. La API solo los manda a Cofianza. */}
+            {(nota || estudio.endeudamiento_motor || (estudio as IEstudioConNota).version_politica) && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Cómo lo calculó Cofianza (solo Cofianza)</h4>
+                {nota && (
+                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">{nota}</p>
+                )}
+                {/* Adenda 4 §13: el endeudamiento que decide (el del motor), no la línea cruda del reporte. */}
+                {estudio.endeudamiento_motor && <EndeudamientoMotor e={estudio.endeudamiento_motor} />}
+                {(estudio as IEstudioConNota).version_politica && (
+                  <p className="text-xs text-gray-500">
+                    Versión de la política con que se decidió:{' '}
+                    <span className="font-mono">{(estudio as IEstudioConNota).version_politica}</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* e. Reporte de la central, plegado. Sin reporte con contenido
+                financiero (manual, SIFIN, no completados, código 14 de
+                DataCrédito o `respuesta_proveedor` no persistida) quedan los
+                datos del formulario: es el único insumo que queda. */}
+            {(isBuroCompleted || (estudio.datos_formulario && !hayReporteFinanciero)) && (
+              <details className="rounded-lg border border-gray-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-gray-50">
+                  <span className="font-medium text-gray-800">
+                    {externo || !isBuroCompleted ? 'Reporte de la central de riesgo' : isTransUnion ? 'Reporte TransUnion' : 'Reporte DataCrédito'}
+                  </span>
+                  <span className="text-xs text-gray-500">Ver</span>
+                </summary>
+                <div className="space-y-4 border-t border-gray-200 p-4">
+                  {transunionData && (
+                    <ReporteBuroErrorBoundary>
+                      <TransUnionReportDetail data={transunionData} />
+                    </ReporteBuroErrorBoundary>
+                  )}
+                  {datacreditoData?.ReportHDCplus && (
+                    <ReporteBuroErrorBoundary>
+                      <DataCreditoReportDetail data={datacreditoData} externo={externo} />
+                    </ReporteBuroErrorBoundary>
+                  )}
+                  {isBuroCompleted && !transunionData && !datacreditoData?.ReportHDCplus && (
+                    <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                      El detalle de este reporte no quedó guardado. El resultado y sus motivos están arriba.
+                    </p>
+                  )}
+                  {estudio.datos_formulario && !hayReporteFinanciero && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        {Object.entries(estudio.datos_formulario)
+                          .filter(([key, value]) => key !== 'acepta_terminos' && value != null && value !== '')
+                          .map(([key, value]) => (
+                            <DetailRow
+                              key={key}
+                              label={CAMPOS_FORMULARIO[key] ?? key.replace(/_/g, ' ')}
+                              value={valorFormulario(key, value)}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </details>
+            )}
+
+            {/* f. Datos del trámite, plegado. */}
+            <details className="rounded-lg border border-gray-200 bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-gray-50">
+                <span className="font-medium text-gray-800">Datos del trámite</span>
+                <span className="text-xs text-gray-500">Ver</span>
+              </summary>
+              <div className="border-t border-gray-200 px-4 py-2">
+                {solicitante && (
+                  <>
+                    <DetailRow
+                      label="Persona evaluada"
+                      value={`${solicitante.nombre} ${solicitante.apellido}`.trim() || '—'}
+                    />
+                    {solicitante.numero_documento && (
+                      <DetailRow
+                        label="Documento"
+                        value={`${solicitante.tipo_documento || ''} ${solicitante.numero_documento}`.trim()}
+                      />
+                    )}
+                  </>
+                )}
+                <DetailRow label="Evaluación de" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
+                {/* Reunión con Gerencia 23-oct: la central consultada es reserva de Cofianza. */}
+                {!externo && centralDefinida(estudio) && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
+                {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
+                  <DetailRow label="Duración del contrato" value={`${estudio.duracion_contrato_meses} meses`} />
+                )}
+                <DetailRow
+                  label="Quién pagó"
+                  value={paga ? PAGO_LABELS[paga === 'gestor' ? 'inmobiliaria' : 'arrendatario'] : PAGO_LABELS[estudio.pago_por] || estudio.pago_por}
+                />
+                {!externo && estudio.referencia_proveedor && (
+                  <DetailRow label="Código de la consulta en la central" value={estudio.referencia_proveedor} />
+                )}
+                <DetailRow label="Fecha de solicitud" value={formatDate(estudio.fecha_solicitud)} />
+                <DetailRow label="Fecha de resultado" value={formatDate(estudio.fecha_completado)} />
+                {estudio.solicitado_por && (
+                  <DetailRow
+                    label="Solicitado por"
+                    value={`${estudio.solicitado_por.nombre} ${estudio.solicitado_por.apellido}`}
+                  />
+                )}
+              </div>
+            </details>
         </div>
 
         {/* Boton cerrar */}
@@ -647,6 +618,12 @@ function EndeudamientoMotor({ e }: { e: IEndeudamientoMotor }) {
           </p>
         ) : (
           delSolicitante
+        )}
+        {/* Adenda 4 §10: el ingreso verificado registrado en la revisión cambia la cifra que decide. */}
+        {e.estimado_pct != null && (
+          <p className="text-xs mt-1">
+            Con el ingreso estimado de la central daba {e.estimado_pct.toLocaleString('es-CO')} %; desde que se registró el ingreso verificado, decide esta cifra.
+          </p>
         )}
         <p className="text-[11px] mt-1 text-gray-500">
           Es la cifra que cuenta para la decisión. La «cuota sobre ingreso» del reporte de la central es un dato crudo, sin el ajuste del ingreso ni la fianza.

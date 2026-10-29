@@ -36,28 +36,17 @@ function ScoreBar({ score }: { score?: number | null }) {
 
   const pct = Math.min(100, Math.max(0, (score / 999) * 100))
 
-  let barColor: string
-  let textColor: string
-  if (score <= 300) {
-    barColor = 'bg-red-500'
-    textColor = 'text-red-700'
-  } else if (score <= 600) {
-    barColor = 'bg-yellow-500'
-    textColor = 'text-yellow-700'
-  } else {
-    barColor = 'bg-green-500'
-    textColor = 'text-green-700'
-  }
-
+  // Neutro: el puntaje de la central no es el veredicto. Los cortes, en el
+  // title (Adenda 2 §2, los mismos del detalle).
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      title="Puntaje de la central: menos de 450 se rechaza; de 450 a 599, revisión manual; 600 o más, sin alerta por puntaje"
+    >
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-15">
-        <div
-          className={cn('h-full rounded-full transition-all', barColor)}
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full rounded-full transition-all bg-primary-600" style={{ width: `${pct}%` }} />
       </div>
-      <span className={cn('text-xs font-semibold tabular-nums', textColor)}>{score}</span>
+      <span className="text-xs font-semibold tabular-nums text-gray-700">{score}</span>
     </div>
   )
 }

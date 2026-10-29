@@ -1,8 +1,9 @@
 /**
  * ScoreGauge
- * Indicador visual semicircular del score CreditVision
- * Rojo (0-449) | Amarillo (450-599) | Verde (600-999)
- * Adenda 2 §2: bajo 450 es rechazo; 450-599 revisión manual.
+ * Indicador visual semicircular del puntaje de la central de riesgo (0-999).
+ * Neutro: el puntaje de la central no es el veredicto (un 773 puede salir no
+ * aprobable por mora). Los cortes de la Adenda 2 §2 solo se le muestran a
+ * Cofianza (`leyenda`); a la inmobiliaria no (Política §2).
  */
 
 'use client'
@@ -11,11 +12,13 @@ import { IconInfo } from '@/components/icons'
 
 interface ScoreGaugeProps {
   score: number | null | undefined
-  resultado?: string
   size?: 'sm' | 'md' | 'lg'
+  /** Solo Cofianza: los cortes del puntaje de la central (Adenda 2 §2). */
+  leyenda?: boolean
 }
 
 const MAX_SCORE = 999
+const COLOR_ARCO = '#047857'
 
 const SIZES = {
   sm: { width: 120, height: 72, fontSize: 'text-lg', labelSize: 'text-xs', strokeWidth: 8, radius: 44 },
@@ -23,63 +26,10 @@ const SIZES = {
   lg: { width: 240, height: 144, fontSize: 'text-4xl', labelSize: 'text-base', strokeWidth: 12, radius: 90 },
 }
 
-function getScoreColor(score: number): { stroke: string; text: string; bg: string; label: string } {
-  if (score >= 600) return { stroke: '#16a34a', text: 'text-green-600', bg: 'bg-green-50', label: 'Aprobado' }
-  if (score >= 450) return { stroke: '#d97706', text: 'text-amber-600', bg: 'bg-amber-50', label: 'Condicionado' }
-  return { stroke: '#dc2626', text: 'text-red-600', bg: 'bg-red-50', label: 'No aprobable' }
-}
-
-function getResultadoLabel(resultado?: string): string {
-  switch (resultado) {
-    case 'aprobado': return 'Aprobado'
-    case 'rechazado': return 'No aprobable'
-    case 'condicionado': return 'Condicionado'
-    default: return ''
-  }
-}
-
-export function ScoreGauge({ score, resultado, size = 'md' }: ScoreGaugeProps) {
+export function ScoreGauge({ score, size = 'md', leyenda = false }: ScoreGaugeProps) {
   const config = SIZES[size]
   const hasScore = score != null && score >= 0
-
-  if (!hasScore) {
-    return (
-      <div className="flex flex-col items-center">
-        <div
-          className="relative flex items-center justify-center"
-          style={{ width: config.width, height: config.height }}
-        >
-          <svg
-            width={config.width}
-            height={config.height}
-            viewBox={`0 0 ${config.width} ${config.height}`}
-          >
-            <path
-              d={describeArc(config.width / 2, config.height, config.radius, 180, 360)}
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth={config.strokeWidth}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-            <span className={`${config.fontSize} font-bold text-gray-500`}>N/A</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 mt-1">
-          <IconInfo size={14} className="text-gray-500" />
-          <span className={`${config.labelSize} text-gray-500`}>
-            {resultado ? getResultadoLabel(resultado) : 'Score no disponible'}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
-  const colors = getScoreColor(score!)
-  const percentage = Math.min(score! / MAX_SCORE, 1)
-  const startAngle = 180
-  const endAngle = 180 + (percentage * 180)
+  const percentage = hasScore ? Math.min(score / MAX_SCORE, 1) : 0
 
   return (
     <div className="flex flex-col items-center">
@@ -103,29 +53,34 @@ export function ScoreGauge({ score, resultado, size = 'md' }: ScoreGaugeProps) {
           {/* Score arc */}
           {percentage > 0 && (
             <path
-              d={describeArc(config.width / 2, config.height, config.radius, startAngle, endAngle)}
+              d={describeArc(config.width / 2, config.height, config.radius, 180, 180 + percentage * 180)}
               fill="none"
-              stroke={colors.stroke}
+              stroke={COLOR_ARCO}
               strokeWidth={config.strokeWidth}
               strokeLinecap="round"
             />
           )}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-          <span className={`${config.fontSize} font-bold ${colors.text}`}>
-            {score}
+          <span className={`${config.fontSize} font-bold ${hasScore ? 'text-primary-700' : 'text-gray-500'}`}>
+            {hasScore ? score : '—'}
           </span>
         </div>
       </div>
-      <span className={`${config.labelSize} font-medium ${colors.text} mt-1`}>
-        {resultado ? getResultadoLabel(resultado) : colors.label}
-      </span>
-      {/* Scale labels */}
-      {size !== 'sm' && (
-        <div className="flex justify-between w-full mt-1 px-1">
-          <span className="text-[10px] text-gray-500">0</span>
-          <span className="text-[10px] text-gray-500">999</span>
+      {hasScore ? (
+        <span className={`${config.labelSize} text-gray-600 mt-1`}>
+          Puntaje de la central de riesgo · {score} de {MAX_SCORE}
+        </span>
+      ) : (
+        <div className="flex items-center gap-1.5 mt-1">
+          <IconInfo size={14} className="text-gray-500" />
+          <span className={`${config.labelSize} text-gray-500`}>Sin puntaje de la central</span>
         </div>
+      )}
+      {leyenda && (
+        <p className="mt-1 text-center text-[11px] text-gray-500">
+          Menos de 450: no aprobable · 450 a 599: revisión obligatoria · 600 o más: decide el puntaje de Cofianza
+        </p>
       )}
     </div>
   )

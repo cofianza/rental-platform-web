@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
-import { etiquetaEstado } from './EstudioEstadoCard'
+import { rotuloEvaluacion } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -446,19 +446,11 @@ export function EstudiosSection({
                             {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
                           </span>
                           )}
-                          {/* Mismas palabras que el Resumen; el resultado, solo cuando lo hay. */}
-                          <Badge estado={estudio.estado} label={etiquetaEstado(estudio)} />
-                          {estudio.resultado !== 'pendiente' && (
-                            <Badge
-                              estado={estudio.resultado}
-                              // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
-                              label={
-                                estudio.tipo === 'con_coarrendatario'
-                                  ? ({ aprobado: 'Válido', rechazado: 'No califica', condicionado: 'En revisión' } as Record<string, string>)[estudio.resultado]
-                                  : undefined
-                              }
-                            />
-                          )}
+                          {/* Una sola pastilla, con el mismo nombre que el Resumen y el detalle. */}
+                          <Badge
+                            estado={estudio.resultado !== 'pendiente' ? estudio.resultado : estudio.estado}
+                            label={rotuloEvaluacion(estudio)}
+                          />
                         </>
                       {persona?.etiqueta === 'Coarrendatario' && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
@@ -491,16 +483,9 @@ export function EstudiosSection({
                     </div>
                     {estudio.score != null && (
                       <div className="mt-1">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            estudio.score >= 600
-                              ? 'bg-green-100 text-green-700'
-                              : estudio.score >= 450 // Adenda 2 §2: bajo 450 es rechazo
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          Score: {estudio.score}
+                        {/* Neutro: el puntaje de la central no es el veredicto. */}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                          Puntaje de la central: {estudio.score}
                         </span>
                       </div>
                     )}
@@ -546,7 +531,13 @@ export function EstudiosSection({
                           que quedó en curso o la reevaluación (apelación), que nace
                           'solicitado' con la central del padre y solo se decide aquí.
                           No mientras se espera la autorización. */}
-                      {ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
+                      {/* Adenda 4 V3 §12: retenida por la espera del coarrendatario, la API no la deja decidir. */}
+                      {estudio.espera_autorizacion ? (
+                        <span className="max-w-56 text-xs text-amber-800">
+                          La decisión espera al coarrendatario hasta el{' '}
+                          {new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })}.
+                        </span>
+                      ) : ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
                         estudio.resultado === 'pendiente' &&
                         (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso' || !!estudio.estudio_padre_id) && (
                         <button
