@@ -34,7 +34,7 @@ import { IconShieldCheck, IconAlertTriangle } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
-import { textoCondicionCoarrendatario } from './textoVisible'
+import { seCierraSiVence, textoCondicionCoarrendatario } from './textoVisible'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
@@ -107,6 +107,9 @@ export function AprobarCondicionadoCard({
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
 
   if (condicion) {
+    // Sin un coarrendatario que la resuelva (al vencer o porque el evaluado no
+    // alcanza: solo se admite uno), ¿se cierra como no aprobado? (API vencidaSeRechaza)
+    const seCierra = seCierraSiVence(condicion)
     return (
       <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
         <div className="flex items-start gap-4">
@@ -115,7 +118,7 @@ export function AprobarCondicionadoCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="mb-0.5 inline-flex items-center gap-1 text-base font-semibold text-gray-900">
-              Aprobado con condición: qué sigue
+              {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
               <InfoTip texto={AYUDA.condicionado} lado="derecha" />
             </h3>
             <p className="text-sm text-gray-700">{textoCondicionCoarrendatario(condicion)}</p>
@@ -129,15 +132,17 @@ export function AprobarCondicionadoCard({
                 </Paso>
                 <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
                   <p>
-                    Si califica, mejora el puntaje del estudio y su ingreso se suma al del solicitante. Con eso, si el
-                    estudio cumple y no hay nada por revisar, queda aprobado sin pasar por un analista; si no, lo decide un
-                    analista de Cofianza. Si no califica, no suma nada y el estudio sigue con el solicitante.
+                    {condicion.obligatoria
+                      ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
+                      : seCierra
+                        ? 'Si califica y entre los dos se cumple el ingreso, el estudio queda aprobado (o lo decide un analista si hay algo por revisar). Si no califica, o con él no alcanza el ingreso, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
+                        : 'Si califica, mejora el puntaje del estudio y su ingreso se suma al del solicitante. Con eso, si el estudio cumple y no hay nada por revisar, queda aprobado sin pasar por un analista; si no, lo decide un analista de Cofianza. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'}
                   </p>
                 </Paso>
                 <Paso n={3} titulo="Si vence el plazo">
                   <p>
-                    {(condicion.reglas_ingreso?.length ?? 0) > 0
-                      ? 'Sin un coarrendatario que cumpla el ingreso, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
+                    {seCierra
+                      ? 'Sin un coarrendatario que cumpla, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
                       : 'El estudio pasa a revisión de un analista de Cofianza, sin repetir la consulta a las centrales.'}
                   </p>
                 </Paso>
@@ -245,8 +250,8 @@ export function AprobarCondicionadoCard({
             {estudioSinCentrales
               ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'
               : sinInfoBuro
-                ? 'El buró no tiene información crediticia de esta persona. No es un rechazo: falta información para medir el riesgo.'
-                : 'El buró sí evaluó a esta persona y el riesgo salió medio. No es un rechazo.'}
+                ? 'Las centrales de riesgo no tienen historial de esta persona. No es un rechazo: falta información para medir el riesgo.'
+                : 'La central sí evaluó a esta persona; el motivo de la revisión está en «Evaluación crediticia», aquí abajo. No es un rechazo.'}
           </p>
           {estudioSinCentrales && esCofianza && (
             <button

@@ -25,7 +25,10 @@ import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { IconRefresh, IconUsers } from '@/components/icons'
-import { fechaCondicion } from './textoVisible'
+import { fechaCondicion, seCierraSiVence } from './textoVisible'
+
+/** Antes de que se decida al titular (Adenda 3 V2 §6.1), como CoarrendatarioPropietarioCard. */
+const PREVIOS = ['borrador', 'en_revision', 'informacion_incompleta']
 
 interface CoarrendatarioCardProps {
   expedienteId: string
@@ -73,16 +76,21 @@ export function CoarrendatarioCard({
   // Si se puede invitar y si la invitación sigue en pie. undefined = cargando;
   // null = no se pudo leer (se cae a la regla de antes: solo en revisión).
   const aprobado = expedienteEstado === 'aprobado'
+  // Con el coarrendatario desde el inicio la invitación sigue en pie antes de
+  // decidir al titular: sin la ventana salía «sin efecto» o no salía.
+  const antesDeLaDecision = PREVIOS.includes(expedienteEstado)
   const [ventana, setVentana] = useState<IVentanaCoarrendatario | null | undefined>(undefined)
   const fetchVentana = useCallback(() => {
     coarrendatarioService.getVentana(expedienteId).then(setVentana, () => setVentana(null))
   }, [expedienteId])
   useEffect(() => {
-    if (expedienteEstado === 'condicionado' || aprobado) fetchVentana()
+    if (expedienteEstado === 'condicionado' || aprobado || antesDeLaDecision) fetchVentana()
     else setVentana(null)
-  }, [fetchVentana, version, expedienteEstado, aprobado])
+  }, [fetchVentana, version, expedienteEstado, aprobado, antesDeLaDecision])
   const vigente = ventana?.vigente ?? expedienteEstado === 'condicionado'
-  const puedeInvitar = ventana?.puede_invitar ?? expedienteEstado === 'condicionado'
+  // Antes de la decisión el prospecto no invita desde aquí (lo hace al autorizar):
+  // el texto del formulario es el de un estudio ya evaluado.
+  const puedeInvitar = !antesDeLaDecision && (ventana?.puede_invitar ?? expedienteEstado === 'condicionado')
 
   // Al autorizar, el prospecto ya escribió nombre/apellido/correo/WhatsApp de
   // la persona con quien va a vivir, y ahí le prometimos que "no tenía que
@@ -175,7 +183,7 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} condicion={condicion} />
+      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} antesDeLaDecision={antesDeLaDecision} condicion={condicion} />
 
       {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
           cancelarla para invitar a otra persona (P4); con el estudio ya
@@ -203,11 +211,13 @@ function EstadoBadge({
   coa,
   sinEfecto,
   aprobado,
+  antesDeLaDecision,
   condicion,
 }: {
   coa: ICoarrendatario
   sinEfecto: boolean
   aprobado: boolean
+  antesDeLaDecision: boolean
   condicion: ICondicionCoarrendatario | null
 }) {
   // Con condición no decide un analista: se pondera contra el puntaje objetivo.
@@ -225,12 +235,20 @@ function EstadoBadge({
           label: 'Invitación vencida',
           mensaje: `Venció el ${new Date(coa.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })} sin respuesta y el enlace ya no sirve. Reenvíela abajo para que le llegue uno nuevo.`,
         }
+      : antesDeLaDecision
+      ? {
+          color: 'bg-blue-50 border-blue-200 text-blue-900',
+          label: 'Esperando que autorice',
+          mensaje: 'Le enviamos la invitación. Su estudio se decide con los dos apenas autorice; si no lo hace a tiempo, lo decidimos con su información.',
+        }
       : {
           color: 'bg-blue-50 border-blue-200 text-blue-900',
           label: 'Esperando respuesta',
           mensaje:
             conCondicion && condicion && !condicion.vencida
-              ? `Le enviamos la invitación por correo. Debe aceptarla antes del ${fechaCondicion(condicion.vence_en)}; si no, el estudio se cierra sin aprobarse.`
+              ? `Le enviamos la invitación por correo. Debe aceptarla antes del ${fechaCondicion(condicion.vence_en)}; ${
+                  seCierraSiVence(condicion) ? 'si no, su estudio no podrá aprobarse.' : 'si no, un analista de Cofianza revisará su estudio sin esa persona.'
+                }`
               : 'Le enviamos la invitación por correo. Le avisaremos cuando responda.',
         },
     aceptado: {
@@ -238,7 +256,9 @@ function EstadoBadge({
       label: 'Aceptó la invitación',
       mensaje: aprobado
         ? 'Estamos procesando su evaluación crediticia. Si queda vinculado, la prima de vinculación baja al 10 % del canon; le avisamos por correo.'
-        : conCondicion
+        : antesDeLaDecision
+          ? 'Estamos haciendo su evaluación crediticia. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
+          : conCondicion
           ? 'Estamos procesando su evaluación crediticia. Cuando termine le avisamos el resultado.'
           : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide su caso con los dos resultados y le avisamos.',
     },
@@ -255,7 +275,9 @@ function EstadoBadge({
       // solo si quedó vinculado, y eso va por correo.
       mensaje: aprobado
         ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
-        : conCondicion
+        : antesDeLaDecision
+          ? 'La evaluación de su coarrendatario terminó. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
+          : conCondicion
           ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por notificación y correo.'
           : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
     },

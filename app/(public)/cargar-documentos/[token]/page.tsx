@@ -16,7 +16,7 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
-import { fechaCondicion, lineaIngresoAdicional, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
+import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import {
@@ -35,6 +35,10 @@ function textoInvitado(
   vigente: boolean,
   /** Adenda 3 §6: con condición no decide un analista y el plazo corre. */
   conCondicion: boolean,
+  /** El plazo de la condición, si sigue corriendo. */
+  plazo: string | null,
+  /** Qué pasa si vence sin coarrendatario (API); null = no lo sabemos. */
+  siVence: ContextoCargaDocumentos['condicion_si_vence'],
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
@@ -50,7 +54,13 @@ function textoInvitado(
     return invitado.vencida
       ? 'La invitación venció sin respuesta. Pídale a quien le pidió el estudio (su inmobiliaria o el propietario) que la reenvíe.'
       : conCondicion
-        ? 'Le enviamos la invitación. Debe aceptarla dentro del plazo de la condición; si no, el estudio se cierra sin aprobarse.'
+        ? `Le enviamos la invitación. Debe aceptarla ${plazo ? `antes del ${fechaCondicion(plazo)}` : 'dentro del plazo de la condición'}; ${
+            siVence === 'rechazo'
+              ? 'si no, su estudio no podrá aprobarse.'
+              : siVence === 'revision'
+                ? 'si no, una persona de nuestro equipo revisará su caso.'
+                : 'hágalo cuanto antes.'
+          }`
         : 'Le enviamos la invitación. Cuando la acepte, hacemos su evaluación crediticia.'
   }
   if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
@@ -203,19 +213,19 @@ export default function CargarDocumentosPage() {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
+            {conCondicion ? 'Está cerca' : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            {soloCoarrendatario ? (
+            {conCondicion ? (
+              // El literal del §6.9, el plazo y la cifra (§6.7) van una sola vez, en el formulario.
+              <>
+                Hola {ctx.solicitante}: así va su estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
+              </>
+            ) : soloCoarrendatario ? (
               <>
                 Hola {ctx.solicitante}, su estudio de arriendo
-                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}
-                {conCondicion
-                  ? // Adenda 3 V2 §6.9: el texto literal, el plazo y la cifra con su advertencia (§6.7).
-                    `: está cerca. ${MENSAJE_ESTA_CERCA}${plazo ? ` Plazo para agregarlo: hasta el ${fechaCondicion(plazo)}.` : ''}${
-                      lineaIngresoAdicional(ctx.condicion_ingreso_adicional_requerido) ? ` ${lineaIngresoAdicional(ctx.condicion_ingreso_adicional_requerido)}` : ''
-                    }`
-                  : ' fue aprobado.'}
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} fue aprobado.
               </>
             ) : (
               <>
@@ -231,7 +241,18 @@ export default function CargarDocumentosPage() {
           <CoarrendatarioInviteForm
             audience="solicitante"
             aprobado={aprobado}
-            condicion={conCondicion ? { vence_en: plazo ?? undefined } : null}
+            condicion={
+              conCondicion
+                ? {
+                    vence_en: plazo ?? undefined,
+                    // Sin plazo vivo ya venció: no se dice «si no lo agrega a tiempo».
+                    vencida: !plazo,
+                    ingreso_adicional_requerido: ctx.condicion_ingreso_adicional_requerido,
+                    siVence: ctx.condicion_si_vence,
+                    obligatoria: ctx.condicion_obligatoria,
+                  }
+                : null
+            }
             initial={ctx.coarrendatario.sugerido}
             invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
             onInvited={cargar}
@@ -243,7 +264,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion)}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence)}</p>
             </div>
           </div>
         )}
