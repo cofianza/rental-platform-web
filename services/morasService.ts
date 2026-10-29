@@ -3,6 +3,7 @@
 // ============================================
 
 import { apiClient } from '@/lib/api'
+import type { EstadoDiferidos } from '@/types/migracion'
 
 export type MoraEstado = 'fase_1' | 'fase_2' | 'fase_3' | 'pagada' | 'cancelada'
 
@@ -59,6 +60,8 @@ export interface IMoraDetalle extends IMoraTicket {
   mensajes: IMoraMensaje[]
   /** Solo contratos migrados (§5.1.4): si la mora se puede reportar a centrales. null = no aplica. */
   reportable_centrales?: { reportable: boolean | null; motivo: string | null } | null
+  /** Migración, Adenda 1 §3: datos que la inmobiliaria debe entregar por la mora. null = no aplica. */
+  diferidos?: (EstadoDiferidos & { fila_id: string; lote_id: string }) | null
 }
 
 /** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =

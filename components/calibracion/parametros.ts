@@ -799,6 +799,22 @@ export const META: Record<string, MetaParametro> = {
     queHace: 'Días para firmar el acta de un lote o de una corrección. Sin firma a tiempo, el lote expira sin activar nada, o la corrección no se aplica.',
     rige: 'siempre',
   },
+  DIAS_ENTREGA_DOCUMENTO_PENDIENTE: {
+    nombre: 'Días para entregar el documento de un arrendatario sin identificar',
+    seccion: 'migracion',
+    sub: 'Carga y plazos',
+    unidad: 'dias_habiles',
+    queHace: 'Si el archivo no trae el documento de un arrendatario, el contrato entra al acta como pendiente de identificación y sin cobertura. La inmobiliaria tiene estos días hábiles, desde la firma del acta, para entregarlo; la fianza se activa el día en que Cofianza lo registra. Si no lo entrega a tiempo, el contrato no se migra. Cada lote conserva el plazo de su acta.',
+    rige: 'siempre',
+  },
+  DIAS_ENTREGA_EXPEDIENTE_TRAS_MORA: {
+    nombre: 'Días para entregar los datos de un contrato migrado con mora',
+    seccion: 'migracion',
+    sub: 'Carga y plazos',
+    unidad: 'dias_habiles',
+    queHace: 'Al reportarse una mora sobre un contrato migrado, se le piden a la inmobiliaria los datos que no se exigieron al migrar: celular y correo del arrendatario, coarrendatarios, copia del contrato firmado e historial de pagos. Tiene estos días hábiles para entregarlos. Cada lote conserva el plazo de su acta.',
+    rige: 'siempre',
+  },
 }
 
 function tarifaEjemplo(pct: number, iva: number): string {

@@ -6,24 +6,33 @@
 
 import { apiClient, type ApiResponse } from '@/lib/api'
 import type {
+  ActualizarListasResultado,
   AuditoriaAbierta,
   ActaEnviada,
+  CargaNativa,
   ActaPdf,
   ArchivoDescargado,
   CorreccionBody,
   CorreccionLote,
+  DecisionListasBody,
   Destinacion,
   DetalleFilaExcluida,
   DetalleFilaMigrada,
+  DocumentoDiferido,
   EstadoActaLote,
+  EstadoListas,
   EstadoMigracionOrg,
   FilaFormatoAnterior,
   GuardarHabilitacionBody,
   Habilitacion,
   InmobiliariaMigracion,
   LiquidacionMigracion,
+  ListasFila,
   LoteResumen,
+  MapeoColumnas,
+  MapeoGuardado,
   MotivoReportable,
+  PersonaDiferida,
   ProcesarResultado,
   RepresentanteLegal,
   ResultadoAuditoria,
@@ -31,6 +40,7 @@ import type {
   TableroLote,
   TipoDocumentoHabilitacion,
   ValidacionResultado,
+  VistaPreviaNativa,
   VistaTablero,
 } from '@/types/migracion'
 
@@ -77,6 +87,10 @@ const conArchivo = (archivo: File, campos: Record<string, string> = {}) => {
   return form
 }
 
+/** Adenda 1 §5: el mapeo y la huella de la vista previa confirmada viajan junto al archivo nativo. */
+const camposNativa = (nativa?: CargaNativa): Record<string, string> =>
+  nativa ? { mapeo: JSON.stringify(nativa.mapeo), confirmacion: nativa.confirmacion } : {}
+
 export const migracionService = {
   descargarPlantilla: () => descargar(`${BASE}/plantilla`, 'plantilla-migracion-cartera.xlsx'),
 
@@ -110,27 +124,65 @@ export const migracionService = {
     return (await apiClient.delete<{ suspendida: false }>(`${org(inmobiliariaId)}/suspension`)).data
   },
 
+  // ── Listas restrictivas OFAC y ONU (Adenda 1 §6) ──
+
+  async estadoListas(): Promise<EstadoListas> {
+    return (await apiClient.get<EstadoListas>(`${BASE}/listas`)).data
+  },
+  /** Solo administrador. Responde siempre; la falla de cada lista va en `resultados`. */
+  async actualizarListas(): Promise<ActualizarListasResultado> {
+    return (await apiClient.post<ActualizarListasResultado>(`${BASE}/listas/actualizar`)).data
+  },
+  /** Confirma (no se migra; protocolo SAGRILAFT) o descarta una coincidencia. */
+  async decidirListas(inmobiliariaId: string, body: DecisionListasBody): Promise<{ listas: ListasFila }> {
+    return (await apiClient.post<{ listas: ListasFila }>(`${org(inmobiliariaId)}/listas/decision`, body)).data
+  },
+
   // ── Carga del archivo (§2.4) ──
 
   // conMora (Adenda 1 §4.4): códigos internos de los contratos que la inmobiliaria declara con
   // mora, separados por coma o renglón; la API los rechaza (400 si alguno no está en el archivo).
 
+  // nativa (Adenda 1 §5): el archivo que exporta el sistema de la inmobiliaria con su mapeo y la
+  // huella de la vista previa confirmada; sin ella, la plantilla de Cofianza.
+
   /** Primera pasada: no crea nada. */
-  async validar(inmobiliariaId: string, archivo: File, conMora = ''): Promise<ValidacionResultado> {
-    const form = conArchivo(archivo, { contratos_con_mora: conMora })
+  async validar(inmobiliariaId: string, archivo: File, conMora = '', nativa?: CargaNativa): Promise<ValidacionResultado> {
+    const form = conArchivo(archivo, { contratos_con_mora: conMora, ...camposNativa(nativa) })
     return json<ValidacionResultado>(await crudo(`${org(inmobiliariaId)}/validar`, { method: 'POST', form }))
   },
   /** El mismo reporte de validación en Excel, con los datos tal como llegaron. */
-  validarXlsx: (inmobiliariaId: string, archivo: File, conMora = '') =>
+  validarXlsx: (inmobiliariaId: string, archivo: File, conMora = '', nativa?: CargaNativa) =>
     descargar(
       `${org(inmobiliariaId)}/validar?formato=xlsx`,
       'reporte-validacion-migracion.xlsx',
-      conArchivo(archivo, { contratos_con_mora: conMora }),
+      conArchivo(archivo, { contratos_con_mora: conMora, ...camposNativa(nativa) }),
     ),
   /** Crea el lote y su Acta de Migración (422 MIGRACION_SIN_ACEPTADAS si nada es aceptable). */
-  async procesar(inmobiliariaId: string, archivo: File, rep: RepresentanteLegal, conMora = ''): Promise<ProcesarResultado> {
-    const form = conArchivo(archivo, { ...rep, contratos_con_mora: conMora })
+  async procesar(
+    inmobiliariaId: string,
+    archivo: File,
+    rep: RepresentanteLegal,
+    conMora = '',
+    nativa?: CargaNativa,
+  ): Promise<ProcesarResultado> {
+    const form = conArchivo(archivo, { ...rep, contratos_con_mora: conMora, ...camposNativa(nativa) })
     return json<ProcesarResultado>(await crudo(`${org(inmobiliariaId)}/procesar`, { method: 'POST', form }))
+  },
+
+  // ── Mapeador del archivo nativo (Adenda 1 §5.4-§5.6) ──
+
+  /** El mapeo guardado de la inmobiliaria (null si no tiene). */
+  async mapeo(inmobiliariaId: string): Promise<MapeoGuardado | null> {
+    return (await apiClient.get<MapeoGuardado | null>(`${org(inmobiliariaId)}/mapeo`)).data
+  },
+  async guardarMapeo(inmobiliariaId: string, mapeo: MapeoColumnas): Promise<MapeoGuardado> {
+    return (await apiClient.put<MapeoGuardado>(`${org(inmobiliariaId)}/mapeo`, { mapeo })).data
+  },
+  /** Las primeras diez filas transformadas; no crea nada ni verifica listas. */
+  async vistaPrevia(inmobiliariaId: string, archivo: File, mapeo: MapeoColumnas): Promise<VistaPreviaNativa> {
+    const form = conArchivo(archivo, { mapeo: JSON.stringify(mapeo) })
+    return json<VistaPreviaNativa>(await crudo(`${org(inmobiliariaId)}/vista-previa`, { method: 'POST', form }))
   },
 
   // ── Acta y lote (§3) ──
@@ -149,6 +201,8 @@ export const migracionService = {
   async actualizarActa(loteId: string): Promise<EstadoActaLote> {
     return (await apiClient.post<EstadoActaLote>(`${BASE}/lotes/${loteId}/acta/actualizar`)).data
   },
+  /** Adenda 1 §5.6: el archivo tal como se cargó. */
+  archivoOriginal: (loteId: string, numero: string) => descargar(`${BASE}/lotes/${loteId}/archivo`, `archivo-original-${numero}.xlsx`),
   /** Antes de la firma: anula el acta en Auco y libera los inmuebles del lote. */
   async cancelarLote(loteId: string): Promise<EstadoActaLote> {
     return (await apiClient.post<EstadoActaLote>(`${BASE}/lotes/${loteId}/cancelar`)).data
@@ -217,6 +271,24 @@ export const migracionService = {
     body: { motivo: MotivoReportable; fecha?: string | null; notas?: string | null },
   ): Promise<DetalleFilaMigrada> {
     return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/reportable`, body)).data
+  },
+  /** Adenda 1 §7: registra el documento del arrendatario pendiente; la fianza se activa en ese momento. */
+  async identificar(filaId: string, body: { tipo_documento: string; numero_documento: string }): Promise<DetalleFilaMigrada> {
+    return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/identificacion`, body)).data
+  },
+  /** Adenda 1 §3: datos que la inmobiliaria entrega tras una mora. coarrendatarios [] = constancia de que no hay. */
+  async registrarDiferidos(
+    filaId: string,
+    body: { celular?: string; correo?: string; coarrendatarios?: PersonaDiferida[] },
+  ): Promise<DetalleFilaMigrada> {
+    return (await apiClient.put<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/diferidos`, body)).data
+  },
+  async cargarDiferido(filaId: string, documento: DocumentoDiferido, archivo: File): Promise<DetalleFilaMigrada> {
+    return json<DetalleFilaMigrada>(await crudo(`${BASE}/filas/${filaId}/diferidos/${documento}`, { method: 'POST', form: conArchivo(archivo) }))
+  },
+  /** Enlace firmado de 10 minutos al PDF entregado. */
+  async verDiferido(filaId: string, documento: DocumentoDiferido): Promise<{ url: string }> {
+    return (await apiClient.get<{ url: string }>(`${BASE}/filas/${filaId}/diferidos/${documento}`)).data
   },
   /** §7.3.4: auditorías sin resultado, la que vence primero arriba. */
   async auditoriasAbiertas(): Promise<AuditoriaAbierta[]> {

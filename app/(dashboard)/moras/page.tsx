@@ -39,6 +39,8 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { useAuthStore } from '@/stores/auth.store'
 import { ApiClientError } from '@/lib/api'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { fechaCorta } from '@/components/dashboard/secciones/_shared'
+import { ListaDiferidos } from '@/components/migracion/Diferidos'
 
 interface ContratoSelectItem {
   id: string
@@ -266,6 +268,21 @@ export default function ReportarMoraPage() {
         descripcion: descripcion.trim() || undefined,
       })
       avisarResultado(esInterno ? 'Mora registrada' : 'Mora reportada a Cofianza', creada)
+      // Contrato migrado (Adenda 1 §3): la mora le pide a la inmobiliaria lo que no se pidió al migrar.
+      // Quien la reporta suele ser la inmobiliaria: a ella se le dice qué entregar, no «se le pidieron a la inmobiliaria».
+      if (creada.diferidos?.items.some((i) => i.pendiente) && creada.diferidos.vence_en) {
+        const plazo = fechaCorta(creada.diferidos.vence_en)
+        const faltan = creada.diferidos.items
+          .filter((i) => i.pendiente)
+          .map((i) => i.etiqueta.charAt(0).toLowerCase() + i.etiqueta.slice(1))
+          .join('; ')
+        toast.info(
+          esInterno
+            ? `Contrato migrado: se le pidieron a la inmobiliaria los datos que faltan, con plazo hasta el ${plazo}.`
+            : `Contrato migrado: entregue a Cofianza, a más tardar el ${plazo}, lo que no se pidió al migrar: ${faltan}.`,
+          { duration: 12000 },
+        )
+      }
       setContratoId('')
       setMonto('')
       setDescripcion('')
@@ -932,6 +949,21 @@ function MoraDetalleModal({
                   />
                 )}
               </div>
+
+              {/* Contrato migrado (Adenda 1 §3): lo que la inmobiliaria debe entregar por la mora. */}
+              {mora.diferidos && (
+                <div>
+                  <ListaDiferidos d={mora.diferidos} intro="Contrato migrado. Falta entregar a Cofianza:" />
+                  {esInterno && mora.diferidos.items.some((i) => i.pendiente) && (
+                    <Link
+                      href={`/admin/migracion/lotes/${mora.diferidos.lote_id}?fila=${mora.diferidos.fila_id}`}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-900"
+                    >
+                      Registrar entregas <IconChevronRight size={14} />
+                    </Link>
+                  )}
+                </div>
+              )}
 
               {mora.descripcion && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
