@@ -1,7 +1,7 @@
 /**
  * MisExpedientesActivosWidget — dashboard del propietario / inmobiliaria.
  * Lista los expedientes activos (no terminales) de los inmuebles del usuario,
- * con el estado de la evaluación y de quién es el turno, igual que la lista
+ * con la etapa y de quién es el turno (EstadoFila), igual que la lista
  * (antes un «qué sigue» fijo por estado: «Cita previa pendiente» a todo
  * borrador, «Genere el contrato» con el contrato ya en firma). Da visibilidad
  * pasiva: incluso cuando no hay accion del propietario, deberia ver donde
@@ -19,8 +19,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { EstudioResultadoBadge } from '@/components/estudios/EstudioResultadoBadge'
-import { ProcessStepBadge } from '@/components/expedientes/ExpedienteBadges'
+import { EstadoFila } from '@/components/expedientes/EstadoFila'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { IconLoader, IconFolderOpen, IconChevronRight, IconRefresh } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente, EstadoExpediente } from '@/types/expediente'
@@ -34,14 +34,9 @@ const ESTADOS_ACTIVOS: EstadoExpediente[] = [
   'condicionado',
 ]
 
-// Mismos textos que la pastilla de la lista (depende_de lo calcula el API).
-const TURNO: Record<NonNullable<IExpediente['depende_de']>, string> = {
-  gestor: 'Su turno',
-  prospecto: 'Esperando al prospecto',
-  cofianza: 'Cofianza procesando',
-}
-
 export function MisExpedientesActivosWidget() {
+  // Solo roles externos (inicio de la inmobiliaria y el propietario): nunca la vista de Cofianza.
+  const vista = usePuedeEditar() ? 'gestor' : 'equipo'
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -124,7 +119,6 @@ export function MisExpedientesActivosWidget() {
 
       <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
         {expedientes.map((exp) => {
-          const ev = exp.estudio_vigente
           const inmueble = exp.inmueble
           const solicitante = exp.solicitante
           return (
@@ -141,36 +135,14 @@ export function MisExpedientesActivosWidget() {
                     <span className="text-sm font-mono font-medium text-primary-700">
                       {formatNumeroEstudio(exp.numero_expediente) || '—'}
                     </span>
-                    {/* El paso, como en la lista (el estado formal decía «Borrador»). */}
-                    <ProcessStepBadge estado={exp.estado} citaRealizada={exp.cita_realizada ?? false} />
                   </div>
                   <div className="text-xs text-gray-600 truncate">
                     {inmueble?.direccion || 'Inmueble por definir'}
                     {solicitante ? ` · ${solicitante.nombre}` : ''}
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <EstudioResultadoBadge
-                      estado={ev?.estado}
-                      resultado={ev?.resultado}
-                      score={ev?.score}
-                      expirado={ev?.expirado}
-                      estadoBloqueo={ev?.estado_bloqueo}
-                      esperaCoarrendatario={!!ev?.condicion_coarrendatario}
-                      sinEjecutar={ev?.sin_ejecutar}
-                    />
-                    {/* Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza). */}
-                    {exp.depende_de && ev?.estado_bloqueo !== 'identidad_rechazada' && (
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                          exp.depende_de === 'gestor'
-                            ? 'border-coral-200 bg-coral-50 text-coral-700'
-                            : 'border-gray-200 bg-gray-50 text-gray-600'
-                        }`}
-                      >
-                        {/* El condicionado lo decide un analista: no es una consulta en curso (igual que la lista). */}
-                        {exp.estado === 'condicionado' && exp.depende_de === 'cofianza' ? 'En revisión de Cofianza' : TURNO[exp.depende_de]}
-                      </span>
-                    )}
+                  {/* La misma etapa y el mismo turno que la lista. */}
+                  <div className="mt-1.5">
+                    <EstadoFila expediente={exp} interno={false} vista={vista} compacto />
                   </div>
                 </div>
                 <IconChevronRight size={16} className="text-gray-500 shrink-0" />

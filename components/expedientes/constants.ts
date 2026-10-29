@@ -28,15 +28,22 @@ export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50] as const
 export const SORTABLE_COLUMNS = {
   numero: { key: 'numero' as const, label: 'Código' },
   created_at: { key: 'created_at' as const, label: 'Fecha' },
-  estado: { key: 'estado' as const, label: 'Estado' },
 } as const
 
 /**
  * Mensajes del módulo
  */
 export const EXPEDIENTE_UI_MESSAGES = {
-  EMPTY_STATE: 'No se encontraron estudios',
-  EMPTY_STATE_FILTERED: 'No hay estudios que coincidan con los filtros',
+  // Estado vacío de la tabla, según por qué está vacía.
+  VACIO_ACCION_TITULO: 'Nada pendiente de su parte',
+  VACIO_ACCION_TEXTO:
+    'Cuando un estudio necesite algo de usted (habilitar la evaluación, definir el pago, reenviar un enlace o crear el contrato), aparecerá aquí.',
+  VACIO_FILTROS_TITULO: 'Ningún estudio coincide',
+  VACIO_FILTROS_TEXTO: 'Pruebe con otra búsqueda o quite los filtros.',
+  VACIO_NADA_TITULO: 'Todavía no tiene estudios',
+  VACIO_NADA_TEXTO:
+    'Un estudio reúne la visita, la evaluación crediticia del prospecto y el contrato. Empiece con «Nuevo estudio».',
+  VACIO_BANDEJA_TITULO: 'No hay estudios en esta bandeja.',
   LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',

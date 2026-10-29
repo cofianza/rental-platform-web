@@ -1,8 +1,7 @@
 /**
- * ExpedientesListado — listado con bandejas operativas, filtros y tabla.
- * Extraído de app/(dashboard)/expedientes/page.tsx para poder reutilizarlo
- * tanto en la página /expedientes como dentro de la pestaña unificada
- * "Estudios" (sub-pestaña Expedientes) sin duplicar la lógica.
+ * ExpedientesListado — listado con bandejas operativas, filtros y tabla. Solo
+ * para Cofianza (administrador, operador, Gerencia): la inmobiliaria y el
+ * propietario usan EstudiosExpedientesFusion.
  *
  * Usa useExpedientes (que escribe el querystring). NO montar simultáneamente
  * con otro listado que use el mismo querystring.
@@ -56,11 +55,7 @@ export function ExpedientesListado() {
     fetchExpedientes,
   } = useExpedientes()
 
-  // El propietario es gestor de sus estudios, igual que la inmobiliaria: le
-  // sirve "Requieren mi acción" (mismo filtro del RPC que usa la vista de la
-  // inmobiliaria) y no el toggle "Mis estudios", que filtra por analista de
-  // Cofianza y a él le devolvía la lista vacía.
-  const vistaGestor = user?.rol === 'propietario'
+  // «Turno del gestor»: llega por el enlace del aviso de bloqueos.
   const requiereAccionActivo = filters.estudio_filtro === 'requiere_accion'
   const elegirBandeja = (bandeja: Parameters<typeof setActiveBandeja>[0]) => {
     setActiveBandeja(bandeja)
@@ -68,10 +63,6 @@ export function ExpedientesListado() {
     // Adenda de precios §8.2: la cola del analista va por prioridad (la ordena
     // la API) y luego por antigüedad: lo más antiguo primero.
     if (bandeja === 'condicionado' && puedeAsignar) setFilters({ sortBy: 'created_at', sortOrder: 'asc', page: 1 })
-  }
-  const verRequiereAccion = () => {
-    setActiveBandeja(null)
-    setFilters({ estudio_filtro: 'requiere_accion', page: 1 })
   }
 
   // Estado de error
@@ -123,16 +114,14 @@ export function ExpedientesListado() {
         }
       />
 
-      {/* Bandejas operativas: KPIs + Tabs + Toggle Mis Expedientes */}
+      {/* Bandejas operativas: Tabs + Toggle Mis estudios */}
       <BandejaTabs
         activeBandeja={activeBandeja}
         misExpedientes={misExpedientes}
         stats={stats}
         onBandejaChange={elegirBandeja}
         onToggleMisExpedientes={toggleMisExpedientes}
-        vistaGestor={vistaGestor}
         requiereAccionActivo={requiereAccionActivo}
-        onRequiereAccion={verRequiereAccion}
       />
 
       {/* Filtros (sin chips de estado, ahora están en bandejas) */}
@@ -168,6 +157,8 @@ export function ExpedientesListado() {
             onSort={handleSort}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+            vacio={hasActiveFilters() ? 'filtros' : 'bandeja'}
+            onClearFilters={clearFilters}
             tomandoId={tomandoId}
             onTomar={
               puedeAsignar

@@ -9,19 +9,20 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
-import { ExpedienteBadge, ProcessStepBadge } from './ExpedienteBadges'
-import { EstudioResultadoBadge } from '@/components/estudios/EstudioResultadoBadge'
+import { EstadoFila } from './EstadoFila'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
+import { AYUDA } from '@/lib/ayudaEstudio'
 import {
   IconChevronUp,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconCheckCircle,
   IconFolderOpen,
   IconPlus,
-  IconExternalLink,
   IconUserCheck,
+  IconX,
 } from '@/components/icons'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import type { IExpediente, IExpedienteFilters, IExpedientesMeta } from '@/types/expediente'
@@ -96,21 +97,13 @@ function Actividad({ expediente }: { expediente: IExpediente }) {
   )
 }
 
-/**
- * Adenda de precios §8.2: el caso R2 entra a la cola del analista con
- * prioridad baja. Discreto y solo para Cofianza: es orden interno de la cola.
- */
-function PrioridadBaja({ expediente, rol }: { expediente: IExpediente; rol?: string }) {
-  const interno = rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
-  if (!interno || expediente.estado !== 'condicionado' || expediente.prioridad_revision !== 'baja') return null
-  return (
-    <span
-      title="Puntaje de las centrales entre 450 y 599: se revisa al final de la cola"
-      className="mt-1 inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
-    >
-      Prioridad baja
-    </span>
-  )
+const M = EXPEDIENTE_UI_MESSAGES
+/** Estado vacío según por qué está vacía la tabla: [título, texto]. */
+const VACIO: Record<NonNullable<ExpedientesTableProps['vacio']>, [string, string | null]> = {
+  accion: [M.VACIO_ACCION_TITULO, M.VACIO_ACCION_TEXTO],
+  filtros: [M.VACIO_FILTROS_TITULO, M.VACIO_FILTROS_TEXTO],
+  nada: [M.VACIO_NADA_TITULO, M.VACIO_NADA_TEXTO],
+  bandeja: [M.VACIO_BANDEJA_TITULO, null],
 }
 
 export interface ExpedientesTableProps {
@@ -121,8 +114,8 @@ export interface ExpedientesTableProps {
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
   /** Mapa perfil_id → nombre de los miembros de la inmobiliaria. Cuando se
-   *  provee (vista inmobiliaria), la columna Responsable muestra el MIEMBRO
-   *  asignado al expediente (miembro_responsable_id); si no, cae al analista
+   *  provee (vista inmobiliaria), la columna Responsable muestra solo el MIEMBRO
+   *  asignado al expediente (miembro_responsable_id); si no, el analista
    *  interno (vista admin/operador). */
   miembrosResponsablesById?: Record<string, string>
   /** Asigna el estudio a quien está mirando la lista, sin abrir el detalle ni
@@ -131,60 +124,9 @@ export interface ExpedientesTableProps {
   onTomar?: (id: string) => Promise<void>
   /** Id del estudio que se está asignando ahora mismo (deshabilita su botón). */
   tomandoId?: string | null
-}
-
-// Un estudio ya enviado al prospecto sigue en estado de expediente 'borrador'
-// (Flujo §11 reserva "Borrador" para el asistente no enviado): si hay una
-// evaluación viva, su badge —en la columna de al lado— dice el paso real y la
-// fila no repite "Borrador". Sin evaluación (o con la evaluación cancelada) el
-// borrador se llama por lo que es: sin enviar. En revisión e información
-// incompleta se muestran siempre: la evaluación no los explica.
-function EstadoExpedienteFila({ expediente }: { expediente: IExpediente }) {
-  const esBorrador = !expediente.cancelado_at && expediente.estado === 'borrador'
-  const evaluacionViva = !!expediente.estudio_vigente && expediente.estudio_vigente.estado !== 'cancelado'
-  if (esBorrador && evaluacionViva) return null
-  // ProcessStepBadge abandona el paso del flujo para cancelado, rechazado y
-  // condicionado, y devuelve la etiqueta del ESTADO. Sin este guard salian dos
-  // pastillas con la misma palabra —para 'rechazado', dos rojas identicas— y en
-  // movil tres. 'condicionado' esta ademas definido con cuatro colores en el repo.
-  if (expediente.cancelado_at || expediente.estado === 'rechazado' || expediente.estado === 'condicionado') {
-    return null
-  }
-  // Cerrado tras un rechazo: «No aprobable», como el detalle (no «Finalizado», que es el cierre exitoso).
-  const cerradoTrasRechazo = expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
-  return (
-    <ExpedienteBadge
-      estado={cerradoTrasRechazo ? 'rechazado' : expediente.estado}
-      size="sm"
-      cancelado={!!expediente.cancelado_at}
-      label={esBorrador ? 'Sin enviar' : undefined}
-    />
-  )
-}
-
-/** De quién es el turno. En la tabla y en las tarjetas del móvil, que no lo decían. */
-function TurnoPill({ expediente, interno }: { expediente: IExpediente; interno: boolean }) {
-  // Identidad rechazada: el badge ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
-  if (!expediente.depende_de || (!interno && expediente.estudio_vigente?.estado_bloqueo === 'identidad_rechazada')) return null
-  return (
-    <span
-      className={`mt-1 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-        expediente.depende_de === 'gestor'
-          ? 'border-coral-200 bg-coral-50 text-coral-700'
-          : 'border-gray-200 bg-gray-50 text-gray-600'
-      }`}
-    >
-      {/* A Cofianza «Su turno» le decía que actuara ella. */}
-      {expediente.depende_de === 'gestor'
-        ? interno ? 'Turno del gestor' : 'Su turno'
-        : expediente.depende_de === 'prospecto'
-          ? 'Esperando al prospecto'
-          // El condicionado lo decide un analista (Adenda 2 §5): no es una consulta en curso.
-          : expediente.estado === 'condicionado'
-            ? interno ? 'Revisión del analista' : 'En revisión de Cofianza'
-            : 'Cofianza procesando'}
-    </span>
-  )
+  /** Por qué está vacía: pendientes del gestor, filtros, sin estudios o bandeja de Cofianza. */
+  vacio?: 'accion' | 'filtros' | 'nada' | 'bandeja'
+  onClearFilters?: () => void
 }
 
 export function ExpedientesTable({
@@ -197,20 +139,25 @@ export function ExpedientesTable({
   miembrosResponsablesById,
   onTomar,
   tomandoId,
+  vacio = 'nada',
+  onClearFilters,
 }: ExpedientesTableProps) {
   const router = useRouter()
   const rol = useAuthStore((st) => st.user?.rol)
   const interno = rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
+  const puedeEditar = usePuedeEditar()
+  const vista = interno ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Solo lectura y el prospecto no crean estudios: sin esto el estado vacío les
   // ofrecía un botón que termina en 403.
-  const puedeCrear = usePuedeEditar() && rol !== 'solicitante'
+  const puedeCrear = puedeEditar && rol !== 'solicitante'
+  // El propietario no tiene equipo: ni columna ni nombre de responsable.
+  const conResponsable = rol !== 'propietario'
 
-  // Nombre a mostrar en la columna Responsable: prioriza el miembro de la
-  // inmobiliaria asignado al expediente; si no hay (o no se proveyó el mapa),
-  // cae al analista interno.
+  // Con el mapa del equipo, solo el miembro asignado: caer al analista le
+  // mostraba a la inmobiliaria a alguien de Cofianza que no está en su filtro.
   const nombreResponsable = (e: IExpediente): string | null => {
-    if (e.miembro_responsable_id && miembrosResponsablesById?.[e.miembro_responsable_id]) {
-      return miembrosResponsablesById[e.miembro_responsable_id]
+    if (miembrosResponsablesById) {
+      return e.miembro_responsable_id ? (miembrosResponsablesById[e.miembro_responsable_id] ?? null) : null
     }
     return e.analista?.nombre ?? null
   }
@@ -221,25 +168,65 @@ export function ExpedientesTable({
 
   // Empty state
   if (expedientes.length === 0) {
+    const [titulo, texto] = VACIO[vacio]
     return (
       <div className="text-center py-12">
-        <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-1">
-          {EXPEDIENTE_UI_MESSAGES.EMPTY_STATE}
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          {EXPEDIENTE_UI_MESSAGES.EMPTY_STATE_FILTERED}
-        </p>
-        {puedeCrear && (
+        {vacio === 'accion' ? (
+          <IconCheckCircle size={48} className="mx-auto text-primary-300 mb-4" />
+        ) : (
+          <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
+        )}
+        <h3 className="text-lg font-medium text-gray-900 mb-1">{titulo}</h3>
+        {texto && <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{texto}</p>}
+        {vacio === 'filtros' && onClearFilters && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <IconX size={16} />
+            {M.CLEAR_FILTERS}
+          </button>
+        )}
+        {vacio === 'nada' && puedeCrear && (
           <button
             onClick={() => router.push('/expedientes/nuevo')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
-            {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
+            {M.NEW_EXPEDIENTE}
           </button>
         )}
       </div>
+    )
+  }
+
+  const responsable = (expediente: IExpediente, movil: boolean) => {
+    const nombre = nombreResponsable(expediente)
+    if (nombre) {
+      return (
+        <div className="flex items-center gap-2">
+          <Avatar name={nombre} size="sm" />
+          <span className={movil ? 'text-xs text-gray-600' : 'text-sm text-gray-700'}>{nombre}</span>
+        </div>
+      )
+    }
+    return onTomar ? (
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onTomar(expediente.id)
+        }}
+        disabled={tomandoId === expediente.id}
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
+      >
+        <IconUserCheck size={14} />
+        Tomar
+      </button>
+    ) : (
+      <span title={AYUDA.responsable} className={movil ? 'text-xs text-gray-500' : 'text-sm text-gray-500'}>
+        Sin asignar
+      </span>
     )
   }
 
@@ -265,21 +252,15 @@ export function ExpedientesTable({
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Solicitante
               </th>
+              {/* Sin ordenar: el orden por estado formal ya no coincide con la etapa que se ve. */}
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <SortableHeader
-                  column="estado"
-                  label={SORTABLE_COLUMNS.estado.label}
-                  currentSortBy={filters.sortBy}
-                  currentSortOrder={filters.sortOrder}
-                  onSort={onSort}
-                />
+                Etapa
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Estudio
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Responsable
-              </th>
+              {conResponsable && (
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Responsable
+                </th>
+              )}
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {/* Dos ordenamientos reales: por movimiento (lo que importa
                     para no dejar un estudio quieto) y por fecha de creación. */}
@@ -297,9 +278,6 @@ export function ExpedientesTable({
                   currentSortOrder={filters.sortOrder}
                   onSort={onSort}
                 />
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Acciones
               </th>
             </tr>
           </thead>
@@ -355,74 +333,11 @@ export function ExpedientesTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-col items-start gap-1">
-                    <ProcessStepBadge
-                      estado={expediente.estado}
-                      citaRealizada={expediente.cita_realizada ?? false}
-                      cancelado={!!expediente.cancelado_at}
-                      estadoPreCancelacion={expediente.estado_pre_cancelacion}
-                      contratoEstado={expediente.contrato_estado}
-                    />
-                    <EstadoExpedienteFila expediente={expediente} />
-                    <PrioridadBaja expediente={expediente} rol={rol} />
-                  </div>
+                  <EstadoFila expediente={expediente} interno={interno} vista={vista} />
                 </td>
-                <td className="px-4 py-3">
-                  <EstudioResultadoBadge
-                    estado={expediente.estudio_vigente?.estado}
-                    resultado={expediente.estudio_vigente?.resultado}
-                    score={expediente.estudio_vigente?.score}
-                    expirado={expediente.estudio_vigente?.expirado}
-                    estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
-                    esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
-                    sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
-                    coarrendatarioFallido={expediente.estudio_vigente?.coarrendatario_fallido}
-                    rolInterno={interno}
-                  />
-                  <TurnoPill expediente={expediente} interno={interno} />
-                </td>
-                <td className="px-4 py-3">
-                  {(() => {
-                    const nombre = nombreResponsable(expediente)
-                    if (nombre) {
-                      return (
-                        <div className="flex items-center gap-2">
-                          <Avatar name={nombre} size="sm" />
-                          <span className="text-sm text-gray-700">{nombre}</span>
-                        </div>
-                      )
-                    }
-                    return onTomar ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onTomar(expediente.id)
-                        }}
-                        disabled={tomandoId === expediente.id}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
-                      >
-                        <IconUserCheck size={14} />
-                        Tomar
-                      </button>
-                    ) : (
-                      <span className="text-sm text-gray-500">Sin asignar</span>
-                    )
-                  })()}
-                </td>
+                {conResponsable && <td className="px-4 py-3">{responsable(expediente, false)}</td>}
                 <td className="px-4 py-3">
                   <Actividad expediente={expediente} />
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRowClick(expediente.id)
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
-                  >
-                    <IconExternalLink size={14} />
-                    Ver
-                  </button>
                 </td>
               </tr>
             ))}
@@ -449,83 +364,28 @@ export function ExpedientesTable({
             }}
             className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
           >
-            {/* Header: código y estado */}
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <span className="font-mono text-sm font-medium text-primary-600">
+            {/* Arriba el solicitante y el número; las pastillas van debajo, no apiladas junto al nombre. */}
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <p className="text-sm font-medium text-gray-900">
+                {expediente.solicitante?.nombre ?? 'Sin solicitante'}
+              </p>
+              <span className="font-mono text-sm font-medium text-primary-600 shrink-0">
                 {formatNumeroEstudio(expediente.numero_expediente)}
               </span>
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                <ProcessStepBadge
-                  estado={expediente.estado}
-                  citaRealizada={expediente.cita_realizada ?? false}
-                  cancelado={!!expediente.cancelado_at}
-                  estadoPreCancelacion={expediente.estado_pre_cancelacion}
-                  contratoEstado={expediente.contrato_estado}
-                />
-                <EstadoExpedienteFila expediente={expediente} />
-                <PrioridadBaja expediente={expediente} rol={rol} />
-                <EstudioResultadoBadge
-                  estado={expediente.estudio_vigente?.estado}
-                  resultado={expediente.estudio_vigente?.resultado}
-                  score={expediente.estudio_vigente?.score}
-                  expirado={expediente.estudio_vigente?.expirado}
-                  estadoBloqueo={expediente.estudio_vigente?.estado_bloqueo}
-                  esperaCoarrendatario={!!expediente.estudio_vigente?.condicion_coarrendatario}
-                  sinEjecutar={expediente.estudio_vigente?.sin_ejecutar}
-                  coarrendatarioFallido={expediente.estudio_vigente?.coarrendatario_fallido}
-                  rolInterno={interno}
-                />
-                <TurnoPill expediente={expediente} interno={interno} />
-              </div>
             </div>
 
-            {/* Inmueble */}
-            {expediente.inmueble && (
-              <div className="mb-2">
-                <p className="text-sm font-medium text-gray-900">
-                  {expediente.inmueble.titulo || expediente.inmueble.direccion}
-                </p>
-                <p className="text-xs text-gray-500">{expediente.inmueble.ciudad}</p>
-              </div>
-            )}
+            <p className="text-xs text-gray-500 mb-3">
+              {expediente.inmueble
+                ? `${expediente.inmueble.titulo || expediente.inmueble.direccion} · ${expediente.inmueble.ciudad}`
+                : 'Inmueble por definir'}
+            </p>
 
-            {/* Solicitante */}
-            {expediente.solicitante && (
-              <div className="mb-3">
-                <p className="text-sm text-gray-700">{expediente.solicitante.nombre}</p>
-                <p className="text-xs text-gray-500">{expediente.solicitante.documento}</p>
-              </div>
-            )}
+            <EstadoFila expediente={expediente} interno={interno} vista={vista} />
 
             {/* Footer: responsable y fecha */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              {(() => {
-                const nombre = nombreResponsable(expediente)
-                if (nombre) {
-                  return (
-                    <div className="flex items-center gap-2">
-                      <Avatar name={nombre} size="sm" />
-                      <span className="text-xs text-gray-600">{nombre}</span>
-                    </div>
-                  )
-                }
-                return onTomar ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onTomar(expediente.id)
-                    }}
-                    disabled={tomandoId === expediente.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
-                  >
-                    <IconUserCheck size={14} />
-                    Tomar
-                  </button>
-                ) : (
-                  <span className="text-xs text-gray-500">Sin asignar</span>
-                )
-              })()}
-              <div className="text-right">
+            <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-gray-100">
+              {conResponsable && responsable(expediente, true)}
+              <div className="ml-auto text-right">
                 <Actividad expediente={expediente} />
               </div>
             </div>
