@@ -140,6 +140,14 @@ const pesos = (n: number) =>
 export const MENSAJE_ESTA_CERCA =
   '¿Alguien más va a vivir con usted en el inmueble? Si esa persona tiene ingresos propios, agréguela como coarrendatario: volvemos a evaluar con los dos y le damos respuesta en segundos. Solo necesitamos su cédula y su autorización.'
 
+/**
+ * Adenda 4 V3 §8: con la condición obligatoria el literal de arriba no aplica
+ * (no hay «respuesta en segundos»: decide un analista). Igual que
+ * MENSAJE_COARRENDATARIO_OBLIGATORIO de la API (rutas-resultado.ts).
+ */
+export const MENSAJE_COARRENDATARIO_OBLIGATORIO =
+  'Para continuar, su estudio necesita un coarrendatario: alguien que vaya a vivir con usted en el inmueble y tenga ingresos propios. Si califica, un analista de Cofianza decide su estudio con la información de los dos y le avisamos el resultado. Solo necesitamos su cédula y su autorización.'
+
 /** La línea de la cifra del §6.7 con su advertencia, o null (como lineaIngresoAdicional de la API). */
 export const lineaIngresoAdicional = (cifra: number | null | undefined): string | null =>
   cifra && cifra > 0
@@ -151,28 +159,47 @@ export const ADVERTENCIA_INGRESO_ADICIONAL =
   'La cifra supone que el coarrendatario no tiene deudas reportadas: si tiene cuotas, esas cuotas se suman a lo que se necesita.'
 
 /**
- * Adenda 3 V2 §6 (cuarto desenlace, «Está cerca»): el texto de la condición
- * para la inmobiliaria, el propietario y el prospecto. Sin puntaje objetivo
- * (§6.8); con el ingreso incumplido, la cifra del §6.7 con su advertencia.
+ * ¿Sin un coarrendatario que la resuelva el estudio se cierra como no aprobado?
+ * ponytail: espejo de vencidaSeRechaza (API, condicion-coarrendatario.ts:182)
+ * mientras DESTINO_VENCIDA_SOLO_PUNTAJE siga en 'revision_manual'. Si la
+ * Gerencia lo cambia a 'rechazo', debe devolver siempre true.
  */
-export function textoCondicionCoarrendatario(c: {
-  vence_en: string
-  vencida: boolean
-  ingreso_adicional_requerido?: number | null
-  reglas_ingreso?: string[]
-  /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento; sin coarrendatario válido, rechazo. */
-  obligatoria?: boolean
-}): string {
+export const seCierraSiVence = (c: { obligatoria?: boolean; reglas_ingreso?: string[] }): boolean =>
+  !!c.obligatoria || (c.reglas_ingreso?.length ?? 0) > 0
+
+/**
+ * Adenda 3 V2 §6 (cuarto desenlace, «Está cerca»): el texto de la condición
+ * para la inmobiliaria, el propietario y el prospecto (`prospecto`). Sin
+ * puntaje objetivo (§6.8); con el ingreso incumplido, la cifra del §6.7 con su
+ * advertencia. Con `obligatoria` (Adenda 4 V3 §8) no es una aprobación: con el
+ * coarrendatario lo decide un analista.
+ */
+export function textoCondicionCoarrendatario(
+  c: {
+    vence_en: string
+    vencida: boolean
+    ingreso_adicional_requerido?: number | null
+    reglas_ingreso?: string[]
+    /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento; sin coarrendatario válido, rechazo. */
+    obligatoria?: boolean
+  },
+  o: { prospecto?: boolean } = {},
+): string {
   const fecha = fechaCondicion(c.vence_en)
   if (c.vencida) {
     // Solo espera a un coarrendatario cuya consulta sigue en curso.
-    return (c.reglas_ingreso?.length ?? 0) > 0 || c.obligatoria
+    return seCierraSiVence(c)
       ? `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario que cumpla el ingreso, el estudio se cerrará como no aprobado.`
       : `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio pasa a revisión de un analista de Cofianza.`
   }
   const cifra = c.ingreso_adicional_requerido && c.ingreso_adicional_requerido > 0
     ? ` Para cumplir con el ingreso, entre los dos necesitan ${pesos(c.ingreso_adicional_requerido)} de ingreso mensual adicional. ${ADVERTENCIA_INGRESO_ADICIONAL}`
     : ''
+  if (c.obligatoria) {
+    return o.prospecto
+      ? `Está cerca: para continuar, su estudio necesita un coarrendatario antes del ${fecha}.${cifra}`
+      : `Requiere coarrendatario: sin un coarrendatario que califique antes del ${fecha}, el estudio se cierra como no aprobado. Si califica, lo decide un analista de Cofianza con los dos.${cifra}`
+  }
   return `Está cerca: aprobado con condición de presentar un coarrendatario antes del ${fecha}.${cifra}`
 }
 

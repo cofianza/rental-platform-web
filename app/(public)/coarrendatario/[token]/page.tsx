@@ -57,7 +57,8 @@ export default function CoarrendatarioPublicPage() {
       // Si ya respondió antes, saltamos a la pantalla correspondiente.
       if (data.estado === 'aceptado') {
         setPhase('aceptado')
-        setResultMsg('Ya había aceptado esta invitación. Estamos procesando su evaluación.')
+        // Puede reabrirlo días después: «estamos procesando» no siempre es cierto.
+        setResultMsg(`Ya aceptó esta invitación. Le escribimos a ${data.email} cuando su evaluación termine.`)
       } else if (data.estado === 'estudio_completado') {
         setPhase('aceptado')
         setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
@@ -219,19 +220,26 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'aceptado') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-8 text-center">
-        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-          <IconCheck size={28} className="text-green-700" />
+      <div className="bg-white rounded-2xl shadow-sm border border-primary-200 p-8 text-center">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
+          <IconCheck size={28} className="text-primary-700" />
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo, {view?.nombre}!</h1>
         <p className="text-sm text-gray-700">
           {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
-        <p className="text-xs text-gray-500 mt-4">
-          {view?.estado === 'estudio_completado'
-            ? `Le enviamos el resultado a ${view.email}.`
-            : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
+        <p className="text-sm text-gray-700 mt-2">
+          Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
+          {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
         </p>
+        {/* Al reabrir con 'aceptado' el mensaje de arriba ya nombra el correo. */}
+        {view?.estado !== 'aceptado' && (
+          <p className="text-xs text-gray-500 mt-4">
+            {view?.estado === 'estudio_completado'
+              ? `Le enviamos el resultado a ${view.email}.`
+              : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
+          </p>
+        )}
         <ContactoCofianza />
       </div>
     )
@@ -241,6 +249,10 @@ export default function CoarrendatarioPublicPage() {
   const titular = view?.expediente.titular_nombre || 'El solicitante'
   const inmueble = `${view?.expediente.inmueble_direccion}${view?.expediente.inmueble_ciudad ? `, ${view.expediente.inmueble_ciudad}` : ''}`
   const procesando = phase === 'aceptando' || phase === 'rechazando' || phase === 'reportando'
+  // «3 de noviembre», en hora de Bogotá: hasta cuándo sirve el enlace.
+  const respondeHasta = view?.expira_en
+    ? new Date(view.expira_en).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })
+    : null
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -254,48 +266,23 @@ export default function CoarrendatarioPublicPage() {
         <div className="p-6 space-y-5">
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-1">Hola, {view?.nombre} {view?.apellido}</h2>
-            {/* P4: si el documento no es el suyo, que no autorice una consulta ajena.
-                UX #10: avisa sin declinar; la invitación sigue abierta hasta que la corrijan. */}
-            {view?.documento && (
-              <div className="mb-2 text-xs text-gray-500">
-                <p>
-                  Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si el número no es el
-                  suyo, no acepte todavía: avísenos y quien tramita el arriendo lo corregirá y le enviará la invitación de nuevo.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleDocumentoIncorrecto}
-                  disabled={procesando}
-                  className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
-                </button>
-                {view.permite_no_soy_yo && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmandoNoSoyYo(true)}
-                    disabled={procesando}
-                    className="mt-2 ml-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    No soy {view.nombre}
-                  </button>
-                )}
-              </div>
-            )}
             <p className="text-sm text-gray-700 leading-relaxed">
-              Con Cofianza <strong>no necesita buscar un fiador</strong>: nosotros respaldamos el arriendo. {titular} lo
-              invita a ser su coarrendatario para que tomen el arriendo juntos: los dos firman como un solo
-              arrendatario y nosotros los respaldamos.
+              {titular} lo invita a ser su coarrendatario: a tomar el arriendo juntos, con el respaldo de Cofianza.
             </p>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900 leading-relaxed">
-            <p className="font-semibold mb-1">¿Qué pasa si acepta?</p>
-            <ul className="list-disc pl-5 space-y-1 text-amber-800">
-              <li>Realizaremos una evaluación crediticia rápida a su nombre.</li>
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-sm text-primary-900 leading-relaxed">
+            <p className="font-semibold mb-1">Qué significa aceptar</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Consultamos su historial en las centrales de riesgo para evaluarlo junto con {titular}. Para usted no tiene costo.</li>
+              <li>
+                Si el arriendo se aprueba, usted firma el contrato como arrendatario, junto con {titular}, y los dos responden
+                por el pago completo del canon.
+              </li>
+              <li>No es fiador ni necesita tener finca raíz.</li>
               <li>Su información se trata conforme a la <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">política de tratamiento de datos</Link>.</li>
-              <li>Si juntos cumplen el perfil, los respaldamos como arrendatarios.</li>
-              <li>No tiene que crear cuenta ni firmar nada extra ahora — solo aceptar.</li>
+              <li>No tiene que crear cuenta.</li>
+              {respondeHasta && <li>Puede responder hasta el {respondeHasta}.</li>}
             </ul>
           </div>
 
@@ -364,6 +351,37 @@ export default function CoarrendatarioPublicPage() {
               A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.
             </p>
           </div>
+
+          {/* P4: si el documento no es el suyo, que no autorice una consulta ajena.
+              UX #10: avisa sin declinar; la invitación sigue abierta hasta que la corrijan.
+              Va justo antes de las casillas: es lo último que revisa antes de autorizar. */}
+          {view?.documento && (
+            <div className="text-xs text-gray-500">
+              <p className="mb-1 text-sm font-semibold text-gray-900">¿Es usted {view.nombre} {view.apellido}?</p>
+              <p>
+                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si el número no es el
+                suyo, no acepte todavía: avísenos y quien tramita el arriendo lo corregirá y le enviará la invitación de nuevo.
+              </p>
+              <button
+                type="button"
+                onClick={handleDocumentoIncorrecto}
+                disabled={procesando}
+                className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
+              </button>
+              {view.permite_no_soy_yo && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoNoSoyYo(true)}
+                  disabled={procesando}
+                  className="mt-2 ml-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  No soy {view.nombre}
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="space-y-3">
             <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">

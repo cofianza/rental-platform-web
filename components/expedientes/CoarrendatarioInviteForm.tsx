@@ -19,9 +19,10 @@
 import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
-import { IconUsers, IconArrowRight } from '@/components/icons'
+import { formatCurrency } from '@/lib/constants'
+import { IconUsers, IconArrowRight, IconCalendar, IconDollarSign, IconAlertTriangle } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
-import { fechaCondicion } from './textoVisible'
+import { ADVERTENCIA_INGRESO_ADICIONAL, fechaCondicion, MENSAJE_COARRENDATARIO_OBLIGATORIO, MENSAJE_ESTA_CERCA, seCierraSiVence } from './textoVisible'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
@@ -55,10 +56,17 @@ interface CoarrendatarioInviteFormProps {
   onInvited?: () => void
   /** Estudio ya aprobado (Decisión 2): el coarrendatario es opcional y baja la prima. */
   aprobado?: boolean
-  /** Adenda 3 §6: aprobado con condición de coarrendatario. Ahí NO es opcional
-   *  ni lo revisa un analista: si no acepta antes de `vence_en`, el estudio se
-   *  cierra sin aprobarse. `vence_en` falta donde la API no la manda (enlace). */
-  condicion?: { vence_en?: string; vencida?: boolean } | null
+  /** Adenda 3 §6: aprobado con condición de coarrendatario. Ahí NO es opcional.
+   *  Qué pasa si no acepta antes de `vence_en` lo dice `siVence` (enlace) o las
+   *  reglas de la condición (panel). `vence_en` falta donde la API no la manda. */
+  condicion?: {
+    vence_en?: string
+    vencida?: boolean
+    ingreso_adicional_requerido?: number | null
+    reglas_ingreso?: string[]
+    obligatoria?: boolean
+    siVence?: 'rechazo' | 'revision' | null
+  } | null
   /** Adenda 3 V2 §6.1: el titular todavía no se evalúa (coarrendatario desde el inicio). */
   antesDeLaDecision?: boolean
 }
@@ -85,6 +93,15 @@ export function CoarrendatarioInviteForm({
   const esGestor = audience === 'gestor'
   const conCondicion = !esGestor && !!condicion
   const fechaLimite = condicion?.vence_en && !condicion.vencida ? fechaCondicion(condicion.vence_en) : null
+  const cifra = condicion?.ingreso_adicional_requerido && condicion.ingreso_adicional_requerido > 0 ? condicion.ingreso_adicional_requerido : null
+  // null = no sabemos qué pasa al vencer (API vieja en el enlace): no se dice nada.
+  const seRechaza = !condicion
+    ? null
+    : condicion.siVence
+      ? condicion.siVence === 'rechazo'
+      : condicion.reglas_ingreso !== undefined || condicion.obligatoria !== undefined
+        ? seCierraSiVence(condicion)
+        : null
   const uid = useId()
   const idDe = (c: Campo) => `${uid}-${c}`
   const [errores, setErrores] = useState<Partial<Record<Campo, string>>>({})
@@ -158,18 +175,15 @@ export function CoarrendatarioInviteForm({
             {esGestor
               ? 'Invite a un coarrendatario'
               : conCondicion
-                ? `Invite a su coarrendatario${fechaLimite ? ` antes del ${fechaLimite}` : ''}`
+                ? 'Invite a su coarrendatario'
                 : 'Puede sumar un coarrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
             {conCondicion ? (
-              <>
-                {/* Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
-                    presentarlo como una condición negativa; solo se le suma el plazo. */}
-                Está cerca. ¿Alguien más va a vivir con usted en el inmueble? Si esa persona tiene ingresos propios,
-                agréguela como coarrendatario: volvemos a evaluar con los dos y le damos respuesta en segundos. Solo
-                necesitamos su cédula y su autorización.{fechaLimite ? ` Plazo para agregarlo: hasta el ${fechaLimite}.` : ''}
-              </>
+              // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
+              // presentarlo como una condición negativa. El plazo va en la lista de abajo.
+              // Con la obligatoria (Adenda 4 V3 §8) no aplica: decide un analista.
+              `Está cerca. ${condicion?.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA}`
             ) : aprobado ? (
               <>
                 {esGestor
@@ -199,6 +213,35 @@ export function CoarrendatarioInviteForm({
               </>
             )}
           </p>
+          {conCondicion && (fechaLimite || cifra || seRechaza !== null) && (
+            <ul className="mt-3 space-y-2 text-sm text-gray-800">
+              {fechaLimite && (
+                <li className="flex items-start gap-2">
+                  <IconCalendar size={16} className="mt-0.5 shrink-0 text-amber-700" />
+                  <span>Plazo: hasta el {fechaLimite}</span>
+                </li>
+              )}
+              {cifra && (
+                <li className="flex items-start gap-2">
+                  <IconDollarSign size={16} className="mt-0.5 shrink-0 text-amber-700" />
+                  <span>
+                    Ingreso adicional que deben sumar entre los dos: {formatCurrency(cifra)}
+                    <span className="mt-0.5 block text-xs text-gray-600">{ADVERTENCIA_INGRESO_ADICIONAL}</span>
+                  </span>
+                </li>
+              )}
+              {seRechaza !== null && (
+                <li className="flex items-start gap-2">
+                  <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-700" />
+                  <span>
+                    {seRechaza
+                      ? 'Si no lo agrega a tiempo: su estudio no podrá aprobarse.'
+                      : 'Si no lo agrega a tiempo: una persona de nuestro equipo revisará su caso y le avisaremos el resultado.'}
+                  </span>
+                </li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
 

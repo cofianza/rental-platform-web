@@ -768,26 +768,6 @@ export default function AutorizarPage() {
           <h2 className="text-xl font-extrabold text-gray-900">
             {tituloFirmado(pagoRequerido, pago, esperaAgotada)}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Su autorización quedó registrada con firma electrónica (Ley 527/1999).
-          </p>
-          <p className="mt-1 text-xs text-gray-500">
-            Si quiere revocarla, escríbanos a{' '}
-            <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium text-primary-700 underline">
-              {CONTACTO_COFIANZA.email}
-            </a>
-            .
-          </p>
-          {/* El SHA-256 completo a la vista se leía como un error de la
-              página. Sigue disponible (es su soporte legal), pero plegado. */}
-          {hashDocumento && (
-            <details className="mx-auto mt-4 max-w-md text-left">
-              <summary className="cursor-pointer text-xs text-gray-500">Ver código de verificación</summary>
-              <p className="mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-500">
-                {hashDocumento}
-              </p>
-            </details>
-          )}
           {/* Cada estado del cobro dice qué sigue. Antes, si el enlace no se
               generaba (sin correo, tope de canon, pasarela caída) o el pago
               estaba en proceso por PSE, la pantalla decía "estamos preparando
@@ -843,11 +823,46 @@ export default function AutorizarPage() {
                 </p>
               )}
             </div>
-          ) : (
-            <p className="mt-4 text-sm text-gray-500">
-              No tiene que hacer nada más aquí. {quien} le contará cómo avanza su estudio.
-              Puede cerrar esta página.
-            </p>
+          ) : null}
+          {/* Qué sigue. El resultado se promete solo por correo: Meta no
+              entrega los WhatsApp (26-oct). */}
+          <div className="mx-auto mt-6 max-w-md text-left">
+            <p className="text-sm font-semibold text-gray-900">Qué sigue</p>
+            <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-gray-600">
+              {pagoRequerido && pago?.payment_link_url && <li>Pague el estudio con el botón de arriba.</li>}
+              <li>
+                {pagoRequerido
+                  ? 'Apenas el estudio esté pagado, consultamos su información en las centrales de riesgo. Suele tardar unos minutos.'
+                  : 'Ahora consultamos su información en las centrales de riesgo. Suele tardar unos minutos.'}
+              </li>
+              <li>
+                Le avisamos el resultado por correo. Si su caso necesita la revisión de una persona de nuestro equipo, puede
+                tardar un poco más.
+              </li>
+              <li>
+                {data && data.expediente.inmueble === null
+                  ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
+                  : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+              </li>
+            </ol>
+            <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>
+          </div>
+          <p className="mt-6 text-xs text-gray-500">
+            Su autorización quedó registrada con firma electrónica (Ley 527/1999). Si quiere revocarla, escríbanos a{' '}
+            <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium text-primary-700 underline">
+              {CONTACTO_COFIANZA.email}
+            </a>
+            .
+          </p>
+          {/* El SHA-256 completo a la vista se leía como un error de la
+              página. Sigue disponible (es su soporte legal), pero plegado. */}
+          {hashDocumento && (
+            <details className="mx-auto mt-2 max-w-md text-left">
+              <summary className="cursor-pointer text-xs text-gray-500">Ver código de verificación</summary>
+              <p className="mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-500">
+                {hashDocumento}
+              </p>
+            </details>
           )}
         </div>
       </Card>
@@ -954,6 +969,9 @@ export default function AutorizarPage() {
                       El estudio tiene un costo{data.pago.monto_formateado ? ` de ${data.pago.monto_formateado}` : ''}.
                       Lo paga al final, después de autorizar.
                     </p>
+                  )}
+                  {data.pago?.requerido === false && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-700">Usted no tiene que pagar nada por este estudio.</p>
                   )}
                   {/* Sin dato del cobro (la API no pudo saberlo): ni «hay costo» ni «no hay costo». */}
                   {data.pago == null && (
@@ -1591,7 +1609,7 @@ export default function AutorizarPage() {
                     } en Mercado Pago; su evaluación empieza cuando se confirme el pago.`
                   : data?.pago == null
                     ? `Revise el resumen y confirme. Con eso queda autorizada la consulta de su información. ${quien} le indicará si tiene costo.`
-                    : 'Revise el resumen y confirme. Con eso queda autorizada la consulta de su información.'}
+                    : 'Revise el resumen y confirme. Con eso queda autorizada la consulta de su información; usted no tiene que pagar nada por este estudio.'}
               </p>
             </div>
 
@@ -1779,6 +1797,11 @@ function tituloFirmado(pagoRequerido: boolean, pago: IPagoProspecto | null, espe
 // Siempre va al inicio de la frase: así el nombre no choca con «a»/«al».
 function quienTramita(solicitadoPor: string | null): string {
   return solicitadoPor?.trim() || 'Quien tramita su arriendo'
+}
+
+// Los sujetos genéricos de quienTramita en medio de una frase: «el propietario del inmueble».
+function enMedioDeFrase(quien: string): string {
+  return quien.replace(/^(El|Quien) /, (m) => m.toLowerCase())
 }
 
 function textoIntentos(n: number): string {
