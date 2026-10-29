@@ -794,6 +794,15 @@ export default function CargaMigracionPage() {
               {/* §3.3-§3.4: la activación es la última firma, la de Cofianza. */}
               Los contratos se activan cuando firmen el Acta de Migración {rep.rep_legal_nombre || 'el representante legal'} y Cofianza.
             </p>
+            {/* Adenda 1 §7: los que no traen documento figuran en el Acta, pero no se activan con la firma. */}
+            {(resumen?.pendientes_identificacion ?? 0) > 0 && (
+              <p>
+                {resumen!.pendientes_identificacion === 1
+                  ? 'El contrato sin documento del arrendatario queda'
+                  : `Los ${resumen!.pendientes_identificacion} contratos sin documento del arrendatario quedan`}{' '}
+                PENDIENTES DE IDENTIFICACIÓN: figuran en el Acta, pero su fianza se activa solo cuando Cofianza registre el documento.
+              </p>
+            )}
           </div>
         }
       />
