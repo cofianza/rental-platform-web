@@ -6,7 +6,7 @@
  * No incluye tiers/comisión/cashback/comparación-sector (no existen / inventados).
  *
  * Re-skin (mockup 13_v2): stat-cards grandes estilo "est-stat" (igual que
- * EstudiosInmobiliariaView) dentro de paneles con header de punto verde, en
+ * EstudiosExpedientesFusion) dentro de paneles con header de punto verde, en
  * lugar de los Kpi/KpiRow compactos. Mismos datos reales de getMiCarteraAnalitica.
  */
 

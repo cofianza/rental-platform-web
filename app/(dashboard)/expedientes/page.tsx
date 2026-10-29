@@ -16,9 +16,11 @@ import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedie
 
 function ExpedientesPageContent() {
   const rol = useAuthStore((s) => s.user?.rol)
-  // La inmobiliaria ve la vista fusionada (expedientes + estudio embebido),
-  // igual que en /estudios. El resto de roles ve el listado estándar.
-  if (rol === 'inmobiliaria') return <EstudiosExpedientesFusion />
+  // La inmobiliaria y el propietario gestionan sus estudios: ven la vista
+  // fusionada (expedientes + estudio embebido). La bandeja de abajo es la de
+  // Cofianza: al propietario le dejaba vacías «En revisión» e «Incompletos» y
+  // todos sus estudios en curso en «Borradores».
+  if (rol === 'inmobiliaria' || rol === 'propietario') return <EstudiosExpedientesFusion />
   // La bandeja operativa no es para el arrendatario: sus solicitudes están en
   // el inicio (llegaba aquí por el botón atrás, las migas o un enlace viejo).
   if (rol === 'solicitante') redirect('/dashboard')

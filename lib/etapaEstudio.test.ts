@@ -1,10 +1,11 @@
 /**
- * Pruebas de lib/etapaEstudio (la web no tiene vitest; se usa node:test). Correr con:
+ * Pruebas de lib/etapaEstudio y de queSigue (la web no tiene vitest; se usa node:test). Correr con:
  * node --import <hook que resuelve imports relativos sin extensión a .ts> --test lib/etapaEstudio.test.ts
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { calcularEtapa, type DatosEtapa } from './etapaEstudio'
+import { calcularEtapa, turnoDeEtapa, type DatosEtapa } from './etapaEstudio'
+import { queSigue } from './ayudaEstudio'
 
 const base: DatosEtapa = {
   estado: 'borrador',
@@ -38,6 +39,11 @@ test('revisión 26-oct: no habilitada, enlace vencido, opción B, Gerencia y con
     'pago',
   )
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'pago_pendiente' }), 'pago')
+  // Gerencia, con el pago del prospecto: lo mismo que la lista («Esperando el pago»).
+  assert.equal(
+    calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'pago_pendiente', pagoPor: 'arrendatario' }),
+    'pago_prospecto',
+  )
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'fallido' }), 'fallida')
   assert.equal(calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'formulario_completado' }), 'sin_ejecutar')
   // Pagada antes de firmar (vitrina): espera al prospecto, no la consulta.
@@ -53,4 +59,34 @@ test('después de la consulta: decisión, contrato, firma y cierre', () => {
   assert.equal(calcularEtapa({ ...base, estado: 'cerrado' }), 'finalizado')
   assert.equal(calcularEtapa({ ...base, estado: 'cerrado', estadoPreCancelacion: 'borrador' }), 'cancelado')
   assert.equal(calcularEtapa({ ...base, estado: 'cerrado', estadoPreCancelacion: 'rechazado' }), 'no_aprobado')
+})
+
+test('Adenda 4: espera del coarrendatario, pago del prospecto y turno', () => {
+  assert.equal(
+    calcularEtapa({ ...base, autorizacionEstado: 'autorizado', titularEstado: 'en_proceso', esperaHasta: '2026-11-01T15:00:00Z' }),
+    'espera_coarrendatario',
+  )
+  assert.equal(
+    calcularEtapa({ ...base, autorizacionEstado: 'autorizado', pago: { estado: 'pendiente', puede_avanzar: false, paga: 'arrendatario' } }),
+    'pago_prospecto',
+  )
+  assert.equal(turnoDeEtapa('decision', true), 'prospecto')
+  assert.equal(turnoDeEtapa('decision', false), 'cofianza')
+  assert.equal(turnoDeEtapa('visita', false), null)
+})
+
+test('qué sigue: espera con fecha, decisión del analista y estudio sin inmueble', () => {
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
+  const espera = queSigue('espera_coarrendatario', { ...o, esperaHasta: '2026-11-01T15:00:00Z' })
+  assert.match(espera, /espera hasta el .+ a que el coarrendatario autorice/)
+  assert.match(espera, /reenvíele la invitación/)
+  assert.doesNotMatch(queSigue('espera_coarrendatario', { ...o, vista: 'equipo' }), /reenvíele/)
+  assert.equal(queSigue('decision', { ...o, vista: 'cofianza', analista: true }), 'Revise el caso y decida si lo aprueba.')
+  assert.equal(queSigue('decision', { ...o, vista: 'cofianza' }), 'Lo decide un analista de Cofianza.')
+  assert.match(queSigue('decision', { ...o, fechaCondicion: '05/11/2026' }), /antes del 05\/11\/2026/)
+  assert.match(queSigue('contrato', { ...o, vista: 'cofianza', sinInmueble: true }), /vincular el inmueble/)
+  assert.equal(queSigue('consulta', { ...o, vista: 'equipo' }), queSigue('consulta', o))
+  // Propietario directo: la API no admite coarrendatario.
+  assert.match(queSigue('decision', o), /o un coarrendatario/)
+  assert.doesNotMatch(queSigue('decision', { ...o, sinCoarrendatario: true }), /coarrendatario/)
 })

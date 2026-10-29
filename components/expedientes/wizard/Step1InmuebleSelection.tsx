@@ -218,12 +218,16 @@ export function Step1InmuebleSelection({
   // Seleccionar inmueble
   // §4.4: el tope se consulta una vez y se compara al seleccionar.
   const [topeCanon, setTopeCanon] = useState<number | null>(null)
+  // Sin propiedad: la tolerancia del panel explica hasta cuánto podrá costar el inmueble.
+  const [toleranciaCanon, setToleranciaCanon] = useState<number | null>(null)
   useEffect(() => {
     let vivo = true
     estudioService
       .getTopeCanon()
       .then((t) => {
-        if (vivo) setTopeCanon(t.tope_cop)
+        if (!vivo) return
+        setTopeCanon(t.tope_cop)
+        setToleranciaCanon(t.tolerancia_canon_pct ?? null)
       })
       .catch(() => {
         // Sin el tope no se bloquea nada: el API lo valida igual al enviar.
@@ -327,7 +331,7 @@ export function Step1InmuebleSelection({
       )}
 
       {data.sinInmueble && puedeSinInmueble ? (
-        <SinInmuebleStep1 data={data} errors={errors} onUpdate={onUpdate} topeCanon={topeCanon} />
+        <SinInmuebleStep1 data={data} errors={errors} onUpdate={onUpdate} topeCanon={topeCanon} toleranciaCanon={toleranciaCanon} />
       ) : (
       <>
 

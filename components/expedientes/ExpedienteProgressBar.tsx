@@ -17,7 +17,7 @@ import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
+import { MENSAJE_COARRENDATARIO_OBLIGATORIO, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 import { PASOS_DETALLE, PASO_DE_ETAPA, type EtapaEstudio } from '@/hooks/useEtapaEstudio'
 
 export interface ExpedienteProgressBarProps {
@@ -37,12 +37,16 @@ export interface ExpedienteProgressBarProps {
   esProspecto?: boolean
   /** Adenda 3 §6: aprobado con condición de coarrendatario (no lo revisa un analista). */
   conCondicion?: boolean
+  /** Adenda 4 V3 §8: la condición es obligatoria; el literal de «Está cerca» no aplica. */
+  condicionObligatoria?: boolean
   /**
    * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
    * autorización y el pago, según la etapa real. undefined = la barra de
    * siempre (prospecto); null = la etapa todavía se está leyendo.
    */
   etapa?: EtapaEstudio | null
+  /** Rótulo del paso actual en la barra por etapa: el mismo del chip del encabezado. */
+  etiquetaActual?: string
   className?: string
 }
 
@@ -54,10 +58,12 @@ export function ExpedienteProgressBar({
   sinInfoBuro,
   esProspecto,
   conCondicion,
+  condicionObligatoria,
   etapa,
+  etiquetaActual,
   className,
 }: ExpedienteProgressBarProps) {
-  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} conCondicion={conCondicion} className={className} />
+  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} etiquetaActual={etiquetaActual} className={className} />
   return (
     <BarraPorEstado
       expedienteId={expedienteId}
@@ -67,6 +73,7 @@ export function ExpedienteProgressBar({
       sinInfoBuro={sinInfoBuro}
       esProspecto={esProspecto}
       conCondicion={conCondicion}
+      condicionObligatoria={condicionObligatoria}
       className={className}
     />
   )
@@ -74,11 +81,11 @@ export function ExpedienteProgressBar({
 
 function BarraPorEtapa({
   etapa,
-  conCondicion,
+  etiquetaActual,
   className,
 }: {
   etapa: EtapaEstudio | null
-  conCondicion?: boolean
+  etiquetaActual?: string
   className?: string
 }) {
   // Mientras se lee la etapa: el espacio de la barra, sin pasos que luego cambien.
@@ -100,17 +107,17 @@ function BarraPorEtapa({
   const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'decision' ? 'ambar' : 'normal'
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-start gap-1">
         {PASOS_DETALLE.map((label, idx) => {
           const isComplete = idx < actual
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
           return (
-            <div key={label} className="flex items-center flex-1">
+            <div key={label} className="flex items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
@@ -123,20 +130,20 @@ function BarraPorEtapa({
                 <span
                   className={cn(
                     'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    // En el celular los siete rótulos no caben: solo el del paso actual.
+                    !isCurrent && 'max-sm:sr-only',
                     isFailed ? 'text-red-600 font-semibold'
                       : isCurrent ? 'text-amber-700 font-semibold'
                       : isComplete ? 'text-primary-700 font-medium'
                       : 'text-gray-500',
                   )}
                 >
-                  {/* Adenda 3 §6: el mismo nombre que el encabezado («Aprobado con condición»). */}
-                  {isCurrent && etapa === 'decision'
-                    ? conCondicion ? 'Con condición' : 'Condicionado'
-                    : isFailed ? 'No aprobable' : label}
+                  {/* El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»). */}
+                  {isCurrent ? etiquetaActual ?? (isFailed ? 'No aprobable' : label) : label}
                 </span>
               </div>
               {idx < PASOS_DETALLE.length - 1 && (
-                <div className={cn('h-0.5 flex-1 mx-1 mt-[-18px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
+                <div className={cn('h-0.5 flex-1 mx-0.5 sm:mx-1 mt-[13px] sm:mt-[17px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
               )}
             </div>
           )
@@ -154,6 +161,7 @@ function BarraPorEstado({
   sinInfoBuro,
   esProspecto,
   conCondicion,
+  condicionObligatoria,
   className,
 }: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -235,7 +243,7 @@ function BarraPorEstado({
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
             : conCondicion
-              ? MENSAJE_ESTA_CERCA
+              ? condicionObligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA
               : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
@@ -255,10 +263,12 @@ function BarraPorEstado({
   if (isConditioned) {
     return (
       <div className={cn('bg-amber-50 border border-amber-200 rounded-lg p-4', className)}>
-        <p className="text-sm font-semibold text-amber-700">{conCondicion ? 'Aprobado con condición' : 'Estudio condicionado'}</p>
+        <p className="text-sm font-semibold text-amber-700">
+          {conCondicion ? (condicionObligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición') : 'En revisión'}
+        </p>
         <p className="text-xs text-amber-600 mt-0.5">
           {/* Adenda 2 §5: decide solo un analista de Cofianza. */}
-          {conCondicion ? 'Espera coarrendatario. En «Resumen» ve qué sigue y el plazo.' : <>{sinInfoBuro ? 'El buró no tiene información de esta persona (no es un rechazo).' : 'Riesgo medio (no es un rechazo).'}{' '}
+          {conCondicion ? 'Espera coarrendatario. En «Resumen» ve qué sigue y el plazo.' : <>{sinInfoBuro ? 'Las centrales de riesgo no tienen información de esta persona (no es un rechazo).' : 'No es un rechazo.'}{' '}
           Lo decide un analista de Cofianza. En «Resumen» ve qué sigue y qué se puede hacer mientras tanto.</>}
         </p>
       </div>
@@ -267,7 +277,7 @@ function BarraPorEstado({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-start gap-1">
         {PROCESS_STEPS.map((step, idx) => {
           const isComplete = idx < currentStep
           const isCurrent = idx === currentStep
@@ -276,11 +286,11 @@ function BarraPorEstado({
           // alcanzo porque el expediente fue cancelado".
           const isFailed = isCancelled && !isComplete
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className="flex items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
@@ -298,6 +308,7 @@ function BarraPorEstado({
                 <span
                   className={cn(
                     'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    !isCurrent && 'max-sm:sr-only',
                     isCurrent && !isFailed ? 'text-amber-700 font-semibold'
                       : isFailed ? 'text-red-600 font-medium'
                       : isComplete ? 'text-primary-700 font-medium'
@@ -310,7 +321,7 @@ function BarraPorEstado({
               {idx < PROCESS_STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'h-0.5 flex-1 mx-1 mt-[-18px] rounded',
+                    'h-0.5 flex-1 mx-0.5 sm:mx-1 mt-[13px] sm:mt-[17px] rounded',
                     isComplete ? 'bg-primary-600'
                       : isFailed ? 'bg-red-200'
                       : 'bg-gray-200',

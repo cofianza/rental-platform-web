@@ -4,14 +4,22 @@
  * Ingreso verificado (Adenda 4 §10): el analista registra, dentro de la
  * revisión manual, el ingreso que comprobó con documentos. Con uno vigente,
  * el endeudamiento y el canon sobre ingreso vuelven a ser obligatorios: si no
- * se cumplen, el estudio no se puede aprobar (el bloqueo lo dice el API).
+ * se cumplen, es un rechazo en firme (§4 y §7). La API pide confirmarlo (409
+ * INGRESO_VERIFICADO_RECHAZA) y, confirmado, el estudio queda no aprobado.
  * Con ADENDA4 apagado (habilitado = false) la sección no se muestra.
  */
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconFileCheck, IconAlertTriangle } from '@/components/icons'
-import { expedienteService, type IIngresoVerificado, type EvaluadoIngreso } from '@/services/expedienteService'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ApiClientError } from '@/lib/api'
+import {
+  expedienteService,
+  type IIngresoVerificado,
+  type EvaluadoIngreso,
+  type IRechazoIngresoVerificado,
+} from '@/services/expedienteService'
 import { formatCurrency, formatDate, fechaCompleta } from '@/lib/constants'
 
 const EVALUADOS: Array<{ id: EvaluadoIngreso; etiqueta: string }> = [
@@ -26,10 +34,28 @@ const CAMPO =
 const hoyBogota = () => new Date(Date.now() - 5 * 3_600_000).toISOString().slice(0, 10)
 const pct = (n: number | null) => (n === null ? 'sin dato' : `${n.toLocaleString('es-CO')} %`)
 
-export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { expedienteId: string; onRegistrado?: () => void }) {
+/** «endeudamiento X %; máximo Z % / canon Y %; máximo W %», solo lo que no se cumple. */
+const textoRechazo = (r: IRechazoIngresoVerificado) =>
+  [
+    r.dti_pct != null ? `endeudamiento ${pct(r.dti_pct)}; máximo ${r.maximos.dti_pct} %` : null,
+    r.canon_ingreso_pct != null ? `canon ${pct(r.canon_ingreso_pct)}; máximo ${r.maximos.canon_ingreso_pct} %` : null,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+
+export function IngresoVerificadoSection({
+  expedienteId,
+  onRegistrado,
+}: {
+  expedienteId: string
+  /** `rechazado`: con ese ingreso el estudio quedó no aprobado (hay que recargarlo). */
+  onRegistrado?: (rechazado: boolean) => void
+}) {
   const [datos, setDatos] = useState<IIngresoVerificado | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  // 409 INGRESO_VERIFICADO_RECHAZA: lo que no se cumple, para confirmar.
+  const [rechazo, setRechazo] = useState<IRechazoIngresoVerificado | null>(null)
   const [evaluado, setEvaluado] = useState<EvaluadoIngreso | ''>('')
   const [tipo, setTipo] = useState('')
   const [monto, setMonto] = useState('')
@@ -57,18 +83,34 @@ export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { exped
   const montoNum = Number(monto.replace(/\D/g, ''))
   const listo = !!tipo && montoNum > 0 && fechaCompleta(fecha)
 
-  const guardar = async () => {
+  const guardar = async (confirmarRechazo = false) => {
     if (!listo || guardando) return
     setGuardando(true)
     try {
-      const d = await expedienteService.registrarIngresoVerificado(expedienteId, { monto: montoNum, tipo_soporte: tipo, fecha_soporte: fecha })
+      const d = await expedienteService.registrarIngresoVerificado(expedienteId, {
+        monto: montoNum,
+        tipo_soporte: tipo,
+        fecha_soporte: fecha,
+        ...(confirmarRechazo && { confirmar_rechazo: true }),
+      })
       setDatos(d)
       setAbierto(false)
       setMonto('')
       setFecha('')
-      toast.success('Ingreso verificado registrado')
-      onRegistrado?.()
+      toast.success(confirmarRechazo ? 'Ingreso verificado registrado: el estudio quedó no aprobado' : 'Ingreso verificado registrado')
+      onRegistrado?.(confirmarRechazo)
     } catch (err) {
+      if (!confirmarRechazo && err instanceof ApiClientError && err.code === 'INGRESO_VERIFICADO_RECHAZA') {
+        setRechazo(err.details as unknown as IRechazoIngresoVerificado)
+        return
+      }
+      // Quedó guardado pero el estudio no pasó a no aprobado: se refresca (para no
+      // guardarlo dos veces) y el mensaje dice qué hacer.
+      if (err instanceof ApiClientError && err.code === 'RECHAZO_NO_REGISTRADO') {
+        setAbierto(false)
+        expedienteService.leerIngresoVerificado(expedienteId).then(setDatos, () => {})
+        onRegistrado?.(false)
+      }
       toast.error(err instanceof Error ? err.message : 'No se pudo registrar el ingreso verificado')
     } finally {
       setGuardando(false)
@@ -159,7 +201,7 @@ export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { exped
               <div className="flex items-center gap-3 sm:col-span-2">
                 <button
                   type="button"
-                  onClick={guardar}
+                  onClick={() => guardar()}
                   disabled={!listo || guardando}
                   className="inline-flex items-center rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
                 >
@@ -173,6 +215,18 @@ export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { exped
           )}
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={!!rechazo}
+        onClose={() => setRechazo(null)}
+        onConfirm={() => guardar(true)}
+        title="El estudio no cumple con este ingreso"
+        message={
+          rechazo &&
+          `Con este ingreso el estudio no cumple (${textoRechazo(rechazo)}). Si confirma, el estudio queda no aprobado.`
+        }
+        confirmLabel="Confirmar"
+        variant="danger"
+      />
     </div>
   )
 }

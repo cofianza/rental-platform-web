@@ -119,6 +119,8 @@ export interface DeclaracionLote {
   autoriza_reporte: boolean | null
   municipio: string | null
   tipo_documento: string | null
+  /** §4.4: códigos internos que la inmobiliaria relacionó con mora; esos contratos se rechazan (§4.6). Ausente en una API anterior. */
+  contratos_con_mora?: string[]
 }
 
 export interface ValidacionResultado {

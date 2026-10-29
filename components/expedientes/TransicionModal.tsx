@@ -45,6 +45,8 @@ export interface TransicionModalProps {
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
    *  documentos consultados (Adenda 2 §5.1). */
   expedienteId?: string
+  /** El nombre del estado que muestra el chip del detalle (la etapa), no el estado formal. */
+  etiquetaActual?: string
 }
 
 export function TransicionModal({
@@ -55,6 +57,7 @@ export function TransicionModal({
   onConfirmar,
   isLoading = false,
   expedienteId,
+  etiquetaActual,
 }: TransicionModalProps) {
   // Identificamos la transicion seleccionada por su label, no solo por
   // estado destino — pueden existir dos transiciones al mismo destino con
@@ -134,7 +137,7 @@ export function TransicionModal({
     }
 
     if (pideEvaluacion && !evaluacionCompleta(evaluacion)) {
-      setError('Puntúa la estabilidad laboral y el historial de arrendamiento')
+      setError('Puntúe la estabilidad laboral y el historial de arrendamiento.')
       return
     }
 
@@ -184,7 +187,7 @@ export function TransicionModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Cambiar Estado del Estudio"
+      title="Cambiar el estado del estudio"
       size="md"
     >
       <div className="space-y-6">
@@ -193,7 +196,7 @@ export function TransicionModal({
           <p className="block text-sm font-medium text-gray-700 mb-2">
             Estado actual
           </p>
-          <Badge estado={estadoActual} />
+          <Badge estado={estadoActual} label={etiquetaActual} />
         </div>
 
         {/* Selector de estado destino */}
@@ -251,7 +254,7 @@ export function TransicionModal({
         {/* Visualización de la transición */}
         {estadoSeleccionado && (
           <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
-            <Badge estado={estadoActual} />
+            <Badge estado={estadoActual} label={etiquetaActual} />
             <IconArrowRight size={20} className="text-gray-500" />
             <Badge estado={estadoSeleccionado} />
           </div>
@@ -287,7 +290,7 @@ export function TransicionModal({
             {pideMotivoGestor
               ? 'Solo lo ve Cofianza: queda en el historial del estudio con su usuario y la fecha.'
               : cancelaCofianza
-                ? 'No incluya datos del buró ni el fundamento interno.'
+                ? 'No incluya datos de las centrales de riesgo ni el fundamento interno.'
                 : esRevisionManual
                   ? 'Es el fundamento de su decisión de revisión manual: queda registrado con su usuario y la fecha.'
                   : 'Este comentario quedará registrado en el historial del estudio.'}
@@ -312,7 +315,7 @@ export function TransicionModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del coarrendatario.
+              Lo verán en el estudio. Escríbalo corto, sin cifras de las centrales de riesgo ni datos del coarrendatario.
               {!motivoGestorValido && ` Mínimo ${MIN_MOTIVO} caracteres (${motivoGestor.trim().length}/${MIN_MOTIVO}).`}
             </p>
           </div>

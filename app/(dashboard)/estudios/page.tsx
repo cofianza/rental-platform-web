@@ -19,7 +19,6 @@ import {
   ESTUDIO_UI_MESSAGES,
 } from '@/components/estudios'
 import { EstudiosExpedientesFusion } from '@/components/estudios/EstudiosExpedientesFusion'
-import { EstudiosPropietarioView } from '@/components/estudios/EstudiosPropietarioView'
 
 function EstudiosContent() {
   const router = useRouter()
@@ -28,10 +27,14 @@ function EstudiosContent() {
 
   // El solicitante no debe entrar a este listado operativo — ve su estudio
   // en el detalle del expediente. Si llega por URL directa, lo redirigimos.
+  // El propietario tiene su lista en /expedientes (la misma de la inmobiliaria);
+  // aquí veía otra («Evaluar candidato») con chips y conteos distintos.
   useEffect(() => {
     if (!isInitialized) return
     if (userRol === 'solicitante') {
       router.replace('/dashboard')
+    } else if (userRol === 'propietario') {
+      router.replace('/expedientes')
     }
   }, [isInitialized, userRol, router])
 
@@ -42,16 +45,8 @@ function EstudiosContent() {
     return <EstudiosExpedientesFusion />
   }
 
-  // Propietario: "Evaluar candidato" (mockup 14) — mismo historial re-skineado,
-  // sin saldo/paquetes; "Nuevo estudio" lleva al flujo real (expediente).
-  if (userRol === 'propietario') {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Evaluar candidato" subtitle="Envíe a un prospecto a evaluación crediticia y consulte sus evaluaciones." />
-        <EstudiosPropietarioView />
-      </div>
-    )
-  }
+  // Mientras redirige.
+  if (userRol === 'propietario') return null
 
   return <EstudiosAdminView />
 }

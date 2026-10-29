@@ -417,9 +417,9 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'capacidad',
     sub: 'Quién es buen pagador',
     unidad: 'meses',
-    queHace: 'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Solo 6, 12 o 24: los que entrega la central.',
+    queHace: 'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Solo 6 o 12.',
     rige: 'a4',
-    opciones: [6, 12, 24],
+    opciones: [6, 12],
     ...DECISION,
   },
   RATIO_COBERTURA_ALTA: {
@@ -495,8 +495,9 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'capacidad',
     sub: 'Apelaciones',
     unidad: 'num',
-    queHace: 'Veces por estudio que Cofianza repite a su costo la consulta a la central cuando, al responder una apelación, el reporte ya venció (30 días). En 0, esa apelación se cierra.',
+    queHace: 'Si Cofianza repite a su costo la consulta a la central (1) o no (0) cuando, al responder la primera apelación de un estudio, el reporte ya venció (30 días). Una apelación posterior nunca la tiene. En 0, esa apelación se cierra.',
     rige: 'siempre',
+    opciones: [0, 1],
   },
 
   // ── Precios y cobros ──────────────────────────────────────────────────────
@@ -744,6 +745,18 @@ export const META: Record<string, MetaParametro> = {
     ejemplo: (v) => `Con ${fmt(v.TARIFA_MIGRACION_REPORTABLE)} % y un canon de $2.000.000, la inmobiliaria paga ${pesos(20_000 * v.TARIFA_MIGRACION_REPORTABLE)} al mes más IVA.`,
     rige: 'siempre',
   },
+  TARIFA_MIGRACION_NO_REPORTABLE: {
+    nombre: 'Tarifa mensual de un contrato migrado que no autoriza reporte',
+    seccion: 'migracion',
+    sub: 'Condiciones',
+    unidad: 'pct',
+    queHace:
+      'Porcentaje del canon, más IVA, que la inmobiliaria paga cada mes por un contrato migrado que no autoriza el reporte a centrales. Si después lo autoriza, pasa a la tarifa del contrato que sí lo autoriza desde el mes siguiente. Queda en el acta; los lotes ya procesados no cambian.',
+    ejemplo: (v) =>
+      `Con ${fmt(v.TARIFA_MIGRACION_NO_REPORTABLE)} % y un canon de $2.000.000, la inmobiliaria paga ${pesos(20_000 * v.TARIFA_MIGRACION_NO_REPORTABLE)} al mes más IVA.`,
+    rige: 'siempre',
+  },
+  // Lo reemplazó la tarifa anterior: la API ya no lo lista; queda para nombrarlo en el historial de cambios.
   RECARGO_NO_REPORTABLE: {
     nombre: 'Recargo si el contrato migrado no autoriza reporte',
     seccion: 'migracion',

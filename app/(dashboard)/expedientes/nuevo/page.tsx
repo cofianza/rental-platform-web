@@ -258,7 +258,8 @@ function NuevoExpedienteContent() {
             Nuevo estudio
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Complete los pasos para crear un nuevo estudio de arrendamiento
+            Elija el inmueble, la persona a evaluar y quién paga. Al final le enviamos a esa persona un enlace por
+            WhatsApp y correo para que autorice la consulta a las centrales de riesgo.
           </p>
         </div>
 

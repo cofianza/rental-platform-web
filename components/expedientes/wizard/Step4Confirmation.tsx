@@ -25,7 +25,7 @@ import {
   IconUsers,
 } from '@/components/icons'
 import { formatCurrency } from '@/lib/constants'
-import { estudioService } from '@/services/estudioService'
+import { estudioService, type ITopeCanon } from '@/services/estudioService'
 import type { WizardData, CoarrendatarioWizard } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
@@ -68,27 +68,76 @@ export function Step4Confirmation({
   // Paga la inmobiliaria en línea: el botón no envía nada todavía, lleva al pago.
   const pagaAhora = forma_pago === 'inmobiliaria'
 
-  // CORR §5.2: antes de enviar, el valor que se le cobrará al prospecto (con
-  // IVA incluido, calculado por la API desde la calibración).
-  const [precioProspecto, setPrecioProspecto] = useState<string | null>(null)
+  // CORR §5.2: el precio (con IVA incluido) y los plazos vivos del panel, para
+  // explicar qué pasa al enviar. Sin ellos la lista sale sin las cifras.
+  const [panel, setPanel] = useState<ITopeCanon | null>(null)
   useEffect(() => {
-    if (forma_pago !== 'prospecto') return
     let vivo = true
     estudioService
       .getTopeCanon()
       .then((r) => {
-        if (vivo) setPrecioProspecto(r.precio_estudio ?? null)
+        if (vivo) setPanel(r)
       })
       .catch(() => {
-        // Sin el precio no se bloquea: la página de pago del prospecto lo muestra igual.
+        // No se bloquea: la página de pago y los mensajes llevan sus propias cifras.
       })
     return () => {
       vivo = false
     }
-  }, [forma_pago])
+  }, [])
 
   // Obtener datos del solicitante (existente o nuevo)
   const solicitanteData = solicitante || formData
+
+  // Qué pasa al pulsar el botón: solo los pasos que aplican a esta forma de pago.
+  const nombre = solicitanteData?.nombre?.trim() || 'la persona'
+  const precio = panel?.precio_estudio
+  const pasos: string[] = []
+  if (forma_pago === 'credito') {
+    pasos.push('Apartamos 1 cupo de su paquete. Se descuenta solo si la consulta a las centrales da resultado.')
+  } else if (pagaAhora) {
+    pasos.push(
+      `Lo llevamos a Mercado Pago para pagar ${precio ?? 'el estudio'}. La solicitud sale cuando se confirme su pago.`,
+    )
+  }
+  pasos.push(
+    `Le enviamos a ${nombre} ${solicitanteData?.telefono ? `un WhatsApp al ${solicitanteData.telefono} y ` : ''}un correo a ${solicitanteData?.email ?? ''} con un enlace personal${panel?.dias_enlace ? ` que vence en ${panel.dias_enlace} días` : ''}. El mensaje lo envía Cofianza, la empresa fiadora: avísele antes para que lo reconozca.`,
+  )
+  pasos.push(
+    `${nombre} confirma su documento y autoriza la consulta desde el celular.${panel?.verificacion_identidad ? ' También se le puede pedir una foto de su documento y de su rostro: conviene que tenga la cédula a mano.' : ''}`,
+  )
+  if (forma_pago === 'prospecto') {
+    pasos.push(
+      `Después de autorizar le llega el enlace de pago${precio ? ` por ${precio}` : ''}. No se consulta hasta que pague.`,
+    )
+  }
+  pasos.push(
+    'Apenas autorice y el estudio esté pagado, consultamos las centrales de riesgo y le avisamos el resultado en la plataforma.',
+  )
+  // Adenda 4: el titular se consulta apenas autoriza; lo que espera al coarrendatario es la decisión.
+  // undefined = no se sabe (panel caído o API vieja): no se afirma ninguna de las dos reglas.
+  if (coarrendatario) {
+    const horas = panel?.horas_espera_coarrendatario
+    pasos.push(
+      `A ${coarrendatario.nombre.trim()} le llega su propia invitación. Cada uno se consulta apenas autoriza${
+        horas
+          ? `; la decisión espera hasta ${horas} horas a que esta persona autorice y, si no lo hace, se decide con quienes hayan autorizado.`
+          : horas === null
+            ? '; el estudio se decide con los resultados de los dos.'
+            : '.'
+      }`,
+    )
+  }
+  const FIN_CADUCIDAD: Record<string, string> = {
+    credito: 'el cupo vuelve a su paquete.',
+    inmobiliaria: 'le devolvemos el pago.',
+    prospecto: 'no se cobra nada.',
+  }
+  const pieCaducidad =
+    panel?.dias_caducidad && forma_pago
+      ? `Si ${nombre} no autoriza en ${panel.dias_caducidad} días, el estudio se cierra solo y ${FIN_CADUCIDAD[forma_pago]}`
+      : null
+  const etiquetaBoton = pagaAhora ? WIZARD_MESSAGES.CONFIRM_CREATE_PAGO : WIZARD_MESSAGES.CONFIRM_CREATE
 
   return (
     <div className="space-y-6">
@@ -98,9 +147,6 @@ export function Step4Confirmation({
           <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP4_TITLE}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {pagaAhora ? WIZARD_MESSAGES.STEP4_SUBTITLE_PAGO : WIZARD_MESSAGES.STEP4_SUBTITLE}
-        </p>
       </div>
 
       {/* Error de submit */}
@@ -132,7 +178,7 @@ export function Step4Confirmation({
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconHome size={16} className="text-gray-500" />
-            {data.step1.sinInmueble ? 'Sin propiedad todavía' : 'Inmueble Seleccionado'}
+            {data.step1.sinInmueble ? 'Sin propiedad todavía' : 'Inmueble seleccionado'}
           </h3>
           <button
             type="button"
@@ -292,19 +338,16 @@ export function Step4Confirmation({
               <span className="flex items-center gap-1"><IconMail size={14} className="text-gray-500" />{coarrendatario.email}</span>
               <span className="flex items-center gap-1"><IconPhone size={14} className="text-gray-500" />{coarrendatario.telefono}</span>
             </div>
-            <p className="text-xs text-gray-500">
-              Le enviamos su invitación al confirmar. La evaluación del titular espera a que esta persona autorice.
-            </p>
           </div>
         </div>
       )}
 
-      {/* Resumen de Configuracion */}
+      {/* Resumen del pago */}
       <div className="overflow-hidden rounded-xl border border-gray-200">
         <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
             <IconFileText size={16} className="text-gray-500" />
-            Configuración
+            Pago
           </h3>
           <button
             type="button"
@@ -320,17 +363,12 @@ export function Step4Confirmation({
           <div>
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Forma de pago del estudio</p>
             {forma_pago ? (
-              <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
-                <IconCreditCard size={14} className="text-gray-500" />
+              <p className="flex items-start gap-1.5 text-sm font-medium text-gray-800">
+                <IconCreditCard size={14} className="mt-0.5 shrink-0 text-gray-500" />
                 {FORMA_PAGO_LABEL[forma_pago]}
               </p>
             ) : (
               <p className="text-sm text-red-600">Sin elegir: vuelva al paso 3</p>
-            )}
-            {forma_pago === 'prospecto' && precioProspecto && (
-              <p className="mt-2 rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-900">
-                Se le cobrará al prospecto <strong>{precioProspecto}</strong>.
-              </p>
             )}
           </div>
 
@@ -370,8 +408,17 @@ export function Step4Confirmation({
         </div>
       </div>
 
-      {/* Boton de crear */}
+      {/* Boton de crear, con lo que va a pasar justo encima */}
       <div className="border-t border-gray-200 pt-5">
+        <div className="mb-4 rounded-xl border border-primary-200 bg-primary-50/50 p-4">
+          <h3 className="text-sm font-bold text-gray-900">Qué pasa cuando pulse «{etiquetaBoton}»</h3>
+          <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-gray-700">
+            {pasos.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ol>
+          {pieCaducidad && <p className="mt-3 text-xs text-gray-600">{pieCaducidad}</p>}
+        </div>
         <button
           type="button"
           onClick={onSubmit}
@@ -391,7 +438,7 @@ export function Step4Confirmation({
           ) : (
             <>
               {pagaAhora ? <IconCreditCard size={18} /> : <IconCheck size={18} />}
-              {pagaAhora ? WIZARD_MESSAGES.CONFIRM_CREATE_PAGO : WIZARD_MESSAGES.CONFIRM_CREATE}
+              {etiquetaBoton}
             </>
           )}
         </button>

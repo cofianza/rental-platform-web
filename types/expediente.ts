@@ -21,7 +21,9 @@ export interface IEstudioVigente {
   /** BLQ §8: por qué se detuvo el enlace (mismo estado que el detalle). Ausente con una API anterior. */
   estado_bloqueo?: EstadoBloqueo | null
   /** Adenda 3 V2 §6: aprobado con condición de presentar un coarrendatario («Está cerca»). */
-  condicion_coarrendatario?: { vence_en: string; ingreso_adicional_requerido: number | null } | null
+  condicion_coarrendatario?: { vence_en: string; ingreso_adicional_requerido: number | null; obligatoria?: boolean } | null
+  /** Adenda 4 V3 §12: el titular ya consultado espera la autorización del coarrendatario hasta esta fecha. */
+  espera_coarrendatario_hasta?: string | null
   /** Autorizó y está pagada, pero la consulta no arrancó sola: hay que lanzarla desde el detalle. */
   sin_ejecutar?: boolean
   /** La última consulta del coarrendatario falló: reintentarla le toca al gestor. */

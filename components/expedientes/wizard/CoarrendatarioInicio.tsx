@@ -44,9 +44,9 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
             Agregar un coarrendatario (opcional)
           </span>
           <span className="mt-1 block text-sm text-gray-600">
-            La persona con quien vivirá el solicitante. No es fiador: firma el contrato como arrendatario, junto con el
-            titular, y responde solidariamente. Le enviamos su propia invitación para que autorice la consulta. Cada uno
-            se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos.
+            Es la persona que va a vivir con el solicitante. No es fiador: firma el contrato como arrendatario, junto
+            con el titular, y los dos responden por el pago del canon. Su consulta va incluida en este estudio, sin
+            costo adicional. Le enviamos su propia invitación por WhatsApp y correo para que autorice la consulta.
           </span>
         </span>
       </label>

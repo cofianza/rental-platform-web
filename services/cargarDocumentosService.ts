@@ -25,6 +25,10 @@ export interface ContextoCargaDocumentos {
   condicion_vence_en?: string | null
   /** Adenda 3 V2 §6.7: ingreso adicional que necesitan entre los dos; null si la condición es solo por puntaje. */
   condicion_ingreso_adicional_requerido?: number | null
+  /** Sin coarrendatario a tiempo: 'rechazo' o 'revision' (manual); null/ausente en un API anterior. */
+  condicion_si_vence?: 'rechazo' | 'revision' | null
+  /** Adenda 4 V3 §8: coarrendatario obligatorio; no es una aprobación (ausente en un API anterior). */
+  condicion_obligatoria?: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
   /** Su coarrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {

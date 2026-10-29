@@ -20,8 +20,9 @@ export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50] as const
  * (estudios.service.ts); 'pagado' NO es ejecutable, por eso se agrupa con lo
  * que sigue esperando al prospecto.
  *
- * 'condicionados' es la cola de revisión manual del §14: mismo estado
- * ('completado') pero resultado 'condicionado'.
+ * 'condicionados' es la cola de revisión manual del §14 (y los aprobados con
+ * condición): mismo estado ('completado') y resultado 'condicionado', y la API
+ * deja solo los de estudios que siguen condicionados (sin decisión del analista).
  */
 export const BANDEJAS: Array<{
   id: string
@@ -44,7 +45,7 @@ export const BANDEJAS: Array<{
   { id: 'en_proceso', label: 'En proceso', estados: ['en_proceso'] },
   {
     id: 'condicionados',
-    label: 'Revisión manual',
+    label: 'Condicionados',
     estados: ['completado'],
     resultado: 'condicionado',
   },
@@ -56,7 +57,7 @@ export const SORTABLE_COLUMNS = {
   created_at: { key: 'created_at' as const, label: 'Fecha' },
   estado: { key: 'estado' as const, label: 'Estado' },
   resultado: { key: 'resultado' as const, label: 'Resultado' },
-  score: { key: 'score' as const, label: 'Score' },
+  score: { key: 'score' as const, label: 'Puntaje central' },
 } as const
 
 export const PROVEEDOR_LABELS: Record<string, string> = {

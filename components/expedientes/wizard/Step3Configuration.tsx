@@ -26,6 +26,7 @@ import {
   IconRefresh,
 } from '@/components/icons'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
+import { estudioService } from '@/services/estudioService'
 import { expedienteService } from '@/services/expedienteService'
 import { listMiembros, type Miembro } from '@/services/miembrosService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -50,32 +51,37 @@ const MAX_NOTAS_LENGTH = 5000
 
 // §6.1/6.2/6.3 — el texto de cada opción es del documento, resumido.
 // CORR §1.1/1.4: sin «Opción A/B/C» y una línea por opción; la regla del cupo va al pie.
+// Las que se pagan llevan el precio en el título apenas llega de la API.
 const OPCIONES_PAGO: {
   valor: FormaPagoEstudio
   titulo: string
   descripcion: string
   Icono: typeof IconCreditCard
+  conPrecio?: boolean
 }[] = [
   {
     valor: 'credito',
     // Adenda de precios §2: el cupo se RESERVA al crear y se consume solo
     // con el resultado (CORR §1.5).
-    titulo: 'Reservar un cupo de su paquete',
-    descripcion: 'Se aparta un cupo y no hay pagos adicionales.',
+    titulo: 'Usar un cupo de su paquete',
+    descripcion: 'Sin pagos adicionales.',
     Icono: IconCreditCard,
   },
   {
     valor: 'inmobiliaria',
     // Adenda 2 §7: se paga en línea; "a cuenta" no se aprobó.
-    titulo: 'Pagar ahora con Mercado Pago',
-    descripcion: 'Usted paga el estudio en línea con tarjeta o PSE al terminar el asistente.',
+    titulo: 'Pagar ahora',
+    descripcion:
+      'Con tarjeta o PSE en Mercado Pago al terminar. A la persona le llega la solicitud cuando se confirme su pago.',
     Icono: IconBank,
+    conPrecio: true,
   },
   {
     valor: 'prospecto',
-    titulo: 'Enviar el enlace de pago al prospecto',
-    descripcion: 'El prospecto paga el estudio después de autorizar la consulta.',
+    titulo: 'Que pague la persona evaluada',
+    descripcion: 'Le llega el enlace de pago después de autorizar la consulta. No se consulta hasta que pague.',
     Icono: IconWhatsapp,
+    conPrecio: true,
   },
 ]
 
@@ -92,9 +98,10 @@ export function Step3Configuration({
   const esInterno = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
   // El responsable-MIEMBRO (multi-tenant Fase 3.1) aplica a la inmobiliaria.
   const esInmobiliaria = userRol === 'inmobiliaria'
-  // Solo la inmobiliaria (y el administrador) tienen paquetes de créditos: al
-  // propietario la consulta del saldo le da 403 y la opción salía deshabilitada.
-  const usaCreditos = (esInmobiliaria || userRol === 'administrador') && !sinInmueble
+  // Solo la inmobiliaria tiene paquetes de créditos: al propietario la consulta
+  // del saldo le da 403, y con el administrador el estudio se creaba pero la
+  // reserva fallaba (liberarEstudioConCredito exige que el inmueble sea suyo).
+  const usaCreditos = esInmobiliaria && !sinInmueble
 
   // Adenda de precios §1.4: la inmobiliaria no paga estudios sueltos
   // (paquete o prospecto); el API responde 403. Sin cupos, sin la opción del paquete.
@@ -112,6 +119,31 @@ export function Step3Configuration({
     if (unicaOpcion && data.forma_pago !== unicaOpcion) onUpdate({ forma_pago: unicaOpcion })
     else if (formaPagoInvisible) onUpdate({ forma_pago: '' })
   }, [unicaOpcion, data.forma_pago, formaPagoInvisible, onUpdate])
+
+  // Precio del estudio al prospecto (IVA incluido), de la calibración vía API.
+  // La API lo manda como «$95.200 (IVA incluido)»: en los títulos basta el valor.
+  const [precio, setPrecio] = useState<string | null>(null)
+  useEffect(() => {
+    let vivo = true
+    estudioService
+      .getTopeCanon()
+      .then((r) => {
+        if (vivo) setPrecio(r.precio_estudio ?? null)
+      })
+      .catch(() => {
+        // Sin el precio no se bloquea: los títulos van sin él.
+      })
+    return () => {
+      vivo = false
+    }
+  }, [])
+  const precioCorto = precio?.replace(/ \(IVA incluido\)$/, '') ?? null
+  const subtitulo = [
+    precioCorto && `El estudio vale ${precioCorto}${precio !== precioCorto ? ', IVA incluido' : ''}.`,
+    usaCreditos && 'Con su paquete no paga nada más; si no le quedan cupos, lo paga la persona evaluada.',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [isLoadingAnalistas, setIsLoadingAnalistas] = useState(false)
@@ -219,9 +251,7 @@ export function Step3Configuration({
           <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
           {WIZARD_MESSAGES.STEP3_TITLE}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {WIZARD_MESSAGES.STEP3_SUBTITLE}
-        </p>
+        {subtitulo && <p className="mt-1 text-sm text-gray-500">{subtitulo}</p>}
       </div>
 
       {/* §6 — la decisión del paso: forma de pago del estudio */}
@@ -232,24 +262,15 @@ export function Step3Configuration({
         )}
       >
         <legend className="sr-only">¿Quién paga el estudio?</legend>
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-700 text-white">
-            <IconCreditCard size={20} />
-          </span>
-          <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 font-display text-base font-bold text-gray-900">
-              ¿Quién paga el estudio?
-              <span className="rounded-full bg-coral-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-coral-700">
-                Obligatorio
-              </span>
-            </p>
-            <p className="mt-0.5 text-sm text-gray-600">
-              Define a quién se le cobra la evaluación. Sin esta elección el estudio no puede iniciar.
-            </p>
-          </div>
-        </div>
+        {unicaOpcion === 'prospecto' ? (
+          // Una sola opción (estudio sin propiedad): no hay nada que elegir.
+          <p className="text-sm text-gray-700">
+            Paga la persona evaluada: le llega el enlace de pago{precioCorto ? ` por ${precioCorto}` : ''} después de
+            autorizar la consulta.
+          </p>
+        ) : (
         <div className="space-y-2.5">
-          {opcionesVisibles.map(({ valor, titulo, descripcion, Icono }) => {
+          {opcionesVisibles.map(({ valor, titulo, descripcion, Icono, conPrecio }) => {
             const seleccionada = data.forma_pago === valor
             const sinSaldo = valor === 'credito' && (saldoError || saldo === 0)
             return (
@@ -282,7 +303,9 @@ export function Step3Configuration({
                   {seleccionada ? <IconCheck size={18} /> : <Icono size={18} />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-gray-900">{titulo}</span>
+                  <span className="block text-sm font-semibold text-gray-900">
+                    {conPrecio && precioCorto ? `${titulo} · ${precioCorto}` : titulo}
+                  </span>
                   <span className="mt-1 block text-sm text-gray-500">{descripcion}</span>
 
                   {valor === 'credito' && (
@@ -296,25 +319,20 @@ export function Step3Configuration({
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
                           No le quedan cupos en su paquete.{' '}
-                          {esInmobiliaria ? (
-                            <>
-                              {/* La compra NO vive en "Pagos a Cofianza": está en
-                                  configuración de créditos. Sin este enlace el
-                                  gestor salía a buscarla y perdía el asistente. */}
-                              <Link
-                                href="/configuracion/creditos-estudios"
-                                target="_blank"
-                                rel="noopener"
-                                className="font-semibold underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Compre un paquete
-                              </Link>{' '}
-                              (se abre en otra pestaña; al volver actualizamos su saldo) o elija otra opción.
-                            </>
-                          ) : (
-                            'Elija otra opción.'
-                          )}
+                          {/* La compra NO vive en "Pagos a Cofianza": está en
+                              configuración de créditos. Sin este enlace el
+                              gestor salía a buscarla y perdía el asistente.
+                              Esta tarjeta solo la ve la inmobiliaria (usaCreditos). */}
+                          <Link
+                            href="/configuracion/creditos-estudios"
+                            target="_blank"
+                            rel="noopener"
+                            className="font-semibold underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Compre un paquete
+                          </Link>{' '}
+                          (se abre en otra pestaña; al volver actualizamos su saldo) o elija otra opción.
                         </span>
                       ) : (
                         <span className="text-gray-600">
@@ -329,6 +347,7 @@ export function Step3Configuration({
             )
           })}
         </div>
+        )}
         {usaCreditos && saldoError && (
           // Fuera de la tarjeta: un botón dentro del <label> activaría el radio.
           <button

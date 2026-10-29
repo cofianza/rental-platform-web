@@ -20,8 +20,10 @@ export {
   ETAPA_LABEL,
   PASOS_DETALLE,
   PASO_DE_ETAPA,
+  turnoDeEtapa,
   type DatosEtapa,
   type EtapaEstudio,
+  type Turno,
 } from '@/lib/etapaEstudio'
 import { calcularEtapa, type EtapaEstudio } from '@/lib/etapaEstudio'
 
@@ -36,12 +38,23 @@ interface ExpedienteEtapa {
 }
 
 /**
- * null mientras carga. `conPago`: el rol puede leer el estado del pago.
+ * etapa null mientras carga. `conPago`: el rol puede leer el estado del pago.
  * `version`: el contador de cargas del detalle (la página da el contexto de
- * refresco, así que aquí llega por parámetro).
+ * refresco, así que aquí llega por parámetro). `esperaHasta`: hasta cuándo el
+ * titular espera al coarrendatario (Adenda 4 §12), para la franja «Qué sigue».
+ * `coaFallido`: la última evaluación del coarrendatario falló (coa_fallido del
+ * RPC de la lista): reintentarla es del gestor.
  */
-export function useEtapaEstudio(expediente: ExpedienteEtapa | null, conPago: boolean, version: number): EtapaEstudio | null {
-  const [etapa, setEtapa] = useState<EtapaEstudio | null>(null)
+export function useEtapaEstudio(
+  expediente: ExpedienteEtapa | null,
+  conPago: boolean,
+  version: number,
+): { etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean } {
+  const [leida, setLeida] = useState<{ etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean }>({
+    etapa: null,
+    esperaHasta: null,
+    coaFallido: false,
+  })
   const id = expediente?.id
   const estado = expediente?.estado
   const pre = expediente?.estado_pre_cancelacion ?? null
@@ -60,34 +73,42 @@ export function useEtapaEstudio(expediente: ExpedienteEtapa | null, conPago: boo
         : Promise.resolve([]),
       preDecision && habilitado ? autorizacionService.getStatus(id).catch(() => null) : Promise.resolve(null),
       preDecision && habilitado && conPago ? pagoEstudioService.getEstado(id).catch(() => null) : Promise.resolve(null),
-      preDecision && habilitado ? estudioService.getEstudiosForExpediente(id, 1, 10).catch(() => null) : Promise.resolve(null),
+      // Condicionado o aprobado: solo por la evaluación del coarrendatario (la misma petición que las tarjetas).
+      (preDecision && habilitado) || estado === 'condicionado' || estado === 'aprobado'
+        ? estudioService.getEstudiosForExpediente(id, 1, 10).catch(() => null)
+        : Promise.resolve(null),
       estado === 'aprobado' ? contratoService.getContratosForExpediente(id, { limit: 20 }).catch(() => null) : Promise.resolve(null),
     ]).then(([citas, aut, pago, estudios, contratos]) => {
       if (cancel) return
       const titular = estudios?.data
         .filter((e) => e.tipo !== 'con_coarrendatario' && e.estado !== 'cancelado')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
-      setEtapa(
-        calcularEtapa({
-          estado,
-          estadoPreCancelacion: pre,
-          habilitado,
-          estudioRechazado: rechazado,
-          citaResuelta: citaOmitida || citas.some((c) => c.estado === 'realizada'),
-          tieneInmueble,
-          autorizacionEstado: aut?.estado ?? null,
-          // Mismo veredicto que la lista (vencido por el reloj o detenido).
-          enlaceVencido: !!titular?.expiracion?.expirado,
-          pago: pago ? { estado: pago.estado, puede_avanzar: pago.puede_avanzar, paga: pago.paga } : null,
-          titularEstado: titular?.estado ?? null,
-          contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
-        }),
-      )
+      const esperaHasta = titular?.espera_autorizacion?.hasta ?? null
+      const ultimaCoa = estudios?.data
+        .filter((e) => e.tipo === 'con_coarrendatario')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+      const etapa = calcularEtapa({
+        estado,
+        estadoPreCancelacion: pre,
+        habilitado,
+        estudioRechazado: rechazado,
+        citaResuelta: citaOmitida || citas.some((c) => c.estado === 'realizada'),
+        tieneInmueble,
+        autorizacionEstado: aut?.estado ?? null,
+        // Mismo veredicto que la lista (vencido por el reloj o detenido).
+        enlaceVencido: !!titular?.expiracion?.expirado,
+        pago: pago ? { estado: pago.estado, puede_avanzar: pago.puede_avanzar, paga: pago.paga } : null,
+        titularEstado: titular?.estado ?? null,
+        pagoPor: titular?.pago_por ?? null,
+        esperaHasta,
+        contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
+      })
+      setLeida({ etapa, esperaHasta, coaFallido: ultimaCoa?.estado === 'fallido' })
     })
     return () => {
       cancel = true
     }
   }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, conPago, version])
 
-  return etapa
+  return leida
 }

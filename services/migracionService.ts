@@ -112,16 +112,24 @@ export const migracionService = {
 
   // ── Carga del archivo (§2.4) ──
 
+  // conMora (Adenda 1 §4.4): códigos internos de los contratos que la inmobiliaria declara con
+  // mora, separados por coma o renglón; la API los rechaza (400 si alguno no está en el archivo).
+
   /** Primera pasada: no crea nada. */
-  async validar(inmobiliariaId: string, archivo: File): Promise<ValidacionResultado> {
-    return json<ValidacionResultado>(await crudo(`${org(inmobiliariaId)}/validar`, { method: 'POST', form: conArchivo(archivo) }))
+  async validar(inmobiliariaId: string, archivo: File, conMora = ''): Promise<ValidacionResultado> {
+    const form = conArchivo(archivo, { contratos_con_mora: conMora })
+    return json<ValidacionResultado>(await crudo(`${org(inmobiliariaId)}/validar`, { method: 'POST', form }))
   },
   /** El mismo reporte de validación en Excel, con los datos tal como llegaron. */
-  validarXlsx: (inmobiliariaId: string, archivo: File) =>
-    descargar(`${org(inmobiliariaId)}/validar?formato=xlsx`, 'reporte-validacion-migracion.xlsx', conArchivo(archivo)),
+  validarXlsx: (inmobiliariaId: string, archivo: File, conMora = '') =>
+    descargar(
+      `${org(inmobiliariaId)}/validar?formato=xlsx`,
+      'reporte-validacion-migracion.xlsx',
+      conArchivo(archivo, { contratos_con_mora: conMora }),
+    ),
   /** Crea el lote y su Acta de Migración (422 MIGRACION_SIN_ACEPTADAS si nada es aceptable). */
-  async procesar(inmobiliariaId: string, archivo: File, rep: RepresentanteLegal): Promise<ProcesarResultado> {
-    const form = conArchivo(archivo, { ...rep })
+  async procesar(inmobiliariaId: string, archivo: File, rep: RepresentanteLegal, conMora = ''): Promise<ProcesarResultado> {
+    const form = conArchivo(archivo, { ...rep, contratos_con_mora: conMora })
     return json<ProcesarResultado>(await crudo(`${org(inmobiliariaId)}/procesar`, { method: 'POST', form }))
   },
 

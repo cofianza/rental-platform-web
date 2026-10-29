@@ -273,13 +273,17 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   }, [resetFilters])
 
   /**
-   * Verifica si hay filtros activos (excluye bandeja y misExpedientes)
+   * Verifica si hay filtros activos (excluye bandeja). El responsable cuenta:
+   * sin él, con uno elegido y la lista vacía, el estado vacío decía «Todavía
+   * no tiene estudios» y no ofrecía «Limpiar filtros».
    */
   const hasActiveFilters = useCallback(() => {
     return (
       filters.search !== '' ||
       filters.fecha_desde !== '' ||
-      filters.fecha_hasta !== ''
+      filters.fecha_hasta !== '' ||
+      filters.analista_id !== '' ||
+      !!filters.miembro_responsable_id
     )
   }, [filters])
 

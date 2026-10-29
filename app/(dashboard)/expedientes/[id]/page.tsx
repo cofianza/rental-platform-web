@@ -6,7 +6,7 @@
 
 'use client'
 
-import { AYUDA, AYUDA_ETAPA, AYUDA_CON_CONDICION } from '@/lib/ayudaEstudio'
+import { AYUDA, queSigue } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { Button } from '@/components/ui/Button'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
@@ -58,9 +58,10 @@ import {
 } from '@/components/expedientes'
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa } from '@/components/expedientes/ResumenPorEtapa'
+import { PastillaTurno } from '@/components/expedientes/PastillaTurno'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
-import { useEtapaEstudio, ETAPA_LABEL } from '@/hooks/useEtapaEstudio'
+import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -76,7 +77,7 @@ import type {
 } from '@/types/expediente'
 import { formatNumeroEstudio } from '@/lib/utils'
 import { documento } from '@/components/contratos/v3/campos'
-import { textoVisible, esRolInterno } from '@/components/expedientes/textoVisible'
+import { textoVisible, esRolInterno, fechaCondicion } from '@/components/expedientes/textoVisible'
 
 export default function ExpedienteDetallePage() {
   const params = useParams()
@@ -139,7 +140,11 @@ export default function ExpedienteDetallePage() {
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
   // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
-  const etapa = useEtapaEstudio(user?.rol === 'solicitante' ? null : expediente, user?.rol !== 'gerencia_consulta', cargas)
+  const { etapa, esperaHasta, coaFallido } = useEtapaEstudio(
+    user?.rol === 'solicitante' ? null : expediente,
+    user?.rol !== 'gerencia_consulta',
+    cargas,
+  )
   const expedienteCargadoRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -493,6 +498,34 @@ export default function ExpedienteDetallePage() {
     !!expediente.inmueble.reservado_por_expediente_id &&
     expediente.inmueble.reservado_por_expediente_id !== id
 
+  // Como la lista (etapaDeFila): la consulta fallida del coarrendatario va antes
+  // del resultado y reintentarla es del gestor. El Resumen y la barra siguen la etapa real.
+  const coaFallidaVive = coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'vigente'
+  const etapaTurno = coaFallidaVive ? 'fallida' : etapa
+  // Un solo nombre para dónde está el estudio: el chip, la barra y el modal de cambio de estado.
+  const etiquetaEtapa =
+    user?.rol === 'solicitante'
+      ? // El vocabulario de su barra y de rutas-resultado (no «Borrador» ni «Condicionado»).
+        expediente.estado === 'borrador'
+        ? 'En preparación'
+        : expediente.estado === 'condicionado'
+          ? condicionCoa ? 'Está cerca' : 'En revisión'
+          : undefined
+      : coaFallidaVive
+        ? 'Falló la consulta del coarrendatario'
+        : etapa === 'decision' && condicionCoa
+          ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
+          : etapa
+            ? ETAPA_LABEL[etapa]
+            : undefined
+  // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
+  const turno = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
+  const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
+  // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
+  const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))
+  // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
+  const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
+
   return (
     <ExpedienteRefrescoContext.Provider value={cargas}>
     <div className="space-y-6" aria-busy={isLoading}>
@@ -531,25 +564,7 @@ export default function ExpedienteDetallePage() {
                       ? 'rechazado'
                       : expediente.estado
                   }
-                  label={
-                    etapa && user?.rol !== 'solicitante'
-                      ? etapa === 'decision' && condicionCoa
-                        ? 'Aprobado con condición'
-                        : ETAPA_LABEL[etapa]
-                      : user?.rol === 'solicitante' && expediente.estado === 'borrador'
-                      ? 'En preparación'
-                      : // Adenda 3 §6: el mismo nombre que la barra y la tarjeta, no el «Condicionado» de la revisión manual.
-                        condicionCoa && expediente.estado === 'condicionado'
-                        ? 'Aprobado con condición'
-                        : undefined
-                  }
-                />
-              )}
-              {etapa && user?.rol !== 'solicitante' && !expediente.cancelado_at && (
-                <InfoTip
-                  texto={etapa === 'decision' && condicionCoa ? AYUDA_CON_CONDICION : AYUDA_ETAPA[etapa]}
-                  etiqueta="Qué significa esta etapa"
-                  lado="derecha"
+                  label={etiquetaEtapa}
                 />
               )}
             </div>
@@ -647,8 +662,14 @@ export default function ExpedienteDetallePage() {
               <Button variante="secondary" onClick={() => fetchExpediente()}>
                 Reintentar acciones
               </Button>
-            ) : transiciones.length > 0 ? (
-              <Button onClick={() => setShowTransicionModal(true)}>Cambiar estado</Button>
+            ) : transicionesModal.length > 0 ? (
+              <Button variante="secondary" onClick={() => setShowTransicionModal(true)}>
+                {!soloCierre
+                  ? 'Cambiar estado'
+                  : transicionesModal.length === 1
+                    ? transicionesModal[0].etiqueta
+                    : 'Cerrar o cancelar el estudio'}
+              </Button>
             ) : null}
           </div>
         )}
@@ -660,12 +681,39 @@ export default function ExpedienteDetallePage() {
           expedienteId={id}
           estadoActual={expediente.estado}
           estadoPreCancelacion={expediente.estado_pre_cancelacion}
-          citaOmitida={expediente.cita_omitida}
+          // Sin inmueble no hay visita: la barra del prospecto la dejaba como paso actual.
+          citaOmitida={expediente.cita_omitida || !expediente.inmueble}
           sinInfoBuro={condicionadoSinInfo}
           esProspecto={user?.rol === 'solicitante'}
           conCondicion={!!condicionCoa}
+          condicionObligatoria={!!condicionCoa?.obligatoria}
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
+          etiquetaActual={etiquetaEtapa}
         />
+        {/* «Qué sigue»: de quién es el turno y el siguiente paso, con las palabras de la lista. */}
+        {etapaTurno && user?.rol !== 'solicitante' && (
+          <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-start sm:gap-3">
+            {turno && (
+              <PastillaTurno
+                turno={turno}
+                vista={vistaTurno}
+                revision={etapaTurno === 'decision' && !condicionCoa}
+                className="shrink-0 self-start"
+              />
+            )}
+            <p className="text-sm text-gray-700">
+              {queSigue(etapaTurno, {
+                vista: vistaTurno,
+                analista: puedeAsignar,
+                fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
+                esperaHasta,
+                sinInmueble: !expediente.inmueble,
+                // Propietario directo: la API no admite coarrendatario (espera el Convenio).
+                sinCoarrendatario: !!expediente.inmueble && !expediente.inmueble.inmobiliaria_id,
+              })}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Adenda de precios §7: canon sobre el tope — aviso al analista y excepción de la Gerencia General. */}
@@ -1259,10 +1307,11 @@ export default function ExpedienteDetallePage() {
         isOpen={showTransicionModal}
         onClose={() => setShowTransicionModal(false)}
         estadoActual={expediente.estado}
-        transicionesDisponibles={(transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))}
+        transicionesDisponibles={transicionesModal}
         onConfirmar={handleEjecutarTransicion}
         isLoading={isExecutingTransicion}
         expedienteId={id}
+        etiquetaActual={etiquetaEtapa}
       />
 
       <MotivoDialog

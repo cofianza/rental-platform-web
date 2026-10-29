@@ -15,7 +15,7 @@
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { useCallback, useEffect, useState } from 'react'
-import { IconBuilding2, IconCheck, IconClock, IconRefresh } from '@/components/icons'
+import { IconBuilding2, IconCheck, IconClock, IconRefresh, IconX } from '@/components/icons'
 import { documento } from '@/components/contratos/v3/campos'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
@@ -29,7 +29,7 @@ import {
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
-import type { IEstudio, EstadoEstudio, ResultadoEstudio } from '@/types/estudio'
+import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida } from './textoVisible'
 
@@ -74,9 +74,8 @@ interface EstudioEstadoCardProps {
    */
   coarrendatarioVigente?: boolean
   /**
-   * Estado del expediente. La aprobación o el rechazo del analista en revisión
-   * manual cambian el expediente, no el `resultado` del estudio (sigue
-   * 'condicionado'): sin esto la tarjeta seguía diciendo «decida si proceder».
+   * Estado del expediente: cerrado, el siguiente paso ya no es el contrato. La
+   * decisión del analista sobre el condicionado llega en `decision_cofianza`.
    */
   expedienteEstado?: string
 }
@@ -92,7 +91,7 @@ export const ESTADO_LABEL: Record<EstadoEstudio, string> = {
   formulario_enviado: 'Esperando datos del prospecto',
   formulario_completado: 'Formulario completado',
   documentos_cargados: 'Documentos cargados',
-  en_proceso: 'Consultando el buró de crédito',
+  en_proceso: 'Consultando las centrales de riesgo',
   completado: 'Completado',
   fallido: 'Consulta fallida',
   cancelado: 'Cancelado',
@@ -105,11 +104,37 @@ export function etiquetaEstado(estudio: Pick<IEstudio, 'estado' | 'estudio_padre
     : ESTADO_LABEL[estudio.estado] ?? estudio.estado
 }
 
-const RESULTADO_LABEL: Record<ResultadoEstudio, string> = {
-  pendiente: 'Pendiente',
-  aprobado: 'Aprobado',
-  rechazado: 'No aprobable',
-  condicionado: 'Condicionado',
+/**
+ * El nombre del resultado de una evaluación: el mismo en esta tarjeta, la
+ * pestaña Evaluación y el detalle. La decisión del analista sobre un
+ * condicionado llega en `decision_cofianza` (el estudio sigue 'condicionado').
+ */
+export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con_coarrendatario'): string {
+  if (e.estado === 'completado') {
+    // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
+    if (esCoarrendatario && e.resultado === 'aprobado') return 'Válido'
+    if (esCoarrendatario && e.resultado === 'rechazado') return 'No califica'
+    if (esCoarrendatario && e.resultado === 'condicionado') return 'En revisión'
+    if (e.resultado === 'condicionado') {
+      if (e.decision_cofianza === 'aprobado') return 'Aprobado'
+      if (e.decision_cofianza === 'negado') return 'No aprobable'
+      // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
+      if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
+      return 'Condicionado'
+    }
+    if (e.resultado === 'aprobado') return 'Aprobado'
+    if (e.resultado === 'rechazado') return 'No aprobable'
+  }
+  // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario.
+  if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al coarrendatario'
+  return etiquetaEstado(e)
+}
+
+/** Color de la pastilla: el del resultado efectivo, para que «Aprobado» no salga en ámbar. */
+export function colorEvaluacion(e: IEstudio): string {
+  if (e.resultado === 'condicionado' && e.decision_cofianza === 'aprobado') return 'aprobado'
+  if (e.resultado === 'condicionado' && e.decision_cofianza === 'negado') return 'rechazado'
+  return e.resultado !== 'pendiente' ? e.resultado : e.estado
 }
 
 /**
@@ -167,17 +192,19 @@ const BURO_LABELS: Record<string, string> = {
   sifin: 'SIFIN',
 }
 
+const PUNTAJE_CENTRAL_AYUDA =
+  'Lo da la central de riesgo consultada, de 0 a 999. No es el puntaje de Cofianza, que además mira ingresos, deudas y el canon.'
+
 function getSiguientePaso(
   estudio: IEstudio,
   esCofianza: boolean,
-  expedienteEstado?: string,
   esCoarrendatario = false,
   /** Roles de Cofianza (también Gerencia): ven el nombre de la central. */
   verCentral = esCofianza,
 ): string {
   // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
   // dice en qué central se consultó («reserva del sumario»).
-  const buro = verCentral ? BURO_LABELS[estudio.proveedor] || 'el buró de crédito' : 'la central de riesgo'
+  const buro = (verCentral && BURO_LABELS[estudio.proveedor]) || 'la central de riesgo'
 
   // §12: "El prospecto no autoriza. El estudio expira transcurrido el plazo
   // definido. El solicitante puede reenviar la solicitud sin costo adicional
@@ -207,15 +234,15 @@ function getSiguientePaso(
     // etiqueta (redacción por rol en la API).
     const etiqueta = estudio.ruta?.etiquetaGestor
     if (estudio.resultado === 'aprobado') {
-      const base = verCentral ? `Evaluación aprobada por ${buro}. Siguiente paso: generar contrato.` : 'Evaluación aprobada. Siguiente paso: generar contrato.'
-      return etiqueta ? `${etiqueta}. ${base}` : base
+      const base = 'Siguiente paso: crear el contrato.'
+      return etiqueta ? `${etiqueta}. ${base}` : `Evaluación aprobada${verCentral ? ` por ${buro}` : ''}. ${base}`
     }
     // Adenda 2 §5: el condicionado lo decide solo un analista de Cofianza.
     if (estudio.resultado === 'condicionado') {
-      if (expedienteEstado === 'aprobado') {
-        return 'Aprobado por un analista de Cofianza en revisión manual. Siguiente paso: generar contrato.'
+      if (estudio.decision_cofianza === 'aprobado') {
+        return 'Aprobado por un analista de Cofianza en revisión manual. Siguiente paso: crear el contrato.'
       }
-      if (expedienteEstado === 'rechazado') {
+      if (estudio.decision_cofianza === 'negado') {
         return 'Un analista de Cofianza revisó el caso y no lo aprobó. El estudio no avanza al contrato.'
       }
       // Adenda 3 V2 §7: lo primero que tiene que hacer Cofianza.
@@ -223,15 +250,16 @@ function getSiguientePaso(
         return 'Coincidencia en listas restrictivas por confirmar. Ábrala en «Ver detalle» para confirmarla o descartarla antes de decidir.'
       }
       // Adenda 3 §6: aprobado con condición. No está en revisión del analista.
+      // Con la obligatoria, si el coarrendatario califica decide un analista (Adenda 4 V3 §8).
       if (estudio.condicion_coarrendatario) {
         const texto = textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
-        return esCofianza && !estudio.condicion_coarrendatario.vencida
+        return esCofianza && !estudio.condicion_coarrendatario.vencida && !estudio.condicion_coarrendatario.obligatoria
           ? `${texto} No requiere decisión del analista mientras la condición esté vigente.`
           : texto
       }
       return esCofianza
-        ? 'Evaluación condicionada. Revise las observaciones y decida si proceder.'
-        : 'Evaluación condicionada. La revisa un analista de Cofianza.'
+        ? 'Revise el motivo y decida si lo aprueba.'
+        : 'En revisión: la decide un analista de Cofianza.'
     }
     if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
     return 'Evaluación completada, esperando resultado.'
@@ -262,8 +290,8 @@ function getSiguientePaso(
     // Pasados 10 min la consulta se cortó (p. ej. un reinicio): la API la
     // recoge en su barrido; no seguir prometiendo "minutos".
     return Date.now() - new Date(estudio.updated_at).getTime() > 10 * 60 * 1000
-      ? 'La consulta al buró está tardando más de lo normal. Cofianza la está revisando.'
-      : 'Consultando con el buró de crédito. El resultado llega en minutos.'
+      ? 'La consulta a las centrales de riesgo está tardando más de lo normal. Cofianza la está revisando.'
+      : 'Consultando las centrales de riesgo. El resultado llega en minutos.'
   }
   // §6.3: el orden es AUTORIZACION -> PAGO -> EJECUCION. 'solicitado' es la
   // espera de la firma; 'pago_pendiente' es la espera del cobro, ya autorizado.
@@ -553,46 +581,34 @@ function EstudioPanel({
     esGestor && onReasignado != null && estudio.estado === 'completado' && !estudio.condicion_coarrendatario
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
-  // Va antes que el «expirado» del reloj: un enlace detenido no espera plazo.
+  // La decisión del analista sobre el condicionado del titular (como rotuloEvaluacion).
   const decisionAnalista =
-    estudio.estado === 'completado' && estudio.resultado === 'condicionado' &&
-    (expedienteEstado === 'aprobado' || expedienteEstado === 'rechazado')
-      ? expedienteEstado
+    etiqueta === 'Titular' && estudio.estado === 'completado' && estudio.resultado === 'condicionado'
+      ? estudio.decision_cofianza
       : null
   const tone = decisionAnalista === 'aprobado'
       ? 'success'
-      : decisionAnalista === 'rechazado'
+      : decisionAnalista === 'negado'
         ? 'danger'
         : getTone(estudio)
   const styles = TONE_STYLES[tone]
-  const estadoLabel = etiquetaEstado(estudio)
-  const resultadoLabel =
-    decisionAnalista === 'aprobado'
-      ? 'Aprobado por el analista'
-      : decisionAnalista === 'rechazado'
-        ? 'No aprobado por el analista'
-        : estudio.condicion_coarrendatario && estudio.resultado === 'condicionado'
-          ? // Mismo nombre que la barra, la tarjeta y el encabezado (Adenda 3 §6).
-            'Aprobado con condición'
-          : estudio.estado === 'completado' && etiqueta === 'Coarrendatario'
-            ? // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
-              estudio.resultado === 'aprobado' ? 'Válido' : estudio.resultado === 'rechazado' ? 'No califica' : 'En revisión'
-            : estudio.estado === 'completado' ? RESULTADO_LABEL[estudio.resultado] : null
+  const rotulo = rotuloEvaluacion(estudio, etiqueta === 'Coarrendatario')
 
+  // No aprobable o fallida: una X, no el visto de las aprobadas.
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />
-    : <IconCheck size={16} />
+    : tone === 'danger' ? <IconX size={16} /> : <IconCheck size={16} />
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', expedienteEstado, etiqueta === 'Coarrendatario', esRolInterno(userRol))
+      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', etiqueta === 'Coarrendatario', esRolInterno(userRol))
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
   // Con contrato o con el estudio cerrado ya no es el siguiente paso.
   const siguientePaso =
     tieneContrato || expedienteEstado === 'cerrado'
-      ? siguientePasoBase.replace(' Siguiente paso: generar contrato.', '')
+      ? siguientePasoBase.replace(' Siguiente paso: crear el contrato.', '')
       : destinacion && !inmuebleActualId
-        ? siguientePasoBase.replace('Siguiente paso: generar contrato.', 'Siguiente paso: vincular el inmueble.')
+        ? siguientePasoBase.replace('Siguiente paso: crear el contrato.', 'Siguiente paso: vincular el inmueble.')
         : siguientePasoBase
   // Texto de la API: sin citas a documentos para nadie, y sin datos internos
   // del modelo para quien no es de Cofianza.
@@ -625,22 +641,25 @@ function EstudioPanel({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
-              {estadoLabel}
+              {rotulo}
             </span>
             {estudio.expiracion?.expirado && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
                 {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
               </span>
             )}
-            {resultadoLabel && (
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
-                {resultadoLabel}
-              </span>
-            )}
           </div>
 
           {siguientePaso && (
             <p className="text-sm text-gray-800 font-medium mb-2">{siguientePaso}</p>
+          )}
+
+          {/* El motivo de la revisión (R2, R4, listas, identidad, puntaje de la
+              central…): antes solo se veía abriendo el detalle. */}
+          {rotulo === 'Condicionado' && visible(estudio.observaciones) && (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
+              Por qué está en revisión: {visible(estudio.observaciones)}
+            </p>
           )}
 
           {/* Motivo real del fallo. El texto de arriba es genérico para
@@ -668,22 +687,20 @@ function EstudioPanel({
                 )}
               </p>
             )}
-            <p className="text-xs text-gray-600">
-              {interno && centralDefinida(estudio) && (
-                <>
-                  Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
-                  {' · '}
-                </>
-              )}
-              Tipo: <span className="font-medium text-gray-800">{estudio.tipo === 'con_coarrendatario' ? 'con coarrendatario' : 'individual'}</span>
-            </p>
+            {/* El tipo ya lo dice la insignia Titular/Coarrendatario. */}
+            {interno && centralDefinida(estudio) && (
+              <p className="text-xs text-gray-600">
+                Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
+              </p>
+            )}
             <p className="text-xs text-gray-600">
               Solicitado: {formatDate(estudio.fecha_solicitud)}
               {estudio.fecha_completado ? ` · Completado: ${formatDate(estudio.fecha_completado)}` : ''}
             </p>
             {typeof estudio.score === 'number' && estudio.score > 0 && (
-              <p className="text-xs text-gray-700">
-                Score: <span className="font-semibold">{estudio.score}</span>
+              <p className="flex items-center gap-1 text-xs text-gray-700">
+                Puntaje de la central: <span className="font-semibold">{estudio.score}</span>
+                <InfoTip texto={PUNTAJE_CENTRAL_AYUDA} etiqueta="Qué es el puntaje de la central" />
               </p>
             )}
             {estudio.antecedentes && (

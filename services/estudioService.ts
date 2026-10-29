@@ -67,9 +67,9 @@ export const estudioService = {
     return res.data
   },
 
-  /** CORR §5.2: trae también el precio al prospecto con IVA incluido (texto de la API; opcional con la API vieja). */
-  async getTopeCanon(): Promise<{ tope_cop: number; precio_estudio?: string }> {
-    const res = await apiClient.get<{ tope_cop: number; precio_estudio?: string }>('/estudios/tope-canon')
+  /** CORR §5.2: trae también el precio al prospecto con IVA incluido y los plazos del panel (opcionales con la API vieja). */
+  async getTopeCanon(): Promise<ITopeCanon> {
+    const res = await apiClient.get<ITopeCanon>('/estudios/tope-canon')
     return res.data
   },
 
@@ -345,6 +345,21 @@ export const estudioService = {
     )
     return res.data.estudio
   },
+}
+
+/**
+ * GET /estudios/tope-canon. Además del tope y el precio, los valores vivos del
+ * panel que el asistente le explica al gestor antes de enviar. null = esa regla
+ * no aplica hoy (Adenda 4 apagada o el barrido de caducidad apagado).
+ */
+export interface ITopeCanon {
+  tope_cop: number
+  precio_estudio?: string
+  dias_enlace?: number
+  dias_caducidad?: number | null
+  horas_espera_coarrendatario?: number | null
+  verificacion_identidad?: boolean
+  tolerancia_canon_pct?: number
 }
 
 /** §5.2 — estudio ya pagado y todavía dentro de su vigencia. */

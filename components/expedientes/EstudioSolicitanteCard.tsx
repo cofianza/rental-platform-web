@@ -566,6 +566,26 @@ export function EstudioSolicitanteCard({
 
   // Consultando TransUnion (en_proceso).
   if (estudio.estado === 'en_proceso') {
+    // Adenda 4 V3 §12: ya consultado, la decisión espera hasta 48 h a que el
+    // coarrendatario autorice; «menos de un minuto» no era cierto.
+    if (estudio.espera_autorizacion) {
+      const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+      return (
+        <div className="border border-amber-200 bg-amber-50 rounded-lg p-5">
+          <div className="flex items-start gap-3">
+            <IconUsers size={20} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900 mb-0.5">Esperamos a su coarrendatario</p>
+              <p className="text-sm text-amber-800">
+                Ya revisamos su historial. Para darle la respuesta esperamos a que {estudio.espera_autorizacion.pendientes.join(' y ')} autorice
+                la consulta, hasta el {hasta}. Pídale que abra el enlace de la invitación que le enviamos. Si no autoriza a tiempo,
+                decidimos con la información de quienes sí autorizaron.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="border border-blue-200 bg-blue-50 rounded-lg p-5">
         <div className="flex items-start gap-3">
@@ -685,7 +705,7 @@ export function EstudioSolicitanteCard({
               )}
               {estudio.condicion_coarrendatario?.vencida && (
                 <p className={`mt-3 text-sm ${tono.texto}`}>
-                  {textoCondicionCoarrendatario(estudio.condicion_coarrendatario)}
+                  {textoCondicionCoarrendatario(estudio.condicion_coarrendatario, { prospecto: true })}
                 </p>
               )}
               {botonCertificado}
@@ -717,12 +737,15 @@ export function EstudioSolicitanteCard({
           <div className="flex items-start gap-3">
             <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-900 mb-0.5">Estudio condicionado</p>
+              {/* Su vocabulario: el del chip y la barra («Está cerca» o «En revisión»). */}
+              <p className="text-sm font-semibold text-amber-900 mb-0.5">
+                {estudio.condicion_coarrendatario ? 'Está cerca' : 'En revisión'}
+              </p>
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">
                 {estudio.condicion_coarrendatario
-                  ? textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
+                  ? textoCondicionCoarrendatario(estudio.condicion_coarrendatario, { prospecto: true })
                   : 'Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.'}
               </p>
               {botonCertificado}
