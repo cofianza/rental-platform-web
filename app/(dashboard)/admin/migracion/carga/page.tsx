@@ -83,6 +83,8 @@ export default function CargaMigracionPage() {
   const { data, loading, error, reload } = useSeccion(cargarOrgs)
   const [orgElegida, setOrgElegida] = useState<string | null>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
+  // Adenda 1 §4.4: códigos internos que la inmobiliaria relaciona con mora (texto libre, como lo envía).
+  const [conMora, setConMora] = useState('')
   const [validacion, setValidacion] = useState<ValidacionResultado | null>(null)
   const [filtro, setFiltro] = useState<ResultadoValidacion | ''>('')
   const [rep, setRep] = useState<RepresentanteLegal>(REP_VACIO)
@@ -123,7 +125,7 @@ export default function CargaMigracionPage() {
       'validar',
       async () => {
         if (!archivo) return
-        setValidacion(await migracionService.validar(orgId, archivo))
+        setValidacion(await migracionService.validar(orgId, archivo, conMora))
         setFiltro('')
       },
       'No se pudo validar el archivo',
@@ -132,7 +134,7 @@ export default function CargaMigracionPage() {
   const procesar = async () => {
     if (!archivo) return
     try {
-      const r = await migracionService.procesar(orgId, archivo, rep)
+      const r = await migracionService.procesar(orgId, archivo, rep, conMora)
       toast.success(`Lote ${r.lote.numero} creado con ${r.resumen.aceptadas + r.resumen.advertencias} contratos.`)
       router.push(`/admin/migracion/lotes/${r.lote.id}`)
     } catch (e) {
@@ -240,6 +242,30 @@ export default function CargaMigracionPage() {
               <p className="mt-1 text-xs text-gray-500">El máximo de contratos por carga viene indicado en la plantilla.</p>
             </div>
 
+            {/* Adenda 1 §4.4 y §4.6: la excepción de mora del lote, por código interno. Cambiarla invalida el reporte. */}
+            <div className="md:col-span-2">
+              <label htmlFor="con-mora" className="block text-sm font-medium text-gray-900">
+                Contratos declarados con mora (opcional)
+              </label>
+              <textarea
+                id="con-mora"
+                rows={2}
+                value={conMora}
+                disabled={ocupado !== null}
+                onChange={(e) => {
+                  setConMora(e.target.value)
+                  reiniciar()
+                }}
+                placeholder="APT-501, LOC-102"
+                className={`${INPUT} mt-1`}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Códigos internos de los contratos que, según la inmobiliaria, no están al día o tuvieron mora en los meses que exige la
+                declaración. Sepárelos con coma o en renglones distintos. Esos contratos no se migran: quedan rechazados y el Acta los
+                relaciona como excepción.
+              </p>
+            </div>
+
             <div className="flex justify-end md:col-span-2">
               <Button onClick={validar} disabled={!org || !archivo || ocupado !== null}>
                 <IconFileCheck size={16} /> {ocupado === 'validar' ? 'Validando…' : 'Validar archivo'}
@@ -262,7 +288,7 @@ export default function CargaMigracionPage() {
                 onClick={() =>
                   conOcupado(
                     'reporte',
-                    async () => guardarArchivo(await migracionService.validarXlsx(orgId, archivo!)),
+                    async () => guardarArchivo(await migracionService.validarXlsx(orgId, archivo!, conMora)),
                     'No se pudo descargar el reporte',
                   )
                 }
@@ -276,7 +302,8 @@ export default function CargaMigracionPage() {
             <p className="mb-3 text-sm text-gray-700">
               <span className="font-semibold">Datos del lote (hoja Instrucciones):</span> municipio {lote.municipio ?? 'sin indicar'} · tipo de
               documento {lote.tipo_documento ?? 'sin indicar'} · autoriza el reporte a centrales:{' '}
-              {lote.autoriza_reporte == null ? 'sin indicar (cada contrato debe traer su respuesta)' : lote.autoriza_reporte ? 'Sí' : 'No'}.
+              {lote.autoriza_reporte == null ? 'sin indicar (cada contrato debe traer su respuesta)' : lote.autoriza_reporte ? 'Sí' : 'No'}
+              {!!lote.contratos_con_mora?.length && ` · declarados con mora: ${lote.contratos_con_mora.join(', ')}`}.
             </p>
           )}
           <KpiRow cols={4}>

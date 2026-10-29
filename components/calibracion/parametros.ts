@@ -744,6 +744,18 @@ export const META: Record<string, MetaParametro> = {
     ejemplo: (v) => `Con ${fmt(v.TARIFA_MIGRACION_REPORTABLE)} % y un canon de $2.000.000, la inmobiliaria paga ${pesos(20_000 * v.TARIFA_MIGRACION_REPORTABLE)} al mes más IVA.`,
     rige: 'siempre',
   },
+  TARIFA_MIGRACION_NO_REPORTABLE: {
+    nombre: 'Tarifa mensual de un contrato migrado que no autoriza reporte',
+    seccion: 'migracion',
+    sub: 'Condiciones',
+    unidad: 'pct',
+    queHace:
+      'Porcentaje del canon, más IVA, que la inmobiliaria paga cada mes por un contrato migrado que no autoriza el reporte a centrales. Si después lo autoriza, pasa a la tarifa del contrato que sí lo autoriza desde el mes siguiente. Queda en el acta; los lotes ya procesados no cambian.',
+    ejemplo: (v) =>
+      `Con ${fmt(v.TARIFA_MIGRACION_NO_REPORTABLE)} % y un canon de $2.000.000, la inmobiliaria paga ${pesos(20_000 * v.TARIFA_MIGRACION_NO_REPORTABLE)} al mes más IVA.`,
+    rige: 'siempre',
+  },
+  // Lo reemplazó la tarifa anterior: la API ya no lo lista; queda para nombrarlo en el historial de cambios.
   RECARGO_NO_REPORTABLE: {
     nombre: 'Recargo si el contrato migrado no autoriza reporte',
     seccion: 'migracion',
