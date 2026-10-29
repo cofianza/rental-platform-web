@@ -6,6 +6,7 @@ import { IconFileText, IconLoader, IconUpload, IconX } from '@/components/icons'
 import { pagoService } from '@/services/pagoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { GarantiaIvaAyuda, usePrimaSugerida } from './GarantiaIva'
+import { fechaCompleta } from '@/lib/constants'
 
 // ============================================
 // Types
@@ -120,7 +121,7 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
     if (!concepto) { setError('Seleccione un concepto'); return }
     if (!monto || montoNum <= 0 || isNaN(montoNum)) { setError('Ingrese un monto válido mayor a 0'); return }
     if (!metodo) { setError('Seleccione un metodo de pago'); return }
-    if (!fechaPago) { setError('Seleccione la fecha de pago'); return }
+    if (!fechaCompleta(fechaPago)) { setError('Seleccione una fecha de pago válida'); return }
 
     const today = hoyBogota()
     if (fechaPago > today) { setError('La fecha de pago no puede ser futura'); return }

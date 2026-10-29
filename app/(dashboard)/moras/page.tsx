@@ -33,7 +33,7 @@ import {
   type MoraEstado,
   type WhatsappEstado,
 } from '@/services/morasService'
-import { formatCurrency } from '@/lib/constants'
+import { formatCurrency, fechaCompleta } from '@/lib/constants'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { useAuthStore } from '@/stores/auth.store'
@@ -244,6 +244,10 @@ export default function ReportarMoraPage() {
 
   async function handleReportar(e: React.FormEvent) {
     e.preventDefault()
+    if (fechaVencimiento && !fechaCompleta(fechaVencimiento)) {
+      toast.error('Fecha de vencimiento inválida')
+      return
+    }
     if (!contratoId) {
       toast.error('Seleccione un contrato')
       return

@@ -23,6 +23,7 @@ import { OtraPersonaModal } from '@/components/expedientes/OtraPersonaModal'
 import { TrazaAutorizacion } from '@/components/expedientes/TrazaAutorizacion'
 import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
+import { fechaCompleta } from '@/lib/constants'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -333,10 +334,10 @@ export function AutorizacionSection({
     setRevocarFecha('')
   }
 
-  const revocacionCompleta = !!revocarCanal && !!revocarFecha && revocarMotivo.trim().length >= 10
+  const revocacionCompleta = !!revocarCanal && fechaCompleta(revocarFecha) && revocarMotivo.trim().length >= 10
 
   const handleRevocar = async () => {
-    if (!revocarCanal || !revocarFecha || revocarMotivo.trim().length < 10) {
+    if (!revocarCanal || !fechaCompleta(revocarFecha) || revocarMotivo.trim().length < 10) {
       toast.error('Indique la fecha, el canal y el soporte de la solicitud (mín. 10 caracteres)')
       return
     }

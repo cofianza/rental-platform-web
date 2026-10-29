@@ -25,6 +25,7 @@ import { estudioService } from '@/services/estudioService'
 import { usePermissions } from '@/hooks/usePermissions'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudio, IDocumentoSoporte, PropositoSoporte, IEstudioHistorial } from '@/types/estudio'
+import { fechaCompleta } from '@/lib/constants'
 
 // ============================================
 // Constants
@@ -359,7 +360,7 @@ export function ReEvaluacionSection({
             />
             <button
               onClick={handleGuardarFecha}
-              disabled={guardandoFecha || fechaRadicacion === fechaGuardada}
+              disabled={guardandoFecha || fechaRadicacion === fechaGuardada || (!!fechaRadicacion && !fechaCompleta(fechaRadicacion))}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               <IconCheck size={16} />

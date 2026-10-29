@@ -14,7 +14,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconCalendar, IconLoader } from '@/components/icons'
-import { formatDate } from '@/lib/constants'
+import { formatDate, fechaCompleta } from '@/lib/constants'
 import { mesTexto, primerDiaMesSiguiente } from '@/lib/tarifaCobro'
 import { tarifaCobroService } from '@/services/tarifaCobroService'
 
@@ -47,7 +47,7 @@ export function TerminacionEfectivaTarifa({
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fecha) return setError('Indique la fecha efectiva de terminación')
+    if (!fechaCompleta(fecha)) return setError('Indique una fecha efectiva de terminación válida')
     if (fechaInicio && fecha < fechaInicio.slice(0, 10))
       return setError(`La fecha no puede ser anterior al inicio del contrato (${formatDate(fechaInicio.slice(0, 10))}).`)
     setError(null)

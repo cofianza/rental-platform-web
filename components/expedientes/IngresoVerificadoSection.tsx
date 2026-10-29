@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconFileCheck, IconAlertTriangle } from '@/components/icons'
 import { expedienteService, type IIngresoVerificado, type EvaluadoIngreso } from '@/services/expedienteService'
-import { formatCurrency, formatDate } from '@/lib/constants'
+import { formatCurrency, formatDate, fechaCompleta } from '@/lib/constants'
 
 const EVALUADOS: Array<{ id: EvaluadoIngreso; etiqueta: string }> = [
   { id: 'empleado', etiqueta: 'Empleado' },
@@ -55,7 +55,7 @@ export function IngresoVerificadoSection({ expedienteId, onRegistrado }: { exped
   const tipos = datos.tipos.filter((t) => t.evaluado === evaluado)
   const etiquetaSoporte = (clave: string) => datos.tipos.find((t) => t.clave === clave)?.etiqueta ?? clave
   const montoNum = Number(monto.replace(/\D/g, ''))
-  const listo = !!tipo && montoNum > 0 && !!fecha
+  const listo = !!tipo && montoNum > 0 && fechaCompleta(fecha)
 
   const guardar = async () => {
     if (!listo || guardando) return

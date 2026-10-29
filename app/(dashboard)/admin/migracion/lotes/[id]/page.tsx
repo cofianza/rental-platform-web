@@ -57,6 +57,7 @@ import type {
   ResultadoAuditoria,
   VistaTablero,
 } from '@/types/migracion'
+import { fechaCompleta } from '@/lib/constants'
 
 const ESTADO: Record<EstadoMigracion, { label: string; tone: ChipTone }> = {
   borrador: { label: 'Borrador', tone: 'gray' },
@@ -733,7 +734,7 @@ export default function LoteMigracionPage() {
                   </label>
                   <Button
                     tamano="sm"
-                    disabled={!!ocupado || !fechaAut}
+                    disabled={!!ocupado || !fechaCompleta(fechaAut)}
                     onClick={() =>
                       accionFila(
                         'reportable',

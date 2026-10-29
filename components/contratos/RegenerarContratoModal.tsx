@@ -23,6 +23,7 @@ import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { SERVICIOS_CONTRATO } from '@/components/expedientes/serviciosContrato'
 import type { CargoServicio } from '@/types/contrato'
+import { fechaCompleta } from '@/lib/constants'
 
 // '' = "sin cambio": no tocamos ese servicio. Así una edición parcial no
 // resetea el resto de la distribución vigente (el backend hace merge).
@@ -218,7 +219,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </button>
         <button
           onClick={handleSubmit}
-          disabled={submitting || !fechaInicio || !duracionMeses}
+          disabled={submitting || !fechaCompleta(fechaInicio) || !duracionMeses}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
         >
           {submitting ? (

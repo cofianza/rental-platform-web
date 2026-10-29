@@ -681,6 +681,17 @@ export function formatCurrency(value: number): string {
  * y construimos la fecha al mediodia UTC, que en cualquier zona horaria de
  * America cae el mismo dia calendario.
  */
+/**
+ * 'AAAA-MM-DD' completa, de calendario y con un año razonable (2000-2100): una
+ * fecha a medio escribir (el año «0020» mientras se teclea 2025) no pasa.
+ */
+export function fechaCompleta(v: string | null | undefined): boolean {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
+  const [y, m, d] = v.split('-').map(Number)
+  const t = new Date(Date.UTC(y, m - 1, d))
+  return y >= 2000 && y <= 2100 && t.getUTCMonth() === m - 1 && t.getUTCDate() === d
+}
+
 export function formatDate(date: Date | string): string {
   let d: Date
   if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
