@@ -67,7 +67,8 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
   const t = data.tarifas
   const o = data.override
   // Condicionado sin decidir: la tarifa depende de cómo lo apruebe el analista.
-  const provisional = estudio.resultado === 'condicionado' && estudio.decision_cofianza !== 'aprobado'
+  // Negado o cerrado sin aprobarse ya está decidido: no se promete una decisión.
+  const provisional = estudio.resultado === 'condicionado' && (estudio.decision_cofianza ?? 'en_curso') === 'en_curso'
 
   const quitar = async () => {
     setQuitando(true)

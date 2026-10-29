@@ -178,7 +178,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     if (initialEstudio?.id && isOpen) {
       estudioService
         .getEstudioById(initialEstudio.id)
-        .then((full) => setEstudio(full))
+        // La espera del coarrendatario (§12) solo llega en el listado: sin ella el
+        // rótulo pasaba de «Esperando al coarrendatario» a «Consultando…».
+        .then((full) => setEstudio({ ...full, espera_autorizacion: full.espera_autorizacion ?? initialEstudio.espera_autorizacion }))
         .catch(() => {
           // Sin reload silencioso: si falla, queda el snapshot del listado.
         })
