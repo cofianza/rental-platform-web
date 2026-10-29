@@ -737,7 +737,10 @@ export function EstudioSolicitanteCard({
           <div className="flex items-start gap-3">
             <IconAlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-900 mb-0.5">Estudio condicionado</p>
+              {/* Su vocabulario: el del chip y la barra («Está cerca» o «En revisión»). */}
+              <p className="text-sm font-semibold text-amber-900 mb-0.5">
+                {estudio.condicion_coarrendatario ? 'Está cerca' : 'En revisión'}
+              </p>
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">

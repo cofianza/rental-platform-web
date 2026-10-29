@@ -91,6 +91,8 @@ export interface DatosEtapa {
   /** null = sin acceso o sin leer. */
   pago: { estado: string; puede_avanzar: boolean; paga?: 'gestor' | 'arrendatario' | null } | null
   titularEstado: string | null
+  /** pago_por de la evaluación del titular: quién paga cuando el rol no lee el pago (Gerencia). */
+  pagoPor?: string | null
   /** Adenda 4 §12: el titular ya consultado espera a que autorice el coarrendatario (espera_autorizacion.hasta). */
   esperaHasta?: string | null
   contratosEstados: string[]
@@ -119,8 +121,8 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   if (d.pago?.estado === 'sin_definir') return 'pago'
   // Opción B: paga la inmobiliaria y el enlace sale después del pago (Adenda 2 §7).
   if (d.pago?.paga === 'gestor' && !d.pago.puede_avanzar) return 'pago'
-  // Gerencia no lee el pago: el estado del titular lo dice.
-  if (!d.pago && d.titularEstado === 'pago_pendiente') return 'pago'
+  // Gerencia no lee el pago: el estado del titular lo dice, y pago_por quién paga (como el RPC de la lista).
+  if (!d.pago && d.titularEstado === 'pago_pendiente') return d.pagoPor === 'arrendatario' ? 'pago_prospecto' : 'pago'
   if (d.autorizacionEstado !== 'autorizado') return 'autorizacion'
   if (d.pago && !d.pago.puede_avanzar) return d.pago.paga === 'arrendatario' ? 'pago_prospecto' : 'pago'
   return 'consulta'

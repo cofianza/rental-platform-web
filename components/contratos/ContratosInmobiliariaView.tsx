@@ -2,7 +2,7 @@
  * ContratosInmobiliariaView — vista de Contratos para la inmobiliaria con el
  * diseño del mockup 13_v2 (tab "Contratos"): 3 stat-cards + tres paneles por
  * etapa (Pendientes de generar / En proceso de firma / Contratos activos) con
- * el lenguaje visual de EstudiosInmobiliariaView (stat-cards font-black,
+ * el lenguaje visual de EstudiosExpedientesFusion (stat-cards font-black,
  * paneles con punto de color, chips de código monospace y badges pill con bdot).
  *
  * NO inventa datos: reutiliza contratoService.getStats (KPIs reales) y

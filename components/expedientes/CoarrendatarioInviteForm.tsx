@@ -206,7 +206,7 @@ export function CoarrendatarioInviteForm({
               </>
             ) : (
               <>
-                Su estudio quedó condicionado y lo revisa un analista de Cofianza; no tiene que hacer
+                Su estudio está en revisión con un analista de Cofianza; no tiene que hacer
                 nada para que avance. Si quiere reforzar su caso, invite a la persona con quien va a
                 vivir como <strong>coarrendatario</strong>: los dos toman el arriendo y los respaldamos
                 juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
