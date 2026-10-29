@@ -9,6 +9,7 @@ import type {
   ActualizarListasResultado,
   AuditoriaAbierta,
   ActaEnviada,
+  CargaNativa,
   ActaPdf,
   ArchivoDescargado,
   CorreccionBody,
@@ -28,6 +29,8 @@ import type {
   LiquidacionMigracion,
   ListasFila,
   LoteResumen,
+  MapeoColumnas,
+  MapeoGuardado,
   MotivoReportable,
   PersonaDiferida,
   ProcesarResultado,
@@ -37,6 +40,7 @@ import type {
   TableroLote,
   TipoDocumentoHabilitacion,
   ValidacionResultado,
+  VistaPreviaNativa,
   VistaTablero,
 } from '@/types/migracion'
 
@@ -82,6 +86,10 @@ const conArchivo = (archivo: File, campos: Record<string, string> = {}) => {
   form.append('archivo', archivo)
   return form
 }
+
+/** Adenda 1 §5: el mapeo y la huella de la vista previa confirmada viajan junto al archivo nativo. */
+const camposNativa = (nativa?: CargaNativa): Record<string, string> =>
+  nativa ? { mapeo: JSON.stringify(nativa.mapeo), confirmacion: nativa.confirmacion } : {}
 
 export const migracionService = {
   descargarPlantilla: () => descargar(`${BASE}/plantilla`, 'plantilla-migracion-cartera.xlsx'),
@@ -135,22 +143,46 @@ export const migracionService = {
   // conMora (Adenda 1 §4.4): códigos internos de los contratos que la inmobiliaria declara con
   // mora, separados por coma o renglón; la API los rechaza (400 si alguno no está en el archivo).
 
+  // nativa (Adenda 1 §5): el archivo que exporta el sistema de la inmobiliaria con su mapeo y la
+  // huella de la vista previa confirmada; sin ella, la plantilla de Cofianza.
+
   /** Primera pasada: no crea nada. */
-  async validar(inmobiliariaId: string, archivo: File, conMora = ''): Promise<ValidacionResultado> {
-    const form = conArchivo(archivo, { contratos_con_mora: conMora })
+  async validar(inmobiliariaId: string, archivo: File, conMora = '', nativa?: CargaNativa): Promise<ValidacionResultado> {
+    const form = conArchivo(archivo, { contratos_con_mora: conMora, ...camposNativa(nativa) })
     return json<ValidacionResultado>(await crudo(`${org(inmobiliariaId)}/validar`, { method: 'POST', form }))
   },
   /** El mismo reporte de validación en Excel, con los datos tal como llegaron. */
-  validarXlsx: (inmobiliariaId: string, archivo: File, conMora = '') =>
+  validarXlsx: (inmobiliariaId: string, archivo: File, conMora = '', nativa?: CargaNativa) =>
     descargar(
       `${org(inmobiliariaId)}/validar?formato=xlsx`,
       'reporte-validacion-migracion.xlsx',
-      conArchivo(archivo, { contratos_con_mora: conMora }),
+      conArchivo(archivo, { contratos_con_mora: conMora, ...camposNativa(nativa) }),
     ),
   /** Crea el lote y su Acta de Migración (422 MIGRACION_SIN_ACEPTADAS si nada es aceptable). */
-  async procesar(inmobiliariaId: string, archivo: File, rep: RepresentanteLegal, conMora = ''): Promise<ProcesarResultado> {
-    const form = conArchivo(archivo, { ...rep, contratos_con_mora: conMora })
+  async procesar(
+    inmobiliariaId: string,
+    archivo: File,
+    rep: RepresentanteLegal,
+    conMora = '',
+    nativa?: CargaNativa,
+  ): Promise<ProcesarResultado> {
+    const form = conArchivo(archivo, { ...rep, contratos_con_mora: conMora, ...camposNativa(nativa) })
     return json<ProcesarResultado>(await crudo(`${org(inmobiliariaId)}/procesar`, { method: 'POST', form }))
+  },
+
+  // ── Mapeador del archivo nativo (Adenda 1 §5.4-§5.6) ──
+
+  /** El mapeo guardado de la inmobiliaria (null si no tiene). */
+  async mapeo(inmobiliariaId: string): Promise<MapeoGuardado | null> {
+    return (await apiClient.get<MapeoGuardado | null>(`${org(inmobiliariaId)}/mapeo`)).data
+  },
+  async guardarMapeo(inmobiliariaId: string, mapeo: MapeoColumnas): Promise<MapeoGuardado> {
+    return (await apiClient.put<MapeoGuardado>(`${org(inmobiliariaId)}/mapeo`, { mapeo })).data
+  },
+  /** Las primeras diez filas transformadas; no crea nada ni verifica listas. */
+  async vistaPrevia(inmobiliariaId: string, archivo: File, mapeo: MapeoColumnas): Promise<VistaPreviaNativa> {
+    const form = conArchivo(archivo, { mapeo: JSON.stringify(mapeo) })
+    return json<VistaPreviaNativa>(await crudo(`${org(inmobiliariaId)}/vista-previa`, { method: 'POST', form }))
   },
 
   // ── Acta y lote (§3) ──
@@ -169,6 +201,8 @@ export const migracionService = {
   async actualizarActa(loteId: string): Promise<EstadoActaLote> {
     return (await apiClient.post<EstadoActaLote>(`${BASE}/lotes/${loteId}/acta/actualizar`)).data
   },
+  /** Adenda 1 §5.6: el archivo tal como se cargó. */
+  archivoOriginal: (loteId: string, numero: string) => descargar(`${BASE}/lotes/${loteId}/archivo`, `archivo-original-${numero}.xlsx`),
   /** Antes de la firma: anula el acta en Auco y libera los inmuebles del lote. */
   async cancelarLote(loteId: string): Promise<EstadoActaLote> {
     return (await apiClient.post<EstadoActaLote>(`${BASE}/lotes/${loteId}/cancelar`)).data

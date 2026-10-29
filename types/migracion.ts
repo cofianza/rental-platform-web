@@ -219,6 +219,7 @@ export interface RepresentanteLegal {
 }
 
 export interface ProcesarResultado extends ValidacionResultado {
+  origen_archivo: 'nativo' | 'plantilla'
   lote: {
     id: string
     numero: string
@@ -330,6 +331,10 @@ export interface TableroLote {
     /** §7.3.1-§7.3.2: periodo y plazo de auditoría que imprimió el acta del lote. */
     meses_sin_mora?: number
     dias_respuesta_auditoria?: number
+    /** Adenda 1 §5.6: el mapeo con que se cargó el archivo nativo (null = plantilla de Cofianza). */
+    mapeo_aplicado?: (MapeoColumnas & { huella_vista_previa?: string }) | null
+    /** SHA-256 del archivo original cargado. */
+    archivo_hash?: string | null
   }
   conteos: Record<EstadoMigracion, number>
   /** Lo que puede ver la inmobiliaria. */
@@ -606,4 +611,81 @@ export interface LiquidacionMigracion {
 export interface ArchivoDescargado {
   blob: Blob
   nombre: string
+}
+
+// ── Mapeador del archivo nativo (Adenda 1 §5.1-§5.6) ──
+
+export type TipoDocumentoArchivo = 'CC' | 'CE' | 'PPT' | 'PEP' | 'Pasaporte' | 'NIT'
+
+/** Las doce columnas de la plantilla más estrato y tipo de inmueble (opcionales, Adenda 1 §2). */
+export type CampoMapeo =
+  | 'codigo_interno'
+  | 'direccion'
+  | 'municipio'
+  | 'destinacion'
+  | 'canon'
+  | 'fecha_inicio'
+  | 'fecha_vencimiento'
+  | 'arrendatario_nombre'
+  | 'arrendatario_tipo_documento'
+  | 'arrendatario_numero_documento'
+  | 'autoriza_reporte'
+  | 'observaciones'
+  | 'estrato'
+  | 'tipo_inmueble'
+
+/** directa: solo columna; compuesta (§5.2): + separador y parte; traducción (§5.3): + equivalencias. */
+export interface ReglaMapeo {
+  columna: string
+  separador?: string | null
+  parte?: number | null
+  equivalencias?: Record<string, string> | null
+}
+
+export interface MapeoColumnas {
+  /** null = la primera hoja del archivo. */
+  hoja: string | null
+  fila_encabezados: number
+  campos: Partial<Record<CampoMapeo, ReglaMapeo>>
+  /** El archivo nativo no tiene hoja Instrucciones: los datos del lote los declara el analista. */
+  lote: { municipio?: string | null; arrendatario_tipo_documento?: TipoDocumentoArchivo | null; autoriza_reporte?: 'Sí' | 'No' | null }
+}
+
+export interface MapeoGuardado {
+  definicion: MapeoColumnas
+  actualizado_en: string
+}
+
+export interface FilaVistaPrevia {
+  /** Fila real de la hoja del archivo original. */
+  n_fila: number
+  resultado: ResultadoValidacion
+  motivos: string[]
+  advertencias: string[]
+  /** La celda tal como quedó tras el mapeo (fechas AAAA-MM-DD). */
+  celdas: Partial<Record<CampoMapeo, string | null>>
+  /** Lo que entiende Cofianza de cada dato (null = no se entendió o vino vacío). */
+  valores: Partial<Record<CampoMapeo, string | number | boolean | null>>
+  /** Datos que se tomaron del lote porque la celda venía vacía. */
+  del_lote: CampoMapeo[]
+}
+
+export interface VistaPreviaNativa {
+  hojas: string[]
+  /** El mapeo efectivo (con la hoja resuelta): el que se confirma. */
+  mapeo: MapeoColumnas
+  encabezados: string[]
+  total_filas: number
+  filas: FilaVistaPrevia[]
+  errores: string[]
+  avisos: string[]
+  /** §5.3: valores que siguen sin servir en todo el archivo, por campo. */
+  sin_equivalencia: Partial<Record<CampoMapeo, string[]>>
+  /** Huella que exigen validar y procesar (§5.4); null mientras el mapeo tenga errores. */
+  confirmacion: string | null
+}
+
+export interface CargaNativa {
+  mapeo: MapeoColumnas
+  confirmacion: string
 }

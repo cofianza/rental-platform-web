@@ -3,7 +3,8 @@
  * de Cofianza (exposición y tarifa), Acta de Migración (§3.3) y la cartera
  * contrato por contrato con sus acciones (§5.1.3, §5.2.5, §6, §7) y las
  * actas de corrección de contratos ya activos (§3.8). Adenda 1: el documento de
- * los contratos PENDIENTES DE IDENTIFICACIÓN (§7) y los datos diferidos a la mora (§3).
+ * los contratos PENDIENTES DE IDENTIFICACIÓN (§7) y los datos diferidos a la mora (§3);
+ * el archivo original y el mapeo con que se cargó, para rastrear cada contrato (§5.6).
  */
 
 'use client'
@@ -48,6 +49,7 @@ import { abrirEnPestana } from '@/lib/utils'
 import { CoincidenciasListas } from '@/components/migracion/CoincidenciasListas'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
 import { IdentificacionPendiente, PanelDiferidos } from '@/components/migracion/Diferidos'
+import { ResumenMapeo } from '@/components/migracion/MapeoNativo'
 import { errorPdf, guardarArchivo, migracionService, motivoRevision, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -152,6 +154,7 @@ export default function LoteMigracionPage() {
   const [filtro, setFiltro] = useState<EstadoMigracion | null>(null)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [dialogo, setDialogo] = useState<Dialogo | null>(null)
+  const [verMapeo, setVerMapeo] = useState(false)
 
   // Detalle del contrato migrado (una fila del lote)
   const [filaId, setFilaId] = useState<string | null>(null)
@@ -290,6 +293,17 @@ export default function LoteMigracionPage() {
             <Link href="/admin/migracion" className={buttonClasses('secondary')}>
               <IconArrowLeft size={16} /> Migración
             </Link>
+            {/* Adenda 1 §5.6: el archivo tal como se cargó. */}
+            <Button
+              variante="secondary"
+              disabled={!t || !!ocupado}
+              onClick={() =>
+                t &&
+                correr('archivo', async () => guardarArchivo(await migracionService.archivoOriginal(id, t.lote.numero)), 'No se pudo descargar el archivo original')
+              }
+            >
+              <IconDownload size={16} /> {ocupado === 'archivo' ? 'Descargando…' : 'Archivo original (Excel)'}
+            </Button>
             <Button variante="secondary" onClick={() => descargarTablero('cofianza')} disabled={!t || !!ocupado}>
               <IconDownload size={16} /> {ocupado === 'xlsx-cofianza' ? 'Descargando…' : 'Tablero Cofianza (Excel)'}
             </Button>
@@ -321,6 +335,21 @@ export default function LoteMigracionPage() {
                   />
                 ))}
               </KpiRow>
+              {/* Adenda 1 §5.6: con qué archivo y mapeo se cargó el lote. */}
+              <p className="mt-3 text-sm text-gray-700">
+                {t.lote.mapeo_aplicado ? (
+                  <>
+                    Cargado con el archivo del sistema de la inmobiliaria (hoja «{t.lote.mapeo_aplicado.hoja ?? 'la primera'}», títulos en la fila{' '}
+                    {t.lote.mapeo_aplicado.fila_encabezados}).{' '}
+                    <button type="button" onClick={() => setVerMapeo(true)} className="font-semibold text-primary-700 hover:underline">
+                      Ver mapeo aplicado
+                    </button>
+                  </>
+                ) : (
+                  'Cargado con la plantilla de Cofianza.'
+                )}
+                {t.lote.archivo_hash && <span className="text-ink-500"> Huella del archivo: {t.lote.archivo_hash.slice(0, 12)}…</span>}
+              </p>
             </section>
 
             <section>
@@ -689,6 +718,11 @@ export default function LoteMigracionPage() {
               <Dato label="Coarrendatarios">
                 {(det.coarrendatarios_entregados ?? det.datos.coarrendatarios).map((c) => c.nombre).join(', ') || 'Ninguno'}
               </Dato>
+              <Dato label="Origen">
+                {t?.lote.mapeo_aplicado
+                  ? `Fila ${det.n_fila} de la hoja «${t.lote.mapeo_aplicado.hoja ?? 'la primera'}» del archivo original`
+                  : `Fila ${det.n_fila} de la plantilla (hoja Contratos)`}
+              </Dato>
               <Dato label="Vigencia">
                 {fechaCorta(det.datos.fecha_inicio)} – {fechaCorta(det.datos.fecha_vencimiento)}
               </Dato>
@@ -1050,6 +1084,12 @@ export default function LoteMigracionPage() {
             )
         }}
       />
+      {t?.lote.mapeo_aplicado && (
+        <Modal isOpen={verMapeo} onClose={() => setVerMapeo(false)} title={`Mapeo aplicado al lote ${t.lote.numero}`} size="xl" closeOnBackdrop>
+          <ResumenMapeo mapeo={t.lote.mapeo_aplicado} />
+        </Modal>
+      )}
+
       <CorreccionModal
         isOpen={!!corrigiendo}
         onClose={() => setCorrigiendo(null)}
