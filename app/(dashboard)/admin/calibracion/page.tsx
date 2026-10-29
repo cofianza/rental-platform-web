@@ -6,10 +6,12 @@
  * cambio debe quedar registrado con fecha, valor anterior, valor nuevo y
  * usuario."
  *
- * Cada parámetro se edita en su fila; el backend valida rango/entero y
- * escribe el historial. La advertencia de la Adenda (p. ej. lo que el factor
- * de ingreso hace con las reglas duras) se muestra al lado del valor, no
- * escondida: es la parte del documento que Gerencia pidió "dejar registrada".
+ * Son ~70 valores: la pantalla abre en un resumen (la escala de decisión, las
+ * reglas encendidas, lo que se cobra y los plazos clave) y muestra una sección
+ * a la vez, con cada valor explicado en palabras sencillas
+ * (components/calibracion/parametros.ts). Lo que no aplica con las reglas
+ * encendidas hoy va plegado al final de su sección. El backend valida rango,
+ * coherencia y permiso y escribe el historial.
  *
  * Adenda 1 del módulo de contratos, respuesta 17: los parámetros de riesgo
  * solo los cambia la Gerencia General; a otro administrador le llegan con
@@ -18,10 +20,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import {
   calibracionService,
@@ -30,459 +30,36 @@ import {
   type ICascadaCentrales,
   type IRevisionManual,
 } from '@/services/calibracionService'
-import { IconLoader, IconLock, IconAlertTriangle, IconCheck, IconSearch, IconChevronDown, IconArrowRight } from '@/components/icons'
-import { formatDate } from '@/lib/constants'
-import { sinReferenciasInternas } from '@/lib/utils'
+import { IconLoader, IconLock, IconSearch, IconChevronDown } from '@/components/icons'
+import { cn } from '@/lib/utils'
+import { EditarParametro } from '@/components/calibracion/EditarParametro'
+import { Historial } from '@/components/calibracion/Historial'
+import { Indicadores } from '@/components/calibracion/Indicadores'
+import { ParametroFila } from '@/components/calibracion/ParametroFila'
+import { Resumen } from '@/components/calibracion/Resumen'
+import { metaDe, porOrden, rigeHoy, SECCIONES, type SeccionId, type Valores } from '@/components/calibracion/parametros'
 
-// es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
-const fmt = (n: number, entero: boolean) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
-
-// 'criterio': 1 = el mayor, 0 = el menor (CRITERIO_SELECCION_INGRESO). Como
-// 'onoff', es de dos valores: se cambia al contrario y se confirma.
-type Unidad = 'cop' | 'pct' | 'puntos' | 'horas' | 'dias' | 'dias_habiles' | 'meses' | 'mes' | 'onoff' | 'criterio' | 'num'
-
-/**
- * Nombre humano, grupo y unidad de cada parámetro. La pantalla los titulaba con
- * su clave de código y los mostraba en una sola lista larga sin unidades:
- * Gerencia tenía que adivinar si «15» eran días, meses o por ciento.
- */
-// `motivo`: el API exige escribirlo (queda en el historial como constancia).
-const META: Record<string, { nombre: string; grupo: Grupo; unidad: Unidad; motivo?: boolean }> = {
-  // Evaluación del prospecto
-  UMBRAL_APROBACION_AUTOMATICA: { nombre: 'Puntaje para aprobar automáticamente', grupo: 'evaluacion', unidad: 'puntos' },
-  UMBRAL_ZONA_GRIS: { nombre: 'Puntaje mínimo para no rechazar (inicio de la zona gris)', grupo: 'evaluacion', unidad: 'puntos' },
-  UMBRAL_COARRENDATARIO: { nombre: 'Puntaje mínimo del coarrendatario (reglas anteriores)', grupo: 'evaluacion', unidad: 'puntos' },
-  UMBRAL_SCORE_RECHAZO: { nombre: 'Score de la central por debajo del cual se rechaza', grupo: 'evaluacion', unidad: 'num' },
-  UMBRAL_SCORE_REVISION: { nombre: 'Score de la central hasta el que va a revisión manual', grupo: 'evaluacion', unidad: 'num' },
-  UMBRAL_CASCADA_RECHAZO: { nombre: 'Rechazo sin consultar la segunda central (por debajo de)', grupo: 'evaluacion', unidad: 'puntos' },
-  UMBRAL_CASCADA_APROBACION: { nombre: 'Aprobación sin consultar la segunda central (desde)', grupo: 'evaluacion', unidad: 'puntos' },
-  FACTOR_AJUSTE_INGRESO: { nombre: 'Factor de ajuste del ingreso', grupo: 'evaluacion', unidad: 'num' },
-  ADENDA3_V2: { nombre: 'Reglas nuevas de coarrendatarios e ingreso', grupo: 'evaluacion', unidad: 'onoff', motivo: true },
-  ADENDA3_INGRESO: { nombre: 'Nuevo cálculo del ingreso (versión anterior)', grupo: 'evaluacion', unidad: 'onoff' },
-  FACTOR_AJUSTE_INGRESO_CANON: { nombre: 'Factor de ajuste del ingreso para el canon', grupo: 'evaluacion', unidad: 'num' },
-  FACTOR_AJUSTE_INGRESO_DTI: { nombre: 'Factor de ajuste del ingreso para el endeudamiento', grupo: 'evaluacion', unidad: 'num' },
-  CRITERIO_SELECCION_INGRESO: { nombre: 'Estimación de ingreso que se toma entre las centrales', grupo: 'evaluacion', unidad: 'criterio' },
-  USAR_PISOS_FACTUALES: { nombre: 'Pisos de ingreso compiten al elegir el ingreso', grupo: 'evaluacion', unidad: 'onoff' },
-  UMBRAL_DIFERENCIA_INGRESO: { nombre: 'Diferencia entre ingreso declarado y estimado que manda a revisión', grupo: 'evaluacion', unidad: 'pct' },
-  UMBRAL_SIMILITUD_BIOMETRICA: { nombre: 'Similitud mínima del reconocimiento facial', grupo: 'evaluacion', unidad: 'pct' },
-  // Aprobación con condición de coarrendatario (Adenda 3 §6)
-  CUARTO_DESENLACE: { nombre: 'Aprobar con condición de coarrendatario (versión anterior)', grupo: 'condicion', unidad: 'onoff' },
-  VIGENCIA_CONDICION_COARRENDATARIO_DIAS: { nombre: 'Plazo para presentar el coarrendatario', grupo: 'condicion', unidad: 'dias' },
-  PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO: { nombre: 'Puntaje mínimo del solicitante para ofrecerle un coarrendatario', grupo: 'condicion', unidad: 'puntos' },
-  PUNTAJE_PISO_COARRENDATARIO: { nombre: 'Puntaje mínimo para exigir coarrendatario (bajo 70 solo por el endeudamiento)', grupo: 'condicion', unidad: 'puntos' },
-  PUNTAJE_MINIMO_COARRENDATARIO: { nombre: 'Puntaje mínimo para que un coarrendatario cuente', grupo: 'condicion', unidad: 'puntos' },
-  BONO_COARRENDATARIO_70_79: { nombre: 'Puntos que suma un coarrendatario de 70 a 79', grupo: 'condicion', unidad: 'puntos' },
-  BONO_COARRENDATARIO_80_89: { nombre: 'Puntos que suma un coarrendatario de 80 a 89', grupo: 'condicion', unidad: 'puntos' },
-  BONO_COARRENDATARIO_90_100: { nombre: 'Puntos que suma un coarrendatario de 90 a 100', grupo: 'condicion', unidad: 'puntos' },
-  INGRESO_COARRENDATARIO_COMPUTABLE: { nombre: 'Parte del ingreso del coarrendatario que se suma', grupo: 'condicion', unidad: 'pct' },
-  // Capacidad de pago sin ingreso verificado
-  ADENDA4: { nombre: 'Reglas de capacidad de pago sin ingreso verificado', grupo: 'capacidad', unidad: 'onoff', motivo: true },
-  MIN_CREDITOS_VIGENTES_COHERENCIA: { nombre: 'Créditos vigentes mínimos para «paga al día»', grupo: 'capacidad', unidad: 'num' },
-  MESES_VENTANA_COMPORTAMIENTO: { nombre: 'Meses sin mora de más de 30 días para «paga al día»', grupo: 'capacidad', unidad: 'meses' },
-  RATIO_COBERTURA_ALTA: { nombre: 'Veces el canon en cuotas para el puntaje alto', grupo: 'capacidad', unidad: 'num' },
-  RATIO_COBERTURA_MEDIA: { nombre: 'Veces el canon en cuotas para el puntaje medio', grupo: 'capacidad', unidad: 'num' },
-  PUNTOS_DTI_COMPORTAMIENTO_ALTO: { nombre: 'Puntos de endeudamiento con el puntaje alto', grupo: 'capacidad', unidad: 'puntos' },
-  PUNTOS_DTI_COMPORTAMIENTO_MEDIO: { nombre: 'Puntos de endeudamiento con el puntaje medio', grupo: 'capacidad', unidad: 'puntos' },
-  FACTOR_CUOTA_MINIMA_TARJETA: { nombre: 'Parte del saldo que cuenta como cuota de una tarjeta', grupo: 'capacidad', unidad: 'num' },
-  DIAS_VIGENCIA_INGRESO_VERIFICADO: { nombre: 'Vigencia de un ingreso verificado (desde la fecha del soporte)', grupo: 'capacidad', unidad: 'dias' },
-  DIAS_VIGENCIA_CERTIFICACION_LABORAL: { nombre: 'Antigüedad máxima de la certificación laboral', grupo: 'capacidad', unidad: 'dias' },
-  HORAS_ESPERA_AUTORIZACION: { nombre: 'Espera a que autoricen los coarrendatarios antes de decidir', grupo: 'capacidad', unidad: 'horas' },
-  CONSULTAS_APELACION_ASUMIDAS: { nombre: 'Consultas a la central que Cofianza asume en la apelación, por estudio', grupo: 'capacidad', unidad: 'num' },
-  // Topes de canon
-  CANON_MAX_TRANSITORIO: { nombre: 'Canon máximo de vivienda sin coafianzamiento', grupo: 'canon', unidad: 'cop' },
-  TOPE_CANON_COMERCIAL: { nombre: 'Canon máximo comercial sin coafianzamiento (sin IVA)', grupo: 'canon', unidad: 'cop' },
-  TOLERANCIA_CANON: { nombre: 'Cuánto puede subir el canon del contrato sobre el evaluado', grupo: 'canon', unidad: 'pct' },
-  TOPE_CANON_INGRESO_RECALCULO: { nombre: 'Relación canon/ingreso máxima al pactar un canon mayor', grupo: 'canon', unidad: 'pct' },
-  // Precios y paquetes
-  PRECIO_ESTUDIO_INDIVIDUAL: { nombre: 'Precio del estudio (sin IVA)', grupo: 'precios', unidad: 'cop' },
-  TARIFA_IVA: { nombre: 'Tarifa de IVA', grupo: 'precios', unidad: 'pct' },
-  TARIFA_VIA_AUTOMATICA: { nombre: 'Tarifa mensual de la fianza, aprobación automática', grupo: 'precios', unidad: 'pct' },
-  TARIFA_VIA_NO_AUTOMATICA: { nombre: 'Tarifa mensual de la fianza, aprobación no automática', grupo: 'precios', unidad: 'pct' },
-  VIGENCIA_PAQUETE_MESES: { nombre: 'Vigencia de un paquete de estudios', grupo: 'precios', unidad: 'meses' },
-  ALERTA_SALDO_MINIMO_CUPOS: { nombre: 'Avisar a la inmobiliaria cuando le queden menos de', grupo: 'precios', unidad: 'num' },
-  PORCENTAJE_BENEFICIO_TRADICIONAL: { nombre: 'Beneficio de la inmobiliaria en modalidad Tradicional', grupo: 'precios', unidad: 'pct' },
-  ALERTA_MEZCLA_TRADICIONAL_PAQUETE_25: { nombre: 'Alerta: % de contratos Tradicional con paquete de 25', grupo: 'precios', unidad: 'pct' },
-  // Autorización del prospecto
-  DIAS_EXPIRACION_ESTUDIO: { nombre: 'Plazo del prospecto para autorizar', grupo: 'autorizacion', unidad: 'dias' },
-  DIAS_CADUCIDAD_ESTUDIO: { nombre: 'Días para que el titular autorice antes de cerrar el estudio', grupo: 'autorizacion', unidad: 'dias' },
-  VIGENCIA_CRC_DIAS: { nombre: 'Vigencia del certificado de riesgo', grupo: 'autorizacion', unidad: 'dias' },
-  MAX_INTENTOS_DOCUMENTO: { nombre: 'Intentos para digitar el documento', grupo: 'autorizacion', unidad: 'num' },
-  MAX_CORRECCIONES_DOCUMENTO: { nombre: 'Correcciones de documento por estudio', grupo: 'autorizacion', unidad: 'num' },
-  MAX_REENVIOS_ENLACE: { nombre: 'Reenvíos del enlace de autorización por estudio', grupo: 'autorizacion', unidad: 'num' },
-  ALERTA_BLOQUEO_WHATSAPP: { nombre: 'WhatsApp al asesor cuando un estudio se bloquea por documento', grupo: 'autorizacion', unidad: 'onoff' },
-  // Contratos
-  VIGENCIA_MESES_DEFECTO: { nombre: 'Vigencia sugerida del contrato', grupo: 'contratos', unidad: 'meses' },
-  MAX_CLAUSULAS_ADICIONALES: { nombre: 'Máximo de cláusulas adicionales por contrato', grupo: 'contratos', unidad: 'num' },
-  DIAS_EXPIRACION_FIRMA: { nombre: 'Plazo para firmar en Auco', grupo: 'contratos', unidad: 'dias' },
-  DIAS_RESERVA_INMUEBLE: { nombre: 'Reserva del inmueble mientras se elabora el contrato', grupo: 'contratos', unidad: 'dias_habiles' },
-  IPC_ANUAL: { nombre: 'IPC anual para el reajuste del canon', grupo: 'contratos', unidad: 'pct' },
-  // Cobro mensual
-  TARIFA_COBRO_DESDE: { nombre: 'Mes desde el que la plataforma cobra la tarifa mensual', grupo: 'cobro', unidad: 'mes' },
-  // Migración de cartera
-  MESES_SIN_MORA_REQUERIDOS: { nombre: 'Meses sin mora que se declaran por contrato migrado', grupo: 'migracion', unidad: 'meses' },
-  TARIFA_MIGRACION_REPORTABLE: { nombre: 'Tarifa mensual de un contrato migrado reportable', grupo: 'migracion', unidad: 'pct' },
-  RECARGO_NO_REPORTABLE: { nombre: 'Recargo a un contrato migrado no reportable (puntos %)', grupo: 'migracion', unidad: 'num' },
-  MAX_FILAS_POR_CARGA: { nombre: 'Máximo de contratos por archivo', grupo: 'migracion', unidad: 'num' },
-  UMBRAL_ALERTA_EXPOSICION_LOTE: { nombre: 'Exposición de un lote que avisa a Gerencia', grupo: 'migracion', unidad: 'cop' },
-  DIAS_RESPUESTA_AUDITORIA: { nombre: 'Plazo para entregar soportes de una auditoría', grupo: 'migracion', unidad: 'dias_habiles' },
-  DIAS_VIGENCIA_LOTE_SIN_FIRMA: { nombre: 'Plazo para firmar el Acta de Migración', grupo: 'migracion', unidad: 'dias' },
-}
-
-type Grupo = 'evaluacion' | 'condicion' | 'capacidad' | 'canon' | 'precios' | 'autorizacion' | 'contratos' | 'cobro' | 'migracion' | 'otros'
-
-const GRUPOS: { id: Grupo; titulo: string; ayuda: string }[] = [
-  { id: 'evaluacion', titulo: 'Evaluación del prospecto', ayuda: 'Puntajes con los que el motor aprueba, rechaza o manda a revisión manual.' },
-  {
-    id: 'condicion',
-    titulo: 'Aprobación con condición de coarrendatario',
-    ayuda: 'Cuándo el motor dice «Está cerca» y pide un coarrendatario, en qué plazo, y cuánto suma el coarrendatario en puntos y en ingreso. Rigen con las reglas nuevas de coarrendatarios e ingreso encendidas.',
-  },
-  {
-    id: 'capacidad',
-    titulo: 'Capacidad de pago sin ingreso verificado',
-    ayuda: 'Cuando el ingreso es una estimación de la central, el endeudamiento y el canon sobre ingreso no rechazan: el caso va al analista y el endeudamiento se puntúa por cómo paga la persona. También corrige las tarjetas que reportan el saldo como cuota.',
-  },
-  { id: 'canon', titulo: 'Topes de canon', ayuda: 'Hasta qué canon se afianza y cuánto puede cambiar al hacer el contrato.' },
-  { id: 'precios', titulo: 'Precios y paquetes', ayuda: 'Lo que se cobra por el estudio y las reglas de los paquetes de cupos.' },
-  { id: 'autorizacion', titulo: 'Autorización del prospecto', ayuda: 'Plazos, intentos y reenvíos del enlace que firma el prospecto.' },
-  { id: 'contratos', titulo: 'Contratos', ayuda: 'Plazos de firma, reserva del inmueble y reajuste del canon.' },
-  { id: 'cobro', titulo: 'Cobro mensual de la fianza', ayuda: 'Desde cuándo la plataforma liquida y cobra la tarifa mensual.' },
-  { id: 'migracion', titulo: 'Migración de cartera', ayuda: 'Reglas para traer contratos que ya estaban afianzados por fuera.' },
-  { id: 'otros', titulo: 'Otros', ayuda: '' },
+type Vista = 'resumen' | SeccionId | 'indicadores' | 'historial'
+const VISTAS: { id: Vista; titulo: string }[] = [
+  { id: 'resumen', titulo: 'Resumen' },
+  ...SECCIONES.map((s) => ({ id: s.id as Vista, titulo: s.titulo })),
+  { id: 'indicadores', titulo: 'Indicadores' },
+  { id: 'historial', titulo: 'Historial de cambios' },
 ]
-
-const metaDe = (clave: string) => META[clave] ?? { nombre: clave, grupo: 'otros' as Grupo, unidad: 'num' as Unidad }
-const nombreDe = (clave: string) => metaDe(clave).nombre
-
-/** 209912 = «nunca»: es el valor con el que el cobro queda apagado. */
-const MES_APAGADO = 209912
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-
-/** El valor con su unidad, como lo diría una persona: «$80.000», «19 %», «15 días». */
-function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'entero'>): string {
-  const u = metaDe(p.clave).unidad
-  const v = fmt(n, p.entero)
-  switch (u) {
-    case 'cop': return `$${v}`
-    case 'pct': return `${v} %`
-    case 'puntos': return `${v} pts`
-    case 'horas': return `${v} ${n === 1 ? 'hora' : 'horas'}`
-    case 'dias': return `${v} ${n === 1 ? 'día' : 'días'}`
-    case 'dias_habiles': return `${v} ${n === 1 ? 'día hábil' : 'días hábiles'}`
-    case 'meses': return `${v} ${n === 1 ? 'mes' : 'meses'}`
-    case 'onoff': return n === 1 ? 'Encendido' : 'Apagado'
-    case 'criterio': return n === 1 ? 'La mayor' : 'La menor'
-    case 'mes': {
-      if (n >= MES_APAGADO) return 'Sin activar'
-      const anio = Math.floor(n / 100)
-      const mes = n % 100
-      return mes >= 1 && mes <= 12 ? `${MESES[mes - 1]} ${anio}` : String(n)
-    }
-    default: return v
-  }
-}
-
-/** Las descripciones citan otros parámetros por su clave («más TARIFA_IVA»): se dicen por su nombre. */
-// El mes de cobro se elige con un selector de mes: el formato AAAAMM y el
-// 209912 («nunca») no se le muestran a la persona.
-const humanizar = (texto: string) =>
-  sinReferenciasInternas(texto)
-    .replace(/\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+\b/g, (c) => (META[c] ? `«${META[c].nombre.toLowerCase()}»` : c))
-    .replace(/\s*\(AAAAMM[^)]*\)/g, '')
-    .replace(new RegExp(`\\b${MES_APAGADO}\\b`, 'g'), '«Sin activar»')
-
-const pct = (n: number, total: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : '—')
-
-function DatoCascada({ label, valor, sub }: { label: string; valor: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-      <dt className="text-xs font-semibold text-gray-600">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold text-gray-900">{valor}</dd>
-      {sub && <dd className="text-xs text-gray-500">{sub}</dd>}
-    </div>
-  )
-}
-
-function FilaParametro({ p, onGuardado }: { p: IParametroCalibracion; onGuardado: () => void }) {
-  const [editando, setEditando] = useState(false)
-  const [valor, setValor] = useState(String(p.valor))
-  const [motivo, setMotivo] = useState('')
-  const [guardando, setGuardando] = useState(false)
-  // El error queda junto al campo y el cambio se confirma: un parámetro del
-  // modelo afecta desde ya a todos los estudios.
-  const [error, setError] = useState<string | null>(null)
-  const [confirmar, setConfirmar] = useState(false)
-
-  const unidad = metaDe(p.clave).unidad
-  const exigeMotivo = !!metaDe(p.clave).motivo
-  const cambiado = Number(valor) !== p.valor
-  const modificado = p.valor !== p.valorDefault
-  const descripcion = humanizar(p.descripcion)
-
-  function pedirConfirmacion() {
-    const n = Number(valor)
-    if (valor.trim() === '' || !Number.isFinite(n)) {
-      setError(unidad === 'mes' ? 'Elija un mes, o «Dejar sin activar».' : 'Escriba un número.')
-      return
-    }
-    if (n < p.min || n > p.max) {
-      setError(`Debe estar entre ${fmt(p.min, p.entero)} y ${fmt(p.max, p.entero)}.`)
-      return
-    }
-    if (p.entero && !Number.isInteger(n)) {
-      setError('Debe ser un número entero.')
-      return
-    }
-    if (unidad === 'mes' && n < MES_APAGADO && (n % 100 < 1 || n % 100 > 12)) {
-      setError('Elija un mes válido.')
-      return
-    }
-    setError(null)
-    setConfirmar(true)
-  }
-
-  async function guardar() {
-    setGuardando(true)
-    try {
-      await calibracionService.actualizar(p.clave, Number(valor), motivo.trim() || undefined)
-      toast.success(`${nombreDe(p.clave)}: ${conUnidad(Number(valor), p)}`)
-      setEditando(false)
-      setConfirmar(false)
-      setMotivo('')
-      onGuardado()
-    } catch (err) {
-      setConfirmar(false)
-      setError(err instanceof Error ? err.message : 'No se pudo guardar')
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  function abrirEdicion() {
-    // Un interruptor no se «edita»: se cambia al valor contrario y se confirma.
-    if (unidad === 'onoff' || unidad === 'criterio') {
-      setValor(p.valor === 1 ? '0' : '1')
-      setConfirmar(true)
-      return
-    }
-    setEditando(true)
-  }
-
-  const valorNuevo = Number(valor)
-
-  return (
-    <div className="border-t border-gray-100 px-4 py-4 first:border-t-0">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-gray-900">{nombreDe(p.clave)}</p>
-            {p.nivel === 'riesgo' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
-                <IconLock size={11} />
-                Gerencia General
-              </span>
-            )}
-            {modificado && (
-              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-800">
-                Modificado · predeterminado {conUnidad(p.valorDefault, p)}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-sm text-gray-600">{descripcion}</p>
-          {p.advertencia && (
-            <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
-              <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>{humanizar(p.advertencia)}</span>
-            </p>
-          )}
-          {p.actualizado_en && <p className="mt-1 text-xs text-gray-500">Último cambio: {formatDate(p.actualizado_en)}</p>}
-        </div>
-
-        {editando ? (
-          <div className="flex w-full flex-col gap-2 sm:w-72">
-            {unidad === 'mes' ? (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-700">
-                  Nuevo mes
-                  <input
-                    type="month"
-                    value={/^\d{6}$/.test(valor) && valorNuevo < MES_APAGADO ? `${valor.slice(0, 4)}-${valor.slice(4)}` : ''}
-                    autoFocus
-                    onChange={(e) => {
-                      setValor(e.target.value.replace('-', ''))
-                      setError(null)
-                    }}
-                    aria-invalid={!!error}
-                    aria-describedby={`ayuda-${p.clave}`}
-                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm ${error ? 'border-red-400' : 'border-gray-300'}`}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setValor(String(MES_APAGADO))
-                    setError(null)
-                  }}
-                  className="self-start text-xs font-medium text-primary-700 hover:underline"
-                >
-                  Dejar sin activar
-                </button>
-              </div>
-            ) : (
-            <label className="text-xs font-medium text-gray-700">
-              Nuevo valor
-              <input
-                type="number"
-                step={p.entero ? 1 : 0.01}
-                min={p.min}
-                max={p.max}
-                value={valor}
-                autoFocus
-                onChange={(e) => {
-                  setValor(e.target.value)
-                  setError(null)
-                }}
-                aria-invalid={!!error}
-                aria-describedby={`ayuda-${p.clave}`}
-                className={`mt-1 w-full rounded-lg border px-3 py-2 text-right font-mono text-sm ${error ? 'border-red-400' : 'border-gray-300'}`}
-              />
-            </label>
-            )}
-            <p id={`ayuda-${p.clave}`} className="-mt-1 text-xs text-gray-500">
-              {unidad === 'mes'
-                ? 'Primer mes que cobra la plataforma.'
-                : `Entre ${conUnidad(p.min, p)} y ${conUnidad(p.max, p)}.`}
-              {valor.trim() !== '' && Number.isFinite(valorNuevo) && cambiado && (
-                <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(valorNuevo, p)}.</span>
-              )}
-            </p>
-            <label className="text-xs font-medium text-gray-700">
-              Motivo ({exigeMotivo ? 'obligatorio' : 'opcional'}, queda en el historial)
-              <input
-                type="text"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                maxLength={500}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-            {error && (
-              <p role="alert" className="text-xs text-red-600">
-                {error}
-              </p>
-            )}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={pedirConfirmacion}
-                disabled={guardando || !cambiado}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary-700 px-3 py-2 text-sm font-bold text-white hover:bg-primary-800 disabled:opacity-50"
-              >
-                {guardando ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditando(false)
-                  setValor(String(p.valor))
-                  setError(null)
-                }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            {unidad === 'onoff' ? (
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-bold ${p.valor === 1 ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-600'}`}
-              >
-                {conUnidad(p.valor, p)}
-              </span>
-            ) : (
-              <span className="text-right text-xl font-bold text-gray-900">{conUnidad(p.valor, p)}</span>
-            )}
-            {p.min === p.max ? (
-              // Rango de un solo valor: el API no deja moverlo (p. ej. un
-              // interruptor que espera la certificación de despliegue).
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <IconLock size={14} />
-                Bloqueado
-              </span>
-            ) : p.editable === false ? (
-              <span className="flex items-center gap-1 text-xs text-gray-500" title="Solo la Gerencia General puede cambiarlo">
-                <IconLock size={14} />
-                Solo lectura
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={abrirEdicion}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                {unidad === 'onoff' ? (p.valor === 1 ? 'Apagar' : 'Encender') : 'Cambiar'}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-      {error && !editando && (
-        <p role="alert" className="mt-2 text-xs text-red-600">
-          {error}
-        </p>
-      )}
-      <ConfirmDialog
-        isOpen={confirmar}
-        onClose={() => {
-          setConfirmar(false)
-          if (!editando) {
-            setValor(String(p.valor))
-            setMotivo('')
-          }
-        }}
-        onConfirm={guardar}
-        title={nombreDe(p.clave)}
-        message={
-          <>
-            <p>{`Pasa de ${conUnidad(p.valor, p)} a ${conUnidad(valorNuevo, p)}. Aplica desde ya a los estudios y contratos que se procesen de aquí en adelante.`}</p>
-            {/* Un interruptor se cambia desde aquí, sin formulario: el motivo va en el diálogo. */}
-            {!editando && (
-              <label className="mt-3 block text-xs font-medium text-gray-700">
-                Motivo ({exigeMotivo ? 'obligatorio' : 'opcional'}, queda en el historial)
-                <input
-                  type="text"
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  maxLength={500}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                />
-              </label>
-            )}
-          </>
-        }
-        confirmDisabled={exigeMotivo && !motivo.trim()}
-        confirmLabel="Guardar cambio"
-        isLoading={guardando}
-      />
-    </div>
-  )
-}
+const esSeccion = (v: Vista): v is SeccionId => SECCIONES.some((s) => s.id === v)
 
 export default function AdminCalibracionPage() {
   const { user } = useAuth()
   const [params, setParams] = useState<IParametroCalibracion[]>([])
   const [historial, setHistorial] = useState<IHistorialCalibracion[]>([])
-  // null = no se pudo cargar (los indicadores son informativos: no tumban el panel).
   const [cascada, setCascada] = useState<ICascadaCentrales | null>(null)
   const [revision, setRevision] = useState<IRevisionManual | null>(null)
   const [loading, setLoading] = useState(true)
   // Un fallo de carga no es «sin cambios registrados»: se dice y se reintenta.
   const [errorCarga, setErrorCarga] = useState(false)
   const [busqueda, setBusqueda] = useState('')
-  const [historialCompleto, setHistorialCompleto] = useState(false)
+  const [vista, setVista] = useState<Vista>('resumen')
+  const [abierto, setAbierto] = useState<string | null>(null)
 
   const cargar = async () => {
     try {
@@ -492,7 +69,7 @@ export default function AdminCalibracionPage() {
         calibracionService.getCascada(30).catch(() => null),
         calibracionService.getRevisionManual(30).catch(() => null),
       ])
-      setParams(p)
+      setParams([...p].sort(porOrden))
       setHistorial(h)
       setCascada(c)
       setRevision(r)
@@ -509,15 +86,41 @@ export default function AdminCalibracionPage() {
     else setLoading(false)
   }, [user])
 
+  // La sección va en el #: recargar o compartir el enlace vuelve al mismo lugar.
+  useEffect(() => {
+    const h = window.location.hash.slice(1)
+    if (VISTAS.some((v) => v.id === h)) setVista(h as Vista)
+  }, [])
+  const irA = (v: Vista) => {
+    setVista(v)
+    setBusqueda('')
+    window.history.replaceState(null, '', `#${v}`)
+    window.scrollTo({ top: 0 })
+  }
+
+  const valores: Valores = useMemo(() => Object.fromEntries(params.map((p) => [p.clave, p.valor])), [params])
+  // El historial llega del más reciente al más viejo: el primero de cada clave es su último cambio.
+  const ultimo = useMemo(() => {
+    const m = new Map<string, IHistorialCalibracion>()
+    for (const h of historial) if (!m.has(h.clave)) m.set(h.clave, h)
+    return m
+  }, [historial])
+
   const q = busqueda.trim().toLowerCase()
-  // Adenda 3 V2 §1: con las reglas nuevas encendidas, el factor único ya no decide nada: no se muestra.
-  const v2 = params.some((p) => p.clave === 'ADENDA3_V2' && p.valor === 1)
-  const vigentes = v2 ? params.filter((p) => p.clave !== 'FACTOR_AJUSTE_INGRESO') : params
-  const visibles = q
-    ? vigentes.filter((p) => `${nombreDe(p.clave)} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q))
-    : vigentes
-  const grupos = GRUPOS.map((g) => ({ ...g, items: visibles.filter((p) => metaDe(p.clave).grupo === g.id) })).filter(
-    (g) => g.items.length > 0,
+  const encontrados = q
+    ? params.filter((p) => {
+        const m = metaDe(p.clave)
+        return `${m.nombre} ${m.queHace} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q)
+      })
+    : []
+  const conteo =
+    encontrados.length === 0
+      ? `Ningún valor coincide con «${busqueda.trim()}».`
+      : `${encontrados.length} ${encontrados.length === 1 ? 'valor coincide' : 'valores coinciden'} con «${busqueda.trim()}».`
+  const pAbierto = params.find((p) => p.clave === abierto)
+
+  const fila = (p: IParametroCalibracion) => (
+    <ParametroFila key={p.clave} p={p} valores={valores} ultimo={ultimo.get(p.clave)} onAbrir={setAbierto} />
   )
 
   if (user?.rol !== 'administrador') {
@@ -533,10 +136,10 @@ export default function AdminCalibracionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Calibración del modelo"
-        subtitle="Los valores con los que la plataforma evalúa, cobra y fija plazos. Cada cambio aplica de inmediato y queda en el historial."
+        subtitle="Los valores con los que la plataforma decide, cobra y fija plazos. Un cambio aplica de inmediato y queda en el historial."
       />
 
       {loading ? (
@@ -559,215 +162,162 @@ export default function AdminCalibracionPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700">
-              <IconLock size={14} className="mt-0.5 shrink-0 text-gray-500" />
-              <span>
-                Los marcados <strong>Gerencia General</strong> afectan el riesgo y solo los cambia la Gerencia General. Los demás
-                son operativos y los puede cambiar cualquier administrador.
-              </span>
-            </p>
-            <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
-              <span>
-                Antes de cambiar un puntaje o un tope, pida a Tecnología que valide la matriz de casos de prueba y confirme que
-                ningún caso crítico cambia de resultado.
-              </span>
-            </p>
-          </div>
+          <label className="relative block">
+            <span className="sr-only">Buscar un valor</span>
+            <IconSearch size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar un valor: precio, IVA, tarifa, días, coarrendatario…"
+              className="w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-3 text-sm shadow-sm"
+            />
+          </label>
 
-          {/* Buscador + atajos a cada grupo: son ~40 parámetros en una sola página. */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="relative block sm:w-72">
-              <span className="sr-only">Buscar parámetro</span>
-              <IconSearch size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar: precio, IVA, días, puntaje…"
-                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm"
-              />
-            </label>
-            <nav aria-label="Grupos de parámetros" className="flex gap-1.5 overflow-x-auto">
-              {grupos.map((g) => (
-                <a
-                  key={g.id}
-                  href={`#grupo-${g.id}`}
-                  className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-primary-300 hover:text-primary-800"
-                >
-                  {g.titulo}
-                </a>
-              ))}
-              <a
-                href="#indicadores"
-                className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-primary-300 hover:text-primary-800"
-              >
-                Indicadores
-              </a>
-              <a
-                href="#historial"
-                className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-primary-300 hover:text-primary-800"
-              >
-                Historial
-              </a>
-            </nav>
-          </div>
-
-          {grupos.length === 0 && (
-            <p className="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
-              Ningún parámetro coincide con «{busqueda}».
-            </p>
-          )}
-
-          {grupos.map((g) => (
-            <section key={g.id} id={`grupo-${g.id}`} className="scroll-mt-20">
-              <h2 className="text-base font-bold text-gray-900">{g.titulo}</h2>
-              {g.ayuda && <p className="mb-2 text-sm text-gray-500">{g.ayuda}</p>}
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                {g.items.map((p) => (
-                  <FilaParametro key={p.clave} p={p} onGuardado={cargar} />
-                ))}
-              </div>
+          {/* Solo el conteo se anuncia (siempre montado): con la lista entera en la región viva, el lector la leía a cada tecla. */}
+          <p role="status" className="sr-only">
+            {q ? conteo : ''}
+          </p>
+          {q ? (
+            <section>
+              <p aria-hidden className="mb-2 text-sm text-gray-600">
+                {conteo}
+              </p>
+              {SECCIONES.map((s) => {
+                const items = encontrados.filter((p) => metaDe(p.clave).seccion === s.id)
+                if (items.length === 0) return null
+                return (
+                  <div key={s.id} className="mb-4">
+                    <h2 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">{s.titulo}</h2>
+                    <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">{items.map(fila)}</div>
+                  </div>
+                )
+              })}
             </section>
-          ))}
+          ) : (
+            <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+              <nav aria-label="Secciones de la calibración" className="min-w-0 lg:sticky lg:top-20 lg:self-start">
+                <ul className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
+                  {VISTAS.map((v) => {
+                    const propios = esSeccion(v.id) ? params.filter((p) => metaDe(p.clave).seccion === v.id) : null
+                    // «Otros» solo aparece si el API trae un valor que esta pantalla todavía no conoce.
+                    if (propios?.length === 0) return null
+                    const n = propios?.filter((p) => rigeHoy(metaDe(p.clave).rige, valores)).length ?? null
+                    return (
+                      <li key={v.id} className="shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => irA(v.id)}
+                          aria-current={vista === v.id ? 'page' : undefined}
+                          className={cn(
+                            'flex w-full items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm',
+                            vista === v.id
+                              ? 'bg-primary-50 font-semibold text-primary-800'
+                              : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 lg:border-0 lg:bg-transparent',
+                          )}
+                        >
+                          {v.titulo}
+                          {n !== null && <span className="text-xs font-normal text-gray-400">{n}</span>}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </nav>
 
-          {/* Indicadores (Política V4.1 §8, Adenda 2 §5.1 y §8): sirven para decidir
-              si mover un umbral, por eso van después de los parámetros y plegados. */}
-          <details id="indicadores" className="group scroll-mt-20 rounded-xl border border-gray-200 bg-white">
-            <summary className="flex cursor-pointer list-none items-center justify-between p-4">
-              <span>
-                <span className="block text-base font-bold text-gray-900">Indicadores de los últimos 30 días</span>
-                <span className="block text-sm text-gray-500">Cómo se están comportando las centrales y la revisión manual.</span>
-              </span>
-              <IconChevronDown size={18} className="text-gray-400 transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="space-y-4 border-t border-gray-100 p-4">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">Consultas a centrales de riesgo</h3>
-                {cascada === null ? (
-                  <p className="mt-1 text-sm text-gray-500">No se pudo cargar este resumen.</p>
-                ) : cascada.total === 0 ? (
-                  <p className="mt-1 text-sm text-gray-500">Sin estudios ejecutados desde {formatDate(cascada.desde)}.</p>
-                ) : (
-                  <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <DatoCascada label="Estudios consultados" valor={cascada.total.toLocaleString('es-CO')} sub={`desde ${formatDate(cascada.desde)}`} />
-                    <DatoCascada
-                      label="Resueltos con una sola central"
-                      valor={pct(cascada.una_central, cascada.total)}
-                      sub={`${cascada.una_central.toLocaleString('es-CO')} estudios`}
-                    />
-                    <DatoCascada
-                      label="Necesitaron las dos centrales"
-                      valor={pct(cascada.dos_centrales, cascada.total)}
-                      sub={`${cascada.dos_centrales.toLocaleString('es-CO')} estudios`}
-                    />
-                    <DatoCascada
-                      label="Sin información de la cascada"
-                      valor={cascada.sin_dato.toLocaleString('es-CO')}
-                      sub={cascada.sin_dato > 0 ? 'no cuentan en los porcentajes' : 'todos quedaron registrados'}
-                    />
-                  </dl>
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">Revisión manual</h3>
-                {revision === null ? (
-                  <p className="mt-1 text-sm text-gray-500">No se pudo cargar este resumen.</p>
-                ) : (
+              <div className="min-w-0">
+                {vista === 'resumen' ? (
+                  <Resumen params={params} valores={valores} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} />
+                ) : vista === 'indicadores' ? (
                   <>
-                    <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <DatoCascada label="Esperando revisión ahora" valor={revision.en_revision_ahora.toLocaleString('es-CO')} />
-                      <DatoCascada
-                        label="Revisadas"
-                        valor={revision.resueltas.toLocaleString('es-CO')}
-                        sub={revision.resueltas > 0 ? `${pct(revision.dentro_del_sla, revision.resueltas)} dentro del plazo` : undefined}
-                      />
-                      <DatoCascada
-                        label="Tiempo promedio de revisión"
-                        valor={revision.promedio_horas_habiles === null ? '—' : `${revision.promedio_horas_habiles} h`}
-                        sub={`horas hábiles · el plazo es ${revision.sla_horas_habiles} h`}
-                      />
-                      <DatoCascada
-                        label="Enviadas a revisión por falta de ingreso"
-                        valor={revision.escaladas_sin_ingreso.toLocaleString('es-CO')}
-                        sub="las centrales no estimaron ingreso"
-                      />
-                    </dl>
-                    <h3 className="mt-4 text-sm font-bold text-gray-900">DataCrédito</h3>
-                    <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <DatoCascada label="Consultas" valor={revision.datacredito.consultas.toLocaleString('es-CO')} />
-                      <DatoCascada label="Veces que no respondió" valor={revision.datacredito.caidas.toLocaleString('es-CO')} />
-                      <DatoCascada
-                        label="Tasa de caída"
-                        valor={revision.datacredito.tasa_caida_pct === null ? '—' : `${revision.datacredito.tasa_caida_pct}%`}
-                        sub="se revisa a los 3 meses"
-                      />
-                      <DatoCascada
-                        label="Errores en los datos enviados"
-                        valor={revision.datacredito.errores_de_dato.toLocaleString('es-CO')}
-                        sub="documento o apellido; no es falla de la central"
-                      />
-                    </dl>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Horas hábiles: lunes a viernes de 8:00 a 18:00 (sin descontar festivos). Las caídas se distinguen desde el 11
-                      de septiembre de 2026.
-                    </p>
+                    <Encabezado titulo="Indicadores de los últimos 30 días" ayuda="Cómo se están comportando las centrales y la revisión manual. Sirven para decidir si conviene mover un valor." />
+                    <Indicadores cascada={cascada} revision={revision} />
                   </>
+                ) : vista === 'historial' ? (
+                  <>
+                    <Encabezado titulo="Historial de cambios" ayuda="Cada cambio con la fecha, quién lo hizo, el valor anterior, el nuevo y el motivo." />
+                    <Historial historial={historial} params={params} />
+                  </>
+                ) : (
+                  <Seccion id={vista} params={params} valores={valores} fila={fila} />
                 )}
               </div>
             </div>
-          </details>
+          )}
 
-          <section id="historial" className="scroll-mt-20">
-            <h2 className="mb-2 text-base font-bold text-gray-900">Historial de cambios</h2>
-            {historial.length === 0 ? (
-              <p className="text-sm text-gray-500">Sin cambios registrados.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600">
-                    <tr>
-                      <th className="px-3 py-2">Fecha</th>
-                      <th className="px-3 py-2">Parámetro</th>
-                      <th className="px-3 py-2">Cambio</th>
-                      <th className="px-3 py-2">Quién</th>
-                      <th className="px-3 py-2">Motivo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(historialCompleto ? historial : historial.slice(0, 10)).map((h) => {
-                      const def = params.find((p) => p.clave === h.clave) ?? { clave: h.clave, entero: false }
-                      return (
-                        <tr key={h.id} className="border-t border-gray-100">
-                          <td className="whitespace-nowrap px-3 py-2 text-gray-600">{formatDate(h.created_at)}</td>
-                          <td className="px-3 py-2">{nombreDe(h.clave)}</td>
-                          <td className="whitespace-nowrap px-3 py-2">
-                            <span className="text-gray-500">{h.valor_anterior === null ? '—' : conUnidad(h.valor_anterior, def)}</span>
-                            <IconArrowRight size={12} className="mx-1.5 inline text-gray-400" />
-                            <span className="font-semibold text-gray-900">{conUnidad(h.valor_nuevo, def)}</span>
-                          </td>
-                          <td className="px-3 py-2 text-gray-700">{h.usuario_nombre ?? '—'}</td>
-                          <td className="px-3 py-2 text-gray-500">{h.motivo ?? '—'}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-                {historial.length > 10 && (
-                  <button
-                    type="button"
-                    onClick={() => setHistorialCompleto((v) => !v)}
-                    className="w-full border-t border-gray-100 py-2 text-sm font-medium text-primary-700 hover:bg-gray-50"
-                  >
-                    {historialCompleto ? 'Ver solo los últimos 10' : `Ver los ${historial.length} cambios`}
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
+          {pAbierto && (
+            <EditarParametro
+              key={pAbierto.clave}
+              p={pAbierto}
+              valores={valores}
+              params={params}
+              historial={historial}
+              onClose={() => setAbierto(null)}
+              onGuardado={cargar}
+            />
+          )}
         </>
       )}
     </div>
+  )
+}
+
+function Encabezado({ titulo, ayuda }: { titulo: string; ayuda: string }) {
+  return (
+    <div className="mb-3">
+      <h2 className="text-lg font-bold text-gray-900">{titulo}</h2>
+      <p className="text-sm text-gray-600">{ayuda}</p>
+    </div>
+  )
+}
+
+/**
+ * Una sección: sus valores por subtema y, plegados al final, los que no
+ * cambian nada con las reglas encendidas hoy (siguen editables para dejarlos
+ * listos).
+ */
+function Seccion({
+  id,
+  params,
+  valores,
+  fila,
+}: {
+  id: SeccionId
+  params: IParametroCalibracion[]
+  valores: Valores
+  fila: (p: IParametroCalibracion) => React.ReactNode
+}) {
+  const s = SECCIONES.find((x) => x.id === id)!
+  const propios = params.filter((p) => metaDe(p.clave).seccion === id)
+  const vigentes = propios.filter((p) => rigeHoy(metaDe(p.clave).rige, valores))
+  const inactivos = propios.filter((p) => !rigeHoy(metaDe(p.clave).rige, valores))
+  const subtemas = [...new Set(vigentes.map((p) => metaDe(p.clave).sub ?? ''))]
+
+  return (
+    <section>
+      <Encabezado titulo={s.titulo} ayuda={s.ayuda} />
+      <div className="space-y-4">
+        {subtemas.map((sub) => (
+          <div key={sub}>
+            {sub && <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-500">{sub}</h3>}
+            <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+              {vigentes.filter((p) => (metaDe(p.clave).sub ?? '') === sub).map(fila)}
+            </div>
+          </div>
+        ))}
+        {inactivos.length > 0 && (
+          <details className="group rounded-xl border border-dashed border-gray-300 bg-gray-50">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm text-gray-600">
+              <span>
+                <span className="font-semibold">No aplican hoy ({inactivos.length})</span>
+                <span className="block text-xs">Con las reglas encendidas hoy no cambian ningún resultado.</span>
+              </span>
+              <IconChevronDown size={18} className="text-gray-400 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="divide-y divide-gray-100 border-t border-gray-200 bg-white opacity-75">{inactivos.map(fila)}</div>
+          </details>
+        )}
+      </div>
+    </section>
   )
 }
