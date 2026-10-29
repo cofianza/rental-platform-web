@@ -11,10 +11,11 @@ import { toast } from 'sonner'
 import { Button, Modal } from '@/components/ui'
 import { IconAlertTriangle, IconScrollText, IconTrash } from '@/components/icons'
 import { fechaCorta, money, type ChipTone } from '@/components/dashboard/secciones/_shared'
+import { CoincidenciasListas } from '@/components/migracion/CoincidenciasListas'
 import { ApiClientError } from '@/lib/api'
 import { migracionService } from '@/services/migracionService'
 import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
-import type { CampoCorregible, CampoCorregido, DatosFilaMigrada, DetalleFilaMigrada, EstadoCorreccion } from '@/types/migracion'
+import type { CampoCorregible, CampoCorregido, DatosFilaMigrada, DetalleFilaMigrada, EstadoCorreccion, ListasPersona } from '@/types/migracion'
 
 export const ESTADO_CORRECCION_TONO: Record<EstadoCorreccion, ChipTone> = {
   en_firma: 'yellow',
@@ -102,7 +103,15 @@ function cambiosDe(it: Item) {
   })
 }
 
-type Falla = { n_fila?: number | null; contrato_numero?: string | null; motivos?: string[]; firmante?: string; motivo?: string }
+type Falla = {
+  n_fila?: number | null
+  contrato_numero?: string | null
+  motivos?: string[]
+  firmante?: string
+  motivo?: string
+  /** Adenda 1 §6: el arrendatario corregido tiene una coincidencia en listas restrictivas. */
+  listas?: ListasPersona
+}
 
 const INPUT =
   'w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50'
@@ -309,6 +318,18 @@ export function CorreccionModal({
                   {f.motivos
                     ? `Contrato ${f.contrato_numero ?? (f.n_fila != null ? `fila ${f.n_fila}` : '')}: ${f.motivos.join(' ')}`
                     : `${f.firmante ?? 'Firmante'}: ${f.motivo ?? ''}`}
+                  {f.listas?.estado === 'por_confirmar' && (
+                    <CoincidenciasListas
+                      inmobiliariaId={f.listas.inmobiliaria_id}
+                      persona={{ documento: f.listas.documento, nombre: f.listas.nombre, n_fila: f.n_fila ?? undefined }}
+                      listas={f.listas}
+                      consecuencia="Esta corrección no se puede hacer por acta; el contrato sigue activo hasta que los administradores decidan."
+                      onDecidida={() => {
+                        setFallas([])
+                        toast.info('Envíe de nuevo el acta de corrección.')
+                      }}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

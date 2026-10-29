@@ -174,6 +174,9 @@ export const ACTION_LABELS: Record<string, string> = {
   migracion_arrendatario_identificado: 'Documento del arrendatario registrado (migración)',
   migracion_diferidos_requeridos: 'Datos de contrato migrado solicitados por mora',
   migracion_diferidos_entregados: 'Datos de contrato migrado entregados',
+  migracion_listas_confirmada: 'Coincidencia en listas restrictivas confirmada (migración)',
+  migracion_listas_descartada: 'Coincidencia en listas restrictivas descartada (migración)',
+  listas_restrictivas_actualizadas: 'Listas restrictivas actualizadas',
 
   // WhatsApp
   whatsapp_enviado: 'WhatsApp enviado',
@@ -209,6 +212,7 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['estudio_autorizacion_bloqueada', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['migracion_lote_cancelado', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['migracion_contrato_excluido', { bg: 'bg-red-100', text: 'text-red-800' }],
+  ['migracion_listas_confirmada', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['tarifa_linea_anulada', { bg: 'bg-red-100', text: 'text-red-800' }],
   ['enlace_magico', { bg: 'bg-blue-100', text: 'text-blue-800' }],
   ['login_', { bg: 'bg-blue-100', text: 'text-blue-800' }],
@@ -454,6 +458,9 @@ export const ACTION_GROUPS: Array<{
       'migracion_arrendatario_identificado',
       'migracion_diferidos_requeridos',
       'migracion_diferidos_entregados',
+      'migracion_listas_confirmada',
+      'migracion_listas_descartada',
+      'listas_restrictivas_actualizadas',
     ].map(toOption),
   },
   {

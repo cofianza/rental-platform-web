@@ -95,6 +95,68 @@ export interface SuspensionResultado {
   ya_estaba_suspendida: boolean
 }
 
+// ── Listas restrictivas OFAC y ONU (Adenda 1 §6) ──
+
+export type CodigoLista = 'ofac_sdn' | 'ofac_consolidada' | 'onu'
+export type EstadoListasFila = 'sin_coincidencia' | 'por_confirmar' | 'descartada' | 'confirmada'
+
+export interface CoincidenciaLista {
+  lista: CodigoLista
+  ref: string
+  /** Nombre principal de la entrada en la lista. */
+  nombre_lista: string
+  /** documento = mismo número (fuerte); nombre = igual o parecido (posible). */
+  tipo: 'documento' | 'nombre'
+  decision: 'confirmada' | 'descartada' | null
+  decision_id?: string
+}
+
+export interface ListasFila {
+  estado: EstadoListasFila
+  coincidencias: CoincidenciaLista[]
+}
+
+export interface ListaRestrictiva {
+  lista: CodigoLista
+  nombre: string
+  publicada_en: string | null
+  /** Última descarga de Cofianza; null = nunca se ha descargado. */
+  sincronizada_en: string | null
+  total_registros: number
+  vigente: boolean
+}
+
+export interface EstadoListas {
+  listas: ListaRestrictiva[]
+  dias_max: number
+  /** El barrido diario está encendido en el servidor. */
+  sincronizacion_automatica: boolean
+}
+
+export interface ActualizarListasResultado extends EstadoListas {
+  resultados: { lista: CodigoLista; ok: boolean; total_registros?: number; error?: string }[]
+}
+
+/** Constancia que imprime el acta (§9). */
+export interface VerificacionListas {
+  verificado_en: string
+  arrendatarios_verificados: number
+  sin_documento: number
+  listas: ListaRestrictiva[]
+  decisiones_ids: string[]
+}
+
+export interface DecisionListasBody {
+  documento: string | null
+  nombre: string
+  decision: 'confirmada' | 'descartada'
+  motivo: string
+  n_fila?: number
+}
+
+/** La persona y su coincidencia, tal como las devuelve la API en un error 409/422 (details.listas). */
+export type ListasPersona = ListasFila & { inmobiliaria_id: string; documento: string | null; nombre: string }
+
 // ── Validación y procesamiento (§2.4) ──
 
 export interface ResumenValidacion {
@@ -104,6 +166,10 @@ export interface ResumenValidacion {
   rechazadas: number
   /** Adenda 1 §7: sin documento del arrendatario (incluidas en aceptadas/advertencias). Ausente en una API anterior. */
   pendientes_identificacion?: number
+  /** Adenda 1 §6: coincidencias en listas sin decidir (bloquean el procesamiento). */
+  listas_por_confirmar: number
+  /** Adenda 1 §6: incluidas en rechazadas; no entran al lote ni al acta. */
+  listas_confirmadas: number
 }
 
 export interface FilaValidacion {
@@ -120,6 +186,8 @@ export interface FilaValidacion {
   tarifa_pct: number | null
   /** Adenda 1 §7: entra al acta sin cobertura hasta que se entregue el documento. */
   pendiente_identificacion?: boolean
+  /** Adenda 1 §6: null = sin documento ni nombre con qué verificar. */
+  listas: ListasFila | null
 }
 
 /** Adenda 1 §4.3: lo declarado una vez para el lote en la hoja Instrucciones. */
@@ -137,6 +205,8 @@ export interface DeclaracionLote {
 export interface ValidacionResultado {
   resumen: ResumenValidacion
   declaracion_lote: DeclaracionLote
+  /** Adenda 1 §6 y §9: listas verificadas y cuántos arrendatarios. */
+  verificacion_listas: VerificacionListas
   filas: FilaValidacion[]
 }
 

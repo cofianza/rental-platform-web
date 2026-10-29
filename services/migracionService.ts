@@ -6,23 +6,27 @@
 
 import { apiClient, type ApiResponse } from '@/lib/api'
 import type {
+  ActualizarListasResultado,
   AuditoriaAbierta,
   ActaEnviada,
   ActaPdf,
   ArchivoDescargado,
   CorreccionBody,
   CorreccionLote,
+  DecisionListasBody,
   Destinacion,
   DetalleFilaExcluida,
   DetalleFilaMigrada,
   DocumentoDiferido,
   EstadoActaLote,
+  EstadoListas,
   EstadoMigracionOrg,
   FilaFormatoAnterior,
   GuardarHabilitacionBody,
   Habilitacion,
   InmobiliariaMigracion,
   LiquidacionMigracion,
+  ListasFila,
   LoteResumen,
   MotivoReportable,
   PersonaDiferida,
@@ -110,6 +114,20 @@ export const migracionService = {
   /** Solo la Gerencia General (403 SOLO_GERENCIA_GENERAL para los demás). */
   async reactivar(inmobiliariaId: string): Promise<{ suspendida: false }> {
     return (await apiClient.delete<{ suspendida: false }>(`${org(inmobiliariaId)}/suspension`)).data
+  },
+
+  // ── Listas restrictivas OFAC y ONU (Adenda 1 §6) ──
+
+  async estadoListas(): Promise<EstadoListas> {
+    return (await apiClient.get<EstadoListas>(`${BASE}/listas`)).data
+  },
+  /** Solo administrador. Responde siempre; la falla de cada lista va en `resultados`. */
+  async actualizarListas(): Promise<ActualizarListasResultado> {
+    return (await apiClient.post<ActualizarListasResultado>(`${BASE}/listas/actualizar`)).data
+  },
+  /** Confirma (no se migra; protocolo SAGRILAFT) o descarta una coincidencia. */
+  async decidirListas(inmobiliariaId: string, body: DecisionListasBody): Promise<{ listas: ListasFila }> {
+    return (await apiClient.post<{ listas: ListasFila }>(`${org(inmobiliariaId)}/listas/decision`, body)).data
   },
 
   // ── Carga del archivo (§2.4) ──

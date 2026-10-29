@@ -22,6 +22,7 @@ import {
   useSeccion,
   type ChipTone,
 } from '@/components/dashboard/secciones/_shared'
+import { EstadoListas } from '@/components/migracion/EstadoListas'
 import { guardarArchivo, migracionService, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import type { Destinacion, EstadoLote, InmobiliariaMigracion, LoteResumen } from '@/types/migracion'
 
@@ -259,6 +260,11 @@ export default function MigracionPage() {
             ))}
           </Tabla>
         </SeccionEstado>
+      </section>
+
+      {/* Adenda 1 §6: la copia local de las listas con que se verifica a cada arrendatario. */}
+      <section>
+        <EstadoListas />
       </section>
 
       <section>

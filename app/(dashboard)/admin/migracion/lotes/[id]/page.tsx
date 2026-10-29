@@ -45,6 +45,7 @@ import {
 } from '@/components/dashboard/secciones/_shared'
 import { ApiClientError } from '@/lib/api'
 import { abrirEnPestana } from '@/lib/utils'
+import { CoincidenciasListas } from '@/components/migracion/CoincidenciasListas'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
 import { IdentificacionPendiente, PanelDiferidos } from '@/components/migracion/Diferidos'
 import { errorPdf, guardarArchivo, migracionService, motivoRevision, plazoVencido, respondidaTarde } from '@/services/migracionService'
@@ -56,6 +57,7 @@ import type {
   EstadoActa,
   EstadoLote,
   EstadoMigracion,
+  ListasPersona,
   ResultadoAuditoria,
   VistaTablero,
 } from '@/types/migracion'
@@ -158,11 +160,14 @@ export default function LoteMigracionPage() {
   const [fechaAut, setFechaAut] = useState(hoy)
   const [notas, setNotas] = useState('')
   const [soporte, setSoporte] = useState<File | null>(null)
+  // Adenda 1 §6: el documento entregado coincide en listas restrictivas (409 al registrarlo).
+  const [listasIdent, setListasIdent] = useState<ListasPersona | null>(null)
 
   const abrirDetalle = async (fid: string) => {
     setFilaId(fid)
     setDet(null)
     setDetError(null)
+    setListasIdent(null)
     setNotas('')
     setSoporte(null)
     setFechaAut(hoy())
@@ -195,6 +200,8 @@ export default function LoteMigracionPage() {
       return true
     } catch (e) {
       const fallas = e instanceof ApiClientError ? (e.details as { fallas?: { firmante: string; motivo: string }[] } | undefined)?.fallas : undefined
+      const listas = e instanceof ApiClientError ? (e.details as { listas?: ListasPersona } | undefined)?.listas : undefined
+      if (listas?.estado === 'por_confirmar') setListasIdent(listas)
       toast.error(msg(e, error), fallas?.length ? { description: fallas.map((f) => `${f.firmante}: ${f.motivo}`).join(' · ') } : undefined)
       return false
     } finally {
@@ -632,6 +639,18 @@ export default function LoteMigracionPage() {
                 det={det}
                 ocupado={ocupado}
                 onRegistrar={(tipoDocumento, numero) => setDialogo({ tipo: 'identificar', tipoDocumento, numero })}
+              />
+            )}
+            {det.estado === 'pendiente_identificacion' && listasIdent && (
+              <CoincidenciasListas
+                inmobiliariaId={listasIdent.inmobiliaria_id}
+                persona={{ documento: listasIdent.documento, nombre: listasIdent.nombre, n_fila: det.n_fila }}
+                listas={listasIdent}
+                consecuencia="El contrato sigue sin cobertura."
+                onDecidida={() => {
+                  setListasIdent(null)
+                  toast.info('Registre de nuevo el documento.')
+                }}
               />
             )}
             {det.en_revision_motivo && <p className="text-sm text-amber-700">En revisión: {motivoRevision(det.en_revision_motivo)}</p>}
