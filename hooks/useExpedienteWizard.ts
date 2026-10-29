@@ -253,7 +253,7 @@ function validateStep2(data: WizardStep2Data): Record<string, string> {
       errors.email = 'Correo inválido'
     }
     if (!form.telefono?.trim()) {
-      errors.telefono = 'Teléfono requerido: a este WhatsApp le llega el enlace para firmar el contrato.'
+      errors.telefono = 'Escriba el celular: ahí le llega por WhatsApp la solicitud de autorización.'
     } else if (!isValidPhone(form.telefono)) {
       errors.telefono = 'Celular colombiano (3XXXXXXXXX) o internacional con código de país (ej. +52 1234567890)'
     }
@@ -643,9 +643,10 @@ export function useExpedienteWizard() {
             telefono: c.telefono.trim(),
           })
         } catch (coaErr) {
-          const detalle = coaErr instanceof ApiClientError ? coaErr.message : 'Error desconocido'
+          const detalle = (coaErr instanceof ApiClientError ? coaErr.message : 'Error desconocido').replace(/\.$/, '')
+          const nombreTitular = (data.step2.solicitante ?? data.step2.formData)?.nombre?.trim() || 'la persona'
           toast.warning(
-            `Creamos el estudio, pero no pudimos invitar al coarrendatario: ${detalle} Invítelo desde el estudio y luego elija ahí la forma de pago.`,
+            `Creamos el estudio, pero no pudimos invitar al coarrendatario: ${detalle}. A ${nombreTitular} todavía no le enviamos nada: invite al coarrendatario desde el estudio y elija ahí quién paga.`,
             { duration: 12000 },
           )
           clearDraft()
@@ -681,9 +682,9 @@ export function useExpedienteWizard() {
         // No se afirma lo que no se sabe.
         toast.success('Estudio creado. Le avisamos cuando el prospecto autorice.')
       } catch (inicioErr) {
-        const detalle = inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido'
+        const detalle = (inicioErr instanceof ApiClientError ? inicioErr.message : 'Error desconocido').replace(/\.$/, '')
         toast.warning(
-          `Creamos el estudio, pero no se pudo iniciar el estudio: ${detalle}. Elija la forma de pago desde el estudio.`,
+          `Creamos el estudio, pero la solicitud no se terminó de enviar: ${detalle}. En el estudio, elija de nuevo quién paga para enviarla.`,
           { duration: 10000 },
         )
       }

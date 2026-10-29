@@ -20,11 +20,13 @@ interface Props {
   onUpdate: (data: Partial<WizardStep1Data>) => void
   /** Tope de canon vigente; null si no se pudo leer (el API valida igual). */
   topeCanon: number | null
+  /** TOLERANCIA_CANON del panel (%); null si no se pudo leer. */
+  toleranciaCanon?: number | null
 }
 
 const COMERCIAL_NO_DISPONIBLE = USOS_NO_AFIANZABLES.includes('comercial')
 
-export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
+export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon, toleranciaCanon = null }: Props) {
   const canon = data.canonObjetivo
   // Mientras comercial no esté disponible, vivienda es la única opción: va marcada.
   const faltaDestinacion = !data.destinacion
@@ -32,6 +34,12 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
     if (COMERCIAL_NO_DISPONIBLE && faltaDestinacion) onUpdate({ destinacion: 'vivienda' })
   }, [faltaDestinacion, onUpdate])
   const excede = topeCanon !== null && canon !== undefined && canon > topeCanon
+  // Mismo canon + tolerancia que canonAprobadoCop en la API; el tope de la
+  // destinación y el ingreso pueden bajarlo, y eso solo lo sabe el certificado.
+  const ayudaCanon =
+    canon && toleranciaCanon !== null
+      ? `Es el canon con el que se evalúa a la persona. Con ${formatCurrency(canon)}, el inmueble que elija después podrá costar hasta ${formatCurrency(Math.floor((canon * (100 + toleranciaCanon)) / 100))} (${toleranciaCanon.toLocaleString('es-CO')} % más), salvo que el tope de su destinación o sus ingresos fijen un máximo menor; el certificado dirá el máximo exacto.`
+      : 'Es el canon con el que se evalúa a la persona.'
 
   return (
     <div className="space-y-5">
@@ -42,7 +50,7 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
         onChange={(v) => onUpdate({ canonObjetivo: v, excedeTope: topeCanon !== null && v !== undefined && v > topeCanon })}
         placeholder="1.500.000"
         error={errors.canonObjetivo}
-        help="El canon con el que se evalúa a la persona. El resultado queda «aprobado hasta» este canon, con la tolerancia de la política."
+        help={ayudaCanon}
       />
 
       <fieldset>
@@ -82,9 +90,9 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon }: Props) {
       )}
 
       <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-        Sin propiedad, el estudio solo lo ven Cofianza y la persona estudiada, y lo paga la persona con el enlace de pago.
-        Cuando el estudio esté aprobado y la persona elija el inmueble, vincúlelo desde el estudio: su canon debe caber en
-        el canon aprobado y debe ser de la misma destinación.
+        Sin propiedad, el estudio solo lo ven Cofianza y la persona evaluada, y lo paga ella con el enlace de pago. Cuando
+        esté aprobado y la persona elija el inmueble, vincúlelo desde el estudio: debe ser de la misma destinación y su
+        canon no puede pasar del máximo del certificado.
       </p>
     </div>
   )

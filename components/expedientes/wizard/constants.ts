@@ -9,8 +9,8 @@
 export const WIZARD_STEPS = [
   'Inmueble',
   'Solicitante',
-  'Configuración',
-  'Confirmación',
+  'Pago',
+  'Revisar y enviar',
 ] as const
 
 export type WizardStepName = (typeof WIZARD_STEPS)[number]
@@ -101,7 +101,7 @@ export const DEPARTAMENTOS_COLOMBIA = [
 
 export const WIZARD_MESSAGES = {
   // Paso 1
-  STEP1_TITLE: 'Seleccionar Inmueble',
+  STEP1_TITLE: 'Elija el inmueble',
   STEP1_SUBTITLE: 'Busque y seleccione el inmueble para el estudio',
   SEARCH_INMUEBLE_PLACEHOLDER: 'Buscar por código, dirección o ciudad...',
   INMUEBLE_REQUIRED: 'Debe seleccionar un inmueble',
@@ -110,7 +110,7 @@ export const WIZARD_MESSAGES = {
   MIN_SEARCH_CHARS: 'Ingrese al menos 2 caracteres para buscar',
 
   // Paso 2
-  STEP2_TITLE: 'Datos del Solicitante',
+  STEP2_TITLE: '¿A quién va a evaluar?',
   STEP2_SUBTITLE: 'Busque un solicitante existente o cree uno nuevo',
   SEARCH_SOLICITANTE_PLACEHOLDER: 'Ingrese número de documento',
   SOLICITANTE_NOT_FOUND: 'No se encontró solicitante con ese documento',
@@ -119,8 +119,8 @@ export const WIZARD_MESSAGES = {
   SOLICITANTE_FOUND: 'Solicitante encontrado',
 
   // Paso 3
-  STEP3_TITLE: 'Configuración',
-  STEP3_SUBTITLE: 'Defina quién paga el estudio de este prospecto',
+  STEP3_TITLE: '¿Quién paga el estudio?',
+  // El subtítulo lleva el precio vivo de la API: se arma en Step3Configuration.
   NOTAS_LABEL: 'Notas internas',
   NOTAS_PLACEHOLDER: 'Notas internas sobre el estudio (opcional)...',
   NOTAS_MAX_LENGTH: 'Las notas no deben exceder 5000 caracteres',
@@ -129,13 +129,11 @@ export const WIZARD_MESSAGES = {
   NO_ANALISTAS: 'No hay analistas disponibles',
 
   // Paso 4
-  STEP4_TITLE: 'Confirmación',
-  STEP4_SUBTITLE: 'Revise los datos antes de enviarle la solicitud de autorización al prospecto',
+  STEP4_TITLE: 'Revise y envíe',
   CONFIRM_CREATE: 'Enviar solicitud de autorización',
   CREATING: 'Enviando solicitud...',
   // Opción B (Adenda 2 §7): primero paga la inmobiliaria en Mercado Pago; la
   // solicitud le sale al prospecto solo cuando se confirma ese pago.
-  STEP4_SUBTITLE_PAGO: 'Revise los datos. Al confirmar lo llevamos a Mercado Pago; la solicitud de autorización le llega al prospecto cuando se confirme su pago',
   CONFIRM_CREATE_PAGO: 'Crear estudio e ir a pagar',
   CREATING_PAGO: 'Creando estudio...',
   SUCCESS: 'Solicitud enviada al prospecto',
@@ -160,7 +158,7 @@ export const WIZARD_MESSAGES = {
   LABEL_TIPO_DOCUMENTO: 'Tipo de documento',
   LABEL_NUMERO_DOCUMENTO: 'Número de documento',
   LABEL_EMAIL: 'Correo electrónico',
-  LABEL_TELEFONO: 'Teléfono',
+  LABEL_TELEFONO: 'Celular (WhatsApp)',
   LABEL_DIRECCION: 'Dirección',
   LABEL_DEPARTAMENTO: 'Departamento',
   LABEL_CIUDAD: 'Ciudad',

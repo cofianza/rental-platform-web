@@ -53,6 +53,13 @@ interface Step2SolicitanteProps {
   onEditingDirtyChange?: (dirty: boolean) => void
 }
 
+// §5.2: el aviso de estudio vigente dice qué tan viejo es y qué salió, para decidir sin abrirlo.
+const ROTULO_RESULTADO: Record<string, string> = {
+  aprobado: 'aprobado',
+  rechazado: 'no aprobable',
+  condicionado: 'en revisión o con condición',
+}
+
 export function Step2Solicitante({
   data,
   errors,
@@ -340,6 +347,10 @@ export function Step2Solicitante({
   // Solo se promete reutilizar "sin volver a cobrarlo" lo que la reasignación
   // del §4.3 acepta para ESTA propiedad; si no, se dice que existe y por qué no sirve.
   const reutilizable = estudioVigente?.reutilizable === true
+  const rotuloVigente = estudioVigente?.resultado ? ROTULO_RESULTADO[estudioVigente.resultado] : undefined
+  const diasVigente = estudioVigente?.fecha_completado
+    ? Math.max(0, Math.floor((Date.now() - new Date(estudioVigente.fecha_completado).getTime()) / 86_400_000))
+    : null
   const bannerVigente = estudioVigente ? (
     <div
       className={cn(
@@ -354,7 +365,9 @@ export function Step2Solicitante({
         />
         <div className="min-w-0 flex-1">
           <p className={cn('text-sm font-semibold', reutilizable ? 'text-primary-900' : 'text-amber-900')}>
-            Esta persona ya tiene un estudio vigente
+            {rotuloVigente && diasVigente !== null
+              ? `Esta persona ya tiene un estudio ${diasVigente === 0 ? 'de hoy' : `de hace ${diasVigente} ${diasVigente === 1 ? 'día' : 'días'}`}: ${rotuloVigente}`
+              : 'Esta persona ya tiene un estudio vigente'}
           </p>
           <p className={cn('mt-1 text-sm', reutilizable ? 'text-primary-800' : 'text-amber-800')}>
             {estudioVigente.expediente_numero
@@ -366,7 +379,7 @@ export function Step2Solicitante({
               ? 'Ábralo en lugar de crear otro: si necesita otro inmueble, se vincula o se reasigna desde ese estudio.'
               : reutilizable
                 ? 'Puede reutilizarlo para esta propiedad sin volver a cobrarlo: ábralo y use «Reasignar a otra propiedad».'
-                : estudioVigente.motivo_no_reutilizable ?? 'Ábralo para revisar si sirve para esta propiedad.'}
+                : `${estudioVigente.motivo_no_reutilizable ?? ''} Si sigue con este asistente, se crea un estudio nuevo y se cobra de nuevo (otro cupo o pago).`.trim()}
           </p>
           {estudioVigente.expediente_id && (
             <Link
@@ -376,7 +389,7 @@ export function Step2Solicitante({
                 reutilizable ? 'text-primary-700 hover:text-primary-800' : 'text-amber-800 hover:text-amber-900',
               )}
             >
-              Ver estudio vigente
+              Ver ese estudio
               <IconArrowRight size={14} />
             </Link>
           )}
@@ -937,9 +950,10 @@ function SolicitanteForm({
             {errors.email && (
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
+            <p className="mt-1 text-xs text-gray-500">Le enviamos copia de cada enlace a este correo.</p>
           </div>
 
-          {/* Telefono (= WhatsApp del arrendatario para firmar) */}
+          {/* Telefono (= WhatsApp del arrendatario para autorizar y firmar) */}
           <div>
             <PhoneInput
               label={WIZARD_MESSAGES.LABEL_TELEFONO}
@@ -950,7 +964,8 @@ function SolicitanteForm({
               error={errors.telefono}
             />
             <p className="mt-1 text-xs text-gray-500">
-              A este WhatsApp le llega el enlace para firmar el contrato.
+              Le escribimos por WhatsApp a este número: primero la solicitud para autorizar la consulta y, si se
+              aprueba, el enlace para firmar el contrato. Use el celular de la persona, no el de la oficina.
             </p>
           </div>
         </div>
