@@ -10,7 +10,6 @@ import { ETAPA_LABEL, type EtapaEstudio, type VistaTurno } from '@/lib/etapaEstu
 import { queSigue } from '@/lib/ayudaEstudio'
 import { etapaDeFila, accionDeFila } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth.store'
 import { PastillaTurno } from './PastillaTurno'
 import { fechaCondicion } from './textoVisible'
 
@@ -113,8 +112,6 @@ export function EstadoFila({
   /** Inicio: las pastillas en fila, no apiladas. */
   compacto?: boolean
 }) {
-  // Sus inmuebles no tienen inmobiliaria: la API no admite coarrendatario (como en el detalle).
-  const propietario = useAuthStore((s) => s.user?.rol) === 'propietario'
   const etapa = etapaDeFila(expediente)
   const { texto, tono } = pastillaEtapa(expediente, etapa, interno)
   const ev = expediente.estudio_vigente
@@ -138,7 +135,6 @@ export function EstadoFila({
           fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
           esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
           sinInmueble: !expediente.inmueble_id,
-          sinCoarrendatario: propietario,
         })}
         // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
         className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}

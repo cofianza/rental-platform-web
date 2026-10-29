@@ -119,7 +119,7 @@ export function Step4Confirmation({
   if (coarrendatario) {
     const horas = panel?.horas_espera_coarrendatario
     pasos.push(
-      `A ${coarrendatario.nombre.trim()} le llega su propia invitación. Cada uno se consulta apenas autoriza${
+      `A ${coarrendatario.nombre.trim()} le llega su propia invitación. Cada uno se consulta apenas autoriza y el estudio está pagado${
         horas
           ? `; la decisión espera hasta ${horas} horas a que esta persona autorice y, si no lo hace, se decide con quienes hayan autorizado.`
           : horas === null

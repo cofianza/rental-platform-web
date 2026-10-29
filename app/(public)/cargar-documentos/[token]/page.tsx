@@ -213,7 +213,7 @@ export default function CargarDocumentosPage() {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {conCondicion ? 'Está cerca' : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
+            {conCondicion ? (ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
             {conCondicion ? (

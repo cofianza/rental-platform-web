@@ -86,7 +86,6 @@ test('qué sigue: espera con fecha, decisión del analista y estudio sin inmuebl
   assert.match(queSigue('decision', { ...o, fechaCondicion: '05/11/2026' }), /antes del 05\/11\/2026/)
   assert.match(queSigue('contrato', { ...o, vista: 'cofianza', sinInmueble: true }), /vincular el inmueble/)
   assert.equal(queSigue('consulta', { ...o, vista: 'equipo' }), queSigue('consulta', o))
-  // Propietario directo: la API no admite coarrendatario.
-  assert.match(queSigue('decision', o), /o un coarrendatario/)
-  assert.doesNotMatch(queSigue('decision', { ...o, sinCoarrendatario: true }), /coarrendatario/)
+  // En revisión sin condición no se ofrece coarrendatario: con 85 o más o bajo 70 no se admite.
+  assert.doesNotMatch(queSigue('decision', o), /coarrendatario/)
 })

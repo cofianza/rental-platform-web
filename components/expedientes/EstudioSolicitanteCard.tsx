@@ -739,7 +739,7 @@ export function EstudioSolicitanteCard({
             <div>
               {/* Su vocabulario: el del chip y la barra («Está cerca» o «En revisión»). */}
               <p className="text-sm font-semibold text-amber-900 mb-0.5">
-                {estudio.condicion_coarrendatario ? 'Está cerca' : 'En revisión'}
+                {estudio.condicion_coarrendatario ? (estudio.condicion_coarrendatario.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'En revisión'}
               </p>
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}

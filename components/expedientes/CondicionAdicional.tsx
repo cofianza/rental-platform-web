@@ -25,8 +25,8 @@ export function CondicionAdicional({
       />
       <span>
         Exigí una condición adicional para aprobarlo, además de los soportes de ingreso (por ejemplo, un
-        coarrendatario, un depósito o un plazo menor). Si la revisión se abrió solo por la capacidad de pago,
-        marcarla cambia la tarifa a la de aprobación no automática; en los demás casos la tarifa ya es esa.
+        coarrendatario, un depósito o un plazo menor). Si la revisión se abrió solo por la capacidad de pago o
+        porque la persona prefirió no dar la foto, marcarla cambia la tarifa a la de aprobación no automática; en los demás casos la tarifa ya es esa.
       </span>
     </label>
   )

@@ -237,7 +237,7 @@ function BarraPorEstado({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : conCondicion ? 'Está cerca' : 'Estamos revisando su estudio'}
+          {isRejected ? 'No aprobable por ahora' : conCondicion ? (condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
