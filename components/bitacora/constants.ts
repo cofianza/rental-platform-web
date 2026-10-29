@@ -171,6 +171,9 @@ export const ACTION_LABELS: Record<string, string> = {
   migracion_contrato_reportable: 'Contrato migrado pasó a reportable',
   migracion_correccion_propuesta: 'Acta de corrección propuesta',
   migracion_correccion_cancelada: 'Acta de corrección cancelada',
+  migracion_arrendatario_identificado: 'Documento del arrendatario registrado (migración)',
+  migracion_diferidos_requeridos: 'Datos de contrato migrado solicitados por mora',
+  migracion_diferidos_entregados: 'Datos de contrato migrado entregados',
 
   // WhatsApp
   whatsapp_enviado: 'WhatsApp enviado',
@@ -448,6 +451,9 @@ export const ACTION_GROUPS: Array<{
       'migracion_contrato_reportable',
       'migracion_correccion_propuesta',
       'migracion_correccion_cancelada',
+      'migracion_arrendatario_identificado',
+      'migracion_diferidos_requeridos',
+      'migracion_diferidos_entregados',
     ].map(toOption),
   },
   {

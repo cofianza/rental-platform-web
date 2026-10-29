@@ -9,7 +9,14 @@ export type TipoDocumentoHabilitacion = 'plantilla' | 'convenio' | 'adhesion'
 export type ResultadoValidacion = 'aceptada' | 'advertencia' | 'rechazada'
 export type EstadoLote = 'procesado' | 'en_firma' | 'activo' | 'expirado' | 'cancelado'
 export type EstadoActa = 'creando' | 'en_firma' | 'completo' | 'incompleto' | 'cancelado' | 'fallido'
-export type EstadoMigracion = 'rechazado_validacion' | 'borrador' | 'activa' | 'en_revision' | 'excluido' | 'terminado'
+export type EstadoMigracion =
+  | 'rechazado_validacion'
+  | 'borrador'
+  | 'pendiente_identificacion'
+  | 'activa'
+  | 'en_revision'
+  | 'excluido'
+  | 'terminado'
 export type ResultadoAuditoria = 'conforme' | 'declaracion_falsa' | 'no_entregado'
 export type MotivoReportable = 'autorizacion_arrendatario' | 'verificacion_individual'
 export type VistaTablero = 'cofianza' | 'inmobiliaria'
@@ -95,6 +102,8 @@ export interface ResumenValidacion {
   aceptadas: number
   advertencias: number
   rechazadas: number
+  /** Adenda 1 §7: sin documento del arrendatario (incluidas en aceptadas/advertencias). Ausente en una API anterior. */
+  pendientes_identificacion?: number
 }
 
 export interface FilaValidacion {
@@ -109,6 +118,8 @@ export interface FilaValidacion {
   canon: number | null
   reportable: boolean | null
   tarifa_pct: number | null
+  /** Adenda 1 §7: entra al acta sin cobertura hasta que se entregue el documento. */
+  pendiente_identificacion?: boolean
 }
 
 /** Adenda 1 §4.3: lo declarado una vez para el lote en la hoja Instrucciones. */
@@ -232,6 +243,8 @@ export interface FilaTablero {
   contrato_numero: string | null
   exposicion_cop: number
   tarifa_mensual_cop: number
+  /** Adenda 1 §7: fin del plazo para entregar el documento (solo pendientes de identificación con el lote firmado). */
+  identificacion_vence_en?: string | null
 }
 
 export interface TableroLote {
@@ -364,7 +377,9 @@ export interface DetalleFilaMigrada {
   en_revision: boolean
   en_revision_motivo: string | null
   excluido_en: string | null
-  excluido_motivo: 'declaracion_falsa' | 'auditoria_no_entregada' | null
+  excluido_motivo: 'declaracion_falsa' | 'auditoria_no_entregada' | 'documento_no_entregado' | null
+  /** Adenda 1 §7: null en una fila no rechazada = pendiente de identificación. */
+  documento_arrendatario?: string | null
   contrato: {
     id: string
     numero: string | null
@@ -373,13 +388,43 @@ export interface DetalleFilaMigrada {
     fecha_firma: string | null
     fecha_terminacion: string | null
   } | null
-  lote: { id: string; numero: string; estado: EstadoLote } | null
+  lote: { id: string; numero: string; estado: EstadoLote; activado_en?: string | null } | null
   estado: EstadoMigracion
   estado_etiqueta: string
   tarifa_vigente_pct: number | null
   auditorias: AuditoriaMigracion[]
   /** Spec §3.8: actas de corrección de este contrato (solo sus propios cambios). */
   correcciones: CorreccionContrato[]
+  /** Adenda 1 §7: hasta cuándo se puede registrar el documento del arrendatario. */
+  identificacion_vence_en?: string | null
+  /** Contacto que ya tiene el arrendatario (solo con contrato). */
+  contacto?: { telefono: string | null; email: string | null } | null
+  /** Adenda 1 §3: datos diferidos a la mora (solo con contrato). */
+  diferidos?: EstadoDiferidos | null
+  coarrendatarios_entregados?: PersonaDiferida[] | null
+}
+
+// ── Datos diferidos a la mora (Adenda 1 §3) ──
+
+export type Diferido = 'celular' | 'correo' | 'coarrendatarios' | 'contrato_firmado' | 'historial_pagos'
+export type DocumentoDiferido = Extract<Diferido, 'contrato_firmado' | 'historial_pagos'>
+
+export interface PersonaDiferida {
+  nombre: string
+  /** CC, CE, PPT, PEP, Pasaporte o NIT. */
+  tipo_documento: string
+  numero_documento: string
+  celular: string
+  email: string
+}
+
+export interface EstadoDiferidos {
+  items: { clave: Diferido; etiqueta: string; pendiente: boolean; entregado_en: string | null }[]
+  /** La primera mora reportada y el fin del plazo de entrega. */
+  requeridos_en: string | null
+  vence_en: string | null
+  vencido: boolean
+  mora_id: string | null
 }
 
 // ── Acta de corrección (Spec §3.8) ──

@@ -15,6 +15,7 @@ import type {
   Destinacion,
   DetalleFilaExcluida,
   DetalleFilaMigrada,
+  DocumentoDiferido,
   EstadoActaLote,
   EstadoMigracionOrg,
   FilaFormatoAnterior,
@@ -24,6 +25,7 @@ import type {
   LiquidacionMigracion,
   LoteResumen,
   MotivoReportable,
+  PersonaDiferida,
   ProcesarResultado,
   RepresentanteLegal,
   ResultadoAuditoria,
@@ -217,6 +219,24 @@ export const migracionService = {
     body: { motivo: MotivoReportable; fecha?: string | null; notas?: string | null },
   ): Promise<DetalleFilaMigrada> {
     return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/reportable`, body)).data
+  },
+  /** Adenda 1 §7: registra el documento del arrendatario pendiente; la fianza se activa en ese momento. */
+  async identificar(filaId: string, body: { tipo_documento: string; numero_documento: string }): Promise<DetalleFilaMigrada> {
+    return (await apiClient.post<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/identificacion`, body)).data
+  },
+  /** Adenda 1 §3: datos que la inmobiliaria entrega tras una mora. coarrendatarios [] = constancia de que no hay. */
+  async registrarDiferidos(
+    filaId: string,
+    body: { celular?: string; correo?: string; coarrendatarios?: PersonaDiferida[] },
+  ): Promise<DetalleFilaMigrada> {
+    return (await apiClient.put<DetalleFilaMigrada>(`${BASE}/filas/${filaId}/diferidos`, body)).data
+  },
+  async cargarDiferido(filaId: string, documento: DocumentoDiferido, archivo: File): Promise<DetalleFilaMigrada> {
+    return json<DetalleFilaMigrada>(await crudo(`${BASE}/filas/${filaId}/diferidos/${documento}`, { method: 'POST', form: conArchivo(archivo) }))
+  },
+  /** Enlace firmado de 10 minutos al PDF entregado. */
+  async verDiferido(filaId: string, documento: DocumentoDiferido): Promise<{ url: string }> {
+    return (await apiClient.get<{ url: string }>(`${BASE}/filas/${filaId}/diferidos/${documento}`)).data
   },
   /** §7.3.4: auditorías sin resultado, la que vence primero arriba. */
   async auditoriasAbiertas(): Promise<AuditoriaAbierta[]> {

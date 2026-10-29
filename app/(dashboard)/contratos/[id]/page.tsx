@@ -41,6 +41,7 @@ import { FirmantesContratoSection } from '@/components/expedientes/FirmantesCont
 import { EnviarFirmaPreviewModal } from '@/components/expedientes/EnviarFirmaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CambiosCorreccion } from '@/components/migracion/Correcciones'
+import { ListaDiferidos } from '@/components/migracion/Diferidos'
 import { abrirEnPestana } from '@/lib/utils'
 import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
@@ -928,6 +929,21 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
           </dd>
         </div>
       </dl>
+      {/* Adenda 1 §7: la fianza nació al registrarse el documento, no con la firma del acta. */}
+      {m.fecha_activacion && m.lote?.activado_en && Date.parse(m.fecha_activacion) > Date.parse(m.lote.activado_en) + 60_000 && (
+        <p className="mt-2 text-xs text-gray-600">La fianza se activó al entregarse el documento del arrendatario.</p>
+      )}
+      {/* Adenda 1 §3: lo que la inmobiliaria debe entregar si se reporta una mora (o ya, si se reportó). */}
+      {m.diferidos && (
+        <ListaDiferidos
+          d={m.diferidos}
+          intro={
+            m.diferidos.requeridos_en
+              ? 'Por la mora reportada, entregue a Cofianza:'
+              : 'Si se reporta una mora sobre este contrato, usted debe entregar a Cofianza:'
+          }
+        />
+      )}
 
       {m.en_revision && (
         <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">

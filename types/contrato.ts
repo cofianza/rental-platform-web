@@ -2,7 +2,7 @@
  * Tipos para Contratos generados desde plantillas
  */
 
-import type { CorreccionContrato } from './migracion'
+import type { CorreccionContrato, EstadoDiferidos } from './migracion'
 
 export type EstadoContrato =
   | 'borrador'
@@ -82,6 +82,8 @@ export interface IContratoMigracion {
   puede_ver_acta?: boolean
   /** Spec migración §3.7-§3.8: actas de corrección del contrato. */
   correcciones?: CorreccionContrato[]
+  /** Adenda 1 de migración §3: qué datos diferidos faltan y su plazo. */
+  diferidos?: EstadoDiferidos | null
 }
 
 export type ModalidadFianza = 'plena' | 'compartida' | 'plus'

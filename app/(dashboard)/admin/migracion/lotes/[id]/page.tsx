@@ -2,7 +2,8 @@
  * Tablero de un lote de migración (spec §8): conteo por estado, vista interna
  * de Cofianza (exposición y tarifa), Acta de Migración (§3.3) y la cartera
  * contrato por contrato con sus acciones (§5.1.3, §5.2.5, §6, §7) y las
- * actas de corrección de contratos ya activos (§3.8).
+ * actas de corrección de contratos ya activos (§3.8). Adenda 1: el documento de
+ * los contratos PENDIENTES DE IDENTIFICACIÓN (§7) y los datos diferidos a la mora (§3).
  */
 
 'use client'
@@ -45,6 +46,7 @@ import {
 import { ApiClientError } from '@/lib/api'
 import { abrirEnPestana } from '@/lib/utils'
 import { CambiosCorreccion, CorreccionModal, ESTADO_CORRECCION_TONO } from '@/components/migracion/Correcciones'
+import { IdentificacionPendiente, PanelDiferidos } from '@/components/migracion/Diferidos'
 import { errorPdf, guardarArchivo, migracionService, motivoRevision, plazoVencido, respondidaTarde } from '@/services/migracionService'
 import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -61,6 +63,7 @@ import { fechaCompleta } from '@/lib/constants'
 
 const ESTADO: Record<EstadoMigracion, { label: string; tone: ChipTone }> = {
   borrador: { label: 'Borrador', tone: 'gray' },
+  pendiente_identificacion: { label: 'Pendiente de identificación', tone: 'yellow' },
   activa: { label: 'Fianza activa por migración', tone: 'green' },
   en_revision: { label: 'En revisión', tone: 'yellow' },
   excluido: { label: 'Excluido', tone: 'red' },
@@ -134,6 +137,7 @@ type Dialogo =
   | { tipo: 'excluir'; nota: string }
   | { tipo: 'decision'; auditoriaId: string; resultado: ResultadoAuditoria }
   | { tipo: 'cancelarCorreccion'; correccionId: string; numero: number }
+  | { tipo: 'identificar'; tipoDocumento: string; numero: string }
 
 export default function LoteMigracionPage() {
   const { id } = useParams<{ id: string }>()
@@ -557,13 +561,20 @@ export default function LoteMigracionPage() {
                 </Td>
                 <Td>
                   {f.arrendatario}
-                  <span className="block text-[11px] text-ink-500">{f.documento}</span>
+                  <span className="block text-[11px] text-ink-500">{f.documento || 'Sin documento'}</span>
                 </Td>
                 <Td className="whitespace-nowrap">{money(f.canon)}</Td>
                 <Td>
                   <Chip tone={ESTADO[f.estado].tone}>{f.estado_etiqueta}</Chip>
                   {f.motivos.length > 0 && <span className="mt-1 block text-[11px] text-red-700">{f.motivos.join('; ')}</span>}
                   {f.en_revision_motivo && <span className="mt-1 block text-[11px] text-amber-700">{motivoRevision(f.en_revision_motivo)}</span>}
+                  {f.estado === 'pendiente_identificacion' && (
+                    <span className="mt-1 block text-[11px] text-amber-700">
+                      {f.identificacion_vence_en
+                        ? `Sin cobertura · documento hasta el ${fechaCorta(f.identificacion_vence_en)}`
+                        : 'Sin cobertura hasta que se entregue el documento'}
+                    </span>
+                  )}
                 </Td>
                 <Td>
                   <Marca reportable={f.reportable} />
@@ -616,13 +627,25 @@ export default function LoteMigracionPage() {
                 </Link>
               )}
             </div>
-            {det.en_revision_motivo && <p className="text-sm text-amber-700">En revisión: {motivoRevision(det.en_revision_motivo)}</p>}
-            {det.excluido_en && (
-              <p className="text-sm text-red-700">
-                Excluido el {fechaCorta(det.excluido_en)} ·{' '}
-                {det.excluido_motivo === 'auditoria_no_entregada' ? 'soportes de auditoría no entregados' : 'declaración falsa'}. Sin cobertura desde el origen.
-              </p>
+            {det.estado === 'pendiente_identificacion' && (
+              <IdentificacionPendiente
+                det={det}
+                ocupado={ocupado}
+                onRegistrar={(tipoDocumento, numero) => setDialogo({ tipo: 'identificar', tipoDocumento, numero })}
+              />
             )}
+            {det.en_revision_motivo && <p className="text-sm text-amber-700">En revisión: {motivoRevision(det.en_revision_motivo)}</p>}
+            {det.excluido_en &&
+              (det.excluido_motivo === 'documento_no_entregado' ? (
+                <p className="text-sm text-red-700">
+                  No migrado el {fechaCorta(det.excluido_en)} · documento del arrendatario no entregado en el plazo. Nunca tuvo cobertura.
+                </p>
+              ) : (
+                <p className="text-sm text-red-700">
+                  Excluido el {fechaCorta(det.excluido_en)} ·{' '}
+                  {det.excluido_motivo === 'auditoria_no_entregada' ? 'soportes de auditoría no entregados' : 'declaración falsa'}. Sin cobertura desde el origen.
+                </p>
+              ))}
 
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Dato label="Inmueble">
@@ -634,14 +657,18 @@ export default function LoteMigracionPage() {
               <Dato label="Arrendatario">
                 {[det.datos.arrendatario.nombre, det.datos.arrendatario.apellido].filter(Boolean).join(' ') || det.datos.arrendatario.razon_social}
                 <span className="block text-xs text-ink-500">
-                  {det.datos.arrendatario.tipo_documento} {det.datos.arrendatario.numero_documento}
+                  {det.datos.arrendatario.numero_documento
+                    ? `${det.datos.arrendatario.tipo_documento ?? ''} ${det.datos.arrendatario.numero_documento}`
+                    : 'Sin documento'}
                 </span>
               </Dato>
               <Dato label="Contacto">
-                {det.datos.arrendatario.celular ?? '—'}
-                <span className="block text-xs text-ink-500">{det.datos.arrendatario.email ?? ''}</span>
+                {det.contacto?.telefono || det.datos.arrendatario.celular || '—'}
+                <span className="block text-xs text-ink-500">{det.contacto?.email || det.datos.arrendatario.email || ''}</span>
               </Dato>
-              <Dato label="Coarrendatarios">{det.datos.coarrendatarios.map((c) => c.nombre).join(', ') || 'Ninguno'}</Dato>
+              <Dato label="Coarrendatarios">
+                {(det.coarrendatarios_entregados ?? det.datos.coarrendatarios).map((c) => c.nombre).join(', ') || 'Ninguno'}
+              </Dato>
               <Dato label="Vigencia">
                 {fechaCorta(det.datos.fecha_inicio)} – {fechaCorta(det.datos.fecha_vencimiento)}
               </Dato>
@@ -748,6 +775,8 @@ export default function LoteMigracionPage() {
                 </div>
               </div>
             )}
+
+            {migrado && <PanelDiferidos key={det.id} det={det} ocupado={ocupado} onAccion={accionFila} />}
 
             {det.correcciones.length > 0 && (
               <div>
@@ -979,6 +1008,25 @@ export default function LoteMigracionPage() {
               'decision',
               () => migracionService.decidirAuditoria(dialogo.auditoriaId, dialogo.resultado, notas.trim() || null),
               'Resultado registrado',
+            )
+        }}
+      />
+      <ConfirmDialog
+        isOpen={dialogo?.tipo === 'identificar'}
+        onClose={() => setDialogo(null)}
+        title="Registrar el documento y activar la fianza"
+        confirmLabel="Registrar y activar"
+        message={
+          dialogo?.tipo === 'identificar'
+            ? `La fianza de este contrato queda activa desde ahora y cubre solo lo que se cause desde hoy. Verifique el documento: ${dialogo.tipoDocumento} ${dialogo.numero}.`
+            : ''
+        }
+        onConfirm={async () => {
+          if (det && dialogo?.tipo === 'identificar')
+            await accionFila(
+              'identificar',
+              () => migracionService.identificar(det.id, { tipo_documento: dialogo.tipoDocumento, numero_documento: dialogo.numero }),
+              'Documento registrado: la fianza quedó activa',
             )
         }}
       />

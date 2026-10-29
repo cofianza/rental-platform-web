@@ -312,6 +312,14 @@ export default function CargaMigracionPage() {
             <Kpi label="Con advertencia" value={resumen.advertencias} tone="orange" Icon={IconAlertTriangle} onClick={() => toggle('advertencia')} active={filtro === 'advertencia'} />
             <Kpi label="Rechazadas" value={resumen.rechazadas} tone="red" Icon={IconX} onClick={() => toggle('rechazada')} active={filtro === 'rechazada'} />
           </KpiRow>
+          {/* Adenda 1 §7: sin documento del arrendatario la fila no se rechaza; entra al acta sin cobertura. */}
+          {(resumen.pendientes_identificacion ?? 0) > 0 && (
+            <p className="mt-3 text-sm text-amber-700">
+              {resumen.pendientes_identificacion === 1 ? 'Un contrato no trae' : `${resumen.pendientes_identificacion} contratos no traen`} el
+              documento del arrendatario: {resumen.pendientes_identificacion === 1 ? 'entra' : 'entran'} al acta como PENDIENTES DE IDENTIFICACIÓN, sin
+              cobertura hasta que la inmobiliaria entregue el documento.
+            </p>
+          )}
 
           <div className="mt-4">
             <FiltroBar count={`${filas.length} de ${resumen.total} filas`} onClear={filtro ? () => setFiltro('') : undefined}>
