@@ -57,7 +57,7 @@ test('pago: del gestor o del prospecto; si no, autorización', () => {
   assert.equal(etapaDeFila(fila({ depende_de: 'prospecto' }, { estado: 'solicitado' })), 'autorizacion')
 })
 
-test('acción del gestor: solo en su turno, con los dos casos especiales', () => {
+test('acción del gestor: solo en su turno, con los casos especiales', () => {
   assert.equal(accionDeFila(fila({ depende_de: 'prospecto' }), 'contrato'), undefined)
   assert.equal(accionDeFila(fila({ depende_de: 'gestor' }), 'contrato'), 'crear el contrato')
   assert.equal(accionDeFila(fila({ depende_de: 'gestor', inmueble_id: null }), 'contrato'), 'vincular el inmueble')
@@ -65,6 +65,10 @@ test('acción del gestor: solo en su turno, con los dos casos especiales', () =>
   assert.equal(
     accionDeFila(fila({ depende_de: 'gestor' }, { expirado: true, estado_bloqueo: 'bloqueado_documento' }), 'enlace'),
     'corregir el documento',
+  )
+  assert.equal(
+    accionDeFila(fila({ depende_de: 'gestor' }, { expirado: true, estado_bloqueo: 'identidad_rechazada' }), 'enlace'),
+    'comunicarse con Cofianza',
   )
   assert.equal(accionDeFila(fila({ depende_de: 'gestor' }), 'decision'), undefined)
 })

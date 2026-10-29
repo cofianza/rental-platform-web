@@ -264,7 +264,7 @@ export function CoarrendatarioInviteForm({
             {' '}Todos los campos son obligatorios.
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField id={idDe('nombre')} label="Nombre" value={nombre} error={errores.nombre} onChange={(v) => { setNombre(v); limpiar('nombre') }} />
             {/* Los dos, como en la cédula: van al contrato. A DataCrédito la API
                 le manda solo el primero (primerApellidoDe, respeta los
@@ -272,8 +272,8 @@ export function CoarrendatarioInviteForm({
             <FormField id={idDe('apellido')} label="Apellidos (como en la cédula)" value={apellido} error={errores.apellido} onChange={(v) => { setApellido(v); limpiar('apellido') }} />
           </div>
 
-          <div className="grid grid-cols-5 gap-3">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+            <div className="sm:col-span-2">
               <label htmlFor="coarrendatario-invite-form-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo de documento</label>
               <select id="coarrendatario-invite-form-tipo-doc"
                 value={tipoDoc}
@@ -285,7 +285,7 @@ export function CoarrendatarioInviteForm({
                 ))}
               </select>
             </div>
-            <div className="col-span-3">
+            <div className="sm:col-span-3">
               <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(v); limpiar('numDoc') }} inputMode="numeric" />
             </div>
           </div>

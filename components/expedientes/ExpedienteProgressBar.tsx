@@ -107,17 +107,17 @@ function BarraPorEtapa({
   const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'decision' ? 'ambar' : 'normal'
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-start gap-1">
         {PASOS_DETALLE.map((label, idx) => {
           const isComplete = idx < actual
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
           return (
-            <div key={label} className="flex items-center flex-1">
+            <div key={label} className="flex items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
@@ -130,6 +130,8 @@ function BarraPorEtapa({
                 <span
                   className={cn(
                     'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    // En el celular los siete rótulos no caben: solo el del paso actual.
+                    !isCurrent && 'max-sm:sr-only',
                     isFailed ? 'text-red-600 font-semibold'
                       : isCurrent ? 'text-amber-700 font-semibold'
                       : isComplete ? 'text-primary-700 font-medium'
@@ -141,7 +143,7 @@ function BarraPorEtapa({
                 </span>
               </div>
               {idx < PASOS_DETALLE.length - 1 && (
-                <div className={cn('h-0.5 flex-1 mx-1 mt-[-18px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
+                <div className={cn('h-0.5 flex-1 mx-0.5 sm:mx-1 mt-[13px] sm:mt-[17px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
               )}
             </div>
           )
@@ -275,7 +277,7 @@ function BarraPorEstado({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-start gap-1">
         {PROCESS_STEPS.map((step, idx) => {
           const isComplete = idx < currentStep
           const isCurrent = idx === currentStep
@@ -284,11 +286,11 @@ function BarraPorEstado({
           // alcanzo porque el expediente fue cancelado".
           const isFailed = isCancelled && !isComplete
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className="flex items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
@@ -306,6 +308,7 @@ function BarraPorEstado({
                 <span
                   className={cn(
                     'text-[10px] mt-1.5 text-center leading-tight max-w-16',
+                    !isCurrent && 'max-sm:sr-only',
                     isCurrent && !isFailed ? 'text-amber-700 font-semibold'
                       : isFailed ? 'text-red-600 font-medium'
                       : isComplete ? 'text-primary-700 font-medium'
@@ -318,7 +321,7 @@ function BarraPorEstado({
               {idx < PROCESS_STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'h-0.5 flex-1 mx-1 mt-[-18px] rounded',
+                    'h-0.5 flex-1 mx-0.5 sm:mx-1 mt-[13px] sm:mt-[17px] rounded',
                     isComplete ? 'bg-primary-600'
                       : isFailed ? 'bg-red-200'
                       : 'bg-gray-200',

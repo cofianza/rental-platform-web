@@ -512,7 +512,8 @@ export default function ExpedienteDetallePage() {
         : etapa
           ? ETAPA_LABEL[etapa]
           : undefined
-  const turno = etapa ? turnoDeEtapa(etapa, !!condicionCoa) : null
+  // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
+  const turno = etapa && etapa !== 'espera_coarrendatario' ? turnoDeEtapa(etapa, !!condicionCoa) : null
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
   const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))

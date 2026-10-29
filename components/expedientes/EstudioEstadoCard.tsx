@@ -15,7 +15,7 @@
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { useCallback, useEffect, useState } from 'react'
-import { IconBuilding2, IconCheck, IconClock, IconRefresh } from '@/components/icons'
+import { IconBuilding2, IconCheck, IconClock, IconRefresh, IconX } from '@/components/icons'
 import { documento } from '@/components/contratos/v3/campos'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
@@ -594,9 +594,10 @@ function EstudioPanel({
   const styles = TONE_STYLES[tone]
   const rotulo = rotuloEvaluacion(estudio, etiqueta === 'Coarrendatario')
 
+  // No aprobable o fallida: una X, no el visto de las aprobadas.
   const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
     ? <IconClock size={16} />
-    : <IconCheck size={16} />
+    : tone === 'danger' ? <IconX size={16} /> : <IconCheck size={16} />
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'

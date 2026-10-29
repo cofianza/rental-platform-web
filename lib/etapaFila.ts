@@ -56,6 +56,8 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
   if (e.depende_de !== 'gestor') return undefined
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'bloqueado_documento') return 'corregir el documento'
+  // Con la identidad rechazada solo Cofianza reenvía: el gestor no puede «reenviar el enlace».
+  if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'comunicarse con Cofianza'
   if (etapa === 'contrato' && !e.inmueble_id) return 'vincular el inmueble'
   return ACCION_GESTOR[etapa]
 }

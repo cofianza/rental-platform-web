@@ -198,7 +198,8 @@ export function textoCondicionCoarrendatario(
   if (c.obligatoria) {
     return o.prospecto
       ? `Está cerca: para continuar, su estudio necesita un coarrendatario antes del ${fecha}.${cifra}`
-      : `Requiere coarrendatario: sin un coarrendatario que califique antes del ${fecha}, el estudio se cierra como no aprobado. Si califica, lo decide un analista de Cofianza con los dos.${cifra}`
+      : // Sin el rótulo al frente: va debajo de la pastilla o del título «Requiere coarrendatario».
+        `Sin un coarrendatario que califique antes del ${fecha}, el estudio se cierra como no aprobado. Si califica, lo decide un analista de Cofianza con los dos.${cifra}`
   }
   return `Está cerca: aprobado con condición de presentar un coarrendatario antes del ${fecha}.${cifra}`
 }

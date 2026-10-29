@@ -363,8 +363,8 @@ export function Step4Confirmation({
           <div>
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Forma de pago del estudio</p>
             {forma_pago ? (
-              <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
-                <IconCreditCard size={14} className="text-gray-500" />
+              <p className="flex items-start gap-1.5 text-sm font-medium text-gray-800">
+                <IconCreditCard size={14} className="mt-0.5 shrink-0 text-gray-500" />
                 {FORMA_PAGO_LABEL[forma_pago]}
               </p>
             ) : (

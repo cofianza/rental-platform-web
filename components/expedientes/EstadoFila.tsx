@@ -120,7 +120,9 @@ export function EstadoFila({
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
   const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
-  const conTurno = !!turno && (interno || ev?.estado_bloqueo !== 'identidad_rechazada')
+  // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
+  const conTurno =
+    !!turno && (interno || ev?.estado_bloqueo !== 'identidad_rechazada') && etapa !== 'espera_coarrendatario'
 
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>
@@ -134,7 +136,8 @@ export function EstadoFila({
           esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
           sinInmueble: !expediente.inmueble_id,
         })}
-        className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}
+        // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
+        className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}
       >
         <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', TONO[tono].dot)} />
         {texto}
