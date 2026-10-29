@@ -127,7 +127,7 @@ export default function CargaMigracionPage() {
   const [validacion, setValidacion] = useState<ValidacionResultado | null>(null)
   const [filtro, setFiltro] = useState<Filtro>('')
   const [rep, setRep] = useState<RepresentanteLegal>(REP_VACIO)
-  const [ocupado, setOcupado] = useState<'plantilla' | 'validar' | 'reporte' | 'vista' | 'guardar' | null>(null)
+  const [ocupado, setOcupado] = useState<'plantilla' | 'validar' | 'reporte' | 'vista' | 'guardar' | 'mapeo' | null>(null)
   const [confirmar, setConfirmar] = useState(false)
   // Adenda 1 §5: archivo nativo con mapeo (por defecto) o plantilla de Cofianza.
   const [tipoArchivo, setTipoArchivo] = useState<TipoArchivo>('nativo')
@@ -191,6 +191,8 @@ export default function CargaMigracionPage() {
   useEffect(() => {
     if (!orgId) return
     let vigente = true
+    // Mientras llega no se elige archivo ni se genera vista previa: saldría con el mapeo de la inmobiliaria anterior.
+    setOcupado('mapeo')
     migracionService
       .mapeo(orgId)
       .catch(() => {
@@ -199,6 +201,7 @@ export default function CargaMigracionPage() {
       })
       .then((r) => {
         if (!vigente) return
+        setOcupado(null)
         const m = r?.definicion ?? MAPEO_VACIO
         setMapeo(m)
         setMapeoGuardadoEn(r?.actualizado_en ?? null)
@@ -463,8 +466,10 @@ export default function CargaMigracionPage() {
             disabled={ocupado !== null}
             onChange={cambiarMapeo}
             onEstructura={(m) => {
+              // Salir del campo sin cambiar la hoja ni la fila no anula la vista previa ya confirmada.
+              if (vistaVigente && m.hoja === vista?.mapeo.hoja && m.fila_encabezados === vista?.mapeo.fila_encabezados) return
               cambiarMapeo(m)
-              if (m.hoja !== vista?.mapeo.hoja || m.fila_encabezados !== vista?.mapeo.fila_encabezados) verVistaPrevia(m)
+              verVistaPrevia(m)
             }}
             onEquivalencias={(campo) => setEquivalencias({ campo, precargar: [] })}
           />
@@ -512,7 +517,7 @@ export default function CargaMigracionPage() {
           <TablaVistaPrevia vista={vista} />
           {sinEquivalencia.length > 0 && (
             <div role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <p className="font-semibold">Valores sin equivalencia en todo el archivo. Las filas con estos valores se rechazarán:</p>
+              <p className="font-semibold">Valores sin equivalencia en todo el archivo. Las filas con estos valores se rechazarán (en tipo de inmueble, el inmueble se carga sin ese dato):</p>
               <ul className="mt-2 space-y-2">
                 {sinEquivalencia.map(([campo, valores]) => (
                   <li key={campo} className="flex flex-wrap items-center gap-2">
