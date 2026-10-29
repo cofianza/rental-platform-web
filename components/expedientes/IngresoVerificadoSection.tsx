@@ -104,6 +104,13 @@ export function IngresoVerificadoSection({
         setRechazo(err.details as unknown as IRechazoIngresoVerificado)
         return
       }
+      // Quedó guardado pero el estudio no pasó a no aprobado: se refresca (para no
+      // guardarlo dos veces) y el mensaje dice qué hacer.
+      if (err instanceof ApiClientError && err.code === 'RECHAZO_NO_REGISTRADO') {
+        setAbierto(false)
+        expedienteService.leerIngresoVerificado(expedienteId).then(setDatos, () => {})
+        onRegistrado?.(false)
+      }
       toast.error(err instanceof Error ? err.message : 'No se pudo registrar el ingreso verificado')
     } finally {
       setGuardando(false)
