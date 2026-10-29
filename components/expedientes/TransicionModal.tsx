@@ -290,7 +290,7 @@ export function TransicionModal({
             {pideMotivoGestor
               ? 'Solo lo ve Cofianza: queda en el historial del estudio con su usuario y la fecha.'
               : cancelaCofianza
-                ? 'No incluya datos del buró ni el fundamento interno.'
+                ? 'No incluya datos de las centrales de riesgo ni el fundamento interno.'
                 : esRevisionManual
                   ? 'Es el fundamento de su decisión de revisión manual: queda registrado con su usuario y la fecha.'
                   : 'Este comentario quedará registrado en el historial del estudio.'}
@@ -315,7 +315,7 @@ export function TransicionModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del coarrendatario.
+              Lo verán en el estudio. Escríbalo corto, sin cifras de las centrales de riesgo ni datos del coarrendatario.
               {!motivoGestorValido && ` Mínimo ${MIN_MOTIVO} caracteres (${motivoGestor.trim().length}/${MIN_MOTIVO}).`}
             </p>
           </div>

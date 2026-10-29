@@ -140,7 +140,7 @@ export default function ExpedienteDetallePage() {
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
   // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
-  const { etapa, esperaHasta } = useEtapaEstudio(
+  const { etapa, esperaHasta, coaFallido } = useEtapaEstudio(
     user?.rol === 'solicitante' ? null : expediente,
     user?.rol !== 'gerencia_consulta',
     cargas,
@@ -498,6 +498,10 @@ export default function ExpedienteDetallePage() {
     !!expediente.inmueble.reservado_por_expediente_id &&
     expediente.inmueble.reservado_por_expediente_id !== id
 
+  // Como la lista (etapaDeFila): la consulta fallida del coarrendatario va antes
+  // del resultado y reintentarla es del gestor. El Resumen y la barra siguen la etapa real.
+  const coaFallidaVive = coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'vigente'
+  const etapaTurno = coaFallidaVive ? 'fallida' : etapa
   // Un solo nombre para dónde está el estudio: el chip, la barra y el modal de cambio de estado.
   const etiquetaEtapa =
     user?.rol === 'solicitante'
@@ -507,12 +511,14 @@ export default function ExpedienteDetallePage() {
         : expediente.estado === 'condicionado'
           ? condicionCoa ? 'Está cerca' : 'En revisión'
           : undefined
-      : etapa === 'decision' && condicionCoa
-        ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
-        : etapa
-          ? ETAPA_LABEL[etapa]
-          : undefined
-  const turno = etapa ? turnoDeEtapa(etapa, !!condicionCoa) : null
+      : coaFallidaVive
+        ? 'Falló la consulta del coarrendatario'
+        : etapa === 'decision' && condicionCoa
+          ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
+          : etapa
+            ? ETAPA_LABEL[etapa]
+            : undefined
+  const turno = etapaTurno ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
   const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))
@@ -684,23 +690,25 @@ export default function ExpedienteDetallePage() {
           etiquetaActual={etiquetaEtapa}
         />
         {/* «Qué sigue»: de quién es el turno y el siguiente paso, con las palabras de la lista. */}
-        {etapa && user?.rol !== 'solicitante' && (
+        {etapaTurno && user?.rol !== 'solicitante' && (
           <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-start sm:gap-3">
             {turno && (
               <PastillaTurno
                 turno={turno}
                 vista={vistaTurno}
-                revision={etapa === 'decision' && !condicionCoa}
+                revision={etapaTurno === 'decision' && !condicionCoa}
                 className="shrink-0 self-start"
               />
             )}
             <p className="text-sm text-gray-700">
-              {queSigue(etapa, {
+              {queSigue(etapaTurno, {
                 vista: vistaTurno,
                 analista: puedeAsignar,
                 fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
                 esperaHasta,
                 sinInmueble: !expediente.inmueble,
+                // Propietario directo: la API no admite coarrendatario (espera el Convenio).
+                sinCoarrendatario: !!expediente.inmueble && !expediente.inmueble.inmobiliaria_id,
               })}
             </p>
           </div>

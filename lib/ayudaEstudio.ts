@@ -85,11 +85,20 @@ function textoEspera(plazo: string, gestor: boolean): string {
 
 /**
  * La frase de la franja «Qué sigue» del detalle. `fechaCondicion` llega ya
- * formateada; `analista`: administrador u operador, que deciden la revisión.
+ * formateada; `analista`: administrador u operador, que deciden la revisión;
+ * `sinCoarrendatario`: canal del propietario directo, donde la API no admite
+ * coarrendatario (espera el Convenio).
  */
 export function queSigue(
   etapa: EtapaEstudio,
-  o: { vista: VistaTurno; analista: boolean; fechaCondicion: string | null; esperaHasta: string | null; sinInmueble: boolean },
+  o: {
+    vista: VistaTurno
+    analista: boolean
+    fechaCondicion: string | null
+    esperaHasta: string | null
+    sinInmueble: boolean
+    sinCoarrendatario?: boolean
+  },
 ): string {
   const gestor = o.vista === 'gestor'
   if (etapa === 'contrato' && o.sinInmueble) {
@@ -105,5 +114,8 @@ export function queSigue(
       : `Falta que la persona sume un coarrendatario antes del ${o.fechaCondicion}.`
   }
   if (etapa === 'decision' && !gestor && o.analista) return 'Revise el caso y decida si lo aprueba.'
+  if (etapa === 'decision' && gestor && o.sinCoarrendatario) {
+    return 'Lo decide un analista de Cofianza y le avisamos cuando decida. Mientras tanto puede reforzar el caso con soportes de ingreso.'
+  }
   return (!gestor && AYUDA_ETAPA_TERCERO[etapa]) || AYUDA_ETAPA[etapa]
 }
