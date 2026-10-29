@@ -45,6 +45,8 @@ export interface TransicionModalProps {
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
    *  documentos consultados (Adenda 2 §5.1). */
   expedienteId?: string
+  /** El nombre del estado que muestra el chip del detalle (la etapa), no el estado formal. */
+  etiquetaActual?: string
 }
 
 export function TransicionModal({
@@ -55,6 +57,7 @@ export function TransicionModal({
   onConfirmar,
   isLoading = false,
   expedienteId,
+  etiquetaActual,
 }: TransicionModalProps) {
   // Identificamos la transicion seleccionada por su label, no solo por
   // estado destino — pueden existir dos transiciones al mismo destino con
@@ -134,7 +137,7 @@ export function TransicionModal({
     }
 
     if (pideEvaluacion && !evaluacionCompleta(evaluacion)) {
-      setError('Puntúa la estabilidad laboral y el historial de arrendamiento')
+      setError('Puntúe la estabilidad laboral y el historial de arrendamiento.')
       return
     }
 
@@ -184,7 +187,7 @@ export function TransicionModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Cambiar Estado del Estudio"
+      title="Cambiar el estado del estudio"
       size="md"
     >
       <div className="space-y-6">
@@ -193,7 +196,7 @@ export function TransicionModal({
           <p className="block text-sm font-medium text-gray-700 mb-2">
             Estado actual
           </p>
-          <Badge estado={estadoActual} />
+          <Badge estado={estadoActual} label={etiquetaActual} />
         </div>
 
         {/* Selector de estado destino */}
@@ -251,7 +254,7 @@ export function TransicionModal({
         {/* Visualización de la transición */}
         {estadoSeleccionado && (
           <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
-            <Badge estado={estadoActual} />
+            <Badge estado={estadoActual} label={etiquetaActual} />
             <IconArrowRight size={20} className="text-gray-500" />
             <Badge estado={estadoSeleccionado} />
           </div>

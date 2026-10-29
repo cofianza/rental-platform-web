@@ -13,7 +13,9 @@ export type EtapaEstudio =
   | 'autorizacion'
   | 'enlace'
   | 'pago'
+  | 'pago_prospecto'
   | 'consulta'
+  | 'espera_coarrendatario'
   | 'sin_ejecutar'
   | 'fallida'
   | 'decision'
@@ -31,7 +33,9 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   autorizacion: 'Esperando autorización',
   enlace: 'Enlace vencido o detenido',
   pago: 'Pago pendiente',
+  pago_prospecto: 'Esperando el pago',
   consulta: 'En evaluación',
+  espera_coarrendatario: 'Esperando al coarrendatario',
   sin_ejecutar: 'Consulta sin ejecutar',
   fallida: 'Consulta fallida',
   // Mismo nombre que la lista y la pestaña «Condicionados» (la pestaña «En revisión» es otro estado).
@@ -55,7 +59,9 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   autorizacion: 1,
   enlace: 1,
   pago: 2,
+  pago_prospecto: 2,
   consulta: 3,
+  espera_coarrendatario: 3,
   sin_ejecutar: 3,
   fallida: 3,
   decision: 4,
@@ -85,6 +91,8 @@ export interface DatosEtapa {
   /** null = sin acceso o sin leer. */
   pago: { estado: string; puede_avanzar: boolean; paga?: 'gestor' | 'arrendatario' | null } | null
   titularEstado: string | null
+  /** Adenda 4 §12: el titular ya consultado espera a que autorice el coarrendatario (espera_autorizacion.hasta). */
+  esperaHasta?: string | null
   contratosEstados: string[]
 }
 
@@ -104,6 +112,8 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   if (d.titularEstado === 'fallido') return 'fallida'
   // Sin la firma del titular (pagado antes de autorizar) no falta la consulta: falta el prospecto.
   if (d.titularEstado && SIN_EJECUTAR.includes(d.titularEstado) && d.autorizacionEstado === 'autorizado') return 'sin_ejecutar'
+  // Sin esto el titular retenido hasta 48 h se leía «En evaluación… llega en minutos».
+  if (d.esperaHasta && d.titularEstado === 'en_proceso') return 'espera_coarrendatario'
   if (d.titularEstado && CONSULTA_INICIADA.includes(d.titularEstado)) return 'consulta'
   if (d.enlaceVencido) return 'enlace'
   if (d.pago?.estado === 'sin_definir') return 'pago'
@@ -112,6 +122,41 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   // Gerencia no lee el pago: el estado del titular lo dice.
   if (!d.pago && d.titularEstado === 'pago_pendiente') return 'pago'
   if (d.autorizacionEstado !== 'autorizado') return 'autorizacion'
-  if (d.pago && !d.pago.puede_avanzar) return 'pago'
+  if (d.pago && !d.pago.puede_avanzar) return d.pago.paga === 'arrendatario' ? 'pago_prospecto' : 'pago'
   return 'consulta'
+}
+
+/** De quién es el siguiente paso. */
+export type Turno = 'gestor' | 'prospecto' | 'cofianza' | 'firmas'
+
+/** Quién mira: gestor = quien gestiona el estudio; cofianza = roles internos; equipo = sin edición (solo lectura). */
+export type VistaTurno = 'gestor' | 'cofianza' | 'equipo'
+
+/**
+ * Mismo criterio que depende_de del RPC de la lista (20261027000002), para que
+ * lista y detalle digan lo mismo: la visita tampoco la cuenta el RPC. null = no
+ * hay turno (cerrado o sin paso pendiente de alguien).
+ */
+export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno | null {
+  switch (etapa) {
+    case 'habilitar':
+    case 'enlace':
+    case 'pago':
+    case 'sin_ejecutar':
+    case 'fallida':
+    case 'contrato':
+      return 'gestor'
+    case 'autorizacion':
+    case 'pago_prospecto':
+    case 'espera_coarrendatario':
+      return 'prospecto'
+    case 'consulta':
+      return 'cofianza'
+    case 'decision':
+      return conCondicion ? 'prospecto' : 'cofianza'
+    case 'firma':
+      return 'firmas'
+    default:
+      return null
+  }
 }

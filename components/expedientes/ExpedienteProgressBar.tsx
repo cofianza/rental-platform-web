@@ -43,6 +43,8 @@ export interface ExpedienteProgressBarProps {
    * siempre (prospecto); null = la etapa todavía se está leyendo.
    */
   etapa?: EtapaEstudio | null
+  /** Rótulo del paso actual en la barra por etapa: el mismo del chip del encabezado. */
+  etiquetaActual?: string
   className?: string
 }
 
@@ -55,9 +57,10 @@ export function ExpedienteProgressBar({
   esProspecto,
   conCondicion,
   etapa,
+  etiquetaActual,
   className,
 }: ExpedienteProgressBarProps) {
-  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} conCondicion={conCondicion} className={className} />
+  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} etiquetaActual={etiquetaActual} className={className} />
   return (
     <BarraPorEstado
       expedienteId={expedienteId}
@@ -74,11 +77,11 @@ export function ExpedienteProgressBar({
 
 function BarraPorEtapa({
   etapa,
-  conCondicion,
+  etiquetaActual,
   className,
 }: {
   etapa: EtapaEstudio | null
-  conCondicion?: boolean
+  etiquetaActual?: string
   className?: string
 }) {
   // Mientras se lee la etapa: el espacio de la barra, sin pasos que luego cambien.
@@ -129,10 +132,8 @@ function BarraPorEtapa({
                       : 'text-gray-500',
                   )}
                 >
-                  {/* Adenda 3 §6: el mismo nombre que el encabezado («Aprobado con condición»). */}
-                  {isCurrent && etapa === 'decision'
-                    ? conCondicion ? 'Con condición' : 'Condicionado'
-                    : isFailed ? 'No aprobable' : label}
+                  {/* El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»). */}
+                  {isCurrent ? etiquetaActual ?? (isFailed ? 'No aprobable' : label) : label}
                 </span>
               </div>
               {idx < PASOS_DETALLE.length - 1 && (
