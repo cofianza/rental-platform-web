@@ -245,6 +245,8 @@ export default function CargarDocumentosPage() {
               conCondicion
                 ? {
                     vence_en: plazo ?? undefined,
+                    // Sin plazo vivo ya venció: no se dice «si no lo agrega a tiempo».
+                    vencida: !plazo,
                     ingreso_adicional_requerido: ctx.condicion_ingreso_adicional_requerido,
                     siVence: ctx.condicion_si_vence,
                     obligatoria: ctx.condicion_obligatoria,

@@ -831,7 +831,7 @@ export default function AutorizarPage() {
             <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-gray-600">
               {pagoRequerido && pago?.payment_link_url && <li>Pague el estudio con el botón de arriba.</li>}
               <li>
-                {pagoRequerido
+                {pagoRequerido && pago?.estado !== 'completado'
                   ? 'Apenas el estudio esté pagado, consultamos su información en las centrales de riesgo. Suele tardar unos minutos.'
                   : 'Ahora consultamos su información en las centrales de riesgo. Suele tardar unos minutos.'}
               </li>

@@ -17,7 +17,7 @@ import type { EstadoExpediente } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
+import { MENSAJE_COARRENDATARIO_OBLIGATORIO, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
 import { PASOS_DETALLE, PASO_DE_ETAPA, type EtapaEstudio } from '@/hooks/useEtapaEstudio'
 
 export interface ExpedienteProgressBarProps {
@@ -37,6 +37,8 @@ export interface ExpedienteProgressBarProps {
   esProspecto?: boolean
   /** Adenda 3 §6: aprobado con condición de coarrendatario (no lo revisa un analista). */
   conCondicion?: boolean
+  /** Adenda 4 V3 §8: la condición es obligatoria; el literal de «Está cerca» no aplica. */
+  condicionObligatoria?: boolean
   /**
    * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
    * autorización y el pago, según la etapa real. undefined = la barra de
@@ -54,6 +56,7 @@ export function ExpedienteProgressBar({
   sinInfoBuro,
   esProspecto,
   conCondicion,
+  condicionObligatoria,
   etapa,
   className,
 }: ExpedienteProgressBarProps) {
@@ -67,6 +70,7 @@ export function ExpedienteProgressBar({
       sinInfoBuro={sinInfoBuro}
       esProspecto={esProspecto}
       conCondicion={conCondicion}
+      condicionObligatoria={condicionObligatoria}
       className={className}
     />
   )
@@ -154,6 +158,7 @@ function BarraPorEstado({
   sinInfoBuro,
   esProspecto,
   conCondicion,
+  condicionObligatoria,
   className,
 }: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -235,7 +240,7 @@ function BarraPorEstado({
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
             : conCondicion
-              ? MENSAJE_ESTA_CERCA
+              ? condicionObligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA
               : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>

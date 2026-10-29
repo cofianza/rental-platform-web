@@ -94,8 +94,8 @@ export function CoarrendatarioInviteForm({
   const conCondicion = !esGestor && !!condicion
   const fechaLimite = condicion?.vence_en && !condicion.vencida ? fechaCondicion(condicion.vence_en) : null
   const cifra = condicion?.ingreso_adicional_requerido && condicion.ingreso_adicional_requerido > 0 ? condicion.ingreso_adicional_requerido : null
-  // null = no sabemos qué pasa al vencer (API vieja en el enlace): no se dice nada.
-  const seRechaza = !condicion
+  // null = no sabemos qué pasa al vencer (API vieja en el enlace) o ya venció: no se dice nada.
+  const seRechaza = !condicion || condicion.vencida
     ? null
     : condicion.siVence
       ? condicion.siVence === 'rechazo'
