@@ -280,6 +280,8 @@ export default function LoteMigracionPage() {
   return (
     <div className="space-y-8">
       <PageHeader
+        // Cuatro botones no caben al lado del título: van debajo y el número del lote no se parte.
+        className="sm:flex-col sm:items-start"
         title={t ? `Lote ${t.lote.numero}` : 'Lote de migración'}
         subtitle={
           t
@@ -348,7 +350,7 @@ export default function LoteMigracionPage() {
                 ) : (
                   'Cargado con la plantilla de Cofianza.'
                 )}
-                {t.lote.archivo_hash && <span className="text-ink-500"> Huella del archivo: {t.lote.archivo_hash.slice(0, 12)}…</span>}
+                {t.lote.archivo_hash && <span className="mt-0.5 block text-xs text-ink-500">Huella del archivo: {t.lote.archivo_hash.slice(0, 12)}…</span>}
               </p>
             </section>
 

@@ -649,17 +649,17 @@ export default function CargaMigracionPage() {
               {filas.map((f) => (
                 <tr key={f.n_fila}>
                   <Td className="font-semibold">{f.n_fila}</Td>
-                  <Td>
+                  <Td className="whitespace-nowrap">
                     <div className="flex flex-col items-start gap-1">
                       <Chip tone={RESULTADO[f.resultado].tone}>{RESULTADO[f.resultado].label}</Chip>
                       {f.listas && LISTAS[f.listas.estado] && <Chip tone={LISTAS[f.listas.estado]!.tone}>{LISTAS[f.listas.estado]!.label}</Chip>}
                     </div>
                   </Td>
-                  <Td>
+                  <Td className="min-w-40">
                     {f.direccion ?? '—'}
                     {f.municipio && <span className="block text-ink-500">{f.municipio}</span>}
                   </Td>
-                  <Td>
+                  <Td className="min-w-40">
                     {f.arrendatario ?? '—'}
                     {f.documento && <span className="block text-ink-500">{f.documento}</span>}
                   </Td>

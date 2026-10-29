@@ -67,7 +67,7 @@ export function EstadoListas({ compacto = false }: { compacto?: boolean }) {
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>
             Las listas restrictivas OFAC y ONU no están al día:{' '}
-            {vencidas.map((l) => `${l.nombre}: ${l.sincronizada_en ? `copia del ${fechaCorta(l.sincronizada_en)}` : 'sin descargar'}`).join('; ')}. No se
+            {vencidas.map((l) => `${l.nombre}, ${l.sincronizada_en ? `copia del ${fechaCorta(l.sincronizada_en)}` : 'sin descargar'}`).join('; ')}. No se
             puede validar ni procesar un archivo hasta actualizarlas.
           </span>
         </p>

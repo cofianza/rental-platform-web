@@ -90,10 +90,10 @@ export function PanelDiferidos({ det, ocupado, onAccion }: { det: DetalleFilaMig
         )}
       </div>
 
-      <ul className="space-y-1 text-xs text-ink-700">
+      <ul className="max-w-xl space-y-1 text-xs text-ink-700">
         {d.items.map((i) => (
-          <li key={i.clave} className="flex flex-wrap items-center gap-2">
-            <span className="min-w-56">{i.etiqueta}</span>
+          <li key={i.clave} className="flex items-start justify-between gap-3">
+            <span>{i.etiqueta}</span>
             {i.pendiente ? (
               <Chip tone="yellow">Pendiente</Chip>
             ) : i.entregado_en ? (

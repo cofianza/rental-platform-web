@@ -953,7 +953,7 @@ function MoraDetalleModal({
               {/* Contrato migrado (Adenda 1 §3): lo que la inmobiliaria debe entregar por la mora. */}
               {mora.diferidos && (
                 <div>
-                  <ListaDiferidos d={mora.diferidos} intro="Contrato migrado: faltan datos de la inmobiliaria:" />
+                  <ListaDiferidos d={mora.diferidos} intro="Contrato migrado. Falta entregar a Cofianza:" />
                   {esInterno && mora.diferidos.items.some((i) => i.pendiente) && (
                     <Link
                       href={`/admin/migracion/lotes/${mora.diferidos.lote_id}?fila=${mora.diferidos.fila_id}`}

@@ -246,28 +246,34 @@ export function EditorMapeo({
                   </label>
                   {r && separa && (
                     <div className="mt-1 flex gap-2">
-                      <input
-                        aria-label={`Separador de ${c.corta}`}
-                        value={r.separador ?? ''}
-                        placeholder=" - "
-                        disabled={disabled}
-                        onChange={(e) => setRegla(c.clave, { ...r, separador: e.target.value })}
-                        className={`${INPUT} w-20`}
-                      />
-                      <input
-                        aria-label={`Parte de ${c.corta}`}
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={r.parte ?? 1}
-                        disabled={disabled}
-                        onChange={(e) => setRegla(c.clave, { ...r, parte: Math.min(10, Math.max(1, Number(e.target.value) || 1)) })}
-                        className={`${INPUT} w-20`}
-                      />
+                      <label className="block w-24 text-[11px] text-ink-500">
+                        Separador
+                        <input
+                          aria-label={`Separador de ${c.corta}`}
+                          value={r.separador ?? ''}
+                          placeholder=" - "
+                          disabled={disabled}
+                          onChange={(e) => setRegla(c.clave, { ...r, separador: e.target.value })}
+                          className={`${INPUT} mt-0.5`}
+                        />
+                      </label>
+                      <label className="block w-24 text-[11px] text-ink-500">
+                        Parte que toma
+                        <input
+                          aria-label={`Parte de ${c.corta}`}
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={r.parte ?? 1}
+                          disabled={disabled}
+                          onChange={(e) => setRegla(c.clave, { ...r, parte: Math.min(10, Math.max(1, Number(e.target.value) || 1)) })}
+                          className={`${INPUT} mt-0.5`}
+                        />
+                      </label>
                     </div>
                   )}
                 </Td>
-                <Td>
+                <Td className="whitespace-nowrap">
                   <Button variante="secondary" tamano="sm" disabled={disabled || !r} onClick={() => onEquivalencias(c.clave)}>
                     Equivalencias ({Object.keys(r?.equivalencias ?? {}).length})
                   </Button>
@@ -405,7 +411,7 @@ export function TablaVistaPrevia({ vista }: { vista: VistaPreviaNativa }) {
       {vista.filas.map((f) => (
         <tr key={f.n_fila}>
           <Td className="font-semibold">{f.n_fila}</Td>
-          <Td>
+          <Td className="whitespace-nowrap">
             <Chip tone={RESULTADO[f.resultado].tone}>{RESULTADO[f.resultado].label}</Chip>
           </Td>
           {campos.map(({ clave }) => {
@@ -465,7 +471,7 @@ export function ResumenMapeo({ mapeo }: { mapeo: MapeoColumnas }) {
             <tr key={c.clave}>
               <Td className="font-medium">{c.etiqueta}</Td>
               <Td>{r.columna}</Td>
-              <Td>{separacion(r)}</Td>
+              <Td className="whitespace-nowrap">{separacion(r)}</Td>
               <Td>{equivalenciasTxt(r)}</Td>
             </tr>
           )

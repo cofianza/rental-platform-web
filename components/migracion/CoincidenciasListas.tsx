@@ -47,6 +47,8 @@ export function CoincidenciasListas({
 
   const fila = persona.n_fila != null ? ` de la fila ${persona.n_fila}` : ''
   const efecto = consecuencia ?? `El contrato${fila} no se migra y no figura en el Acta.`
+  // El diálogo tapa la tabla: el título dice de quién es la coincidencia.
+  const quien = persona.nombre.trim() || (persona.documento ? `el documento ${persona.documento}` : 'este arrendatario')
 
   const decidir = async (decision: 'confirmada' | 'descartada', motivo: string) => {
     setGuardando(true)
@@ -88,7 +90,7 @@ export function CoincidenciasListas({
         isOpen={dialogo === 'confirmada'}
         onClose={() => setDialogo(null)}
         onConfirm={(motivo) => decidir('confirmada', motivo)}
-        title="Confirmar la coincidencia"
+        title={`Confirmar la coincidencia de ${quien}`}
         variant="danger"
         confirmLabel="Confirmar coincidencia"
         label="Motivo (queda en la bitácora)"
@@ -100,7 +102,7 @@ export function CoincidenciasListas({
         isOpen={dialogo === 'descartada'}
         onClose={() => setDialogo(null)}
         onConfirm={(motivo) => decidir('descartada', motivo)}
-        title="Descartar la coincidencia"
+        title={`Descartar la coincidencia de ${quien}`}
         confirmLabel="Descartar coincidencia"
         label="Motivo del descarte (obligatorio)"
         minLength={10}
