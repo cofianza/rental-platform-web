@@ -29,7 +29,7 @@ import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
-import { rotuloEvaluacion } from './EstudioEstadoCard'
+import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -316,7 +316,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
         <div>
           <h4 className="text-sm font-medium text-gray-700 mb-1">Resultado</h4>
           <div className="flex flex-col items-center gap-2 py-2">
-            <Badge estado={estudio.resultado !== 'pendiente' ? estudio.resultado : estudio.estado} label={rotuloEvaluacion(estudio)} />
+            <Badge estado={colorEvaluacion(estudio)} label={rotuloEvaluacion(estudio)} />
             {/* La API la manda sin puntaje a los externos. Como en el Resumen: solo
                 con resultado y en el titular (sin resultado la ruta dice «En revisión manual»). */}
             {estudio.estado === 'completado' && estudio.tipo !== 'con_coarrendatario' && estudio.ruta?.etiquetaGestor && (

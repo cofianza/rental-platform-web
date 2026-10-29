@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
-import { rotuloEvaluacion } from './EstudioEstadoCard'
+import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -448,7 +448,7 @@ export function EstudiosSection({
                           )}
                           {/* Una sola pastilla, con el mismo nombre que el Resumen y el detalle. */}
                           <Badge
-                            estado={estudio.resultado !== 'pendiente' ? estudio.resultado : estudio.estado}
+                            estado={colorEvaluacion(estudio)}
                             label={rotuloEvaluacion(estudio)}
                           />
                         </>

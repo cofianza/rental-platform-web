@@ -130,6 +130,13 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
   return etiquetaEstado(e)
 }
 
+/** Color de la pastilla: el del resultado efectivo, para que «Aprobado» no salga en ámbar. */
+export function colorEvaluacion(e: IEstudio): string {
+  if (e.resultado === 'condicionado' && e.decision_cofianza === 'aprobado') return 'aprobado'
+  if (e.resultado === 'condicionado' && e.decision_cofianza === 'negado') return 'rechazado'
+  return e.resultado !== 'pendiente' ? e.resultado : e.estado
+}
+
 /**
  * Línea de listas restrictivas (verificación de antecedentes). El prospecto
  * nunca la ve (la API le manda `antecedentes: null`). Lenguaje claro para
