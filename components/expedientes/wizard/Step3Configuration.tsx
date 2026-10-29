@@ -319,25 +319,20 @@ export function Step3Configuration({
                       ) : saldo === 0 ? (
                         <span className="text-amber-600">
                           No le quedan cupos en su paquete.{' '}
-                          {esInmobiliaria ? (
-                            <>
-                              {/* La compra NO vive en "Pagos a Cofianza": está en
-                                  configuración de créditos. Sin este enlace el
-                                  gestor salía a buscarla y perdía el asistente. */}
-                              <Link
-                                href="/configuracion/creditos-estudios"
-                                target="_blank"
-                                rel="noopener"
-                                className="font-semibold underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Compre un paquete
-                              </Link>{' '}
-                              (se abre en otra pestaña; al volver actualizamos su saldo) o elija otra opción.
-                            </>
-                          ) : (
-                            'Elija otra opción.'
-                          )}
+                          {/* La compra NO vive en "Pagos a Cofianza": está en
+                              configuración de créditos. Sin este enlace el
+                              gestor salía a buscarla y perdía el asistente.
+                              Esta tarjeta solo la ve la inmobiliaria (usaCreditos). */}
+                          <Link
+                            href="/configuracion/creditos-estudios"
+                            target="_blank"
+                            rel="noopener"
+                            className="font-semibold underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Compre un paquete
+                          </Link>{' '}
+                          (se abre en otra pestaña; al volver actualizamos su saldo) o elija otra opción.
                         </span>
                       ) : (
                         <span className="text-gray-600">

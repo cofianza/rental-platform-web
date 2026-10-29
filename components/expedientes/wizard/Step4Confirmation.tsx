@@ -115,13 +115,16 @@ export function Step4Confirmation({
     'Apenas autorice y el estudio esté pagado, consultamos las centrales de riesgo y le avisamos el resultado en la plataforma.',
   )
   // Adenda 4: el titular se consulta apenas autoriza; lo que espera al coarrendatario es la decisión.
+  // undefined = no se sabe (panel caído o API vieja): no se afirma ninguna de las dos reglas.
   if (coarrendatario) {
     const horas = panel?.horas_espera_coarrendatario
     pasos.push(
-      `A ${coarrendatario.nombre.trim()} le llega su propia invitación. Cada uno se consulta apenas autoriza; ${
+      `A ${coarrendatario.nombre.trim()} le llega su propia invitación. Cada uno se consulta apenas autoriza${
         horas
-          ? `la decisión espera hasta ${horas} horas a que esta persona autorice y, si no lo hace, se decide con quienes hayan autorizado.`
-          : 'el estudio se decide con los resultados de los dos.'
+          ? `; la decisión espera hasta ${horas} horas a que esta persona autorice y, si no lo hace, se decide con quienes hayan autorizado.`
+          : horas === null
+            ? '; el estudio se decide con los resultados de los dos.'
+            : '.'
       }`,
     )
   }
