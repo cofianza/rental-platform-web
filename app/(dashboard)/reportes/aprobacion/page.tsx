@@ -234,7 +234,7 @@ export default function AprobacionExpedientesPage() {
       {/* Header */}
       <PageHeader
         title="Tasa de Aprobación"
-        subtitle="Aprobados vs no aprobables por periodo. Lo que sigue en revisión manual va aparte y no cuenta en la tasa."
+        subtitle="Aprobados vs no aprobables por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también con coarrendatario) o no automática (decididos por un analista). Lo que sigue en revisión manual va aparte y no cuenta en la tasa."
         actions={
           <div className="flex items-center gap-2">
             <ExportButton
@@ -359,9 +359,8 @@ export default function AprobacionExpedientesPage() {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-4 py-3 font-medium text-gray-700">Periodo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Aprobados</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Automática</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Con coarrendatario</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Revisión manual</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa automática</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa no automática</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">No aprobables</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">En decisión</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Decididos</th>
@@ -376,9 +375,8 @@ export default function AprobacionExpedientesPage() {
                 >
                   <td className="px-4 py-3 text-gray-900">{p.periodo}</td>
                   <td className="px-4 py-3 text-right text-green-600 font-medium">{p.aprobados}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_automatica}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_coarrendatario}</td>
-                  <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_revision_manual}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_tarifa_automatica}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_tarifa_no_automatica}</td>
                   <td className="px-4 py-3 text-right text-red-600 font-medium">{p.rechazados}</td>
                   <td className="px-4 py-3 text-right text-amber-600 font-medium">
                     {p.condicionados}
@@ -397,13 +395,10 @@ export default function AprobacionExpedientesPage() {
                   {data.totales.total_aprobados}
                 </td>
                 <td className="px-4 py-3 text-right font-bold text-gray-600">
-                  {data.totales.total_aprobados_automatica}
+                  {data.totales.total_aprobados_tarifa_automatica}
                 </td>
                 <td className="px-4 py-3 text-right font-bold text-gray-600">
-                  {data.totales.total_aprobados_coarrendatario}
-                </td>
-                <td className="px-4 py-3 text-right font-bold text-gray-600">
-                  {data.totales.total_aprobados_revision_manual}
+                  {data.totales.total_aprobados_tarifa_no_automatica}
                 </td>
                 <td className="px-4 py-3 text-right font-bold text-red-600">
                   {data.totales.total_rechazados}

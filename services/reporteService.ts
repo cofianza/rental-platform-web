@@ -48,7 +48,7 @@ export interface VolumenFilters {
 
 /**
  * Tasa de aprobación (P26): la decisión vigente de cada estudio; los aprobados
- * por ruta de aprobación; `condicionados` son los que siguen «en decisión» y
+ * por tarifa (la que fija la ruta de aprobación); `condicionados` son los que siguen «en decisión» y
  * quedan fuera de la tasa; `total` son los decididos (aprobados + no aprobables).
  */
 export interface AprobacionPeriodo {
@@ -57,6 +57,9 @@ export interface AprobacionPeriodo {
   aprobados_automatica: number
   aprobados_coarrendatario: number
   aprobados_revision_manual: number
+  /** Agrupados por tarifa: automática (incluye la del conjunto con coarrendatario) y no automática. */
+  aprobados_tarifa_automatica: number
+  aprobados_tarifa_no_automatica: number
   rechazados: number
   condicionados: number
   total: number
@@ -70,6 +73,8 @@ export interface AprobacionData {
     total_aprobados_automatica: number
     total_aprobados_coarrendatario: number
     total_aprobados_revision_manual: number
+    total_aprobados_tarifa_automatica: number
+    total_aprobados_tarifa_no_automatica: number
     total_rechazados: number
     total_condicionados: number
     total_resueltos: number
