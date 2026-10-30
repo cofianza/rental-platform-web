@@ -140,6 +140,7 @@ const VACIO: Record<NonNullable<ExpedientesTableProps['vacio']>, [string, string
   nada: [M.VACIO_NADA_TITULO, M.VACIO_NADA_TEXTO],
   bandeja: [M.VACIO_BANDEJA_TITULO, null],
   asignados: [M.VACIO_ASIGNADOS_TITULO, M.VACIO_ASIGNADOS_TEXTO],
+  asignados_bandeja: [M.VACIO_ASIGNADOS_BANDEJA_TITULO, null],
 }
 
 export interface ExpedientesTableProps {
@@ -163,7 +164,7 @@ export interface ExpedientesTableProps {
   /** Id del estudio que se está asignando ahora mismo (deshabilita su botón). */
   tomandoId?: string | null
   /** Por qué está vacía: pendientes del gestor, filtros, sin estudios o bandeja de Cofianza. */
-  vacio?: 'accion' | 'filtros' | 'nada' | 'bandeja' | 'asignados'
+  vacio?: 'accion' | 'filtros' | 'nada' | 'bandeja' | 'asignados' | 'asignados_bandeja'
   onClearFilters?: () => void
 }
 

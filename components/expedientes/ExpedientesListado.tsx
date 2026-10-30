@@ -160,8 +160,11 @@ export function ExpedientesListado() {
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
             vacio={
               // U22: «Asignados a mí» filtra por analista; sin otro filtro, el vacío lo explica.
+              // X11: con una pestaña activa, «en esta bandeja» (puede tener asignados en otras).
               misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta
-                ? 'asignados'
+                ? activeBandeja === null
+                  ? 'asignados'
+                  : 'asignados_bandeja'
                 : hasActiveFilters()
                   ? 'filtros'
                   : 'bandeja'

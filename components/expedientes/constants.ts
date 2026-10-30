@@ -49,6 +49,8 @@ export const EXPEDIENTE_UI_MESSAGES = {
   // U22: con «Asignados a mí» encendido.
   VACIO_ASIGNADOS_TITULO: 'No tiene estudios asignados.',
   VACIO_ASIGNADOS_TEXTO: 'Use «Tomar» en la lista para asignárselos.',
+  // X11: con «Asignados a mí» y una pestaña: puede tener asignados en otras.
+  VACIO_ASIGNADOS_BANDEJA_TITULO: 'No tiene estudios asignados en esta bandeja.',
   LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',
