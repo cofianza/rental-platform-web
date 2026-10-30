@@ -5,7 +5,14 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seCierraSiVence, textoCondicionCoarrendatario } from '../components/expedientes/textoVisible'
+import {
+  MENSAJE_COARRENDATARIO_OBLIGATORIO,
+  MENSAJE_ESTA_CERCA,
+  MENSAJE_ESTA_CERCA_DECIDE_ANALISTA,
+  mensajeCondicionCoarrendatario,
+  seCierraSiVence,
+  textoCondicionCoarrendatario,
+} from '../components/expedientes/textoVisible'
 
 const base = { vence_en: '2026-11-03T15:00:00.000Z', vencida: false, ingreso_adicional_requerido: null, reglas_ingreso: [] as string[] }
 
@@ -28,4 +35,14 @@ test('obligatoria: no dice «aprobado con condición»; el prospecto y el gestor
 test('vencida: con obligatoria se cierra; solo por puntaje, revisión', () => {
   assert.match(textoCondicionCoarrendatario({ ...base, vencida: true, obligatoria: true }), /se cerrará como no aprobado/)
   assert.match(textoCondicionCoarrendatario({ ...base, vencida: true }), /revisión de un analista/)
+})
+
+test('mensajeCondicionCoarrendatario: el literal del §6.9 solo sin obligatoria ni R2 (Adenda 4 R3)', () => {
+  assert.equal(mensajeCondicionCoarrendatario({}), MENSAJE_ESTA_CERCA)
+  assert.equal(mensajeCondicionCoarrendatario({ obligatoria: true }), MENSAJE_COARRENDATARIO_OBLIGATORIO)
+  assert.equal(mensajeCondicionCoarrendatario({ obligatoria: true, decide_analista: true }), MENSAJE_COARRENDATARIO_OBLIGATORIO)
+  const r2 = mensajeCondicionCoarrendatario({ decide_analista: true })
+  assert.equal(r2, MENSAJE_ESTA_CERCA_DECIDE_ANALISTA)
+  assert.doesNotMatch(r2, /segundos/)
+  assert.match(r2, /un analista de Cofianza decide su estudio/)
 })

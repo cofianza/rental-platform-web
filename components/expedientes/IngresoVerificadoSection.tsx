@@ -6,6 +6,8 @@
  * el endeudamiento y el canon sobre ingreso vuelven a ser obligatorios: si no
  * se cumplen, es un rechazo en firme (§4 y §7). La API pide confirmarlo (409
  * INGRESO_VERIFICADO_RECHAZA) y, confirmado, el estudio queda no aprobado.
+ * Un soporte que no corresponde a la situación laboral declarada (§10) también
+ * se confirma antes (409 SOPORTE_NO_CORRESPONDE).
  * Con ADENDA4 apagado (habilitado = false) la sección no se muestra.
  */
 
@@ -19,6 +21,7 @@ import {
   type IIngresoVerificado,
   type EvaluadoIngreso,
   type IRechazoIngresoVerificado,
+  type ISoporteNoCorresponde,
 } from '@/services/expedienteService'
 import { formatCurrency, formatDate, fechaCompleta } from '@/lib/constants'
 
@@ -56,6 +59,9 @@ export function IngresoVerificadoSection({
   const [guardando, setGuardando] = useState(false)
   // 409 INGRESO_VERIFICADO_RECHAZA: lo que no se cumple, para confirmar.
   const [rechazo, setRechazo] = useState<IRechazoIngresoVerificado | null>(null)
+  // 409 SOPORTE_NO_CORRESPONDE: el soporte es de otro tipo de evaluado; confirmado, se manda con la marca.
+  const [noCorresponde, setNoCorresponde] = useState<ISoporteNoCorresponde | null>(null)
+  const [soporteConfirmado, setSoporteConfirmado] = useState(false)
   const [evaluado, setEvaluado] = useState<EvaluadoIngreso | ''>('')
   const [tipo, setTipo] = useState('')
   const [monto, setMonto] = useState('')
@@ -83,7 +89,7 @@ export function IngresoVerificadoSection({
   const montoNum = Number(monto.replace(/\D/g, ''))
   const listo = !!tipo && montoNum > 0 && fechaCompleta(fecha)
 
-  const guardar = async (confirmarRechazo = false) => {
+  const guardar = async (confirmarRechazo = false, confirmarSoporte = soporteConfirmado) => {
     if (!listo || guardando) return
     setGuardando(true)
     try {
@@ -92,15 +98,23 @@ export function IngresoVerificadoSection({
         tipo_soporte: tipo,
         fecha_soporte: fecha,
         ...(confirmarRechazo && { confirmar_rechazo: true }),
+        ...(confirmarSoporte && { confirmar_soporte: true }),
       })
       setDatos(d)
       setAbierto(false)
       setMonto('')
       setFecha('')
+      setSoporteConfirmado(false)
       toast.success(confirmarRechazo ? 'Ingreso verificado registrado: el estudio quedó no aprobado' : 'Ingreso verificado registrado')
       onRegistrado?.(confirmarRechazo)
     } catch (err) {
+      if (!confirmarSoporte && err instanceof ApiClientError && err.code === 'SOPORTE_NO_CORRESPONDE') {
+        setNoCorresponde(err.details as unknown as ISoporteNoCorresponde)
+        return
+      }
       if (!confirmarRechazo && err instanceof ApiClientError && err.code === 'INGRESO_VERIFICADO_RECHAZA') {
+        // Si ya confirmó el soporte, la confirmación del rechazo lo lleva también.
+        setSoporteConfirmado(confirmarSoporte)
         setRechazo(err.details as unknown as IRechazoIngresoVerificado)
         return
       }
@@ -127,7 +141,7 @@ export function IngresoVerificadoSection({
             <>
               <p className="text-gray-700">
                 {formatCurrency(datos.vigente.monto)} al mes · {etiquetaSoporte(datos.vigente.tipo_soporte)} del{' '}
-                {formatDate(datos.vigente.fecha_soporte)} · vale hasta el {formatDate(datos.vigente.vence_el)}
+                {formatDate(datos.vigente.fecha_soporte)} · vence el {formatDate(datos.vigente.vence_el)}
               </p>
               {datos.evaluacion && (
                 <p className={datos.evaluacion.cumple ? 'text-primary-800' : 'text-red-700'}>
@@ -163,6 +177,7 @@ export function IngresoVerificadoSection({
                   onChange={(e) => {
                     setEvaluado(e.target.value as EvaluadoIngreso)
                     setTipo('')
+                    setSoporteConfirmado(false)
                   }}
                 >
                   <option value="">Elija…</option>
@@ -175,7 +190,15 @@ export function IngresoVerificadoSection({
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-gray-700">Documento soporte</span>
-                <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value)} disabled={!evaluado}>
+                <select
+                  className={CAMPO}
+                  value={tipo}
+                  onChange={(e) => {
+                    setTipo(e.target.value)
+                    setSoporteConfirmado(false)
+                  }}
+                  disabled={!evaluado}
+                >
                   <option value="">Elija…</option>
                   {tipos.map((t) => (
                     <option key={t.clave} value={t.clave}>
@@ -215,6 +238,22 @@ export function IngresoVerificadoSection({
           )}
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={!!noCorresponde}
+        onClose={() => setNoCorresponde(null)}
+        onConfirm={() => {
+          setSoporteConfirmado(true)
+          return guardar(false, true)
+        }}
+        title="El soporte no corresponde a la situación laboral"
+        message={
+          noCorresponde &&
+          `El soporte «${noCorresponde.soporte}» no corresponde a una persona ${noCorresponde.persona}; según la Adenda 4 §10 se admite ${noCorresponde.admitidos
+            .map((a) => `«${a}»`)
+            .join(' o ')}. ¿Registrarlo igual?`
+        }
+        confirmLabel="Registrar igual"
+      />
       <ConfirmDialog
         isOpen={!!rechazo}
         onClose={() => setRechazo(null)}

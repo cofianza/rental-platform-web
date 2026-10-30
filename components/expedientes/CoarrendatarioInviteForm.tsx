@@ -22,7 +22,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { formatCurrency } from '@/lib/constants'
 import { IconUsers, IconArrowRight, IconCalendar, IconDollarSign, IconAlertTriangle } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
-import { ADVERTENCIA_INGRESO_ADICIONAL, fechaCondicion, MENSAJE_COARRENDATARIO_OBLIGATORIO, MENSAJE_ESTA_CERCA, seCierraSiVence } from './textoVisible'
+import { ADVERTENCIA_INGRESO_ADICIONAL, fechaCondicion, mensajeCondicionCoarrendatario, seCierraSiVence } from './textoVisible'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
@@ -65,6 +65,8 @@ interface CoarrendatarioInviteFormProps {
     ingreso_adicional_requerido?: number | null
     reglas_ingreso?: string[]
     obligatoria?: boolean
+    /** Adenda 4 R3: «Está cerca» con R2: decide un analista. */
+    decide_analista?: boolean
     siVence?: 'rechazo' | 'revision' | null
   } | null
   /** Adenda 3 V2 §6.1: el titular todavía no se evalúa (coarrendatario desde el inicio). */
@@ -182,8 +184,8 @@ export function CoarrendatarioInviteForm({
             {conCondicion ? (
               // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
               // presentarlo como una condición negativa. El plazo va en la lista de abajo.
-              // Con la obligatoria (Adenda 4 V3 §8) no aplica: decide un analista.
-              condicion?.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : `Está cerca. ${MENSAJE_ESTA_CERCA}`
+              // Con la obligatoria (Adenda 4 V3 §8) o con R2 (R3) no aplica: decide un analista.
+              condicion?.obligatoria ? mensajeCondicionCoarrendatario(condicion) : `Está cerca. ${mensajeCondicionCoarrendatario(condicion ?? {})}`
             ) : aprobado ? (
               <>
                 {esGestor

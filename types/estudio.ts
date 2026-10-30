@@ -125,6 +125,8 @@ export interface ICondicionCoarrendatario {
   reglas_ingreso: string[]
   /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento: al vencer sin coarrendatario válido, rechazo. */
   obligatoria?: boolean
+  /** Adenda 4 R3: el titular tiene R2: con el coarrendatario decide un analista (sin «respuesta en segundos»). */
+  decide_analista?: boolean
 }
 
 export interface IEstudioDocumento {
