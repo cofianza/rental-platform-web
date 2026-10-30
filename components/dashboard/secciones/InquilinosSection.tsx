@@ -47,7 +47,7 @@ const resultadoTone = (resultado: string | null): ChipTone => {
   }
 }
 
-// Score del buró en escala 0-999: mismos cortes que ScoreGauge.
+// Puntaje de la central (0-999): solo el color de la ficha, sin cifras de corte en el texto (X9).
 const scoreTone = (score: number): ChipTone =>
   score >= 600 ? 'green' : score >= 450 ? 'yellow' : 'red'
 
@@ -145,7 +145,7 @@ export function InquilinosSection() {
           active={pago === 'mora'}
         />
         <Kpi
-          label="Score promedio"
+          label="Puntaje promedio de la central"
           value={scorePromedio ?? '—'}
           sub={scorePromedio != null ? `${conScore.length} con estudio` : undefined}
           tone="blue"
@@ -259,7 +259,7 @@ export function InquilinosSection() {
             'Cédula',
             'Inmueble',
             'Canon',
-            'Score',
+            'Puntaje central',
             'Resultado',
             'Mes',
             'Pago',
