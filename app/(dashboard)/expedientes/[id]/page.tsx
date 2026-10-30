@@ -397,8 +397,11 @@ export default function ExpedienteDetallePage() {
         setPedirCierreSinActa(true)
         return
       }
-      const message = err instanceof Error ? err.message : 'Error al cambiar el estado'
-      toast.error(message)
+      // X13: la nota de identidad la pide el modal en línea; sin toast repetido.
+      if (!(err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA')) {
+        const message = err instanceof Error ? err.message : 'Error al cambiar el estado'
+        toast.error(message)
+      }
       throw err
     } finally {
       setIsExecutingTransicion(false)

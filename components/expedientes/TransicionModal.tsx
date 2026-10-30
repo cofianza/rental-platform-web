@@ -74,7 +74,7 @@ export function TransicionModal({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [condicionAdicional, setCondicionAdicional] = useState(false)
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
-  // La foto no coincidió con el documento: la API pide la nota (NOTA_IDENTIDAD_REQUERIDA).
+  // La foto no coincidió o no se pudo verificar: la API pide la nota (NOTA_IDENTIDAD_REQUERIDA).
   const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
   const [notaIdentidad, setNotaIdentidad] = useState('')
   const { userRole } = usePermissions()
@@ -185,7 +185,8 @@ export function TransicionModal({
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
         setPideNotaIdentidad(true)
-        setError('La foto del solicitante no coincidió con su documento. Explique abajo cómo verificó la identidad.')
+        // El texto de la API distingue «no coincidió» de «no se pudo verificar».
+        setError(err.message || 'La foto del solicitante no permitió verificar su identidad. Explique abajo cómo la verificó.')
       }
       return
     } finally {

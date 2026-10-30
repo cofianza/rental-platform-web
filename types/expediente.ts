@@ -354,7 +354,7 @@ export interface IEjecutarTransicion {
   evaluacion?: IEvaluacionRevisionManual
   /** Adenda 4 §9: al aprobar un condicionado, exigió algo más (tarifa no automática). */
   condicion_adicional?: boolean
-  /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige al aprobar). */
+  /** Biometría «no coincide» o «no verificada»: cómo verificó el analista la identidad (la API la exige al aprobar). */
   nota_identidad?: string
   /** P34: obligatorio al rechazar; es lo que ve la inmobiliaria o el propietario. */
   motivo?: string

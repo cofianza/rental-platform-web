@@ -87,7 +87,7 @@ export function AprobarCondicionadoCard({
   const [documentos, setDocumentos] = useState<string[]>([])
   // «Documentos de ingreso verificados» (A1) exige al menos un documento (la API da 400 sin él).
   const faltanDocumentosA1 = motivos.motivos.includes('A1') && documentos.length === 0
-  // La foto no coincidió con el documento: la API pide una nota de identidad.
+  // La foto no coincidió o no se pudo verificar: la API pide una nota de identidad.
   // Se descubre con su respuesta (NOTA_IDENTIDAD_REQUERIDA); desde ahí se exige aquí.
   const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
   const [notaIdentidad, setNotaIdentidad] = useState('')
@@ -239,7 +239,8 @@ export function AprobarCondicionadoCard({
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
         setPideNotaIdentidad(true)
-        toast.error('La foto del solicitante no coincidió con su documento. Explique abajo cómo verificó la identidad.')
+        // El texto de la API distingue «no coincidió» de «no se pudo verificar».
+        toast.error(err.message || 'La foto del solicitante no permitió verificar su identidad. Explique abajo cómo la verificó.')
         return
       }
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
@@ -433,7 +434,7 @@ export function AprobarCondicionadoCard({
               Cómo verificó la identidad <span className="text-red-500">*</span>
             </label>
             <p className="mb-1 text-xs text-gray-600">
-              La foto del solicitante no coincidió con su documento. Explique cómo confirmó que es la misma persona.
+              La foto del solicitante no coincidió con su documento o no permitió verificar su identidad. Explique cómo confirmó que es la misma persona.
             </p>
             <textarea
               id="nota-identidad"
