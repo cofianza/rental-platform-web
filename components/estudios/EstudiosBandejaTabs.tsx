@@ -56,8 +56,8 @@ export function EstudiosBandejaTabs({
         <KPIMini label="Este mes" value={stats?.este_mes} color="bg-primary-600" />
         <KPIMini label="Aprobados" value={stats?.aprobados} color="bg-green-500" />
         <KPIMini label="Condicionados" value={stats?.condicionados} color="bg-amber-500" />
-        {/* U13: en Evaluaciones, «Consultando» (en las listas de estudios, «Antes del resultado»). */}
-        <KPIMini label="Consultando" value={stats?.en_proceso} color="bg-blue-500" />
+        {/* X12: «En proceso», como la insignia del estado (incluye la espera de hasta 48 h). */}
+        <KPIMini label="En proceso" value={stats?.en_proceso} color="bg-blue-500" />
         <KPIMini label="No aprobables" value={stats?.rechazados} color="bg-red-500" />
       </div>
       {fallo && (

@@ -42,8 +42,8 @@ export const BANDEJAS: Array<{
     label: 'Listos para ejecutar',
     estados: ['formulario_completado', 'documentos_cargados'],
   },
-  // U13: en Evaluaciones, «Consultando».
-  { id: 'en_proceso', label: 'Consultando', estados: ['en_proceso'] },
+  // X12: «En proceso», como la insignia del estado: incluye la espera de hasta 48 h.
+  { id: 'en_proceso', label: 'En proceso', estados: ['en_proceso'] },
   {
     id: 'condicionados',
     label: 'Condicionados',
