@@ -92,6 +92,8 @@ export interface IExpediente {
   notas: string | null
   /** Miembro de la inmobiliaria responsable del expediente (multi-tenant Fase 3.1). */
   miembro_responsable_id?: string | null
+  /** Solo para Cofianza en la lista: null = sin inmobiliaria; ausente = no se pudo leer. */
+  inmobiliaria_nombre?: string | null
   /** Computed por el backend (RPC list_expedientes_with_relations): TRUE si
    *  existe al menos una cita en estado='realizada'. Permite mapear el paso
    *  del proceso (Cita previa vs Estudio) cuando estado='borrador'. */
