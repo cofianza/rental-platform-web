@@ -2,7 +2,13 @@
  * Layout publico minimalista (sin sidebar ni auth)
  */
 
+import type { Metadata } from 'next'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
+
+// Flujos por enlace con token: nunca a un buscador (robots.ts tampoco los deja rastrear).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function PublicLayout({
   children,

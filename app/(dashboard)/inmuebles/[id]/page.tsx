@@ -551,7 +551,7 @@ export default function InmuebleDetailPage() {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 66vw"
-                priority
+                preload
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">

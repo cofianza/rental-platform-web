@@ -93,7 +93,7 @@ export function PropertyDetailClient({ property, similares }: Props) {
                   src={mainImage}
                   alt={`${tipoLabel} en ${property.ciudad}`}
                   fill
-                  priority
+                  preload
                   sizes="(max-width: 1024px) 100vw, 66vw"
                   unoptimized={!esStorageSupabase(mainImage)}
                   className="object-cover hover:scale-105 transition-transform duration-300"

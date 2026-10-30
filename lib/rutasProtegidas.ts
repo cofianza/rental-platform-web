@@ -37,6 +37,24 @@ export const DASHBOARD_SEGMENTOS = [
   'usuarios',
 ] as const
 
+/**
+ * Segmentos de primer nivel de app/(public): flujos por enlace con token. No se
+ * indexan (robots.ts los excluye y su layout pide noindex). La prueba también
+ * avisa si aparece uno nuevo sin agregarlo aquí.
+ */
+export const PUBLICO_SEGMENTOS = [
+  'autorizar',
+  'cargar-documentos',
+  'coarrendatario',
+  'estudio',
+  'invitacion',
+  'invitacion-miembro',
+  'pago',
+  'verificar',
+  'verificar-identidad',
+  'visita',
+] as const
+
 // Rutas de auth que deben redirigir a dashboard si ya está autenticado.
 // OJO: /verificar-email, /recuperar-contrasena y /restablecer-contrasena NO van
 // aquí — el enlace del correo debe funcionar SIEMPRE, incluso si el navegador

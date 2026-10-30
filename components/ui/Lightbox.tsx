@@ -246,7 +246,7 @@ export function Lightbox({
             fill
             className="object-contain select-none"
             sizes="90vw"
-            priority
+            preload
             draggable={false}
           />
         </div>

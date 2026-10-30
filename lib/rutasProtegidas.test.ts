@@ -6,15 +6,22 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { DASHBOARD_SEGMENTOS, esRutaProtegida, esRutaAuth } from './rutasProtegidas'
+import { DASHBOARD_SEGMENTOS, PUBLICO_SEGMENTOS, esRutaProtegida, esRutaAuth } from './rutasProtegidas'
 
-test('cada segmento de app/(dashboard) está protegido', () => {
-  const dir = join(import.meta.dirname, '..', 'app', '(dashboard)')
-  const segmentos = readdirSync(dir, { withFileTypes: true })
+const segmentosDe = (grupo: string) =>
+  readdirSync(join(import.meta.dirname, '..', 'app', grupo), { withFileTypes: true })
     .filter((d) => d.isDirectory() && !d.name.startsWith('(') && !d.name.startsWith('_'))
     .map((d) => d.name)
-  for (const s of segmentos) {
+
+test('cada segmento de app/(dashboard) está protegido', () => {
+  for (const s of segmentosDe('(dashboard)')) {
     assert.ok((DASHBOARD_SEGMENTOS as readonly string[]).includes(s), `falta '${s}' en DASHBOARD_SEGMENTOS`)
+  }
+})
+
+test('cada segmento de app/(public) está en PUBLICO_SEGMENTOS', () => {
+  for (const s of segmentosDe('(public)')) {
+    assert.ok((PUBLICO_SEGMENTOS as readonly string[]).includes(s), `falta '${s}' en PUBLICO_SEGMENTOS`)
   }
 })
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit, Fraunces } from "next/font/google";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { SITIO_URL } from "@/lib/sitio";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -19,23 +20,26 @@ const geistMono = Geist_Mono({
 // Fuentes del rebranding del cliente (entregadas en cofianza_login v1).
 // Outfit = sans display para titulares grandes; Fraunces italic = acento
 // editorial en frases destacadas (eg. 'Soy yo. Llamanos.').
+// Ambas son variables: sin `weight` se descarga un solo archivo con todo el
+// eje de peso, en vez de uno por peso.
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
+// Solo la usa la landing (font-script): sin precarga, las demás páginas no la
+// descargan.
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["300", "400"],
   style: ["italic"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
   // B9: las URLs de og:image (p. ej. /autorizar) salen absolutas al dominio
   // canónico, no al de Vercel ni al de la vista previa.
-  metadataBase: new URL("https://www.cofianza.co"),
+  metadataBase: new URL(SITIO_URL),
   title: "Cofianza",
   description: "Plataforma de gestión de arrendamientos en Colombia",
   keywords: "arrendamiento, inmuebles, propiedades, colombia, gestión",
