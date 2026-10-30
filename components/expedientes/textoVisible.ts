@@ -25,6 +25,14 @@ const FLAGS: Record<string, string> = {
   defuncion: 'hay un reporte de defunción',
 }
 
+/**
+ * Adenda 3 V2 §7: el coarrendatario «no califica», nunca «rechazo». La API
+ * conserva el prefijo porque es el marcador con que reconoce la regla.
+ */
+export function motivoCoarrendatario(motivo: string): string {
+  return motivo.replace(/^Rechazo automático:/, 'No califica:').replace('se rechaza sin', 'se decide sin')
+}
+
 /** Nombre de flag de antecedentes en lenguaje claro. */
 export function describirFlag(flag: string): string {
   return FLAGS[flag] ?? flag.replace(/_/g, ' ')

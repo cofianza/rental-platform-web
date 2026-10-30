@@ -28,7 +28,7 @@ import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
-import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
+import { motivoCoarrendatario, textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 
 interface EstudioDetailModalProps {
@@ -288,9 +288,12 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   }
 
   // Por qué salió así: un solo bloque, sin repetir un texto que ya dijo otro campo.
+  const motivoRechazo = textoVisible(estudio.motivo_rechazo, { externo })
   const porQue = [
     textoVisible(estudio.observaciones, { externo }),
-    estudio.resultado === 'rechazado' ? textoVisible(estudio.motivo_rechazo, { externo }) : '',
+    estudio.resultado === 'rechazado'
+      ? estudio.tipo === 'con_coarrendatario' ? motivoCoarrendatario(motivoRechazo) : motivoRechazo
+      : '',
     estudio.resultado === 'condicionado' ? textoVisible(estudio.condiciones, { externo }) : '',
   ].filter((t, i, todos) => t && todos.indexOf(t) === i)
   const aprobadoSinTexto = estudio.estado === 'completado' && estudio.resultado === 'aprobado'

@@ -31,7 +31,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida } from './textoVisible'
+import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida } from './textoVisible'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -722,7 +722,10 @@ function EstudioPanel({
             )}
             {visible(estudio.motivo_rechazo) && (
               <p className="text-xs text-red-700 mt-1">
-                Motivo: <span className="font-medium">{visible(estudio.motivo_rechazo)}</span>
+                Motivo:{' '}
+                <span className="font-medium">
+                  {estudio.tipo === 'con_coarrendatario' ? motivoCoarrendatario(visible(estudio.motivo_rechazo)) : visible(estudio.motivo_rechazo)}
+                </span>
               </p>
             )}
             {visible(estudio.condiciones) && (
