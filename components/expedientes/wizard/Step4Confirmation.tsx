@@ -112,7 +112,7 @@ export function Step4Confirmation({
     )
   }
   pasos.push(
-    'Apenas autorice y el estudio esté pagado, consultamos las centrales de riesgo y le avisamos el resultado por notificación y correo.',
+    'Apenas autorice y el estudio esté pagado, consultamos las centrales de riesgo y le avisamos el resultado en la plataforma.',
   )
   // Adenda 4: el titular se consulta apenas autoriza; lo que espera al coarrendatario es la decisión.
   // undefined = no se sabe (panel caído o API vieja): no se afirma ninguna de las dos reglas.
