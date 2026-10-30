@@ -1,7 +1,7 @@
 'use client'
 
 import { Modal } from '@/components/ui/Modal'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { IconAlertTriangle, IconX } from '@/components/icons'
 import { RichTextEditor } from './RichTextEditor'
 import type { IPlantillaContrato, IPlantillaContratoFormData } from '@/types/plantilla-contrato'
@@ -21,33 +21,21 @@ export function PlantillaFormModal({
   onClose,
   onSubmit,
 }: PlantillaFormModalProps) {
-  const [nombre, setNombre] = useState('')
-  const [descripcion, setDescripcion] = useState('')
-  const [contenido, setContenido] = useState('')
-  const [activa, setActiva] = useState(false)
+  // Estado inicial desde las props: los padres remontan el modal con `key`
+  // (abierto + plantilla) en vez de sincronizarlo con un efecto.
+  const [nombre, setNombre] = useState(plantilla?.nombre ?? '')
+  const [descripcion, setDescripcion] = useState(plantilla?.descripcion || '')
+  // `|| ''`: las plantillas HTML (V1/V4) pueden llegar sin `contenido` de
+  // un backend desactualizado — sin la defensa, .trim() sobre null
+  // tumbaba toda la página.
+  const [contenido, setContenido] = useState(plantilla?.contenido || '')
+  // Nueva = inactiva: la activa más reciente pasa a ser la de todos los contratos.
+  const [activa, setActiva] = useState(plantilla?.activa ?? false)
 
   const isEditing = !!plantilla
   // V1/V4 viven en contenido_html con estilos de impresión, tablas, logo y las
   // anclas de firma de Auco: el editor las destruye, así que no se montan.
   const esHtml = !!plantilla?.contenido_html
-
-  useEffect(() => {
-    if (plantilla) {
-      setNombre(plantilla.nombre)
-      setDescripcion(plantilla.descripcion || '')
-      // `|| ''`: las plantillas HTML (V1/V4) pueden llegar sin `contenido` de
-      // un backend desactualizado — sin la defensa, .trim() sobre null
-      // tumbaba toda la página.
-      setContenido(plantilla.contenido || '')
-      setActiva(plantilla.activa)
-    } else {
-      setNombre('')
-      setDescripcion('')
-      setContenido('')
-      // Nueva = inactiva: la activa más reciente pasa a ser la de todos los contratos.
-      setActiva(false)
-    }
-  }, [plantilla, isOpen])
 
   const detectedVariables = useMemo(() => {
     const regex = /\{\{(\w+)\}\}/g

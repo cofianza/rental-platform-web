@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconPlus, IconLoader } from '@/components/icons'
-import {
-  PlantillasFilters,
-  PlantillasTable,
-  PlantillaFormModal,
-} from '@/components/plantillas-contrato'
-import { ConfirmDialog } from '@/components/users'
+import dynamic from 'next/dynamic'
+import { PlantillasFilters } from '@/components/plantillas-contrato/PlantillasFilters'
+import { PlantillasTable } from '@/components/plantillas-contrato/PlantillasTable'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import type {
@@ -17,6 +15,13 @@ import type {
   IPlantillaContratoFormData,
 } from '@/types/plantilla-contrato'
 
+
+// TipTap (editor del modal) pesa: se carga solo en el cliente y al abrir,
+// como react-pdf.
+const PlantillaFormModal = dynamic(
+  () => import('@/components/plantillas-contrato/PlantillaFormModal').then((m) => ({ default: m.PlantillaFormModal })),
+  { ssr: false },
+)
 
 export default function PlantillasContratoPage() {
   const { user } = useAuth()
@@ -206,20 +211,24 @@ export default function PlantillasContratoPage() {
       </div>
 
       {/* Form Modal */}
-      <PlantillaFormModal
-        isOpen={formModal.isOpen}
-        plantilla={formModal.plantilla}
-        isSubmitting={isSubmitting}
-        onClose={() => setFormModal({ isOpen: false, plantilla: null })}
-        onSubmit={handleFormSubmit}
-      />
+      {formModal.isOpen && (
+        <PlantillaFormModal
+          // Se remonta por plantilla: arranca con sus datos (o vacío si es nueva).
+          key={formModal.plantilla?.id ?? 'nueva'}
+          isOpen={formModal.isOpen}
+          plantilla={formModal.plantilla}
+          isSubmitting={isSubmitting}
+          onClose={() => setFormModal({ isOpen: false, plantilla: null })}
+          onSubmit={handleFormSubmit}
+        />
+      )}
 
       {/* Deactivate Confirm */}
       <ConfirmDialog
         isOpen={deactivateDialog.isOpen}
         title="Desactivar plantilla"
         message={`¿Está seguro de desactivar la plantilla "${deactivateDialog.plantilla?.nombre}"? No se podrá usar para nuevos contratos.`}
-        confirmText="Desactivar"
+        confirmLabel="Desactivar"
         variant="danger"
         isLoading={isDeactivating}
         onConfirm={handleConfirmDeactivate}

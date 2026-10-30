@@ -390,6 +390,8 @@ export function GestionPerfilesPage({ rol }: Props) {
 
       {/* Modal crear/editar (rol fijo) */}
       <UserForm
+        // Se remonta al abrir/cerrar o cambiar de usuario: arranca con sus datos.
+        key={formOpen ? `${formMode}-${editUser?.id ?? 'nuevo'}` : 'cerrado'}
         isOpen={formOpen}
         onClose={() => setFormOpen(false)}
         onSubmit={handleSubmit}

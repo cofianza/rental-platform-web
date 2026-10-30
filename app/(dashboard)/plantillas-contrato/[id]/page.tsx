@@ -14,12 +14,20 @@ import {
   IconLoader,
   IconRefresh,
 } from '@/components/icons'
-import { PlantillaFormModal, PlantillaPreviewModal } from '@/components/plantillas-contrato'
-import { ConfirmDialog } from '@/components/users'
+import dynamic from 'next/dynamic'
+import { PlantillaPreviewModal } from '@/components/plantillas-contrato/PlantillaPreviewModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
 import type { IPlantillaContrato } from '@/types/plantilla-contrato'
+
+// TipTap (editor del modal) pesa: se carga solo en el cliente y al abrir,
+// como react-pdf.
+const PlantillaFormModal = dynamic(
+  () => import('@/components/plantillas-contrato/PlantillaFormModal').then((m) => ({ default: m.PlantillaFormModal })),
+  { ssr: false },
+)
 
 export default function PlantillaDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -280,13 +288,16 @@ export default function PlantillaDetallePage() {
       </div>
 
       {/* Edit Modal */}
-      <PlantillaFormModal
-        isOpen={formOpen}
-        plantilla={plantilla}
-        isSubmitting={isSubmitting}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleUpdate}
-      />
+      {formOpen && (
+        <PlantillaFormModal
+          // Montado solo mientras está abierto: cada apertura arranca con los datos actuales.
+          isOpen={formOpen}
+          plantilla={plantilla}
+          isSubmitting={isSubmitting}
+          onClose={() => setFormOpen(false)}
+          onSubmit={handleUpdate}
+        />
+      )}
 
       {/* Preview Modal */}
       <PlantillaPreviewModal
@@ -302,7 +313,7 @@ export default function PlantillaDetallePage() {
         isOpen={deactivateOpen}
         title="Desactivar plantilla"
         message={`¿Está seguro de desactivar "${plantilla.nombre}"? No se podrá usar para nuevos contratos.`}
-        confirmText="Desactivar"
+        confirmLabel="Desactivar"
         variant="danger"
         isLoading={isDeactivating}
         onConfirm={handleDeactivate}

@@ -15,11 +15,11 @@ import {
   UsersTable,
   UsersSkeleton,
   UserForm,
-  ConfirmDialog,
   DeleteUserDialog,
   ResetPasswordDialog,
   USER_MESSAGES,
 } from '@/components/users'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/hooks/useAuth'
 import type { IUserProfile, IUserFormData } from '@/types/user'
@@ -183,6 +183,8 @@ function UsuariosContent() {
 
       {/* Modal de formulario */}
       <UserForm
+        // Se remonta al abrir/cerrar o cambiar de usuario: arranca con sus datos.
+        key={modalMode ? `${modalMode}-${selectedUser?.id ?? 'nuevo'}` : 'cerrado'}
         isOpen={modalMode !== null}
         onClose={closeModal}
         onSubmit={handleFormSubmit}
@@ -206,7 +208,7 @@ function UsuariosContent() {
             ? USER_MESSAGES.CONFIRM_DEACTIVATE
             : USER_MESSAGES.CONFIRM_ACTIVATE
         }
-        confirmText={confirmDialog.action === 'deactivate' ? 'Desactivar' : 'Activar'}
+        confirmLabel={confirmDialog.action === 'deactivate' ? 'Desactivar' : 'Activar'}
         variant={confirmDialog.action === 'deactivate' ? 'danger' : 'default'}
         isLoading={isConfirmLoading}
       />

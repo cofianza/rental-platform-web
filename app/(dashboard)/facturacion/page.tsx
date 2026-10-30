@@ -5,7 +5,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, type Tab } from '@/components/ui/Tabs'
@@ -19,7 +20,18 @@ import { PrimasPorRemitirSection } from '@/components/facturacion/PrimasPorRemit
 import { TarifaMensualSection } from '@/components/facturacion/TarifaMensualSection'
 import { useAuthStore } from '@/stores/auth.store'
 
+// useSearchParams necesita un Suspense por encima (si no, la build falla al
+// prerenderizar la página).
 export default function FacturacionPage() {
+  return (
+    <Suspense fallback={null}>
+      <Facturacion />
+    </Suspense>
+  )
+}
+
+function Facturacion() {
+  const searchParams = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const isSolicitante = user?.rol === 'solicitante'
   const isAdmin = user?.rol === 'administrador'
@@ -72,16 +84,15 @@ export default function FacturacionPage() {
 
   // El solicitante entra a pagar/facturar, no a editar datos fiscales; el
   // equipo de Cofianza, a lo que falta facturar.
-  const [activeTab, setActiveTab] = useState(
-    isSolicitante || isAdmin || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales',
-  )
-  // Los avisos enlazan a una pestaña (/facturacion?tab=reembolsos). Se lee en el
-  // cliente, y de nuevo cuando carga el usuario (decide qué pestañas hay).
-  const tabIds = tabs.map((t) => t.id).join(',')
-  useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get('tab')
-    if (tab && tabIds.split(',').includes(tab)) setActiveTab(tab)
-  }, [tabIds])
+  // Los avisos enlazan a una pestaña (/facturacion?tab=reembolsos). La pestaña
+  // se deriva en cada render: la que eligió el usuario, si no la del enlace, si
+  // no la de su rol; solo cuenta si existe para él (el rol decide qué pestañas hay).
+  const pestanaPorDefecto = isSolicitante || isAdmin || !canSeeDatosFiscales ? 'pendientes' : 'datos-fiscales'
+  const [tabElegida, setTabElegida] = useState<string | null>(null)
+  const existe = (id: string | null): id is string => !!id && tabs.some((t) => t.id === id)
+  const tabUrl = searchParams.get('tab')
+  const activeTab = existe(tabElegida) ? tabElegida : existe(tabUrl) ? tabUrl : pestanaPorDefecto
+  const setActiveTab = setTabElegida
   // Bump cuando se emite una factura para forzar refresh del tab Mis facturas
   // si el usuario navega despues. FacturasSection no expone refetch directo.
   const [facturasReloadKey, setFacturasReloadKey] = useState(0)

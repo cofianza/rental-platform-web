@@ -18,6 +18,13 @@ interface PlantillasTableProps {
   onDeactivate: (plantilla: IPlantillaContrato) => void
 }
 
+// Fuera del componente: definido dentro, cada render creaba un tipo de
+// componente nuevo y React remontaba los íconos.
+function SortIcon({ field, sortBy, sortDir }: { field: string; sortBy: string; sortDir: 'asc' | 'desc' }) {
+  if (sortBy !== field) return <span className="text-gray-300 ml-1">&#8597;</span>
+  return <span className="ml-1">{sortDir === 'asc' ? '&#9650;' : '&#9660;'}</span>
+}
+
 export function PlantillasTable({
   plantillas,
   meta,
@@ -30,11 +37,6 @@ export function PlantillasTable({
   onEdit,
   onDeactivate,
 }: PlantillasTableProps) {
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortBy !== field) return <span className="text-gray-300 ml-1">&#8597;</span>
-    return <span className="ml-1">{sortDir === 'asc' ? '&#9650;' : '&#9660;'}</span>
-  }
-
   if (plantillas.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -56,7 +58,7 @@ export function PlantillasTable({
                 onClick={() => onSort('nombre')}
               >
                 <span className="flex items-center">
-                  Nombre <SortIcon field="nombre" />
+                  Nombre <SortIcon field="nombre" sortBy={sortBy} sortDir={sortDir} />
                 </span>
               </th>
               <th
@@ -64,7 +66,7 @@ export function PlantillasTable({
                 onClick={() => onSort('version')}
               >
                 <span className="flex items-center">
-                  Versión <SortIcon field="version" />
+                  Versión <SortIcon field="version" sortBy={sortBy} sortDir={sortDir} />
                 </span>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -78,7 +80,7 @@ export function PlantillasTable({
                 onClick={() => onSort('created_at')}
               >
                 <span className="flex items-center">
-                  Fecha <SortIcon field="created_at" />
+                  Fecha <SortIcon field="created_at" sortBy={sortBy} sortDir={sortDir} />
                 </span>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">

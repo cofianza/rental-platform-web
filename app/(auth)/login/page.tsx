@@ -107,13 +107,11 @@ function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, router, searchParams])
 
-  // Limpiar error de auth cuando cambian los inputs
+  // Un error de un intento anterior (volvió a /login) no se arrastra. El de
+  // este formulario se limpia al escribir, en los onChange de los campos.
   useEffect(() => {
-    if (error) {
-      clearError()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, password])
+    clearError()
+  }, [clearError])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -216,6 +214,7 @@ function LoginForm() {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value)
+              if (error) clearError()
               if (errors.email) setErrors({ ...errors, email: undefined })
             }}
             placeholder="nombre@correo.com"
@@ -246,6 +245,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value)
+                if (error) clearError()
                 if (errors.password) setErrors({ ...errors, password: undefined })
               }}
               placeholder="••••••••"

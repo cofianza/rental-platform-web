@@ -12,7 +12,8 @@
 import { Modal } from '@/components/ui/Modal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
@@ -120,7 +121,20 @@ const FILTROS: Array<{ key: 'todas' | 'activas' | MoraEstado; label: string }> =
   { key: 'pagada', label: 'Pagadas' },
 ]
 
+// useSearchParams necesita un Suspense por encima (si no, la build falla al
+// prerenderizar la página).
 export default function ReportarMoraPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReportarMora />
+    </Suspense>
+  )
+}
+
+function ReportarMora() {
+  const searchParams = useSearchParams()
+  // Llega desde la tarjeta del inmueble (?contrato_id=).
+  const contratoIdUrl = searchParams.get('contrato_id') ?? ''
   // La pantalla estaba escrita para el propietario ("Avisa a Cofianza…"), pero
   // quien más la usa es el operador de Cofianza: para él esto es una cola de
   // gestión, no un formulario de aviso.
@@ -155,14 +169,10 @@ export default function ReportarMoraPage() {
   // Form state
   // Llega desde la tarjeta del inmueble (?contrato_id=): evita volver a
   // elegir el contrato en un selector de todos.
-  const [contratoId, setContratoId] = useState(
-    typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('contrato_id') ?? '') : '',
-  )
+  const [contratoId, setContratoId] = useState(contratoIdUrl)
   // Deep link desde la tarjeta del inmueble (?contrato_id=): el formulario
   // tiene que abrirse aunque para el operador vaya plegado por defecto.
-  const [deepLinkContrato] = useState(
-    () => typeof window !== 'undefined' && !!new URLSearchParams(window.location.search).get('contrato_id'),
-  )
+  const [deepLinkContrato] = useState(() => !!contratoIdUrl)
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [monto, setMonto] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -221,11 +231,15 @@ export default function ReportarMoraPage() {
           }
         })
         setContratos(items)
+        // Deep link: pre-llena el monto del contrato que vino en la URL (si el
+        // usuario aún no escribió uno).
+        const delEnlace = contratoIdUrl ? items.find((c) => c.id === contratoIdUrl) : undefined
+        if (delEnlace) setMonto((m) => m || String(delEnlace.monto))
         setTotalContratos(res.meta.total)
         setFalloContratos(false)
       })
       .catch(() => { setContratos([]); setFalloContratos(true) })
-  }, [])
+  }, [contratoIdUrl])
 
   // El select traía 100 contratos sin forma de buscar: encontrar el correcto
   // era ir bajando a ojo.
@@ -236,13 +250,12 @@ export default function ReportarMoraPage() {
     : contratos
 
   const contratoSeleccionado = contratos.find((c) => c.id === contratoId)
-  useEffect(() => {
-    // Pre-llenar monto al elegir contrato (puede editarse si difiere).
-    if (contratoSeleccionado && !monto) {
-      setMonto(String(contratoSeleccionado.monto))
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contratoId])
+  // Pre-llenar monto al elegir contrato (puede editarse si difiere).
+  const elegirContrato = (id: string) => {
+    setContratoId(id)
+    const elegido = contratos.find((c) => c.id === id)
+    if (elegido && !monto) setMonto(String(elegido.monto))
+  }
 
   async function handleReportar(e: React.FormEvent) {
     e.preventDefault()
@@ -332,7 +345,7 @@ export default function ReportarMoraPage() {
             <select
               id="moras-contrato"
               value={contratoId}
-              onChange={(e) => setContratoId(e.target.value)}
+              onChange={(e) => elegirContrato(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               required
             >
