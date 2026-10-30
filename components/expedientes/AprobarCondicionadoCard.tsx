@@ -132,7 +132,9 @@ export function AprobarCondicionadoCard({
                 </Paso>
                 <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
                   <p>
-                    {condicion.obligatoria
+                    {condicion.decide_analista && !condicion.obligatoria && !seCierra
+                      ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'
+                      : condicion.obligatoria
                       ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
                       : seCierra
                         ? 'Si califica y entre los dos se cumple el ingreso, el estudio queda aprobado (o lo decide un analista si hay algo por revisar). Si no califica, o con él no alcanza el ingreso, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
