@@ -5,6 +5,7 @@
 
 'use client'
 
+import Link from 'next/link'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
@@ -230,13 +231,13 @@ export function ExpedientesTable({
           </button>
         )}
         {vacio === 'nada' && puedeCrear && (
-          <button
-            onClick={() => router.push('/expedientes/nuevo')}
+          <Link
+            href="/expedientes/nuevo"
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconPlus size={18} />
             {M.NEW_EXPEDIENTE}
-          </button>
+          </Link>
         )}
       </div>
     )

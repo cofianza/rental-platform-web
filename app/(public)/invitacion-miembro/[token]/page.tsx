@@ -223,12 +223,12 @@ export default function InvitacionMiembroPage() {
           Su cuenta fue creada con el correo <strong>{info.email}</strong>. Inicie sesión para
           empezar a gestionar la cartera de la inmobiliaria.
         </p>
-        <button
-          onClick={() => router.push('/login')}
+        <Link
+          href="/login"
           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Iniciar sesión
-        </button>
+        </Link>
       </div>
     )
   }

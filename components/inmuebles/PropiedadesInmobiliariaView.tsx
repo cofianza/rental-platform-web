@@ -477,14 +477,13 @@ export function PropiedadesInmobiliariaView() {
                         </button>
                       )}
                       {puedeEditar && (
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/inmuebles/${i.id}/editar`)}
+                        <Link
+                          href={`/inmuebles/${i.id}/editar`}
                           className="inline-flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:border-coral-500 hover:text-coral-700"
                         >
                           <IconPencil size={13} />
                           Editar
-                        </button>
+                        </Link>
                       )}
                     </div>
                   </div>

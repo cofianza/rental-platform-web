@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -31,7 +31,6 @@ const PlantillaFormModal = dynamic(
 
 export default function PlantillaDetallePage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const { user } = useAuth()
 
   const [plantilla, setPlantilla] = useState<IPlantillaContrato | null>(null)
@@ -137,12 +136,12 @@ export default function PlantillaDetallePage() {
               <IconRefresh size={16} /> Reintentar
             </button>
           )}
-          <button
-            onClick={() => router.push('/plantillas-contrato')}
-            className="text-primary-600 hover:underline text-sm"
+          <Link
+            href="/plantillas-contrato"
+            className="inline-block text-primary-600 hover:underline text-sm"
           >
             Volver al listado
-          </button>
+          </Link>
         </div>
       </div>
     )
@@ -167,13 +166,13 @@ export default function PlantillaDetallePage() {
       {/* Back + Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <button
-            onClick={() => router.push('/plantillas-contrato')}
+          <Link
+            href="/plantillas-contrato"
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 mb-2"
           >
             <IconArrowLeft size={16} />
             Volver
-          </button>
+          </Link>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             {plantilla.nombre}
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

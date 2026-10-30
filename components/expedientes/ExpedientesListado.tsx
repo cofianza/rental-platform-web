@@ -9,10 +9,10 @@
 
 'use client'
 
-import { Button } from '@/components/ui/Button'
+import { buttonClasses } from '@/components/ui/Button'
+import Link from 'next/link'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
@@ -26,7 +26,6 @@ import { ExpedientesSkeleton } from './ExpedientesSkeleton'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
 
 export function ExpedientesListado() {
-  const router = useRouter()
   const user = useAuthStore((s) => s.user)
   // El solicitante no crea expedientes — el flujo arranca con la cita previa
   // que dispara el propietario/inmobiliaria desde su panel. Ocultamos el CTA.
@@ -105,10 +104,10 @@ export function ExpedientesListado() {
               entityName="Estudios"
             />
             {puedeCrearExpediente && (
-              <Button onClick={() => router.push('/expedientes/nuevo')}>
+              <Link href="/expedientes/nuevo" className={buttonClasses()}>
                 <IconPlus size={16} />
                 {EXPEDIENTE_UI_MESSAGES.NEW_EXPEDIENTE}
-              </Button>
+              </Link>
             )}
           </div>
         }

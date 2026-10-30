@@ -349,13 +349,13 @@ export default function InmuebleDetailPage() {
               <IconRefresh size={16} />
               Reintentar
             </button>
-            <button
-              onClick={() => router.push('/inmuebles')}
+            <Link
+              href="/inmuebles"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <IconArrowLeft size={16} />
               Volver al listado
-            </button>
+            </Link>
           </div>
         </div>
       </div>

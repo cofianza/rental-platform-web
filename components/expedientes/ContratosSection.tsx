@@ -329,14 +329,14 @@ export function ContratosSection({
       {/* La fila entera ya navega al detalle: el ojo solo
           se conserva para roles internos. */}
       {!esV3 && !esDuenio && (
-        <button
-          onClick={() => router.push(`/contratos/${c.id}`)}
-          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
+        <Link
+          href={`/contratos/${c.id}`}
+          className="inline-block p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
           title="Ver detalle"
           aria-label="Ver detalle del contrato"
         >
           <IconEye size={16} />
-        </button>
+        </Link>
       )}
       <button
         onClick={() => handleDownload(c)}
@@ -554,10 +554,9 @@ export function ContratosSection({
             const esV3 = !!c.destinacion
             return (
               <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => router.push(esV3 ? rutaAsistente : `/contratos/${c.id}`)}
-                  className="w-full text-left"
+                <Link
+                  href={esV3 ? rutaAsistente : `/contratos/${c.id}`}
+                  className="block w-full text-left"
                 >
                   <span className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-gray-900">
@@ -570,7 +569,7 @@ export function ContratosSection({
                   <span className="mt-1 block text-xs text-gray-500">
                     Versión {c.version} · {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
                   </span>
-                </button>
+                </Link>
                 {accionesContrato(c, esV3)}
               </div>
             )

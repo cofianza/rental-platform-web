@@ -15,10 +15,10 @@
 
 'use client'
 
-import { Button } from '@/components/ui/Button'
+import { buttonClasses } from '@/components/ui/Button'
+import Link from 'next/link'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
 import { IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
@@ -48,7 +48,6 @@ const CHIPS: { id: EstudioFiltro; label: string; title?: string }[] = [
 
 export function EstudiosExpedientesFusion() {
   const puedeEditar = usePuedeEditar()
-  const router = useRouter()
   // El propietario no tiene equipo, cupos ni paquetes.
   const esPropietario = useAuthStore((s) => s.user?.rol) === 'propietario'
   const {
@@ -160,10 +159,10 @@ export function EstudiosExpedientesFusion() {
             </span>
           )}
           {puedeEditar && (
-            <Button variante="accent" onClick={() => router.push('/expedientes/nuevo')}>
+            <Link href="/expedientes/nuevo" className={buttonClasses('accent')}>
               <IconPlus size={16} />
               Nuevo estudio
-            </Button>
+            </Link>
           )}
         </div>
       </div>

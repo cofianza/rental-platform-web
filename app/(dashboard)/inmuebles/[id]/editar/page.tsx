@@ -6,7 +6,8 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { InmuebleForm } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
@@ -17,7 +18,6 @@ import type { IInmueble } from '@/types/inmueble'
 
 export default function EditarInmueblePage() {
   const params = useParams()
-  const router = useRouter()
   const id = params.id as string
   // Desde el asistente de contratos: al guardar (o cancelar) se vuelve allá. Solo rutas internas.
   const returnToParam = useSearchParams()?.get('returnTo')
@@ -66,12 +66,12 @@ export default function EditarInmueblePage() {
         <PageHeader title="Editar inmueble" subtitle="Error al cargar" />
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-600 mb-4">{error || 'Inmueble no encontrado'}</p>
-          <button
-            onClick={() => router.push('/inmuebles')}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
+          <Link
+            href="/inmuebles"
+            className="inline-block px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
           >
             Volver al listado
-          </button>
+          </Link>
         </div>
       </div>
     )
