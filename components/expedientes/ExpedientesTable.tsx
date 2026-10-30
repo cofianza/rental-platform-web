@@ -97,6 +97,17 @@ function ActividadHeader({
   )
 }
 
+/** Vista de Cofianza. Ausente = la API no pudo leerla: mejor un guion que afirmar que no tiene. */
+function nombreInmobiliaria(e: IExpediente): string {
+  if (e.inmobiliaria_nombre === undefined) return '—'
+  return e.inmobiliaria_nombre ?? 'Sin inmobiliaria'
+}
+
+/** Sin columna que la nombre (tarjeta y tabla angosta). */
+function rotuloInmobiliaria(e: IExpediente): string {
+  return e.inmobiliaria_nombre ? `Inmobiliaria: ${e.inmobiliaria_nombre}` : nombreInmobiliaria(e)
+}
+
 /** Días completos transcurridos desde una fecha ISO. */
 function diasDesde(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
@@ -296,6 +307,11 @@ export function ExpedientesTable({
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Inmueble
               </th>
+              {interno && (
+                <th className="hidden xl:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Inmobiliaria
+                </th>
+              )}
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Solicitante
               </th>
@@ -352,7 +368,20 @@ export function ExpedientesTable({
                   ) : (
                     <span className="text-sm text-gray-500">Inmueble por definir</span>
                   )}
+                  {/* Sin espacio para la columna (menú abierto en portátil), la lleva aquí. */}
+                  {interno && (
+                    <p className="xl:hidden text-xs text-gray-500 truncate max-w-[200px]" title={nombreInmobiliaria(expediente)}>
+                      {rotuloInmobiliaria(expediente)}
+                    </p>
+                  )}
                 </td>
+                {interno && (
+                  <td className="hidden xl:table-cell px-4 py-3">
+                    <p className="text-sm text-gray-700 truncate max-w-[160px]" title={nombreInmobiliaria(expediente)}>
+                      {nombreInmobiliaria(expediente)}
+                    </p>
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   {expediente.solicitante ? (
                     <div>
@@ -414,6 +443,7 @@ export function ExpedientesTable({
                 ? `${expediente.inmueble.titulo || expediente.inmueble.direccion} · ${expediente.inmueble.ciudad}`
                 : 'Inmueble por definir'}
             </p>
+            {interno && <p className="text-xs text-gray-500 -mt-2 mb-3">{rotuloInmobiliaria(expediente)}</p>}
 
             <EstadoFila expediente={expediente} interno={interno} vista={vista} analista={analista} />
 
