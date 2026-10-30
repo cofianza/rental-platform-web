@@ -2,6 +2,11 @@
  * Tipos para Plantillas de Contrato
  */
 
+export type VariablePlantilla = string | { clave: string; fuente?: string }
+
+/** El nombre de una variable, venga como texto o como objeto {clave, fuente}. */
+export const nombreVariable = (v: VariablePlantilla): string => (typeof v === 'string' ? v : v?.clave ?? '')
+
 export interface IPlantillaContrato {
   id: string
   nombre: string
@@ -9,7 +14,8 @@ export interface IPlantillaContrato {
   contenido: string
   /** Plantillas HTML (V1/V4) que usa el generador de PDF; no se editan en el panel. */
   contenido_html?: string | null
-  variables: string[]
+  /** Las plantillas V3 guardan {clave, fuente}; las anteriores, el nombre. Mostrar con nombreVariable(). */
+  variables: VariablePlantilla[]
   activa: boolean
   version: number
   creado_por: string | null

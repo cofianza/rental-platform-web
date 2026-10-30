@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
-import type { IPlantillaContrato } from '@/types/plantilla-contrato'
+import { nombreVariable, type IPlantillaContrato } from '@/types/plantilla-contrato'
 
 // TipTap (editor del modal) pesa: se carga solo en el cliente y al abrir,
 // como react-pdf.
@@ -245,7 +245,7 @@ export default function PlantillaDetallePage() {
             </h2>
             {plantilla.variables && plantilla.variables.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {plantilla.variables.map((v) => (
+                {plantilla.variables.map(nombreVariable).map((v) => (
                   <span
                     key={v}
                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800"
