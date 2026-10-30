@@ -10,6 +10,7 @@ import {
   MENSAJE_ESTA_CERCA,
   MENSAJE_ESTA_CERCA_DECIDE_ANALISTA,
   mensajeCondicionCoarrendatario,
+  motivoCoarrendatario,
   seCierraSiVence,
   textoCondicionCoarrendatario,
 } from '../components/expedientes/textoVisible'
@@ -45,4 +46,10 @@ test('mensajeCondicionCoarrendatario: el literal del §6.9 solo sin obligatoria 
   assert.equal(r2, MENSAJE_ESTA_CERCA_DECIDE_ANALISTA)
   assert.doesNotMatch(r2, /segundos/)
   assert.match(r2, /un analista de Cofianza decide su estudio/)
+})
+
+test('al coarrendatario su motivo dice «No califica», no «Rechazo automático»', () => {
+  assert.equal(motivoCoarrendatario('Rechazo automático: no cumple una condición.'), 'No califica: no cumple una condición.')
+  assert.equal(motivoCoarrendatario('Otro motivo.'), 'Otro motivo.')
+  assert.equal(motivoCoarrendatario('Mínimo 450; se rechaza sin calcular.'), 'Mínimo 450; se decide sin calcular.')
 })
