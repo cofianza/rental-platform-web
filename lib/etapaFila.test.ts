@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { etapaDeFila, accionDeFila } from './etapaFila'
+import { etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
 import type { IExpediente, IEstudioVigente } from '@/types/expediente'
 
 const fila = (o: Partial<IExpediente> = {}, ev?: Partial<IEstudioVigente> | null): IExpediente =>
@@ -71,4 +71,58 @@ test('acción del gestor: solo en su turno, con los casos especiales', () => {
     'comunicarse con Cofianza',
   )
   assert.equal(accionDeFila(fila({ depende_de: 'gestor' }), 'decision'), undefined)
+})
+
+test('L3: aprobado con el contrato en borrador: terminar el contrato', () => {
+  const e = fila({ estado: 'aprobado', contrato_estado: 'borrador', depende_de: 'gestor' }, { estado: 'completado' })
+  assert.equal(etapaDeFila(e), 'contrato')
+  assert.equal(accionDeFila(e, 'contrato'), 'terminar el contrato')
+  assert.equal(accionDeFila(fila({ estado: 'aprobado', depende_de: 'gestor' }), 'contrato'), 'crear el contrato')
+})
+
+test('U9: «Tomar» solo con el turno de Cofianza', () => {
+  assert.equal(tomarDisponible(fila({ estado: 'condicionado' }, { estado: 'completado' })), true)
+  assert.equal(
+    tomarDisponible(fila({ estado: 'condicionado' }, { estado: 'completado', condicion_coarrendatario: { vence_en: '2099-01-01', ingreso_adicional_requerido: null } })),
+    false,
+  )
+  assert.equal(tomarDisponible(fila({}, { estado: 'fallido' })), true)
+  assert.equal(tomarDisponible(fila({}, { estado: 'formulario_completado', sin_ejecutar: true })), true)
+  assert.equal(tomarDisponible(fila({ estado: 'aprobado' }, { estado: 'completado' })), false)
+  assert.equal(tomarDisponible(fila({}, { estado: 'solicitado' })), false)
+})
+
+test('U14: actividad en alerta solo con turno del gestor o de Cofianza', () => {
+  assert.equal(actividadConAlerta(fila({ depende_de: 'gestor' })), true)
+  assert.equal(actividadConAlerta(fila({ estado: 'condicionado', depende_de: 'cofianza' }, { estado: 'completado' })), true)
+  assert.equal(actividadConAlerta(fila({ depende_de: 'prospecto' })), false)
+  assert.equal(actividadConAlerta(fila({ estado: 'aprobado', contrato_estado: 'vigente', depende_de: 'gestor' })), false)
+  assert.equal(actividadConAlerta(fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', depende_de: 'prospecto' })), false)
+  assert.equal(actividadConAlerta(fila({ estado: 'cerrado', depende_de: null })), false)
+})
+
+test('L4: «En revisión hace N días» desde las 24 h; rojo desde los 3 días', () => {
+  const ahora = Date.parse('2026-10-30T12:00:00Z')
+  const hace = (h: number) => new Date(ahora - h * 3_600_000).toISOString()
+  assert.equal(revisionDemorada(hace(23), ahora), null)
+  assert.deepEqual(revisionDemorada(hace(25), ahora), { texto: 'En revisión hace 1 día', tono: 'ambar' })
+  assert.deepEqual(revisionDemorada(hace(50), ahora), { texto: 'En revisión hace 2 días', tono: 'ambar' })
+  assert.deepEqual(revisionDemorada(hace(80), ahora), { texto: 'En revisión hace 3 días', tono: 'rojo' })
+  assert.equal(revisionDemorada(null, ahora), null)
+})
+
+test('X5: el encabezado Actividad recorre los cuatro órdenes y vuelve al inicio', () => {
+  const pasos: Array<ReturnType<typeof siguienteOrdenActividad>> = []
+  let o = siguienteOrdenActividad('numero', 'asc')
+  for (let i = 0; i < 5; i++) {
+    pasos.push(o)
+    o = siguienteOrdenActividad(o.sortBy, o.sortOrder)
+  }
+  assert.deepEqual(pasos, [
+    { sortBy: 'updated_at', sortOrder: 'desc' },
+    { sortBy: 'updated_at', sortOrder: 'asc' },
+    { sortBy: 'created_at', sortOrder: 'desc' },
+    { sortBy: 'created_at', sortOrder: 'asc' },
+    { sortBy: 'updated_at', sortOrder: 'desc' },
+  ])
 })

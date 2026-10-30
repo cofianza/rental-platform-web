@@ -2,8 +2,8 @@
  * ScoreGauge
  * Indicador visual semicircular del puntaje de la central de riesgo (0-999).
  * Neutro: el puntaje de la central no es el veredicto (un 773 puede salir no
- * aprobable por mora). Los cortes de la Adenda 2 §2 solo se le muestran a
- * Cofianza (`leyenda`); a la inmobiliaria no (Política §2).
+ * aprobable por mora). Qué papel tienen los cortes de la Adenda 2 §2 (sin
+ * cifras) solo se le explica a Cofianza (`leyenda`); a la inmobiliaria no (Política §2).
  */
 
 'use client'
@@ -13,7 +13,7 @@ import { IconInfo } from '@/components/icons'
 interface ScoreGaugeProps {
   score: number | null | undefined
   size?: 'sm' | 'md' | 'lg'
-  /** Solo Cofianza: los cortes del puntaje de la central (Adenda 2 §2). */
+  /** Solo Cofianza: qué papel tiene el puntaje de la central (Adenda 2 §2), sin cifras. */
   leyenda?: boolean
 }
 
@@ -79,7 +79,8 @@ export function ScoreGauge({ score, size = 'md', leyenda = false }: ScoreGaugePr
       )}
       {leyenda && (
         <p className="mt-1 text-center text-[11px] text-gray-500">
-          Menos de 450: no aprobable · 450 a 599: revisión obligatoria · 600 o más: decide el puntaje de Cofianza
+          {/* X9: sin cortes escritos a mano (los fija la Política y pueden cambiar). */}
+          El puntaje de la central es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión.
         </p>
       )}
     </div>

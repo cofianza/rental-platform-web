@@ -120,7 +120,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
       if (e.decision_cofianza === 'negado') return 'No aprobable'
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
-      return 'Condicionado'
+      // U8: un nombre por situación, como la lista, la barra y las notificaciones.
+      return 'En revisión de Cofianza'
     }
     if (e.resultado === 'aprobado') return 'Aprobado'
     if (e.resultado === 'rechazado') return 'No aprobable'
@@ -302,7 +303,8 @@ function getSiguientePaso(
     return 'Ya autorizó. Esperando el pago del estudio: no se consulta a centrales hasta confirmarlo.'
   }
   if (estudio.estado === 'pagado') {
-    return 'Pago recibido. El estudio se ejecuta en seguida.'
+    // U27: pagado antes de autorizar: sin la autorización no se consulta.
+    return 'Pago recibido. Falta que la persona autorice la consulta.'
   }
   if (estudio.estado === 'autorizado') {
     return 'Autorizado. Esperando que el prospecto complete el formulario con sus datos.'

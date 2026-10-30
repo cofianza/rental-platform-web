@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ESTADOS_ESTUDIO, type EstadoEstudioType } from '@/lib/constants'
 import type { IEstudiosMeta, IEstudiosStats } from '@/types/estudio'
 import { estudioService } from '@/services/estudioService'
@@ -17,23 +17,33 @@ import { BANDEJAS } from './constants'
 
 export interface EstudiosBandejaTabsProps {
   activeBandeja: string | null
-  meta: IEstudiosMeta | null
+  /** Ya no se usa: «Este mes» sale de las estadísticas (U19). */
+  meta?: IEstudiosMeta | null
   onBandejaChange: (bandeja: string | null) => void
 }
 
 export function EstudiosBandejaTabs({
   activeBandeja,
-  meta,
   onBandejaChange,
 }: EstudiosBandejaTabsProps) {
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
+  // U19: si la API falla, «—» con reintento (no ceros que parecen datos).
+  const [fallo, setFallo] = useState(false)
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
+    setFallo(false)
     estudioService
       .getStats()
       .then(setStats)
-      .catch(() => setStats(null))
+      .catch(() => {
+        setStats(null)
+        setFallo(true)
+      })
   }, [])
+
+  useEffect(() => {
+    cargar()
+  }, [cargar])
 
   return (
     <div className="space-y-4">
@@ -42,16 +52,26 @@ export function EstudiosBandejaTabs({
           stats ya lo devolvía y es la cola que exige decisión humana (§14):
           sin él, esos casos no se contaban en ninguna parte. */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <KPIMini
-          label="Este mes"
-          value={stats?.este_mes ?? meta?.total ?? 0}
-          color="bg-primary-600"
-        />
-        <KPIMini label="Aprobados" value={stats?.aprobados ?? 0} color="bg-green-500" />
-        <KPIMini label="Condicionados" value={stats?.condicionados ?? 0} color="bg-amber-500" />
-        <KPIMini label="En proceso" value={stats?.en_proceso ?? 0} color="bg-blue-500" />
-        <KPIMini label="No aprobables" value={stats?.rechazados ?? 0} color="bg-red-500" />
+        {/* «Este mes» sale solo de las estadísticas: el total del listado filtrado no es «este mes». */}
+        <KPIMini label="Este mes" value={stats?.este_mes} color="bg-primary-600" />
+        <KPIMini label="Aprobados" value={stats?.aprobados} color="bg-green-500" />
+        <KPIMini label="Condicionados" value={stats?.condicionados} color="bg-amber-500" />
+        {/* X12: «En proceso», como la insignia del estado (incluye la espera de hasta 48 h). */}
+        <KPIMini label="En proceso" value={stats?.en_proceso} color="bg-blue-500" />
+        <KPIMini label="No aprobables" value={stats?.rechazados} color="bg-red-500" />
       </div>
+      {fallo && (
+        <p role="status" className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          No se pudieron cargar los contadores.
+          <button
+            type="button"
+            onClick={cargar}
+            className="min-h-10 rounded-lg px-3 text-sm font-medium text-primary-700 hover:bg-primary-50"
+          >
+            Reintentar
+          </button>
+        </p>
+      )}
 
       {/* Tabs */}
       <div className="overflow-x-auto">
@@ -68,11 +88,13 @@ export function EstudiosBandejaTabs({
                 : null
             // Sin contador el operador no sabía si una bandeja tenía trabajo
             // dentro o estaba vacía: había que entrar a cada una.
-            const count = bandeja.resultado
-              ? (stats?.por_resultado[bandeja.resultado] ?? 0)
-              : bandeja.estados.length
-                ? bandeja.estados.reduce((n, e) => n + (stats?.por_estado[e] ?? 0), 0)
-                : (stats?.total ?? 0)
+            const count = !stats
+              ? '—'
+              : bandeja.resultado
+                ? (stats.por_resultado[bandeja.resultado] ?? 0)
+                : bandeja.estados.length
+                  ? bandeja.estados.reduce((n, e) => n + (stats.por_estado[e] ?? 0), 0)
+                  : stats.total
 
             return (
               <button
@@ -112,14 +134,15 @@ function KPIMini({
   color,
 }: {
   label: string
-  value: number
+  /** undefined = sin dato (cargando o falló). */
+  value: number | undefined
   color: string
 }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 relative overflow-hidden">
       <div className={cn('absolute left-0 top-0 bottom-0 w-1', color)} />
       <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-2xl font-bold text-gray-900">{value ?? '—'}</p>
     </div>
   )
 }

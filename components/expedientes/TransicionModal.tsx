@@ -19,6 +19,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 import { CondicionAdicional } from './CondicionAdicional'
+import { ApiClientError } from '@/lib/api'
 
 /** transitionBodySchema del API exige el comentario con al menos 10 caracteres. */
 const MIN_MOTIVO = 10
@@ -40,6 +41,8 @@ export interface TransicionModalProps {
     motivos?: IMotivosElegidos,
     /** Adenda 4 §9: al aprobar una revisión manual, exigió algo más. */
     condicionAdicional?: boolean,
+    /** Biometría «no coincide»: cómo verificó el analista la identidad. */
+    notaIdentidad?: string,
   ) => Promise<void>
   isLoading?: boolean
   /** Con él, al salir de 'condicionado' (revisión manual) se piden los
@@ -71,6 +74,9 @@ export function TransicionModal({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [condicionAdicional, setCondicionAdicional] = useState(false)
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
+  // La foto no coincidió o no se pudo verificar: la API pide la nota (NOTA_IDENTIDAD_REQUERIDA).
+  const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
+  const [notaIdentidad, setNotaIdentidad] = useState('')
   const { userRole } = usePermissions()
   const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
   const [error, setError] = useState<string | null>(null)
@@ -88,6 +94,8 @@ export function TransicionModal({
     setDocumentos([])
     setEvaluacion({})
     setMotivos({ motivos: [] })
+    setPideNotaIdentidad(false)
+    setNotaIdentidad('')
     setError(null)
     onClose()
   }
@@ -141,6 +149,17 @@ export function TransicionModal({
       return
     }
 
+    // «Documentos de ingreso verificados» exige al menos un documento (la API da 400 sin él).
+    if (pideEvaluacion && motivos.motivos.includes('A1') && documentos.length === 0) {
+      setError('Con «Documentos de ingreso verificados», indique al menos un documento que revisó.')
+      return
+    }
+
+    if (pideEvaluacion && pideNotaIdentidad && notaIdentidad.trim().length < MIN_MOTIVO) {
+      setError(`Explique cómo verificó la identidad (mínimo ${MIN_MOTIVO} caracteres).`)
+      return
+    }
+
     setError(null)
     if (esDestructiva && !confirmando) {
       setConfirmando(true)
@@ -161,7 +180,15 @@ export function TransicionModal({
         pideMotivoGestor ? motivoGestor.trim() : undefined,
         tipoLista && catalogo ? motivosParaEnviar(tipoLista, motivos, catalogo) : undefined,
         pideEvaluacion && condicionAdicional ? true : undefined,
+        pideEvaluacion && notaIdentidad.trim() ? notaIdentidad.trim() : undefined,
       )
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
+        setPideNotaIdentidad(true)
+        // El texto de la API distingue «no coincidió» de «no se pudo verificar».
+        setError(err.message || 'La foto del solicitante no permitió verificar su identidad. Explique abajo cómo la verificó.')
+      }
+      return
     } finally {
       enviando.current = false
     }
@@ -178,7 +205,7 @@ export function TransicionModal({
   const CONSECUENCIAS: Record<string, string> = {
     rechazado: `Se libera la reserva del inmueble, se cancelan los contratos que aún no se hayan firmado y se le avisa por correo al coarrendatario${
       estadoActual === 'condicionado' ? ' y al prospecto, con su derecho de apelación' : ''
-    }. Desde "rechazado" el estudio solo puede cerrarse: no hay vuelta atrás.`,
+    }. Desde No aprobable el estudio solo puede cerrarse. Si lo cierra, una apelación del prospecto ya no podrá reabrirlo.`,
     cerrado:
       'El estudio queda archivado y sale del flujo. Se cancelan los contratos que aún no se hayan firmado y se libera la reserva del inmueble. No se puede reabrir.',
   }
@@ -323,6 +350,23 @@ export function TransicionModal({
 
         {esRevisionManual && expedienteId && (
           <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={isLoading} />
+        )}
+
+        {pideEvaluacion && pideNotaIdentidad && (
+          <div>
+            <label htmlFor="transicion-modal-nota-identidad" className="block text-sm font-medium text-gray-700 mb-2">
+              Cómo verificó la identidad <span className="text-red-500">*</span>
+            </label>
+            <textarea id="transicion-modal-nota-identidad"
+              value={notaIdentidad}
+              onChange={(e) => setNotaIdentidad(e.target.value)}
+              placeholder="Por ejemplo: revisé la cédula original en una videollamada"
+              rows={2}
+              maxLength={1000}
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
+            />
+          </div>
         )}
 
         {pideEvaluacion && (

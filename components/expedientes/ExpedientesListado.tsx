@@ -114,7 +114,7 @@ export function ExpedientesListado() {
         }
       />
 
-      {/* Bandejas operativas: Tabs + Toggle Mis estudios */}
+      {/* Bandejas operativas: Tabs + Toggle «Asignados a mí» */}
       <BandejaTabs
         activeBandeja={activeBandeja}
         misExpedientes={misExpedientes}
@@ -155,9 +155,20 @@ export function ExpedientesListado() {
             meta={meta}
             filters={filters}
             onSort={handleSort}
+            onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
-            vacio={hasActiveFilters() ? 'filtros' : 'bandeja'}
+            vacio={
+              // U22: «Asignados a mí» filtra por analista; sin otro filtro, el vacío lo explica.
+              // X11: con una pestaña activa, «en esta bandeja» (puede tener asignados en otras).
+              misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta
+                ? activeBandeja === null
+                  ? 'asignados'
+                  : 'asignados_bandeja'
+                : hasActiveFilters()
+                  ? 'filtros'
+                  : 'bandeja'
+            }
             onClearFilters={clearFilters}
             tomandoId={tomandoId}
             onTomar={

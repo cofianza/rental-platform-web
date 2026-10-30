@@ -37,9 +37,10 @@ import { AdquirirEstudiosCredito } from './AdquirirEstudiosCredito'
 // En el orden del recorrido.
 const CHIPS: { id: EstudioFiltro; label: string; title?: string }[] = [
   { id: 'todos', label: 'Todos' },
-  { id: 'requiere_accion', label: 'Requieren mi acción' },
+  { id: 'requiere_accion', label: 'Requieren su acción' },
   { id: 'sin_estudio', label: 'Antes de la evaluación', title: 'Visita pendiente o evaluación sin habilitar' },
-  { id: 'en_proceso', label: 'En proceso' },
+  // U13: el mismo nombre que la pestaña de la lista de Cofianza.
+  { id: 'en_proceso', label: 'Antes del resultado' },
   { id: 'condicionado', label: 'Condicionados' },
   { id: 'aprobado', label: 'Aprobados' },
   { id: 'rechazado', label: 'No aprobables' },
@@ -188,7 +189,7 @@ export function EstudiosExpedientesFusion() {
           onClick={() => setFilters({ estudio_filtro: 'aprobado', page: 1 })}
         />
         <StatCard
-          label="En proceso"
+          label="Antes del resultado"
           value={conteo('en_proceso')}
           color="text-blue-600"
           sub="Todavía sin resultado"
@@ -215,7 +216,7 @@ export function EstudiosExpedientesFusion() {
             title={c.title}
             onClick={() => setFilters({ estudio_filtro: c.id, page: 1 })}
             className={cn(
-              'rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
+              'min-h-10 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
               activeChip === c.id
                 ? 'border-primary-600 bg-primary-50 text-primary-700'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600',
@@ -259,6 +260,7 @@ export function EstudiosExpedientesFusion() {
             meta={meta}
             filters={filters}
             onSort={handleSort}
+            onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
             miembrosResponsablesById={miembrosById}

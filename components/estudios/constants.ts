@@ -42,6 +42,7 @@ export const BANDEJAS: Array<{
     label: 'Listos para ejecutar',
     estados: ['formulario_completado', 'documentos_cargados'],
   },
+  // X12: «En proceso», como la insignia del estado: incluye la espera de hasta 48 h.
   { id: 'en_proceso', label: 'En proceso', estados: ['en_proceso'] },
   {
     id: 'condicionados',
@@ -57,7 +58,7 @@ export const SORTABLE_COLUMNS = {
   created_at: { key: 'created_at' as const, label: 'Fecha' },
   estado: { key: 'estado' as const, label: 'Estado' },
   resultado: { key: 'resultado' as const, label: 'Resultado' },
-  score: { key: 'score' as const, label: 'Puntaje central' },
+  score: { key: 'score' as const, label: 'Puntaje de la central' },
 } as const
 
 export const PROVEEDOR_LABELS: Record<string, string> = {
@@ -67,9 +68,9 @@ export const PROVEEDOR_LABELS: Record<string, string> = {
 }
 
 export const ESTUDIO_UI_MESSAGES = {
-  EMPTY_STATE: 'No se encontraron estudios',
-  EMPTY_STATE_FILTERED: 'No hay estudios que coincidan con los filtros aplicados.',
-  LOADING: 'Cargando estudios...',
+  EMPTY_STATE: 'No se encontraron evaluaciones',
+  EMPTY_STATE_FILTERED: 'No hay evaluaciones que coincidan con los filtros aplicados.',
+  LOADING: 'Cargando evaluaciones...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',
   SEARCH_PLACEHOLDER: 'Buscar por número de estudio, nombre o cédula',

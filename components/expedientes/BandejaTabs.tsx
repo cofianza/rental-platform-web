@@ -1,7 +1,7 @@
 /**
  * BandejaTabs - Bandejas operativas de estudios (solo Cofianza: la inmobiliaria
  * y el propietario usan EstudiosExpedientesFusion).
- * Tabs con contadores por estado y toggle "Mis estudios". Sin fila de KPIs:
+ * Tabs con contadores por estado y toggle «Asignados a mí». Sin fila de KPIs:
  * cada pestaña ya trae su contador, y los KPIs contaban mal («En proceso»
  * dejaba fuera los estudios en curso; «Requieren acción» sumaba los aprobados
  * con condición, que esperan al prospecto).
@@ -14,16 +14,19 @@ import type { IExpedientesStats } from '@/types/expediente'
 import { cn } from '@/lib/utils'
 import { IconX } from '@/components/icons'
 
-// Bandejas en el orden del recorrido. «En curso» es el estado 'borrador': ahí
-// están los estudios enviados al prospecto, no solo los sin enviar.
+// Bandejas en el orden del recorrido. «Antes del resultado» es el estado
+// 'borrador': ahí están los estudios enviados al prospecto, no solo los sin
+// enviar (U13: el mismo nombre que en la lista de la inmobiliaria).
 const BANDEJAS: Array<{
   label: string
   estado: EstadoExpediente | null
   /** Solo se muestra con contador mayor que 0 o activa (casi siempre vacía). */
   siHay?: boolean
+  /** Rótulo visible bajo las pestañas cuando está activa (U12). */
+  nota?: string
 }> = [
   { label: 'Todos', estado: null },
-  { label: 'En curso', estado: 'borrador' },
+  { label: 'Antes del resultado', estado: 'borrador' },
   { label: 'En revisión', estado: 'en_revision', siHay: true },
   { label: 'Incompletos', estado: 'informacion_incompleta', siHay: true },
   // Adenda 3 §6: los aprobados con condición también caen aquí. Sin texto de
@@ -31,8 +34,9 @@ const BANDEJAS: Array<{
   // que no puede darse.
   { label: 'Condicionados', estado: 'condicionado' },
   { label: 'Aprobados', estado: 'aprobado' },
-  { label: 'No aprobables', estado: 'rechazado' },
-  { label: 'Cerrados', estado: 'cerrado' },
+  // U12: un no aprobable que ya se cerró pasa a «Cerrados» (el estado formal es cerrado).
+  { label: 'No aprobables', estado: 'rechazado', nota: 'Los no aprobables que ya se cerraron están en «Cerrados».' },
+  { label: 'Cerrados', estado: 'cerrado', nota: 'Incluye los cancelados, los finalizados y los no aprobables que ya se cerraron.' },
 ]
 
 export interface BandejaTabsProps {
@@ -120,6 +124,9 @@ export function BandejaTabs({
                     )}
                   >
                     {count}
+                    {/* U3: cuántos de los condicionados esperan la decisión de Cofianza. */}
+                    {bandeja.estado === 'condicionado' && stats?.condicionados_por_decidir != null &&
+                      ` · ${stats.condicionados_por_decidir} por decidir`}
                   </span>
                 </button>
               )
@@ -127,7 +134,7 @@ export function BandejaTabs({
           </nav>
         </div>
 
-        {/* Toggle Mis Expedientes (analista de Cofianza) */}
+        {/* Toggle «Asignados a mí» (analista de Cofianza) */}
         <button
           type="button"
           aria-pressed={misExpedientes}
@@ -152,9 +159,13 @@ export function BandejaTabs({
               )}
             />
           </span>
-          Mis estudios
+          Asignados a mí
         </button>
       </div>
+      {(() => {
+        const nota = !requiereAccionActivo ? BANDEJAS.find((b) => b.estado !== null && b.estado === activeBandeja)?.nota : undefined
+        return nota ? <p className="text-xs text-gray-500">{nota}</p> : null
+      })()}
     </div>
   )
 }

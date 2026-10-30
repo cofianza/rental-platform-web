@@ -39,7 +39,7 @@ export function ExpedientesFilters({
   return (
     <div className="space-y-4">
       {/* Búsqueda y filtros principales */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-4">
         {/* Campo de búsqueda */}
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -51,6 +51,7 @@ export function ExpedientesFilters({
           </div>
           <input
             type="text"
+            aria-label="Buscar estudios"
             placeholder={EXPEDIENTE_UI_MESSAGES.SEARCH_PLACEHOLDER}
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
@@ -58,6 +59,8 @@ export function ExpedientesFilters({
           />
           {filters.search && (
             <button
+              type="button"
+              aria-label="Borrar la búsqueda"
               onClick={() => onFilterChange({ search: '' })}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600"
             >
@@ -97,31 +100,41 @@ export function ExpedientesFilters({
           </div>
         )}
 
-        {/* Filtro de fechas */}
+        {/* Filtro de fechas (U18: con rótulo visible; el placeholder de un date no se ve) */}
         <div className="flex gap-2 lg:w-auto">
-          <div className="relative flex-1 lg:w-40">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconCalendar size={16} className="text-gray-500" />
+          <div className="flex-1 lg:w-40">
+            <label htmlFor="filtro-creado-desde" className="mb-1 block text-xs font-medium text-gray-600">
+              Creado desde
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <IconCalendar size={16} className="text-gray-500" />
+              </div>
+              <input
+                id="filtro-creado-desde"
+                type="date"
+                value={filters.fecha_desde}
+                onChange={(e) => onFilterChange({ fecha_desde: e.target.value })}
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
             </div>
-            <input
-              type="date"
-              value={filters.fecha_desde}
-              onChange={(e) => onFilterChange({ fecha_desde: e.target.value })}
-              placeholder="Desde"
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
           </div>
-          <div className="relative flex-1 lg:w-40">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconCalendar size={16} className="text-gray-500" />
+          <div className="flex-1 lg:w-40">
+            <label htmlFor="filtro-creado-hasta" className="mb-1 block text-xs font-medium text-gray-600">
+              Creado hasta
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <IconCalendar size={16} className="text-gray-500" />
+              </div>
+              <input
+                id="filtro-creado-hasta"
+                type="date"
+                value={filters.fecha_hasta}
+                onChange={(e) => onFilterChange({ fecha_hasta: e.target.value })}
+                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
             </div>
-            <input
-              type="date"
-              value={filters.fecha_hasta}
-              onChange={(e) => onFilterChange({ fecha_hasta: e.target.value })}
-              placeholder="Hasta"
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
           </div>
         </div>
       </div>
@@ -130,8 +143,9 @@ export function ExpedientesFilters({
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
+            type="button"
             onClick={onClearFilters}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
+            className="flex min-h-10 items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
           >
             <IconX size={14} />
             {EXPEDIENTE_UI_MESSAGES.CLEAR_FILTERS}

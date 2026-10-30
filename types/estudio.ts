@@ -56,6 +56,8 @@ export interface IEstudio {
   score?: number | null
   /** Política §14 caso L: ninguna central respondió. Solo en el listado por expediente. */
   sin_centrales?: boolean
+  /** Una central falló y la otra respondió sin puntaje: Cofianza también puede volver a consultar. */
+  reconsulta_sin_datos?: boolean
   /** Adenda 4 §12: la evaluación del titular espera a que autoricen sus coarrendatarios (hasta esa hora). */
   espera_autorizacion?: { hasta: string; pendientes: string[] } | null
   /** Adenda 4 §13: el endeudamiento con que decidió el motor. Solo Cofianza, en el detalle. */
@@ -226,6 +228,8 @@ export interface ICertificadoPresignedUrlResponse {
 // ============================================
 
 export interface IEstudioListItem extends IEstudio {
+  /** U5: nombre de la persona evaluada (solo en la del coarrendatario; GET /estudios). */
+  nombre_evaluado?: string | null
   expedientes?: {
     numero: string
     solicitantes?: {

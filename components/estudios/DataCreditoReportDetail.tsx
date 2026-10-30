@@ -72,7 +72,7 @@ const EVENTOS_CIERRE = new Set([
  */
 const RAZONES_EXCLUSION_INGRESO: Record<number, string> = {
   50: 'Persona jurídica',
-  51: 'Sin información en el buró',
+  51: 'Sin información en las centrales de riesgo',
   52: 'Sin desempeño crediticio',
   53: 'Titular reportado como fallecido',
   54: 'Solo figura como codeudor',
@@ -699,8 +699,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             />
             {modelo && (
               <InfoRow
-                label={`Score${nombreModelo ? ` (${nombreModelo})` : ''}`}
-                value={score !== null ? formatEntero(score) : 'Sin score'}
+                label={`Puntaje de la central${nombreModelo ? ` (${nombreModelo})` : ''}`}
+                value={score !== null ? formatEntero(score) : 'Sin puntaje'}
               />
             )}
           </div>
