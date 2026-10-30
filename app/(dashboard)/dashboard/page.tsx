@@ -19,7 +19,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { estudioService } from '@/services/estudioService'
-import { fechaCondicion, MENSAJE_COARRENDATARIO_OBLIGATORIO, MENSAJE_ESTA_CERCA } from '@/components/expedientes/textoVisible'
+import { fechaCondicion, mensajeCondicionCoarrendatario } from '@/components/expedientes/textoVisible'
 import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
@@ -993,8 +993,8 @@ function SolicitanteDashboard() {
                       <>
                         <p className="text-sm text-amber-800 font-medium">{condicion.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'}</p>
                         <p className="text-xs text-amber-700 mt-0.5">
-                          {/* Adenda 4 V3 §8: con la obligatoria el literal no aplica (decide un analista). */}
-                          {condicion.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : MENSAJE_ESTA_CERCA} Plazo para agregarlo: hasta el {fechaCondicion(condicion.vence_en)}.
+                          {/* Adenda 4 V3 §8 y R3: con la obligatoria o con R2 el literal no aplica (decide un analista). */}
+                          {mensajeCondicionCoarrendatario(condicion)} Plazo para agregarlo: hasta el {fechaCondicion(condicion.vence_en)}.
                         </p>
                       </>
                     ) : (

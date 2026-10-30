@@ -687,6 +687,7 @@ export default function ExpedienteDetallePage() {
           esProspecto={user?.rol === 'solicitante'}
           conCondicion={!!condicionCoa}
           condicionObligatoria={!!condicionCoa?.obligatoria}
+          condicionDecideAnalista={!!condicionCoa?.decide_analista}
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
           etiquetaActual={etiquetaEtapa}
         />

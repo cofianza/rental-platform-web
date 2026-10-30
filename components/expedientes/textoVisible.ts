@@ -148,6 +148,18 @@ export const MENSAJE_ESTA_CERCA =
 export const MENSAJE_COARRENDATARIO_OBLIGATORIO =
   'Para continuar, su estudio necesita un coarrendatario: alguien que vaya a vivir con usted en el inmueble y tenga ingresos propios. Si califica, un analista de Cofianza decide su estudio con la información de los dos y le avisamos el resultado. Solo necesitamos su cédula y su autorización.'
 
+/**
+ * Adenda 4 R3: «Está cerca» con el endeudamiento puntuado por comportamiento
+ * (R2): el conjunto no se aprueba solo, así que no se promete «respuesta en
+ * segundos». Igual que MENSAJE_ESTA_CERCA_DECIDE_ANALISTA de la API (rutas-resultado.ts).
+ */
+export const MENSAJE_ESTA_CERCA_DECIDE_ANALISTA =
+  '¿Alguien más va a vivir con usted en el inmueble? Si esa persona tiene ingresos propios, agréguela como coarrendatario: un analista de Cofianza decide su estudio con la información de los dos y le avisamos el resultado. Solo necesitamos su cédula y su autorización.'
+
+/** El cuerpo del aviso de la condición al prospecto (como resolverRuta de la API). */
+export const mensajeCondicionCoarrendatario = (c: { obligatoria?: boolean; decide_analista?: boolean }): string =>
+  c.obligatoria ? MENSAJE_COARRENDATARIO_OBLIGATORIO : c.decide_analista ? MENSAJE_ESTA_CERCA_DECIDE_ANALISTA : MENSAJE_ESTA_CERCA
+
 /** La línea de la cifra del §6.7 con su advertencia, o null (como lineaIngresoAdicional de la API). */
 export const lineaIngresoAdicional = (cifra: number | null | undefined): string | null =>
   cifra && cifra > 0

@@ -29,6 +29,8 @@ export interface ContextoCargaDocumentos {
   condicion_si_vence?: 'rechazo' | 'revision' | null
   /** Adenda 4 V3 §8: coarrendatario obligatorio; no es una aprobación (ausente en un API anterior). */
   condicion_obligatoria?: boolean
+  /** Adenda 4 R3: «Está cerca» con R2: decide un analista (ausente en un API anterior). */
+  condicion_decide_analista?: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
   /** Su coarrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {

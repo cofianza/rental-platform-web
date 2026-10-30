@@ -250,6 +250,7 @@ export default function CargarDocumentosPage() {
                     ingreso_adicional_requerido: ctx.condicion_ingreso_adicional_requerido,
                     siVence: ctx.condicion_si_vence,
                     obligatoria: ctx.condicion_obligatoria,
+                    decide_analista: ctx.condicion_decide_analista,
                   }
                 : null
             }
