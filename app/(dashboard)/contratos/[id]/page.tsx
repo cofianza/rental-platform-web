@@ -249,11 +249,9 @@ export default function ContratoDetallePage() {
     fetchContrato()
   }, [fetchContrato])
 
-  // Pestaña con el número del contrato (varios contratos abiertos a la vez).
+  // Pestaña con el número del contrato (varios contratos abiertos a la vez); se
+  // pinta con <title> en el render principal.
   const numeroContrato = contrato?.numero
-  useEffect(() => {
-    if (numeroContrato) document.title = `Contrato ${numeroContrato} — Cofianza`
-  }, [numeroContrato])
 
   async function handleDownload() {
     setDownloadLoading(true)
@@ -458,6 +456,8 @@ export default function ContratoDetallePage() {
 
   return (
     <div className="space-y-6">
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {numeroContrato && <title>{`Contrato ${numeroContrato} — Cofianza`}</title>}
       {/* Back + Breadcrumbs */}
       <div className="flex items-center gap-2 text-sm">
         <Link

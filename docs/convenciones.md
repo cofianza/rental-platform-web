@@ -162,8 +162,7 @@ rental-platform-web/
 │   │   ├── client.ts                  # Supabase browser client
 │   │   └── server.ts                  # Supabase server client
 │   ├── constants.ts                   # Constantes de la app
-│   ├── utils.ts                       # Utilidades generales
-│   └── mock-data.ts                   # Mock data (temporal)
+│   └── utils.ts                       # Utilidades generales
 ├── hooks/                             # Custom hooks
 │   ├── useAuth.ts                     # Hook de autenticación
 │   ├── useInmuebles.ts               # TanStack Query hooks

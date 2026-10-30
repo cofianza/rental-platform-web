@@ -15,7 +15,8 @@ import { NotificationBell } from './NotificationBell'
 import { cn } from '@/lib/utils'
 
 export function Header() {
-  const { openSidebar, sidebarOpen } = useUIStore()
+  const openSidebar = useUIStore((st) => st.openSidebar)
+  const sidebarOpen = useUIStore((st) => st.sidebarOpen)
   const user = useAuthStore((state) => state.user)
   const breadcrumbs = useBreadcrumbs()
 

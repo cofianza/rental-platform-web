@@ -335,11 +335,9 @@ export default function ExpedienteDetallePage() {
     fetchExpediente()
   }, [fetchExpediente])
 
-  // Pestaña con el número del estudio (varios estudios abiertos a la vez).
+  // Pestaña con el número del estudio (varios estudios abiertos a la vez); se
+  // pinta con <title> en el render principal.
   const numeroExpediente = expediente?.numero_expediente
-  useEffect(() => {
-    if (numeroExpediente) document.title = `Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`
-  }, [numeroExpediente])
 
   // Al firmar TODAS las partes, el expediente pasa a 'cerrado' en backend, pero
   // ese cierre es DIFERIDO (auto-heal disparado al listar contratos, que
@@ -348,8 +346,18 @@ export default function ExpedienteDetallePage() {
   // una sola vez (onAllSigned está guardado en FirmantesContratoSection), así que
   // no hay loop de refetch. Generar, regenerar, enviar a firma y cambiar de
   // estado también lo llaman: el Resumen oculto se refresca con esta carga.
+  // El temporizador se guarda para cancelarlo al salir de la página (y para no
+  // apilar recargas si llegan varios avisos seguidos: cuenta el último).
+  const recargaDiferidaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (recargaDiferidaRef.current) clearTimeout(recargaDiferidaRef.current)
+  }, [])
   const handleContratoActualizado = useCallback(() => {
-    setTimeout(() => { fetchExpediente() }, 2500)
+    if (recargaDiferidaRef.current) clearTimeout(recargaDiferidaRef.current)
+    recargaDiferidaRef.current = setTimeout(() => {
+      recargaDiferidaRef.current = null
+      fetchExpediente()
+    }, 2500)
   }, [fetchExpediente])
 
   // Ejecutar transición
@@ -539,6 +547,8 @@ export default function ExpedienteDetallePage() {
   return (
     <ExpedienteRefrescoContext.Provider value={cargas}>
     <div className="space-y-6" aria-busy={isLoading}>
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {numeroExpediente && <title>{`Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`}</title>}
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex items-start gap-4">

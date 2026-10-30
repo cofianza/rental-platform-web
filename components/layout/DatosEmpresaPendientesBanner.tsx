@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { IconAlertTriangle, IconArrowRight } from '@/components/icons'
@@ -31,32 +31,39 @@ export function muestraAvisoDatosEmpresa(pathname: string): boolean {
   )
 }
 
+// ¿Ya se cerró el modal en esta sesión? sessionStorage no avisa cambios en la
+// misma pestaña (no hay a qué suscribirse); el cierre de ahora lo lleva el estado.
+const sinSuscripcion = () => () => {}
+function vistoEnSesion(): boolean {
+  try {
+    return !!sessionStorage.getItem(CLAVE_SESION)
+  } catch {
+    return false
+  }
+}
+
 export function DatosEmpresaPendientesBanner() {
   const pathname = usePathname()
   const router = useRouter()
-  const { falta, cargar } = useFirmantePendienteStore()
-  const [modal, setModal] = useState(false)
+  const falta = useFirmantePendienteStore((st) => st.falta)
+  const cargar = useFirmantePendienteStore((st) => st.cargar)
+  // El modal se deriva (antes un efecto lo abría): sale una vez por sesión
+  // mientras falte el dato. En el servidor no se sabe, así que no se pinta.
+  const visto = useSyncExternalStore(sinSuscripcion, vistoEnSesion, () => true)
+  const [cerrado, setCerrado] = useState(false)
 
   const aplica = muestraAvisoDatosEmpresa(pathname)
+  const modal = !!falta && aplica && !visto && !cerrado
 
   useEffect(() => {
     if (aplica) void cargar()
   }, [pathname, aplica, cargar])
 
-  useEffect(() => {
-    if (!falta || !aplica) return
-    try {
-      if (!sessionStorage.getItem(CLAVE_SESION)) setModal(true)
-    } catch {
-      setModal(true)
-    }
-  }, [falta, aplica])
-
   function cerrar() {
     try {
       sessionStorage.setItem(CLAVE_SESION, '1')
     } catch {}
-    setModal(false)
+    setCerrado(true)
   }
 
   if (!falta || !aplica) return null

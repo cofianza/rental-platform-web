@@ -185,7 +185,8 @@ export default function LoteMigracionPage() {
   // Depende de la query: un aviso del mismo lote cambia solo ?fila y la página no se vuelve a montar.
   const filaParam = useSearchParams().get('fila')
   // Spec §3.3: sin el firmante de Cofianza el acta no puede salir a firma (la API responde 422).
-  const { falta: faltaFirmante, cargar: cargarFirmante } = useFirmantePendienteStore()
+  const faltaFirmante = useFirmantePendienteStore((st) => st.falta)
+  const cargarFirmante = useFirmantePendienteStore((st) => st.cargar)
   const esAdmin = useAuthStore((st) => st.user?.rol) === 'administrador'
   useEffect(() => {
     void cargarFirmante()

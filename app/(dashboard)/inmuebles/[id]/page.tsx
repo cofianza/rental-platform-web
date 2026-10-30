@@ -175,14 +175,6 @@ export default function InmuebleDetailPage() {
     }
   }, [activeTab, fetchExpedientes])
 
-  // Título dinámico de la página. Sin limpieza al salir: el título de la
-  // siguiente ruta lo pone su metadata (reponer «Cofianza» la pisaba).
-  useEffect(() => {
-    if (inmueble) {
-      document.title = `${inmueble.codigo} | Cofianza`
-    }
-  }, [inmueble])
-
   // Contrato vigente: solo cuando el inmueble está 'ocupado' (tiene arriendo
   // activo). Habilita "Ver contrato" y "Terminar contrato". `resuelto`
   // distingue "cargando" de "no hay contrato vigente" (p. ej. ocupado por una
@@ -500,6 +492,8 @@ export default function InmuebleDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {inmueble && <title>{`${inmueble.codigo} | Cofianza`}</title>}
       {/* Breadcrumbs */}
       <Breadcrumbs
         items={[
