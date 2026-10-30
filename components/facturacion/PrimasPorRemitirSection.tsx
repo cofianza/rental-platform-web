@@ -1,9 +1,10 @@
 /**
  * PrimasPorRemitirSection — Adenda de precios §5.1. En la modalidad Trasladada
  * la inmobiliaria recauda la prima de vinculación del arrendatario por cuenta
- * de Cofianza y la remite a más tardar el día 10. Cada contrato activado deja
- * una fila; aquí Cofianza ve lo pendiente y lo marca como remitido. Si no se
- * remite no hay bloqueo: la fila sigue pendiente y visible.
+ * de Cofianza y la remite a más tardar el día 10; en la Tradicional la asume
+ * ella (Técnico V3 §11.7.1). Cada contrato activado deja una fila; aquí Cofianza
+ * ve lo pendiente y lo marca como remitido o pagado. Sin ese pago no hay
+ * bloqueo: la fila sigue pendiente y visible.
  */
 
 'use client'
@@ -15,6 +16,8 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { facturacionService, type IPrimaPorRemitir } from '@/services/facturacionService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconAlertTriangle, IconCheck, IconLoader, IconRefresh } from '@/components/icons'
+
+const esTradicional = (p: IPrimaPorRemitir) => p.concepto === 'prima_tradicional'
 
 const hoyBogota = () => new Date(Date.now() - 5 * 3_600_000).toISOString().slice(0, 10)
 
@@ -31,7 +34,7 @@ export function PrimasPorRemitirSection() {
       setItems(await facturacionService.listPrimasPorRemitir())
       setErrorCarga(null)
     } catch (err) {
-      setErrorCarga(err instanceof Error ? err.message : 'No pudimos cargar las primas por remitir')
+      setErrorCarga(err instanceof Error ? err.message : 'No pudimos cargar las primas por cobrar')
     } finally {
       setLoading(false)
     }
@@ -45,11 +48,11 @@ export function PrimasPorRemitirSection() {
     setGuardando(true)
     try {
       await facturacionService.marcarPrimaRemitida(p.id, notas)
-      toast.success('Prima marcada como remitida.')
+      toast.success(esTradicional(p) ? 'Prima marcada como pagada.' : 'Prima marcada como remitida.')
       setMarcando(null)
       await cargar()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo marcar como remitida')
+      toast.error(err instanceof Error ? err.message : 'No se pudo marcar la prima')
       return false
     } finally {
       setGuardando(false)
@@ -89,24 +92,24 @@ export function PrimasPorRemitirSection() {
         onClose={() => setMarcando(null)}
         onConfirm={(nota) => (marcando ? marcar(marcando, nota) : undefined)}
         isLoading={guardando}
-        title="Marcar prima como remitida"
+        title={marcando && esTradicional(marcando) ? 'Marcar prima como pagada' : 'Marcar prima como remitida'}
         descripcion={
           marcando
-            ? `La inmobiliaria ${marcando.inmobiliarias?.nombre ?? ''} remitió ${formatCurrency(marcando.monto_cop)} del contrato ${marcando.contratos?.numero ?? ''}. Queda registrado quién lo marcó y cuándo.`
+            ? `La inmobiliaria ${marcando.inmobiliarias?.nombre ?? ''} ${esTradicional(marcando) ? 'pagó' : 'remitió'} ${formatCurrency(marcando.monto_cop)} del contrato ${marcando.contratos?.numero ?? ''}. Queda registrado quién lo marcó y cuándo.`
             : ''
         }
-        label="Soporte de la remisión"
+        label={marcando && esTradicional(marcando) ? 'Soporte del pago' : 'Soporte de la remisión'}
         placeholder="Ej.: transferencia recibida el 09/11, comprobante 123…"
-        confirmLabel="Marcar remitida"
+        confirmLabel={marcando && esTradicional(marcando) ? 'Marcar pagada' : 'Marcar remitida'}
         minLength={3}
       />
 
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-gray-900">Primas de vinculación por remitir</h3>
+          <h3 className="text-base font-semibold text-gray-900">Primas de vinculación por cobrar</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Modalidad Trasladada: la inmobiliaria la recauda del arrendatario y la remite a Cofianza a más tardar el
-            día 10. {pendientes.length} {pendientes.length === 1 ? 'pendiente' : 'pendientes'}.
+            Trasladada: la inmobiliaria la recauda del arrendatario y la remite a Cofianza. Tradicional: la asume la
+            inmobiliaria. {pendientes.length} {pendientes.length === 1 ? 'pendiente' : 'pendientes'}.
           </p>
         </div>
         <button
@@ -122,13 +125,14 @@ export function PrimasPorRemitirSection() {
         <div className="p-8 text-center">
           <IconCheck size={32} className="mx-auto text-green-500 mb-3" />
           <p className="text-sm text-gray-500">
-            Aún no hay primas de la modalidad Trasladada. Aparecen aquí cuando se activa la fianza de un contrato.
+            Aún no hay primas por cobrar. Aparecen aquí cuando se activa la fianza de un contrato.
           </p>
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
           {items.map((p) => {
-            const vencida = p.estado === 'pendiente' && p.vence_en < hoy
+            // La Tradicional no tiene plazo documentado: no se marca vencida.
+            const vencida = !esTradicional(p) && p.estado === 'pendiente' && p.vence_en < hoy
             return (
               <div key={p.id} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
                 <div className="flex-1 min-w-0">
@@ -136,6 +140,7 @@ export function PrimasPorRemitirSection() {
                     <span className="text-sm font-semibold text-gray-900">{formatCurrency(p.monto_cop)}</span>
                     <span className="text-xs text-gray-500">IVA incluido</span>
                     <span className="text-sm text-gray-700">{p.inmobiliarias?.nombre ?? 'Inmobiliaria'}</span>
+                    <span className="text-xs text-gray-500">{esTradicional(p) ? 'Tradicional' : 'Trasladada'}</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-600">
                     {p.contratos ? (
@@ -150,12 +155,12 @@ export function PrimasPorRemitirSection() {
                   </p>
                   <p className={`mt-0.5 text-xs ${vencida ? 'text-amber-700' : 'text-gray-500'}`}>
                     {vencida && <IconAlertTriangle size={12} className="inline mr-1 -mt-0.5" />}
-                    Remitir a más tardar el {formatDate(p.vence_en)}
+                    {esTradicional(p) ? `Causada el ${formatDate(p.created_at)}` : `Remitir a más tardar el ${formatDate(p.vence_en)}`}
                     {p.reporte_enviado_en ? ' · reporte enviado' : ''}
                   </p>
                   {p.estado !== 'pendiente' && (
                     <p className="mt-0.5 text-xs text-gray-500">
-                      {p.estado === 'remitida' ? 'Remitida' : 'Anulada'}
+                      {p.estado === 'anulada' ? 'Anulada' : esTradicional(p) ? 'Pagada' : 'Remitida'}
                       {p.remitida_en ? ` el ${formatDate(p.remitida_en)}` : ''}
                       {p.notas ? ` · ${p.notas}` : ''}
                     </p>
@@ -165,14 +170,14 @@ export function PrimasPorRemitirSection() {
                   <button
                     onClick={() => setMarcando(p)}
                     disabled={guardando}
-                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
+                    className="inline-flex items-center justify-center min-h-10 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 w-full sm:w-auto"
                   >
-                    Marcar remitida
+                    {esTradicional(p) ? 'Marcar pagada' : 'Marcar remitida'}
                   </button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full shrink-0">
                     <IconCheck size={14} />
-                    {p.estado === 'remitida' ? 'Remitida' : 'Anulada'}
+                    {p.estado === 'anulada' ? 'Anulada' : esTradicional(p) ? 'Pagada' : 'Remitida'}
                   </span>
                 )}
               </div>
