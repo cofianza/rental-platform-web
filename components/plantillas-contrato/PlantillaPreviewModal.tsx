@@ -2,12 +2,13 @@
 
 import { Modal } from '@/components/ui/Modal'
 import { IconX } from '@/components/icons'
+import { nombreVariable, type VariablePlantilla } from '@/types/plantilla-contrato'
 
 interface PlantillaPreviewModalProps {
   isOpen: boolean
   nombre: string
   html: string
-  variables: string[]
+  variables: VariablePlantilla[]
   onClose: () => void
 }
 
@@ -47,7 +48,7 @@ export function PlantillaPreviewModal({
             Variables utilizadas ({variables.length}):
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {variables.map((v) => (
+            {variables.map(nombreVariable).map((v) => (
               <span
                 key={v}
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800"
