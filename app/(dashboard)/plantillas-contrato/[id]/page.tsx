@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -14,16 +14,31 @@ import {
   IconLoader,
   IconRefresh,
 } from '@/components/icons'
-import { PlantillaFormModal, PlantillaPreviewModal } from '@/components/plantillas-contrato'
-import { ConfirmDialog } from '@/components/users'
+import dynamic from 'next/dynamic'
+import { PlantillaPreviewModal } from '@/components/plantillas-contrato/PlantillaPreviewModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
 import type { IPlantillaContrato } from '@/types/plantilla-contrato'
 
+// TipTap (editor del modal) pesa: se carga solo en el cliente y al abrir,
+// como react-pdf.
+const PlantillaFormModal = dynamic(
+  () => import('@/components/plantillas-contrato/PlantillaFormModal').then((m) => ({ default: m.PlantillaFormModal })),
+  {
+    ssr: false,
+    // Primera apertura: el bloque del editor tarda en bajar; algo que diga que viene.
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" role="status" aria-label="Cargando el editor">
+        <IconLoader size={28} className="animate-spin text-white" />
+      </div>
+    ),
+  },
+)
+
 export default function PlantillaDetallePage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const { user } = useAuth()
 
   const [plantilla, setPlantilla] = useState<IPlantillaContrato | null>(null)
@@ -129,12 +144,12 @@ export default function PlantillaDetallePage() {
               <IconRefresh size={16} /> Reintentar
             </button>
           )}
-          <button
-            onClick={() => router.push('/plantillas-contrato')}
-            className="text-primary-600 hover:underline text-sm"
+          <Link
+            href="/plantillas-contrato"
+            className="inline-block text-primary-600 hover:underline text-sm"
           >
             Volver al listado
-          </button>
+          </Link>
         </div>
       </div>
     )
@@ -159,13 +174,13 @@ export default function PlantillaDetallePage() {
       {/* Back + Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <button
-            onClick={() => router.push('/plantillas-contrato')}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 mb-2"
+          <Link
+            href="/plantillas-contrato"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 mb-2"
           >
             <IconArrowLeft size={16} />
             Volver
-          </button>
+          </Link>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             {plantilla.nombre}
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -280,13 +295,16 @@ export default function PlantillaDetallePage() {
       </div>
 
       {/* Edit Modal */}
-      <PlantillaFormModal
-        isOpen={formOpen}
-        plantilla={plantilla}
-        isSubmitting={isSubmitting}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleUpdate}
-      />
+      {formOpen && (
+        <PlantillaFormModal
+          // Montado solo mientras está abierto: cada apertura arranca con los datos actuales.
+          isOpen={formOpen}
+          plantilla={plantilla}
+          isSubmitting={isSubmitting}
+          onClose={() => setFormOpen(false)}
+          onSubmit={handleUpdate}
+        />
+      )}
 
       {/* Preview Modal */}
       <PlantillaPreviewModal
@@ -302,7 +320,7 @@ export default function PlantillaDetallePage() {
         isOpen={deactivateOpen}
         title="Desactivar plantilla"
         message={`¿Está seguro de desactivar "${plantilla.nombre}"? No se podrá usar para nuevos contratos.`}
-        confirmText="Desactivar"
+        confirmLabel="Desactivar"
         variant="danger"
         isLoading={isDeactivating}
         onConfirm={handleDeactivate}

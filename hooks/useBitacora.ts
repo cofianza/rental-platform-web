@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { useBitacoraStore } from '@/stores/bitacora.store'
 import { bitacoraService } from '@/services/bitacoraService'
 import { DEFAULT_FILTERS, BITACORA_MESSAGES } from '@/components/bitacora/constants'
@@ -86,21 +87,26 @@ export function useBitacora() {
   )
 
   // Fetch logs from API
+  // Una respuesta vieja (filtro anterior que tardó más) se descarta.
+  const iniciarPeticion = useUltimaPeticion()
   const fetchLogs = useCallback(async () => {
+    const vigente = iniciarPeticion()
     setLoading(true)
     setError(null)
 
     try {
       const response = await bitacoraService.getLogs(filters)
+      if (!vigente()) return
       setLogs(response.data)
       setMeta(response.meta)
     } catch (err) {
+      if (!vigente()) return
       const message = err instanceof Error ? err.message : BITACORA_MESSAGES.FETCH_ERROR
       setError(message)
     } finally {
-      setLoading(false)
+      if (vigente()) setLoading(false)
     }
-  }, [filters, setLoading, setError, setLogs, setMeta])
+  }, [filters, iniciarPeticion, setLoading, setError, setLogs, setMeta])
 
   // Debounced fetch on filter change
   useEffect(() => {

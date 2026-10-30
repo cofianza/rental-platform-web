@@ -22,6 +22,7 @@ import { estudioService } from '@/services/estudioService'
 import { fechaCondicion, mensajeCondicionCoarrendatario } from '@/components/expedientes/textoVisible'
 import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { useAuthStore } from '@/stores/auth.store'
 import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado } from '@/services/dashboardService'
@@ -103,7 +104,11 @@ export default function DashboardPage() {
 
   // ── Fetch data ──────────────────────────────────────────
 
+  // Cambiar de periodo o de alcance mientras carga: la respuesta vieja se
+  // descarta en vez de pisar la del filtro vigente.
+  const iniciarPeticion = useUltimaPeticion()
   const fetchAll = useCallback(async (showLoading = true) => {
+    const vigente = iniciarPeticion()
     if (showLoading) setLoading(true)
     const errors: Record<string, string> = {}
     // El rango se calcula en cada carga: si se fijaba al abrir la página,
@@ -131,6 +136,7 @@ export default function DashboardPage() {
         sortOrder: 'asc',
       }),
     ])
+    if (!vigente()) return
 
     if (summaryResult.status === 'fulfilled') {
       setSummary(summaryResult.value)
@@ -152,7 +158,7 @@ export default function DashboardPage() {
 
     setSectionErrors(errors)
     setLoading(false)
-  }, [activePreset, alcance, userId])
+  }, [activePreset, alcance, userId, iniciarPeticion])
 
   useEffect(() => {
     if (!needsOperativo) return
@@ -1130,17 +1136,16 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
   const cy = 100
   const radius = 70
   const innerRadius = 45
-  let cumulativeAngle = -90 // start at top
-
-  const segments = data
+  const visibles = data
     .filter((d) => d.count > 0)
     .sort((a, b) => b.count - a.count)
-    .map((d) => {
-      const angle = (d.count / total) * 360
-      const startAngle = cumulativeAngle
-      cumulativeAngle += angle
-      return { ...d, startAngle, angle }
-    })
+  // Ángulo inicial = -90 (arriba) + lo que ocupan los segmentos anteriores.
+  const segments = visibles.map((d, i) => {
+    const previos = visibles.slice(0, i).reduce((suma, x) => suma + x.count, 0)
+    const angle = (d.count / total) * 360
+    const startAngle = -90 + (previos / total) * 360
+    return { ...d, startAngle, angle }
+  })
 
   return (
     <div className="flex flex-col items-center gap-4">

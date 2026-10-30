@@ -15,7 +15,7 @@ import { ApiClientError } from '@/lib/api'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { ExpedienteRefrescoContext } from '@/components/expedientes/ExpedienteRefresco'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
@@ -82,7 +82,6 @@ import { textoVisible, esRolInterno, fechaCondicion } from '@/components/expedie
 
 export default function ExpedienteDetallePage() {
   const params = useParams()
-  const router = useRouter()
   const id = params.id as string
   const user = useAuthStore((s) => s.user)
   // El arrendatario vuelve a SU lista (el dashboard); /expedientes es la
@@ -336,11 +335,9 @@ export default function ExpedienteDetallePage() {
     fetchExpediente()
   }, [fetchExpediente])
 
-  // Pestaña con el número del estudio (varios estudios abiertos a la vez).
+  // Pestaña con el número del estudio (varios estudios abiertos a la vez); se
+  // pinta con <title> en el render principal.
   const numeroExpediente = expediente?.numero_expediente
-  useEffect(() => {
-    if (numeroExpediente) document.title = `Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`
-  }, [numeroExpediente])
 
   // Al firmar TODAS las partes, el expediente pasa a 'cerrado' en backend, pero
   // ese cierre es DIFERIDO (auto-heal disparado al listar contratos, que
@@ -349,8 +346,18 @@ export default function ExpedienteDetallePage() {
   // una sola vez (onAllSigned está guardado en FirmantesContratoSection), así que
   // no hay loop de refetch. Generar, regenerar, enviar a firma y cambiar de
   // estado también lo llaman: el Resumen oculto se refresca con esta carga.
+  // El temporizador se guarda para cancelarlo al salir de la página (y para no
+  // apilar recargas si llegan varios avisos seguidos: cuenta el último).
+  const recargaDiferidaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (recargaDiferidaRef.current) clearTimeout(recargaDiferidaRef.current)
+  }, [])
   const handleContratoActualizado = useCallback(() => {
-    setTimeout(() => { fetchExpediente() }, 2500)
+    if (recargaDiferidaRef.current) clearTimeout(recargaDiferidaRef.current)
+    recargaDiferidaRef.current = setTimeout(() => {
+      recargaDiferidaRef.current = null
+      fetchExpediente()
+    }, 2500)
   }, [fetchExpediente])
 
   // Ejecutar transición
@@ -468,12 +475,12 @@ export default function ExpedienteDetallePage() {
         <p className="text-gray-500 mb-6">
           El estudio que busca no existe o fue eliminado.
         </p>
-        <button
-          onClick={() => router.push(rutaListado)}
-          className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
+        <Link
+          href={rutaListado}
+          className="inline-block px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
         >
           {user?.rol === 'solicitante' ? 'Ver mis estudios' : 'Volver al listado'}
-        </button>
+        </Link>
       </div>
     )
   }
@@ -540,16 +547,18 @@ export default function ExpedienteDetallePage() {
   return (
     <ExpedienteRefrescoContext.Provider value={cargas}>
     <div className="space-y-6" aria-busy={isLoading}>
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {numeroExpediente && <title>{`Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`}</title>}
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <button
-            onClick={() => router.push(rutaListado)}
+          <Link
+            href={rutaListado}
             aria-label={user?.rol === 'solicitante' ? 'Volver a mis estudios' : 'Volver al listado'}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
+            className="inline-block p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
           >
             <IconArrowLeft size={20} className="text-gray-600" />
-          </button>
+          </Link>
           <div className="space-y-2">
             {/* Código y estado */}
             <div className="flex items-center gap-3 flex-wrap">

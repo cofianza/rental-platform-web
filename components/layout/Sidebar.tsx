@@ -20,7 +20,11 @@ import { useFirmantePendienteStore } from '@/stores/firmantePendiente.store'
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { sidebarExpanded, sidebarOpen, toggleSidebar, closeSidebar } = useUIStore()
+  // Selectores atómicos: sin ellos, cualquier cambio del store repintaba el menú.
+  const sidebarExpanded = useUIStore((st) => st.sidebarExpanded)
+  const sidebarOpen = useUIStore((st) => st.sidebarOpen)
+  const toggleSidebar = useUIStore((st) => st.toggleSidebar)
+  const closeSidebar = useUIStore((st) => st.closeSidebar)
   const { logout } = useAuth()
   const { canAccessResource, userRole } = usePermissions()
   // Spec migración §3.3: el firmante de Cofianza es obligatorio; se marca en el menú.

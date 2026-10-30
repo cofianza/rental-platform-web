@@ -257,7 +257,9 @@ export function IdentificacionPendiente({
   const [tipo, setTipo] = useState<string>(TIPOS_DOC.find((t) => t.toLowerCase() === inicial.toLowerCase()) ?? 'CC')
   const [numero, setNumero] = useState(det.datos.arrendatario.numero_documento ?? '')
   const activo = det.lote?.estado === 'activo'
-  const vencido = !!det.identificacion_vence_en && Date.now() > Date.parse(det.identificacion_vence_en)
+  // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
+  const [ahora] = useState(() => Date.now())
+  const vencido = !!det.identificacion_vence_en && ahora > Date.parse(det.identificacion_vence_en)
 
   return (
     <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

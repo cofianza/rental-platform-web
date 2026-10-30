@@ -51,11 +51,15 @@ export function Lightbox({
     zoom, setZoom, position, setPosition, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM,
   })
 
-  // Reset zoom cuando cambia la imagen
-  useEffect(() => {
+  // Reset zoom cuando cambia la imagen. Se ajusta durante el render (no en un
+  // efecto): cubre las flechas, el teclado y que el padre abra en otra foto, sin
+  // pintar un cuadro con el zoom de la anterior.
+  const [indicePrevio, setIndicePrevio] = useState(currentIndex)
+  if (currentIndex !== indicePrevio) {
+    setIndicePrevio(currentIndex)
     setZoom(1)
     setPosition({ x: 0, y: 0 })
-  }, [currentIndex])
+  }
 
   // Zoom in
   const handleZoomIn = useCallback(() => {
@@ -246,7 +250,7 @@ export function Lightbox({
             fill
             className="object-contain select-none"
             sizes="90vw"
-            priority
+            preload
             draggable={false}
           />
         </div>

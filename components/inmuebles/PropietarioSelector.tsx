@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { IconSearch, IconLoader, IconX, IconUser } from '@/components/icons'
 import { userService } from '@/services/userService'
+import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { cn } from '@/lib/utils'
 
 // Tipo simplificado para el selector (no necesita todos los campos de IUserProfile)
@@ -52,7 +53,10 @@ export function PropietarioSelector({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Buscar usuarios cuando cambia el término de búsqueda
+  // Escribir rápido dispara varias búsquedas: solo cuenta la última.
+  const iniciarPeticion = useUltimaPeticion()
   const searchUsers = useCallback(async (term: string) => {
+    const vigente = iniciarPeticion()
     if (term.length < 2) {
       setUsers([])
       return
@@ -61,15 +65,17 @@ export function PropietarioSelector({
     setIsLoading(true)
     try {
       const data = await userService.buscarPerfiles(term)
+      if (!vigente()) return
       // El selector no muestra el correo (no está en perfiles)
       setUsers(data.map((user) => ({ ...user, email: '' })))
     } catch (err) {
+      if (!vigente()) return
       console.error('Error searching users:', err)
       setUsers([])
     } finally {
-      setIsLoading(false)
+      if (vigente()) setIsLoading(false)
     }
-  }, [])
+  }, [iniciarPeticion])
 
   // Debounce de búsqueda
   useEffect(() => {
@@ -77,12 +83,11 @@ export function PropietarioSelector({
       clearTimeout(debounceRef.current)
     }
 
+    // Las búsquedas cortas se limpian en cambiarBusqueda (el manejador).
     if (search.length >= 2) {
       debounceRef.current = setTimeout(() => {
         searchUsers(search)
       }, 300)
-    } else {
-      setUsers([])
     }
 
     return () => {
@@ -104,12 +109,19 @@ export function PropietarioSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Actualizar selectedUser cuando cambia initialPropietario
-  useEffect(() => {
-    if (initialPropietario) {
-      setSelectedUser(initialPropietario)
+  // El padre (InmuebleForm) remonta este selector con `key` cuando llega
+  // initialPropietario, así que no hace falta sincronizarlo con un efecto.
+
+  // Cambiar el término: con menos de 2 caracteres se descarta la búsqueda en
+  // vuelo y se vacía la lista (antes lo hacía el efecto del debounce).
+  const cambiarBusqueda = (valor: string) => {
+    setSearch(valor)
+    if (valor.length < 2) {
+      iniciarPeticion()
+      setUsers([])
+      setIsLoading(false)
     }
-  }, [initialPropietario])
+  }
 
   const handleSelect = (user: PropietarioOption) => {
     setSelectedUser({
@@ -119,13 +131,13 @@ export function PropietarioSelector({
     })
     onChange(user.id, user)
     setIsOpen(false)
-    setSearch('')
+    cambiarBusqueda('')
   }
 
   const handleClear = () => {
     setSelectedUser(null)
     onChange('', null)
-    setSearch('')
+    cambiarBusqueda('')
     inputRef.current?.focus()
   }
 
@@ -174,7 +186,7 @@ export function PropietarioSelector({
             ref={inputRef}
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => cambiarBusqueda(e.target.value)}
             onFocus={handleInputFocus}
             disabled={disabled}
             placeholder="Buscar propietario por nombre o email..."

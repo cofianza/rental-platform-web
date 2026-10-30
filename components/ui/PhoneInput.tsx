@@ -99,12 +99,17 @@ export function PhoneInput({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const botonRef = useRef<HTMLButtonElement>(null)
 
-  // Sync when external value changes
-  useEffect(() => {
-    const p = parsePhoneValue(value)
-    setSelectedDial(p.dial)
-    setLocalNumber(p.local)
-  }, [value])
+  // Sincroniza cuando cambia el valor externo. Se ajusta durante el render (el
+  // patrón de React para «estado derivado de una prop») y no en un efecto: mismo
+  // resultado sin el render intermedio con el valor viejo. Mientras se teclea, el
+  // valor que vuelve del padre se parsea a los mismos dígitos, así que el cursor
+  // no salta; y si el padre no actualiza `value`, el estado local sigue mandando.
+  const [valorPrevio, setValorPrevio] = useState(value)
+  if (value !== valorPrevio) {
+    setValorPrevio(value)
+    setSelectedDial(parsed.dial)
+    setLocalNumber(parsed.local)
+  }
 
   // Close dropdown on click outside
   useEffect(() => {

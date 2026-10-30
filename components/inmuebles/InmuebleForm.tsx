@@ -1103,7 +1103,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                   </p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {fotosAdicionales.map((foto, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                      // La URL blob de la vista previa es única por foto: key estable al quitar una.
+                      <div key={foto.preview} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
                         <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
@@ -1210,6 +1211,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     Propietario<span className="text-red-500"> *</span>
                   </p>
                   <PropietarioSelector
+                    // Se remonta cuando llega el propietario del inmueble (modo
+                    // edición) para que tome initialPropietario como estado inicial.
+                    key={initialPropietario?.id ?? 'sin-propietario'}
                     value={formData.propietario_id}
                     onChange={handlePropietarioChange}
                     disabled={isSubmitting}

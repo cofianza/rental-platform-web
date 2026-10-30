@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { IconEye, IconDownload, IconArrowRight, IconLoader, IconChevronLeft, IconChevronRight, IconRefresh } from '@/components/icons'
@@ -249,10 +250,10 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
           const inmueble = expediente?.inmuebles
 
           return (
-            <div
+            <Link
               key={c.id}
-              onClick={() => router.push(rutaContrato(c))}
-              className="p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
+              href={rutaContrato(c)}
+              className="block p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
             >
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm font-medium text-gray-900">{c.nombre_archivo || 'contrato.pdf'}</p>
@@ -274,7 +275,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                   v{c.version}
                 </span>
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>

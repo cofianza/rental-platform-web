@@ -6,26 +6,10 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { esRutaProtegida, esRutaAuth } from '@/lib/rutasProtegidas'
 
-// Rutas que requieren autenticación
-const protectedRoutes = [
-  '/dashboard',
-  '/inmuebles',
-  '/interesados',
-  '/expedientes',
-  '/reportes',
-  '/usuarios',
-  '/configuracion',
-  '/bitacora',
-]
-
-// Rutas de auth que deben redirigir a dashboard si ya está autenticado.
-// OJO: /verificar-email, /recuperar-contrasena y /restablecer-contrasena NO van
-// aquí — el enlace del correo debe funcionar SIEMPRE, incluso si el navegador
-// ya tiene una sesión activa (otra pestaña, el celular con la sesión abierta, o
-// quien quiere cambiar su contraseña temporal). Si estuvieran en esta lista, el
-// proxy los mandaría a /dashboard y el token se perdería.
-const authRoutes = ['/login', '/registro']
+// Las rutas protegidas salen de lib/rutasProtegidas (todos los segmentos de
+// app/(dashboard), con una prueba que avisa si falta uno).
 
 // Cookie de sesión establecida por authService después del login
 const SESSION_COOKIE_NAME = 'hp-session'
@@ -37,9 +21,7 @@ export function proxy(request: NextRequest) {
   const hasSession = request.cookies.has(SESSION_COOKIE_NAME)
 
   // Ruta protegida sin sesión -> redirect a login
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
+  const isProtectedRoute = esRutaProtegida(pathname)
 
   if (isProtectedRoute && !hasSession) {
     const loginUrl = new URL('/login', request.url)
@@ -49,7 +31,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Ruta de auth con sesión -> redirect a dashboard
-  const isAuthRoute = authRoutes.some((route) => pathname === route) || pathname.startsWith('/registro')
+  const isAuthRoute = esRutaAuth(pathname)
 
   if (isAuthRoute && hasSession) {
     return NextResponse.redirect(new URL('/dashboard', request.url))

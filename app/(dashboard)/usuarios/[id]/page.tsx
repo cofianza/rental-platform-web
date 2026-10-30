@@ -79,8 +79,6 @@ export default function UsuarioDetailPage() {
       try {
         const userData = await userService.getUserById(userId)
         setUser(userData)
-        // Actualizar título de la página
-        document.title = `${userData.nombre} ${userData.apellido} | Cofianza`
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error al cargar el usuario'
         setError(message)
@@ -134,6 +132,8 @@ export default function UsuarioDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      <title>{`${user.nombre} ${user.apellido} | Cofianza`}</title>
 
       {/* Header */}
       <div className="flex items-start justify-between">

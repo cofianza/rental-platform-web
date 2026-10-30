@@ -5,6 +5,7 @@
  * resultado y turno), que usaban palabras distintas a las del detalle.
  */
 
+import { useState } from 'react'
 import type { IExpediente } from '@/types/expediente'
 import { ETAPA_LABEL, type EtapaEstudio, type VistaTurno } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
@@ -115,6 +116,8 @@ export function EstadoFila({
   /** Inicio: las pastillas en fila, no apiladas. */
   compacto?: boolean
 }) {
+  // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
+  const [ahora] = useState(() => Date.now())
   const etapa = etapaDeFila(expediente)
   const { texto, tono } = pastillaEtapa(expediente, etapa, interno)
   const ev = expediente.estudio_vigente
@@ -124,7 +127,7 @@ export function EstadoFila({
   const c = ev?.condicion_coarrendatario
   const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
-  const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, Date.now()) : null
+  const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
   const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.

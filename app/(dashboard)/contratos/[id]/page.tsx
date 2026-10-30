@@ -249,11 +249,9 @@ export default function ContratoDetallePage() {
     fetchContrato()
   }, [fetchContrato])
 
-  // Pestaña con el número del contrato (varios contratos abiertos a la vez).
+  // Pestaña con el número del contrato (varios contratos abiertos a la vez); se
+  // pinta con <title> en el render principal.
   const numeroContrato = contrato?.numero
-  useEffect(() => {
-    if (numeroContrato) document.title = `Contrato ${numeroContrato} — Cofianza`
-  }, [numeroContrato])
 
   async function handleDownload() {
     setDownloadLoading(true)
@@ -416,12 +414,12 @@ export default function ContratoDetallePage() {
         <IconAlertTriangle size={48} className="text-gray-500 mb-4" />
         <p className="text-lg font-medium text-gray-900 mb-2">Contrato no encontrado</p>
         <p className="text-sm text-gray-500 mb-4">El contrato solicitado no existe o fue eliminado</p>
-        <button
-          onClick={() => router.push('/contratos')}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+        <Link
+          href="/contratos"
+          className="inline-block px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Volver a Contratos
-        </button>
+        </Link>
       </div>
     )
   }
@@ -458,21 +456,23 @@ export default function ContratoDetallePage() {
 
   return (
     <div className="space-y-6">
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {numeroContrato && <title>{`Contrato ${numeroContrato} — Cofianza`}</title>}
       {/* Back + Breadcrumbs */}
       <div className="flex items-center gap-2 text-sm">
-        <button
-          onClick={() => router.push('/contratos')}
-          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+        <Link
+          href="/contratos"
+          className="inline-block p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
           aria-label="Volver a Contratos"
         >
           <IconArrowLeft size={18} />
-        </button>
-        <button
-          onClick={() => router.push('/contratos')}
-          className="text-gray-500 hover:text-gray-700 transition-colors"
+        </Link>
+        <Link
+          href="/contratos"
+          className="inline-block text-gray-500 hover:text-gray-700 transition-colors"
         >
           Contratos
-        </button>
+        </Link>
         <IconChevronRight size={14} className="text-gray-500" />
         <span className="text-gray-900 font-medium truncate">{titulo}</span>
       </div>
@@ -739,7 +739,7 @@ export default function ContratoDetallePage() {
               icon={<IconFolderOpen size={16} />}
               iconClass="bg-primary-50 text-primary-600"
               label="Ver estudio"
-              onClick={() => router.push(`/expedientes/${contrato.expediente_id}`)}
+              href={`/expedientes/${contrato.expediente_id}`}
             />
             <LinkRow
               icon={<IconHistory size={16} />}
@@ -1013,27 +1013,36 @@ function InfoRow({ icon, label, value }: { icon?: ReactNode; label: string; valu
   )
 }
 
+// Con `href` es un enlace (navegación); con `onClick`, un botón (abre algo aquí).
 function LinkRow({
   icon,
   iconClass,
   label,
+  href,
   onClick,
 }: {
   icon: ReactNode
   iconClass: string
   label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="group flex w-full items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40"
-    >
+} & ({ href: string; onClick?: never } | { href?: never; onClick: () => void })) {
+  const className =
+    'group flex w-full items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40'
+  const contenido = (
+    <>
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClass}`}>
         {icon}
       </span>
       <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
       <IconChevronRight size={16} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+    </>
+  )
+  return href ? (
+    <Link href={href} className={className}>
+      {contenido}
+    </Link>
+  ) : (
+    <button onClick={onClick} className={className}>
+      {contenido}
     </button>
   )
 }

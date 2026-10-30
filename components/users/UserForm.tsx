@@ -5,7 +5,7 @@
  * Modal para crear/editar usuarios
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
@@ -45,38 +45,28 @@ export function UserForm({
   lockedRol,
   titleCreate,
 }: UserFormProps) {
-  const [formData, setFormData] = useState<IUserFormData>({
-    email: '',
-    nombre: '',
-    apellido: '',
-    telefono: '',
-    rol: lockedRol ?? ('' as IUserFormData['rol']),
-  })
+  // Estado inicial desde las props: los padres remontan el formulario con `key`
+  // (modo + usuario + abierto) en vez de sincronizarlo con un efecto.
+  const [formData, setFormData] = useState<IUserFormData>(() =>
+    mode === 'edit' && user
+      ? {
+          email: user.email,
+          nombre: user.nombre || '',
+          apellido: user.apellido || '',
+          telefono: user.telefono || '',
+          rol: user.rol,
+        }
+      : {
+          email: '',
+          nombre: '',
+          apellido: '',
+          telefono: '',
+          rol: lockedRol ?? ('' as IUserFormData['rol']),
+        },
+  )
   const [errors, setErrors] = useState<FormErrors>({})
   // Nadie se cambia su propio rol (el API también lo rechaza).
   const esPropio = useAuthStore((s) => mode === 'edit' && !!user && s.user?.id === user.id)
-
-  // Cargar datos del usuario al editar
-  useEffect(() => {
-    if (mode === 'edit' && user) {
-      setFormData({
-        email: user.email,
-        nombre: user.nombre || '',
-        apellido: user.apellido || '',
-        telefono: user.telefono || '',
-        rol: user.rol,
-      })
-    } else if (mode === 'create') {
-      setFormData({
-        email: '',
-        nombre: '',
-        apellido: '',
-        telefono: '',
-        rol: lockedRol ?? ('' as IUserFormData['rol']),
-      })
-    }
-    setErrors({})
-  }, [mode, user, lockedRol])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}

@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
@@ -125,6 +125,9 @@ function IngresosBarChart({ data }: { data: IngresosPeriodo[] }) {
 // LOADING SKELETONS
 // ============================================
 
+// Alturas fijas (antes Math.random en render: impuro y distinto en cada render).
+const SKELETON_ALTURAS = [120, 80, 150, 60, 130, 100]
+
 function ChartSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
@@ -133,7 +136,7 @@ function ChartSkeleton() {
           <div key={i} className="flex-1">
             <div
               className="bg-gray-200 rounded w-full"
-              style={{ height: `${40 + Math.random() * 120}px` }}
+              style={{ height: `${SKELETON_ALTURAS[i]}px` }}
             />
           </div>
         ))}
@@ -202,33 +205,48 @@ export default function IngresosReportePage() {
     concepto: '',
   })
 
-  const fetchData = useCallback(async (currentFilters?: IngresosFilters) => {
-    setLoading(true)
-    try {
-      const cleanFilters: { dateFrom?: string; dateTo?: string; concepto?: string } = {}
-      if (currentFilters?.dateFrom) cleanFilters.dateFrom = currentFilters.dateFrom
-      if (currentFilters?.dateTo) cleanFilters.dateTo = currentFilters.dateTo
-      if (currentFilters?.concepto) cleanFilters.concepto = currentFilters.concepto
-
-      const result = await reporteService.getIngresosReporte(cleanFilters)
-      setData(result)
-      setFalloCarga(false)
-    } catch (err) {
-      console.error('Error cargando ingresos:', err)
-      toast.error('Error al cargar el reporte de ingresos')
-      setData(null)
-      setFalloCarga(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  // Filtros con los que se pidió el reporte (los de arriba son el borrador
+  // del formulario hasta pulsar «Aplicar»). El efecto carga cada vez que
+  // cambian o se reintenta, y descarta la respuesta si llegó otra después.
+  const [aplicados, setAplicados] = useState<IngresosFilters>(filters)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
-    fetchData(filters)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    let vigente = true
+    const cargar = async () => {
+      const cleanFilters: { dateFrom?: string; dateTo?: string; concepto?: string } = {}
+      if (aplicados.dateFrom) cleanFilters.dateFrom = aplicados.dateFrom
+      if (aplicados.dateTo) cleanFilters.dateTo = aplicados.dateTo
+      if (aplicados.concepto) cleanFilters.concepto = aplicados.concepto
+      try {
+        const result = await reporteService.getIngresosReporte(cleanFilters)
+        if (!vigente) return
+        setData(result)
+        setFalloCarga(false)
+      } catch (err) {
+        if (!vigente) return
+        console.error('Error cargando ingresos:', err)
+        toast.error('Error al cargar el reporte de ingresos')
+        setData(null)
+        setFalloCarga(true)
+      } finally {
+        if (vigente) setLoading(false)
+      }
+    }
+    cargar()
+    return () => {
+      vigente = false
+    }
+  }, [aplicados, intento])
 
   const handleApply = () => {
-    fetchData(filters)
+    setLoading(true)
+    setAplicados({ ...filters })
+  }
+
+  const reintentar = () => {
+    setLoading(true)
+    setIntento((n) => n + 1)
   }
 
   const hasMeses = data && data.meses.length > 0
@@ -279,7 +297,7 @@ export default function IngresosReportePage() {
           </p>
           <button
             type="button"
-            onClick={() => fetchData(filters)}
+            onClick={reintentar}
             className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
           >
             Reintentar

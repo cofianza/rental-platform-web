@@ -175,14 +175,6 @@ export default function InmuebleDetailPage() {
     }
   }, [activeTab, fetchExpedientes])
 
-  // Título dinámico de la página. Sin limpieza al salir: el título de la
-  // siguiente ruta lo pone su metadata (reponer «Cofianza» la pisaba).
-  useEffect(() => {
-    if (inmueble) {
-      document.title = `${inmueble.codigo} | Cofianza`
-    }
-  }, [inmueble])
-
   // Contrato vigente: solo cuando el inmueble está 'ocupado' (tiene arriendo
   // activo). Habilita "Ver contrato" y "Terminar contrato". `resuelto`
   // distingue "cargando" de "no hay contrato vigente" (p. ej. ocupado por una
@@ -349,13 +341,13 @@ export default function InmuebleDetailPage() {
               <IconRefresh size={16} />
               Reintentar
             </button>
-            <button
-              onClick={() => router.push('/inmuebles')}
+            <Link
+              href="/inmuebles"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <IconArrowLeft size={16} />
               Volver al listado
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -500,6 +492,8 @@ export default function InmuebleDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
+      {inmueble && <title>{`${inmueble.codigo} | Cofianza`}</title>}
       {/* Breadcrumbs */}
       <Breadcrumbs
         items={[
@@ -551,7 +545,7 @@ export default function InmuebleDetailPage() {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 66vw"
-                priority
+                preload
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">

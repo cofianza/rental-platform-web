@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
@@ -115,6 +115,10 @@ function BarChart({ data }: { data: VolumenPeriodo[] }) {
 // LOADING SKELETON
 // ============================================
 
+// Alturas fijas (antes Math.random en render: impuro y distinto en cada render).
+const SKELETON_CREADOS = [110, 70, 140, 50, 120, 90]
+const SKELETON_CERRADOS = [80, 40, 100, 30, 90, 60]
+
 function ChartSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
@@ -123,11 +127,11 @@ function ChartSkeleton() {
           <div key={i} className="flex gap-1 items-end flex-1">
             <div
               className="bg-gray-200 rounded w-full"
-              style={{ height: `${30 + Math.random() * 120}px` }}
+              style={{ height: `${SKELETON_CREADOS[i]}px` }}
             />
             <div
               className="bg-gray-200 rounded w-full"
-              style={{ height: `${20 + Math.random() * 100}px` }}
+              style={{ height: `${SKELETON_CERRADOS[i]}px` }}
             />
           </div>
         ))}
@@ -181,35 +185,48 @@ export default function VolumenExpedientesPage() {
     estado: '',
   })
 
-  const fetchData = useCallback(async (currentFilters?: VolumenFilters) => {
-    setLoading(true)
-    try {
-      const filtersToUse = currentFilters || {}
-      // Clean empty strings
-      const cleanFilters: VolumenFilters = {}
-      if (filtersToUse.dateFrom) cleanFilters.dateFrom = filtersToUse.dateFrom
-      if (filtersToUse.dateTo) cleanFilters.dateTo = filtersToUse.dateTo
-      if (filtersToUse.estado) cleanFilters.estado = filtersToUse.estado
-
-      const result = await reporteService.getVolumenExpedientes(cleanFilters)
-      setData(result)
-      setFalloCarga(false)
-    } catch (err) {
-      console.error('Error cargando volumen de estudios:', err)
-      toast.error('Error al cargar el reporte de volumen')
-      setData(null)
-      setFalloCarga(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  // Filtros con los que se pidió el reporte (los de arriba son el borrador
+  // del formulario hasta pulsar «Aplicar»). El efecto carga cada vez que
+  // cambian o se reintenta, y descarta la respuesta si llegó otra después.
+  const [aplicados, setAplicados] = useState<VolumenFilters>(filters)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
-    fetchData(filters)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    let vigente = true
+    const cargar = async () => {
+      const cleanFilters: VolumenFilters = {}
+      if (aplicados.dateFrom) cleanFilters.dateFrom = aplicados.dateFrom
+      if (aplicados.dateTo) cleanFilters.dateTo = aplicados.dateTo
+      if (aplicados.estado) cleanFilters.estado = aplicados.estado
+      try {
+        const result = await reporteService.getVolumenExpedientes(cleanFilters)
+        if (!vigente) return
+        setData(result)
+        setFalloCarga(false)
+      } catch (err) {
+        if (!vigente) return
+        console.error('Error cargando volumen de estudios:', err)
+        toast.error('Error al cargar el reporte de volumen')
+        setData(null)
+        setFalloCarga(true)
+      } finally {
+        if (vigente) setLoading(false)
+      }
+    }
+    cargar()
+    return () => {
+      vigente = false
+    }
+  }, [aplicados, intento])
 
   const handleApply = () => {
-    fetchData(filters)
+    setLoading(true)
+    setAplicados({ ...filters })
+  }
+
+  const reintentar = () => {
+    setLoading(true)
+    setIntento((n) => n + 1)
   }
 
   const hasPeriodos = data && data.periodos.length > 0
@@ -249,7 +266,7 @@ export default function VolumenExpedientesPage() {
           </p>
           <button
             type="button"
-            onClick={() => fetchData(filters)}
+            onClick={reintentar}
             className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
           >
             Reintentar

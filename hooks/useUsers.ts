@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { toast } from 'sonner'
 import { useUsersStore } from '@/stores/users.store'
 import { userService } from '@/services/userService'
@@ -95,21 +96,26 @@ export function useUsers() {
   /**
    * Carga usuarios desde la API
    */
+  // Una respuesta vieja (búsqueda anterior que tardó más) se descarta.
+  const iniciarPeticion = useUltimaPeticion()
   const fetchUsers = useCallback(async () => {
+    const vigente = iniciarPeticion()
     setLoading(true)
     setError(null)
 
     try {
       const response = await userService.getUsers(filters)
+      if (!vigente()) return
       setUsers(response.data)
       setMeta(response.meta)
     } catch (err) {
+      if (!vigente()) return
       const message = err instanceof Error ? err.message : USER_MESSAGES.FETCH_ERROR
       setError(message)
     } finally {
-      setLoading(false)
+      if (vigente()) setLoading(false)
     }
-  }, [filters, setLoading, setError, setUsers, setMeta])
+  }, [filters, iniciarPeticion, setLoading, setError, setUsers, setMeta])
 
   /**
    * Efecto para cargar usuarios cuando cambian los filtros

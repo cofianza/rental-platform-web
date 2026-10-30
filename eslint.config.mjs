@@ -29,6 +29,12 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
+      // Reglas de recommended-latest (React Compiler: pureza, refs, setState en
+      // efectos…) en 'warn' para no romper el lint con el código existente;
+      // rules-of-hooks sigue en 'error'.
+      ...Object.fromEntries(
+        Object.keys(hooksPlugin.configs['recommended-latest'].rules).map((regla) => [regla, 'warn']),
+      ),
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',

@@ -8,8 +8,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button, ConfirmDialog, PageHeader } from '@/components/ui'
 import {
@@ -106,7 +106,6 @@ const TIPOS_ARCHIVO: { valor: TipoArchivo; titulo: string; ayuda: string }[] = [
 
 /** Inmobiliarias que pueden cargar: sin suspensión y con al menos una destinación completa. */
 async function cargarOrgs() {
-  const preseleccion = new URLSearchParams(window.location.search).get('inmobiliaria')
   const orgs = (await migracionService.listarInmobiliarias())
     .filter((o) => !o.suspension && o.habilitaciones.some((h) => h.faltantes.length === 0))
     .map((o) => ({
@@ -114,12 +113,25 @@ async function cargarOrgs() {
       nombre: o.nombre,
       destinaciones: o.habilitaciones.filter((h) => h.faltantes.length === 0).map((h) => h.destinacion),
     }))
-  return { orgs, preseleccion: orgs.some((o) => o.id === preseleccion) ? preseleccion : null }
+  return { orgs }
 }
 
+// useSearchParams necesita un Suspense por encima (si no, la build falla al
+// prerenderizar la página).
 export default function CargaMigracionPage() {
+  return (
+    <Suspense fallback={null}>
+      <CargaMigracion />
+    </Suspense>
+  )
+}
+
+function CargaMigracion() {
   const router = useRouter()
   const { data, loading, error, reload } = useSeccion(cargarOrgs)
+  // ?inmobiliaria= preselecciona la organización si está entre las habilitadas.
+  const inmobiliariaUrl = useSearchParams().get('inmobiliaria')
+  const preseleccion = data?.orgs.some((o) => o.id === inmobiliariaUrl) ? inmobiliariaUrl : null
   const [orgElegida, setOrgElegida] = useState<string | null>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
   // Adenda 1 §4.4: códigos internos que la inmobiliaria relaciona con mora (texto libre, como lo envía).
@@ -140,7 +152,7 @@ export default function CargaMigracionPage() {
   const [equivalencias, setEquivalencias] = useState<{ campo: CampoMapeo; precargar: string[] } | null>(null)
 
   const orgs = data?.orgs ?? []
-  const orgId = orgElegida ?? data?.preseleccion ?? ''
+  const orgId = orgElegida ?? preseleccion ?? ''
   const org = orgs.find((o) => o.id === orgId)
   const nativo = tipoArchivo === 'nativo'
   // Lo que se confirmó en la vista previa: viaja tal cual a validar, al reporte y a procesar.
