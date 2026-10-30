@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
@@ -48,24 +48,47 @@ export default function CuposVencidosReportePage() {
   // Tercer estado: «no cargó» no es «no venció nada».
   const [falloCarga, setFalloCarga] = useState(false)
 
-  const fetchData = useCallback(async (m: string) => {
-    setLoading(true)
-    try {
-      setData(await reporteService.getCuposVencidos(m))
-      setFalloCarga(false)
-    } catch (err) {
-      console.error('Error cargando cupos vencidos:', err)
-      toast.error('Error al cargar el reporte de cupos vencidos')
-      setData(null)
-      setFalloCarga(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  // Mes con el que se pidió el reporte (el input es el borrador hasta pulsar
+  // «Aplicar»). El efecto carga al cambiar o al reintentar, y descarta la
+  // respuesta si llegó otra después.
+  const [mesAplicado, setMesAplicado] = useState(mes)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
-    fetchData(mes)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    let vigente = true
+    const cargar = async () => {
+      try {
+        const result = await reporteService.getCuposVencidos(mesAplicado)
+        if (!vigente) return
+        setData(result)
+        setFalloCarga(false)
+      } catch (err) {
+        if (!vigente) return
+        console.error('Error cargando cupos vencidos:', err)
+        toast.error('Error al cargar el reporte de cupos vencidos')
+        setData(null)
+        setFalloCarga(true)
+      } finally {
+        if (vigente) setLoading(false)
+      }
+    }
+    cargar()
+    return () => {
+      vigente = false
+    }
+  }, [mesAplicado, intento])
+
+  const aplicar = () => {
+    if (!mes) return
+    setLoading(true)
+    setMesAplicado(mes)
+    setIntento((n) => n + 1)
+  }
+
+  const reintentar = () => {
+    setLoading(true)
+    setIntento((n) => n + 1)
+  }
 
   const hayFilas = !!data && data.filas.length > 0
 
@@ -103,7 +126,7 @@ export default function CuposVencidosReportePage() {
           </p>
           <button
             type="button"
-            onClick={() => fetchData(mes)}
+            onClick={reintentar}
             className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
           >
             Reintentar
@@ -123,7 +146,7 @@ export default function CuposVencidosReportePage() {
           />
         </div>
         <button
-          onClick={() => mes && fetchData(mes)}
+          onClick={aplicar}
           disabled={loading || !mes}
           className="px-4 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >

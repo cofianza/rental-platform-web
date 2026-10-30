@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
@@ -88,6 +88,9 @@ function HorizontalBarChart({ data }: { data: TiempoEtapa[] }) {
 // LOADING SKELETON
 // ============================================
 
+// Anchos fijos (antes Math.random en render: impuro y distinto en cada render).
+const SKELETON_ANCHOS = [70, 50, 80, 45, 60]
+
 function ChartSkeleton() {
   return (
     <div className="animate-pulse space-y-3">
@@ -96,7 +99,7 @@ function ChartSkeleton() {
           <div className="h-4 bg-gray-200 rounded w-28" />
           <div
             className="h-8 bg-gray-200 rounded"
-            style={{ width: `${40 + Math.random() * 40}%` }}
+            style={{ width: `${SKELETON_ANCHOS[i]}%` }}
           />
         </div>
       ))}
@@ -160,32 +163,47 @@ export default function TiemposPorEtapaPage() {
     dateTo: '',
   })
 
-  const fetchData = useCallback(async (currentFilters?: { dateFrom?: string; dateTo?: string }) => {
-    setLoading(true)
-    try {
-      const cleanFilters: { dateFrom?: string; dateTo?: string } = {}
-      if (currentFilters?.dateFrom) cleanFilters.dateFrom = currentFilters.dateFrom
-      if (currentFilters?.dateTo) cleanFilters.dateTo = currentFilters.dateTo
-
-      const result = await reporteService.getTiemposPorEtapa(cleanFilters)
-      setData(result)
-      setFalloCarga(false)
-    } catch (err) {
-      console.error('Error cargando tiempos por etapa:', err)
-      toast.error('Error al cargar el reporte de tiempos')
-      setData(null)
-      setFalloCarga(true)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  // Filtros con los que se pidió el reporte (los de arriba son el borrador
+  // del formulario hasta pulsar «Aplicar»). El efecto carga cada vez que
+  // cambian o se reintenta, y descarta la respuesta si llegó otra después.
+  const [aplicados, setAplicados] = useState<{ dateFrom: string; dateTo: string }>(filters)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
-    fetchData(filters)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    let vigente = true
+    const cargar = async () => {
+      const cleanFilters: { dateFrom?: string; dateTo?: string } = {}
+      if (aplicados.dateFrom) cleanFilters.dateFrom = aplicados.dateFrom
+      if (aplicados.dateTo) cleanFilters.dateTo = aplicados.dateTo
+      try {
+        const result = await reporteService.getTiemposPorEtapa(cleanFilters)
+        if (!vigente) return
+        setData(result)
+        setFalloCarga(false)
+      } catch (err) {
+        if (!vigente) return
+        console.error('Error cargando tiempos por etapa:', err)
+        toast.error('Error al cargar el reporte de tiempos')
+        setData(null)
+        setFalloCarga(true)
+      } finally {
+        if (vigente) setLoading(false)
+      }
+    }
+    cargar()
+    return () => {
+      vigente = false
+    }
+  }, [aplicados, intento])
 
   const handleApply = () => {
-    fetchData(filters)
+    setLoading(true)
+    setAplicados({ ...filters })
+  }
+
+  const reintentar = () => {
+    setLoading(true)
+    setIntento((n) => n + 1)
   }
 
   const hasEtapas = data && data.etapas.length > 0
@@ -224,7 +242,7 @@ export default function TiemposPorEtapaPage() {
           </p>
           <button
             type="button"
-            onClick={() => fetchData(filters)}
+            onClick={reintentar}
             className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
           >
             Reintentar

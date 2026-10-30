@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { toast } from 'sonner'
 import { useExpedientesStore, DEFAULT_EXPEDIENTE_FILTERS } from '@/stores/expedientesStore'
 import { expedienteService } from '@/services/expedienteService'
@@ -160,26 +161,26 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
    */
   // Número de la última petición: una respuesta vieja (búsqueda o filtro
   // anterior que tardó más) se descarta en vez de pisar la vigente.
-  const peticionRef = useRef(0)
+  const iniciarPeticion = useUltimaPeticion()
   const fetchExpedientes = useCallback(async () => {
-    const n = ++peticionRef.current
+    const vigente = iniciarPeticion()
     setLoading(true)
     setError(null)
 
     try {
       const response = await expedienteService.getExpedientes(filters)
-      if (n !== peticionRef.current) return
+      if (!vigente()) return
       setExpedientes(response.data)
       setMeta(response.meta)
     } catch (err) {
-      if (n !== peticionRef.current) return
+      if (!vigente()) return
       const message = err instanceof Error ? err.message : EXPEDIENTE_MESSAGES.FETCH_ERROR
       setError(message)
       toast.error(message)
     } finally {
-      if (n === peticionRef.current) setLoading(false)
+      if (vigente()) setLoading(false)
     }
-  }, [filters, setLoading, setError, setExpedientes, setMeta])
+  }, [filters, iniciarPeticion, setLoading, setError, setExpedientes, setMeta])
 
   /**
    * Carga estadísticas de expedientes

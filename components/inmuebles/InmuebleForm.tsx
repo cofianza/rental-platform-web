@@ -1210,6 +1210,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     Propietario<span className="text-red-500"> *</span>
                   </p>
                   <PropietarioSelector
+                    // Se remonta cuando llega el propietario del inmueble (modo
+                    // edición) para que tome initialPropietario como estado inicial.
+                    key={initialPropietario?.id ?? 'sin-propietario'}
                     value={formData.propietario_id}
                     onChange={handlePropietarioChange}
                     disabled={isSubmitting}
