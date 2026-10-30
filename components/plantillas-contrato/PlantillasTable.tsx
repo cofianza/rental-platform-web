@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { IconChevronLeft, IconChevronRight, IconEdit, IconEye, IconPower } from '@/components/icons'
+import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp, IconEdit, IconEye, IconPower } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import type { IPlantillaContrato, IPlantillaContratoMeta } from '@/types/plantilla-contrato'
 
@@ -22,7 +22,7 @@ interface PlantillasTableProps {
 // componente nuevo y React remontaba los íconos.
 function SortIcon({ field, sortBy, sortDir }: { field: string; sortBy: string; sortDir: 'asc' | 'desc' }) {
   if (sortBy !== field) return <span className="text-gray-300 ml-1">&#8597;</span>
-  return <span className="ml-1">{sortDir === 'asc' ? '&#9650;' : '&#9660;'}</span>
+  return <span className="ml-1 inline-flex align-middle">{sortDir === 'asc' ? <IconChevronUp size={12} /> : <IconChevronDown size={12} />}</span>
 }
 
 export function PlantillasTable({
