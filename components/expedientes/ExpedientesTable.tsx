@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
 import { EstadoFila } from './EstadoFila'
+import { actividadConAlerta, tomarDisponible } from '@/lib/etapaFila'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import { AYUDA } from '@/lib/ayudaEstudio'
@@ -46,8 +47,10 @@ function SortableHeader({
 
   return (
     <button
+      type="button"
       onClick={() => onSort(column)}
-      className="flex items-center gap-1 group text-left"
+      // U7: el botón no hereda el uppercase del encabezado.
+      className="flex items-center gap-1 group text-left uppercase tracking-wider"
     >
       <span>{label}</span>
       <span className={cn('transition-opacity', isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50')}>
@@ -56,6 +59,40 @@ function SortableHeader({
         ) : (
           <IconChevronDown size={14} />
         )}
+      </span>
+    </button>
+  )
+}
+
+/**
+ * U7: un solo encabezado ordenable para la actividad y la creación. Cada clic
+ * pasa por: actividad reciente, actividad antigua, creación antigua, creación reciente.
+ */
+function ActividadHeader({
+  currentSortBy,
+  currentSortOrder,
+  onSort,
+}: Omit<SortableHeaderProps, 'column' | 'label'>) {
+  const porCreacion = currentSortBy === 'created_at'
+  const activo = porCreacion || currentSortBy === 'updated_at'
+  const siguiente: IExpedienteFilters['sortBy'] =
+    currentSortBy === 'updated_at' && currentSortOrder === 'asc'
+      ? 'created_at'
+      : porCreacion && currentSortOrder === 'desc'
+        ? 'updated_at'
+        : porCreacion
+          ? 'created_at'
+          : 'updated_at'
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(siguiente)}
+      title="Clic para ordenar por la última actividad o por la fecha de creación"
+      className="flex items-center gap-1 group text-left uppercase tracking-wider"
+    >
+      <span>{porCreacion ? 'Creado' : 'Actividad'}</span>
+      <span className={cn('transition-opacity', activo ? 'opacity-100' : 'opacity-0 group-hover:opacity-50')}>
+        {activo && currentSortOrder === 'asc' ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
       </span>
     </button>
   )
@@ -73,8 +110,8 @@ function diasDesde(iso: string): number {
  * parado hace 3 semanas. Los casos cerrados no se pintan de rojo: ya no esperan.
  */
 function Actividad({ expediente }: { expediente: IExpediente }) {
-  const cerrado =
-    expediente.estado === 'cerrado' || expediente.estado === 'rechazado' || !!expediente.cancelado_at
+  // U14: en alerta solo si alguien tiene que mover el estudio (gestor o Cofianza).
+  const cerrado = !actividadConAlerta(expediente)
   const d = diasDesde(expediente.updated_at)
 
   return (
@@ -104,6 +141,7 @@ const VACIO: Record<NonNullable<ExpedientesTableProps['vacio']>, [string, string
   filtros: [M.VACIO_FILTROS_TITULO, M.VACIO_FILTROS_TEXTO],
   nada: [M.VACIO_NADA_TITULO, M.VACIO_NADA_TEXTO],
   bandeja: [M.VACIO_BANDEJA_TITULO, null],
+  asignados: [M.VACIO_ASIGNADOS_TITULO, M.VACIO_ASIGNADOS_TEXTO],
 }
 
 export interface ExpedientesTableProps {
@@ -125,7 +163,7 @@ export interface ExpedientesTableProps {
   /** Id del estudio que se está asignando ahora mismo (deshabilita su botón). */
   tomandoId?: string | null
   /** Por qué está vacía: pendientes del gestor, filtros, sin estudios o bandeja de Cofianza. */
-  vacio?: 'accion' | 'filtros' | 'nada' | 'bandeja'
+  vacio?: 'accion' | 'filtros' | 'nada' | 'bandeja' | 'asignados'
   onClearFilters?: () => void
 }
 
@@ -145,6 +183,7 @@ export function ExpedientesTable({
   const router = useRouter()
   const rol = useAuthStore((st) => st.user?.rol)
   const interno = rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'
+  const analista = rol === 'administrador' || rol === 'operador_analista'
   const puedeEditar = usePuedeEditar()
   const vista = interno ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Solo lectura y el prospecto no crean estudios: sin esto el estado vacío les
@@ -211,14 +250,19 @@ export function ExpedientesTable({
         </div>
       )
     }
+    // U9: «Tomar» solo cuando el turno es de Cofianza; si no, no hay nada que tomar.
+    if (onTomar && !tomarDisponible(expediente)) {
+      return <span className={movil ? 'text-xs text-gray-500' : 'text-sm text-gray-500'}>—</span>
+    }
     return onTomar ? (
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation()
           onTomar(expediente.id)
         }}
         disabled={tomandoId === expediente.id}
-        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
+        className="inline-flex min-h-10 items-center gap-1 px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded disabled:opacity-50 transition-colors"
       >
         <IconUserCheck size={14} />
         Tomar
@@ -258,26 +302,14 @@ export function ExpedientesTable({
               </th>
               {conResponsable && (
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Responsable
+                  {/* U9: para Cofianza la columna es el analista asignado. */}
+                  {interno ? 'Analista' : 'Responsable'}
                 </th>
               )}
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {/* Dos ordenamientos reales: por movimiento (lo que importa
-                    para no dejar un estudio quieto) y por fecha de creación. */}
-                <SortableHeader
-                  column="updated_at"
-                  label="Última actividad"
-                  currentSortBy={filters.sortBy}
-                  currentSortOrder={filters.sortOrder}
-                  onSort={onSort}
-                />
-                <SortableHeader
-                  column="created_at"
-                  label="Creado"
-                  currentSortBy={filters.sortBy}
-                  currentSortOrder={filters.sortOrder}
-                  onSort={onSort}
-                />
+                {/* Dos ordenamientos reales en un botón: por movimiento (lo que
+                    importa para no dejar un estudio quieto) y por fecha de creación. */}
+                <ActividadHeader currentSortBy={filters.sortBy} currentSortOrder={filters.sortOrder} onSort={onSort} />
               </th>
             </tr>
           </thead>
@@ -300,7 +332,7 @@ export function ExpedientesTable({
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <td className="px-4 py-3">
-                  <span className="font-mono text-sm font-medium text-primary-600">
+                  <span className="text-sm font-medium text-gray-900 tabular-nums">
                     {formatNumeroEstudio(expediente.numero_expediente)}
                   </span>
                 </td>
@@ -333,7 +365,7 @@ export function ExpedientesTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <EstadoFila expediente={expediente} interno={interno} vista={vista} />
+                  <EstadoFila expediente={expediente} interno={interno} vista={vista} analista={analista} />
                 </td>
                 {conResponsable && <td className="px-4 py-3">{responsable(expediente, false)}</td>}
                 <td className="px-4 py-3">
@@ -369,7 +401,7 @@ export function ExpedientesTable({
               <p className="text-sm font-medium text-gray-900">
                 {expediente.solicitante?.nombre ?? 'Sin solicitante'}
               </p>
-              <span className="font-mono text-sm font-medium text-primary-600 shrink-0">
+              <span className="text-sm font-medium text-gray-900 tabular-nums shrink-0">
                 {formatNumeroEstudio(expediente.numero_expediente)}
               </span>
             </div>
@@ -380,7 +412,7 @@ export function ExpedientesTable({
                 : 'Inmueble por definir'}
             </p>
 
-            <EstadoFila expediente={expediente} interno={interno} vista={vista} />
+            <EstadoFila expediente={expediente} interno={interno} vista={vista} analista={analista} />
 
             {/* Footer: responsable y fecha */}
             <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-gray-100">
@@ -422,7 +454,7 @@ export function ExpedientesTable({
               aria-label="Página anterior"
               onClick={() => onPageChange(meta.page - 1)}
               disabled={meta.page <= 1}
-              className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <IconChevronLeft size={18} />
             </button>
@@ -445,9 +477,10 @@ export function ExpedientesTable({
                 return (
                   <button
                     key={pageNum}
+                    type="button"
                     onClick={() => onPageChange(pageNum)}
                     className={cn(
-                      'w-8 h-8 rounded text-sm font-medium transition-colors',
+                      'min-h-10 min-w-10 rounded text-sm font-medium transition-colors',
                       pageNum === meta.page
                         ? 'bg-primary-700 text-white'
                         : 'hover:bg-gray-100 text-gray-600'
@@ -464,7 +497,7 @@ export function ExpedientesTable({
               aria-label="Página siguiente"
               onClick={() => onPageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages}
-              className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <IconChevronRight size={18} />
             </button>

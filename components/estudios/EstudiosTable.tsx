@@ -36,12 +36,12 @@ function ScoreBar({ score }: { score?: number | null }) {
 
   const pct = Math.min(100, Math.max(0, (score / 999) * 100))
 
-  // Neutro: el puntaje de la central no es el veredicto. Los cortes, en el
-  // title (Adenda 2 §2, los mismos del detalle).
+  // Neutro: el puntaje de la central no es el veredicto. Sin cortes escritos
+  // a mano (U15): son calibrables y la Política los reserva.
   return (
     <div
       className="flex items-center gap-2"
-      title="Puntaje de la central: menos de 450 se rechaza; de 450 a 599, revisión manual; 600 o más, sin alerta por puntaje"
+      title="El puntaje de la central es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión."
     >
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-15">
         <div className="h-full rounded-full transition-all bg-primary-600" style={{ width: `${pct}%` }} />
@@ -67,7 +67,8 @@ function SortableHeader({ column, label, currentSortBy, currentSortOrder, onSort
   const isActive = currentSortBy === column
 
   return (
-    <button onClick={() => onSort(column)} className="flex items-center gap-1 group text-left">
+    // U7: el botón no hereda el uppercase del encabezado.
+    <button type="button" onClick={() => onSort(column)} className="flex items-center gap-1 group text-left uppercase tracking-wider">
       <span>{label}</span>
       <span className={cn('transition-opacity', isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50')}>
         {isActive && currentSortOrder === 'asc' ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
@@ -80,10 +81,25 @@ function SortableHeader({ column, label, currentSortBy, currentSortOrder, onSort
 // Helper
 // ============================================
 
-function getSolicitanteName(estudio: IEstudioListItem): string {
+function getTitularName(estudio: IEstudioListItem): string | null {
   const sol = estudio.expedientes?.solicitantes
-  if (sol) return `${sol.nombre} ${sol.apellido}`.trim()
-  return 'Sin solicitante'
+  return sol ? `${sol.nombre} ${sol.apellido}`.trim() : null
+}
+
+/**
+ * U5: la evaluación del coarrendatario lleva el nombre del coarrendatario (el
+ * del formulario, que la API manda como nombre_evaluado), no el del titular.
+ */
+function getSolicitanteName(estudio: IEstudioListItem): string {
+  if (estudio.tipo === 'con_coarrendatario') return estudio.nombre_evaluado?.trim() || 'Coarrendatario'
+  return getTitularName(estudio) ?? 'Sin solicitante'
+}
+
+/** Debajo del nombre del coarrendatario: de quién es coarrendatario. */
+function getCoarrendatarioDe(estudio: IEstudioListItem): string | null {
+  if (estudio.tipo !== 'con_coarrendatario') return null
+  const titular = getTitularName(estudio)
+  return titular ? `Coarrendatario de ${titular}` : null
 }
 
 function getExpedienteNumero(estudio: IEstudioListItem): string {
@@ -239,14 +255,17 @@ export function EstudiosTable({
                     <p className="text-sm font-medium text-gray-900 truncate max-w-50">
                       {getSolicitanteName(estudio)}
                     </p>
+                    {getCoarrendatarioDe(estudio) && (
+                      <p className="text-xs text-gray-500 truncate max-w-50">{getCoarrendatarioDe(estudio)}</p>
+                    )}
                     <p className="text-xs text-gray-500 font-mono">
                       {getExpedienteNumero(estudio)}
                     </p>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm text-gray-700 capitalize">
-                    {estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Individual'}
+                  <span className="text-sm text-gray-700">
+                    {estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Titular'}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -320,9 +339,10 @@ export function EstudiosTable({
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-900">
-                {getSolicitanteName(estudio)}
-              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">{getSolicitanteName(estudio)}</p>
+                {getCoarrendatarioDe(estudio) && <p className="text-xs text-gray-500">{getCoarrendatarioDe(estudio)}</p>}
+              </div>
               <Badge estado={estudio.estado} />
             </div>
 
@@ -330,9 +350,7 @@ export function EstudiosTable({
             <div className="flex items-center gap-3 mb-2 text-xs text-gray-500">
               <span className="font-mono">{getExpedienteNumero(estudio)}</span>
               <span>{PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}</span>
-              <span className="capitalize">
-                {estudio.tipo === 'con_coarrendatario' ? 'Co-arr.' : 'Individual'}
-              </span>
+              <span>{estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Titular'}</span>
             </div>
 
             {/* Score bar */}
@@ -368,7 +386,7 @@ export function EstudiosTable({
             >
               {ITEMS_PER_PAGE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option} por pagina
+                  {option} por página
                 </option>
               ))}
             </select>
@@ -380,7 +398,7 @@ export function EstudiosTable({
               aria-label="Página anterior"
               onClick={() => onPageChange(meta.page - 1)}
               disabled={meta.page <= 1}
-              className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <IconChevronLeft size={18} />
             </button>
@@ -401,9 +419,10 @@ export function EstudiosTable({
                 return (
                   <button
                     key={pageNum}
+                    type="button"
                     onClick={() => onPageChange(pageNum)}
                     className={cn(
-                      'w-8 h-8 rounded text-sm font-medium transition-colors',
+                      'min-h-10 min-w-10 rounded text-sm font-medium transition-colors',
                       pageNum === meta.page
                         ? 'bg-primary-700 text-white'
                         : 'hover:bg-gray-100 text-gray-600'
@@ -420,7 +439,7 @@ export function EstudiosTable({
               aria-label="Página siguiente"
               onClick={() => onPageChange(meta.page + 1)}
               disabled={meta.page >= meta.totalPages}
-              className="p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <IconChevronRight size={18} />
             </button>

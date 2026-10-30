@@ -32,6 +32,7 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck, IconAlertTriangle } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
+import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
 import { seCierraSiVence, textoCondicionCoarrendatario } from './textoVisible'
@@ -50,6 +51,8 @@ interface AprobarCondicionadoCardProps {
   sinInfoBuro?: boolean
   /** Política §14 caso L: id del estudio del titular si ninguna central respondió. */
   estudioSinCentrales?: string | null
+  /** Una central no respondió y la otra respondió sin puntaje (no es el caso L completo). */
+  reconsultaParcial?: boolean
   /** Inmueble sin inmobiliaria: el coarrendatario no existe en este canal (Decisión 4). */
   canalPropietario?: boolean
   /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
@@ -63,6 +66,7 @@ export function AprobarCondicionadoCard({
   userRol,
   sinInfoBuro,
   estudioSinCentrales,
+  reconsultaParcial,
   canalPropietario,
   condicion,
   onAprobado,
@@ -81,6 +85,13 @@ export function AprobarCondicionadoCard({
   // B14: sin catálogo todavía no se decide el modo (lista o texto).
   const motivoListo = cargandoMotivos ? false : catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
+  // «Documentos de ingreso verificados» (A1) exige al menos un documento (la API da 400 sin él).
+  const faltanDocumentosA1 = motivos.motivos.includes('A1') && documentos.length === 0
+  // La foto no coincidió con el documento: la API pide una nota de identidad.
+  // Se descubre con su respuesta (NOTA_IDENTIDAD_REQUERIDA); desde ahí se exige aquí.
+  const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
+  const [notaIdentidad, setNotaIdentidad] = useState('')
+  const faltaNotaIdentidad = pideNotaIdentidad && notaIdentidad.trim().length < 10
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
@@ -202,7 +213,7 @@ export function AprobarCondicionadoCard({
 
   const handleAprobar = async () => {
     // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
-    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo) return
+    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo || faltanDocumentosA1 || faltaNotaIdentidad) return
     aprobando.current = true
     setLoading(true)
     try {
@@ -213,6 +224,7 @@ export function AprobarCondicionadoCard({
         evaluacion,
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
         ...(condicionAdicional ? { condicion_adicional: true } : {}),
+        ...(notaIdentidad.trim() ? { nota_identidad: notaIdentidad.trim() } : {}),
       })
       setConfirmAprobarOpen(false)
       // El puntaje del modelo es interno: solo se le muestra a Cofianza, en
@@ -225,6 +237,11 @@ export function AprobarCondicionadoCard({
       toast.success(`Estudio aprobado. Ya puede crear el contrato.${puntaje}`)
       onAprobado?.()
     } catch (err) {
+      if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
+        setPideNotaIdentidad(true)
+        toast.error('La foto del solicitante no coincidió con su documento. Explique abajo cómo verificó la identidad.')
+        return
+      }
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
       toast.error(msg)
     } finally {
@@ -249,7 +266,9 @@ export function AprobarCondicionadoCard({
             <InfoTip texto={AYUDA.condicionado} lado="derecha" />
           </h3>
           <p className="text-sm text-gray-700">
-            {estudioSinCentrales
+            {estudioSinCentrales && reconsultaParcial
+              ? 'Una central de riesgo no respondió y la otra no devolvió puntaje de esta persona. No es un rechazo: Cofianza puede volver a consultar cuando la central responda.'
+              : estudioSinCentrales
               ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'
               : sinInfoBuro
                 ? 'Las centrales de riesgo no tienen historial de esta persona. No es un rechazo: falta información para medir el riesgo.'
@@ -403,6 +422,30 @@ export function AprobarCondicionadoCard({
         </div>
         )}
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
+        {faltanDocumentosA1 && (
+          <p className="text-sm text-amber-800">
+            Con «Documentos de ingreso verificados», indique al menos un documento que revisó.
+          </p>
+        )}
+        {pideNotaIdentidad && (
+          <div>
+            <label htmlFor="nota-identidad" className="block text-sm font-medium text-gray-700 mb-1">
+              Cómo verificó la identidad <span className="text-red-500">*</span>
+            </label>
+            <p className="mb-1 text-xs text-gray-600">
+              La foto del solicitante no coincidió con su documento. Explique cómo confirmó que es la misma persona.
+            </p>
+            <textarea
+              id="nota-identidad"
+              value={notaIdentidad}
+              onChange={(e) => setNotaIdentidad(e.target.value)}
+              rows={2}
+              disabled={loading}
+              placeholder="Por ejemplo: revisé la cédula original en una videollamada (mínimo 10 caracteres)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+            />
+          </div>
+        )}
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         <CondicionAdicional checked={condicionAdicional} onChange={setCondicionAdicional} disabled={loading} />
         {sinInfoBuro && (
@@ -439,7 +482,7 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion)}
+            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion) || faltanDocumentosA1 || faltaNotaIdentidad}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}

@@ -111,5 +111,9 @@ export function queSigue(
       : `Falta que la persona sume un coarrendatario antes del ${o.fechaCondicion}.`
   }
   if (etapa === 'decision' && !gestor && o.analista) return 'Revise el caso y decida si lo aprueba.'
+  // U2: el analista también puede ejecutar la consulta que no arrancó.
+  if (etapa === 'sin_ejecutar' && !gestor && o.analista) {
+    return 'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Ejecútela en «Evaluación crediticia», en el detalle; la inmobiliaria también puede hacerlo.'
+  }
   return (!gestor && AYUDA_ETAPA_TERCERO[etapa]) || AYUDA_ETAPA[etapa]
 }

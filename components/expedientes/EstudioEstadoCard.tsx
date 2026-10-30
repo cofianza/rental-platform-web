@@ -302,7 +302,8 @@ function getSiguientePaso(
     return 'Ya autorizó. Esperando el pago del estudio: no se consulta a centrales hasta confirmarlo.'
   }
   if (estudio.estado === 'pagado') {
-    return 'Pago recibido. El estudio se ejecuta en seguida.'
+    // U27: pagado antes de autorizar: sin la autorización no se consulta.
+    return 'Pago recibido. Falta que la persona autorice la consulta.'
   }
   if (estudio.estado === 'autorizado') {
     return 'Autorizado. Esperando que el prospecto complete el formulario con sus datos.'

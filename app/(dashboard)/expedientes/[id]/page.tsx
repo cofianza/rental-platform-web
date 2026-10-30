@@ -59,6 +59,7 @@ import {
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa } from '@/components/expedientes/ResumenPorEtapa'
 import { PastillaTurno } from '@/components/expedientes/PastillaTurno'
+import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
@@ -247,8 +248,13 @@ export default function ExpedienteDetallePage() {
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
   // Política §14 caso L: ninguna central respondió; Cofianza puede volver a consultar.
+  // También cuando una central falló y la otra respondió sin puntaje.
   const estudioSinCentrales =
-    titularCondicionado?.sin_centrales && titularCondicionado.estado === 'completado' ? titularCondicionado.id : null
+    (titularCondicionado?.sin_centrales || titularCondicionado?.reconsulta_sin_datos) &&
+    titularCondicionado.estado === 'completado'
+      ? titularCondicionado.id
+      : null
+  const reconsultaParcial = !!estudioSinCentrales && !titularCondicionado?.sin_centrales
   // Adenda 3 §6: aprobado con condición de coarrendatario (la API responde 409
   // a aprobarlo a mano, pedir soportes y reasignar).
   const condicionCoa = titularCondicionado?.condicion_coarrendatario ?? null
@@ -357,6 +363,7 @@ export default function ExpedienteDetallePage() {
     motivo?: string,
     motivos?: IMotivosElegidos,
     condicionAdicional?: boolean,
+    notaIdentidad?: string,
   ) => {
     setIsExecutingTransicion(true)
     try {
@@ -369,6 +376,7 @@ export default function ExpedienteDetallePage() {
         motivo,
         ...motivos,
         ...(condicionAdicional ? { condicion_adicional: true } : {}),
+        ...(notaIdentidad ? { nota_identidad: notaIdentidad } : {}),
       })
       setExpediente(expedienteActualizado)
 
@@ -699,9 +707,25 @@ export default function ExpedienteDetallePage() {
                 turno={turno}
                 vista={vistaTurno}
                 revision={etapaTurno === 'decision' && !condicionCoa}
+                analista={puedeAsignar}
+                sinEjecutar={etapaTurno === 'sin_ejecutar'}
                 className="shrink-0 self-start"
               />
             )}
+            {/* L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h). */}
+            {(() => {
+              const demora =
+                isInternalRole && etapaTurno === 'decision' && !condicionCoa
+                  ? revisionDemorada(expediente.en_revision_desde, Date.now())
+                  : null
+              return demora ? (
+                <span
+                  className={`shrink-0 self-start text-xs font-medium ${demora.tono === 'rojo' ? 'text-red-600' : 'text-amber-700'}`}
+                >
+                  {demora.texto}
+                </span>
+              ) : null
+            })()}
             <p className="text-sm text-gray-700">
               {queSigue(etapaTurno, {
                 vista: vistaTurno,
@@ -874,6 +898,7 @@ export default function ExpedienteDetallePage() {
                   prefillTipoDocumento={expediente.solicitante?.tipo_documento ?? null}
                   prefillNumeroDocumento={expediente.solicitante?.numero_documento ?? null}
                   solicitanteTelefono={expediente.solicitante?.telefono ?? null}
+                  sinInmueble={!expediente.inmueble}
                 />
                 <CoarrendatarioCard
                   expedienteId={id}
@@ -926,6 +951,7 @@ export default function ExpedienteDetallePage() {
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
                         estudioSinCentrales={estudioSinCentrales}
+                        reconsultaParcial={reconsultaParcial}
                         condicion={condicionCoa}
                         canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                         onAprobado={fetchExpediente}

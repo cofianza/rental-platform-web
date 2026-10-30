@@ -14,7 +14,8 @@ export const ESTADO_OPTIONS: { value: EstadoExpediente; label: string }[] = [
   { value: 'aprobado', label: 'Aprobado' },
   { value: 'rechazado', label: 'No aprobable' },
   { value: 'condicionado', label: 'Condicionado' },
-  { value: 'cerrado', label: 'Finalizado' },
+  // U12: el mismo nombre que la pestaña «Cerrados» (incluye cancelados y no aprobables cerrados).
+  { value: 'cerrado', label: 'Cerrado' },
 ]
 
 /**
@@ -26,7 +27,8 @@ export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50] as const
  * Columnas ordenables
  */
 export const SORTABLE_COLUMNS = {
-  numero: { key: 'numero' as const, label: 'Código' },
+  // U23: «N.°», como en el detalle («Estudio N.° …»).
+  numero: { key: 'numero' as const, label: 'N.°' },
   created_at: { key: 'created_at' as const, label: 'Fecha' },
 } as const
 
@@ -44,6 +46,9 @@ export const EXPEDIENTE_UI_MESSAGES = {
   VACIO_NADA_TEXTO:
     'Un estudio reúne la visita, la evaluación crediticia del prospecto y el contrato. Empiece con «Nuevo estudio».',
   VACIO_BANDEJA_TITULO: 'No hay estudios en esta bandeja.',
+  // U22: con «Asignados a mí» encendido.
+  VACIO_ASIGNADOS_TITULO: 'No tiene estudios asignados.',
+  VACIO_ASIGNADOS_TEXTO: 'Use «Tomar» en la lista para asignárselos.',
   LOADING: 'Cargando estudios...',
   ERROR_RETRY: 'Reintentar',
   CLEAR_FILTERS: 'Limpiar filtros',

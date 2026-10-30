@@ -8,7 +8,7 @@
 import type { IExpediente } from '@/types/expediente'
 import { ETAPA_LABEL, type EtapaEstudio, type VistaTurno } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
 import { PastillaTurno } from './PastillaTurno'
 import { fechaCondicion } from './textoVisible'
@@ -92,7 +92,7 @@ function PrioridadBaja({ expediente }: { expediente: IExpediente }) {
   if (expediente.estado !== 'condicionado' || expediente.prioridad_revision !== 'baja') return null
   return (
     <span
-      title="Puntaje de las centrales entre 450 y 599: se revisa al final de la cola"
+      title="Puntaje de la central en la franja media: se revisa al final de la cola"
       className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
     >
       Prioridad baja
@@ -104,25 +104,37 @@ export function EstadoFila({
   expediente,
   interno,
   vista,
+  analista = false,
   compacto = false,
 }: {
   expediente: IExpediente
   interno: boolean
   vista: VistaTurno
+  /** Administrador u operador: deciden la revisión y ejecutan la consulta que no arrancó. */
+  analista?: boolean
   /** Inicio: las pastillas en fila, no apiladas. */
   compacto?: boolean
 }) {
   const etapa = etapaDeFila(expediente)
   const { texto, tono } = pastillaEtapa(expediente, etapa, interno)
   const ev = expediente.estudio_vigente
-  const score = ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
+  // U4: en un estudio no aprobable o cancelado el puntaje ya no orienta nada.
+  const conPuntaje = etapa !== 'no_aprobado' && etapa !== 'cancelado'
+  const score = conPuntaje && ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
   const c = ev?.condicion_coarrendatario
+  const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
+  // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
+  const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, Date.now()) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
   const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
+  // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
   const conTurno =
-    !!turno && (interno || ev?.estado_bloqueo !== 'identidad_rechazada') && etapa !== 'espera_coarrendatario'
+    !!turno &&
+    (interno || ev?.estado_bloqueo !== 'identidad_rechazada') &&
+    etapa !== 'espera_coarrendatario' &&
+    !(revision && vista !== 'cofianza')
 
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>
@@ -131,7 +143,7 @@ export function EstadoFila({
         // en la condición del coarrendatario, decía que lo decide un analista.
         title={queSigue(etapa, {
           vista,
-          analista: false,
+          analista,
           fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
           esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
           sinInmueble: !expediente.inmueble_id,
@@ -147,16 +159,23 @@ export function EstadoFila({
           title="Puntaje de la central de riesgo, de 0 a 999. Cofianza decide con ese puntaje y además con ingresos, deudas y el canon: por eso un puntaje alto puede no aprobarse."
           className="text-[11px] text-gray-500"
         >
-          Puntaje de la central: {score}
+          Puntaje de la central: {score} (no es el de Cofianza)
         </span>
       )}
       {conTurno && (
         <PastillaTurno
           turno={turno}
           vista={vista}
-          revision={expediente.estado === 'condicionado' && turno === 'cofianza'}
+          revision={revision}
+          analista={analista}
+          sinEjecutar={etapa === 'sin_ejecutar'}
           accion={turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined}
         />
+      )}
+      {demora && (
+        <span className={cn('text-[11px] font-medium', demora.tono === 'rojo' ? 'text-red-600' : 'text-amber-700')}>
+          {demora.texto}
+        </span>
       )}
       {interno && <PrioridadBaja expediente={expediente} />}
     </div>

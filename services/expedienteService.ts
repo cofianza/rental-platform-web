@@ -144,6 +144,9 @@ class ExpedienteService {
     return {
       total: response.data?.total || 0,
       por_estado,
+      ...(response.data && 'condicionados_por_decidir' in response.data
+        ? { condicionados_por_decidir: response.data.condicionados_por_decidir as number | null }
+        : {}),
     }
   }
 
@@ -248,6 +251,7 @@ class ExpedienteService {
         ...(data.motivos?.length ? { motivos: data.motivos } : {}),
         ...(data.motivo_detalle ? { motivo_detalle: data.motivo_detalle } : {}),
         ...(data.condicion_adicional ? { condicion_adicional: true } : {}),
+        ...(data.nota_identidad ? { nota_identidad: data.nota_identidad } : {}),
       }
     )) as any
 
@@ -602,6 +606,8 @@ class ExpedienteService {
       fuente_capacidad_verificada?: boolean
       /** Adenda 4 §9: aprobó exigiendo algo más (tarifa no automática). */
       condicion_adicional?: boolean
+      /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige). */
+      nota_identidad?: string
     },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
@@ -680,6 +686,8 @@ export interface IIngresoVerificado {
   habilitado: boolean
   vigente: { monto: number; tipo_soporte: string; fecha_soporte: string; vence_el: string } | null
   evaluacion: { dti_pct: number | null; canon_ingreso_pct: number | null; cumple: boolean } | null
+  /** U26: los máximos de la Política (ausente en APIs anteriores). */
+  maximos?: { dti_pct: number; canon_ingreso_pct: number }
   situacion_laboral: string | null
   tipos: Array<{ clave: string; evaluado: EvaluadoIngreso; etiqueta: string }>
 }

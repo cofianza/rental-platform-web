@@ -101,8 +101,9 @@ export const NAV_ITEMS: NavItem[] = [
     // propio enlace (OficinaVirtualNav / PropietarioShell).
     label: 'Evaluaciones',
     href: '/estudios',
-    icon: 'FolderOpen',
-    description: 'Bandeja de evaluaciones crediticias (buró, resultado, score)',
+    // U11: otro ícono que «Estudios» (las dos entradas se veían iguales).
+    icon: 'Shield',
+    description: 'Bandeja de evaluaciones crediticias (centrales de riesgo, resultado y puntaje)',
     resource: 'estudios',
     requiredRoles: ['administrador', 'operador_analista', 'gerencia_consulta'],
     group: 'Operación',
@@ -540,7 +541,7 @@ export const ESTADOS_ESTUDIO: Record<EstadoEstudioType, EstadoConfig> = {
     borderColor: 'border-blue-300',
   },
   pago_pendiente: {
-    label: 'Pago Pendiente',
+    label: 'Pago pendiente',
     color: 'orange',
     bgColor: 'bg-orange-100',
     textColor: 'text-orange-700',
@@ -561,28 +562,28 @@ export const ESTADOS_ESTUDIO: Record<EstadoEstudioType, EstadoConfig> = {
     borderColor: 'border-cyan-300',
   },
   formulario_enviado: {
-    label: 'Enlace Enviado',
+    label: 'Enlace enviado',
     color: 'cyan',
     bgColor: 'bg-cyan-100',
     textColor: 'text-cyan-700',
     borderColor: 'border-cyan-300',
   },
   formulario_completado: {
-    label: 'Form. Completado',
+    label: 'Lista para consultar',
     color: 'indigo',
     bgColor: 'bg-indigo-100',
     textColor: 'text-indigo-700',
     borderColor: 'border-indigo-300',
   },
   documentos_cargados: {
-    label: 'Docs Cargados',
+    label: 'Lista para consultar',
     color: 'violet',
     bgColor: 'bg-violet-100',
     textColor: 'text-violet-700',
     borderColor: 'border-violet-300',
   },
   en_proceso: {
-    label: 'En Proceso',
+    label: 'En proceso',
     color: 'amber',
     bgColor: 'bg-amber-100',
     textColor: 'text-amber-700',

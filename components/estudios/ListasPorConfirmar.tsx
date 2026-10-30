@@ -55,7 +55,7 @@ export function ListasPorConfirmar({
     try {
       if (accion === 'confirmar') await estudioService.confirmarListas(estudioId, motivo.trim())
       else await estudioService.descartarListas(estudioId, motivo.trim())
-      toast.success(accion === 'confirmar' ? 'Coincidencia confirmada: el estudio quedó rechazado.' : 'Coincidencia descartada: el caso sigue en revisión.')
+      toast.success(accion === 'confirmar' ? 'Coincidencia confirmada: el estudio quedó no aprobable.' : 'Coincidencia descartada: el caso sigue en revisión.')
       setAccion(null)
       setMotivo('')
       onResuelto()

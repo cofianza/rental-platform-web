@@ -38,8 +38,9 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   espera_coarrendatario: 'Esperando al coarrendatario',
   sin_ejecutar: 'Consulta sin ejecutar',
   fallida: 'Consulta fallida',
-  // Mismo nombre que la lista y la pestaña «Condicionados» (la pestaña «En revisión» es otro estado).
-  decision: 'Condicionado',
+  // U8: un nombre por situación (lista, detalle y notificación). Con condición
+  // de coarrendatario la fila y el detalle ponen su propio rótulo.
+  decision: 'En revisión de Cofianza',
   contrato: 'Aprobado',
   firma: 'En firma',
   vigente: 'Contrato vigente',

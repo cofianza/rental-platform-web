@@ -51,6 +51,8 @@ interface EstudioSolicitanteCardProps {
   /** Teléfono del solicitante — solo para el copy del card de autorización
    *  (el enlace va por email siempre y por WhatsApp solo si hay número). */
   solicitanteTelefono?: string | null
+  /** Estudio sin inmueble todavía: el contrato espera a que elija uno (U6). */
+  sinInmueble?: boolean
 }
 
 /**
@@ -77,6 +79,7 @@ export function EstudioSolicitanteCard({
   prefillTipoDocumento,
   prefillNumeroDocumento,
   solicitanteTelefono,
+  sinInmueble = false,
 }: EstudioSolicitanteCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -398,7 +401,7 @@ export function EstudioSolicitanteCard({
         <div>
           <p className="text-sm font-semibold text-blue-900 mb-0.5">¡Autorización firmada! Iniciando su evaluación…</p>
           <p className="text-sm text-blue-800">
-            Recibimos su autorización y estamos iniciando la consulta de su historial. Esto toma unos segundos.
+            Recibimos su autorización y estamos iniciando la consulta de su historial. Suele tardar unos minutos. Le avisaremos por correo cuando termine.
           </p>
         </div>
       </div>
@@ -535,7 +538,7 @@ export function EstudioSolicitanteCard({
           {esReintento ? 'Reintente la evaluación' : 'Confirme sus datos para la evaluación crediticia'}
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Al tocar <strong>{esReintento ? 'Reintentar evaluación' : 'Iniciar evaluación'}</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. El resultado llega en unos minutos.
+          Al tocar <strong>{esReintento ? 'Reintentar evaluación' : 'Iniciar evaluación'}</strong>, consultaremos su historial en las <strong>centrales de riesgo</strong>. Suele tardar unos minutos. Le avisaremos por correo cuando termine.
         </p>
 
         {/* BLQ §3.5: el documento solo lo corrige quien tramita el arriendo
@@ -593,7 +596,7 @@ export function EstudioSolicitanteCard({
           <div>
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Consultando su historial…</p>
             <p className="text-sm text-blue-800">
-              Estamos evaluando su historial crediticio. Esto suele tardar menos de un minuto — le avisaremos por correo cuando termine.
+              Estamos evaluando su historial crediticio. Suele tardar unos minutos. Le avisaremos por correo cuando termine.
             </p>
           </div>
         </div>
@@ -723,7 +726,9 @@ export function EstudioSolicitanteCard({
             <div>
               <p className="text-sm font-semibold text-green-900 mb-0.5">¡Estudio aprobado!</p>
               <p className="text-sm text-green-800">
-                Pronto el propietario le liberará el contrato para firmar. Le avisaremos en cuanto esté listo.
+                {sinInmueble
+                  ? 'Cuando elija el inmueble, quien tramita su arriendo preparará el contrato.'
+                  : 'Quien tramita su arriendo preparará el contrato. Le avisaremos cuando esté listo para firmar.'}
               </p>
               {botonCertificado}
             </div>

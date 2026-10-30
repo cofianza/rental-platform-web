@@ -104,6 +104,8 @@ export interface IExpediente {
   contrato_estado?: string | null
   /** Adenda de precios §8.2: prioridad en la cola del analista (el caso R2 va 'baja'). */
   prioridad_revision?: 'baja' | 'normal' | 'alta'
+  /** Solo Cofianza, en revisión: desde cuándo (lista y detalle; «En revisión hace N días»). */
+  en_revision_desde?: string | null
   /** Solo si se pidió con_contrato_vivo: ya tiene un contrato no cancelado. */
   tiene_contrato_vivo?: boolean
   /** Flag del workflow paso 3: el propietario habilito el estudio crediticio. */
@@ -191,6 +193,8 @@ export interface IExpedientesStatsRaw {
 export interface IExpedientesStats {
   total: number
   por_estado: Record<EstadoExpediente, number>
+  /** Solo Cofianza: condicionados sin condición de coarrendatario (los decide un analista). null = no se pudo leer. */
+  condicionados_por_decidir?: number | null
 }
 
 /**
@@ -350,6 +354,8 @@ export interface IEjecutarTransicion {
   evaluacion?: IEvaluacionRevisionManual
   /** Adenda 4 §9: al aprobar un condicionado, exigió algo más (tarifa no automática). */
   condicion_adicional?: boolean
+  /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige al aprobar). */
+  nota_identidad?: string
   /** P34: obligatorio al rechazar; es lo que ve la inmobiliaria o el propietario. */
   motivo?: string
   /** H58/H103: motivos de lista; el API arma con ellos motivo y comentario. */

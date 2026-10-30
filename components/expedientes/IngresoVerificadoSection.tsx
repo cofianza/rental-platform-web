@@ -146,8 +146,10 @@ export function IngresoVerificadoSection({
               {datos.evaluacion && (
                 <p className={datos.evaluacion.cumple ? 'text-primary-800' : 'text-red-700'}>
                   {!datos.evaluacion.cumple && <IconAlertTriangle size={14} className="mr-1 inline" />}
-                  Con este ingreso, el endeudamiento es {pct(datos.evaluacion.dti_pct)} (máximo 65 %) y el canon es{' '}
-                  {pct(datos.evaluacion.canon_ingreso_pct)} del ingreso (máximo 40 %):{' '}
+                  {/* U26: los máximos de la API; 65 y 40 solo si una API anterior no los manda. */}
+                  Con este ingreso, el endeudamiento es {pct(datos.evaluacion.dti_pct)} (máximo{' '}
+                  {pct(datos.maximos?.dti_pct ?? 65)}) y el canon es {pct(datos.evaluacion.canon_ingreso_pct)} del ingreso
+                  (máximo {pct(datos.maximos?.canon_ingreso_pct ?? 40)}):{' '}
                   {datos.evaluacion.cumple ? 'cumple.' : 'no cumple, y con ingreso verificado eso impide aprobarlo.'}
                 </p>
               )}

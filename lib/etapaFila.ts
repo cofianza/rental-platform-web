@@ -59,5 +59,40 @@ export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | unde
   // Con la identidad rechazada solo Cofianza reenvía: el gestor no puede «reenviar el enlace».
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'comunicarse con Cofianza'
   if (etapa === 'contrato' && !e.inmueble_id) return 'vincular el inmueble'
+  // L3: con el contrato en borrador ya no hay que crearlo, sino terminarlo.
+  if (etapa === 'contrato' && e.contrato_estado === 'borrador') return 'terminar el contrato'
   return ACCION_GESTOR[etapa]
+}
+
+/**
+ * U9: «Tomar» solo cuando el turno es de Cofianza: la decisión sin condición de
+ * coarrendatario, la consulta fallida y la que no arrancó. En las demás no hay
+ * nada que un analista deba tomar.
+ */
+export function tomarDisponible(e: IExpediente, etapa: EtapaEstudio = etapaDeFila(e)): boolean {
+  if (etapa === 'decision') return !e.estudio_vigente?.condicion_coarrendatario
+  return etapa === 'fallida' || etapa === 'sin_ejecutar'
+}
+
+/**
+ * U14: la «Última actividad» solo se pinta de alerta cuando alguien tiene que
+ * mover el estudio (el gestor o Cofianza). Con el contrato en firma o vigente,
+ * o el estudio terminado, el tiempo quieto no es un atraso.
+ */
+export function actividadConAlerta(e: IExpediente, etapa: EtapaEstudio = etapaDeFila(e)): boolean {
+  if (['vigente', 'firma', 'finalizado', 'no_aprobado', 'cancelado'].includes(etapa)) return false
+  return e.depende_de === 'gestor' || e.depende_de === 'cofianza'
+}
+
+/**
+ * L4: «En revisión hace N días» para Cofianza, desde las 24 h (la alerta del
+ * barrido); rojo desde los 3 días. null antes de las 24 h o sin el dato.
+ */
+export function revisionDemorada(desde: string | null | undefined, ahoraMs: number): { texto: string; tono: 'ambar' | 'rojo' } | null {
+  if (!desde) return null
+  const t = Date.parse(desde)
+  if (!Number.isFinite(t)) return null
+  const dias = Math.floor((ahoraMs - t) / 86_400_000)
+  if (dias < 1) return null
+  return { texto: `En revisión hace ${dias} ${dias === 1 ? 'día' : 'días'}`, tono: dias >= 3 ? 'rojo' : 'ambar' }
 }
