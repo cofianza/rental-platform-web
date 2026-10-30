@@ -92,7 +92,7 @@ test('qué sigue: espera con fecha, decisión del analista y estudio sin inmuebl
 
 test('U2: la consulta que no arrancó, para el analista de Cofianza', () => {
   const o = { vista: 'cofianza' as const, analista: true, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
-  assert.match(queSigue('sin_ejecutar', o), /Ejecútela en «Evaluación crediticia», en el detalle; la inmobiliaria también puede hacerlo\./)
+  assert.match(queSigue('sin_ejecutar', o), /Ejecútela en «Evaluación crediticia», en el detalle; quien tramita el arriendo también puede hacerlo\./)
   // Gerencia (no analista) y el gestor conservan su texto.
   assert.doesNotMatch(queSigue('sin_ejecutar', { ...o, analista: false }), /Ejecútela/)
   assert.match(queSigue('sin_ejecutar', { ...o, vista: 'gestor', analista: false }), /Ejecútela en «Evaluación crediticia», aquí abajo\./)
