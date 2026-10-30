@@ -155,6 +155,7 @@ export function ExpedientesListado() {
             meta={meta}
             filters={filters}
             onSort={handleSort}
+            onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
             vacio={

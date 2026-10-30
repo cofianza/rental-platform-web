@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
 import { EstadoFila } from './EstadoFila'
-import { actividadConAlerta, tomarDisponible } from '@/lib/etapaFila'
+import { actividadConAlerta, siguienteOrdenActividad, tomarDisponible } from '@/lib/etapaFila'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import { AYUDA } from '@/lib/ayudaEstudio'
@@ -65,28 +65,26 @@ function SortableHeader({
 }
 
 /**
- * U7: un solo encabezado ordenable para la actividad y la creación. Cada clic
- * pasa por: actividad reciente, actividad antigua, creación antigua, creación reciente.
+ * U7: un solo encabezado ordenable para la actividad y la creación. X5: cada
+ * clic fija orden y sentido (siguienteOrdenActividad): actividad reciente,
+ * actividad antigua, creación reciente, creación antigua.
  */
 function ActividadHeader({
   currentSortBy,
   currentSortOrder,
-  onSort,
-}: Omit<SortableHeaderProps, 'column' | 'label'>) {
+  onOrdenar,
+}: {
+  currentSortBy: IExpedienteFilters['sortBy']
+  currentSortOrder: IExpedienteFilters['sortOrder']
+  onOrdenar: (sortBy: IExpedienteFilters['sortBy'], sortOrder: IExpedienteFilters['sortOrder']) => void
+}) {
   const porCreacion = currentSortBy === 'created_at'
   const activo = porCreacion || currentSortBy === 'updated_at'
-  const siguiente: IExpedienteFilters['sortBy'] =
-    currentSortBy === 'updated_at' && currentSortOrder === 'asc'
-      ? 'created_at'
-      : porCreacion && currentSortOrder === 'desc'
-        ? 'updated_at'
-        : porCreacion
-          ? 'created_at'
-          : 'updated_at'
+  const siguiente = siguienteOrdenActividad(currentSortBy, currentSortOrder)
   return (
     <button
       type="button"
-      onClick={() => onSort(siguiente)}
+      onClick={() => onOrdenar(siguiente.sortBy, siguiente.sortOrder)}
       title="Clic para ordenar por la última actividad o por la fecha de creación"
       className="flex items-center gap-1 group text-left uppercase tracking-wider"
     >
@@ -149,6 +147,8 @@ export interface ExpedientesTableProps {
   meta: IExpedientesMeta | null
   filters: IExpedienteFilters
   onSort: (column: IExpedienteFilters['sortBy']) => void
+  /** X5: orden y sentido explícitos (el encabezado «Actividad» recorre cuatro órdenes). */
+  onOrdenar: (sortBy: IExpedienteFilters['sortBy'], sortOrder: IExpedienteFilters['sortOrder']) => void
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
   /** Mapa perfil_id → nombre de los miembros de la inmobiliaria. Cuando se
@@ -172,6 +172,7 @@ export function ExpedientesTable({
   meta,
   filters,
   onSort,
+  onOrdenar,
   onPageChange,
   onLimitChange,
   miembrosResponsablesById,
@@ -309,7 +310,7 @@ export function ExpedientesTable({
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {/* Dos ordenamientos reales en un botón: por movimiento (lo que
                     importa para no dejar un estudio quieto) y por fecha de creación. */}
-                <ActividadHeader currentSortBy={filters.sortBy} currentSortOrder={filters.sortOrder} onSort={onSort} />
+                <ActividadHeader currentSortBy={filters.sortBy} currentSortOrder={filters.sortOrder} onOrdenar={onOrdenar} />
               </th>
             </tr>
           </thead>

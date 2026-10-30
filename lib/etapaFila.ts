@@ -3,7 +3,7 @@
  * con calcularEtapa, pero solo con lo que trae el RPC de la lista. Pura.
  */
 
-import type { IExpediente } from '@/types/expediente'
+import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
 import type { EtapaEstudio } from './etapaEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
@@ -95,4 +95,19 @@ export function revisionDemorada(desde: string | null | undefined, ahoraMs: numb
   const dias = Math.floor((ahoraMs - t) / 86_400_000)
   if (dias < 1) return null
   return { texto: `En revisión hace ${dias} ${dias === 1 ? 'día' : 'días'}`, tono: dias >= 3 ? 'rojo' : 'ambar' }
+}
+
+/**
+ * X5: el ciclo del encabezado «Actividad» de la lista, con orden explícito en
+ * cada paso: actividad reciente → actividad antigua → creación reciente →
+ * creación antigua → actividad reciente. Desde otra columna empieza por
+ * actividad reciente. Pura.
+ */
+export function siguienteOrdenActividad(
+  sortBy: IExpedienteFilters['sortBy'],
+  sortOrder: IExpedienteFilters['sortOrder'],
+): { sortBy: IExpedienteFilters['sortBy']; sortOrder: IExpedienteFilters['sortOrder'] } {
+  if (sortBy === 'updated_at') return sortOrder === 'desc' ? { sortBy: 'updated_at', sortOrder: 'asc' } : { sortBy: 'created_at', sortOrder: 'desc' }
+  if (sortBy === 'created_at' && sortOrder === 'desc') return { sortBy: 'created_at', sortOrder: 'asc' }
+  return { sortBy: 'updated_at', sortOrder: 'desc' }
 }

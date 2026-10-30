@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada } from './etapaFila'
+import { etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
 import type { IExpediente, IEstudioVigente } from '@/types/expediente'
 
 const fila = (o: Partial<IExpediente> = {}, ev?: Partial<IEstudioVigente> | null): IExpediente =>
@@ -109,4 +109,20 @@ test('L4: «En revisión hace N días» desde las 24 h; rojo desde los 3 días',
   assert.deepEqual(revisionDemorada(hace(50), ahora), { texto: 'En revisión hace 2 días', tono: 'ambar' })
   assert.deepEqual(revisionDemorada(hace(80), ahora), { texto: 'En revisión hace 3 días', tono: 'rojo' })
   assert.equal(revisionDemorada(null, ahora), null)
+})
+
+test('X5: el encabezado Actividad recorre los cuatro órdenes y vuelve al inicio', () => {
+  const pasos: Array<ReturnType<typeof siguienteOrdenActividad>> = []
+  let o = siguienteOrdenActividad('numero', 'asc')
+  for (let i = 0; i < 5; i++) {
+    pasos.push(o)
+    o = siguienteOrdenActividad(o.sortBy, o.sortOrder)
+  }
+  assert.deepEqual(pasos, [
+    { sortBy: 'updated_at', sortOrder: 'desc' },
+    { sortBy: 'updated_at', sortOrder: 'asc' },
+    { sortBy: 'created_at', sortOrder: 'desc' },
+    { sortBy: 'created_at', sortOrder: 'asc' },
+    { sortBy: 'updated_at', sortOrder: 'desc' },
+  ])
 })
