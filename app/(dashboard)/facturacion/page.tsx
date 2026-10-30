@@ -76,7 +76,7 @@ function Facturacion() {
         { id: 'facturas', label: 'Facturas' },
         ...(canReembolsar ? [{ id: 'reembolsos', label: 'Reembolsos' }] : []),
         // Adenda de precios §5.1: lo que las inmobiliarias remiten a Cofianza.
-        ...(canSeeTarifasIva ? [{ id: 'primas', label: 'Primas por remitir' }] : []),
+        ...(canSeeTarifasIva ? [{ id: 'primas', label: 'Primas por cobrar' }] : []),
         // Plan cobro-tarifa-mensual §4: las cuentas de cobro de la tarifa a cada inmobiliaria.
         ...(canSeeTarifasIva ? [{ id: 'tarifa', label: 'Tarifa mensual' }] : []),
         ...(esTitular ? [{ id: 'tarifa', label: 'Cuentas de cobro Cofianza' }] : []),

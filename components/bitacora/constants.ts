@@ -143,7 +143,7 @@ export const ACTION_LABELS: Record<string, string> = {
   pago_link_resent: 'Enlace de pago reenviado',
   pago_webhook_processed: 'Webhook de pago procesado',
   pago_state_transitioned: 'Pago cambió de estado',
-  prima_remitida: 'Prima remitida por la inmobiliaria',
+  prima_remitida: 'Prima marcada como recibida de la inmobiliaria',
 
   // Cobro de la tarifa mensual
   tarifa_linea_pagada: 'Línea de la tarifa pagada',

@@ -381,6 +381,10 @@ class FacturacionService {
 export interface IPrimaPorRemitir {
   id: string
   contrato_id: string
+  /** Trasladada: la recauda y la remite la inmobiliaria. Tradicional: la asume y la paga ella. */
+  concepto: 'prima_trasladada' | 'prima_tradicional'
+  /** Cuándo se causó: al activarse la fianza. */
+  created_at: string
   monto_cop: number
   /** AAAA-MM-DD: día 10 en que la inmobiliaria debe remitirla. */
   vence_en: string
