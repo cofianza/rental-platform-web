@@ -20,7 +20,15 @@ import type {
 // como react-pdf.
 const PlantillaFormModal = dynamic(
   () => import('@/components/plantillas-contrato/PlantillaFormModal').then((m) => ({ default: m.PlantillaFormModal })),
-  { ssr: false },
+  {
+    ssr: false,
+    // Primera apertura: el bloque del editor tarda en bajar; algo que diga que viene.
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" role="status" aria-label="Cargando el editor">
+        <IconLoader size={28} className="animate-spin text-white" />
+      </div>
+    ),
+  },
 )
 
 export default function PlantillasContratoPage() {

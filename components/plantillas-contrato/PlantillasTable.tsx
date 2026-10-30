@@ -21,7 +21,7 @@ interface PlantillasTableProps {
 // Fuera del componente: definido dentro, cada render creaba un tipo de
 // componente nuevo y React remontaba los íconos.
 function SortIcon({ field, sortBy, sortDir }: { field: string; sortBy: string; sortDir: 'asc' | 'desc' }) {
-  if (sortBy !== field) return <span className="text-gray-300 ml-1">&#8597;</span>
+  if (sortBy !== field) return <span className="ml-1 inline-flex align-middle text-gray-300"><IconChevronDown size={12} /></span>
   return <span className="ml-1 inline-flex align-middle">{sortDir === 'asc' ? <IconChevronUp size={12} /> : <IconChevronDown size={12} />}</span>
 }
 
