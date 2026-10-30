@@ -84,6 +84,8 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
       return s.motivoDetalle ? `Rechazó: ${s.motivoDetalle}` : 'Una de las partes rechazó la firma.'
     case 'CANCELADO':
       return 'El proceso de firma se anuló.'
+    case 'AUCO_DATOS':
+      return s.motivoDetalle ?? 'Auco rechazó los datos del envío.'
     case 'AUCO_UPLOAD':
     case 'HUERFANO':
       return `El proceso de firma no se creó en Auco${s.motivoDetalle ? `: ${s.motivoDetalle}` : '.'}`
@@ -137,7 +139,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   // Auco notifica en orden: el turno es del primero que no ha firmado.
   const turno = s?.estado === 'en_firma' ? firmantes.find((f) => f.estado !== 'firmado') : undefined
   const bloqueados = s?.estado === 'en_firma' ? firmantes.filter((f) => f.estado === 'bloqueado') : []
-  const nota = !enFirma || e.reintento ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
+  // Las partes están congeladas: reintentar daría el mismo rechazo (la API tampoco lo deja).
+  const rechazoDatos = (enFirma || incompleta) && s?.estado === 'fallido' && s.motivo === 'AUCO_DATOS'
+  const nota = !enFirma || e.reintento || rechazoDatos ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
   const motivo = motivoDe(s)
   // Adenda 1 (respuesta 11): el aviso lo acepta la inmobiliaria y, hasta entonces, ella no reenvía ni cancela (el API igual).
   // Sin el acuse disponible (falta la migración) el API no lo exige: aquí tampoco.
@@ -366,7 +370,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </div>
         )}
 
-        {incompleta && motivo && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
+        {incompleta && motivo && !rechazoDatos && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
         {nota && <Aviso>{nota}</Aviso>}
         {enFirma && e.identidadPendientes > 0 && (
           <Aviso>
@@ -388,6 +392,17 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           <Aviso tono="aviso">
             {bloqueados.map((f) => f.nombre).join(', ')} {bloqueados.length === 1 ? 'quedó bloqueado' : 'quedaron bloqueados'} en
             Auco por intentos fallidos con el código. Cofianza debe desbloquearlo; ya le avisamos al equipo.
+          </Aviso>
+        )}
+
+        {rechazoDatos && (
+          <Aviso tono="error">
+            <p>{motivo}</p>
+            <p className="mt-1">
+              {editable
+                ? 'Si el problema es el correo o el celular, cancele el contrato y corríjalo al crearlo de nuevo. Si es el nombre o el documento, comuníquese con Cofianza antes de cancelar.'
+                : 'La inmobiliaria debe revisar el dato con Cofianza.'}
+            </p>
           </Aviso>
         )}
 
@@ -460,7 +475,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             // §12.2: con el acta cargada ya se puede cerrar el estudio; es lo que sigue.
             <Aviso tono="exito">
               <p>
-                Siguiente paso: cierre el estudio desde su página, con «Cambiar estado».
+                Siguiente paso: abra el estudio y ciérrelo.
               </p>
               <Link
                 href={`/expedientes/${expedienteId}`}
@@ -595,7 +610,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         }}
         title="¿Cancelar el contrato?"
         descripcion={
-          enFirma
+          enFirma && creado
             ? `Se anula el proceso de firma en Auco, el número ${e.numero} queda anulado y el inmueble se libera.`
             : `El número ${e.numero} queda anulado y el inmueble se libera.`
         }

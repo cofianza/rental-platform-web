@@ -54,6 +54,8 @@ test('después de la consulta: decisión, contrato, firma y cierre', () => {
   assert.equal(calcularEtapa({ ...base, estado: 'condicionado' }), 'decision')
   assert.equal(calcularEtapa({ ...base, estado: 'aprobado' }), 'contrato')
   assert.equal(calcularEtapa({ ...base, estado: 'aprobado', contratosEstados: ['pendiente_firma'] }), 'firma')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', contratosEstados: ['firma_incompleta'] }), 'firma_incompleta')
+  assert.equal(turnoDeEtapa('firma_incompleta', false), 'gestor')
   assert.equal(calcularEtapa({ ...base, estado: 'aprobado', contratosEstados: ['cancelado', 'vigente'] }), 'vigente')
   assert.equal(calcularEtapa({ ...base, estado: 'rechazado' }), 'no_aprobado')
   assert.equal(calcularEtapa({ ...base, estado: 'cerrado' }), 'finalizado')

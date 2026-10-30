@@ -21,6 +21,7 @@ export type EtapaEstudio =
   | 'decision'
   | 'contrato'
   | 'firma'
+  | 'firma_incompleta'
   | 'vigente'
   | 'finalizado'
   | 'no_aprobado'
@@ -43,6 +44,7 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   decision: 'En revisión de Cofianza',
   contrato: 'Aprobado',
   firma: 'En firma',
+  firma_incompleta: 'Firma incompleta',
   vigente: 'Contrato vigente',
   finalizado: 'Finalizado',
   no_aprobado: 'No aprobable',
@@ -69,6 +71,7 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   no_aprobado: 4,
   contrato: 5,
   firma: 6,
+  firma_incompleta: 6,
   vigente: PASOS_DETALLE.length,
   finalizado: PASOS_DETALLE.length,
   cancelado: 0,
@@ -107,7 +110,9 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
     return d.estadoPreCancelacion ? 'cancelado' : 'finalizado'
   }
   if (d.contratosEstados.some((e) => ['firmado', 'vigente', 'finalizado'].includes(e))) return 'vigente'
-  if (d.contratosEstados.some((e) => e === 'pendiente_firma' || e === 'firma_incompleta')) return 'firma'
+  if (d.contratosEstados.includes('pendiente_firma')) return 'firma'
+  // El proceso ya cerró: nadie puede firmar, le toca actuar a la inmobiliaria.
+  if (d.contratosEstados.includes('firma_incompleta')) return 'firma_incompleta'
   if (d.estado === 'aprobado') return 'contrato'
   if (d.estado === 'condicionado') return 'decision'
   if (d.estudioRechazado) return 'no_habilitada'
@@ -148,6 +153,7 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'sin_ejecutar':
     case 'fallida':
     case 'contrato':
+    case 'firma_incompleta':
       return 'gestor'
     case 'autorizacion':
     case 'pago_prospecto':

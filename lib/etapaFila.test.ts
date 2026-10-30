@@ -27,7 +27,8 @@ test('cierre: no aprobable, cancelado y finalizado', () => {
 
 test('contrato: vigente y en firma', () => {
   assert.equal(etapaDeFila(fila({ estado: 'aprobado', contrato_estado: 'vigente' })), 'vigente')
-  assert.equal(etapaDeFila(fila({ estado: 'aprobado', contrato_estado: 'firma_incompleta' })), 'firma')
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', contrato_estado: 'firma_incompleta' })), 'firma_incompleta')
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma' })), 'firma')
 })
 
 test('falló la del coarrendatario, aprobado y condicionado', () => {

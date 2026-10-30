@@ -27,7 +27,7 @@ export const AYUDA = {
   visita:
     'La visita al inmueble va antes de habilitar la evaluación. Si ya se hizo por fuera (WhatsApp u otro medio), se puede marcar como omitida.',
   contrato:
-    'El contrato de arrendamiento afianzado por Cofianza. Se firma por medios electrónicos: arrendatario, arrendador y Cofianza.',
+    'El contrato de arrendamiento afianzado por Cofianza. Se firma por medios electrónicos entre las partes: arrendatario, coarrendatario si lo hay y arrendador.',
   // Sin el plazo en días: es calibrable.
   condicionado:
     'El estudio no se aprobó solo. Puede estar aprobado con condición (la persona tiene un plazo para sumar un coarrendatario) o en revisión (lo decide un analista de Cofianza con la información completa).',
@@ -58,6 +58,7 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
     'Lo decide un analista de Cofianza y le avisamos cuando decida. Mientras tanto puede reforzar el caso con soportes de ingreso.',
   contrato: 'El estudio está aprobado: cree el contrato aquí abajo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
+  firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Abra el contrato: allí verá qué aviso aceptar y si puede reenviarlo o debe cancelarlo.',
   vigente: 'El contrato está firmado y vigente.',
   finalizado: 'El estudio terminó y queda para consulta.',
   no_aprobado: 'El estudio no quedó aprobable. Abajo están el motivo y, si aplica, cómo apelar.',
@@ -76,6 +77,7 @@ export const AYUDA_ETAPA_TERCERO: Partial<Record<EtapaEstudio, string>> = {
     'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Se ejecuta desde «Evaluación crediticia», aquí abajo.',
   decision: 'Lo decide un analista de Cofianza.',
   contrato: 'Falta que la inmobiliaria o el propietario creen el contrato.',
+  firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Falta que la inmobiliaria o el propietario la reenvíen o cancelen el contrato.',
 }
 
 function textoEspera(plazo: string, gestor: boolean): string {
