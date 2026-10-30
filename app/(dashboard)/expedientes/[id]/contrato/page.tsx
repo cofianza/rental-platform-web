@@ -486,7 +486,13 @@ function Asistente({
       propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
       firmasHuella: rutaB ? contrato.propio?.firmasHuella : undefined,
     })
-    if (ok) toast.success(`Contrato ${contrato.numero} enviado a firma`)
+    if (ok) {
+      toast.success(
+        contrato.biometriaFirma
+          ? `Contrato ${contrato.numero}: enviamos el correo de verificación de identidad. La firma sale cuando todos terminen.`
+          : `Contrato ${contrato.numero} enviado a firma`,
+      )
+    }
   }
 
   // Orden de firma = orden de las partes: arrendatario, coarrendatario y el representante

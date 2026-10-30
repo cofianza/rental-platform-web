@@ -518,7 +518,7 @@ export default function ExpedienteDetallePage() {
 
   // Como la lista (etapaDeFila): la consulta fallida del coarrendatario va antes
   // del resultado y reintentarla es del gestor. El Resumen y la barra siguen la etapa real.
-  const coaFallidaVive = coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'vigente'
+  const coaFallidaVive = coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'firma_incompleta' && etapa !== 'vigente'
   const etapaTurno = coaFallidaVive ? 'fallida' : etapa
   // Un solo nombre para dónde está el estudio: el chip, la barra y el modal de cambio de estado.
   const etiquetaEtapa =

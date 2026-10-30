@@ -16,7 +16,8 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
     return e.estado_pre_cancelacion ? 'cancelado' : 'finalizado'
   }
   if (e.contrato_estado && CONTRATO_FIRMADO.includes(e.contrato_estado)) return 'vigente'
-  if (e.contrato_estado === 'pendiente_firma' || e.contrato_estado === 'firma_incompleta') return 'firma'
+  if (e.contrato_estado === 'pendiente_firma') return 'firma'
+  if (e.contrato_estado === 'firma_incompleta') return 'firma_incompleta'
   const ev = e.estudio_vigente
   if (ev?.coarrendatario_fallido) return 'fallida'
   if (e.estado === 'aprobado') return 'contrato'
@@ -50,6 +51,7 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   sin_ejecutar: 'ejecutar la consulta',
   contrato: 'crear el contrato',
   firma: 'revisar la firma del contrato',
+  firma_incompleta: 'revisar la firma incompleta',
   vigente: 'cargar el acta de entrega',
 }
 

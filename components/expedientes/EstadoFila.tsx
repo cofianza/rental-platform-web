@@ -27,6 +27,7 @@ const TONO: Record<Tono, { wrap: string; dot: string }> = {
 const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   contrato: 'verde',
   firma: 'verde',
+  firma_incompleta: 'rojo',
   vigente: 'verde',
   finalizado: 'verde',
   no_aprobado: 'rojo',
