@@ -120,7 +120,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
       if (e.decision_cofianza === 'negado') return 'No aprobable'
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
-      return 'Condicionado'
+      // U8: un nombre por situación, como la lista, la barra y las notificaciones.
+      return 'En revisión de Cofianza'
     }
     if (e.resultado === 'aprobado') return 'Aprobado'
     if (e.resultado === 'rechazado') return 'No aprobable'
