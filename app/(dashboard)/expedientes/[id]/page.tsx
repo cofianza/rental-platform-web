@@ -38,6 +38,7 @@ import {
   TransicionModal,
   ComentariosSection,
   TimelineSection,
+  WhatsappMensajesSection,
   AsignacionResponsableModal,
   DocumentosSection,
   EstudiosSection,
@@ -1335,6 +1336,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Timeline (HP-270) */}
         {activeTab === 'timeline' && (
           <div className="p-6">
+            <WhatsappMensajesSection expedienteId={id} />
             <TimelineSection expedienteId={id} />
           </div>
         )}
