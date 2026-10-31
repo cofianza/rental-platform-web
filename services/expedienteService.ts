@@ -363,6 +363,12 @@ class ExpedienteService {
   // HP-270: Timeline de eventos
   // ============================================
 
+  /** Estado de cada WhatsApp del estudio (solo Cofianza). */
+  async getWhatsappMensajes(expedienteId: string): Promise<IWhatsappMensaje[]> {
+    const response = (await apiClient.get(`/expedientes/${expedienteId}/whatsapp`)) as unknown as { data: IWhatsappMensaje[] }
+    return response.data ?? []
+  }
+
   /**
    * Obtiene el timeline unificado de eventos del expediente
    * Soporta paginación y filtro por tipo
@@ -690,4 +696,17 @@ export interface IIngresoVerificado {
   maximos?: { dti_pct: number; canon_ingreso_pct: number }
   situacion_laboral: string | null
   tipos: Array<{ clave: string; evaluado: EvaluadoIngreso; etiqueta: string }>
+}
+
+export interface IWhatsappMensaje {
+  id: string
+  plantilla: string | null
+  telefono_mascara: string | null
+  estado: 'aceptado' | 'enviado' | 'entregado' | 'leido' | 'fallido'
+  error_codigo: number | null
+  error_titulo: string | null
+  enviado_en: string
+  entregado_en: string | null
+  leido_en: string | null
+  fallido_en: string | null
 }
