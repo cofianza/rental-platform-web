@@ -13,8 +13,9 @@ import { IconLoader, IconArrowRight } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
 import type { IMotivosElegidos } from '@/types/estudio'
+import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -85,6 +86,7 @@ export function TransicionModal({
   const enviando = useRef(false)
   // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
   const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
+  const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(expedienteId, isOpen && esRevisionManual && (userRole === 'administrador' || userRole === 'operador_analista'))
 
   const handleClose = () => {
     if (isLoading) return
@@ -149,9 +151,12 @@ export function TransicionModal({
       return
     }
 
-    // «Documentos de ingreso verificados» exige al menos un documento (la API da 400 sin él).
-    if (pideEvaluacion && motivos.motivos.includes('A1') && documentos.length === 0) {
-      setError('Con «Documentos de ingreso verificados», indique al menos un documento que revisó.')
+    // Los motivos que el estudio contradice no se pueden registrar (la API da 400).
+    const errorFundamento = pideEvaluacion
+      ? errorMotivosAprobacion(motivos.motivos, noAplican, documentos, evaluacion.arrendamiento_previo)
+      : null
+    if (errorFundamento) {
+      setError(errorFundamento)
       return
     }
 
@@ -288,7 +293,7 @@ export function TransicionModal({
         )}
 
         {tipoLista && catalogo && (
-          <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isLoading} />
+          <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={(v) => { setMotivos(v); setError(null) }} disabled={isLoading} noAplican={tipoLista === 'aprobar' ? noAplican : undefined} errorLectura={tipoLista === 'aprobar' && errorMotivosLectura} onReintentar={reintentarMotivos} />
         )}
 
         {esperaLista && <CargandoMotivos />}

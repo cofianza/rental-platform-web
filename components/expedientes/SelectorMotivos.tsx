@@ -10,6 +10,7 @@
 import { IconLoader } from '@/components/icons'
 import type { ICatalogoMotivos, IMotivosElegidos, TipoDecision } from '@/types/estudio'
 import { textoVisible } from './textoVisible'
+import { REPORTE_CENTRALES } from './DocumentosConsultados'
 
 const OTRO: Record<TipoDecision, string> = { aprobar: 'A9', rechazar: 'R9', condicionar: 'C6' }
 const MIN_DETALLE = 10
@@ -25,6 +26,22 @@ function delTipo(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMot
 }
 
 /** null si está completo; si no, qué falta. */
+/** Lo que impide aprobar con estos motivos: la API rechaza lo mismo. */
+export function errorMotivosAprobacion(
+  motivos: string[],
+  noAplican: Record<string, string>,
+  documentos: string[],
+  arrendamientoPrevio: string | undefined,
+): string | null {
+  const invalido = motivos.find((c) => noAplican[c])
+  if (invalido) return `Desmarque el motivo que no aplica. ${noAplican[invalido]}`
+  if (motivos.includes('A1') && !documentos.some((d) => d !== REPORTE_CENTRALES))
+    return 'Con «Documentos de ingreso verificados», indique al menos un documento de ingreso que revisó, además del reporte de las centrales.'
+  if (motivos.includes('A3') && arrendamientoPrevio !== 'referencia_positiva')
+    return 'Para «Referencia de arrendamiento», elija una referencia positiva verificada en el historial de arrendamiento.'
+  return null
+}
+
 export function errorMotivos(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): string | null {
   const motivos = delTipo(tipo, v, catalogo)
   if (motivos.length === 0) return 'Elija al menos un motivo.'
@@ -75,12 +92,19 @@ export function SelectorMotivos({
   value,
   onChange,
   disabled,
+  noAplican = {},
+  errorLectura,
+  onReintentar,
 }: {
   tipo: TipoDecision
   catalogo: ICatalogoMotivos
   value: IMotivosElegidos
   onChange: (v: IMotivosElegidos) => void
   disabled?: boolean
+  /** Código → por qué este estudio no lo admite. */
+  noAplican?: Record<string, string>
+  errorLectura?: boolean
+  onReintentar?: () => void
 }) {
   const opciones = Object.entries(catalogo[tipo] ?? {})
   const idBase = `motivos-${tipo}`
@@ -98,13 +122,29 @@ export function SelectorMotivos({
         {TITULO[tipo]} <span className="text-red-500">*</span>
         <span className="ml-1 font-normal text-gray-500">(uno o varios)</span>
       </legend>
+      {errorLectura && (
+        <p role="status" className="text-sm text-amber-800">
+          No pudimos comprobar qué motivos aplican a este estudio.{' '}
+          <button type="button" onClick={onReintentar} className="font-medium underline">
+            Reintentar
+          </button>
+        </p>
+      )}
       <ul className="space-y-1.5">
-        {opciones.map(([codigo, m]) => (
+        {opciones.map(([codigo, m]) => {
+          const marcado = value.motivos.includes(codigo)
+          const bloqueado = !!noAplican[codigo] && !marcado
+          return (
           <li key={codigo}>
-            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50">
+            <label
+              className={`flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 ${
+                bloqueado ? 'cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:bg-gray-50'
+              }`}
+            >
               <input
                 type="checkbox"
-                checked={value.motivos.includes(codigo)}
+                checked={marcado}
+                disabled={bloqueado}
                 onChange={() => alternar(codigo)}
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
@@ -112,14 +152,17 @@ export function SelectorMotivos({
                   verá la inmobiliaria, que puede repetirse entre motivos. */}
               <span className="min-w-0 text-sm">
                 {/* El catálogo lo escribe la API; sin «(§14)» ni «Anexo A» en pantalla. */}
-                <span className="block text-gray-900">{textoVisible(m.interno)}</span>
-                {m.interno !== m.visible && (
+                <span className={`block ${bloqueado ? 'text-gray-500' : 'text-gray-900'}`}>{textoVisible(m.interno)}</span>
+                {noAplican[codigo] ? (
+                  <span className="block text-xs text-amber-800">No aplica. {noAplican[codigo]}</span>
+                ) : m.interno !== m.visible && (
                   <span className="block text-xs text-gray-500">La inmobiliaria ve: «{textoVisible(m.visible, { externo: true })}»</span>
                 )}
               </span>
             </label>
           </li>
-        ))}
+          )
+        })}
       </ul>
       <div>
         {tipo === 'condicionar' && <LoVeLaInmobiliaria />}

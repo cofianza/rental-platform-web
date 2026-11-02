@@ -586,6 +586,11 @@ class ExpedienteService {
     return response.data
   }
 
+  async getMotivosAprobacion(expedienteId: string): Promise<Record<string, string>> {
+    const res = await apiClient.get<Record<string, string>>(`/expedientes/${expedienteId}/motivos-aprobacion`)
+    return res.data
+  }
+
   /**
    * Aprobar manualmente un expediente que el buró dejó condicionado: el
    * propietario revisa la documentación adicional pedida (codeudor, póliza,
