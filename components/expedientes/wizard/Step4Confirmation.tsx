@@ -128,16 +128,16 @@ export function Step4Confirmation({
       }`,
     )
   }
-  // Al caducar solo se devuelve si nadie llegó a la central (reembolsos.service:
-  // devolverEvaluacionSinConsulta); el coarrendatario pudo consultarse sin el titular.
+  // Al caducar se devuelve aunque el coarrendatario ya se haya consultado: esa
+  // consulta la asume Cofianza (reembolsos.service: devolverEvaluacionSinConsulta).
   const FIN_CADUCIDAD: Record<string, string> = {
-    credito: 'si todavía no se consultó a nadie, el cupo vuelve a su paquete.',
-    inmobiliaria: 'si todavía no se consultó a nadie, le devolvemos el pago.',
-    prospecto: 'si todavía no se consultó a nadie, no se cobra nada.',
+    credito: 'el cupo vuelve a su paquete.',
+    inmobiliaria: 'le devolvemos el pago.',
+    prospecto: 'no se cobra nada.',
   }
   const pieCaducidad =
     panel?.dias_caducidad && forma_pago
-      ? `Si ${nombre} no autoriza en ${panel.dias_caducidad} días, el estudio se cierra solo y, ${FIN_CADUCIDAD[forma_pago]}`
+      ? `Si ${nombre} no autoriza en ${panel.dias_caducidad} días, el estudio se cierra solo y ${FIN_CADUCIDAD[forma_pago]}`
       : null
   const etiquetaBoton = pagaAhora ? WIZARD_MESSAGES.CONFIRM_CREATE_PAGO : WIZARD_MESSAGES.CONFIRM_CREATE
 
