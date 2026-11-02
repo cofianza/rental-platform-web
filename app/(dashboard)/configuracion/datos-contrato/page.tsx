@@ -82,7 +82,8 @@ export default function DatosContratoPage() {
           matricula_arrendador: data.matricula_arrendador,
           matricula_expedida_por: data.matricula_expedida_por,
           matricula_fecha: data.matricula_fecha,
-          whatsapp_recaudo: data.whatsapp_recaudo,
+          // Sin guardar todavía, propone el celular del registro: es el mismo casi siempre.
+          whatsapp_recaudo: data.whatsapp_recaudo || data.telefono,
           email_recaudo: data.email_recaudo,
           cuenta_recaudo_banco: data.cuenta_recaudo_banco,
           cuenta_recaudo_tipo: data.cuenta_recaudo_tipo,
