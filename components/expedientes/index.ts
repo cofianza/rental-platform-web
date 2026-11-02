@@ -21,6 +21,7 @@ export * from './ComentariosSection'
 
 // HP-270: Timeline
 export * from './TimelineSection'
+export * from './WhatsappMensajesSection'
 
 // HP-285: Asignación responsable
 export * from './AsignacionResponsableModal'
