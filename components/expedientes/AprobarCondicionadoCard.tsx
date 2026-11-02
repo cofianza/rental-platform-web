@@ -36,8 +36,9 @@ import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
 import { seCierraSiVence, textoCondicionCoarrendatario } from './textoVisible'
+import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { CargandoMotivos, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -85,8 +86,6 @@ export function AprobarCondicionadoCard({
   // B14: sin catálogo todavía no se decide el modo (lista o texto).
   const motivoListo = cargandoMotivos ? false : catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
-  // «Documentos de ingreso verificados» (A1) exige al menos un documento (la API da 400 sin él).
-  const faltanDocumentosA1 = motivos.motivos.includes('A1') && documentos.length === 0
   // La foto no coincidió o no se pudo verificar: la API pide una nota de identidad.
   // Se descubre con su respuesta (NOTA_IDENTIDAD_REQUERIDA); desde ahí se exige aquí.
   const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
@@ -94,6 +93,9 @@ export function AprobarCondicionadoCard({
   const faltaNotaIdentidad = pideNotaIdentidad && notaIdentidad.trim().length < 10
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
+  // Los motivos que el estudio contradice no se pueden registrar (la API da 400).
+  const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(expedienteId, userRol === 'administrador' || userRol === 'operador_analista')
+  const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplican, documentos, evaluacion.arrendamiento_previo)
   // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
   const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
   const [condicionAdicional, setCondicionAdicional] = useState(false)
@@ -213,7 +215,7 @@ export function AprobarCondicionadoCard({
 
   const handleAprobar = async () => {
     // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
-    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo || faltanDocumentosA1 || faltaNotaIdentidad) return
+    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo || errorFundamento || faltaNotaIdentidad) return
     aprobando.current = true
     setLoading(true)
     try {
@@ -405,7 +407,7 @@ export function AprobarCondicionadoCard({
         {cargandoMotivos ? (
           <CargandoMotivos />
         ) : catalogo ? (
-          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} />
+          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} noAplican={noAplican} errorLectura={errorMotivosLectura} onReintentar={reintentarMotivos} />
         ) : (
         <div>
           <label htmlFor="fundamento-revision" className="block text-sm font-medium text-gray-700 mb-1">
@@ -423,11 +425,6 @@ export function AprobarCondicionadoCard({
         </div>
         )}
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
-        {faltanDocumentosA1 && (
-          <p className="text-sm text-amber-800">
-            Con «Documentos de ingreso verificados», indique al menos un documento que revisó.
-          </p>
-        )}
         {pideNotaIdentidad && (
           <div>
             <label htmlFor="nota-identidad" className="block text-sm font-medium text-gray-700 mb-1">
@@ -471,6 +468,7 @@ export function AprobarCondicionadoCard({
             </label>
           </div>
         )}
+        {errorFundamento && <p role="status" className="text-sm text-amber-800">{errorFundamento}</p>}
         <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
           <button
             type="button"
@@ -483,7 +481,7 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion) || faltanDocumentosA1 || faltaNotaIdentidad}
+            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}

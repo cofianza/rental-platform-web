@@ -469,7 +469,7 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     return (
       <div className="mt-3 pt-3 border-t border-gray-100">
         <p className="text-xs text-gray-500">
-          <span className="font-medium text-gray-700">Fundamento:</span> {detalle.fundamento}
+          <span className="font-medium text-gray-700">Fundamento:</span> {textoVisible(detalle.fundamento.replace(/(^|\n)[ARC]\d+ · /g, '$1'))}
         </p>
       </div>
     )

@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { documentoService } from '@/services/documentoService'
 import { expedienteSoportesService } from '@/services/expedienteSoportesService'
 
-const REPORTE_BURO = 'Reporte del buró (evaluación crediticia)'
+export const REPORTE_CENTRALES = 'Reporte de las centrales de riesgo (evaluación crediticia)'
 
 interface DocumentosConsultadosProps {
   expedienteId: string
@@ -22,7 +22,7 @@ interface DocumentosConsultadosProps {
 }
 
 export function DocumentosConsultados({ expedienteId, value, onChange, disabled }: DocumentosConsultadosProps) {
-  const [opciones, setOpciones] = useState<string[]>([REPORTE_BURO])
+  const [opciones, setOpciones] = useState<string[]>([REPORTE_CENTRALES])
 
   useEffect(() => {
     let cancel = false
@@ -35,7 +35,7 @@ export function DocumentosConsultados({ expedienteId, value, onChange, disabled 
         ...docs.map((d) => (d.tipo_documento?.nombre ? `${d.tipo_documento.nombre}: ${d.nombre_original}` : d.nombre_original)),
         ...soportes.map((s) => `Soporte: ${s.nombre_original}`),
       ]
-      setOpciones([REPORTE_BURO, ...new Set(nombres)])
+      setOpciones([REPORTE_CENTRALES, ...new Set(nombres)])
     })
     return () => { cancel = true }
   }, [expedienteId])
