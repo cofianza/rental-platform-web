@@ -283,7 +283,7 @@ export const META: Record<string, MetaParametro> = {
     queHace: 'Desde este puntaje, el solicitante de una inmobiliaria que no alcanza a aprobarse solo recibe «Está cerca» y puede presentar un coarrendatario. Por debajo, ningún coarrendatario cuenta.',
     ejemplo: (v) =>
       `Con ${v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO}: ${Math.min(v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO + 8, v.UMBRAL_APROBACION_AUTOMATICA - 1)} puntos recibe «Está cerca»; ${v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO - 2} no.`,
-    nota: 'No aplica al solicitante sin historial en las centrales. Si quedó por debajo solo por el endeudamiento, manda el puntaje mínimo para exigir coarrendatario.',
+    nota: 'No aplica al solicitante sin historial en las centrales. Si quedó por debajo solo por el endeudamiento, o por el endeudamiento y el canon, manda el puntaje mínimo para exigir coarrendatario.',
     rige: 'v2',
     ...DECISION,
   },
@@ -292,11 +292,11 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
     unidad: 'puntos',
-    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza.',
+    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, o por el endeudamiento y el canon, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza.',
     ejemplo: (v) =>
       v.PUNTAJE_PISO_COARRENDATARIO > 0
-        ? `Con ${v.PUNTAJE_PISO_COARRENDATARIO}: ${Math.min(v.PUNTAJE_PISO_COARRENDATARIO + 4, v.UMBRAL_ZONA_GRIS - 1)} puntos por endeudamiento debe presentar coarrendatario; ${v.PUNTAJE_PISO_COARRENDATARIO - 1} se rechaza.`
-        : 'Con 0: todo solicitante que quede por debajo de la zona gris solo por el endeudamiento debe presentar coarrendatario.',
+        ? `Con ${v.PUNTAJE_PISO_COARRENDATARIO}: ${Math.min(v.PUNTAJE_PISO_COARRENDATARIO + 4, v.UMBRAL_ZONA_GRIS - 1)} puntos por esas causas debe presentar coarrendatario; ${v.PUNTAJE_PISO_COARRENDATARIO - 1} se rechaza.`
+        : 'Con 0: todo solicitante que quede por debajo de la zona gris solo por esas causas debe presentar coarrendatario.',
     rige: 'v2_a4',
     ...DECISION,
   },

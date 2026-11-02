@@ -55,7 +55,7 @@ function tramosPuntaje(v: Valores): Tramo[] {
       hasta: gris,
       clave: 'PUNTAJE_PISO_COARRENDATARIO',
       titulo: 'Se rechaza, salvo un caso',
-      detalle: 'Con inmobiliaria, si solo lo baja el endeudamiento sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
+      detalle: 'Con inmobiliaria, si solo lo baja el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
       tono: 'naranja',
     })
   } else {
