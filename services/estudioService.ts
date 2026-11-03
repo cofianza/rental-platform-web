@@ -123,7 +123,7 @@ export const estudioService = {
   /**
    * Ejecuta el estudio contra el proveedor de riesgo (TransUnion).
    * Lo dispara el solicitante tras confirmar sus datos, o admin/operador.
-   * El documento no viaja: se corrige con «Corregir documento» (BLQ §3.5).
+   * El documento no viaja: se corrige con «Corregir datos» (BLQ §3.5).
    */
   async ejecutarEstudio(
     estudioId: string,

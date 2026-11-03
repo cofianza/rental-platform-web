@@ -822,8 +822,9 @@ export default function AutorizarPage() {
               )}
             </div>
           ) : null}
-          {/* Qué sigue. El resultado se promete solo por correo: Meta no
-              entrega los WhatsApp (26-oct). */}
+          {/* Qué sigue. El resultado se promete solo por correo, igual que en
+              /pago/resultado: el correo sale con todos los resultados; el
+              WhatsApp solo con algunos (no con la revisión manual) y si hay celular. */}
           <div className="mx-auto mt-6 max-w-md text-left">
             <p className="text-sm font-semibold text-gray-900">Qué sigue</p>
             <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-gray-600">

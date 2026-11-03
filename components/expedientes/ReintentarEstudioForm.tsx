@@ -7,7 +7,7 @@
  *
  * Compartido por EstudioEstadoCard (resumen) y EstudiosSection (tab Estudios).
  * El documento ya no se corrige aquí (BLQ §3.5): /ejecutar lo descarta, y el
- * del titular se corrige con «Corregir documento» (corrección ciega con la
+ * del titular se corrige con «Corregir datos» (corrección ciega con la
  * fuente de verificación) y luego se reenvía el enlace. Solo el primer
  * apellido viaja como override.
  */
@@ -225,7 +225,7 @@ export function ReintentarEstudioForm({
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800 disabled:opacity-50"
               >
                 <IconPencil size={12} />
-                Corregir documento
+                Corregir datos
               </button>
             )}
           </div>

@@ -307,7 +307,7 @@ export default function EstudioFormularioPage() {
   // Form
   // ============================================
 
-  // Pasaporte, TI, NIT o sin documento: se dice desde el principio, no al enviar.
+  // Sin tipo o sin número: se dice desde el principio, no al enviar.
   const sinDocumento = !numDoc.trim() || !tipoDoc
 
   return (
@@ -359,9 +359,9 @@ export default function EstudioFormularioPage() {
           </p>
           {sinDocumento ? (
             <>
-              {/* Los mismos que acepta la evaluación (CC, CE, PPT, PEP): TI y NIT no aplican y el pasaporte no está en las centrales. */}
+              {/* Los mismos que ofrece el asistente y consulta la API (los proveedores mapean CC, CE, PPT, PEP y pasaporte): TI y NIT no aplican. */}
               <p role="alert" className="mt-2 text-sm text-amber-800">
-                Las centrales de riesgo solo consultan cédula de ciudadanía, cédula de extranjería, PPT o PEP.
+                Las centrales de riesgo solo consultan cédula de ciudadanía, cédula de extranjería, PPT, PEP o pasaporte.
                 Pídale a quien tramita su arriendo que registre uno de ellos; mientras tanto no podemos recibir
                 este formulario.
               </p>

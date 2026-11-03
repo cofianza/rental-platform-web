@@ -365,7 +365,7 @@ export function EstudioSolicitanteCard({
     ? `vence el ${new Date(autorizacion.token_expiracion).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}`
     : estudio.expiracion?.expiraEn
       ? `vence el ${formatDate(estudio.expiracion.expiraEn)}`
-      : 'vence en 15 días'
+      : 'tiene un plazo para usarse'
   const cardFirmaAutorizacion = (
     <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
       <div className="flex items-start gap-3">
@@ -542,7 +542,7 @@ export function EstudioSolicitanteCard({
         </p>
 
         {/* BLQ §3.5: el documento solo lo corrige quien tramita el arriendo
-            («Corregir documento»); la API ya no acepta cambiarlo aquí. */}
+            («Corregir datos»); la API ya no acepta cambiarlo aquí. */}
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
           <p className="text-xs font-medium text-gray-700 mb-1">Documento que se consultará</p>
           <p className="font-mono text-sm font-semibold text-gray-900">

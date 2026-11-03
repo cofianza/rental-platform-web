@@ -862,7 +862,7 @@ export function AutorizacionSection({
             </div>
           </div>
           {contactoDestino}
-          {acciones('Enviar nueva autorización', true)}
+          {acciones('Reenviar enlace', true)}
         </div>
       )}
 
@@ -881,7 +881,7 @@ export function AutorizacionSection({
             </div>
           )}
           {contactoDestino}
-          {acciones('Enviar nueva autorización', true)}
+          {acciones('Reenviar enlace', true)}
         </div>
       )}
 

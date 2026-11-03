@@ -29,6 +29,7 @@ export type Unidad =
   | 'criterio'
   | 'factor'
   | 'veces'
+  | 'consultas'
   | 'num'
 
 export type SeccionId = 'aprobacion' | 'ingreso' | 'coarrendatarios' | 'capacidad' | 'precios' | 'plazos' | 'contratos' | 'migracion' | 'otros'
@@ -494,7 +495,7 @@ export const META: Record<string, MetaParametro> = {
     nombre: 'Consultas que Cofianza paga en una apelación',
     seccion: 'capacidad',
     sub: 'Apelaciones',
-    unidad: 'num',
+    unidad: 'consultas',
     queHace: 'Si Cofianza repite a su costo la consulta a la central (1) o no (0) cuando, al responder la primera apelación de un estudio, el reporte ya venció (30 días). Una apelación posterior nunca la tiene. En 0, esa apelación se cierra.',
     rige: 'siempre',
     opciones: [0, 1],
@@ -870,6 +871,8 @@ export function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'e
       return `${v} ${n === 1 ? 'mes' : 'meses'}`
     case 'veces':
       return `${v} ${n === 1 ? 'vez' : 'veces'}`
+    case 'consultas':
+      return `${v} ${n === 1 ? 'consulta' : 'consultas'}`
     case 'factor':
       return `×${v}`
     case 'onoff':

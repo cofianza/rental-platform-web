@@ -34,6 +34,18 @@ const ETIQUETA: Record<string, string> = {
   CITA_ASISTENCIA_CONFIRMADA_DUENO: 'Asistencia confirmada (al dueño)',
   RESPONSABLE_EXPEDIENTE: 'Responsable asignado',
   NUEVA_SOLICITUD_VITRINA: 'Nueva solicitud',
+  // Las que faltaban: sin etiqueta salían como «Mensaje de WhatsApp».
+  ESTUDIO_CONDICIONADO: 'Estudio en revisión',
+  AUTORIZACION_OTP: 'Código de verificación',
+  CONTRATO_FIRMADO: 'Contrato firmado',
+  INTERESADO_VITRINA_DUENO: 'Nuevo interesado (al dueño)',
+  INTERESADO_MENSAJE_DUENO: 'Mensaje del interesado (al dueño)',
+  MORA_FASE_1: 'Recordatorio de pago',
+  MORA_FASE_1_V2: 'Recordatorio de pago',
+  MORA_FASE_2: 'Aviso de mora',
+  MORA_FASE_2_V2: 'Aviso de mora',
+  MORA_FASE_3: 'Mora escalada a Cofianza',
+  MORA_FASE_3_V2: 'Mora escalada a Cofianza',
 }
 
 /** El error de Meta llega en inglés: la frase útil va primero y el detalle aparte. */
@@ -45,13 +57,15 @@ function motivoFallo(codigo: number | null): string {
   return 'No se pudo entregar. Contacte a la persona por otro canal.'
 }
 
-const ESTADO: Record<IWhatsappMensaje['estado'], { texto: string; clase: string }> = {
+const ESTADO: Record<string, { texto: string; clase: string } | undefined> = {
   aceptado: { texto: 'En camino', clase: 'text-gray-600' },
   enviado: { texto: 'Enviado', clase: 'text-gray-600' },
   entregado: { texto: 'Entregado', clase: 'text-primary-700' },
   leido: { texto: 'Leído', clase: 'text-primary-700' },
   fallido: { texto: 'No entregado', clase: 'text-red-700' },
 }
+/** Un estado que la web todavía no conoce no puede tumbar la sección. */
+const ESTADO_DESCONOCIDO = { texto: 'Sin confirmar', clase: 'text-gray-600' }
 
 export function WhatsappMensajesSection({ expedienteId }: { expedienteId: string }) {
   const [mensajes, setMensajes] = useState<IWhatsappMensaje[]>([])
@@ -101,7 +115,7 @@ export function WhatsappMensajesSection({ expedienteId }: { expedienteId: string
       ) : (
         <ul className="divide-y divide-gray-100">
           {mensajes.map((m) => {
-            const estado = ESTADO[m.estado]
+            const estado = ESTADO[m.estado] ?? ESTADO_DESCONOCIDO
             const hora = m.fallido_en ?? m.leido_en ?? m.entregado_en ?? m.enviado_en
             return (
               <li key={m.id} className="flex items-start gap-3 px-4 py-3">

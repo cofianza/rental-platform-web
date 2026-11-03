@@ -79,7 +79,7 @@ export function CargandoMotivos() {
 
 const TITULO: Record<TipoDecision, string> = {
   aprobar: 'Motivo de la aprobación',
-  rechazar: 'Motivo del rechazo',
+  rechazar: 'Motivo por el que no es aprobable',
   condicionar: 'Condiciones',
 }
 

@@ -74,6 +74,18 @@ function estadoLabel(estado: string): string {
   return ESTADO_LABELS[estado] || estado.replace(/_/g, ' ')
 }
 
+/**
+ * El cierre según de dónde viene: solo desde «Aprobado» puede ser el cierre
+ * natural; desde un estado activo es una cancelación y desde «No aprobable»,
+ * el archivo de un no aprobable. «Finalizado» para todos engañaba.
+ */
+function estadoNuevoLabel(anterior: string, nuevo: string): string {
+  if (nuevo !== 'cerrado') return estadoLabel(nuevo)
+  if (anterior === 'rechazado') return 'No aprobable (cerrado)'
+  if (anterior === 'aprobado') return 'Finalizado'
+  return 'Cancelado'
+}
+
 // ============================================
 // Config
 // ============================================
@@ -409,7 +421,7 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
           <p className="text-xs text-gray-500">
             <span className="font-medium text-gray-700">{estadoLabel(anterior)}</span>
             {' → '}
-            <span className="font-medium text-gray-700">{estadoLabel(nuevo)}</span>
+            <span className="font-medium text-gray-700">{estadoNuevoLabel(anterior, nuevo)}</span>
           </p>
         )}
         {comentario && (

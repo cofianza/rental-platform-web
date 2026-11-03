@@ -320,6 +320,7 @@ function sufijo(unidad: string, n: number): string {
       dias_habiles: uno ? 'día hábil' : 'días hábiles',
       meses: uno ? 'mes' : 'meses',
       veces: 'veces',
+      consultas: uno ? 'consulta' : 'consultas',
     } as Record<string, string>
   )[unidad] ?? ''
 }

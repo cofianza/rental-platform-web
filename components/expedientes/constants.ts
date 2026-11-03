@@ -27,8 +27,8 @@ export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50] as const
  * Columnas ordenables
  */
 export const SORTABLE_COLUMNS = {
-  // U23: «N.°», como en el detalle («Estudio N.° …»).
-  numero: { key: 'numero' as const, label: 'N.°' },
+  // U23: «N.º», como en el detalle («Estudio N.º …»).
+  numero: { key: 'numero' as const, label: 'N.º' },
   created_at: { key: 'created_at' as const, label: 'Fecha' },
 } as const
 

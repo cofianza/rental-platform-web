@@ -10,7 +10,7 @@ import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/ca
 import { IconInfo, IconLock } from '@/components/icons'
 import { EscalaDecision } from './EscalaDecision'
 import { ParametroFila } from './ParametroFila'
-import { conUnidad, metaDe, type SeccionId, type Valores } from './parametros'
+import { conUnidad, metaDe, rigeHoy, type SeccionId, type Valores } from './parametros'
 
 interface Props {
   params: IParametroCalibracion[]
@@ -115,7 +115,7 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
           </div>
         }
       >
-        <ul className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">{de(CLAVE).map(cifra)}</ul>
+        <ul className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">{de(CLAVE).filter((p) => rigeHoy(metaDe(p.clave).rige, valores)).map(cifra)}</ul>
       </Tarjeta>
     </div>
   )

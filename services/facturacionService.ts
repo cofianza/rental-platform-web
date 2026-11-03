@@ -383,7 +383,7 @@ export interface IPrimaPorRemitir {
   contrato_id: string
   /** Trasladada: la recauda y la remite la inmobiliaria. Tradicional: la asume y la paga ella. */
   concepto: 'prima_trasladada' | 'prima_tradicional'
-  /** Cuándo se causó: al activarse la fianza. */
+  /** Cuándo se registró la fila; la causación es contratos.fecha_firma (activación de la fianza). */
   created_at: string
   monto_cop: number
   /** AAAA-MM-DD: día 10 en que la inmobiliaria debe remitirla. */
@@ -393,7 +393,8 @@ export interface IPrimaPorRemitir {
   notas: string | null
   reporte_enviado_en: string | null
   inmobiliarias: { nombre: string } | null
-  contratos: { numero: string; expediente_id: string; direccion: string | null } | null
+  /** fecha_firma: última firma = activación de la fianza (cuándo se causó la prima). */
+  contratos: { numero: string; expediente_id: string; fecha_firma?: string | null; direccion: string | null } | null
 }
 
 export interface ITarifaIva {

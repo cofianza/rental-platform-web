@@ -181,7 +181,7 @@ export function ReEvaluacionSection({
   const hasChildReeval = !!hija
   const agotadas = totalEnCadena > MAX_REEVALUACIONES
 
-  // Política §11: 15 días hábiles desde la notificación del rechazo para
+  // Política §11: 15 días hábiles desde la notificación del resultado no aprobable para
   // radicar la apelación (la fecha que registra el analista o, sin ella, el
   // primer soporte); radicada a tiempo, Cofianza responde en 10 aunque ya haya
   // pasado el día 15. Política §8: la reevaluación se registra contra el
@@ -227,13 +227,13 @@ export function ReEvaluacionSection({
           : reporteVencido
             ? `La apelación ya no se puede decidir: ${sinReporte} ${ESTUDIO_NUEVO}`
             : plazoVencido
-              ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde la notificación del rechazo y no se radicó a tiempo. ${ESTUDIO_NUEVO}${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registre abajo la fecha en que lo hizo.' : ''}`
+              ? `Venció el plazo para apelar${apelarHasta ? ` (${dia(apelarHasta)})` : ''}: son 15 días hábiles desde que se notificó el resultado no aprobable y no se radicó a tiempo. ${ESTUDIO_NUEVO}${esAnalista ? ' Si apeló a tiempo por correo u otro canal, registre abajo la fecha en que lo hizo.' : ''}`
               : !puedeReevaluar
                 ? 'Esta evaluación no admite apelación.'
                 : responderHasta && hasta
                   ? `Apelación radicada a tiempo. Cofianza responde a más tardar el ${dia(hasta)}${porReporte ? ', cuando vence el reporte de la central' : ''}; la reevaluación se puede registrar aunque ya haya pasado el día 15.`
                   : hasta
-                    ? `El solicitante puede apelar hasta el ${dia(hasta)} (${porReporte ? 'ese día vence el reporte de la central con que se decide' : '15 días hábiles desde la notificación del rechazo'}). Suba los documentos soporte para radicar la apelación.`
+                    ? `El solicitante puede apelar hasta el ${dia(hasta)} (${porReporte ? 'ese día vence el reporte de la central con que se decide' : '15 días hábiles desde que se notificó el resultado no aprobable'}). Suba los documentos soporte para radicar la apelación.`
                     : 'Suba los documentos soporte para solicitar la reevaluación.'
   // La fecha de radicación solo cambia algo si la apelación sigue abierta o
   // la cerró el plazo: con listas, sin reevaluaciones o sin reporte, no.
@@ -316,7 +316,7 @@ export function ReEvaluacionSection({
       <div className="flex items-start gap-3 p-4 rounded-lg border bg-red-50 border-red-200">
         <IconAlertTriangle size={20} className="text-red-500 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-red-800">Esta evaluación fue rechazada</p>
+          <p className="text-sm font-medium text-red-800">Esta evaluación quedó no aprobable</p>
           <p className="text-sm text-gray-600 mt-1">
             {avisoPlazo}
             {totalEnCadena > 1 && ` Reevaluación ${totalEnCadena - 1} de ${MAX_REEVALUACIONES}.`}

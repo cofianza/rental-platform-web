@@ -71,7 +71,8 @@ const ESTADO: Record<EstadoMigracion, { label: string; tone: ChipTone }> = {
   pendiente_identificacion: { label: 'Pendiente de identificación', tone: 'yellow' },
   activa: { label: 'Fianza activa por migración', tone: 'green' },
   en_revision: { label: 'En revisión', tone: 'yellow' },
-  excluido: { label: 'Excluido', tone: 'red' },
+  // Suma los excluidos (declaración falsa, soportes no entregados) y los no migrados por documento no entregado.
+  excluido: { label: 'Excluido o no migrado', tone: 'red' },
   terminado: { label: 'Terminado', tone: 'blue' },
   rechazado_validacion: { label: 'Rechazado en validación', tone: 'red' },
 }
@@ -297,17 +298,19 @@ export default function LoteMigracionPage() {
             <Link href="/admin/migracion" className={buttonClasses('secondary')}>
               <IconArrowLeft size={16} /> Migración
             </Link>
-            {/* Adenda 1 §5.6: el archivo tal como se cargó. */}
-            <Button
-              variante="secondary"
-              disabled={!t || !!ocupado}
-              onClick={() =>
-                t &&
-                correr('archivo', async () => guardarArchivo(await migracionService.archivoOriginal(id, t.lote.numero)), 'No se pudo descargar el archivo original')
-              }
-            >
-              <IconDownload size={16} /> {ocupado === 'archivo' ? 'Descargando…' : 'Archivo original (Excel)'}
-            </Button>
+            {/* Adenda 1 §5.6: el archivo tal como se cargó. Los lotes antiguos no lo guardaron: sin botón. */}
+            {t?.lote.tiene_archivo !== false && (
+              <Button
+                variante="secondary"
+                disabled={!t || !!ocupado}
+                onClick={() =>
+                  t &&
+                  correr('archivo', async () => guardarArchivo(await migracionService.archivoOriginal(id, t.lote.numero)), 'No se pudo descargar el archivo original')
+                }
+              >
+                <IconDownload size={16} /> {ocupado === 'archivo' ? 'Descargando…' : 'Archivo original (Excel)'}
+              </Button>
+            )}
             <Button variante="secondary" onClick={() => descargarTablero('cofianza')} disabled={!t || !!ocupado}>
               <IconDownload size={16} /> {ocupado === 'xlsx-cofianza' ? 'Descargando…' : 'Tablero Cofianza (Excel)'}
             </Button>

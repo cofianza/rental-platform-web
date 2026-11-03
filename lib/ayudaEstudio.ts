@@ -8,7 +8,8 @@ import type { EtapaEstudio, VistaTurno } from './etapaEstudio'
 
 export const AYUDA = {
   autorizacion:
-    'Es el permiso de la persona para consultar sus datos en las centrales de riesgo (Ley 1581). Le llega por WhatsApp y correo, vence a los 15 días y, sin él, no se consulta a nadie.',
+    // Sin el plazo en días: es calibrable (DIAS_EXPIRACION_ESTUDIO); la fecha real sale en la tarjeta.
+    'Es el permiso de la persona para consultar sus datos en las centrales de riesgo (Ley 1581). Le llega por WhatsApp y correo; cuando se envía, en esta tarjeta aparece la fecha en que vence. Sin él no se consulta a nadie.',
   reenviar:
     'Envía un enlace nuevo a la persona y el anterior deja de servir. Úselo si no le llegó, si venció o después de corregir sus datos. Cuenta dentro de los reenvíos permitidos.',
   corregir:
@@ -23,7 +24,7 @@ export const AYUDA = {
   pago:
     'Quién cubre el estudio: un cupo del paquete de la inmobiliaria o el prospecto con el enlace de pago. Sin pago no se consulta a las centrales.',
   cupo:
-    'El cupo queda reservado al habilitar el estudio y se descuenta solo cuando la consulta da resultado. Si no se llega a consultar, vuelve al saldo de la inmobiliaria.',
+    'El cupo queda reservado al habilitar el estudio y se descuenta solo cuando una consulta da resultado, la del titular o la del coarrendatario. Si no se llega a consultar, vuelve al saldo de la inmobiliaria, salvo que el paquete ya haya vencido.',
   visita:
     'La visita al inmueble va antes de habilitar la evaluación. Si ya se hizo por fuera (WhatsApp u otro medio), se puede marcar como omitida.',
   contrato:

@@ -154,7 +154,7 @@ export function PrimasPorRemitirSection() {
                   </p>
                   <p className={`mt-0.5 text-xs ${vencida ? 'text-amber-700' : 'text-gray-500'}`}>
                     {vencida && <IconAlertTriangle size={12} className="inline mr-1 -mt-0.5" />}
-                    {esTradicional(p) ? `Causada el ${formatDate(p.created_at)}` : `Remitir a más tardar el ${formatDate(p.vence_en)}`}
+                    {esTradicional(p) ? `Causada el ${formatDate(p.contratos?.fecha_firma ?? p.created_at)}` : `Remitir a más tardar el ${formatDate(p.vence_en)}`}
                     {p.reporte_enviado_en ? ' · reporte enviado' : ''}
                   </p>
                   {p.estado !== 'pendiente' && (

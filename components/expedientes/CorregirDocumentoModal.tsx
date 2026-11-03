@@ -136,7 +136,7 @@ export function CorregirDocumentoModal({
 
   return (
     <>
-      <Modal isOpen={isOpen && !confirmar} onClose={cerrar} title={conNombre ? 'Corregir datos del prospecto' : 'Corregir documento'} size="md" closeOnBackdrop={false}>
+      <Modal isOpen={isOpen && !confirmar} onClose={cerrar} title="Corregir datos del prospecto" size="md" closeOnBackdrop={false}>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           {conNombre && (
           <>

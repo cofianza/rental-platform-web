@@ -94,8 +94,8 @@ function textoCubiertoParaLaInmobiliaria(
   return {
     titulo: 'Cupo reservado',
     texto: e.autorizado
-      ? 'El prospecto ya autorizó la consulta. El cupo se consume cuando la central entregue el resultado; si no lo entrega, vuelve a su saldo.'
-      : 'Se reservó 1 cupo de su paquete. El estudio inicia cuando el prospecto autorice la consulta; si no se llega a consultar, el cupo vuelve a su saldo.',
+      ? 'El prospecto ya autorizó la consulta. El cupo se consume cuando la central entregue el resultado del titular o del coarrendatario; si no lo entrega, vuelve a su saldo, salvo que el paquete ya haya vencido.'
+      : 'Se reservó 1 cupo de su paquete. El estudio inicia cuando el prospecto autorice la consulta; si no se llega a consultar, el cupo vuelve a su saldo, salvo que el paquete ya haya vencido.',
   }
 }
 
