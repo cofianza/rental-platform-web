@@ -60,7 +60,7 @@ export function Step4Confirmation({
   // §7: el resumen debe mostrar "propiedad, canon, datos del prospecto y forma
   // de pago". Las tres primeras ya estaban; la forma de pago es lo que faltaba.
   const FORMA_PAGO_LABEL: Record<string, string> = {
-    credito: 'Se reserva un cupo de su paquete; se descuenta cuando la central entrega el resultado',
+    credito: 'Se reserva un cupo de su paquete; se descuenta cuando la central entrega el resultado del titular o del coarrendatario',
     // Adenda 2 §7: se paga en línea; la solicitud sale al confirmarse el pago.
     inmobiliaria: 'Usted paga ahora con Mercado Pago; la solicitud de autorización sale cuando se confirme el pago',
     prospecto: 'Enlace de pago al prospecto, después de que autorice',
@@ -131,7 +131,8 @@ export function Step4Confirmation({
   // Al caducar se devuelve aunque el coarrendatario ya se haya consultado: esa
   // consulta la asume Cofianza (reembolsos.service: devolverEvaluacionSinConsulta).
   const FIN_CADUCIDAD: Record<string, string> = {
-    credito: 'el cupo vuelve a su paquete.',
+    // Si el paquete ya venció, el cupo se extingue (destinoCupoNoConsumido en la API).
+    credito: 'el cupo vuelve a su paquete, salvo que el paquete ya haya vencido.',
     inmobiliaria: 'le devolvemos el pago.',
     prospecto: 'no se cobra nada.',
   }

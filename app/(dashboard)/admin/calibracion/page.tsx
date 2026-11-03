@@ -58,6 +58,8 @@ export default function AdminCalibracionPage() {
   const [loading, setLoading] = useState(true)
   // Un fallo de carga no es «sin cambios registrados»: se dice y se reintenta.
   const [errorCarga, setErrorCarga] = useState(false)
+  // El historial que no se pudo leer tampoco es «sin cambios»: lo dice su pestaña.
+  const [errorHistorial, setErrorHistorial] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [vista, setVista] = useState<Vista>('resumen')
   const [abierto, setAbierto] = useState<string | null>(null)
@@ -66,12 +68,13 @@ export default function AdminCalibracionPage() {
     try {
       const [p, h, c, r] = await Promise.all([
         calibracionService.listar(),
-        calibracionService.historial(),
+        calibracionService.historial().catch(() => null),
         calibracionService.getCascada(30).catch(() => null),
         calibracionService.getRevisionManual(30).catch(() => null),
       ])
       setParams([...p].sort(porOrden))
-      setHistorial(h)
+      setHistorial(h ?? [])
+      setErrorHistorial(h === null)
       setCascada(c)
       setRevision(r)
       setErrorCarga(false)
@@ -130,7 +133,7 @@ export default function AdminCalibracionPage() {
         <PageHeader title="Calibración del modelo" />
         <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-6">
           <IconLock className="text-red-600" size={20} />
-          <p className="text-sm text-red-800">Solo la Gerencia (administrador) puede acceder a esta sección.</p>
+          <p className="text-sm text-red-800">Esta sección solo la pueden ver los administradores de Cofianza.</p>
         </div>
       </div>
     )
@@ -235,7 +238,15 @@ export default function AdminCalibracionPage() {
                 ) : vista === 'historial' ? (
                   <>
                     <Encabezado titulo="Historial de cambios" ayuda="Cada cambio con la fecha, quién lo hizo, el valor anterior, el nuevo y el motivo." />
-                    <Historial historial={historial} params={params} />
+                    <Historial
+                      historial={historial}
+                      params={params}
+                      error={errorHistorial}
+                      onReintentar={() => {
+                        setLoading(true)
+                        void cargar()
+                      }}
+                    />
                   </>
                 ) : (
                   <Seccion id={vista} params={params} valores={valores} fila={fila} />

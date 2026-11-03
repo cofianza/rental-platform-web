@@ -124,6 +124,16 @@ export function TransicionModal({
   // Al cancelar, este texto se guarda como motivo de la cancelación, que ven la
   // inmobiliaria o el propietario y el solicitante en el estudio. No hay otro
   // campo: quien cancela desde Cofianza tiene que saberlo al escribirlo.
+  // «Finalizado» es el cierre natural (arriendo firmado). Cancelar o cerrar un
+  // no aprobable también lleva a 'cerrado', pero no es eso.
+  const etiquetaDestino =
+    estadoSeleccionado !== 'cerrado'
+      ? undefined
+      : transicionSeleccionada?.etiqueta.startsWith('Cancelar')
+        ? 'Cancelado'
+        : estadoActual === 'rechazado'
+          ? 'No aprobable (cerrado)'
+          : undefined
   const cancelaCofianza =
     estadoSeleccionado === 'cerrado' &&
     !!transicionSeleccionada?.etiqueta.startsWith('Cancelar') &&
@@ -288,7 +298,7 @@ export function TransicionModal({
           <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
             <Badge estado={estadoActual} label={etiquetaActual} />
             <IconArrowRight size={20} className="text-gray-500" />
-            <Badge estado={estadoSeleccionado} />
+            <Badge estado={estadoSeleccionado} label={etiquetaDestino} />
           </div>
         )}
 

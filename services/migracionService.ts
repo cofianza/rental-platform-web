@@ -245,7 +245,7 @@ export const migracionService = {
     return (await apiClient.get<FilaFormatoAnterior[]>(`${BASE}/reportes/formato-anterior${qs({ inmobiliariaId })}`)).data
   },
   reporteFormatoAnteriorXlsx: (inmobiliariaId?: string) =>
-    descargar(`${BASE}/reportes/formato-anterior${qs({ formato: 'xlsx', inmobiliariaId })}`, 'migracion-formato-anterior.xlsx'),
+    descargar(`${BASE}/reportes/formato-anterior${qs({ formato: 'xlsx', inmobiliariaId })}`, 'migracion-sin-autorizacion-reporte.xlsx'),
   /** mes = AAAA-MM. */
   async liquidacion(mes: string, inmobiliariaId?: string): Promise<LiquidacionMigracion> {
     return (await apiClient.get<LiquidacionMigracion>(`${BASE}/reportes/liquidacion${qs({ mes, inmobiliariaId })}`)).data

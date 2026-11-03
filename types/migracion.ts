@@ -335,6 +335,8 @@ export interface TableroLote {
     mapeo_aplicado?: (MapeoColumnas & { huella_vista_previa?: string }) | null
     /** SHA-256 del archivo original cargado. */
     archivo_hash?: string | null
+    /** false en lotes antiguos que no guardaron el archivo: no se ofrece descargarlo. */
+    tiene_archivo?: boolean
   }
   conteos: Record<EstadoMigracion, number>
   /** Lo que puede ver la inmobiliaria. */

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/calibracionService'
-import { IconArrowRight } from '@/components/icons'
+import { IconArrowRight, IconRefresh } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { conUnidad, nombreDe } from './parametros'
 
@@ -26,8 +26,36 @@ export function CambioItem({ h, params, conNombre = true }: { h: IHistorialCalib
   )
 }
 
-export function Historial({ historial, params }: { historial: IHistorialCalibracion[]; params: IParametroCalibracion[] }) {
+export function Historial({
+  historial,
+  params,
+  error = false,
+  onReintentar,
+}: {
+  historial: IHistorialCalibracion[]
+  params: IParametroCalibracion[]
+  /** No se pudo leer: no es lo mismo que no tener cambios. */
+  error?: boolean
+  onReintentar?: () => void
+}) {
   const [todos, setTodos] = useState(false)
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-sm text-red-700">No se pudo cargar el historial de cambios.</p>
+        {onReintentar && (
+          <button
+            type="button"
+            onClick={onReintentar}
+            className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+          >
+            <IconRefresh size={14} />
+            Reintentar
+          </button>
+        )}
+      </div>
+    )
+  }
   if (historial.length === 0) {
     return <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">Todavía no hay cambios registrados.</p>
   }

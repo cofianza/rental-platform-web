@@ -290,7 +290,7 @@ function PagoResultadoContent() {
               {esEstudio ? (
                 <ol className="list-decimal space-y-1 pl-4">
                   <li>Cofianza consulta las centrales de riesgo (suele tardar unos minutos).</li>
-                  <li>Le avisamos por correo y WhatsApp con el resultado.</li>
+                  <li>Le avisamos el resultado por correo.</li>
                   <li>Si tiene dudas, escríbale a quien le envió el enlace.</li>
                 </ol>
               ) : (

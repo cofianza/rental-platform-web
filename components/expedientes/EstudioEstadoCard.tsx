@@ -202,6 +202,8 @@ function getSiguientePaso(
   esCoarrendatario = false,
   /** Roles de Cofianza (también Gerencia): ven el nombre de la central. */
   verCentral = esCofianza,
+  /** Puede reenviar o cancelar la invitación del coarrendatario (no Gerencia ni solo lectura). */
+  puedeGestionar = false,
 ): string {
   // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
   // dice en qué central se consultó («reserva del sumario»).
@@ -286,7 +288,12 @@ function getSiguientePaso(
     // Adenda 4 V3 §12: ya consultado, no se decide al titular solo mientras un coarrendatario no autorice.
     if (estudio.espera_autorizacion) {
       const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
-      return `Ya se consultaron las centrales. La decisión espera a que ${estudio.espera_autorizacion.pendientes.join(' y ')} autorice, hasta el ${hasta}; después se decide con quienes hayan autorizado. Si no lo va a hacer, reenvíele la invitación o cancélela.`
+      const pendientes = estudio.espera_autorizacion.pendientes
+      const varios = pendientes.length > 1
+      const base = `Ya se consultaron las centrales. La decisión espera a que ${pendientes.join(' y ')} ${varios ? 'autoricen' : 'autorice'}, hasta el ${hasta}; después se decide con quienes hayan autorizado.`
+      return puedeGestionar
+        ? `${base} ${varios ? 'Si alguno no lo va a hacer, reenvíele la invitación o cancélela.' : 'Si no lo va a hacer, reenvíele la invitación o cancélela.'}`
+        : base
     }
     // Pasados 10 min la consulta se cortó (p. ej. un reinicio): la API la
     // recoge en su barrido; no seguir prometiendo "minutos".
@@ -603,7 +610,7 @@ function EstudioPanel({
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', etiqueta === 'Coarrendatario', esRolInterno(userRol))
+      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', etiqueta === 'Coarrendatario', esRolInterno(userRol), esGestor)
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
   // Con contrato o con el estudio cerrado ya no es el siguiente paso.
   const siguientePaso =
@@ -657,8 +664,9 @@ function EstudioPanel({
           )}
 
           {/* El motivo de la revisión (R2, R4, listas, identidad, puntaje de la
-              central…): antes solo se veía abriendo el detalle. */}
-          {rotulo === 'Condicionado' && visible(estudio.observaciones) && (
+              central…): antes solo se veía abriendo el detalle. Compara con el
+              rótulo de rotuloEvaluacion (antes con «Condicionado», que ya no sale). */}
+          {(rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión') && visible(estudio.observaciones) && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
               Por qué está en revisión: {visible(estudio.observaciones)}
             </p>

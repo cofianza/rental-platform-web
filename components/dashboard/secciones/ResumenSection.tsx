@@ -713,7 +713,7 @@ export function ResumenSection() {
                     ? `de ${resumen.decididosDelPeriodo} ${resumen.decididosDelPeriodo === 1 ? 'estudio decidido' : 'estudios decididos'}`
                     : undefined
               }
-              hint="Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y rechazados)"
+              hint="Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y no aprobables)"
               onClick={goExpedientes}
             />
             <Kpi
