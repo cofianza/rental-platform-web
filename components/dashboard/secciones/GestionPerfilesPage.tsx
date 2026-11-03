@@ -224,7 +224,7 @@ export function GestionPerfilesPage({ rol }: Props) {
     <div className="font-display">
       <SeccionHeader title={titulo} subtitle={subtitulo} right={nuevoBtn} />
 
-      <KpiRow loading={loading} error={error}>
+      <KpiRow loading={loading && rows.length === 0} error={error}>
         <Kpi
           label={`Total ${titulo.toLowerCase()}`}
           value={total}
@@ -282,6 +282,7 @@ export function GestionPerfilesPage({ rol }: Props) {
 
       <SeccionEstado
         loading={loading}
+        datos={rows.length > 0}
         error={error}
         onRetry={reload}
         vacio={

@@ -24,6 +24,7 @@ import { TrazaAutorizacion } from '@/components/expedientes/TrazaAutorizacion'
 import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBanner'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { fechaCompleta } from '@/lib/constants'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -225,8 +226,8 @@ export function AutorizacionSection({
       <p className="text-xs text-amber-700">
         El prospecto se registró sin documento. Escríbalo para enviarle la solicitud: se guarda en sus datos.
       </p>
-      <div className="grid grid-cols-5 gap-2">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+        <div className="sm:col-span-2">
           <label htmlFor="autorizacion-section-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo de documento</label>
           <select id="autorizacion-section-tipo-doc"
             value={tipoDocEdit}
@@ -241,7 +242,7 @@ export function AutorizacionSection({
             {/* Sin NIT: Adenda de precios §6.1, no se estudian arrendatarios con NIT. */}
           </select>
         </div>
-        <div className="col-span-3">
+        <div className="sm:col-span-3">
           <label htmlFor="autorizacion-section-num-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Número de documento</label>
           <input id="autorizacion-section-num-doc"
             inputMode="numeric"
@@ -361,11 +362,10 @@ export function AutorizacionSection({
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center gap-2 text-gray-500">
-          <IconLoader size={16} className="animate-spin" />
-          <span className="text-sm">Cargando autorización…</span>
-        </div>
+      <div role="status" className="space-y-3 bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        <span className="sr-only">Cargando autorización…</span>
+        <Skeleton className="h-5 w-48" />
+        <SkeletonText lineas={2} />
       </div>
     )
   }
@@ -496,7 +496,7 @@ export function AutorizacionSection({
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
           <h3 className="text-base font-semibold text-gray-900">Autorización Habeas Data</h3>

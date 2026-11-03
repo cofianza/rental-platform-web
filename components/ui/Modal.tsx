@@ -151,7 +151,7 @@ export function Modal({
 
   return (
     <div
-      className={cn('fixed inset-0 flex items-center justify-center', encima ? 'z-[60]' : 'z-50', !bare && 'p-4')}
+      className={cn('fixed inset-0 flex items-center justify-center', encima ? 'z-[60]' : 'z-50', !bare && 'p-3 sm:p-4')}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
@@ -173,7 +173,7 @@ export function Modal({
         className={cn(
           bare
             ? 'relative bg-white shadow-xl w-full outline-none'
-            : cn('relative bg-white rounded-lg shadow-xl w-full flex flex-col outline-none', 'max-h-[calc(100vh-2rem)]', SIZES[size]),
+            : cn('relative bg-white rounded-lg shadow-xl w-full flex flex-col outline-none', 'max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)]', SIZES[size]),
           'animate-in fade-in zoom-in-95 duration-200',
           className
         )}
@@ -185,8 +185,8 @@ export function Modal({
           <>
             {/* Header (no se encoge) */}
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-                <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 shrink-0">
+                <h2 id={titleId} className="min-w-0 break-words text-base sm:text-lg font-semibold text-gray-900">
                   {title}
                 </h2>
                 <button
@@ -202,7 +202,7 @@ export function Modal({
             )}
 
             {/* Body — scroll interno cuando el contenido excede el viewport */}
-            <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
+            <div className="px-4 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
           </>
         )}
       </div>

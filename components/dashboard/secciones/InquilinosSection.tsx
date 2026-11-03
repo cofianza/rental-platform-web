@@ -127,7 +127,7 @@ export function InquilinosSection() {
     <div>
       <SeccionHeader title="Inquilinos" subtitle={subtitulo} />
 
-      <KpiRow loading={loading} error={error}>
+      <KpiRow loading={loading && !data} error={error}>
         <Kpi
           label="Activos al día"
           value={alDia}
@@ -228,7 +228,7 @@ export function InquilinosSection() {
       </FiltroBar>
 
       <SeccionEstado
-        loading={loading}
+        loading={loading} datos={!!data}
         error={error}
         onRetry={reload}
         vacio={

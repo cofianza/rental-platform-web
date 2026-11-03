@@ -30,7 +30,8 @@ import {
   type ICascadaCentrales,
   type IRevisionManual,
 } from '@/services/calibracionService'
-import { IconLoader, IconLock, IconSearch, IconChevronDown } from '@/components/icons'
+import { IconLock, IconSearch, IconChevronDown } from '@/components/icons'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
 import { EditarParametro } from '@/components/calibracion/EditarParametro'
 import { Historial } from '@/components/calibracion/Historial'
@@ -143,9 +144,7 @@ export default function AdminCalibracionPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <IconLoader size={28} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonTable filas={8} columnas={4} etiqueta="Cargando la calibración…" />
       ) : errorCarga ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
           <p className="mb-3 text-sm text-red-700">No se pudo cargar la calibración.</p>

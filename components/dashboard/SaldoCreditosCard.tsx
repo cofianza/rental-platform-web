@@ -10,7 +10,8 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
-import { IconReceipt, IconLoader, IconChevronRight, IconPlus } from '@/components/icons'
+import { IconReceipt, IconChevronRight, IconPlus } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export function SaldoCreditosCard() {
   const puedeEditar = usePuedeEditar()
@@ -51,9 +52,10 @@ export function SaldoCreditosCard() {
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-700">Cupos de estudios</h3>
           {loading ? (
-            <div className="flex items-center gap-2 mt-1">
-              <IconLoader className="animate-spin text-gray-500" size={16} />
-              <span className="text-xs text-gray-500">cargando…</span>
+            <div role="status" aria-live="polite" className="mt-1 space-y-2">
+              <span className="sr-only">Cargando cupos de estudios…</span>
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-32" />
             </div>
           ) : (
             <>

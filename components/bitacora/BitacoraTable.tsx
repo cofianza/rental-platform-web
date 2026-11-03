@@ -1,6 +1,8 @@
 'use client'
 
-import { IconChevronLeft, IconChevronRight, IconLoader } from '@/components/icons'
+import { IconChevronLeft, IconChevronRight } from '@/components/icons'
+import { SkeletonTable } from '@/components/ui/Skeleton'
+import { cn } from '@/lib/utils'
 import { ActionBadge } from './ActionBadge'
 import { ITEMS_PER_PAGE_OPTIONS, ENTITY_LABELS, BITACORA_MESSAGES } from './constants'
 import type { IAuditLog, IAuditLogFilters, IAuditLogsMeta } from '@/types/bitacora'
@@ -40,6 +42,10 @@ export function BitacoraTable({
     onFilterChange({ limit: newLimit, page: 1 })
   }
 
+  if (isLoading && logs.length === 0) {
+    return <SkeletonTable filas={8} columnas={5} etiqueta="Cargando la bitácora…" />
+  }
+
   if (!isLoading && logs.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
@@ -49,12 +55,10 @@ export function BitacoraTable({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
-      )}
+    <div
+      className={cn('bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative transition-opacity', isLoading && 'pointer-events-none opacity-60')}
+      aria-busy={isLoading}
+    >
 
       {/* Desktop */}
       <div className="hidden md:block overflow-x-auto">
@@ -130,13 +134,13 @@ export function BitacoraTable({
             className="p-4 space-y-2 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => onViewDetail(log)}
           >
-            <div className="flex items-start justify-between">
-              <div className="text-sm font-medium text-gray-900">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 text-sm font-medium text-gray-900 break-words">
                 {log.usuario_nombre || 'Sistema'}
               </div>
               <ActionBadge action={log.accion} />
             </div>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
               <span>{ENTITY_LABELS[log.entidad] || log.entidad}</span>
               {log.ip && <span className="font-mono">{log.ip}</span>}
             </div>
@@ -154,7 +158,7 @@ export function BitacoraTable({
               {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} registros
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">Mostrar:</span>
                 <select
@@ -176,7 +180,7 @@ export function BitacoraTable({
                   aria-label="Página anterior"
                   onClick={() => handlePageChange(meta.page - 1)}
                   disabled={meta.page <= 1}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <IconChevronLeft size={20} />
                 </button>
@@ -188,7 +192,7 @@ export function BitacoraTable({
                   aria-label="Página siguiente"
                   onClick={() => handlePageChange(meta.page + 1)}
                   disabled={meta.page >= meta.totalPages}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <IconChevronRight size={20} />
                 </button>

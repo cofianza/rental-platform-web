@@ -247,6 +247,9 @@ export default function AprobacionExpedientesPage() {
   const hasMeses = data && data.meses.length > 0
   const tasaGlobal = data?.totales.tasa_global
 
+  // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
+  const recargando = loading && !!data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -254,7 +257,7 @@ export default function AprobacionExpedientesPage() {
         title="Tasa de Aprobación"
         subtitle="Aprobados vs no aprobables por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también con coarrendatario) o no automática (decididos por un analista). Lo que sigue en revisión manual va aparte y no cuenta en la tasa."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportButton
               endpoint="/export/reportes/aprobacion"
               params={{
@@ -290,7 +293,7 @@ export default function AprobacionExpedientesPage() {
       )}
 
       {/* Global indicator */}
-      {loading ? (
+      {loading && !data ? (
         <IndicatorSkeleton />
       ) : falloCarga ? null : (
         <div
@@ -353,8 +356,8 @@ export default function AprobacionExpedientesPage() {
       </div>
 
       {/* Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 p-4 sm:p-6 transition-opacity ${recargando ? 'opacity-60' : ''}`}>
+        {loading && !data ? (
           <ChartSkeleton />
         ) : hasMeses ? (
           <StackedBarChart data={data.meses} />
@@ -366,8 +369,8 @@ export default function AprobacionExpedientesPage() {
       </div>
 
       {/* Summary Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
+        {loading && !data ? (
           <div className="p-4">
             <TableSkeleton />
           </div>

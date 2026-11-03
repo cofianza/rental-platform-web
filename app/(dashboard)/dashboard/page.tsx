@@ -233,6 +233,11 @@ export default function DashboardPage() {
     )
   }
 
+  // Primera carga: esqueletos. Al cambiar de periodo o alcance se dejan las
+  // cifras a la vista (atenuadas) hasta que llegan las nuevas.
+  const cargaInicial = loading && summary === null
+  const recargando = loading && !cargaInicial
+
   // Vista completa para admin/operador/gerencia
   return (
     <div className="space-y-6">
@@ -270,8 +275,8 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cargaInicial ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 animate-pulse">
               <div className="h-4 w-24 bg-gray-200 rounded mb-3" />
@@ -283,7 +288,7 @@ export default function DashboardPage() {
       ) : sectionErrors.summary ? (
         <SectionError message={sectionErrors.summary} onRetry={() => fetchAll()} />
       ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
           {/* Es el total abierto hoy: no depende del periodo elegido. */}
           <KPICard
             title="Estudios abiertos (hoy)"
@@ -313,11 +318,11 @@ export default function DashboardPage() {
       ) : null}
 
       {/* Main content: Chart + Pendientes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 transition-opacity ${recargando ? 'pointer-events-none opacity-60' : ''}`} aria-busy={recargando}>
         {/* Donut Chart — 1 col */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudios por estado</h2>
-          {loading ? (
+          {cargaInicial ? (
             <div className="flex items-center justify-center h-64 animate-pulse">
               <div className="w-48 h-48 bg-gray-200 rounded-full" />
             </div>
@@ -330,18 +335,18 @@ export default function DashboardPage() {
 
         {/* Pendientes — 2 col */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center gap-3">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-900 mr-auto">Pendientes prioritarios</h2>
             {/* Filtro de alcance: sin él, "pendientes" era un montón indistinto
                 de toda la plataforma y el analista no veía ni lo suyo ni lo
                 huérfano. */}
-            <div className="flex items-center gap-1" role="group" aria-label="Alcance">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto" role="group" aria-label="Alcance">
               {ALCANCES.filter((a) => a.key !== 'mios' || isOperador).map((a) => (
                 <button
                   key={a.key}
                   onClick={() => setAlcance(a.key)}
                   aria-pressed={alcance === a.key}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                  className={`shrink-0 whitespace-nowrap px-3 py-2 sm:py-1.5 text-xs font-medium rounded-full transition-colors ${
                     alcance === a.key
                       ? 'bg-primary-700 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -358,10 +363,10 @@ export default function DashboardPage() {
               Ver todos
             </Link>
           </div>
-          {loading ? (
+          {cargaInicial ? (
             <div className="divide-y divide-gray-100">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="px-6 py-4 animate-pulse">
+                <div key={i} className="px-4 sm:px-6 py-4 animate-pulse">
                   <div className="h-4 w-32 bg-gray-200 rounded mb-2" />
                   <div className="h-3 w-48 bg-gray-200 rounded" />
                 </div>
@@ -388,10 +393,10 @@ export default function DashboardPage() {
                 <Link
                   key={exp.id}
                   href={`/expedientes/${exp.id}`}
-                  className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
                       <span className="text-sm font-medium text-gray-900">
                         {exp.numero_expediente ? `Estudio ${formatNumeroEstudio(exp.numero_expediente)}` : 'Estudio sin número'}
                       </span>
@@ -709,7 +714,7 @@ function SolicitanteDashboard() {
         <div className="space-y-3">
           {/* Sin cita */}
           {expedientesSinCita.map((exp) => (
-            <div key={`sin-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-6 text-white shadow-lg">
+            <div key={`sin-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-4 sm:p-6 text-white shadow-lg">
               <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
               <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -800,7 +805,7 @@ function SolicitanteDashboard() {
             const pago = pagoByExpediente[exp.id]
             const esFallido = pago?.estado === 'fallido'
             return (
-              <div key={`pago-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-6 text-white shadow-lg">
+              <div key={`pago-${exp.id}`} className="relative overflow-hidden bg-gradient-to-r from-primary-700 to-cyan-700 rounded-xl p-4 sm:p-6 text-white shadow-lg">
                 <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-cyan-300/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -897,8 +902,8 @@ function SolicitanteDashboard() {
 
       {/* Active processes */}
       {loadingExp ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 animate-pulse">
-          <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-8 animate-pulse" role="status" aria-label="Cargando sus estudios…">
+          <div className="h-6 w-48 max-w-full bg-gray-200 rounded mb-4" />
           <div className="h-4 w-full bg-gray-200 rounded mb-2" />
           <div className="h-4 w-3/4 bg-gray-200 rounded" />
         </div>
@@ -953,12 +958,12 @@ function SolicitanteDashboard() {
               <Link
                 key={exp.id}
                 href={`/expedientes/${exp.id}`}
-                className="block bg-white rounded-lg border border-gray-200 p-6 hover:border-primary-300 hover:shadow-sm transition-all"
+                className="block bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:border-primary-300 hover:shadow-sm transition-all"
               >
                 {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-semibold text-gray-900">{exp.numero_expediente ? `Estudio ${formatNumeroEstudio(exp.numero_expediente)}` : 'Estudio'}</span>
                       {isCancelled ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
@@ -971,12 +976,12 @@ function SolicitanteDashboard() {
                         />
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 break-words">
                       {exp.inmueble?.direccion || exp.inmueble?.titulo || 'Inmueble por definir'}
                       {exp.inmueble?.ciudad ? `, ${exp.inmueble.ciudad}` : ''}
                     </p>
                   </div>
-                  <IconChevronRight size={20} className="text-gray-500 mt-1" />
+                  <IconChevronRight size={20} className="text-gray-500 mt-1 shrink-0" />
                 </div>
 
                 {/* Stepper */}
@@ -1170,7 +1175,7 @@ function DonutChart({ data }: { data: ExpedientePorEstado[] }) {
           {total}
         </text>
         <text x={cx} y={cy + 12} textAnchor="middle" className="fill-gray-500" fontSize="10">
-          expedientes
+          estudios
         </text>
       </svg>
 

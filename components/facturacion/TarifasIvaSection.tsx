@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { facturacionService, type ITarifaIva as Tarifa } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconLoader, IconCheck } from '@/components/icons'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 const CONCEPTO_LABELS: Record<string, string> = {
   estudio: 'Evaluación crediticia',
@@ -63,14 +64,16 @@ export function TarifasIvaSection() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
+      <div role="status" aria-live="polite" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-4">
+        <span className="sr-only">Cargando tarifas de IVA…</span>
+        <Skeleton className="h-5 w-48 max-w-full" />
+        <SkeletonText lineas={4} />
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
       <div className="mb-4">
         <h3 className="text-base font-semibold text-gray-900">Tarifas de IVA por concepto</h3>
         <p className="text-sm text-gray-500 mt-1">
@@ -85,11 +88,11 @@ export function TarifasIvaSection() {
 
       <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg">
         {tarifas.map((t) => (
-          <div key={t.concepto} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm font-medium text-gray-700">
+          <div key={t.concepto} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
+            <span className="min-w-0 text-sm font-medium text-gray-700">
               {CONCEPTO_LABELS[t.concepto] ?? t.concepto}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="number"
                 inputMode="decimal"
@@ -119,7 +122,7 @@ export function TarifasIvaSection() {
           <button
             onClick={handleSave}
             disabled={!edited || saving}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <IconLoader size={16} className="animate-spin" />

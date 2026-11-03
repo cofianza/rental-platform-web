@@ -304,7 +304,7 @@ export function PropertyGrid() {
       {/* Results count */}
       <div ref={resultadosRef} className="flex items-center justify-between scroll-mt-24">
         <p className="text-sm text-gray-600">
-          {loading ? (
+          {loading && properties.length === 0 ? (
             <span className="inline-block w-40 h-4 bg-gray-200 rounded animate-pulse" />
           ) : error || vitrinaVacia ? null : (
             <><span className="font-semibold text-gray-900">{total}</span> {total === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}</>
@@ -313,13 +313,15 @@ export function PropertyGrid() {
       </div>
 
       {/* Grid */}
-      {loading ? (
+      {/* Primera carga: esqueleto. Al filtrar o paginar con resultados en
+          pantalla, se dejan visibles (atenuados) hasta que llegan los nuevos. */}
+      {loading && properties.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <PropertyCardSkeleton key={i} />
           ))}
         </div>
-      ) : error ? (
+      ) : error && !loading ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <IconAlertTriangle size={48} className="mx-auto text-amber-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No pudimos cargar los inmuebles</h3>
@@ -353,7 +355,10 @@ export function PropertyGrid() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity ${loading ? 'pointer-events-none opacity-60' : ''}`}
+          aria-busy={loading}
+        >
           {properties.map((property) => (
             <PropertyCard
               key={property.id}
@@ -366,8 +371,8 @@ export function PropertyGrid() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && !loading && (
-        <div className="flex items-center justify-center gap-2 pt-4">
+      {totalPages > 1 && !(loading && properties.length === 0) && (
+        <div className={`flex flex-wrap items-center justify-center gap-2 pt-4 ${loading ? 'pointer-events-none opacity-60' : ''}`}>
           <button
             onClick={() => irAPagina(Math.max(1, page - 1))}
             disabled={page <= 1}

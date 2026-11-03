@@ -26,6 +26,7 @@ import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
 import { cn } from '@/lib/utils'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { textoVisible } from './textoVisible'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 export interface TimelineSectionProps {
   expedienteId: string
@@ -211,12 +212,19 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
   // ---- Renders ----
 
-  if (isLoading) {
+  // Solo la primera carga: al cambiar el filtro se siguen viendo los eventos de antes.
+  if (isLoading && eventos.length === 0) {
     return (
       <div>
         <FilterChips filtro={filtro} onChange={handleFiltroChange} />
-        <div className="flex items-center justify-center py-12">
-          <IconLoader size={24} className="text-gray-500 animate-spin" />
+        <div role="status" className="mt-4 space-y-5">
+          <span className="sr-only">Cargando historial…</span>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3">
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+              <SkeletonText lineas={2} className="flex-1" />
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -256,7 +264,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
     <div>
       <FilterChips filtro={filtro} onChange={handleFiltroChange} />
 
-      <div className="relative mt-4">
+      <div className={cn('relative mt-4', isLoading && 'opacity-60 pointer-events-none')} aria-busy={isLoading}>
         {/* Línea vertical */}
         <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200" />
 

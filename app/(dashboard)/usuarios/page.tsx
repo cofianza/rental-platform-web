@@ -9,7 +9,8 @@ import { useState, Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
-import { IconLoader, IconArrowRight, IconRefresh } from '@/components/icons'
+import { IconArrowRight, IconRefresh } from '@/components/icons'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 import {
   UserFilters,
   UsersTable,
@@ -121,11 +122,7 @@ function UsuariosContent() {
 
   // Si no es admin, mostrar loader mientras redirige
   if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    )
+    return <SkeletonPage etiqueta="Cargando usuarios…" />
   }
 
   return (
@@ -138,7 +135,7 @@ function UsuariosContent() {
         />
         <Link
           href="/usuarios/huerfanos"
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
+          className="inline-flex min-h-10 items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"
         >
           Limpiar cuentas huérfanas <IconArrowRight size={16} />
         </Link>
@@ -234,12 +231,7 @@ function UsuariosContent() {
 // Loading fallback
 function LoadingFallback() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Usuarios" subtitle="Cargando..." />
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    </div>
+    <SkeletonPage etiqueta="Cargando usuarios…" />
   )
 }
 

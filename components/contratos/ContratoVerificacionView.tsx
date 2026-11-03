@@ -13,7 +13,8 @@
 
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api'
-import { IconLoader, IconAlertTriangle } from '@/components/icons'
+import { IconAlertTriangle } from '@/components/icons'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 interface Props {
   contratoId: string
@@ -47,8 +48,13 @@ export function ContratoVerificacionView({ contratoId }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader size={28} className="animate-spin text-gray-500" />
+      <div role="status" aria-live="polite" className="h-full p-4 sm:p-6">
+        <span className="sr-only">Cargando vista de verificación…</span>
+        <div className="mx-auto max-w-2xl space-y-4">
+          <SkeletonText lineas={3} />
+          <SkeletonText lineas={5} />
+          <SkeletonText lineas={4} />
+        </div>
       </div>
     )
   }

@@ -6,9 +6,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconAlertTriangle, IconCheck, IconClock, IconLoader, IconRefresh, IconWhatsapp } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconClock, IconRefresh, IconWhatsapp } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { expedienteService, type IWhatsappMensaje } from '@/services/expedienteService'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 const ETIQUETA: Record<string, string> = {
   AUTORIZACION_LINK: 'Enlace de autorización',
@@ -79,9 +80,10 @@ export function WhatsappMensajesSection({ expedienteId }: { expedienteId: string
         <IconWhatsapp size={16} className="text-gray-500" />
         <h3 className="text-sm font-semibold text-gray-900">Mensajes de WhatsApp</h3>
       </div>
-      {loading ? (
-        <div className="flex justify-center py-6">
-          <IconLoader size={20} className="animate-spin text-gray-500" />
+      {loading && mensajes.length === 0 ? (
+        <div role="status" className="space-y-3 p-4">
+          <span className="sr-only">Cargando mensajes…</span>
+          <SkeletonText lineas={3} />
         </div>
       ) : error ? (
         <div className="p-4 text-center">

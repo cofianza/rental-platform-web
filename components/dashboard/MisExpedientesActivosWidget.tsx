@@ -21,7 +21,8 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { EstadoFila } from '@/components/expedientes/EstadoFila'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { IconLoader, IconFolderOpen, IconChevronRight, IconRefresh } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { IconFolderOpen, IconChevronRight, IconRefresh } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente, EstadoExpediente } from '@/types/expediente'
 import { formatNumeroEstudio } from '@/lib/utils'
@@ -72,10 +73,12 @@ export function MisExpedientesActivosWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-center py-6">
-          <IconLoader size={24} className="animate-spin text-primary-600" />
-        </div>
+      <div role="status" aria-live="polite" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-3">
+        <span className="sr-only">Cargando sus estudios activos…</span>
+        <Skeleton className="h-5 w-40 max-w-full" />
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} className="h-10 w-full rounded-lg" />
+        ))}
       </div>
     )
   }

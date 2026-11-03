@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 interface FormErrors {
   password?: string
@@ -149,19 +150,14 @@ function ResetPasswordForm() {
   // Estado de carga: validando token
   if (isValidating) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
-        <div className="flex flex-col items-center justify-center py-12">
-          <IconLoader size={32} className="animate-spin text-primary-600 mb-4" />
-          <p className="text-gray-500 text-sm">Verificando enlace...</p>
-        </div>
-      </div>
+      <EsqueletoFlujo campos={2} etiqueta="Verificando enlace…" />
     )
   }
 
   // No se pudo verificar: reintentar, no "pide otro enlace".
   if (!isTokenValid && errorVerificacion) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-6">
             <IconAlertTriangle size={32} className="text-amber-600" />
@@ -172,7 +168,7 @@ function ResetPasswordForm() {
             type="button"
             onClick={validar}
             className={cn(
-              'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
+              'inline-flex min-h-11 items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
               'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
@@ -188,7 +184,7 @@ function ResetPasswordForm() {
   // Token inválido o expirado
   if (!isTokenValid) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
@@ -201,7 +197,7 @@ function ResetPasswordForm() {
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
             className={cn(
-              'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
+              'inline-flex min-h-11 items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
               'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
@@ -226,7 +222,7 @@ function ResetPasswordForm() {
   // Éxito: contraseña restablecida
   if (isSuccess) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
@@ -243,7 +239,7 @@ function ResetPasswordForm() {
           <a
             href={AUTH_ROUTES.LOGIN}
             className={cn(
-              'inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
+              'inline-flex min-h-11 items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg font-medium text-sm',
               'bg-primary-700 hover:bg-primary-800 text-white',
               'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               'transition-colors'
@@ -258,7 +254,7 @@ function ResetPasswordForm() {
 
   // Formulario de nueva contraseña
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
 
       {/* Título */}
       <div className="text-center mb-8">
@@ -314,7 +310,7 @@ function ResetPasswordForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
+              className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors"
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -384,7 +380,7 @@ function ResetPasswordForm() {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
+              className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors"
               aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -400,7 +396,7 @@ function ResetPasswordForm() {
           type="submit"
           disabled={isLoading}
           className={cn(
-            'w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm',
+            'w-full min-h-11 py-2.5 px-4 rounded-lg text-white font-medium text-sm',
             'bg-primary-700 hover:bg-primary-800',
             'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'transition-colors flex items-center justify-center gap-2',
@@ -434,7 +430,7 @@ function ResetPasswordForm() {
 
 function ResetPasswordFallback() {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
       <div className="flex items-center justify-center py-12">
         <IconLoader size={32} className="animate-spin text-primary-600" />
       </div>

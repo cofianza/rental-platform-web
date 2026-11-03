@@ -35,7 +35,7 @@ function SuccessContent() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
       <div className="flex justify-center mb-6">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
           <IconCheck size={32} className="text-green-600" />
@@ -46,8 +46,8 @@ function SuccessContent() {
 
       <div className="space-y-4 mt-6">
         <div className="flex items-center justify-center gap-2 text-gray-600">
-          <IconMail size={20} className="text-primary-600" />
-          <p className="text-sm">
+          <IconMail size={20} className="shrink-0 text-primary-600" />
+          <p className="min-w-0 break-words text-sm">
             Hemos enviado un enlace de verificación a{' '}
             <span className="font-medium text-gray-900">{email}</span>
           </p>
@@ -74,7 +74,7 @@ function SuccessContent() {
         <button
           onClick={handleResend}
           disabled={resending || !email}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex min-h-11 items-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {resending ? (
             <>
@@ -101,7 +101,7 @@ function SuccessContent() {
 export default function RegisterSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full flex justify-center">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full flex justify-center">
         <IconLoader size={24} className="animate-spin text-primary-600" />
       </div>
     }>

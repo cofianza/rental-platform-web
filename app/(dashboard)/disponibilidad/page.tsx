@@ -400,7 +400,7 @@ export default function DisponibilidadPage() {
         subtitle="Configure cuándo puede recibir visitas de arrendatarios interesados"
       />
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-3xl">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 max-w-3xl">
         {!puedeEditar && (
           <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
             Esta es la agenda de visitas de su inmobiliaria: una sola para todos sus inmuebles. Solo
@@ -578,7 +578,7 @@ export default function DisponibilidadPage() {
                   </label>
 
                   {horario.activo ? (
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 flex-1">
                       <input
                         type="time"
                         aria-label={`Hora de inicio, ${label}`}
@@ -670,14 +670,14 @@ export default function DisponibilidadPage() {
                   key={b.fecha}
                   className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-gray-200 bg-gray-50"
                 >
-                  <span className="text-sm text-gray-900">
+                  <span className="min-w-0 break-words text-sm text-gray-900">
                     <span className="font-medium">{fechaCO(b.fecha)}</span>
                     {b.motivo && <span className="text-gray-600"> — {b.motivo}</span>}
                   </span>
                   <button
                     type="button"
                     onClick={() => quitarFechaBloqueada(b.fecha)}
-                    className="text-gray-500 hover:text-red-600 transition-colors"
+                    className="shrink-0 p-2 -m-1 text-gray-500 hover:text-red-600 transition-colors"
                     aria-label={`Quitar ${fechaCO(b.fecha)}`}
                   >
                     <IconTrash size={16} />

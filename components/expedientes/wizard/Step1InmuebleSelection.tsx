@@ -34,6 +34,7 @@ import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { SinInmuebleStep1 } from './SinInmuebleStep1'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface Step1InmuebleSelectionProps {
   data: WizardStep1Data
@@ -347,8 +348,9 @@ export function Step1InmuebleSelection({
                 {verTodosMios ? 'Todos mis inmuebles' : 'Mis inmuebles disponibles'}
               </p>
               {isLoadingMios ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <IconLoader size={16} className="animate-spin" /> Cargando sus inmuebles...
+                <div role="status">
+                  <span className="sr-only">Cargando sus inmuebles…</span>
+                  <Skeleton className="h-11 w-full rounded-lg" />
                 </div>
               ) : misInmuebles.length === 0 ? (
                 <p className="text-sm text-gray-500">
@@ -665,7 +667,7 @@ export function Step1InmuebleSelection({
                   <p className="text-xl font-black leading-none tracking-tight text-gray-900">
                     {data.inmueble.habitaciones}
                   </p>
-                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Habitaciones</p>
+                  <p className="mt-1 break-words text-[11px] font-bold uppercase tracking-normal text-gray-500 sm:tracking-wide">Habitaciones</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xl font-black leading-none tracking-tight text-gray-900">

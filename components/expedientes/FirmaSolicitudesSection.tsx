@@ -9,6 +9,7 @@ import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { ISolicitudFirma, EstadoSolicitudFirma } from '@/types/firma'
 import type { Bloqueo } from '@/types/contratoV3'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; text: string }> = {
   pendiente: { label: 'Pendiente', bg: 'bg-gray-100', text: 'text-gray-700' },
@@ -110,17 +111,20 @@ export function FirmaSolicitudesSection({
 
   const canSendFirma = canManage && estadoContrato === 'pendiente_firma'
 
-  if (isLoading) {
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (isLoading && solicitudes.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <IconLoader size={20} className="animate-spin text-primary-600" />
+      <div role="status" className="space-y-2">
+        <span className="sr-only">Cargando firmas…</span>
+        <Skeleton className="h-14 w-full rounded-lg" />
+        <Skeleton className="h-14 w-full rounded-lg" />
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-sm font-semibold text-gray-900">
           Solicitudes de Firma ({solicitudes.length})
         </h4>
@@ -237,7 +241,7 @@ export function FirmaSolicitudesSection({
 
       {/* Confirmation modal for reenviar */}
       {reenviarTarget && (
-        <Modal isOpen onClose={() => setReenviarTarget(null)} bare ariaLabel="Reenviar solicitud de firma" closeOnBackdrop={false} className="rounded-xl max-w-sm w-full mx-4 p-6 space-y-4">
+        <Modal isOpen onClose={() => setReenviarTarget(null)} bare ariaLabel="Reenviar solicitud de firma" closeOnBackdrop={false} className="rounded-xl max-w-sm w-full mx-4 p-4 sm:p-6 space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
               <IconAlertTriangle size={20} className="text-amber-600" />

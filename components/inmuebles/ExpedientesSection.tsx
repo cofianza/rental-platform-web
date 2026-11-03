@@ -6,7 +6,8 @@
 'use client'
 
 import Link from 'next/link'
-import { IconFolderOpen, IconPlus, IconExternalLink, IconLoader } from '@/components/icons'
+import { IconFolderOpen, IconPlus, IconExternalLink } from '@/components/icons'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 import { ExpedienteBadge } from '@/components/expedientes/ExpedienteBadges'
 import { formatDate } from '@/lib/constants'
 import type { IExpediente } from '@/types/expediente'
@@ -32,9 +33,7 @@ export function ExpedientesSection({
 }: ExpedientesSectionProps) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <IconLoader size={24} className="text-primary-600 animate-spin" />
-      </div>
+      <SkeletonTable filas={3} columnas={4} etiqueta="Cargando estudios…" />
     )
   }
 
@@ -108,7 +107,7 @@ export function ExpedientesSection({
               className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition-colors group"
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-primary-600 group-hover:text-primary-700">
                     {formatNumeroEstudio(expediente.numero_expediente)}
                   </span>
@@ -121,7 +120,7 @@ export function ExpedientesSection({
                   {solicitanteNombre}
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-500">
+              <div className="ml-3 flex shrink-0 items-center gap-3 text-sm text-gray-500">
                 <span>{formatDate(expediente.created_at)}</span>
                 <IconExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>

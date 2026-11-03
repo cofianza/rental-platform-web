@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { expedienteSoportesService, type SoporteListItem, type PresignedUrlInput } from '@/services/expedienteSoportesService'
 import type { PropositoSoporte } from '@/types/estudio'
 import { IconFileText, IconPlus } from '@/components/icons'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
   certificacion_laboral: 'Certificación laboral',
@@ -139,7 +140,10 @@ export function SoportesCondicionadoSection({
 
   if (loading) {
     return (
-      <p className="text-xs text-gray-500">Cargando documentos…</p>
+      <div role="status" className="space-y-2">
+        <span className="sr-only">Cargando documentos…</span>
+        <SkeletonText lineas={2} />
+      </div>
     )
   }
 

@@ -218,8 +218,8 @@ export function InmueblesTable({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
       {/* Loading overlay */}
       {isLoading && inmuebles.length > 0 && (
-        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
+        <div className="absolute inset-0 z-10 flex items-start justify-end bg-white/40 p-3" role="status" aria-label="Actualizando">
+          <IconLoader size={18} className="text-primary-600 animate-spin" />
         </div>
       )}
 
@@ -401,7 +401,7 @@ export function InmueblesTable({
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-primary-600">{inmueble.codigo}</span>
                   <EstadoBadge estado={inmueble.estado} />
                   <EstudiosActivosBadge count={inmueble.expedientes_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
@@ -412,19 +412,19 @@ export function InmueblesTable({
                 </div>
               </div>
               <div
-                className="flex items-center gap-1 ml-2"
+                className="flex shrink-0 items-center gap-1 ml-2"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => onView(inmueble)}
-                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 >
                   <IconEye size={18} />
                 </button>
                 {canEdit && (
                   <button
                     onClick={() => onEdit(inmueble)}
-                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                    className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                   >
                     <IconEdit size={18} />
                   </button>
@@ -432,7 +432,7 @@ export function InmueblesTable({
                 {canDelete && (
                   <button
                     onClick={() => onDelete(inmueble)}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
                     <IconTrash size={18} />
                   </button>
@@ -464,7 +464,7 @@ export function InmueblesTable({
             </div>
 
             {/* Controles */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {/* Items por página */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">Mostrar:</span>

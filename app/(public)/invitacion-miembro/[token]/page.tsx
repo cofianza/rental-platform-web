@@ -32,6 +32,7 @@ import {
   salirDeMiInmobiliaria,
   type InvitacionMiembroInfo,
 } from '@/services/miembrosService'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 type Status = 'loading' | 'error' | 'ready' | 'registrado'
 
@@ -177,9 +178,7 @@ export default function InvitacionMiembroPage() {
 
   if (status === 'loading' || !isInitialized) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo campos={3} etiqueta="Cargando la invitación…" />
     )
   }
 
@@ -195,7 +194,7 @@ export default function InvitacionMiembroPage() {
               ? 'Invitación no encontrada'
               : 'No se pudo cargar la invitación'
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
           <IconX size={32} className="text-red-600" />
         </div>
@@ -203,7 +202,7 @@ export default function InvitacionMiembroPage() {
         <p className="text-sm text-gray-600 mb-6">{errorMsg}</p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+          className="inline-flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           <IconHome size={16} />
           Volver al inicio
@@ -214,18 +213,18 @@ export default function InvitacionMiembroPage() {
 
   if (status === 'registrado' && info) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
           <IconCheck size={32} className="text-green-600" />
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">¡Listo! Se unió a {info.organizacion}</h1>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-gray-600 mb-6 break-words">
           Su cuenta fue creada con el correo <strong>{info.email}</strong>. Inicie sesión para
           empezar a gestionar la cartera de la inmobiliaria.
         </p>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+          className="inline-flex min-h-11 items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
         >
           Iniciar sesión
         </Link>
@@ -239,20 +238,20 @@ export default function InvitacionMiembroPage() {
   const wrongRole = isAuthenticated && user?.rol !== 'inmobiliaria'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
           <IconShield size={20} className="text-primary-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Invitación a un equipo</h1>
       </div>
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="text-sm text-gray-600 mb-6 break-words">
         {info.invitador ? <strong>{info.invitador}</strong> : 'Una inmobiliaria'} lo invitó a unirse a{' '}
         <strong>{info.organizacion}</strong> en Cofianza para gestionar inmuebles y estudios en
         equipo.
       </p>
 
-      <p className="text-xs text-gray-500 mb-6">
+      <p className="text-xs text-gray-500 mb-6 break-words">
         Invitación enviada a: <strong className="text-gray-700">{info.email}</strong>
       </p>
 
@@ -276,7 +275,7 @@ export default function InvitacionMiembroPage() {
           </p>
           <button
             onClick={() => saveTokenAndGo('/login')}
-            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+            className="w-full min-h-11 px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
           >
             Iniciar sesión
           </button>
@@ -295,7 +294,7 @@ export default function InvitacionMiembroPage() {
                 required
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full min-h-11 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div>
@@ -305,7 +304,7 @@ export default function InvitacionMiembroPage() {
                 required
                 value={apellido}
                 onChange={(e) => setApellido(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full min-h-11 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
@@ -330,13 +329,13 @@ export default function InvitacionMiembroPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 8 caracteres, con mayúscula, minúscula y número"
-              className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full min-h-11 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full min-h-11 px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <IconLoader size={16} className="animate-spin" /> : null}
             Crear cuenta y unirme
@@ -356,7 +355,7 @@ export default function InvitacionMiembroPage() {
           </p>
           <button
             onClick={handleLogout}
-            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+            className="mt-3 min-h-11 w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 sm:w-auto rounded-lg hover:bg-amber-700"
           >
             Cerrar sesión
           </button>
@@ -366,13 +365,13 @@ export default function InvitacionMiembroPage() {
       {/* Autenticado, rol correcto, email no coincide */}
       {!info.cuenta_otro_rol && isAuthenticated && !wrongRole && !emailMatch && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-900">
+          <p className="text-sm text-amber-900 break-words">
             Su cuenta está asociada al email <strong>{user?.email}</strong>, pero esta invitación fue
             enviada a <strong>{info.email}</strong>. Inicie sesión con el email invitado.
           </p>
           <button
             onClick={handleLogout}
-            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+            className="mt-3 min-h-11 w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 sm:w-auto rounded-lg hover:bg-amber-700"
           >
             Cerrar sesión
           </button>
@@ -385,7 +384,7 @@ export default function InvitacionMiembroPage() {
           <p className="text-sm text-amber-900">{cierre.mensaje}</p>
           <button
             onClick={() => setConfirmarCierre(true)}
-            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+            className="mt-3 min-h-11 w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 sm:w-auto rounded-lg hover:bg-amber-700"
           >
             Cerrar mi inmobiliaria y aceptar
           </button>
@@ -407,7 +406,7 @@ export default function InvitacionMiembroPage() {
           <button
             onClick={handleAceptar}
             disabled={submitting}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full min-h-11 px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <IconLoader size={16} className="animate-spin" /> : null}
             Aceptar invitación

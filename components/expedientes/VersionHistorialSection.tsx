@@ -6,6 +6,7 @@ import { IconDownload, IconHistory, IconLoader, IconRefresh } from '@/components
 import { contratoService } from '@/services/contratoService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoVersion } from '@/types/contrato'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface VersionHistorialSectionProps {
   contratoId: string
@@ -66,10 +67,13 @@ export function VersionHistorialSection({
     }
   }
 
-  if (isLoading) {
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (isLoading && versiones.length === 0) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <IconLoader size={18} className="animate-spin text-gray-500" />
+      <div role="status" className="space-y-2 py-2">
+        <span className="sr-only">Cargando versiones…</span>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full rounded-lg" />
       </div>
     )
   }

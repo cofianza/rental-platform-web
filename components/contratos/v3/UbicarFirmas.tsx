@@ -29,6 +29,7 @@ import {
   IconX,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import type { MarcaFirma, PdfPropio } from '@/types/contratoV3'
 
 /** Lo que ocupa una firma en Auco, en puntos (RECUADRO_FIRMA del API). */
@@ -276,7 +277,7 @@ export function UbicarFirmas({
           </Button>
         </div>
         {editable && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {sinGuardar && (
               <Button variante="secondary" tamano="sm" onClick={onDescartar} disabled={ocupado}>
                 Descartar cambios
@@ -300,16 +301,12 @@ export function UbicarFirmas({
             </Button>
           </div>
         ) : !url ? (
-          <div role="status" className="flex h-40 items-center justify-center gap-2 text-sm text-gray-500">
-            <IconLoader size={18} className="animate-spin" /> Cargando el contrato…
-          </div>
+          <CargandoPagina />
         ) : (
           <Document
             file={url}
             loading={
-              <div role="status" className="flex h-40 items-center justify-center gap-2 text-sm text-gray-500">
-                <IconLoader size={18} className="animate-spin" /> Cargando el contrato…
-              </div>
+              <CargandoPagina />
             }
             onLoadError={() => setError('No pudimos abrir el contrato de la inmobiliaria.')}
           >
@@ -394,6 +391,20 @@ export function UbicarFirmas({
             )}
           </Document>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** Esqueleto con forma de página mientras llega el PDF. */
+function CargandoPagina() {
+  return (
+    <div role="status" aria-live="polite" className="p-3 sm:p-4">
+      <span className="sr-only">Cargando el contrato…</span>
+      <div className="mx-auto aspect-[8.5/11] w-full max-w-xl space-y-4 rounded bg-white p-4 sm:p-8">
+        <SkeletonText lineas={3} />
+        <SkeletonText lineas={5} />
+        <SkeletonText lineas={4} />
       </div>
     </div>
   )

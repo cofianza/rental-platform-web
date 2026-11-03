@@ -32,6 +32,7 @@ import {
   IconShieldCheck,
   IconUser,
 } from '@/components/icons'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 type Paso = 'cargando' | 'error' | 'consentimiento' | 'fotos' | 'listo'
 type Opcion = 'autoriza' | 'analista'
@@ -114,16 +115,14 @@ export default function VerificarIdentidadPage() {
 
   if (paso === 'cargando') {
     return (
-      <div className="flex justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo campos={2} etiqueta="Cargando la verificación de identidad…" />
     )
   }
 
   if (paso === 'error' || !data) {
     return (
       <div>
-        <div className="rounded-xl border border-red-200 bg-white p-8 text-center">
+        <div className="rounded-xl border border-red-200 bg-white p-5 sm:p-8 text-center">
           <h1 className="text-xl font-bold text-gray-900">No pudimos abrir este enlace</h1>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">{error}</p>
           {reintentable && (
@@ -143,7 +142,7 @@ export default function VerificarIdentidadPage() {
 
   if (paso === 'listo') {
     return (
-      <div className="rounded-xl border border-primary-200 bg-white p-8 text-center">
+      <div className="rounded-xl border border-primary-200 bg-white p-5 sm:p-8 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700">
           <IconCheck size={28} />
         </div>
@@ -166,7 +165,7 @@ export default function VerificarIdentidadPage() {
         <h1 className="text-xl font-extrabold tracking-tight text-gray-900">
           {paso === 'consentimiento' ? 'Antes de firmar, confirmemos que es usted' : 'Tome las dos fotos'}
         </h1>
-        {data.inmueble && <p className="mt-1 text-sm text-gray-500">Contrato de arrendamiento · {data.inmueble}</p>}
+        {data.inmueble && <p className="mt-1 break-words text-sm text-gray-500">Contrato de arrendamiento · {data.inmueble}</p>}
       </div>
 
       {paso === 'consentimiento' ? (
@@ -192,7 +191,7 @@ export default function VerificarIdentidadPage() {
                   checked={opcion === k}
                   onChange={(e) => setOpcion(e.target.checked ? k : null)}
                   disabled={enviando}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-primary-600"
                 />
                 <span className="text-sm font-medium text-gray-800">{data.consentimiento.opciones[k]}</span>
               </label>
@@ -255,7 +254,7 @@ export default function VerificarIdentidadPage() {
             type="button"
             onClick={continuar}
             disabled={enviando}
-            className="w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             Continuar sin la verificación con foto
           </button>

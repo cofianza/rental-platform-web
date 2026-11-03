@@ -15,7 +15,9 @@ import { toast } from 'sonner'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { facturacionService, type IPrimaPorRemitir } from '@/services/facturacionService'
 import { formatCurrency, formatDate } from '@/lib/constants'
-import { IconAlertTriangle, IconCheck, IconLoader, IconRefresh } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconRefresh } from '@/components/icons'
+import { cn } from '@/lib/utils'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 const esTradicional = (p: IPrimaPorRemitir) => p.concepto === 'prima_tradicional'
 
@@ -59,12 +61,8 @@ export function PrimasPorRemitirSection() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
-      </div>
-    )
+  if (loading && items.length === 0) {
+    return <SkeletonTable filas={4} columnas={4} etiqueta="Cargando primas por cobrar…" />
   }
 
   if (errorCarga) {
@@ -104,8 +102,8 @@ export function PrimasPorRemitirSection() {
         minLength={3}
       />
 
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
-        <div>
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-gray-900">Primas de vinculación por cobrar</h3>
           <p className="text-sm text-gray-500 mt-0.5">
             Trasladada: la inmobiliaria la recauda del arrendatario y la remite a Cofianza. Tradicional: la asume la
@@ -114,9 +112,10 @@ export function PrimasPorRemitirSection() {
         </div>
         <button
           onClick={cargar}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 shrink-0"
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 shrink-0"
         >
-          <IconRefresh size={14} />
+          <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
           Refrescar
         </button>
       </div>
@@ -129,12 +128,12 @@ export function PrimasPorRemitirSection() {
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className={cn('divide-y divide-gray-100 transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
           {items.map((p) => {
             // La Tradicional no tiene plazo documentado: no se marca vencida.
             const vencida = !esTradicional(p) && p.estado === 'pendiente' && p.vence_en < hoy
             return (
-              <div key={p.id} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+              <div key={p.id} className="px-4 sm:px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-gray-900">{formatCurrency(p.monto_cop)}</span>
@@ -142,7 +141,7 @@ export function PrimasPorRemitirSection() {
                     <span className="text-sm text-gray-700">{p.inmobiliarias?.nombre ?? 'Inmobiliaria'}</span>
                     <span className="text-xs text-gray-500">{esTradicional(p) ? 'Tradicional' : 'Trasladada'}</span>
                   </div>
-                  <p className="mt-1 text-xs text-gray-600">
+                  <p className="mt-1 text-xs text-gray-600 break-words">
                     {p.contratos ? (
                       <Link
                         href={`/expedientes/${p.contratos.expediente_id}/contrato`}

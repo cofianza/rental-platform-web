@@ -17,6 +17,7 @@ import { contratoService } from '@/services/contratoService'
 import { formatDate, formatDateTime } from '@/lib/constants'
 import { VerificacionIdentidadFirma } from './VerificacionIdentidadFirma'
 import type { IContratoFirmante, ISolicitudFirma, RolFirmante, EstadoSolicitudFirma, IVerificacionIdentidad } from '@/types/firma'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const ROL_META: Record<RolFirmante, { label: string; icon: typeof IconUser }> = {
   arrendatario: { label: 'Arrendatario', icon: IconUser },
@@ -231,9 +232,9 @@ export function FirmantesContratoSection({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h4 className="text-sm font-semibold text-gray-900">Firmantes del contrato</h4>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!isLoading && (
             <span className={`text-xs font-medium ${todasFirmaron ? 'text-green-700' : 'text-gray-500'}`}>
               {firmados}/{total} firmaron
@@ -347,8 +348,11 @@ export function FirmantesContratoSection({
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-4">
-          <IconLoader size={20} className="animate-spin text-primary-600" />
+        <div role="status" className="space-y-2">
+          <span className="sr-only">Cargando firmantes…</span>
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          ))}
         </div>
       ) : (
         <ol className="space-y-2">

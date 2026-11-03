@@ -15,7 +15,7 @@ import { IconHome, IconBuilding2 } from '@/components/icons'
 // Campo del diseño v2 (COFIANZA_Login_Registro_v2): sin icono a la izquierda,
 // borde 1,5 px, 15 px de letra; el mismo del login.
 const CAMPO =
-  'w-full rounded-[10px] border-[1.5px] bg-white py-3 text-[15px] leading-[1.25] text-slate-900 placeholder:text-slate-400 transition-all focus:outline-hidden focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10'
+  'w-full rounded-[10px] border-[1.5px] bg-white py-3 text-base sm:text-[15px] leading-[1.25] text-slate-900 placeholder:text-slate-400 transition-all focus:outline-hidden focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10'
 
 /** Clase de input; `error` pinta borde rojo y `rightIcon` reserva espacio para el ojo. */
 export function regInputCls(opts: { error?: boolean; rightIcon?: boolean } = {}): string {

@@ -35,6 +35,7 @@ import { money } from '@/components/dashboard/secciones/_shared'
 import { SolicitudesVisitaWidget } from './SolicitudesVisitaWidget'
 import { PerfilIncompletoBanner } from './PerfilIncompletoBanner'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   IconPlus,
   IconLoader,
@@ -227,7 +228,7 @@ export function PropiedadesInmobiliariaView() {
         <p className="text-sm font-medium text-gray-500">
           Gestione sus propiedades · Publique en cofianza.co · Reciba solicitudes de visita
         </p>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
             <IconBuilding2 size={14} />
             {meta ? meta.total : error ? '—' : '…'} propiedades
@@ -277,18 +278,18 @@ export function PropiedadesInmobiliariaView() {
 
       {/* Lista de propiedades */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6 sm:py-5">
           <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-primary-600" />
             Sus propiedades
           </h3>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="-mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1">
             {CHIPS.map((c) => (
               <button
                 key={c.key}
                 onClick={() => setFilters({ ...c.patch, page: 1 })}
                 className={cn(
-                  'rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
+                  'shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-1.5 text-xs font-bold transition-colors',
                   activeChip === c.key
                     ? 'border-primary-600 bg-primary-50 text-primary-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600',
@@ -300,7 +301,7 @@ export function PropiedadesInmobiliariaView() {
           </div>
         </div>
 
-        <div className={cn('relative p-6', isLoading && inmuebles.length > 0 && 'opacity-60')} aria-busy={isLoading}>
+        <div className={cn('relative p-4 sm:p-6', isLoading && inmuebles.length > 0 && 'pointer-events-none opacity-60')} aria-busy={isLoading}>
           {/* Al filtrar o paginar se siguen viendo las filas anteriores: que se note que se están actualizando. */}
           {isLoading && inmuebles.length > 0 && (
             <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
@@ -308,9 +309,19 @@ export function PropiedadesInmobiliariaView() {
             </span>
           )}
           {isLoading && inmuebles.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
-              <IconLoader size={20} className="animate-spin text-primary-600" />
-              Cargando propiedades…
+            <div role="status" aria-live="polite" className="space-y-4">
+              <span className="sr-only">Cargando propiedades…</span>
+              {[0, 1, 2].map((k) => (
+                <div key={k} className="flex flex-col gap-4 rounded-2xl border border-gray-200 p-3 sm:flex-row sm:items-center">
+                  <Skeleton className="h-40 w-full shrink-0 rounded-xl sm:h-24 sm:w-36" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-3 w-1/3" />
+                    <Skeleton className="h-6 w-28" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error && !isLoading ? (
             <div className="py-12 text-center" role="alert">
@@ -396,7 +407,7 @@ export function PropiedadesInmobiliariaView() {
 
                     {/* Info de la propiedad */}
                     <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => copiarCodigo(i.codigo)}
@@ -495,7 +506,7 @@ export function PropiedadesInmobiliariaView() {
 
         {/* Paginación simple (reusa meta del listado) */}
         {meta && meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 px-4 py-3 text-sm text-gray-500 sm:px-6">
             <span>
               Página {meta.page} de {meta.totalPages} · {meta.total} propiedades
             </span>

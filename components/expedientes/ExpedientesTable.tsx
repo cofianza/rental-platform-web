@@ -430,7 +430,7 @@ export function ExpedientesTable({
           >
             {/* Arriba el solicitante y el número; las pastillas van debajo, no apiladas junto al nombre. */}
             <div className="flex items-start justify-between gap-2 mb-1">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="min-w-0 break-words text-sm font-medium text-gray-900">
                 {expediente.solicitante?.nombre ?? 'Sin solicitante'}
               </p>
               <span className="text-sm font-medium text-gray-900 tabular-nums shrink-0">
@@ -438,7 +438,7 @@ export function ExpedientesTable({
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-gray-500 mb-3 break-words">
               {expediente.inmueble
                 ? `${expediente.inmueble.titulo || expediente.inmueble.direccion} · ${expediente.inmueble.ciudad}`
                 : 'Inmueble por definir'}
@@ -462,7 +462,7 @@ export function ExpedientesTable({
       {meta && meta.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
           {/* Info y selector de items */}
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-600">
             <span>
               Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
               {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}

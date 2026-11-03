@@ -21,6 +21,7 @@ import {
   type TipoDocumentoRepresentante,
 } from '@/services/perfilArrendadorService'
 import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { rutaInterna } from '@/lib/utils'
@@ -217,12 +218,8 @@ export default function DatosContratoPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-gray-500" />
-      </div>
-    )
+  if (loading && !perfil) {
+    return <SkeletonDetail bloques={3} etiqueta="Cargando sus datos para contrato…" />
   }
 
   if (!perfil || errorCarga) {
@@ -262,14 +259,14 @@ export default function DatosContratoPage() {
       <fieldset disabled={soloLectura} className="space-y-6 border-0 p-0 m-0 disabled:opacity-70">
       {/* Logo (solo inmobiliaria) */}
       {isInmobiliaria && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-1">Logo de la inmobiliaria</h3>
           <p className="text-sm text-gray-500 mb-4">
             Aparecerá en la esquina superior derecha de cada contrato. PNG, JPG o WebP. Máx 2 MB.
           </p>
 
           {perfil.logo_url ? (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                 <img
                   src={perfil.logo_url}
@@ -571,7 +568,7 @@ export default function DatosContratoPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <IconLoader size={16} className="animate-spin" />

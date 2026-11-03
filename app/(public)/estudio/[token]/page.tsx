@@ -15,6 +15,7 @@ import { IconCheck, IconRefresh, IconX } from '@/components/icons'
 import { formatNumeroEstudio } from '@/lib/utils'
 import { TIPOS_DOCUMENTO } from '@/lib/constants'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 const nombreTipoDocumento = (t: unknown) =>
   TIPOS_DOCUMENTO[String(t ?? '').toUpperCase() as keyof typeof TIPOS_DOCUMENTO] ?? String(t ?? '')
@@ -154,18 +155,13 @@ export default function EstudioFormularioPage() {
 
   if (pageState === 'loading') {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Cargando formulario...</p>
-        </div>
-      </div>
+      <EsqueletoFlujo bloques={1} campos={4} etiqueta="Cargando formulario…" />
     )
   }
 
   if (pageState === 'error') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
           <IconX size={32} className="text-red-500" />
         </div>
@@ -193,7 +189,7 @@ export default function EstudioFormularioPage() {
 
   if (pageState === 'submitted') {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
           <IconCheck size={32} className="text-green-500" />
         </div>
@@ -222,7 +218,7 @@ export default function EstudioFormularioPage() {
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
             Su estudio
           </h2>
-          <p className="text-sm text-primary-700">
+          <p className="text-sm text-primary-700 break-words">
             Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
@@ -230,7 +226,7 @@ export default function EstudioFormularioPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 space-y-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
               <IconCheck size={20} className="text-green-600" />
@@ -249,31 +245,31 @@ export default function EstudioFormularioPage() {
             {datos.nombre_completo && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Nombre</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.nombre_completo}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.nombre_completo}</span>
               </div>
             )}
             {datos.tipo_documento && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Documento</span>
-                <span className="text-sm text-gray-900 col-span-2">{nombreTipoDocumento(datos.tipo_documento)} {datos.numero_documento}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{nombreTipoDocumento(datos.tipo_documento)} {datos.numero_documento}</span>
               </div>
             )}
             {datos.email && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Correo</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.email}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.email}</span>
               </div>
             )}
             {datos.telefono && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Teléfono</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.telefono}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.telefono}</span>
               </div>
             )}
             {datos.ingresos_mensuales && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Ingresos</span>
-                <span className="text-sm text-gray-900 col-span-2">
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">
                   ${Number(datos.ingresos_mensuales).toLocaleString('es-CO')}
                 </span>
               </div>
@@ -281,19 +277,19 @@ export default function EstudioFormularioPage() {
             {datos.ocupacion && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Ocupación</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.ocupacion}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.ocupacion}</span>
               </div>
             )}
             {datos.empresa && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Empresa</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.empresa}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.empresa}</span>
               </div>
             )}
             {datos.direccion_residencia && (
               <div className="grid grid-cols-3 gap-2">
                 <span className="text-sm text-gray-500">Dirección</span>
-                <span className="text-sm text-gray-900 col-span-2">{datos.direccion_residencia}</span>
+                <span className="text-sm text-gray-900 col-span-2 min-w-0 break-words">{datos.direccion_residencia}</span>
               </div>
             )}
           </div>
@@ -324,7 +320,7 @@ export default function EstudioFormularioPage() {
           <h2 className="text-lg font-semibold text-primary-900 mb-1">
             Complete sus datos para su estudio
           </h2>
-          <p className="text-sm text-primary-700">
+          <p className="text-sm text-primary-700 break-words">
             Estudio <strong>{formatNumeroEstudio(formInfo.expediente_numero)}</strong>
             {formInfo.inmueble_direccion && (
               <> &middot; {formInfo.inmueble_direccion}, {formInfo.inmueble_ciudad}</>
@@ -334,7 +330,7 @@ export default function EstudioFormularioPage() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 space-y-5">
         <h3 className="text-lg font-semibold text-gray-900">Confirme sus datos</h3>
 
         {/* Nombre */}
@@ -347,7 +343,7 @@ export default function EstudioFormularioPage() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Su nombre completo"
           />
         </div>
@@ -389,7 +385,7 @@ export default function EstudioFormularioPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="correo@ejemplo.com"
             />
           </div>
@@ -402,7 +398,7 @@ export default function EstudioFormularioPage() {
               value={telefono}
               onChange={(e) => setTelefono(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="3001234567"
               inputMode="tel"
               autoComplete="tel"
@@ -425,7 +421,7 @@ export default function EstudioFormularioPage() {
                 const digits = e.target.value.replace(/\D/g, '').slice(0, 10)
                 setIngresos(digits ? Number(digits).toLocaleString('es-CO') : '')
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="$ 0"
               inputMode="numeric"
             />
@@ -438,7 +434,7 @@ export default function EstudioFormularioPage() {
               type="text"
               value={ocupacion}
               onChange={(e) => setOcupacion(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Empleado, independiente, etc."
             />
           </div>
@@ -453,7 +449,7 @@ export default function EstudioFormularioPage() {
             type="text"
             value={empresa}
             onChange={(e) => setEmpresa(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Nombre de la empresa"
           />
         </div>
@@ -467,7 +463,7 @@ export default function EstudioFormularioPage() {
             type="text"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full min-h-11 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Calle, número, barrio, ciudad"
           />
         </div>
@@ -489,7 +485,7 @@ export default function EstudioFormularioPage() {
             type="checkbox"
             checked={acepta}
             onChange={(e) => setAcepta(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <label htmlFor="acepta_terminos" className="text-sm text-gray-600">
             Acepto los{' '}

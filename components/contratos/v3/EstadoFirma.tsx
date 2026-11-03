@@ -312,7 +312,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         </div>
       )}
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-7">
         <h2 className="font-display text-lg font-bold text-gray-900">Proceso de firma</h2>
 
         {activa && (
@@ -458,7 +458,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
       />
 
       {e.acta && (
-        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+        <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-7">
           <div>
             <h2 className="font-display text-lg font-bold text-gray-900">Acta de entrega e inventario</h2>
             <p className="mt-1 text-sm text-gray-500">
@@ -519,7 +519,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         </section>
       )}
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-7">
         <div>
           <h2 className="font-display text-lg font-bold text-gray-900">Documentos</h2>
           <p className="mt-1 text-sm text-gray-500">

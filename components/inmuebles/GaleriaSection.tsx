@@ -40,6 +40,7 @@ import { Lightbox } from '@/components/ui/Lightbox'
 import { ConfirmDialog } from '@/components/ui'
 import { inmuebleService } from '@/services/inmuebleService'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import type { IFotoInmueble } from '@/types/inmueble'
 import { FOTO_LIMITS } from '@/types/inmueble'
 
@@ -482,8 +483,11 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="text-primary-600 animate-spin" />
+      <div role="status" aria-live="polite" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <span className="sr-only">Cargando fotos…</span>
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className="aspect-square rounded-lg" />
+        ))}
       </div>
     )
   }

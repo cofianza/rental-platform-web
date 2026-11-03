@@ -10,7 +10,6 @@ import { toast } from 'sonner'
 import {
   IconCheck,
   IconX,
-  IconLoader,
   IconRefresh,
   IconEye,
   IconFileText,
@@ -24,6 +23,7 @@ import { DocumentViewer } from '@/components/ui/DocumentViewer'
 import { RechazoModal } from './RechazoModal'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento, EstadoDocumento } from '@/types/documento'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 // ============================================
 // Helpers
@@ -119,11 +119,7 @@ function ThumbnailImage({ doc, onClick }: { doc: IDocumento; onClick: () => void
   }, [doc.id])
 
   if (isLoadingUrl) {
-    return (
-      <div className="w-full h-32 bg-gray-50 rounded-lg flex items-center justify-center">
-        <IconLoader size={18} className="animate-spin text-gray-500" />
-      </div>
-    )
+    return <Skeleton className="w-full h-32 rounded-lg" />
   }
 
   if (!signedUrl) return null
@@ -270,13 +266,13 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
   // Render
   // ============================================
 
-  if (isLoading) {
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (isLoading && documentos.length === 0) {
     return (
-      <div className="mt-8 border-t border-gray-200 pt-6">
-        <div className="flex items-center gap-2 text-gray-500">
-          <IconLoader size={18} className="animate-spin" />
-          <span className="text-sm">Cargando panel de revisión...</span>
-        </div>
+      <div role="status" className="mt-8 space-y-3 border-t border-gray-200 pt-6">
+        <span className="sr-only">Cargando panel de revisión…</span>
+        <Skeleton className="h-5 w-48" />
+        <SkeletonText lineas={3} />
       </div>
     )
   }
@@ -306,7 +302,7 @@ export function RevisionPanel({ expedienteId, onRevisionChange }: RevisionPanelP
   return (
     <div className="mt-8 border-t border-gray-200 pt-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <IconShield size={20} className="text-primary-600" />
           <h4 className="text-base font-semibold text-gray-900">Revisión de documentos</h4>

@@ -41,7 +41,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
     <div className={cn('border-b border-gray-200', className)}>
       <nav
         role="tablist"
-        className="-mb-px flex space-x-8 overflow-x-auto"
+        className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto"
         aria-label="Secciones"
       >
         {tabs.map((tab, i) => {
@@ -59,7 +59,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
               onClick={() => onChange(tab.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                'shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 isActive
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

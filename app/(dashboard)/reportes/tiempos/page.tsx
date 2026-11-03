@@ -208,6 +208,9 @@ export default function TiemposPorEtapaPage() {
 
   const hasEtapas = data && data.etapas.length > 0
 
+  // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
+  const recargando = loading && !!data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -215,7 +218,7 @@ export default function TiemposPorEtapaPage() {
         title="Tiempos por Etapa"
         subtitle="Tiempo promedio en cada etapa del flujo de estudios"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportButton
               endpoint="/export/reportes/tiempos"
               params={{
@@ -280,7 +283,7 @@ export default function TiemposPorEtapaPage() {
       </div>
 
       {/* Summary cards */}
-      {loading ? (
+      {loading && !data ? (
         <CardsSkeleton />
       ) : hasEtapas ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -306,7 +309,7 @@ export default function TiemposPorEtapaPage() {
       ) : null}
 
       {/* Warning banner for insufficient data */}
-      {!loading && data && data.resumen.total_expedientes_analizados < 5 && (
+      {data && data.resumen.total_expedientes_analizados < 5 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
           <strong>Datos insuficientes:</strong> solo {data.resumen.total_expedientes_analizados}{' '}
           estudios analizados. Se recomiendan al menos 5 para resultados significativos.
@@ -314,7 +317,7 @@ export default function TiemposPorEtapaPage() {
       )}
 
       {/* Legend */}
-      {!loading && hasEtapas && (
+      {hasEtapas && (
         <div className="flex gap-4">
           <span className="flex items-center gap-1.5 text-xs text-gray-600">
             <span className="w-3 h-3 rounded bg-teal-600" />
@@ -328,8 +331,8 @@ export default function TiemposPorEtapaPage() {
       )}
 
       {/* Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 p-4 sm:p-6 transition-opacity ${recargando ? 'opacity-60' : ''}`}>
+        {loading && !data ? (
           <ChartSkeleton />
         ) : hasEtapas ? (
           <HorizontalBarChart data={data.etapas} />
@@ -341,8 +344,8 @@ export default function TiemposPorEtapaPage() {
       </div>
 
       {/* Detail Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
+        {loading && !data ? (
           <div className="p-4">
             <TableSkeleton />
           </div>

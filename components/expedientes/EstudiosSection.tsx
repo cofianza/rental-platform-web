@@ -29,6 +29,7 @@ import {
 import type { IEstudio, ICreateEstudioInput } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { textoVisible, esRolInterno, centralDefinida } from './textoVisible'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 // ============================================
 // Constants
@@ -323,12 +324,9 @@ export function EstudiosSection({
   // Render
   // ============================================
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="animate-spin text-primary-600" />
-      </div>
-    )
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (loading && estudios.length === 0) {
+    return <SkeletonTable filas={2} columnas={4} etiqueta="Cargando evaluaciones…" />
   }
 
   if (error) {
@@ -349,7 +347,7 @@ export function EstudiosSection({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="inline-flex items-center gap-1.5 text-lg font-semibold text-gray-900">
           Evaluaciones crediticias
           <InfoTip texto={AYUDA.evaluaciones} lado="derecha" />

@@ -2,7 +2,8 @@
 
 import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
-import { IconX, IconLoader } from '@/components/icons'
+import { IconX } from '@/components/icons'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { contratoService } from '@/services/contratoService'
 import { formatDateTime } from '@/lib/constants'
 import type { IContratoAccesoFirmado } from '@/types/contrato'
@@ -50,18 +51,19 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
   return (
     <Modal isOpen onClose={onClose} bare ariaLabel="Registro de accesos al contrato" closeOnBackdrop className="rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Log de Accesos al Documento Firmado</h2>
+      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
+        <h2 className="min-w-0 text-lg font-semibold text-gray-900">Log de Accesos al Documento Firmado</h2>
         <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
           <IconX size={20} />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <IconLoader size={24} className="animate-spin text-primary-600" />
+          <div role="status" aria-live="polite">
+            <span className="sr-only">Cargando registro de accesos…</span>
+            <SkeletonText lineas={6} />
           </div>
         ) : error ? (
           <p className="text-sm text-red-600 text-center py-8">{error}</p>

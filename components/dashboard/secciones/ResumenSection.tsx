@@ -61,6 +61,7 @@ import {
   IconUserX,
 } from '@/components/icons'
 import type { IconProps } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 /** Umbrales de siniestralidad: los mismos en la tarjeta, las barras, la leyenda y la alerta. */
 const UMBRAL_ATENCION = 5
@@ -451,9 +452,15 @@ export function ResumenSection() {
       <Bloque titulo="Pendientes de Cofianza">
         <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
           {extras === null ? (
-            <p role="status" className="flex items-center gap-2 px-3 py-3 text-xs text-ink-500">
-              <IconLoader size={14} className="animate-spin" /> Cargando pendientes…
-            </p>
+            <div role="status" aria-live="polite" className="divide-y divide-ink-100">
+              <span className="sr-only">Cargando pendientes…</span>
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                  <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
+                  <Skeleton className="h-3 flex-1" />
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               {pendientes.length > 0 ? (

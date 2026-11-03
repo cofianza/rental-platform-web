@@ -67,7 +67,7 @@ function AuditoriasAbiertas() {
   const auditorias = data ?? []
   return (
     <SeccionEstado
-      loading={loading}
+      loading={loading} datos={!!data}
       error={error}
       onRetry={reload}
       vacio={
@@ -207,7 +207,7 @@ export default function MigracionPage() {
           subtitle="La carga solo se permite con la habilitación completa de al menos una destinación y sin suspensión."
         />
         <SeccionEstado
-          loading={loading}
+          loading={loading} datos={!!data}
           error={error}
           onRetry={reload}
           vacio={
@@ -270,7 +270,7 @@ export default function MigracionPage() {
       <section>
         <SeccionHeader title="Lotes" subtitle="Cada carga procesada crea un lote que se activa con la firma del Acta de Migración." />
         <SeccionEstado
-          loading={loading}
+          loading={loading} datos={!!data}
           error={error}
           onRetry={reload}
           vacio={

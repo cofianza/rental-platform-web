@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { pagoService, type IPago, type IPagoEvento } from '@/services/pagoService'
 import {
   IconLoader,
@@ -145,9 +146,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
   if (pageState === 'loading') {
     return (
       <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
-        <div className="flex items-center justify-center py-12">
-          <IconLoader size={32} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonDetail bloques={1} etiqueta="Cargando el detalle del pago…" className="py-2" />
       </Modal>
     )
   }

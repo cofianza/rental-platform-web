@@ -21,6 +21,7 @@ import { ESTADOS_CONTRATO, etiquetaContrato, formatDate, formatDateTime } from '
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 import type { Bloqueo } from '@/types/contratoV3'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 
@@ -392,12 +393,9 @@ export function ContratosSection({
   )
 
   // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="animate-spin text-primary-600" />
-      </div>
-    )
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (isLoading && contratos.length === 0) {
+    return <SkeletonTable filas={2} columnas={4} etiqueta="Cargando contratos…" />
   }
 
   // Error state
@@ -415,7 +413,7 @@ export function ContratosSection({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-semibold text-gray-900">
           Contratos ({contratos.length})
         </h3>

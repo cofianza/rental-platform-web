@@ -26,6 +26,7 @@ import {
 import { Modal } from '@/components/ui/Modal'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento } from '@/types/documento'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 // ============================================
 // Types
@@ -120,9 +121,7 @@ function ImagePanel({ documento, title, icon, emptyMessage, zoom }: ImagePanelPr
             </div>
           </div>
         ) : isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <IconLoader size={32} className="text-gray-400 animate-spin" />
-          </div>
+          <Skeleton className="absolute inset-0 rounded-none" />
         ) : error ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-red-400">

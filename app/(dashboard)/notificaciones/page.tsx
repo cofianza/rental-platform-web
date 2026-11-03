@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useNotificationStore } from '@/stores/notification.store'
 import { notificacionService, type INotificacion } from '@/services/notificacionService'
 import {
@@ -243,8 +244,17 @@ export default function NotificacionesPage() {
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading && lista.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
-            <IconLoader size={24} className="animate-spin text-gray-500" />
+          <div role="status" aria-live="polite" className="divide-y divide-gray-100">
+            <span className="sr-only">Cargando notificaciones…</span>
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="flex gap-3 px-4 py-4">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : fallo && lista.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -283,8 +293,8 @@ export default function NotificacionesPage() {
                   >
                     <NotificationIcon tipo={n.tipo} titulo={n.titulo} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className={cn('text-sm text-gray-900', unread && 'font-semibold')}>
+                      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                        <p className={cn('text-sm text-gray-900 break-words', unread && 'font-semibold')}>
                           {n.titulo}
                           {prioritaria && (
                             <span className="ml-2 rounded bg-red-600 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase text-white">
@@ -294,7 +304,7 @@ export default function NotificacionesPage() {
                         </p>
                         <span className="text-xs text-gray-500 shrink-0">{formatDateTime(n.created_at)}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{sinReferenciasInternas(n.mensaje)}</p>
+                      <p className="text-sm text-gray-600 mt-1 break-words">{sinReferenciasInternas(n.mensaje)}</p>
                     </div>
                   </button>
                 </li>

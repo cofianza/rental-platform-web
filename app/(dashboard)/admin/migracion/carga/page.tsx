@@ -318,7 +318,7 @@ function CargaMigracion() {
       <section>
         <SeccionHeader title="1. Inmobiliaria y archivo" subtitle="Solo aparecen las inmobiliarias habilitadas y sin suspensión." />
         <SeccionEstado
-          loading={loading}
+          loading={loading} datos={!!data}
           error={error}
           onRetry={reload}
           vacio={

@@ -2,9 +2,10 @@
 
 import { Modal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
-import { IconX, IconLoader } from '@/components/icons'
+import { IconX } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import type { IVersionComparison, IVersionDiferencia } from '@/types/contrato'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 const CAMBIO_STYLES: Record<IVersionDiferencia['cambio'], { label: string; bg: string; text: string }> = {
   agregada: { label: 'Agregada', bg: 'bg-green-100', text: 'text-green-700' },
@@ -56,7 +57,7 @@ export function CompararVersionesModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Comparar versiones del contrato" encima closeOnBackdrop className="rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">
           Comparar versiones v{v1} y v{v2}
         </h2>
@@ -68,10 +69,11 @@ export function CompararVersionesModal({
         </button>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <IconLoader size={24} className="animate-spin text-primary-600" />
+          <div role="status">
+            <span className="sr-only">Cargando versiones…</span>
+            <SkeletonText lineas={8} />
           </div>
         )}
 
@@ -84,7 +86,7 @@ export function CompararVersionesModal({
         {comparison && (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-gray-600">
                 <span className="font-medium">{comparison.total_cambios}</span> cambio(s) encontrado(s)
               </p>
@@ -100,7 +102,7 @@ export function CompararVersionesModal({
             </div>
 
             {/* Version info */}
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+            <div className="grid grid-cols-1 gap-2 text-xs text-gray-500 sm:grid-cols-2 sm:gap-4">
               <div className="bg-gray-50 rounded-lg p-2.5">
                 <span className="font-medium text-gray-700">v{comparison.v1.version}</span>
                 {comparison.v1.fecha_generacion && (
@@ -125,7 +127,7 @@ export function CompararVersionesModal({
                 No hay diferencias entre las versiones
               </p>
             ) : (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-lg overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
@@ -173,7 +175,7 @@ export function CompararVersionesModal({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-gray-200">
+      <div className="px-4 sm:px-6 py-3 border-t border-gray-200">
         <button
           onClick={onClose}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"

@@ -12,7 +12,8 @@
 
 import { useEffect, useState } from 'react'
 import { apiClient, ApiClientError } from '@/lib/api'
-import { IconLoader, IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 interface Props {
   inmuebleId: string
@@ -46,8 +47,8 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-        <div>
+      <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-gray-900">Vista previa del contrato</h3>
           <p className="text-xs text-gray-500 mt-0.5">
             Asi se vería el contrato con los datos actuales del inmueble y su perfil.
@@ -57,7 +58,7 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
         <button
           onClick={fetchHtml}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-white rounded-md disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-white rounded-md disabled:opacity-50"
           title="Recargar"
         >
           <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
@@ -66,8 +67,11 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={24} className="animate-spin text-gray-500" />
+        <div role="status" aria-live="polite" className="space-y-6 p-4 sm:p-6">
+          <span className="sr-only">Cargando contrato…</span>
+          <SkeletonText lineas={4} />
+          <SkeletonText lineas={5} />
+          <SkeletonText lineas={3} />
         </div>
       ) : error ? (
         <div className="flex items-start gap-3 p-6 bg-red-50">

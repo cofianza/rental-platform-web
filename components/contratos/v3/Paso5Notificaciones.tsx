@@ -27,6 +27,7 @@ import {
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { abrirEnPestana, cn } from '@/lib/utils'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
 import type { Contacto, EstadoAsistente, MarcaFirma, NumeroPaso, Paso5 } from '@/types/contratoV3'
@@ -254,7 +255,7 @@ export function VistaPreviaContrato({
                   : null)
 
   return (
-    <section id="vista-previa" className="scroll-mt-20 space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+    <section id="vista-previa" className="scroll-mt-20 space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-bold text-gray-900">
@@ -572,8 +573,11 @@ export function VisorDocumentos({ docs, visor }: { docs: DocVisor[]; visor: Retu
             </Button>
           </div>
         ) : (
-          <div role="status" className="flex h-40 items-center justify-center gap-2 text-sm text-gray-500">
-            <IconLoader size={18} className="animate-spin" /> Cargando documento…
+          <div role="status" aria-live="polite" className="space-y-4 rounded-lg border border-gray-200 p-4 sm:p-8">
+            <span className="sr-only">Cargando documento…</span>
+            <SkeletonText lineas={3} />
+            <SkeletonText lineas={5} />
+            <SkeletonText lineas={4} />
           </div>
         ))}
     </div>

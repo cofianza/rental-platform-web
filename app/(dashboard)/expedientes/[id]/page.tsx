@@ -552,15 +552,15 @@ export default function ExpedienteDetallePage() {
       {numeroExpediente && <title>{`Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`}</title>}
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-2 sm:gap-4">
           <Link
             href={rutaListado}
             aria-label={user?.rol === 'solicitante' ? 'Volver a mis estudios' : 'Volver al listado'}
-            className="inline-block p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
+            className="inline-block shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
           >
             <IconArrowLeft size={20} className="text-gray-600" />
           </Link>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             {/* Código y estado */}
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-gray-900">
@@ -591,7 +591,7 @@ export default function ExpedienteDetallePage() {
             </div>
 
             {/* Info del inmueble y solicitante */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-4 text-sm text-gray-600 break-words">
               {!expediente.inmueble && expediente.canon_objetivo_cop && (
                 <span>
                   <span className="text-gray-500">Inmueble:</span> por definir · canon de{' '}
@@ -635,7 +635,7 @@ export default function ExpedienteDetallePage() {
                 Para inmobiliaria/propietario el responsable relevante es el
                 "Responsable del expediente" (miembro) del tab Resumen. */}
             {puedeAsignar && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 text-sm text-gray-500">
                   Responsable:
                   <InfoTip texto={AYUDA.responsable} lado="derecha" />
@@ -678,7 +678,7 @@ export default function ExpedienteDetallePage() {
         {/* Acciones — el solicitante no cambia estado manualmente; un miembro
             con perfil incompleto tampoco hasta completar sus datos. */}
         {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
-          <div className="flex gap-3 ml-12 lg:ml-0">
+          <div className="flex flex-wrap gap-3 sm:ml-12 lg:ml-0">
             {transiciones === null ? (
               <Button variante="secondary" onClick={() => fetchExpediente()}>
                 Reintentar acciones
@@ -697,7 +697,7 @@ export default function ExpedienteDetallePage() {
       </div>
 
       {/* Barra de progreso */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
         <ExpedienteProgressBar
           expedienteId={id}
           estadoActual={expediente.estado}
@@ -786,7 +786,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Resumen. Siempre montado (oculto en las otras pestañas): al
             volver no se desmontan y re-piden sus tarjetas. Se mantienen al día
             con el contador de cargas (fetchExpediente), no remontándose. */}
-        <div className="p-6 space-y-6" hidden={activeTab !== 'resumen'}>
+        <div className="p-4 sm:p-6 space-y-6" hidden={activeTab !== 'resumen'}>
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ||
@@ -1053,7 +1053,7 @@ export default function ExpedienteDetallePage() {
                     />
                   ),
                   visita: expediente.inmueble ? (
-                    <div className="rounded-lg border border-gray-200 p-5">
+                    <div className="rounded-lg border border-gray-200 p-4 sm:p-5">
                       <CitasSection
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -1072,7 +1072,7 @@ export default function ExpedienteDetallePage() {
 
             {/* El prospecto ve su cita arriba de los datos (al gestor se la ordena la etapa). */}
             {user?.rol === 'solicitante' && expediente.inmueble && (
-            <div className="border border-gray-200 rounded-lg p-5">
+            <div className="border border-gray-200 rounded-lg p-4 sm:p-5">
               <CitasSection
                 expedienteId={id}
                 expedienteEstado={expediente.estado}
@@ -1090,7 +1090,7 @@ export default function ExpedienteDetallePage() {
             <DatosPlegables plegar={user?.rol !== 'solicitante'}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Sección Inmueble */}
-              <div className="border border-gray-200 rounded-lg p-5">
+              <div className="border border-gray-200 rounded-lg p-4 sm:p-5">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
                   Inmueble
                 </h3>
@@ -1163,7 +1163,7 @@ export default function ExpedienteDetallePage() {
               </div>
 
               {/* Sección Solicitante */}
-              <div className="border border-gray-200 rounded-lg p-5">
+              <div className="border border-gray-200 rounded-lg p-4 sm:p-5">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
                   Solicitante
                 </h3>
@@ -1229,7 +1229,7 @@ export default function ExpedienteDetallePage() {
               </div>
 
               {/* Sección Expediente */}
-              <div className="border border-gray-200 rounded-lg p-5 lg:col-span-2">
+              <div className="border border-gray-200 rounded-lg p-4 sm:p-5 lg:col-span-2">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
                   Datos del Estudio
                 </h3>
@@ -1258,7 +1258,7 @@ export default function ExpedienteDetallePage() {
         {/* Tab: Documentos (HP-295). Montado desde el inicio (oculto) para que
             el contador de pendientes de la pestaña se vea sin tener que abrirla. */}
         {user?.rol !== 'solicitante' && (
-          <div className="p-6" hidden={activeTab !== 'documentos'}>
+          <div className="p-4 sm:p-6" hidden={activeTab !== 'documentos'}>
             <DocumentosSection
               key={visitasDocumentos}
               expedienteId={id}
@@ -1270,7 +1270,7 @@ export default function ExpedienteDetallePage() {
 
         {/* Tab: Estudios */}
         {activeTab === 'estudios' && (
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-6">
             {/* El pago y la autorizacion viven en Resumen (§6.3): aqui se repetian
                 las mismas tres tarjetas y la accion util quedaba enterrada. */}
             <p className="text-sm text-gray-500">
@@ -1306,7 +1306,7 @@ export default function ExpedienteDetallePage() {
 
         {/* Tab: Contratos */}
         {activeTab === 'contratos' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <ContratosSection
               expedienteId={id}
               expedienteEstado={expediente.estado}
@@ -1321,21 +1321,21 @@ export default function ExpedienteDetallePage() {
 
         {/* Tab: Pagos (HP-351) */}
         {activeTab === 'pagos' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <PagosSection expedienteId={id} onPagoActualizado={fetchExpediente} />
           </div>
         )}
 
         {/* Tab: Comentarios (HP-263) */}
         {activeTab === 'comentarios' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <ComentariosSection expedienteId={id} />
           </div>
         )}
 
         {/* Tab: Timeline (HP-270) */}
         {activeTab === 'timeline' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <WhatsappMensajesSection expedienteId={id} />
             <TimelineSection expedienteId={id} />
           </div>
@@ -1403,11 +1403,11 @@ function InfoRow({
     <div className="flex justify-between items-start gap-4">
       <span className="text-gray-500 shrink-0">{label}:</span>
       {href ? (
-        <Link href={href} className="text-right font-semibold text-primary-700 hover:underline">
+        <Link href={href} className="min-w-0 break-words text-right font-semibold text-primary-700 hover:underline">
           {value}
         </Link>
       ) : (
-        <span className={`text-right ${highlight ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+        <span className={`min-w-0 break-words text-right ${highlight ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
           {value}
         </span>
       )}
@@ -1418,7 +1418,8 @@ function InfoRow({
 // Skeleton de carga
 function ExpedienteDetalleSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="space-y-6 animate-pulse" role="status" aria-live="polite">
+      <span className="sr-only">Cargando el estudio…</span>
       {/* Header skeleton */}
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 bg-gray-200 rounded-lg" />
@@ -1427,13 +1428,13 @@ function ExpedienteDetalleSkeleton() {
             <div className="h-8 w-40 bg-gray-200 rounded" />
             <div className="h-6 w-24 bg-gray-200 rounded-full" />
           </div>
-          <div className="h-4 w-64 bg-gray-200 rounded" />
-          <div className="h-4 w-48 bg-gray-200 rounded" />
+          <div className="h-4 w-64 max-w-full bg-gray-200 rounded" />
+          <div className="h-4 w-48 max-w-full bg-gray-200 rounded" />
         </div>
       </div>
 
       {/* Progress bar skeleton */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
         <div className="flex justify-between">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex flex-col items-center gap-2">
@@ -1445,17 +1446,17 @@ function ExpedienteDetalleSkeleton() {
       </div>
 
       {/* Tabs skeleton */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 overflow-hidden">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-10 w-24 bg-gray-200 rounded" />
+          <div key={i} className="h-10 w-24 shrink-0 bg-gray-200 rounded" />
         ))}
       </div>
 
       {/* Content skeleton */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[1, 2].map((i) => (
-            <div key={i} className="border border-gray-200 rounded-lg p-5">
+            <div key={i} className="border border-gray-200 rounded-lg p-4 sm:p-5">
               <div className="h-4 w-24 bg-gray-200 rounded mb-4" />
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((j) => (
@@ -1478,7 +1479,7 @@ function DatosPlegables({ plegar, children }: { plegar: boolean; children: React
   if (!plegar) return <>{children}</>
   return (
     <details className="rounded-lg border border-gray-200 bg-white">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm hover:bg-gray-50">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-4 text-sm sm:px-5 hover:bg-gray-50">
         <span className="font-medium text-gray-800">Datos del estudio</span>
         <span className="text-xs text-gray-500">Inmueble · Solicitante · Notas · Ver</span>
       </summary>

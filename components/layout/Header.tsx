@@ -36,7 +36,7 @@ export function Header() {
       className={cn(
         'sticky top-0 z-30 bg-white border-b border-gray-200',
         'transition-all duration-300 ease-in-out',
-        'h-16 flex items-center px-4 lg:px-6 gap-4'
+        'h-16 flex items-center px-3 sm:px-4 lg:px-6 gap-2 sm:gap-4'
       )}
     >
       {/* Botón hamburguesa (solo mobile) */}
@@ -52,16 +52,17 @@ export function Header() {
       </button>
 
       {/* Breadcrumbs */}
-      <div className="flex-1 flex items-center gap-2 overflow-x-auto">
+      <div className="flex-1 min-w-0 flex items-center gap-2">
         {breadcrumbs.length > 0 ? (
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2">
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2">
+            {/* En el celular solo cabe la página actual: el menú da el resto. */}
             {breadcrumbs.map((crumb, index) => (
-              <div key={crumb.href} className="flex items-center gap-2">
+              <div key={crumb.href} className={cn('items-center gap-2', crumb.isLast ? 'flex min-w-0' : 'hidden sm:flex')}>
                 {index > 0 && (
-                  <IconChevronRight size={16} className="text-gray-500" />
+                  <IconChevronRight size={16} className="hidden sm:block shrink-0 text-gray-500" />
                 )}
                 {crumb.isLast ? (
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="truncate text-sm font-medium text-gray-900">
                     {crumb.label}
                   </span>
                 ) : (
@@ -83,7 +84,7 @@ export function Header() {
       </div>
 
       {/* Zona derecha: Notificaciones + Avatar */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <NotificationBell />
 
         {/* Divisor */}

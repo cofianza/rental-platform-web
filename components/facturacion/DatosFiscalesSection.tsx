@@ -15,13 +15,14 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { perfilArrendadorService, type IPerfilArrendador } from '@/services/perfilArrendadorService'
 import { useAuth } from '@/hooks/useAuth'
-import { IconLoader, IconAlertTriangle } from '@/components/icons'
+import { IconAlertTriangle } from '@/components/icons'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 function Dato({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <dt className="text-xs font-medium text-gray-500">{label}</dt>
-      <dd className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-500 italic'}`}>
+      <dd className={`mt-0.5 text-sm break-words ${value ? 'text-gray-900' : 'text-gray-500 italic'}`}>
         {value || 'Sin registrar'}
       </dd>
     </div>
@@ -56,9 +57,10 @@ export function DatosFiscalesSection() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white p-10 text-sm text-gray-500">
-        <IconLoader size={18} className="animate-spin" />
-        Cargando sus datos de facturación...
+      <div role="status" aria-live="polite" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-4">
+        <span className="sr-only">Cargando sus datos de facturación…</span>
+        <Skeleton className="h-5 w-48 max-w-full" />
+        <SkeletonText lineas={5} />
       </div>
     )
   }
@@ -86,7 +88,7 @@ export function DatosFiscalesSection() {
   const nombre = [perfil?.nombre, perfil?.apellido].filter(Boolean).join(' ').trim()
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
+    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-gray-900">Con estos datos le factura Cofianza</h3>
       <p className="mt-1 text-xs text-gray-500">
         Los tomamos de su perfil; no hace falta que los escriba otra vez.

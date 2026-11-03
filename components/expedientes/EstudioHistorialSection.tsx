@@ -6,11 +6,11 @@
 'use client'
 
 import { Badge } from '@/components/ui/Badge'
-import { IconLoader } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import type { IEstudioHistorial } from '@/types/estudio'
 import { useAuthStore } from '@/stores/auth.store'
 import { textoVisible, esRolInterno } from './textoVisible'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -36,8 +36,10 @@ export function EstudioHistorialSection({
   const externo = !esRolInterno(useAuthStore((s) => s.user?.rol))
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
+      <div role="status" className="space-y-2 py-2">
+        <span className="sr-only">Cargando historial…</span>
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-12 w-full rounded-lg" />
       </div>
     )
   }
@@ -97,7 +99,7 @@ export function EstudioHistorialSection({
                       : 'bg-gray-50 border-gray-100 hover:border-primary-200 hover:bg-primary-50/50',
                   )}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <span className="text-sm font-medium text-gray-900">
                       {item.es_reevaluacion
                         ? `Re-evaluacion ${item.numero_en_cadena - 1}`

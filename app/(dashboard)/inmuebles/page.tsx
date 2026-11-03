@@ -10,7 +10,7 @@ import { useState, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 // Imports directos, no del barrel: '@/components/inmuebles' arrastra el
 // formulario y la galería (dnd-kit) a la lista.
 import { InmueblesFilters } from '@/components/inmuebles/InmueblesFilters'
@@ -317,7 +317,7 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
   ]
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
       {chips.map((c) => {
         const isActive = active === c.key
         return (
@@ -325,7 +325,7 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
             key={c.key}
             type="button"
             onClick={() => onSelect(c.patch)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
               isActive
                 ? 'bg-primary-700 text-white border-primary-700 shadow-sm'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -343,10 +343,7 @@ function VitrinaFilterChips({ filters, onSelect }: VitrinaFilterChipsProps) {
 function LoadingFallback() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Propiedades y Vitrina" subtitle="Cargando..." />
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
+      <SkeletonPage etiqueta="Cargando propiedades…" />
     </div>
   )
 }

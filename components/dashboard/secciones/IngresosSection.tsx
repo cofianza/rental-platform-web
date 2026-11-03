@@ -103,7 +103,7 @@ export function IngresosSection() {
           </div>
         ))}
 
-      <KpiRow loading={loading} error={error}>
+      <KpiRow loading={loading && !data} error={error}>
         <Kpi
           label="Tarifa mensual"
           value={moneyCompact(data?.totalAfianzamiento)}
@@ -139,7 +139,7 @@ export function IngresosSection() {
       <SeccionHeader title="Tarifa mensual por contrato" />
 
       <SeccionEstado
-        loading={loading}
+        loading={loading} datos={!!data}
         error={error}
         onRetry={reload}
         vacio={

@@ -16,6 +16,8 @@ import { visitaService, type IVisitaPublica, type IVisitaDia } from '@/services/
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { cn } from '@/lib/utils'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const TZ = 'America/Bogota'
 const DIAS_RANGO = 14
@@ -175,9 +177,7 @@ export default function GestionarVisitaPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo bloques={1} campos={2} etiqueta="Cargando su visita…" />
     )
   }
 
@@ -250,7 +250,7 @@ export default function GestionarVisitaPage() {
           {visita.inmueble && (
             <div className="flex items-start gap-2">
               <IconMapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
-              <span className="text-gray-700">
+              <span className="min-w-0 break-words text-gray-700">
                 {visita.inmueble.direccion ? (
                   `${visita.inmueble.direccion}, ${visita.inmueble.ciudad}`
                 ) : (
@@ -313,7 +313,7 @@ export default function GestionarVisitaPage() {
               </p>
               <Link
                 href={`/visita/reprogramar/${token}`}
-                className="mt-3 inline-block text-sm text-gray-500 hover:underline"
+                className="mt-1 inline-block py-3 text-sm text-gray-500 hover:underline"
               >
                 Necesito cambiar la fecha
               </Link>
@@ -328,14 +328,14 @@ export default function GestionarVisitaPage() {
                 type="button"
                 onClick={handleConfirmar}
                 disabled={submitting}
-                className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="mt-4 w-full min-h-11 px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <IconLoader size={16} className="animate-spin" />}
                 Sí, confirmo mi asistencia
               </button>
               <Link
                 href={`/visita/reprogramar/${token}`}
-                className="mt-3 block text-center text-sm text-gray-500 hover:underline"
+                className="mt-1 block py-3 text-center text-sm text-gray-500 hover:underline"
               >
                 Necesito cambiar la fecha
               </Link>
@@ -360,14 +360,14 @@ export default function GestionarVisitaPage() {
             type="button"
             onClick={handleCancelar}
             disabled={submitting}
-            className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="mt-4 w-full min-h-11 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {submitting && <IconLoader size={16} className="animate-spin" />}
             Confirmar cancelación
           </button>
           <Link
             href={`/visita/reprogramar/${token}`}
-            className="mt-3 block text-center text-sm text-primary-600 hover:underline"
+            className="mt-1 block py-3 text-center text-sm text-primary-600 hover:underline"
           >
             Mejor reprogramar mi visita
           </Link>
@@ -376,8 +376,11 @@ export default function GestionarVisitaPage() {
         <Card>
           <p className="text-sm font-medium text-gray-700 mb-3">Horarios disponibles</p>
           {slotsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <IconLoader size={24} className="animate-spin text-gray-500" />
+            <div role="status" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <span className="sr-only">Cargando horarios…</span>
+              {Array.from({ length: 6 }, (_, i) => (
+                <Skeleton key={i} className="h-11 rounded-lg" />
+              ))}
             </div>
           ) : slotsError ? (
             <div className="py-4 text-center">
@@ -385,7 +388,7 @@ export default function GestionarVisitaPage() {
               <button
                 type="button"
                 onClick={cargarSlots}
-                className="mt-3 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="mt-3 min-h-11 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 Reintentar
               </button>
@@ -411,7 +414,7 @@ export default function GestionarVisitaPage() {
                         type="button"
                         onClick={() => setSlotSel(s.inicio)}
                         className={cn(
-                          'px-3 py-1.5 rounded-lg border text-sm font-medium transition flex items-center gap-1',
+                          'min-h-11 px-4 py-2 rounded-lg border text-sm font-medium transition flex items-center gap-1',
                           slotSel === s.inicio
                             ? 'bg-primary-700 text-white border-primary-700'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400',
@@ -433,14 +436,14 @@ export default function GestionarVisitaPage() {
             type="button"
             onClick={handleReprogramar}
             disabled={submitting || !slotSel}
-            className="mt-4 w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="mt-4 w-full min-h-11 px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting && <IconLoader size={16} className="animate-spin" />}
             Confirmar nueva fecha
           </button>
           <Link
             href={`/visita/cancelar/${token}`}
-            className="mt-3 block text-center text-sm text-gray-500 hover:underline"
+            className="mt-1 block py-3 text-center text-sm text-gray-500 hover:underline"
           >
             No podré asistir, cancelar visita
           </Link>
@@ -482,5 +485,5 @@ function ContactoAyuda({ contacto, className }: { contacto?: IVisitaPublica['con
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">{children}</div>
+  return <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">{children}</div>
 }

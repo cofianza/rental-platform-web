@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
-import { IconLoader, IconArrowRight } from '@/components/icons'
+import { IconArrowRight } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey } from '@/lib/constants'
 import { formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import type { IContratoHistorialEntry } from '@/types/contrato'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 export interface ContratoHistorialModalProps {
   isOpen: boolean
@@ -49,8 +50,11 @@ export function ContratoHistorialModal({
       closeOnBackdrop
     >
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <IconLoader size={24} className="animate-spin text-primary-600" />
+        <div role="status" className="space-y-4 py-2">
+          <span className="sr-only">Cargando historial…</span>
+          {[0, 1, 2].map((i) => (
+            <SkeletonText key={i} lineas={2} />
+          ))}
         </div>
       ) : historial.length === 0 ? (
         <div className="text-center py-12">

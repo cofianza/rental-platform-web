@@ -62,7 +62,7 @@ export function PlantillaFormModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Plantilla de contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">
           {isEditing ? 'Editar plantilla' : 'Nueva plantilla'}
         </h2>
@@ -75,7 +75,7 @@ export function PlantillaFormModal({
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
         {/* Nombre */}
         <div>
           <label htmlFor="plantilla-form-modal-nombre" className="block text-sm font-medium text-gray-700 mb-1">
@@ -174,7 +174,7 @@ export function PlantillaFormModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={onClose}

@@ -12,17 +12,15 @@
 import { Suspense } from 'react'
 import { InmuebleForm, PerfilIncompletoBanner } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 
 function LoadingFallback() {
   return (
     <div className="space-y-6">
-      <PageHeader title="Nuevo inmueble" subtitle="Cargando..." />
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
+      <PageHeader title="Nuevo inmueble" />
+      <SkeletonDetail bloques={2} etiqueta="Cargando formulario…" />
     </div>
   )
 }

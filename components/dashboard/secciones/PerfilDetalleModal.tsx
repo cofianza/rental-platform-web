@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { etiquetaContrato } from '@/lib/constants'
 import { dashboardService, type PerfilDetalle } from '@/services/dashboardService'
 import {
@@ -16,7 +17,6 @@ import {
   type ChipTone,
 } from '@/components/dashboard/secciones/_shared'
 import {
-  IconLoader,
   IconHome,
   IconFileText,
   IconDollarSign,
@@ -96,9 +96,7 @@ export function PerfilDetalleModal({
   return (
     <Modal isOpen={!!perfilId} onClose={onClose} title={data?.nombre ?? 'Detalle del aliado'} size="lg" closeOnBackdrop>
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={28} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonDetail bloques={2} etiqueta="Cargando el detalle del aliado…" />
       )}
 
       {error && !loading && (

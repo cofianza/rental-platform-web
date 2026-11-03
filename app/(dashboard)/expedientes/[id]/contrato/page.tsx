@@ -112,7 +112,7 @@ function ContratoV3({ expedienteId }: { expedienteId: string }) {
     return (
       <div className="mx-auto max-w-4xl space-y-6" aria-busy="true">
         <div className="h-4 w-36 animate-pulse rounded bg-gray-200" />
-        <div className="h-8 w-72 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-72 max-w-full animate-pulse rounded bg-gray-200" />
         <div className="h-12 w-full animate-pulse rounded-xl bg-gray-200" />
         <div className="h-96 w-full animate-pulse rounded-2xl bg-gray-200" />
       </div>
@@ -630,7 +630,7 @@ function Asistente({
 
       <fieldset
         disabled={!editable}
-        className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7"
+        className="min-w-0 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-7"
       >
         {paso === 1 && (
           <Paso1Confirmacion

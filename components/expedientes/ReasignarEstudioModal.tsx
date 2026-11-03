@@ -56,6 +56,7 @@ import type { IInmueble } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 import { ApiClientError } from '@/lib/api'
 import { EvaluarEnEstudioNuevo } from './EvaluarEnEstudioNuevo'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 /** Misma regla que la API (inmuebles/destinacion.ts): mixto o desconocido no tiene destinación. */
 function destinacionDeUso(uso: string | null | undefined): 'vivienda' | 'comercial' | null {
@@ -341,9 +342,11 @@ export function ReasignarEstudioModal({
 
         <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
           {isLoading && (
-            <div className="flex items-center justify-center gap-2 p-6 text-sm text-gray-500">
-              <IconLoader size={16} className="animate-spin" />
-              Cargando propiedades...
+            <div role="status" className="space-y-3 p-3">
+              <span className="sr-only">Cargando propiedades…</span>
+              {[0, 1, 2].map((i) => (
+                <SkeletonText key={i} lineas={2} />
+              ))}
             </div>
           )}
 

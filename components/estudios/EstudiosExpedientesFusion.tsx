@@ -147,7 +147,7 @@ export function EstudiosExpedientesFusion() {
                 : ` Este mes se iniciaron ${stats.este_mes} evaluaciones crediticias.`)}
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {!esPropietario && (
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
               <IconCheckCircle size={14} />
@@ -170,7 +170,7 @@ export function EstudiosExpedientesFusion() {
       {/* Tarjetas: cuentan estudios con el mismo filtro que su chip y lo activan
           al hacer clic, para no tener dos controles que parecen filtrar y solo
           uno lo hace. Arrancan por lo que requiere acción. */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label={puedeEditar ? 'Requieren su acción' : 'Requieren acción del equipo'}
           value={conteo('requiere_accion')}
@@ -206,7 +206,7 @@ export function EstudiosExpedientesFusion() {
       </div>
 
       {/* Chips: filtran EXPEDIENTES por el estado de su estudio vigente */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
         {CHIPS.map((c) => (
           <button
             key={c.id}
@@ -215,7 +215,7 @@ export function EstudiosExpedientesFusion() {
             title={c.title}
             onClick={() => setFilters({ estudio_filtro: c.id, page: 1 })}
             className={cn(
-              'min-h-10 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
+              'min-h-10 shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
               activeChip === c.id
                 ? 'border-primary-600 bg-primary-50 text-primary-700'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600',
@@ -242,7 +242,7 @@ export function EstudiosExpedientesFusion() {
 
       {/* Lista de expedientes con badge de estudio embebido */}
       <div
-        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60' : ''}`}
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
         aria-busy={isLoading}
       >
         {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
@@ -304,7 +304,7 @@ function StatCard({
     </>
   )
   if (!onClick) {
-    return <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">{contenido}</div>
+    return <div className="min-w-0 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:px-5">{contenido}</div>
   }
   return (
     <button
@@ -312,7 +312,7 @@ function StatCard({
       onClick={onClick}
       aria-pressed={activo}
       className={cn(
-        'rounded-xl border bg-white px-5 py-4 text-left transition-colors hover:border-primary-600',
+        'min-w-0 rounded-xl border bg-white px-4 py-4 text-left transition-colors hover:border-primary-600 sm:px-5',
         activo ? 'border-primary-600 ring-1 ring-primary-600' : 'border-gray-200',
       )}
     >

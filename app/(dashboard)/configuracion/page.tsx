@@ -176,12 +176,12 @@ export default function ConfiguracionPage() {
             <Link
               key={seccion.id}
               href={seccion.href}
-              className="w-full flex items-center gap-4 p-6 hover:bg-gray-50 transition-colors text-left"
+              className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-6 hover:bg-gray-50 transition-colors text-left"
             >
-              <div className={`p-3 rounded-lg ${seccion.color}`}>
+              <div className={`p-3 rounded-lg shrink-0 ${seccion.color}`}>
                 <Icon size={24} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900">
                   {seccion.titulo}
                 </h3>
@@ -189,7 +189,7 @@ export default function ConfiguracionPage() {
                   {seccion.descripcion}
                 </p>
               </div>
-              <IconChevronRight size={20} className="text-gray-500" />
+              <IconChevronRight size={20} className="text-gray-500 shrink-0" />
             </Link>
           )
         })}

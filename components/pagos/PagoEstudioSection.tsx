@@ -28,6 +28,7 @@ import { facturacionService, type IDatosFiscalesPagoFactura } from '@/services/f
 import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 const fmtCOP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
 
@@ -393,7 +394,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
 
   if (isLoading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-6 h-32" />
+      <div role="status" aria-live="polite" className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+        <span className="sr-only">Cargando el estado del pago…</span>
+        <Skeleton className="h-5 w-48 max-w-full" />
+        <SkeletonText lineas={2} />
+      </div>
     )
   }
 
@@ -710,7 +715,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
 
       {/* Procesando — PSE/efectivo en proceso en la pasarela */}
       {estado.estado === 'procesando' && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <IconLoader size={20} className="text-blue-600 shrink-0 animate-spin" />
             <div>

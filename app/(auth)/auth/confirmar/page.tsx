@@ -16,6 +16,7 @@ import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { AUTH_ROUTES } from '@/lib/constants'
 import { mensajeParaProspecto } from '@/lib/errorMessages'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 type Vista = 'cargando' | 'entrar' | 'pedir' | 'enviado'
 
@@ -75,15 +76,13 @@ export default function ConfirmarEnlacePage() {
 
   if (vista === 'cargando') {
     return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo variante="resultado" etiqueta="Cargando…" />
     )
   }
 
   if (vista === 'enviado') {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
           <IconCheck size={32} className="text-green-600" />
         </div>
@@ -102,7 +101,7 @@ export default function ConfirmarEnlacePage() {
 
   if (vista === 'entrar') {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Entre a su estudio</h2>
         <p className="text-gray-500 mb-6">Toque el botón para abrir su sesión. No necesita contraseña.</p>
         {error && (
@@ -149,7 +148,7 @@ export default function ConfirmarEnlacePage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Entre sin contraseña</h2>
         <p className="text-gray-500 mt-1">
@@ -187,7 +186,7 @@ export default function ConfirmarEnlacePage() {
         <button
           type="submit"
           disabled={enviando}
-          className="w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm bg-primary-700 hover:bg-primary-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full min-h-11 py-2.5 px-4 rounded-lg text-white font-medium text-sm bg-primary-700 hover:bg-primary-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {enviando ? (
             <>

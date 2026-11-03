@@ -89,7 +89,7 @@ export function ExpedientesListado() {
         title="Estudios"
         subtitle={meta ? `${meta.total} estudios` : 'Cargando...'}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportButton
               endpoint="/export/expedientes"
               params={{
@@ -137,7 +137,7 @@ export function ExpedientesListado() {
 
       {/* Tabla / Skeleton / Empty */}
       <div
-        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60' : ''}`}
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
         aria-busy={isLoading}
       >
         {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}

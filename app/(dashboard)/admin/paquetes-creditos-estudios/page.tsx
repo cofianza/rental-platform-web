@@ -27,6 +27,7 @@ import {
   IconLock,
   IconRefresh,
 } from '@/components/icons'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 
 const formatCOP = (n: number) => `$${n.toLocaleString('es-CO')}`
 
@@ -171,9 +172,7 @@ export default function AdminPaquetesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <IconLoader className="animate-spin text-primary-600" size={32} />
-      </div>
+      <SkeletonPage etiqueta="Cargando paquetes de cupos…" />
     )
   }
 
@@ -368,7 +367,7 @@ export default function AdminPaquetesPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="paquetes-creditos-estudios-cantidad-de-estudios" className="block text-sm font-medium text-gray-700 mb-1">
                 Cantidad de estudios <span className="text-red-500">*</span>
@@ -416,7 +415,7 @@ export default function AdminPaquetesPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="paquetes-creditos-estudios-orden" className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
               <input id="paquetes-creditos-estudios-orden"
@@ -440,7 +439,7 @@ export default function AdminPaquetesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">
+          <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-gray-200">
             <button
               onClick={() => setModalOpen(false)}
               disabled={saving}

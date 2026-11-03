@@ -13,10 +13,10 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { facturacionService } from '@/services/facturacionService'
 import { formatCurrency } from '@/lib/constants'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { ESTADO_FACTURA_CONFIG } from '@/types/facturacion'
 import type { IFactura } from '@/types/facturacion'
 import {
-  IconLoader,
   IconAlertTriangle,
   IconArrowLeft,
   IconDownload,
@@ -103,11 +103,7 @@ export default function FacturaDetallePage() {
   // Render: Loading
   // ============================================
   if (pageState === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
-    )
+    return <SkeletonDetail bloques={3} etiqueta="Cargando la factura…" />
   }
 
   // ============================================
@@ -174,15 +170,15 @@ export default function FacturaDetallePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
           <Link
             href="/facturacion"
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <IconArrowLeft size={20} />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{factura.numero}</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-gray-900 break-all">{factura.numero}</h1>
             <p className="text-sm text-gray-500">Factura electrónica</p>
           </div>
           <span
@@ -223,37 +219,37 @@ export default function FacturaDetallePage() {
           {/* Emisor y Receptor */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Emisor */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
                 Emisor
               </h3>
-              <p className="text-lg font-semibold text-gray-900">{factura.emisor_razon_social}</p>
+              <p className="text-lg font-semibold text-gray-900 break-words">{factura.emisor_razon_social}</p>
               <p className="text-sm text-gray-600 mt-1">NIT: {factura.emisor_nit}</p>
               <p className="text-sm text-gray-600 mt-1">{factura.emisor_direccion}</p>
             </div>
 
             {/* Receptor */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
                 Receptor
               </h3>
-              <p className="text-lg font-semibold text-gray-900">{factura.receptor_razon_social}</p>
+              <p className="text-lg font-semibold text-gray-900 break-words">{factura.receptor_razon_social}</p>
               <p className="text-sm text-gray-600 mt-1">Doc: {factura.receptor_documento}</p>
               <p className="text-sm text-gray-600 mt-1">{factura.receptor_direccion}</p>
-              <p className="text-sm text-gray-600 mt-1">{factura.receptor_email}</p>
+              <p className="text-sm text-gray-600 mt-1 break-all">{factura.receptor_email}</p>
             </div>
           </div>
 
           {/* Concepto */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Concepto
             </h3>
-            <p className="text-gray-900">{factura.concepto}</p>
+            <p className="text-gray-900 break-words">{factura.concepto}</p>
           </div>
 
           {/* Desglose de montos */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Desglose de Montos
             </h3>
@@ -281,7 +277,7 @@ export default function FacturaDetallePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Informacion
             </h3>
@@ -298,7 +294,7 @@ export default function FacturaDetallePage() {
           </div>
 
           {/* Documents (HP-356) */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Documentos Fiscales
             </h3>
@@ -321,7 +317,7 @@ export default function FacturaDetallePage() {
                     <>
                       <button
                         onClick={() => handleDownload('pdf')}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Descargar PDF"
                         aria-label="Descargar PDF"
                       >
@@ -352,7 +348,7 @@ export default function FacturaDetallePage() {
                     <>
                       <button
                         onClick={() => handleDownload('xml')}
-                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="Descargar XML"
                         aria-label="Descargar XML"
                       >

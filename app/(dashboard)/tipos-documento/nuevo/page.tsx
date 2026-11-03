@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Breadcrumbs } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { TipoDocumentoForm } from '@/components/tipos-documento/TipoDocumentoForm'
 import { tipoDocumentoAdminService } from '@/services/tipoDocumentoAdminService'
 import { useAuth } from '@/hooks/useAuth'
@@ -39,11 +39,7 @@ export default function NuevoTipoDocumentoPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    )
+    return <SkeletonDetail bloques={2} etiqueta="Cargando…" />
   }
 
   return (

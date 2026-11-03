@@ -17,7 +17,8 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { pagoService, type IReembolsoPendiente } from '@/services/pagoService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconAlertTriangle, IconCheck, IconClock, IconLoader, IconRefresh } from '@/components/icons'
-import { formatNumeroEstudio } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 const ORIGEN: Record<string, string> = {
   manual: 'Pago registrado a mano: se devuelve por el mismo medio',
@@ -85,12 +86,8 @@ export function ReembolsosSection() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
-      </div>
-    )
+  if (loading && items.length === 0) {
+    return <SkeletonTable filas={4} columnas={4} etiqueta="Cargando pagos por devolver…" />
   }
 
   if (errorCarga) {
@@ -158,8 +155,8 @@ export function ReembolsosSection() {
         minLength={3}
       />
 
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
-        <div>
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-gray-900">Pagos por devolver</h3>
           <p className="text-sm text-gray-500 mt-0.5">
             {items.length} {items.length === 1 ? 'pago' : 'pagos'} por devolver o revisar. El reembolso va al mismo
@@ -168,16 +165,17 @@ export function ReembolsosSection() {
         </div>
         <button
           onClick={cargar}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 shrink-0"
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 shrink-0"
         >
-          <IconRefresh size={14} />
+          <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
           Refrescar
         </button>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className={cn('divide-y divide-gray-100 transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
         {items.map((r) => (
-          <div key={r.id} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+          <div key={r.id} className="px-4 sm:px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-gray-900">
@@ -193,7 +191,7 @@ export function ReembolsosSection() {
               <p className="mt-1 text-xs text-gray-600">
                 {r.motivo_texto.charAt(0).toUpperCase() + r.motivo_texto.slice(1)}.
               </p>
-              <p className="mt-0.5 text-xs text-gray-500">
+              <p className="mt-0.5 text-xs text-gray-500 break-words">
                 {ORIGEN[r.proveedor] ?? `Pago de Mercado Pago ${r.provider_payment_id}`}
               </p>
               {r.notas && (

@@ -117,11 +117,11 @@ function BarraPorEtapa({
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
           return (
-            <div key={label} className="flex items-start flex-1">
+            <div key={label} className="flex min-w-0 items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
+                    'w-7 h-7 shrink-0 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
@@ -291,11 +291,11 @@ function BarraPorEstado({
           // alcanzo porque el expediente fue cancelado".
           const isFailed = isCancelled && !isComplete
           return (
-            <div key={step.id} className="flex items-start flex-1">
+            <div key={step.id} className="flex min-w-0 items-start flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
-                    'w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
+                    'w-7 h-7 shrink-0 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
                     isComplete && 'bg-primary-700 text-white',
                     isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
                     isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',

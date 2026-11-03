@@ -163,7 +163,7 @@ function VariableDropdown({ onInsert }: { onInsert: (variable: string) => void }
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-100 max-h-80 overflow-y-auto"
+          className="fixed w-72 max-w-[calc(100vw-16px)] bg-white border border-gray-200 rounded-lg shadow-lg z-100 max-h-80 overflow-y-auto"
           style={{ top: pos.top, left: pos.left }}
         >
           {VARIABLE_GROUPS.map((group) => (
@@ -374,7 +374,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] px-4 py-3',
+        class: 'prose prose-sm max-w-none break-words focus:outline-none min-h-[300px] px-3 py-3 sm:px-4',
       },
     },
   })

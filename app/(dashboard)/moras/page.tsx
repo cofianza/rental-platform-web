@@ -17,6 +17,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
+import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton'
+import { cn } from '@/lib/utils'
 import {
   IconAlertTriangle,
   IconClock,
@@ -312,10 +314,10 @@ function ReportarMora() {
   // así que lo dejamos plegado y detrás de la tabla.
   const formularioReporte = (
     <details open={!esInterno || deepLinkContrato} className="bg-white rounded-xl border border-gray-200">
-      <summary className="cursor-pointer px-5 py-4 text-sm font-bold text-gray-900 marker:text-gray-400">
+      <summary className="cursor-pointer px-4 sm:px-5 py-4 text-sm font-bold text-gray-900 marker:text-gray-400">
         {esInterno ? 'Registrar mora manualmente' : 'Reportar una mora'}
       </summary>
-      <div className="px-5 pb-5">
+      <div className="px-4 sm:px-5 pb-5">
       <form onSubmit={handleReportar} className="space-y-4">
         <div className="flex items-start gap-3 bg-primary-50 border-l-4 border-primary-500 rounded-r-lg p-3 text-sm text-primary-900">
           <IconAlertTriangle size={18} className="text-primary-600 shrink-0 mt-0.5" />
@@ -450,7 +452,7 @@ function ReportarMora() {
           <button
             type="submit"
             disabled={reportando || !contratoId || !monto}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-ink-900 bg-coral-500 hover:bg-coral-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 text-sm font-bold text-ink-900 bg-coral-500 hover:bg-coral-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
           >
             {reportando ? <IconLoader size={16} className="animate-spin" /> : <IconAlertTriangle size={16} />}
             {reportando ? 'Reportando…' : esInterno ? 'Registrar mora' : 'Reportar a Cofianza'}
@@ -463,8 +465,8 @@ function ReportarMora() {
 
   const tablaMoras = (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-200 flex flex-wrap items-center gap-3">
-        <div className="mr-auto">
+      <div className="px-4 sm:px-6 py-5 border-b border-gray-200 flex flex-wrap items-center gap-3">
+        <div className="mr-auto min-w-0">
           <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-coral-500" />
             Seguimiento de moras
@@ -475,13 +477,14 @@ function ReportarMora() {
             {!loading && totalMoras > moras.length && ` Mostrando ${moras.length} de ${totalMoras}.`}
           </p>
         </div>
+        <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 sm:pb-0">
         {FILTROS.map((f) => (
           <button
             key={f.key}
             type="button"
             aria-pressed={filtro === f.key}
             onClick={() => setFiltro(f.key)}
-            className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-2 sm:py-1 text-xs font-bold transition-colors ${
               filtro === f.key
                 ? 'border-primary-600 bg-primary-50 text-primary-700'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
@@ -493,12 +496,11 @@ function ReportarMora() {
             {f.label}
           </button>
         ))}
+        </div>
       </div>
 
-      {loading ? (
-        <div className="p-8 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
-          <IconLoader size={16} className="animate-spin" /> Cargando moras…
-        </div>
+      {loading && moras.length === 0 ? (
+        <SkeletonTable filas={5} columnas={7} etiqueta="Cargando moras…" className="rounded-none border-0" />
       ) : falloCarga ? (
         <div className="p-8 text-center bg-amber-50">
           <p className="font-semibold text-amber-900 text-sm">No se pudieron cargar las moras</p>
@@ -520,7 +522,7 @@ function ReportarMora() {
               : 'Sin resultados para este filtro.'}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className={cn('overflow-x-auto transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
         <table className="w-full min-w-max text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -657,7 +659,7 @@ function ReportarMora() {
       />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Sin datos, «—» y no 0: un 0 afirma que no hay moras. */}
         <KpiCard label="Moras reportadas" value={stats?.reportadas_mes ?? '—'} sub="Este mes" />
         <KpiCard label="Resueltas" value={stats?.resueltas ?? '—'} color="primary" sub="Pagadas" />
@@ -884,10 +886,10 @@ function MoraDetalleModal({
   return (
     <>
       <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del caso de mora" closeOnBackdrop={false} className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col mx-4">
-        <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-gray-200">
-          <div>
-            <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
-              {mora?.ticket_numero ?? 'Cargando…'}
+        <div className="flex items-start justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
+          <div className="min-w-0">
+            <h2 className="text-lg font-extrabold text-gray-900 flex flex-wrap items-center gap-2">
+              {mora?.ticket_numero ?? <Skeleton className="h-6 w-32" />}
               {cfg && (
                 <span
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold border ${cfg.chip} ${cfg.chipText}`}
@@ -898,7 +900,7 @@ function MoraDetalleModal({
               )}
             </h2>
             {mora && (
-              <p className="text-sm text-gray-500 mt-0.5">
+              <p className="text-sm text-gray-500 mt-0.5 break-words">
                 {mora.inquilino_nombre} · {mora.inmueble_direccion ?? '—'}
               </p>
             )}
@@ -912,15 +914,24 @@ function MoraDetalleModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
           {loading || !mora ? (
-            <div className="text-center py-8 text-gray-500 flex items-center justify-center gap-2">
-              <IconLoader size={16} className="animate-spin" /> Cargando…
+            <div role="status" aria-live="polite" className="space-y-4 py-2">
+              <span className="sr-only">Cargando el detalle de la mora…</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ))}
+              </div>
+              <Skeleton className="h-24 w-full rounded-lg" />
             </div>
           ) : (
             <>
               {/* Detalle resumen */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <Field label="Monto" value={formatCurrency(mora.monto_mora)} />
                 <Field
                   label="Vencimiento canon"
@@ -1101,7 +1112,7 @@ function MoraDetalleModal({
         </div>
 
         {mora && !sinAcciones && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center gap-2 justify-end">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center gap-2 justify-end">
             {notaDueno && <p className="mr-auto text-xs text-gray-600">{notaDueno}</p>}
             {puedeCerrar && (
               <>

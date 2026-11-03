@@ -20,6 +20,7 @@ import { misDatosFiscalesService, type IMisDatosFiscales } from '@/services/misD
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { useAuthStore } from '@/stores/auth.store'
 import { IconLoader, IconCheck, IconAlertTriangle } from '@/components/icons'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 const TIPO_DOC_NATURAL = [
   { value: 'cc', label: 'Cédula de Ciudadanía (CC)' },
@@ -197,8 +198,10 @@ export function DatosFiscalesSolicitanteSection() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
+      <div role="status" aria-live="polite" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-4">
+        <span className="sr-only">Cargando sus datos fiscales…</span>
+        <Skeleton className="h-5 w-48 max-w-full" />
+        <SkeletonText lineas={6} />
       </div>
     )
   }
@@ -238,7 +241,7 @@ export function DatosFiscalesSolicitanteSection() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">Datos del receptor</h3>
         <p className="text-sm text-gray-500 mb-4">
           Estos datos aparecerán en las facturas electrónicas que Cofianza emita a su nombre.
@@ -429,7 +432,7 @@ export function DatosFiscalesSolicitanteSection() {
           <button
             type="submit"
             disabled={saving || !dirty}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? (
               <IconLoader size={16} className="animate-spin" />

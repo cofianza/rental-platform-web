@@ -343,8 +343,8 @@ export default function HomePage() {
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
-            <div key={i} className="px-5 py-8 text-center reveal">
-              <div className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+            <div key={i} className="px-2 sm:px-5 py-8 text-center reveal">
+              <div className="text-3xl sm:text-5xl font-black text-white tracking-tight">
                 {Array.isArray(c.val) ? (
                   <>
                     {c.val[0]}

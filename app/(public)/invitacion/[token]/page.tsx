@@ -21,6 +21,7 @@ import {
 } from '@/services/invitacionService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 type Status = 'loading' | 'error' | 'ready'
 
@@ -109,9 +110,7 @@ export default function InvitacionPage() {
 
   if (status === 'loading' || !isInitialized) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo variante="resultado" etiqueta="Cargando la invitación…" />
     )
   }
 
@@ -119,7 +118,7 @@ export default function InvitacionPage() {
   // "tu estudio ya está en tu cuenta".
   if (status === 'error' && errorCode === 'INVITACION_YA_CANJEADA') {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
           <IconCheck size={32} className="text-primary-600" />
         </div>
@@ -144,7 +143,7 @@ export default function InvitacionPage() {
         : 'No se pudo cargar la invitación'
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
           <IconX size={32} className="text-red-600" />
         </div>
@@ -180,7 +179,7 @@ export default function InvitacionPage() {
   const wrongRole = isAuthenticated && user?.rol !== 'solicitante'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Tiene una invitación</h1>
       <p className="text-sm text-gray-600 mb-6">
         <strong>{info.propietario_invitante.nombre_publico}</strong> lo invitó a iniciar su
@@ -188,16 +187,16 @@ export default function InvitacionPage() {
       </p>
 
       {/* Tarjeta del inmueble */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
-        <div className="flex items-start justify-between gap-4 mb-2">
-          <div>
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-5 mb-6">
+        <div className="flex flex-col gap-3 mb-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
             <p className="text-xs text-gray-500 font-mono">{info.inmueble.codigo}</p>
-            <p className="text-base font-semibold text-gray-900 mt-1">
+            <p className="text-base font-semibold text-gray-900 mt-1 break-words">
               {info.inmueble.direccion}
             </p>
             <p className="text-sm text-gray-600">{info.inmueble.ciudad}</p>
           </div>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-xs text-gray-500">Canon mensual</p>
             <p className="text-lg font-bold text-primary-700">
               {formatCurrency(info.inmueble.valor_arriendo)}
@@ -209,7 +208,7 @@ export default function InvitacionPage() {
         </p>
       </div>
 
-      <p className="text-xs text-gray-500 mb-6">
+      <p className="text-xs text-gray-500 mb-6 break-words">
         Invitación enviada a: <strong className="text-gray-700">{emailInvitacion}</strong>
       </p>
 
@@ -222,13 +221,13 @@ export default function InvitacionPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => saveTokenAndGo('/login')}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-primary-700 bg-white border-2 border-primary-600 rounded-lg hover:bg-primary-50"
+              className="flex-1 min-h-11 px-4 py-2.5 text-sm font-medium text-primary-700 bg-white border-2 border-primary-600 rounded-lg hover:bg-primary-50"
             >
               Iniciar sesión
             </button>
             <button
               onClick={() => saveTokenAndGo('/registro/solicitante')}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+              className="flex-1 min-h-11 px-4 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
             >
               Crear cuenta
             </button>
@@ -254,7 +253,7 @@ export default function InvitacionPage() {
           </p>
           <button
             onClick={handleLogout}
-            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+            className="mt-3 min-h-11 w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 sm:w-auto rounded-lg hover:bg-amber-700"
           >
             Cerrar sesión
           </button>
@@ -263,14 +262,14 @@ export default function InvitacionPage() {
 
       {isAuthenticated && !wrongRole && !emailMatch && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-900">
+          <p className="text-sm text-amber-900 break-words">
             Su cuenta está asociada al email <strong>{user?.email}</strong>, pero esta
             invitación fue enviada a <strong>{emailInvitacion}</strong>. Debe iniciar sesión
             con el email al que se envió la invitación.
           </p>
           <button
             onClick={handleLogout}
-            className="mt-3 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+            className="mt-3 min-h-11 w-full px-4 py-2 text-sm font-medium text-white bg-amber-600 sm:w-auto rounded-lg hover:bg-amber-700"
           >
             Cerrar sesión
           </button>
@@ -292,7 +291,7 @@ export default function InvitacionPage() {
           <button
             onClick={handleCanjear}
             disabled={canjeando}
-            className="w-full px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full min-h-11 px-4 py-3 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {canjeando ? (
               <>
