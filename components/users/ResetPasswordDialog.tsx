@@ -182,7 +182,7 @@ export function ResetPasswordDialog({ isOpen, user, onClose }: ResetPasswordDial
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+        <div className="flex flex-wrap justify-end gap-2 px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
           <button
             type="button"
             onClick={onClose}

@@ -28,6 +28,7 @@ import {
   IconClock,
   IconLogOut,
 } from '@/components/icons'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 import {
   listMiembros,
   invitarMiembro,
@@ -275,9 +276,7 @@ export default function EquipoPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={32} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonTable filas={4} columnas={4} etiqueta="Cargando el equipo…" />
       ) : errorCarga && !data ? (
         <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
           <p className="text-sm text-red-700 mb-3">No pudimos cargar el equipo. Puede ser un problema de conexión.</p>

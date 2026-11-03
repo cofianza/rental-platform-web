@@ -18,6 +18,7 @@ import { IconLoader, IconTrash, IconAlertTriangle, IconArrowLeft } from '@/compo
 import { userService } from '@/services/userService'
 import { useAuth } from '@/hooks/useAuth'
 import type { IOrphanAuthUser } from '@/types/user'
+import { SkeletonPage, SkeletonTable } from '@/components/ui/Skeleton'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('es-CO', {
@@ -89,11 +90,7 @@ export default function HuerfanosPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    )
+    return <SkeletonPage etiqueta="Cargando cuentas huérfanas…" />
   }
 
   return (
@@ -119,9 +116,7 @@ export default function HuerfanosPage() {
       </div>
 
       {loading && !orphans && (
-        <div className="flex items-center justify-center h-32">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
+        <SkeletonTable filas={4} columnas={5} etiqueta="Cargando cuentas huérfanas…" />
       )}
 
       {error && (
@@ -139,7 +134,7 @@ export default function HuerfanosPage() {
       )}
 
       {orphans && orphans.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-opacity ${loading ? 'pointer-events-none opacity-60' : ''}`} aria-busy={loading}>
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -207,7 +202,7 @@ export default function HuerfanosPage() {
                   <button
                     onClick={() => handleDelete(orphan)}
                     disabled={deleting === orphan.id}
-                    className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    className="shrink-0 inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
                   >
                     {deleting === orphan.id ? <IconLoader size={12} className="animate-spin" /> : <IconTrash size={12} />}
                     Eliminar
@@ -225,7 +220,7 @@ export default function HuerfanosPage() {
         </div>
       )}
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <Link
           href="/usuarios"
           className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800 hover:underline"

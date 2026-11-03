@@ -19,6 +19,7 @@ import {
 } from '@/services/coarrendatarioService'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'error'
 
@@ -152,15 +153,13 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'cargando') {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <EsqueletoFlujo bloques={1} campos={1} etiqueta="Cargando la solicitud…" />
     )
   }
 
   if (phase === 'error') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-5 sm:p-8">
         <h1 className="text-xl font-bold text-red-700 mb-2">No pudimos abrir su invitación</h1>
         <p className="text-sm text-gray-600">{errorMsg}</p>
         {reintentable && (
@@ -179,7 +178,7 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'rechazado') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación declinada</h1>
         <p className="text-sm text-gray-600 mb-4">
           Le avisamos a {view?.expediente.titular_nombre} que no continuará como coarrendatario.
@@ -192,7 +191,7 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'no_soy_yo') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Gracias por avisarnos</h1>
         <p className="text-sm text-gray-600 mb-4">
           Cerramos esta invitación. No consultamos ninguna central de riesgo con estos datos y le avisamos a quien tramita
@@ -206,7 +205,7 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'reportado') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Gracias por avisarnos</h1>
         <p className="text-sm text-gray-600 mb-4">
           Le pedimos a quien tramita el arriendo que corrija su número de documento. Cuando lo haga, le llegará una
@@ -220,7 +219,7 @@ export default function CoarrendatarioPublicPage() {
 
   if (phase === 'aceptado') {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-primary-200 p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-primary-200 p-5 sm:p-8 text-center">
         <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
           <IconCheck size={28} className="text-primary-700" />
         </div>
@@ -234,7 +233,7 @@ export default function CoarrendatarioPublicPage() {
         </p>
         {/* Al reabrir con 'aceptado' el mensaje de arriba ya nombra el correo. */}
         {view?.estado !== 'aceptado' && (
-          <p className="text-xs text-gray-500 mt-4">
+          <p className="text-xs text-gray-500 mt-4 break-words">
             {view?.estado === 'estudio_completado'
               ? `Le enviamos el resultado a ${view.email}.`
               : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
@@ -256,14 +255,14 @@ export default function CoarrendatarioPublicPage() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white p-6">
+        <div className="bg-gradient-to-br from-primary-700 to-primary-900 text-white p-5 sm:p-6">
           <h1 className="text-xl font-bold mb-1">{titular} lo invita a ser su coarrendatario</h1>
-          <p className="text-primary-100 text-sm">
+          <p className="text-primary-100 text-sm break-words">
             {inmueble}
           </p>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-1">Hola, {view?.nombre} {view?.apellido}</h2>
             <p className="text-sm text-gray-700 leading-relaxed">
@@ -303,7 +302,7 @@ export default function CoarrendatarioPublicPage() {
                   Este es el texto íntegro que está aceptando. Versión {view.version_terminos}.
                 </p>
               </div>
-              <div className="whitespace-pre-wrap bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+              <div className="whitespace-pre-wrap break-words bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
                 {view.texto_legal}
               </div>
             </div>
@@ -366,7 +365,7 @@ export default function CoarrendatarioPublicPage() {
                 type="button"
                 onClick={handleDocumentoIncorrecto}
                 disabled={procesando}
-                className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border sm:w-auto border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
               </button>
@@ -375,7 +374,7 @@ export default function CoarrendatarioPublicPage() {
                   type="button"
                   onClick={() => setConfirmandoNoSoyYo(true)}
                   disabled={procesando}
-                  className="mt-2 ml-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border sm:ml-2 sm:w-auto border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   No soy {view.nombre}
                 </button>
@@ -384,26 +383,26 @@ export default function CoarrendatarioPublicPage() {
           )}
 
           <div className="space-y-3">
-            <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-start gap-3 rounded-lg py-1.5 text-sm text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 disabled={procesando}
-                className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span>
                 Acepto los <Link href="/terminos" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">términos y condiciones</Link> de Cofianza.
               </span>
             </label>
 
-            <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-start gap-3 rounded-lg py-1.5 text-sm text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={acceptData}
                 onChange={(e) => setAcceptData(e.target.checked)}
                 disabled={procesando}
-                className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span>
                 <strong>He leído, comprendido y acepto</strong> la autorización de tratamiento de datos que aparece arriba, y autorizo la consulta y el reporte en centrales de información (Ley 1266/2008 y Ley 1581/2012).
@@ -424,14 +423,14 @@ export default function CoarrendatarioPublicPage() {
               type="button"
               onClick={handleAceptar}
               disabled={procesando || !acceptTerms || !acceptData}
-              className="flex-1 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
+              className="flex-1 min-h-11 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
             >
               {phase === 'aceptando' ? 'Procesando…' : 'Aceptar y autorizar la evaluación'}
             </button>
             <button
               onClick={() => setConfirmandoRechazo(true)}
               disabled={procesando}
-              className="px-5 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              className="min-h-11 px-5 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
               {phase === 'rechazando' ? 'Procesando…' : 'Declinar'}
             </button>

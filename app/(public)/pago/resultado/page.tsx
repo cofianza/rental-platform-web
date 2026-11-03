@@ -15,6 +15,7 @@ import { getResultadoPagoPublico, type IPagoResultadoPublico } from '@/services/
 import { IconCheck, IconClock, IconX } from '@/components/icons'
 import { formatNumeroEstudio } from '@/lib/utils'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 // Cuanto esperar antes de auto-cerrar/redirigir tras un pago exitoso. Da tiempo
 // a leer "Pago exitoso" sin que el usuario sienta que se queda atorado.
@@ -111,10 +112,7 @@ function PagoResultadoContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 mt-4">Procesando resultado del pago...</p>
-      </div>
+      <EsqueletoFlujo variante="resultado" etiqueta="Procesando resultado del pago…" />
     )
   }
 
@@ -191,13 +189,13 @@ function PagoResultadoContent() {
           <p className="text-sm font-medium text-gray-700">Detalle</p>
         </div>
         <div className="px-5 py-3 space-y-0">
-          <div className="flex justify-between py-2.5 border-b border-gray-100">
-            <span className="text-sm text-gray-500">Concepto</span>
-            <span className="text-sm font-medium text-gray-900">{conceptoLabel}</span>
+          <div className="flex justify-between gap-4 py-2.5 border-b border-gray-100">
+            <span className="shrink-0 text-sm text-gray-500">Concepto</span>
+            <span className="min-w-0 text-right text-sm font-medium text-gray-900">{conceptoLabel}</span>
           </div>
           {resultado?.monto_formateado && (
-            <div className="flex justify-between py-2.5 border-b border-gray-100">
-              <span className="text-sm text-gray-500">Monto</span>
+            <div className="flex justify-between gap-4 py-2.5 border-b border-gray-100">
+              <span className="shrink-0 text-sm text-gray-500">Monto</span>
               {/* monto_formateado ya trae el signo: antes salía "$$150.000 COP".
                   Y, si el cobro lleva IVA, «(IVA incluido)» (Adenda de precios §1.2). */}
               <span className="text-sm font-semibold text-gray-900">
@@ -205,8 +203,8 @@ function PagoResultadoContent() {
               </span>
             </div>
           )}
-          <div className="flex justify-between py-2.5 border-b border-gray-100">
-            <span className="text-sm text-gray-500">Estado</span>
+          <div className="flex justify-between gap-4 py-2.5 border-b border-gray-100">
+            <span className="shrink-0 text-sm text-gray-500">Estado</span>
             <span
               className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${
                 isSuccess
@@ -225,8 +223,8 @@ function PagoResultadoContent() {
               el arrendatario no reconoce ni puede citarle a nadie. Si no
               tenemos el número real del estudio, mejor no mostrar la fila. */}
           {resultado?.expediente_numero && (
-            <div className="flex justify-between py-2.5">
-              <span className="text-sm text-gray-500">Estudio</span>
+            <div className="flex justify-between gap-4 py-2.5">
+              <span className="shrink-0 text-sm text-gray-500">Estudio</span>
               <span className="text-sm font-medium text-gray-900">
                 {formatNumeroEstudio(resultado.expediente_numero)}
               </span>
@@ -273,7 +271,7 @@ function PagoResultadoContent() {
                   }
                 }, 300)
               }}
-              className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
+              className="inline-flex min-h-11 w-full items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm sm:w-auto"
             >
               Cerrar y volver al estudio
             </button>
@@ -326,7 +324,7 @@ function PagoResultadoContent() {
         <div className="mt-4 flex justify-center">
           <Link
             href={expedienteId ? `/expedientes/${expedienteId}` : '/dashboard'}
-            className={`inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+            className={`inline-flex min-h-11 w-full items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors sm:w-auto ${
               retryHref
                 ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                 : 'text-white bg-primary-700 hover:bg-primary-800 shadow-sm'
@@ -354,10 +352,7 @@ export default function PagoResultadoPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 mt-4">Cargando...</p>
-        </div>
+        <EsqueletoFlujo variante="resultado" etiqueta="Cargando…" />
       }
     >
       <PagoResultadoContent />

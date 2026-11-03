@@ -9,8 +9,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui'
 import { RoleBadge, StatusBadge } from '@/components/users'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import {
-  IconLoader,
   IconArrowLeft,
   IconUser,
   IconMail,
@@ -36,12 +36,12 @@ function InfoItem({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="p-2 bg-gray-100 rounded-lg">
+      <div className="p-2 bg-gray-100 rounded-lg shrink-0">
         <Icon size={20} className="text-gray-600" />
       </div>
-      <div>
+      <div className="min-w-0">
         <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-gray-900 font-medium">{value || '-'}</p>
+        <p className="text-gray-900 font-medium break-words">{value || '-'}</p>
       </div>
     </div>
   )
@@ -93,11 +93,7 @@ export default function UsuarioDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
-      </div>
+      <SkeletonDetail bloques={1} etiqueta="Cargando el perfil del usuario…" />
     )
   }
 
@@ -107,7 +103,7 @@ export default function UsuarioDetailPage() {
       <div className="space-y-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 mb-4">{error || 'Usuario no encontrado'}</p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => router.back()}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -136,7 +132,7 @@ export default function UsuarioDetailPage() {
       <title>{`${user.nombre} ${user.apellido} | Cofianza`}</title>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader
           title={fullName}
           subtitle={isOwnProfile ? 'Mi perfil' : 'Perfil de usuario'}
@@ -153,14 +149,14 @@ export default function UsuarioDetailPage() {
       {/* Contenido principal */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Avatar y badges */}
-        <div className="bg-linear-to-r from-primary-600 to-primary-700 px-6 py-8">
+        <div className="bg-linear-to-r from-primary-600 to-primary-700 px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-white rounded-full flex items-center justify-center">
               <IconUser size={40} className="text-primary-600" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">{fullName}</h2>
-              <div className="flex items-center gap-2 mt-2">
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-white break-words">{fullName}</h2>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 <RoleBadge role={user.rol} />
                 <StatusBadge activo={user.estado === 'activo'} />
               </div>
@@ -169,7 +165,7 @@ export default function UsuarioDetailPage() {
         </div>
 
         {/* Información del usuario */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Información de contacto
           </h3>

@@ -32,7 +32,8 @@ import {
   IconFileText,
   IconMail,
 } from '@/components/icons'
-import { abrirEnPestana } from '@/lib/utils'
+import { abrirEnPestana, cn } from '@/lib/utils'
+import { SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
 
 // ============================================
 // Types
@@ -262,23 +263,8 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
   if (pageState === 'loading' && pagos.length === 0) {
     return (
       <div className="space-y-6">
-        {/* Skeleton summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-              <div className="h-8 bg-gray-200 rounded w-32" />
-            </div>
-          ))}
-        </div>
-        {/* Skeleton table */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-100 rounded" />
-            ))}
-          </div>
-        </div>
+        <SkeletonCards cantidad={3} etiqueta="Cargando resumen de pagos…" className="sm:grid-cols-3 lg:grid-cols-3" />
+        <SkeletonTable filas={5} columnas={6} etiqueta="Cargando pagos…" />
       </div>
     )
   }
@@ -317,7 +303,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
           {canManage && ' Puede generar un enlace de pago o registrar un pago manual.'}
         </p>
         {canManage && (
-          <div className="flex justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
@@ -441,7 +427,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
 
         {/* Action buttons */}
         {canManage && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
@@ -461,7 +447,10 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div
+        className={cn('hidden md:block bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity', pageState === 'loading' && 'pointer-events-none opacity-60')}
+        aria-busy={pageState === 'loading'}
+      >
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -508,7 +497,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
       </div>
 
       {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
+      <div className={cn('md:hidden space-y-4 transition-opacity', pageState === 'loading' && 'pointer-events-none opacity-60')}>
         {pagos.map((pago) => (
           <PagoCard
             onFacturar={canFacturar ? handleFacturar : undefined}
@@ -534,7 +523,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3">
           <p className="text-sm text-gray-500">
             Mostrando {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, total)} de {total}
           </p>
@@ -542,7 +531,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Anterior
             </button>
@@ -552,7 +541,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Siguiente
             </button>
@@ -771,7 +760,7 @@ function PagoCard({
             {CONCEPTOS_LABELS[pago.concepto] || pago.concepto}
           </p>
           {pago.descripcion && (
-            <p className="text-sm text-gray-500 mt-0.5">{pago.descripcion}</p>
+            <p className="text-sm text-gray-500 mt-0.5 break-words">{pago.descripcion}</p>
           )}
         </div>
         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${estadoConfig.bg} ${estadoConfig.color}`}>
@@ -798,7 +787,7 @@ function PagoCard({
         </div>
         <div>
           <p className="text-gray-500">Referencia</p>
-          <p className="text-gray-900">{pago.transaction_ref || pago.referencia_bancaria || '-'}</p>
+          <p className="text-gray-900 break-all">{pago.transaction_ref || pago.referencia_bancaria || '-'}</p>
         </div>
       </div>
 

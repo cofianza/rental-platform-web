@@ -13,7 +13,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { IconLoader, IconArrowRight, IconPhone, IconRefresh } from '@/components/icons'
+import { IconArrowRight, IconPhone, IconRefresh } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { citaService } from '@/services/citaService'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ESTADO_CITA_CONFIG, type ICita } from '@/types/cita'
@@ -70,9 +71,10 @@ export function SolicitudesVisitaWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-2 text-sm text-gray-500">
-        <IconLoader size={16} className="animate-spin" />
-        Cargando solicitudes de visita…
+      <div role="status" aria-live="polite" className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
+        <span className="sr-only">Cargando solicitudes de visita…</span>
+        <Skeleton className="h-4 w-1/2 max-w-xs" />
+        <Skeleton className="h-3 w-3/4 max-w-md" />
       </div>
     )
   }
@@ -101,8 +103,8 @@ export function SolicitudesVisitaWidget() {
   return (
     <div className="bg-white border border-coral-200 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 bg-coral-50 border-b border-coral-200 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="px-4 sm:px-5 py-3 bg-coral-50 border-b border-coral-200 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-coral-500 shrink-0" />
           <h3 className="text-sm font-semibold text-coral-900">Solicitudes de visita recibidas</h3>
           <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full bg-coral-600 text-ink-900 text-xs font-bold">

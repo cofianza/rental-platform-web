@@ -115,7 +115,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
           }}
           onFocus={() => setOpen(true)}
           placeholder="Empiece a escribir su municipio (ej. Medellín)"
-          className={`w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+          className={`w-full min-h-11 rounded-lg border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           }`}
           autoComplete="off"
@@ -124,7 +124,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-600"
+            className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-gray-500 hover:text-gray-600"
             aria-label="Limpiar"
           >
             <IconX size={14} aria-hidden />
@@ -144,7 +144,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
                 key={m.id}
                 type="button"
                 onClick={() => handleSelect(m)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none"
+                className="w-full min-h-11 text-left px-3 py-2.5 text-sm hover:bg-primary-50 focus:bg-primary-50 focus:outline-none"
               >
                 <span className="font-medium text-gray-900">{m.name}</span>
                 <span className="text-gray-500"> · {m.department.name}</span>

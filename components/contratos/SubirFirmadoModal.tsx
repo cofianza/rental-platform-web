@@ -90,14 +90,14 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
   return (
     <Modal isOpen onClose={onClose} bare ariaLabel="Subir contrato firmado" closeOnBackdrop={false} className="rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Subir Contrato Firmado</h2>
         <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
           <IconX size={20} />
         </button>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-4 sm:p-6 space-y-5">
         {/* Drop zone */}
         <div
           onDragOver={handleDragOver}
@@ -189,7 +189,7 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+      <div className="flex flex-wrap items-center justify-end gap-3 px-4 py-4 sm:px-6 border-t border-gray-200">
         <button
           onClick={onClose}
           disabled={isUploading}

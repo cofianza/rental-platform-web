@@ -8,7 +8,7 @@
 import { Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui'
-import { IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { IconAlertTriangle, IconLoader, IconRefresh } from '@/components/icons'
 import { useEstudiosList } from '@/hooks/useEstudiosList'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -107,8 +107,17 @@ function EstudiosAdminView() {
         />
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        {isLoading ? (
+      {/* Al filtrar o paginar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+      <div
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && estudios.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
+        aria-busy={isLoading}
+      >
+        {isLoading && estudios.length > 0 && (
+          <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+            <IconLoader size={12} className="animate-spin" /> Actualizando…
+          </span>
+        )}
+        {isLoading && estudios.length === 0 ? (
           <EstudiosSkeleton count={filters.limit} />
         ) : (
           <EstudiosTable
@@ -153,9 +162,9 @@ function EstudiosPageSkeleton() {
         ))}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-hidden">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-9 w-28 bg-gray-200 rounded-lg animate-pulse" />
+          <div key={i} className="h-9 w-28 shrink-0 bg-gray-200 rounded-lg animate-pulse" />
         ))}
       </div>
 

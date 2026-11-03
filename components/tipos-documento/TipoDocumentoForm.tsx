@@ -382,7 +382,7 @@ export function TipoDocumentoForm({
       </div>
 
       {/* Botones */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+      <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}

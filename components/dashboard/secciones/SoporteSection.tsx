@@ -191,7 +191,7 @@ export function SoporteSection() {
         }
       />
 
-      <KpiRow loading={loading} error={error}>
+      <KpiRow loading={loading && !data} error={error}>
         <Kpi
           label="Abiertos"
           value={abiertos}
@@ -261,7 +261,7 @@ export function SoporteSection() {
       </FiltroBar>
 
       <SeccionEstado
-        loading={loading}
+        loading={loading} datos={!!data}
         error={error}
         onRetry={reload}
         vacio={
@@ -404,7 +404,7 @@ export function SoporteSection() {
       <Modal isOpen={!!detail} onClose={() => setDetail(null)} title={detail ? detail.ticketNumero : ''} size="md" closeOnBackdrop>
         {detail && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
                 <div className="text-[11px] uppercase tracking-wide text-gray-500">Remitente</div>
                 <div className="font-medium text-gray-900">

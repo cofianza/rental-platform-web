@@ -7,10 +7,10 @@
 
 'use client'
 
-import { IconLoader } from '@/components/icons'
 import type { ICatalogoMotivos, IMotivosElegidos, TipoDecision } from '@/types/estudio'
 import { textoVisible } from './textoVisible'
 import { REPORTE_CENTRALES } from './DocumentosConsultados'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const OTRO: Record<TipoDecision, string> = { aprobar: 'A9', rechazar: 'R9', condicionar: 'C6' }
 const MIN_DETALLE = 10
@@ -68,9 +68,12 @@ export function LoVeLaInmobiliaria() {
  */
 export function CargandoMotivos() {
   return (
-    <p role="status" className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-500">
-      <IconLoader size={16} className="animate-spin" aria-hidden /> Cargando los motivos…
-    </p>
+    <div role="status" className="space-y-2 rounded-lg border border-gray-200 px-3 py-3">
+      <span className="sr-only">Cargando los motivos…</span>
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className="h-5 w-full" />
+      ))}
+    </div>
   )
 }
 

@@ -11,7 +11,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { InmuebleForm } from '@/components/inmuebles'
 import { PageHeader } from '@/components/ui'
-import { IconLoader } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { inmuebleService } from '@/services/inmuebleService'
 import { rutaInterna } from '@/lib/utils'
 import type { IInmueble } from '@/types/inmueble'
@@ -52,10 +52,8 @@ export default function EditarInmueblePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Editar inmueble" subtitle="Cargando datos..." />
-        <div className="flex items-center justify-center h-64">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
+        <PageHeader title="Editar inmueble" />
+        <SkeletonDetail bloques={2} etiqueta="Cargando inmueble…" />
       </div>
     )
   }

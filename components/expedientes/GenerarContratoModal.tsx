@@ -102,7 +102,7 @@ export function GenerarContratoModal({
 
   return (
     <Modal isOpen={isOpen} onClose={generating ? () => {} : onClose} bare ariaLabel="Generar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Generar contrato</h2>
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
@@ -113,7 +113,7 @@ export function GenerarContratoModal({
         </button>
       </div>
 
-      <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+      <div className="p-4 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
         <div>
           <label htmlFor="generar-contrato-modal-fecha-de-inicio-del-contrato" className="block text-sm font-medium text-gray-700 mb-1">
             Fecha de inicio del contrato
@@ -226,7 +226,7 @@ export function GenerarContratoModal({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
+      <div className="flex flex-wrap justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-200">
         <button
           onClick={onClose}
           disabled={generating}

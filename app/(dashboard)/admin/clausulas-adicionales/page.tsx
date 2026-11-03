@@ -21,12 +21,12 @@ import { Badge, Button, ConfirmDialog, MotivoDialog, PageHeader, SearchInput, Ta
 import {
   IconChevronDown,
   IconChevronRight,
-  IconLoader,
   IconLock,
   IconPencil,
   IconPlus,
   IconRefresh,
 } from '@/components/icons'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { Aviso, inputClass } from '@/components/contratos/v3/campos'
 import { EditorClausula } from '@/components/contratos/v3/EditorClausula'
 import { useAuth } from '@/hooks/useAuth'
@@ -393,10 +393,10 @@ function Detalle({
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Contratos que la usan</h3>
         {usos === undefined || usos === 'cargando' ? (
-          <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-            <IconLoader size={16} className="animate-spin text-primary-600" />
-            Cargando usos…
-          </p>
+          <div role="status" aria-live="polite" className="mt-2">
+            <span className="sr-only">Cargando usos…</span>
+            <SkeletonText lineas={2} />
+          </div>
         ) : usos === 'error' ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-red-700">
             <span>No pudimos cargar los usos.</span>

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { Button, ConfirmDialog, Modal, MotivoDialog, PageHeader, buttonClasses } from '@/components/ui'
 import {
   IconAlertTriangle,
@@ -317,7 +318,7 @@ export default function LoteMigracionPage() {
         }
       />
 
-      <SeccionEstado loading={tablero.loading} error={tablero.error} onRetry={tablero.reload}>
+      <SeccionEstado loading={tablero.loading} datos={!!tablero.data} error={tablero.error} onRetry={tablero.reload}>
         {t && (
           <>
             <section>
@@ -394,7 +395,7 @@ export default function LoteMigracionPage() {
           title="Acta de Migración"
           subtitle="La firma del representante legal y de Cofianza por Auco activa todos los contratos del lote a la vez."
         />
-        <SeccionEstado loading={acta.loading} error={acta.error} onRetry={acta.reload}>
+        <SeccionEstado loading={acta.loading} datos={!!acta.data} error={acta.error} onRetry={acta.reload}>
           <div className="space-y-3 rounded-xl border border-ink-200 bg-white p-4">
             {a ? (
               <>
@@ -502,7 +503,7 @@ export default function LoteMigracionPage() {
             }
           />
           <SeccionEstado
-            loading={correcciones.loading}
+            loading={correcciones.loading} datos={!!correcciones.data}
             error={correcciones.error}
             onRetry={correcciones.reload}
             vacio={(correcciones.data?.length ?? 0) === 0 && { icon: IconScrollText, titulo: 'Este lote no tiene correcciones' }}
@@ -580,7 +581,7 @@ export default function LoteMigracionPage() {
       <section>
         <SeccionHeader title="Contratos del lote" />
         <SeccionEstado
-          loading={tablero.loading}
+          loading={tablero.loading} datos={!!tablero.data}
           error={tablero.error}
           onRetry={tablero.reload}
           vacio={filas.length === 0 && { icon: IconFolderOpen, titulo: filtro ? 'No hay contratos en este estado' : 'El lote no tiene filas' }}
@@ -650,9 +651,7 @@ export default function LoteMigracionPage() {
             </Button>
           </div>
         ) : !det ? (
-          <p role="status" className="py-8 text-center text-sm text-ink-500">
-            Cargando…
-          </p>
+          <SkeletonDetail bloques={2} etiqueta="Cargando el contrato migrado…" />
         ) : (
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">

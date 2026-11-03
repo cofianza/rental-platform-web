@@ -28,6 +28,7 @@ import {
   IconScrollText,
   IconArrowRight,
 } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import {
   documentosLegalesService,
@@ -393,12 +394,15 @@ export default function MiInmobiliariaPage() {
             Requeridos por Cofianza para el vínculo. La validación la hace nuestro equipo tras cargar cada uno.
           </p>
         </div>
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <IconLoader size={16} className="animate-spin" /> Cargando documentos...
+        {loading && docs.length === 0 ? (
+          <div role="status" aria-live="polite" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))]">
+            <span className="sr-only">Cargando documentos…</span>
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            ))}
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))]">
             {tiposVisibles.map((cfg) => {
               const doc = docs.find((d) => d.tipo === cfg.tipo)
               return (

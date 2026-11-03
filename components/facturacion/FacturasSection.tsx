@@ -14,7 +14,6 @@ import { formatCurrency } from '@/lib/constants'
 import { ESTADO_FACTURA_CONFIG } from '@/types/facturacion'
 import type { IFactura, EstadoFactura } from '@/types/facturacion'
 import {
-  IconLoader,
   IconAlertTriangle,
   IconRefresh,
   IconPlus,
@@ -23,7 +22,8 @@ import {
   IconEye,
   IconFileText,
 } from '@/components/icons'
-import { abrirEnPestana } from '@/lib/utils'
+import { abrirEnPestana, cn } from '@/lib/utils'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 // ============================================
 // Types
@@ -127,13 +127,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
   // Render: Loading
   // ============================================
   if (pageState === 'loading' && facturas.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8">
-        <div className="flex items-center justify-center">
-          <IconLoader size={32} className="animate-spin text-primary-600" />
-        </div>
-      </div>
-    )
+    return <SkeletonTable filas={6} columnas={7} etiqueta="Cargando facturas…" />
   }
 
   // ============================================
@@ -252,7 +246,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
           {isAdmin && onFacturarPendiente && (
             <button
               onClick={onFacturarPendiente}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
             >
               <IconPlus size={18} />
               Facturar un pago pendiente
@@ -272,7 +266,10 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div
+        className={cn('bg-white rounded-lg border border-gray-200 overflow-hidden transition-opacity', pageState === 'loading' && 'pointer-events-none opacity-60')}
+        aria-busy={pageState === 'loading'}
+      >
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -341,7 +338,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                         {/* Ver detalle */}
                         <Link
                           href={`/facturacion/${factura.id}`}
-                          className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                          className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                           title="Ver detalle"
                           aria-label={`Ver detalle de la factura ${factura.numero}`}
                         >
@@ -352,7 +349,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                         {factura.pdf_url && (
                           <button
                             onClick={() => handleDownload(factura, 'pdf')}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Descargar PDF"
                             aria-label={`Descargar PDF de la factura ${factura.numero}`}
                           >
@@ -364,7 +361,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
                         {factura.xml_url && (
                           <button
                             onClick={() => handleDownload(factura, 'xml')}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Descargar XML"
                             aria-label={`Descargar XML de la factura ${factura.numero}`}
                           >
@@ -390,7 +387,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3">
           <p className="text-sm text-gray-500">
             Mostrando {(page - 1) * limit + 1} - {Math.min(page * limit, total)} de {total}
           </p>
@@ -398,7 +395,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Anterior
             </button>
@@ -408,7 +405,7 @@ export function FacturasSection({ onFacturarPendiente }: FacturasSectionProps = 
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Siguiente
             </button>

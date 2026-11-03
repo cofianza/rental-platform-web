@@ -17,7 +17,6 @@ import Link from 'next/link'
 import {
   IconFileText,
   IconUser,
-  IconLoader,
   IconAlertTriangle,
   IconCreditCard,
   IconBank,
@@ -33,6 +32,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import type { WizardStep3Data, FormaPagoEstudio } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface Step3ConfigurationProps {
   data: WizardStep3Data
@@ -415,9 +415,9 @@ export function Step3Configuration({
         </label>
 
         {isLoadingAnalistas ? (
-          <div className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-500">
-            <IconLoader size={16} className="animate-spin" />
-            <span>Cargando responsables...</span>
+          <div role="status">
+            <span className="sr-only">Cargando responsables…</span>
+            <Skeleton className="h-12 w-full rounded-lg" />
           </div>
         ) : analistasError ? (
           <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -468,9 +468,9 @@ export function Step3Configuration({
             <span className="text-gray-500 font-normal">(opcional)</span>
           </label>
           {isLoadingMiembros ? (
-            <div className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-500">
-              <IconLoader size={16} className="animate-spin" />
-              <span>Cargando equipo...</span>
+            <div role="status">
+              <span className="sr-only">Cargando equipo…</span>
+              <Skeleton className="h-12 w-full rounded-lg" />
             </div>
           ) : (
             <select id="step3-configuration-responsable-del-estudio-opcional"

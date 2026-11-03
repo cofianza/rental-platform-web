@@ -24,6 +24,7 @@ import {
   type ContextoCargaDocumentos,
   type PropositoSoporte,
 } from '@/services/cargarDocumentosService'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 // Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
 // estudio ya resuelto no se promete una revisión que no va a ocurrir, y al
@@ -165,16 +166,14 @@ export default function CargarDocumentosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
-      </div>
+      <EsqueletoFlujo bloques={1} campos={3} etiqueta="Cargando los documentos…" />
     )
   }
 
   if (error || !ctx) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+      <div className="flex justify-center py-6">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
           <h1 className="text-lg font-semibold text-gray-900 mb-2">
             {reintentable ? 'No pudimos cargar la página' : 'Enlace no disponible'}
           </h1>
@@ -215,7 +214,7 @@ export default function CargarDocumentosPage() {
           <h1 className="text-2xl font-bold text-gray-900">
             {conCondicion ? (ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1 break-words">
             {conCondicion ? (
               // El literal del §6.9, el plazo y la cifra (§6.7) van una sola vez, en el formulario.
               <>
@@ -286,7 +285,7 @@ export default function CargarDocumentosPage() {
         )}
 
         {soloCoarrendatario ? null : ctx.puede_subir ? (
-          <form onSubmit={handleSubir} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+          <form onSubmit={handleSubir} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 space-y-4">
             <div>
               <label htmlFor="cargar-proposito" className="block text-sm font-medium text-gray-700 mb-1">
                 Tipo de documento
@@ -311,20 +310,20 @@ export default function CargarDocumentosPage() {
                 type="file"
                 accept=".pdf,image/jpeg,image/png"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                className="w-full text-sm text-gray-700 file:mr-3 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
             </div>
             <button
               type="submit"
               disabled={subiendo}
-              className="w-full px-5 py-2.5 text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full min-h-11 px-5 py-2.5 text-base sm:text-sm font-medium text-ink-900 bg-coral-500 rounded-lg hover:bg-coral-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {subiendo ? <IconLoader size={16} className="animate-spin" /> : null}
               {subiendo ? 'Subiendo…' : 'Subir documento'}
             </button>
           </form>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center text-sm text-gray-600">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 text-center text-sm text-gray-600">
             Este enlace ya no admite cargar documentos (el estudio cambió de estado). Si tiene dudas, escríbale a quien
             tramita su arriendo.
             <ContactoCofianza />
@@ -343,10 +342,10 @@ export default function CargarDocumentosPage() {
                 {ctx.soportes.map((s) => (
                   <li key={s.id} className="px-5 py-3 flex items-center gap-3">
                     <IconCheckCircle size={18} className="text-green-600 shrink-0" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">{PROPOSITO_LABEL[s.proposito] || s.proposito}</p>
-                      <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                        <IconFileText size={11} /> {s.nombre_original}
+                      <p className="text-xs text-gray-500 flex items-center gap-1 min-w-0">
+                        <IconFileText size={11} className="shrink-0" /> <span className="truncate">{s.nombre_original}</span>
                       </p>
                     </div>
                   </li>

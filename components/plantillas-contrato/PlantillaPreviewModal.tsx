@@ -24,9 +24,9 @@ export function PlantillaPreviewModal({
   return (
     <Modal isOpen onClose={onClose} bare ariaLabel="Vista previa de la plantilla" closeOnBackdrop className="rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200 shrink-0">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-gray-900 break-words">
             Vista Previa: {nombre}
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -43,7 +43,7 @@ export function PlantillaPreviewModal({
 
       {/* Variables usadas */}
       {variables.length > 0 && (
-        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 shrink-0">
+        <div className="px-4 py-3 sm:px-6 bg-gray-50 border-b border-gray-200 shrink-0">
           <p className="text-xs font-medium text-gray-600 mb-1.5">
             Variables utilizadas ({variables.length}):
           </p>
@@ -62,7 +62,7 @@ export function PlantillaPreviewModal({
 
       {/* HTML preview */}
       {/* En iframe: el <style> de la plantilla (body, h2, table…) no se sale al panel. */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-6">
         <iframe
           srcDoc={html}
           sandbox=""
@@ -72,7 +72,7 @@ export function PlantillaPreviewModal({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-gray-200 shrink-0">
+      <div className="px-4 py-3 sm:px-6 border-t border-gray-200 shrink-0">
         <button
           onClick={onClose}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"

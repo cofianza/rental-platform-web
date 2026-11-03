@@ -14,6 +14,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 import { IconLoader, IconCheck, IconHome, IconUser, IconX, IconFileText } from '@/components/icons'
 import {
   interesadosService,
@@ -200,7 +201,7 @@ export default function InteresadosPage() {
       />
 
       {/* Filtros por estado */}
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {FILTROS.map((f) => (
           <button
             key={f.value}
@@ -210,7 +211,7 @@ export default function InteresadosPage() {
             // la petición en vuelo, su respuesta se sumaba a la lista del
             // filtro nuevo (interesados «Contactado» bajo «Nuevos»).
             disabled={cargandoMas}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors disabled:opacity-50 ${
+            className={`shrink-0 whitespace-nowrap px-3 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-50 ${
               filtro === f.value
                 ? 'bg-primary-700 text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -221,11 +222,9 @@ export default function InteresadosPage() {
         ))}
       </div>
 
-      {loading || porRecargar ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <IconLoader size={16} className="animate-spin" /> Cargando interesados…
-        </div>
-      ) : fallo ? (
+      {(loading || porRecargar) && items.length === 0 ? (
+        <SkeletonTable filas={4} columnas={4} etiqueta="Cargando interesados…" />
+      ) : fallo && !loading ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-12 text-center">
           <p className="font-semibold text-amber-900">No se pudo cargar la lista</p>
           <p className="text-sm text-amber-800 mt-1">
@@ -239,7 +238,7 @@ export default function InteresadosPage() {
             Reintentar
           </button>
         </div>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !loading ? (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-12 text-center">
           <IconUser size={40} className="mx-auto text-gray-300 mb-3" />
           <p className="font-semibold text-gray-900">Aún no tiene interesados</p>
@@ -249,7 +248,10 @@ export default function InteresadosPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div
+          className={`space-y-3 transition-opacity ${loading ? 'pointer-events-none opacity-60' : ''}`}
+          aria-busy={loading}
+        >
           {items.map((it) => (
             <div
               key={it.id}
@@ -274,8 +276,8 @@ export default function InteresadosPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-gray-900 truncate">{it.nombre}</span>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="min-w-0 font-semibold text-gray-900 break-words">{it.nombre}</span>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${ESTADO_STYLE[it.estado]}`}
                   >
@@ -298,7 +300,7 @@ export default function InteresadosPage() {
                     WhatsApp: {it.telefono}
                   </a>
                   {it.email ? (
-                    <a href={`mailto:${it.email}`} className="text-gray-600 hover:underline">
+                    <a href={`mailto:${it.email}`} className="min-w-0 break-all text-gray-600 hover:underline">
                       {it.email}
                     </a>
                   ) : (

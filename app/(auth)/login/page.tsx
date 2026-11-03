@@ -223,7 +223,7 @@ function LoginForm() {
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'error-email' : undefined}
             className={cn(
-              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
+              'w-full px-3.5 py-3 border-[1.5px] rounded-[10px] text-base sm:text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
               'placeholder:text-slate-400',
               'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
               'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -254,7 +254,7 @@ function LoginForm() {
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? 'error-password' : undefined}
               className={cn(
-                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
+                'w-full pl-3.5 pr-11 py-3 border-[1.5px] rounded-[10px] text-base sm:text-[15px] leading-[1.25] text-slate-900 bg-white transition-all',
                 'placeholder:text-slate-400',
                 'focus:outline-none focus:border-primary-600 focus:ring-[3px] focus:ring-primary-600/10',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -264,7 +264,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
@@ -279,7 +279,7 @@ function LoginForm() {
         <div className="flex justify-end items-center text-[13px] mb-5">
           <Link
             href={AUTH_ROUTES.FORGOT_PASSWORD}
-            className="text-primary-600 font-semibold hover:underline"
+            className="inline-flex min-h-11 items-center text-primary-600 font-semibold hover:underline"
           >
             ¿Olvidó su contraseña?
           </Link>

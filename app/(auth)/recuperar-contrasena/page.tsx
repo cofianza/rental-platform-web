@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
   // Pantalla de confirmación post-envío
   if (isSubmitted) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
 
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
           <Link
             href={AUTH_ROUTES.LOGIN}
             className={cn(
-              'inline-flex items-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm',
+              'inline-flex min-h-11 items-center gap-2 py-2.5 px-4 rounded-lg font-medium text-sm',
               'text-primary-600 hover:text-primary-700 hover:bg-primary-50',
               'transition-colors'
             )}
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full">
 
       {/* Título */}
       <div className="text-center mb-8">
@@ -152,7 +152,7 @@ export default function ForgotPasswordPage() {
           type="submit"
           disabled={isLoading}
           className={cn(
-            'w-full py-2.5 px-4 rounded-lg text-white font-medium text-sm',
+            'w-full min-h-11 py-2.5 px-4 rounded-lg text-white font-medium text-sm',
             'bg-primary-700 hover:bg-primary-800',
             'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'transition-colors flex items-center justify-center gap-2',

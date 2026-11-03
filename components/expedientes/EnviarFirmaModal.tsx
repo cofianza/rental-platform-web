@@ -69,7 +69,7 @@ export function EnviarFirmaModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Enviar para firma" closeOnBackdrop={false} className="rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Enviar para Firma</h2>
         <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
           <IconX size={20} />
@@ -77,7 +77,7 @@ export function EnviarFirmaModal({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           <p className="text-sm text-gray-500">
             Se enviará un enlace seguro al firmante para que revise y firme el contrato. El plazo para firmar nunca pasa la vigencia del certificado de riesgo.
           </p>
@@ -134,7 +134,7 @@ export function EnviarFirmaModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <div className="flex flex-wrap items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t border-gray-200">
           <button
             type="button"
             onClick={onClose}

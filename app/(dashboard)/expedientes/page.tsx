@@ -61,9 +61,9 @@ function ExpedientesPageSkeleton() {
       </div>
 
       {/* Bandeja tabs skeleton */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-hidden">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-9 w-28 bg-gray-200 rounded-lg animate-pulse" />
+          <div key={i} className="h-9 w-28 shrink-0 bg-gray-200 rounded-lg animate-pulse" />
         ))}
       </div>
 

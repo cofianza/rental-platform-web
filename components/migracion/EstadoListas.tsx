@@ -83,7 +83,7 @@ export function EstadoListas({ compacto = false }: { compacto?: boolean }) {
         subtitle={`Copia local de las listas públicas del Tesoro de EE. UU. y del Consejo de Seguridad de la ONU. Al validar un archivo se verifica a cada arrendatario, sin costo de consulta. Con una lista de más de ${data?.dias_max ?? 7} días sin actualizar no se puede validar ni procesar.`}
         right={boton || undefined}
       />
-      <SeccionEstado loading={loading} error={error} onRetry={reload}>
+      <SeccionEstado loading={loading} datos={!!data} error={error} onRetry={reload}>
         <Tabla head={['Lista', 'Publicada', 'Copia actualizada', 'Registros', 'Estado']}>
           {data?.listas.map((l) => (
             <tr key={l.lista}>

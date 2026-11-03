@@ -87,8 +87,8 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Enviar a firma" closeOnBackdrop={false} className="rounded-xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+    <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Enviar a firma" closeOnBackdrop={false} className="rounded-xl w-full max-w-lg mx-4 max-h-[90dvh] flex flex-col">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Enviar a firma</h2>
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
@@ -99,7 +99,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         </button>
       </div>
 
-      <div className="p-6 space-y-4 overflow-y-auto">
+      <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
         <p className="text-sm text-gray-600">
           Cada parte recibe <strong>su propio</strong> código de firma por WhatsApp en el número indicado.
           Verifique a quién le llega cada uno antes de enviar.
@@ -227,7 +227,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         </ul>
       </div>
 
-      <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
+      <div className="flex flex-wrap justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-200">
         <button
           onClick={onClose}
           disabled={submitting}

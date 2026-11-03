@@ -722,7 +722,7 @@ export default function RegisterInmobiliariaPage() {
               type="checkbox"
               checked={formData.accept_terms}
               onChange={(e) => updateField('accept_terms', e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-primary-600"
             />
             <div>
               <span className="text-[13px] leading-[1.5] text-slate-500">
@@ -741,7 +741,7 @@ export default function RegisterInmobiliariaPage() {
               type="checkbox"
               checked={formData.accept_data_treatment}
               onChange={(e) => updateField('accept_data_treatment', e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-primary-600"
             />
             <div>
               <span className="text-[13px] leading-[1.5] text-slate-500">

@@ -47,6 +47,7 @@ import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3
 import type { Bloqueo } from '@/types/contratoV3'
 import type { IContrato, IContratoMigracion, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 const PdfViewer = dynamic(
   () => import('@/components/ui/PdfViewer').then((m) => ({ default: m.PdfViewer })),
@@ -379,12 +380,13 @@ export default function ContratoDetallePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-4 w-52 bg-gray-200 animate-pulse rounded" />
+        <div role="status" aria-live="polite" className="sr-only">Cargando contrato…</div>
+        <div className="h-4 w-52 max-w-full bg-gray-200 animate-pulse rounded" />
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3.5">
             <div className="h-11 w-11 bg-gray-200 animate-pulse rounded-xl" />
             <div>
-              <div className="h-7 w-64 bg-gray-200 animate-pulse rounded" />
+              <div className="h-7 w-48 sm:w-64 bg-gray-200 animate-pulse rounded" />
               <div className="flex gap-2 mt-2.5">
                 <div className="h-6 w-24 bg-gray-200 animate-pulse rounded-full" />
                 <div className="h-6 w-12 bg-gray-200 animate-pulse rounded-full" />
@@ -626,8 +628,13 @@ export default function ContratoDetallePage() {
             ) : previewUrl ? (
               <PdfViewer url={previewUrl} />
             ) : previewCargando ? (
-              <div className="flex h-full items-center justify-center text-gray-500">
-                <IconLoader size={24} className="animate-spin" />
+              <div role="status" aria-live="polite" className="h-full p-4 sm:p-6">
+                <span className="sr-only">Cargando documento…</span>
+                <div className="mx-auto h-full max-w-2xl space-y-4 rounded-lg border border-gray-100 p-4 sm:p-8">
+                  <SkeletonText lineas={3} />
+                  <SkeletonText lineas={5} />
+                  <SkeletonText lineas={4} />
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
@@ -1004,11 +1011,11 @@ function PanelMigrado({ contratoId, m, verLote }: { contratoId: string; m: ICont
 function InfoRow({ icon, label, value }: { icon?: ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="flex items-center gap-2 text-gray-500">
+      <dt className="flex shrink-0 items-center gap-2 text-gray-500">
         {icon && <span className="text-gray-500 shrink-0">{icon}</span>}
         {label}
       </dt>
-      <dd className="font-medium text-gray-900 text-right tabular-nums">{value}</dd>
+      <dd className="min-w-0 break-words font-medium text-gray-900 text-right tabular-nums">{value}</dd>
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { IconHistory, IconClock, IconUser, IconLoader, IconChevronLeft, IconChev
 import { inmuebleService } from '@/services/inmuebleService'
 import { formatCurrency, formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 import type { ICambioInmueble, ICambiosResumen } from '@/types/cambio-inmueble'
 
 const CAMPOS_MONETARIOS = ['valor_arriendo', 'valor_comercial', 'administracion']
@@ -162,10 +163,26 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
   }
 
   // Loading state
-  if (isLoading && page === 1) {
+  // Primera carga: esqueleto. Con cambios en pantalla (filtro o página) se
+  // dejan visibles y se marca la recarga abajo.
+  if (isLoading && cambios.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="text-primary-600 animate-spin" />
+      <div role="status" aria-live="polite" className="space-y-4">
+        <span className="sr-only">Cargando historial…</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-lg" />
+          ))}
+        </div>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-3">
+            <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          </div>
+        ))}
       </div>
     )
   }
@@ -349,7 +366,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
                     </div>
 
                     {/* Values */}
-                    <div className="text-sm mb-1.5">
+                    <div className="text-sm mb-1.5 break-words">
                       <span className="text-gray-500 line-through">
                         {formatValue(cambio.campo, cambio.valor_anterior)}
                       </span>
@@ -376,7 +393,7 @@ export function HistorialSection({ inmuebleId }: HistorialSectionProps) {
       ))}
 
       {/* Loading overlay for page changes */}
-      {isLoading && page > 1 && (
+      {isLoading && cambios.length > 0 && (
         <div className="flex items-center justify-center py-4">
           <IconLoader size={20} className="text-primary-600 animate-spin" />
         </div>

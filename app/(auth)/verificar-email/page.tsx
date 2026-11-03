@@ -63,7 +63,7 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+    <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
       {/* Logo mobile */}
 
       {state === 'verifying' && (
@@ -154,7 +154,7 @@ function VerifyEmailContent() {
           <div className="space-y-2">
             <Link
               href={AUTH_ROUTES.LOGIN}
-              className="inline-flex w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-bold rounded-lg hover:bg-primary-800 transition-colors"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-bold rounded-lg hover:bg-primary-800 transition-colors"
             >
               Iniciar sesión y empezar
             </Link>
@@ -180,7 +180,7 @@ function VerifyEmailContent() {
           <button
             type="button"
             onClick={verify}
-            className="inline-flex w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-bold rounded-lg hover:bg-primary-800 transition-colors"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-bold rounded-lg hover:bg-primary-800 transition-colors"
           >
             <IconRefresh size={16} /> Reintentar
           </button>
@@ -200,7 +200,7 @@ function VerifyEmailContent() {
           <div className="bg-gray-50 rounded-lg p-4 space-y-3">
             <p className="text-sm text-gray-600">Ingrese su email para solicitar un nuevo enlace:</p>
             <div className="flex gap-2">
-              <div className="relative flex-1">
+              <div className="relative min-w-0 flex-1">
                 <IconMail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                   type="email"
@@ -214,7 +214,7 @@ function VerifyEmailContent() {
               <button
                 onClick={handleResend}
                 disabled={resending || !resendEmail.trim()}
-                className="px-4 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                className="min-h-11 shrink-0 px-4 py-2.5 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {resending ? <IconLoader size={16} className="animate-spin" /> : 'Enviar'}
               </button>
@@ -241,7 +241,7 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full flex justify-center">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full flex justify-center">
         <IconLoader size={24} className="animate-spin text-primary-600" />
       </div>
     }>

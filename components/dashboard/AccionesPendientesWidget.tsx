@@ -14,7 +14,8 @@
 
 import Link from 'next/link'
 import { EmptyState } from '@/components/ui'
-import { IconLoader, IconCalendar, IconClock, IconShieldCheck, IconChevronRight, IconFolderOpen } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { IconCalendar, IconClock, IconShieldCheck, IconChevronRight, IconFolderOpen } from '@/components/icons'
 import { useAccionesPendientes } from '@/hooks/useAccionesPendientes'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
@@ -33,10 +34,12 @@ function AccionesPendientes() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-center py-6">
-          <IconLoader size={24} className="animate-spin text-primary-600" />
-        </div>
+      <div role="status" aria-live="polite" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 space-y-3">
+        <span className="sr-only">Cargando acciones pendientes…</span>
+        <Skeleton className="h-5 w-40 max-w-full" />
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} className="h-10 w-full rounded-lg" />
+        ))}
       </div>
     )
   }

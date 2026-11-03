@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui'
 import { IconLoader, IconBuilding2, IconRefresh } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getEmpresa, updateEmpresa, type EmpresaInfo } from '@/services/empresaService'
 import { TIPOS_DOCUMENTO } from '@/lib/constants'
@@ -135,9 +136,7 @@ export default function EmpresaPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={32} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonDetail bloques={2} etiqueta="Cargando los datos de la empresa…" />
       ) : !form ? (
         !esAdmin ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-sm text-gray-600">

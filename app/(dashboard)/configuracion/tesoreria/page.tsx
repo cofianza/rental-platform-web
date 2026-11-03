@@ -18,6 +18,7 @@ import { dashboardService } from '@/services/dashboardService'
 import { ApiClientError } from '@/lib/api'
 import { formatCurrency } from '@/lib/constants'
 import { IconLoader, IconCheck, IconBank, IconAlertTriangle } from '@/components/icons'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 
 export default function TesoreriaPage() {
   const router = useRouter()
@@ -98,9 +99,7 @@ export default function TesoreriaPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={28} className="animate-spin text-primary-600" />
-        </div>
+        <SkeletonDetail bloques={1} etiqueta="Cargando la configuración de tesorería…" />
       ) : loadError ? (
         <div className="bg-white rounded-lg border border-gray-200">
           <EmptyState

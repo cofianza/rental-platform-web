@@ -13,7 +13,6 @@ import { dashboardService, type MiInmueble } from '@/services/dashboardService'
 import { money } from '@/components/dashboard/secciones/_shared'
 import { cn } from '@/lib/utils'
 import {
-  IconLoader,
   IconDollarSign,
   IconTrendingUp,
   IconBarChart3,
@@ -21,6 +20,7 @@ import {
   IconShieldCheck,
   IconHome,
 } from '@/components/icons'
+import { SkeletonCards } from '@/components/ui/Skeleton'
 
 const onlyDigits = (s: string) => s.replace(/\D/g, '')
 const toNum = (s: string | undefined) => (s ? Number(s) : 0)
@@ -100,10 +100,7 @@ export function RentabilidadPropietarioSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10" role="status" aria-live="polite">
-        <IconLoader size={24} className="animate-spin text-primary-600" />
-        <span className="sr-only">Cargando rentabilidad…</span>
-      </div>
+      <SkeletonCards cantidad={3} etiqueta="Cargando rentabilidad…" />
     )
   }
 
@@ -216,7 +213,7 @@ export function RentabilidadPropietarioSection() {
       {/* Resumen total de cartera (sin datos no se pinta un $0 que no es cierto) */}
       {!fallo && (
       <Panel title="Resumen de su cartera" dot="bg-primary-600">
-        <div className="grid grid-cols-2 gap-4 p-5 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
           <Stat label="Ingresos brutos" value={money(cartera.brutos)} sub="mensual" Icon={IconDollarSign} color="text-blue-600" />
           <Stat label="Gastos" value={money(cartera.gastosMes)} sub="mensual" Icon={IconBarChart3} color="text-coral-700" />
           <Stat

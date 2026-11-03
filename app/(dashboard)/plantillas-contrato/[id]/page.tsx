@@ -17,6 +17,7 @@ import {
 import dynamic from 'next/dynamic'
 import { PlantillaPreviewModal } from '@/components/plantillas-contrato/PlantillaPreviewModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDateTime } from '@/lib/constants'
@@ -125,8 +126,8 @@ export default function PlantillaDetallePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
+      <div className="sm:p-6">
+        <SkeletonDetail bloques={2} etiqueta="Cargando plantilla…" />
       </div>
     )
   }
@@ -156,9 +157,9 @@ export default function PlantillaDetallePage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="sm:p-6">
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+      <nav className="flex min-w-0 items-center gap-2 text-sm text-gray-500 mb-4">
         <Link href="/dashboard" className="hover:text-primary-600 flex items-center gap-1">
           <IconHome size={16} />
           Inicio
@@ -168,12 +169,12 @@ export default function PlantillaDetallePage() {
           Plantillas
         </Link>
         <IconChevronRight size={14} />
-        <span className="text-gray-900 font-medium truncate max-w-xs">{plantilla.nombre}</span>
+        <span className="min-w-0 text-gray-900 font-medium truncate max-w-xs">{plantilla.nombre}</span>
       </nav>
 
       {/* Back + Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div className="min-w-0">
           <Link
             href="/plantillas-contrato"
             className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary-600 mb-2"
@@ -181,7 +182,7 @@ export default function PlantillaDetallePage() {
             <IconArrowLeft size={16} />
             Volver
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex flex-wrap items-center gap-x-3 gap-y-1 break-words">
             {plantilla.nombre}
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               v{plantilla.version}
@@ -200,7 +201,7 @@ export default function PlantillaDetallePage() {
             <p className="text-sm text-gray-500 mt-1">{plantilla.descripcion}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handlePreview}
             disabled={isLoadingPreview}
@@ -239,7 +240,7 @@ export default function PlantillaDetallePage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Variables */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">
               Variables ({plantilla.variables?.length || 0})
             </h2>
@@ -248,7 +249,7 @@ export default function PlantillaDetallePage() {
                 {plantilla.variables.map(nombreVariable).map((v) => (
                   <span
                     key={v}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800"
+                    className="inline-flex max-w-full items-center break-all px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800"
                   >
                     {`{{${v}}}`}
                   </span>
@@ -260,9 +261,9 @@ export default function PlantillaDetallePage() {
           </div>
 
           {/* Contenido */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">Contenido HTML</h2>
-            <pre className="bg-gray-50 rounded-lg p-4 text-xs font-mono text-gray-700 overflow-x-auto max-h-96 whitespace-pre-wrap">
+            <pre className="bg-gray-50 rounded-lg p-4 text-xs font-mono text-gray-700 overflow-x-auto max-h-96 whitespace-pre-wrap break-words">
               {plantilla.contenido}
             </pre>
           </div>
@@ -270,7 +271,7 @@ export default function PlantillaDetallePage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Información</h2>
             <dl className="space-y-3 text-sm">
               <div>

@@ -13,6 +13,7 @@ import {
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SkeletonText } from '@/components/ui/Skeleton'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -143,15 +144,16 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
   }))
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <IconFolderOpen size={16} className="text-primary-600" />
         Archivos asociados
       </h3>
 
       {loading ? (
-        <div className="flex items-center justify-center py-6">
-          <IconLoader size={20} className="animate-spin text-gray-500" />
+        <div role="status" aria-live="polite">
+          <span className="sr-only">Cargando archivos…</span>
+          <SkeletonText lineas={4} />
         </div>
       ) : loadError ? (
         <div className="text-center py-6">
@@ -206,7 +208,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                         <button
                           onClick={() => handleDescargar(archivo)}
                           disabled={downloadingId === archivo.id}
-                          className="p-1.5 text-gray-500 hover:text-gray-600 rounded disabled:opacity-50"
+                          className="p-2.5 text-gray-500 hover:text-gray-600 rounded disabled:opacity-50"
                           title="Descargar"
                           aria-label={`Descargar ${archivo.nombre_archivo}`}
                         >
@@ -220,7 +222,7 @@ export function ContratoArchivosSection({ contrato }: ContratoArchivosSectionPro
                           <button
                             onClick={() => setAEliminar(archivo)}
                             disabled={deletingId === archivo.id}
-                            className="p-1.5 text-gray-500 hover:text-red-600 rounded disabled:opacity-50"
+                            className="p-2.5 text-gray-500 hover:text-red-600 rounded disabled:opacity-50"
                             title="Eliminar"
                             aria-label={`Eliminar ${archivo.nombre_archivo}`}
                           >

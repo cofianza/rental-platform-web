@@ -36,6 +36,7 @@ import {
   type RolMiembro,
 } from '@/services/miembrosService'
 import { formatCurrency, formatDate } from '@/lib/constants'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 const MODALIDAD_LABEL: Record<ModalidadFianza, string> = {
   trasladada: 'Trasladada (la paga el arrendatario)',
@@ -67,7 +68,7 @@ function ConvenioPanel({ org, onGuardado }: { org: InmobiliariaAdmin; onGuardado
   }
 
   return (
-    <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+    <div className="px-4 sm:px-5 py-4 border-b border-gray-100 bg-gray-50/60">
       <label htmlFor={`convenio-${org.id}`} className="block text-sm font-medium text-gray-900">
         Modalidad de la fianza por defecto
       </label>
@@ -115,12 +116,17 @@ function BeneficioPanel({ orgId }: { orgId: string }) {
       .catch(() => setError(true))
   }, [orgId])
 
-  if (error) return <p className="px-5 py-3 text-xs text-red-700 border-b border-gray-100">No se pudo cargar el beneficio acumulado.</p>
-  if (!data) return null
+  if (error) return <p className="px-4 sm:px-5 py-3 text-xs text-red-700 border-b border-gray-100">No se pudo cargar el beneficio acumulado.</p>
+  if (!data)
+    return (
+      <div aria-hidden="true" className="px-4 sm:px-5 py-4 border-b border-gray-100">
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+    )
   const total = data.totales[0]?.total_cop ?? 0
 
   return (
-    <div className="px-5 py-4 border-b border-gray-100">
+    <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
       <p className="text-sm font-medium text-gray-900">Beneficio Tradicional acumulado: {formatCurrency(total)}</p>
       <p className="mt-0.5 text-xs text-gray-500">
         Porcentaje de calibración sobre lo pagado por cada estudio, sin IVA, cuando el contrato en modalidad Tradicional queda vigente. Sin liquidar: la forma de pago está pendiente.
@@ -242,8 +248,9 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-6">
-        <IconLoader size={20} className="animate-spin text-primary-600" />
+      <div role="status" aria-live="polite" className="px-4 sm:px-5 py-4">
+        <span className="sr-only">Cargando miembros…</span>
+        <SkeletonText lineas={3} />
       </div>
     )
   }
@@ -272,7 +279,7 @@ function MiembrosPanel({ orgId }: { orgId: string }) {
     <>
     <ul className="divide-y divide-gray-100 bg-gray-50/50">
       {data.miembros.map((m) => (
-        <li key={m.id} className="px-5 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <li key={m.id} className="px-4 sm:px-5 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-medium text-gray-900 break-all">
@@ -374,8 +381,14 @@ export default function AdminInmobiliariasPage() {
       />
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <IconLoader size={32} className="animate-spin text-primary-600" />
+        <div role="status" aria-live="polite" className="space-y-3">
+          <span className="sr-only">Cargando inmobiliarias…</span>
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="space-y-2 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:px-5">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
         </div>
       ) : errorCarga ? (
         <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
@@ -402,7 +415,7 @@ export default function AdminInmobiliariasPage() {
                 <button
                   onClick={() => setAbierta(open ? null : o.id)}
                   aria-expanded={open}
-                  className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-gray-50"
+                  className="w-full px-4 sm:px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-gray-50"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{o.nombre}</p>

@@ -92,13 +92,16 @@ export default function CuposVencidosReportePage() {
 
   const hayFilas = !!data && data.filas.length > 0
 
+  // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
+  const recargando = loading && !!data
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Cupos vencidos"
         subtitle="Cupos de paquetes prepagados que vencieron sin usarse en el mes, para el registro contable. Valores sin IVA."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => data && descargarCsv(data)}
@@ -154,8 +157,8 @@ export default function CuposVencidosReportePage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
+        {loading && !data ? (
           <div className="animate-pulse p-4 space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-10 bg-gray-100 rounded" />

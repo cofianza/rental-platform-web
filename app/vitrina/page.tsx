@@ -10,6 +10,7 @@ import type { Metadata } from 'next'
 import { PropertyGrid } from '@/components/vitrina/PropertyGrid'
 import { PublicNavbar } from '@/components/vitrina/PublicNavbar'
 import { PublicFooter } from '@/components/vitrina/PublicFooter'
+import { SkeletonCards } from '@/components/ui/Skeleton'
 
 export const metadata: Metadata = {
   title: 'Vitrina de inmuebles — Cofianza',
@@ -48,9 +49,7 @@ export default function VitrinaPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
           <Suspense
             fallback={
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <SkeletonCards cantidad={6} etiqueta="Cargando inmuebles…" />
             }
           >
             <PropertyGrid />

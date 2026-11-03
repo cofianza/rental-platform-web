@@ -403,7 +403,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-wrap justify-end gap-3 pt-2">
             <button
               onClick={closeModals}
               disabled={isLoading}
@@ -447,7 +447,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               placeholder="Ejemplo: imprevisto del propietario, reprogramaremos..."
             />
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-wrap justify-end gap-3 pt-2">
             <button
               onClick={closeModals}
               disabled={isLoading}

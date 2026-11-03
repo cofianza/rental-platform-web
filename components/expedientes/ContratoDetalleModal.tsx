@@ -2,13 +2,14 @@
 
 import { Modal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
-import { IconX, IconHistory, IconLoader, IconAlertTriangle } from '@/components/icons'
+import { IconX, IconHistory, IconAlertTriangle } from '@/components/icons'
 import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { VersionHistorialSection } from './VersionHistorialSection'
 import { CompararVersionesModal } from './CompararVersionesModal'
 import { ContratoHistorialModal } from './ContratoHistorialModal'
 import type { IContrato } from '@/types/contrato'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface ContratoDetalleModalProps {
   contrato: IContrato | null
@@ -53,7 +54,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
     <>
       <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del contrato" closeOnBackdrop className="rounded-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
           <button type="button" data-modal-close aria-label="Cerrar"
             onClick={onClose}
@@ -63,7 +64,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Preview del PDF */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Vista previa</h3>
@@ -81,8 +82,9 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                 </div>
               </div>
             ) : pdfLoading ? (
-              <div className="flex items-center justify-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <IconLoader size={24} className="animate-spin text-gray-500" />
+              <div role="status">
+                <span className="sr-only">Cargando el documento…</span>
+                <Skeleton className="h-64 w-full rounded-lg" />
               </div>
             ) : pdfError ? (
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -100,7 +102,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           </div>
 
           {/* Info general */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-gray-500">Archivo</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
@@ -220,7 +222,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-gray-200">
+        <div className="px-4 sm:px-6 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"

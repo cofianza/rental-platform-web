@@ -32,6 +32,7 @@ import {
 import { formatCurrency, formatDate, fechaCompleta } from '@/lib/constants'
 import { accionesDeCuenta, accionesDeLinea, contarCuentas, SITUACION_LABELS, SITUACIONES_FILTRO } from '@/lib/tarifaCobro'
 import { hoyBogota } from '@/hooks/useContratoV3'
+import { SkeletonTable, SkeletonText } from '@/components/ui/Skeleton'
 import { useCuentaCobro, useCuentasCobro } from '@/hooks/useTarifaCobro'
 import { tarifaCobroService } from '@/services/tarifaCobroService'
 import { facturacionService } from '@/services/facturacionService'
@@ -99,7 +100,7 @@ export function TarifaMensualSection() {
       type="button"
       onClick={() => setFiltro(id)}
       aria-pressed={filtro === id}
-      className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+      className={`shrink-0 whitespace-nowrap px-3 py-2 sm:py-1.5 text-xs font-medium rounded-full border transition-colors ${
         filtro === id ? 'bg-primary-700 text-white border-primary-700' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
       }`}
     >
@@ -109,9 +110,9 @@ export function TarifaMensualSection() {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 space-y-3">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 space-y-3">
         <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
-          <div>
+          <div className="min-w-0">
             <h3 className="text-base font-semibold text-gray-900">{titular ? 'Cuentas de cobro Cofianza' : 'Tarifa mensual'}</h3>
             <p className="text-sm text-gray-500 mt-0.5">
               {titular
@@ -119,7 +120,7 @@ export function TarifaMensualSection() {
                 : 'Una cuenta de cobro por inmobiliaria y mes, con una línea por contrato. Vence el día 10; la inmobiliaria la paga por transferencia. Las líneas Trasladada se cobran, pero no se facturan.'}
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <label htmlFor="tarifa-mes" className="sr-only">
               Mes
             </label>
@@ -128,7 +129,7 @@ export function TarifaMensualSection() {
               type="month"
               value={mes}
               onChange={(e) => setMes(e.target.value)}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              className="rounded-lg border border-gray-300 px-2 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             />
             {!titular && (
             <button
@@ -136,7 +137,7 @@ export function TarifaMensualSection() {
               onClick={descargarExcel}
               disabled={!periodo || descargando}
               title={periodo ? 'Descargar las líneas del mes en Excel' : 'Elija un mes para descargar el Excel'}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {descargando ? <IconLoader size={14} className="animate-spin" /> : <IconDownload size={14} />}
               Excel
@@ -146,14 +147,14 @@ export function TarifaMensualSection() {
               type="button"
               onClick={recargar}
               disabled={cargando}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconRefresh size={14} className={cargando ? 'animate-spin' : ''} />
               Refrescar
             </button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {chip(null, 'Todas', cuentas.length)}
           {situaciones.map((s) => chip(s, SITUACION_LABELS[s], porSituacion[s]))}
           {chip('nota_credito', 'Nota crédito pendiente', notaCredito)}
@@ -162,9 +163,7 @@ export function TarifaMensualSection() {
       </div>
 
       {cargando && !cuentas.length ? (
-        <div className="p-6 flex items-center justify-center">
-          <IconLoader size={20} className="animate-spin text-gray-500" />
-        </div>
+        <SkeletonTable filas={4} columnas={4} etiqueta="Cargando cuentas de cobro…" className="rounded-none border-0" />
       ) : error ? (
         <div className="p-6 text-center">
           <p className="text-sm text-red-700">{error}</p>
@@ -190,7 +189,7 @@ export function TarifaMensualSection() {
           </p>
         </div>
       ) : (
-        <div className={`divide-y divide-gray-100 ${cargando ? 'opacity-50' : ''}`}>
+        <div className={`divide-y divide-gray-100 transition-opacity ${cargando ? 'pointer-events-none opacity-60' : ''}`} aria-busy={cargando}>
           {visibles.map((c) => (
             <FilaCuenta
               key={c.id}
@@ -226,12 +225,12 @@ function FilaCuenta({
         type="button"
         onClick={onToggle}
         aria-expanded={abierta}
-        className="w-full px-6 py-4 flex items-center gap-3 text-left hover:bg-gray-50"
+        className="w-full px-4 sm:px-6 py-4 flex items-center gap-3 text-left hover:bg-gray-50"
       >
         {abierta ? <IconChevronDown size={16} className="text-gray-500 shrink-0" /> : <IconChevronRight size={16} className="text-gray-500 shrink-0" />}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-gray-900">{c.inmobiliarias?.nombre ?? 'Inmobiliaria'}</span>
+            <span className="text-sm font-semibold text-gray-900 break-words">{c.inmobiliarias?.nombre ?? 'Inmobiliaria'}</span>
             <span className="text-sm text-gray-600 capitalize">{mesTexto(c.periodo)}</span>
             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${SITUACION_CLASES[c.situacion]}`}>
               {SITUACION_LABELS[c.situacion]}
@@ -288,13 +287,14 @@ function DetalleCuenta({ id, rol, onCambio }: { id: string; rol: string | undefi
 
   if (cargando && !cuenta)
     return (
-      <div className="px-6 pb-4 flex justify-center">
-        <IconLoader size={18} className="animate-spin text-gray-500" />
+      <div role="status" aria-live="polite" className="px-4 sm:px-6 pb-4">
+        <span className="sr-only">Cargando la cuenta de cobro…</span>
+        <SkeletonText lineas={3} />
       </div>
     )
   if (error || !cuenta)
     return (
-      <div className="px-6 pb-4 text-center">
+      <div className="px-4 sm:px-6 pb-4 text-center">
         <p className="text-sm text-red-700">{error ?? 'No pudimos cargar la cuenta de cobro'}</p>
         <button onClick={recargar} className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary-700 hover:text-primary-800">
           <IconRefresh size={14} />
@@ -306,7 +306,7 @@ function DetalleCuenta({ id, rol, onCambio }: { id: string; rol: string | undefi
   const acciones = accionesDeCuenta(cuenta, rol, hoyBogota())
 
   return (
-    <div className="px-6 pb-5 space-y-3 bg-gray-50/50">
+    <div className="px-4 sm:px-6 pb-5 space-y-3 bg-gray-50/50">
       <ConfirmDialog
         isOpen={confirmar !== null}
         onClose={() => setConfirmar(null)}

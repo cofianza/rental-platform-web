@@ -23,7 +23,8 @@ import { facturacionService, type IPagoPendienteFacturar } from '@/services/fact
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { IconLoader, IconCheck, IconAlertTriangle, IconRefresh } from '@/components/icons'
-import { formatNumeroEstudio } from '@/lib/utils'
+import { cn, formatNumeroEstudio } from '@/lib/utils'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 
 interface PendientesFacturarSectionProps {
   /** Callback cuando una factura se emite — el page la usa para refrescar
@@ -99,12 +100,8 @@ export function PendientesFacturarSection({
     }
   }
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
-      </div>
-    )
+  if (loading && items.length === 0) {
+    return <SkeletonTable filas={4} columnas={4} etiqueta="Cargando pagos pendientes de facturación…" />
   }
 
   if (errorCarga) {
@@ -143,8 +140,8 @@ export function PendientesFacturarSection({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <div>
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-gray-900">Pagos pendientes de facturación</h3>
           <p className="text-sm text-gray-500 mt-0.5">
             {items.length} {items.length === 1 ? 'pago completado' : 'pagos completados'} sin factura electrónica.
@@ -152,19 +149,19 @@ export function PendientesFacturarSection({
         </div>
         <button
           onClick={fetchPendientes}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100"
           disabled={loading}
         >
-          <IconRefresh size={14} />
+          <IconRefresh size={14} className={loading ? 'animate-spin' : ''} />
           Refrescar
         </button>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className={cn('divide-y divide-gray-100 transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
         {items.map((pago) => {
           const isEmitiendo = emitiendo === itemId(pago)
           return (
-            <div key={itemId(pago)} className="px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+            <div key={itemId(pago)} className="px-4 sm:px-6 py-4 flex items-start sm:items-center gap-4 flex-col sm:flex-row">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-gray-900">
@@ -184,7 +181,7 @@ export function PendientesFacturarSection({
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-xs text-gray-600">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
                   <span>{formatCurrency(pago.monto)}</span>
                   {pago.fecha_pago && (
                     <>

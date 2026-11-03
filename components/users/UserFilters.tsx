@@ -30,7 +30,7 @@ export function UserFilters({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Barra de búsqueda */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 w-full lg:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <IconSearch className="h-5 w-5 text-gray-500" />
           </div>
@@ -40,7 +40,6 @@ export function UserFilters({
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            disabled={isLoading}
           />
         </div>
 

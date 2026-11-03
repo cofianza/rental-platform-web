@@ -226,9 +226,9 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
           )}
 
           {canManage && contrato.firmado_referencia_otp && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between gap-3 text-sm">
               <span className="text-gray-500">Ref. OTP</span>
-              <span className="font-medium text-gray-900">{contrato.firmado_referencia_otp}</span>
+              <span className="min-w-0 break-all text-right font-medium text-gray-900">{contrato.firmado_referencia_otp}</span>
             </div>
           )}
 

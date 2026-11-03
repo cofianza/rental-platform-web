@@ -102,7 +102,7 @@ export function ExpedientesFilters({
 
         {/* Filtro de fechas (U18: con rótulo visible; el placeholder de un date no se ve) */}
         <div className="flex gap-2 lg:w-auto">
-          <div className="flex-1 lg:w-40">
+          <div className="min-w-0 flex-1 lg:w-40">
             <label htmlFor="filtro-creado-desde" className="mb-1 block text-xs font-medium text-gray-600">
               Creado desde
             </label>
@@ -119,7 +119,7 @@ export function ExpedientesFilters({
               />
             </div>
           </div>
-          <div className="flex-1 lg:w-40">
+          <div className="min-w-0 flex-1 lg:w-40">
             <label htmlFor="filtro-creado-hasta" className="mb-1 block text-xs font-medium text-gray-600">
               Creado hasta
             </label>

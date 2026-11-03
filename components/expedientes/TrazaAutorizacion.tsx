@@ -7,9 +7,10 @@
 'use client'
 
 import { useState } from 'react'
-import { IconLoader, IconShield } from '@/components/icons'
+import { IconShield } from '@/components/icons'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { ITrazaAutorizacion } from '@/types/autorizacion'
+import { SkeletonText } from '@/components/ui/Skeleton'
 
 const CIERRE: Record<string, string> = {
   intentos: 'Bloqueado por intentos',
@@ -68,9 +69,10 @@ export function TrazaAutorizacion({ expedienteId }: { expedienteId: string }) {
               </button>
             </p>
           ) : !traza ? (
-            <p className="flex items-center gap-2 text-gray-500">
-              <IconLoader size={14} className="animate-spin" /> Cargando…
-            </p>
+            <div role="status">
+              <span className="sr-only">Cargando la traza…</span>
+              <SkeletonText lineas={4} />
+            </div>
           ) : (
             <>
               <section>

@@ -27,6 +27,7 @@ import SlotSelector, {
 } from '@/components/citas/SlotSelector'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 interface CitasSectionProps {
   expedienteId: string
@@ -170,8 +171,10 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <IconLoader size={20} className="animate-spin text-gray-500" />
+      <div role="status" className="space-y-3 rounded-lg border border-gray-200 p-4">
+        <span className="sr-only">Cargando visitas…</span>
+        <Skeleton className="h-5 w-40" />
+        <SkeletonText lineas={2} />
       </div>
     )
   }
@@ -180,7 +183,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
           <IconCalendar size={16} />
           Visita al inmueble

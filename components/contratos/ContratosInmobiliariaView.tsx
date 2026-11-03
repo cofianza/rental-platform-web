@@ -24,8 +24,8 @@ import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ContratosFilters } from './ContratosFilters'
+import { SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
 import {
-  IconLoader,
   IconAlertTriangle,
   IconFileText,
   IconChevronDown,
@@ -271,9 +271,11 @@ export function ContratosInmobiliariaView() {
 
   if (primeraCarga) {
     return (
-      <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
-        <IconLoader size={28} className="animate-spin text-primary-600" />
-        <span className="sr-only">Cargando contratos…</span>
+      <div className="space-y-6">
+        <SkeletonTable filas={1} columnas={4} etiqueta="Cargando filtros…" />
+        <SkeletonCards cantidad={3} etiqueta="Cargando indicadores…" />
+        <SkeletonTable filas={3} columnas={5} etiqueta="Cargando contratos…" />
+        <SkeletonTable filas={3} columnas={5} etiqueta="Cargando contratos…" />
       </div>
     )
   }
@@ -338,10 +340,7 @@ export function ContratosInmobiliariaView() {
         subtitle="Genere el contrato desde el estudio"
       >
         {loadingSinContrato ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-500" role="status" aria-live="polite">
-            <IconLoader size={20} className="mx-auto mb-2 animate-spin text-primary-600" />
-            Buscando estudios aprobados…
-          </div>
+          <SkeletonTable filas={2} columnas={4} etiqueta="Buscando estudios aprobados…" className="rounded-none border-0" />
         ) : sinContratoVisibles.length === 0 ? (
           <EmptyRow
             texto={sinContrato.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
@@ -350,21 +349,21 @@ export function ContratosInmobiliariaView() {
           <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                <th className="px-6 py-3 font-bold">Arrendatario</th>
-                <th className="px-6 py-3 font-bold">Inmueble</th>
-                <th className="px-6 py-3 font-bold">Aprobado el</th>
-                <th className="px-6 py-3" />
+                <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Inmueble</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Aprobado el</th>
+                <th className="px-4 py-3 sm:px-6" />
               </tr>
             </thead>
             <tbody>
               {sinContratoVisibles.map((e) => (
                 <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3">
+                  <td className="px-4 py-3 sm:px-6">
                     <Link href={`/expedientes/${e.id}`} className="font-medium text-primary-700 hover:underline">
                       {e.solicitante?.nombre ?? '—'}
                     </Link>
                   </td>
-                  <td className="px-6 py-3">
+                  <td className="px-4 py-3 sm:px-6">
                     {e.inmueble ? (
                       <div>
                         <span className="text-gray-900">
@@ -381,8 +380,8 @@ export function ContratosInmobiliariaView() {
                       <span className="text-gray-500">—</span>
                     )}
                   </td>
-                  <td className="px-6 py-3 text-xs text-gray-500">{formatDate(e.updated_at)}</td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{formatDate(e.updated_at)}</td>
+                  <td className="px-4 py-3 sm:px-6 text-right">
                     <Link
                       href={`/expedientes/${e.id}`}
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
@@ -407,25 +406,25 @@ export function ContratosInmobiliariaView() {
           <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                <th className="px-6 py-3 font-bold">Arrendatario</th>
-                <th className="px-6 py-3 font-bold">Propiedad</th>
-                <th className="px-6 py-3 font-bold">Canon</th>
-                <th className="px-6 py-3 font-bold">Generado</th>
-                <th className="px-6 py-3 font-bold">Estado</th>
-                <th className="px-6 py-3" />
+                <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Propiedad</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Canon</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Generado</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Estado</th>
+                <th className="px-4 py-3 sm:px-6" />
               </tr>
             </thead>
             <tbody>
               {pendientes.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
-                  <td className="px-6 py-3"><Propiedad c={c} /></td>
-                  <td className="px-6 py-3 font-bold text-gray-900">
+                  <td className="px-4 py-3 sm:px-6"><Arrendatario c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6"><Propiedad c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6 font-bold text-gray-900">
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
                   </td>
-                  <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
-                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
+                  <td className="px-4 py-3 sm:px-6"><EstadoBadge c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6 text-right">
                     <Link
                       href={rutaContrato(c)}
                       className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
@@ -451,21 +450,21 @@ export function ContratosInmobiliariaView() {
           <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                <th className="px-6 py-3 font-bold">Arrendatario</th>
-                <th className="px-6 py-3 font-bold">Propiedad</th>
-                <th className="px-6 py-3 font-bold">Estado</th>
-                <th className="px-6 py-3 font-bold">Generado</th>
-                <th className="px-6 py-3" />
+                <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Propiedad</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Estado</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Generado</th>
+                <th className="px-4 py-3 sm:px-6" />
               </tr>
             </thead>
             <tbody>
               {enFirma.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
-                  <td className="px-6 py-3"><Propiedad c={c} /></td>
-                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
-                  <td className="px-6 py-3 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-4 py-3 sm:px-6"><Arrendatario c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6"><Propiedad c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6"><EstadoBadge c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{fecha(c.fecha_generacion ?? c.created_at)}</td>
+                  <td className="px-4 py-3 sm:px-6 text-right">
                     <VerLink c={c} />
                   </td>
                 </tr>
@@ -484,25 +483,25 @@ export function ContratosInmobiliariaView() {
           <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                <th className="px-6 py-3 font-bold">Arrendatario</th>
-                <th className="px-6 py-3 font-bold">Propiedad</th>
-                <th className="px-6 py-3 font-bold">Canon</th>
-                <th className="px-6 py-3 font-bold">Inicio</th>
-                <th className="px-6 py-3 font-bold">Estado</th>
-                <th className="px-6 py-3" />
+                <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Propiedad</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Canon</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Inicio</th>
+                <th className="px-4 py-3 sm:px-6 font-bold">Estado</th>
+                <th className="px-4 py-3 sm:px-6" />
               </tr>
             </thead>
             <tbody>
               {activos.data.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-6 py-3"><Arrendatario c={c} /></td>
-                  <td className="px-6 py-3"><Propiedad c={c} /></td>
-                  <td className="px-6 py-3 font-bold text-gray-900">
+                  <td className="px-4 py-3 sm:px-6"><Arrendatario c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6"><Propiedad c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6 font-bold text-gray-900">
                     {c.valor_arriendo ? formatCurrency(c.valor_arriendo) : '—'}
                   </td>
-                  <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
-                  <td className="px-6 py-3"><EstadoBadge c={c} /></td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
+                  <td className="px-4 py-3 sm:px-6"><EstadoBadge c={c} /></td>
+                  <td className="px-4 py-3 sm:px-6 text-right">
                     <VerLink c={c} />
                   </td>
                 </tr>
@@ -519,7 +518,7 @@ export function ContratosInmobiliariaView() {
           type="button"
           onClick={() => setVerCerrados((v) => !v)}
           aria-expanded={verCerrados}
-          className="flex w-full flex-wrap items-center justify-between gap-3 px-6 py-5 text-left hover:bg-gray-50/60"
+          className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-4 text-left hover:bg-gray-50/60 sm:px-6 sm:py-5"
         >
           <span className="flex items-center gap-2.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
@@ -533,33 +532,30 @@ export function ContratosInmobiliariaView() {
         {verCerrados && (
           <div className="border-t border-gray-200">
             {loading && cerrados.data.length === 0 ? (
-              <div className="px-6 py-8 text-center" role="status" aria-live="polite">
-                <IconLoader size={20} className="mx-auto animate-spin text-primary-600" />
-                <span className="sr-only">Cargando contratos terminados y cancelados…</span>
-              </div>
+              <SkeletonTable filas={3} columnas={6} etiqueta="Cargando contratos terminados y cancelados…" className="rounded-none border-0" />
             ) : cerrados.data.length === 0 ? (
               <EmptyRow texto="Ningún contrato terminado ni cancelado." />
             ) : (
               <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                    <th className="px-6 py-3 font-bold">Arrendatario</th>
-                    <th className="px-6 py-3 font-bold">Propiedad</th>
-                    <th className="px-6 py-3 font-bold">Inicio</th>
-                    <th className="px-6 py-3 font-bold">Terminado</th>
-                    <th className="px-6 py-3 font-bold">Estado</th>
-                    <th className="px-6 py-3" />
+                    <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+                    <th className="px-4 py-3 sm:px-6 font-bold">Propiedad</th>
+                    <th className="px-4 py-3 sm:px-6 font-bold">Inicio</th>
+                    <th className="px-4 py-3 sm:px-6 font-bold">Terminado</th>
+                    <th className="px-4 py-3 sm:px-6 font-bold">Estado</th>
+                    <th className="px-4 py-3 sm:px-6" />
                   </tr>
                 </thead>
                 <tbody>
                   {cerrados.data.map((c) => (
                     <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                      <td className="px-6 py-3"><Arrendatario c={c} /></td>
-                      <td className="px-6 py-3"><Propiedad c={c} /></td>
-                      <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
-                      <td className="px-6 py-3 text-xs text-gray-500">{c.fecha_terminacion ? formatDate(c.fecha_terminacion) : '—'}</td>
-                      <td className="px-6 py-3"><EstadoBadge c={c} /></td>
-                      <td className="px-6 py-3 text-right">
+                      <td className="px-4 py-3 sm:px-6"><Arrendatario c={c} /></td>
+                      <td className="px-4 py-3 sm:px-6"><Propiedad c={c} /></td>
+                      <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{c.fecha_inicio ? formatDate(c.fecha_inicio) : '—'}</td>
+                      <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{c.fecha_terminacion ? formatDate(c.fecha_terminacion) : '—'}</td>
+                      <td className="px-4 py-3 sm:px-6"><EstadoBadge c={c} /></td>
+                      <td className="px-4 py-3 sm:px-6 text-right">
                         <VerLink c={c} />
                       </td>
                     </tr>
@@ -589,7 +585,7 @@ function Paginacion({
   if (meta.totalPages <= 1) return null
   return (
     <nav
-      className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-3"
+      className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 sm:px-6"
       aria-label={`Paginación de ${que}`}
     >
       <p className="text-xs text-gray-500">
@@ -669,7 +665,7 @@ function Panel({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-gray-200 px-4 py-4 sm:px-6 sm:py-5">
         <h3 className="flex items-center gap-2.5 text-base font-bold text-gray-900">
           <span className={cn('inline-block h-2 w-2 rounded-full', dot)} />
           {title}

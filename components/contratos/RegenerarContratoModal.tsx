@@ -109,7 +109,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
 
   return (
     <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Regenerar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Editar y regenerar contrato</h2>
         <button type="button" data-modal-close aria-label="Cerrar"
           onClick={onClose}
@@ -120,7 +120,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </button>
       </div>
 
-      <div className="p-6 space-y-5 overflow-y-auto">
+      <div className="p-4 sm:p-6 space-y-5 overflow-y-auto">
         <p className="text-sm text-gray-600">
           Ajuste los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
           La identidad del arrendatario no es editable.
@@ -209,7 +209,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
+      <div className="flex flex-wrap justify-end gap-2 px-4 py-4 sm:px-6 border-t border-gray-200">
         <button
           onClick={onClose}
           disabled={submitting}

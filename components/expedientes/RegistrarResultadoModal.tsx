@@ -253,7 +253,7 @@ export function RegistrarResultadoModal({
             <p id="registrar-resultado-modal-resultado" className="block text-sm font-medium text-gray-700 mb-2">
               Resultado <span className="text-red-500">*</span>
             </p>
-            <div role="group" aria-labelledby="registrar-resultado-modal-resultado" className="grid grid-cols-3 gap-3">
+            <div role="group" aria-labelledby="registrar-resultado-modal-resultado" className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
               {RESULTADOS.map((r) => (
                 <button
                   key={r.value}

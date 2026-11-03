@@ -18,7 +18,7 @@ import { dashboardService, type MiCarteraAnalitica } from '@/services/dashboardS
 import { moneyCompact } from '@/components/dashboard/secciones/_shared'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { cn } from '@/lib/utils'
-import { IconLoader } from '@/components/icons'
+import { SkeletonCards } from '@/components/ui/Skeleton'
 
 export function CarteraAnaliticaSection() {
   const rol = useAuthStore((s) => s.user?.rol)
@@ -50,10 +50,7 @@ export function CarteraAnaliticaSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-10" role="status" aria-live="polite">
-        <IconLoader size={24} className="animate-spin text-primary-600" />
-        <span className="sr-only">Cargando analítica…</span>
-      </div>
+      <SkeletonCards cantidad={6} etiqueta="Cargando analítica…" />
     )
   }
 
@@ -85,7 +82,7 @@ export function CarteraAnaliticaSection() {
     <div className="space-y-6">
       {/* Salud de su cartera */}
       <Panel title="Salud de su cartera">
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Contratos activos"
             value={s.contratosActivos}
@@ -190,7 +187,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
           {title}
         </h3>
       </div>
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </div>
   )
 }

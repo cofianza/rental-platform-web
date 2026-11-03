@@ -86,7 +86,7 @@ export function EstudiosFilters({
 
         {/* Dates */}
         <div className="flex gap-2 lg:w-auto">
-          <div className="relative flex-1 lg:w-40">
+          <div className="relative min-w-0 flex-1 lg:w-40">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <IconCalendar size={16} className="text-gray-500" />
             </div>
@@ -97,7 +97,7 @@ export function EstudiosFilters({
               className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
-          <div className="relative flex-1 lg:w-40">
+          <div className="relative min-w-0 flex-1 lg:w-40">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <IconCalendar size={16} className="text-gray-500" />
             </div>

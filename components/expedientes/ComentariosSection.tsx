@@ -16,6 +16,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IComentarioExpediente } from '@/types/expediente'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 // ============================================
 // Helpers
@@ -302,10 +303,17 @@ export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
   // Render
   // ============================================
 
-  if (isLoading) {
+  // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
+  if (isLoading && comentarios.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <IconLoader size={24} className="text-gray-500 animate-spin" />
+      <div role="status" className="space-y-4">
+        <span className="sr-only">Cargando comentarios…</span>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex gap-3">
+            <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+            <SkeletonText lineas={2} className="flex-1" />
+          </div>
+        ))}
       </div>
     )
   }

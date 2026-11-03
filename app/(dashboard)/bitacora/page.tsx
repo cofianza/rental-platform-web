@@ -2,7 +2,8 @@
 
 import { Suspense } from 'react'
 import { PageHeader } from '@/components/ui'
-import { IconLoader, IconRefresh } from '@/components/icons'
+import { IconRefresh } from '@/components/icons'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 import { BitacoraFilters } from '@/components/bitacora/BitacoraFilters'
 import { BitacoraTable } from '@/components/bitacora/BitacoraTable'
 import { BitacoraDetailModal } from '@/components/bitacora/BitacoraDetailModal'
@@ -86,12 +87,7 @@ function BitacoraContent() {
 
 function LoadingFallback() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Bitácora" subtitle="Cargando..." />
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    </div>
+    <SkeletonPage etiqueta="Cargando la bitácora…" />
   )
 }
 

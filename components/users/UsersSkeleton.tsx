@@ -59,7 +59,8 @@ function SkeletonCard() {
 
 export function UsersSkeleton({ rows = 5 }: UsersSkeletonProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div role="status" aria-live="polite" className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <span className="sr-only">Cargando usuarios…</span>
       {/* Vista Desktop - Tabla */}
       <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -92,7 +93,7 @@ export function UsersSkeleton({ rows = 5 }: UsersSkeletonProps) {
 
       {/* Vista Mobile - Cards */}
       <div className="md:hidden divide-y divide-gray-200">
-        {Array.from({ length: rows }).map((_, index) => (
+        {Array.from({ length: Math.min(rows, 4) }).map((_, index) => (
           <SkeletonCard key={index} />
         ))}
       </div>

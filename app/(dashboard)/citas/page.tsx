@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader, EmptyState } from '@/components/ui'
-import { IconLoader, IconCalendar, IconRefresh } from '@/components/icons'
+import { IconCalendar, IconRefresh } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/stores/auth.store'
 import { useMisCitas } from '@/hooks/useMisCitas'
@@ -168,8 +169,10 @@ export default function CitasPage() {
 
   if (!isInitialized) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <IconLoader size={32} className="animate-spin text-primary-600" />
+      <div className="space-y-6">
+        <PageHeader title="Citas de visita" subtitle="Gestione las visitas a sus inmuebles" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <TableroSkeleton />
       </div>
     )
   }
@@ -196,22 +199,22 @@ export default function CitasPage() {
               ))}
             </select>
           </div>
-          <div>
+          <div className="flex-1 min-w-[140px] sm:flex-none">
             <label htmlFor="citas-desde" className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
             <input id="citas-desde"
               type="date"
               value={filters.fecha_desde || ''}
               onChange={(e) => setFilters({ fecha_desde: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          <div>
+          <div className="flex-1 min-w-[140px] sm:flex-none">
             <label htmlFor="citas-hasta" className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
             <input id="citas-hasta"
               type="date"
               value={filters.fecha_hasta || ''}
               onChange={(e) => setFilters({ fecha_hasta: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           {hasActiveFilters && (
@@ -227,8 +230,9 @@ export default function CitasPage() {
               pagoPedidoRef.current.clear()
               refetch()
             }}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg"
             title="Refrescar"
+            aria-label="Refrescar"
           >
             <IconRefresh size={18} />
           </button>
@@ -250,12 +254,9 @@ export default function CitasPage() {
         </div>
       )}
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <IconLoader size={24} className="animate-spin text-primary-600" />
-        </div>
-      )}
+      {/* Primera carga (o sin citas en pantalla): esqueleto del tablero. Con
+          citas visibles, la recarga las deja y solo las atenúa. */}
+      {isLoading && totalCitas === 0 && <TableroSkeleton />}
 
       {/* Empty state global */}
       {!isLoading && !error && totalCitas === 0 && (
@@ -290,8 +291,11 @@ export default function CitasPage() {
       {/* Kanban — scroll horizontal forzado para que se vean los 5 estados.
           Wrapper con fade en el borde derecho para indicar visualmente que
           hay mas contenido fuera del viewport en pantallas angostas. */}
-      {!isLoading && totalCitas > 0 && (
-        <div className="relative -mx-4">
+      {totalCitas > 0 && (
+        <div
+          className={`relative -mx-4 transition-opacity ${isLoading ? 'pointer-events-none opacity-60' : ''}`}
+          aria-busy={isLoading}
+        >
           <div
             className="flex gap-4 overflow-x-scroll pb-3 px-4 [scrollbar-color:theme(colors.gray.300)_theme(colors.gray.100)] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
           >
@@ -343,6 +347,27 @@ export default function CitasPage() {
           <div className="hidden sm:block absolute top-0 right-0 bottom-3 w-12 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none" />
         </div>
       )}
+    </div>
+  )
+}
+
+/** Esqueleto del tablero: columnas por estado con un par de tarjetas. */
+function TableroSkeleton() {
+  return (
+    <div role="status" aria-live="polite" className="-mx-4 flex gap-4 overflow-hidden px-4 pb-3">
+      <span className="sr-only">Cargando citas…</span>
+      {[0, 1, 2, 3].map((col) => (
+        <div key={col} className="w-72 shrink-0 space-y-2">
+          <Skeleton className="mb-3 h-9 w-full rounded-lg" />
+          {[0, 1].map((card) => (
+            <div key={card} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   )
 }

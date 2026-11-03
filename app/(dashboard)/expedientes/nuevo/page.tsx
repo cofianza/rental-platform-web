@@ -24,6 +24,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { IconAlertTriangle } from '@/components/icons'
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 // useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
 // el render bloqueante no rompa el static export. Wrapper minimo.
@@ -31,8 +32,12 @@ export default function NuevoExpedientePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+          <Skeleton className="h-8 w-56 max-w-full" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-7">
+            <SkeletonText lineas={5} />
+          </div>
         </div>
       }
     >
@@ -311,9 +316,10 @@ function NuevoExpedienteContent() {
         {/* Contenido del paso */}
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           {prefillLoading ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-              <p className="text-sm text-gray-500">Cargando inmueble seleccionado...</p>
+            <div role="status" className="space-y-4">
+              <span className="sr-only">Cargando inmueble seleccionado…</span>
+              <Skeleton className="h-6 w-48 max-w-full" />
+              <SkeletonText lineas={4} />
             </div>
           ) : (
             renderStep()

@@ -22,11 +22,12 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
 import { PageHeader, ConfirmDialog, SearchInput } from '@/components/ui'
-import { IconLoader, IconPlus, IconEdit, IconMenu, IconLock, IconChevronLeft, IconChevronRight } from '@/components/icons'
+import { IconPlus, IconEdit, IconMenu, IconLock, IconChevronLeft, IconChevronRight } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { tipoDocumentoAdminService } from '@/services/tipoDocumentoAdminService'
 import type { ITipoDocumento } from '@/types/documento'
 import { cn } from '@/lib/utils'
+import { SkeletonPage, SkeletonTable } from '@/components/ui/Skeleton'
 
 type FilterActivo = 'todos' | 'activos' | 'inactivos'
 
@@ -289,11 +290,7 @@ function TiposDocumentoContent() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <IconLoader size={32} className="text-primary-600 animate-spin" />
-      </div>
-    )
+    return <SkeletonPage etiqueta="Cargando tipos de documento…" />
   }
 
   return (
@@ -304,15 +301,15 @@ function TiposDocumentoContent() {
       />
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Filter pills */}
           {(['todos', 'activos', 'inactivos'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => { setFilterActivo(filter); setPage(1) }}
               className={cn(
-                'px-3 py-1.5 text-sm rounded-lg transition-colors',
+                'px-3 py-2 sm:py-1.5 text-sm rounded-lg transition-colors',
                 filterActivo === filter
                   ? 'bg-primary-700 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
@@ -329,13 +326,13 @@ function TiposDocumentoContent() {
               setSearch(value)
               setPage(1)
             }}
-            className="ml-2 w-48"
+            className="w-full sm:ml-2 sm:w-48"
           />
         </div>
 
         <Link
           href="/tipos-documento/nuevo"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconPlus size={16} />
           Nuevo tipo
@@ -343,10 +340,8 @@ function TiposDocumentoContent() {
       </div>
 
       {/* Table */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-48">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
+      {isLoading && tipos.length === 0 ? (
+        <SkeletonTable filas={6} columnas={7} etiqueta="Cargando tipos de documento…" />
       ) : tipos.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <p className="text-sm">No se encontraron tipos de documento</p>
@@ -357,7 +352,10 @@ function TiposDocumentoContent() {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div
+            className={cn('bg-white rounded-xl border border-gray-200 overflow-hidden transition-opacity', isLoading && 'pointer-events-none opacity-60')}
+            aria-busy={isLoading}
+          >
             {isReordering && (
               <div className="px-4 py-2 bg-primary-50 text-primary-700 text-xs font-medium">
                 Guardando orden...
@@ -430,7 +428,7 @@ function TiposDocumentoContent() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={pagination.page <= 1}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <IconChevronLeft size={20} />
               </button>
@@ -440,7 +438,7 @@ function TiposDocumentoContent() {
               <button
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={pagination.page >= pagination.totalPages}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <IconChevronRight size={20} />
               </button>

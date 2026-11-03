@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 import { PlantillasFilters } from '@/components/plantillas-contrato/PlantillasFilters'
 import { PlantillasTable } from '@/components/plantillas-contrato/PlantillasTable'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SkeletonTable } from '@/components/ui/Skeleton'
 import { plantillaContratoService } from '@/services/plantillaContratoService'
 import { useAuth } from '@/hooks/useAuth'
 import type {
@@ -155,11 +156,11 @@ export default function PlantillasContratoPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="sm:p-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">Plantillas de Contrato</h1>
           <p className="text-sm text-gray-500 mt-1">
             Gestione las plantillas de los contratos de arrendamiento
@@ -168,7 +169,7 @@ export default function PlantillasContratoPage() {
         {canCreate && (
           <button
             onClick={() => setFormModal({ isOpen: true, plantilla: null })}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800"
+            className="flex w-full items-center justify-center gap-2 px-4 py-2.5 sm:w-auto sm:py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800"
           >
             <IconPlus size={18} />
             Nueva plantilla
@@ -188,11 +189,9 @@ export default function PlantillasContratoPage() {
 
       {/* Content */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <IconLoader size={24} className="animate-spin text-primary-600" />
-          </div>
-        ) : error ? (
+        {isLoading && plantillas.length === 0 ? (
+          <SkeletonTable filas={5} columnas={6} etiqueta="Cargando plantillas…" className="rounded-none border-0" />
+        ) : error && !isLoading ? (
           <div className="text-center py-12">
             <p className="text-red-600 mb-2">{error}</p>
             <button
@@ -203,6 +202,7 @@ export default function PlantillasContratoPage() {
             </button>
           </div>
         ) : (
+          <div className={isLoading ? 'pointer-events-none opacity-60' : undefined} aria-busy={isLoading}>
           <PlantillasTable
             plantillas={plantillas}
             meta={meta}
@@ -215,6 +215,7 @@ export default function PlantillasContratoPage() {
             onEdit={(p) => setFormModal({ isOpen: true, plantilla: p })}
             onDeactivate={(p) => setDeactivateDialog({ isOpen: true, plantilla: p })}
           />
+          </div>
         )}
       </div>
 

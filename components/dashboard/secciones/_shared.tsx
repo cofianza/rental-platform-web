@@ -125,14 +125,24 @@ export function SeccionEstado({
   error,
   onRetry,
   vacio,
+  datos,
   children,
 }: {
   loading: boolean
   error: string | null
   onRetry: () => void
   vacio?: boolean | EmptyState
+  /** Ya hay datos en pantalla: una recarga los deja visibles (atenuados) en vez de volver al esqueleto. */
+  datos?: boolean
   children: React.ReactNode
 }) {
+  if (loading && datos && !error && !vacio) {
+    return (
+      <div aria-busy="true" className="pointer-events-none opacity-60 transition-opacity">
+        {children}
+      </div>
+    )
+  }
   if (loading) {
     return (
       <div role="status" aria-live="polite">
@@ -190,8 +200,8 @@ export function SeccionHeader({
   right?: React.ReactNode
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
-      <div>
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
         <h2 className="text-lg font-extrabold tracking-tight text-ink-900">{title}</h2>
         {subtitle && <p className="mt-0.5 text-xs text-ink-500">{subtitle}</p>}
       </div>

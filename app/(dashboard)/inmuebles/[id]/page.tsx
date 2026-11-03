@@ -333,7 +333,7 @@ export default function InmuebleDetailPage() {
           <p className="text-gray-600 mb-6">
             El inmueble que busca no existe o no tiene permisos para verlo.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => fetchInmueble()}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
@@ -504,9 +504,9 @@ export default function InmuebleDetailPage() {
 
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-gray-900">{inmueble.codigo}</h1>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+            <h1 className="text-2xl font-bold text-gray-900 break-words">{inmueble.codigo}</h1>
             <span
               className={cn(
                 'px-2.5 py-1 text-xs font-medium rounded-full',
@@ -521,9 +521,9 @@ export default function InmuebleDetailPage() {
             </span>
             <EstudiosActivosBadge count={inmueble.expedientes_activos} reservado={inmueble.reservado} arrendado={inmueble.arrendado} />
           </div>
-          <p className="text-gray-500 flex items-center gap-1">
-            <IconMapPin size={14} />
-            {inmueble.direccion}, {inmueble.ciudad}
+          <p className="text-gray-500 flex items-start gap-1 break-words">
+            <IconMapPin size={14} className="mt-1 shrink-0" />
+            <span className="min-w-0">{inmueble.direccion}, {inmueble.ciudad}</span>
           </p>
         </div>
 
@@ -558,7 +558,7 @@ export default function InmuebleDetailPage() {
           {/* Tabs */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
+              <nav className="flex -mb-px overflow-x-auto">
                 {tabs.map((tab) => {
                   const Icon = tab.icon
                   return (
@@ -566,7 +566,7 @@ export default function InmuebleDetailPage() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                        'flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                         activeTab === tab.id
                           ? 'border-primary-600 text-primary-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

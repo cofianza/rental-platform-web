@@ -68,7 +68,7 @@ export default function AuthLayout({
       </div>
 
       {/* Lado derecho — formulario */}
-      <div className="bg-white flex flex-col px-6 py-10 lg:p-12">
+      <div className="bg-white flex flex-col px-4 py-8 sm:px-6 sm:py-10 lg:p-12">
         {/* Mobile: link a la landing + logo */}
         <div className="lg:hidden mb-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-primary-700 transition-colors">

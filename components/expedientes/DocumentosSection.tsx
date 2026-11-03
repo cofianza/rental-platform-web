@@ -43,6 +43,7 @@ import type {
   IVersionEntry,
   IDocumentoMetadatos,
 } from '@/types/documento'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 // HP-327: Codigos de tipos de documento para selfie
 const SELFIE_CODIGO = 'selfie_con_id'
@@ -151,9 +152,10 @@ function VersionHistoryPanel({ documentoId }: { documentoId: string }) {
       {isExpanded && (
         <div className="mt-2 space-y-2">
           {isLoading ? (
-            <div className="flex items-center gap-2 py-2">
-              <IconLoader size={14} className="animate-spin text-gray-500" />
-              <span className="text-xs text-gray-500">Cargando...</span>
+            <div role="status" className="space-y-2 py-2">
+              <span className="sr-only">Cargando versiones…</span>
+              <Skeleton className="h-8 w-full rounded" />
+              <Skeleton className="h-8 w-full rounded" />
             </div>
           ) : error ? (
             <p className="text-xs text-red-500">{error}</p>

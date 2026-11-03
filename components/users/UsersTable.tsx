@@ -6,8 +6,9 @@
  */
 
 import Link from 'next/link'
-import { IconEdit, IconEye, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconLoader, IconTrash, IconLock } from '@/components/icons'
+import { IconEdit, IconEye, IconUserCheck, IconUserX, IconChevronLeft, IconChevronRight, IconTrash, IconLock } from '@/components/icons'
 import { RoleBadge, StatusBadge } from './UserBadges'
+import { cn } from '@/lib/utils'
 import { ITEMS_PER_PAGE_OPTIONS, USER_MESSAGES } from './constants'
 import type { IUserProfile, IUserFilters, IUsersMeta } from '@/types/user'
 
@@ -54,13 +55,10 @@ export function UsersTable({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
-          <IconLoader size={32} className="text-primary-600 animate-spin" />
-        </div>
-      )}
+    <div
+      className={cn('bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-opacity', isLoading && 'pointer-events-none opacity-60')}
+      aria-busy={isLoading}
+    >
 
       {/* Vista Desktop - Tabla */}
       <div className="hidden md:block overflow-x-auto">
@@ -174,8 +172,8 @@ export function UsersTable({
       <div className="md:hidden divide-y divide-gray-200">
         {users.map((user) => (
           <div key={user.id} className="p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/usuarios/${user.id}`}
                   className="text-sm font-medium text-gray-900 hover:text-primary-700 hover:underline"
@@ -184,9 +182,9 @@ export function UsersTable({
                     ? `${user.nombre} ${user.apellido}`
                     : user.nombre || user.apellido || 'Sin nombre'}
                 </Link>
-                <div className="text-sm text-gray-500">{user.email}</div>
+                <div className="text-sm text-gray-500 break-all">{user.email}</div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
                 <Link
                   href={`/usuarios/${user.id}`}
                   title="Ver perfil"
@@ -231,7 +229,7 @@ export function UsersTable({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <RoleBadge role={user.rol} />
               <StatusBadge activo={user.estado === 'activo'} />
             </div>
@@ -258,7 +256,7 @@ export function UsersTable({
             </div>
 
             {/* Controles */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               {/* Items por página */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">Mostrar:</span>
@@ -282,7 +280,7 @@ export function UsersTable({
                   aria-label="Página anterior"
                   onClick={() => handlePageChange(meta.page - 1)}
                   disabled={meta.page <= 1}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <IconChevronLeft size={20} />
                 </button>
@@ -294,7 +292,7 @@ export function UsersTable({
                   aria-label="Página siguiente"
                   onClick={() => handlePageChange(meta.page + 1)}
                   disabled={meta.page >= meta.totalPages}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <IconChevronRight size={20} />
                 </button>

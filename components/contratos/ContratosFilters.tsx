@@ -77,7 +77,7 @@ export function ContratosFilters({
           type="date"
           value={filters.fecha_desde || ''}
           onChange={(e) => onFilterChange({ fecha_desde: e.target.value || undefined })}
-          className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="w-full lg:w-auto pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           placeholder="Desde"
         />
       </div>
@@ -91,7 +91,7 @@ export function ContratosFilters({
           type="date"
           value={filters.fecha_hasta || ''}
           onChange={(e) => onFilterChange({ fecha_hasta: e.target.value || undefined })}
-          className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="w-full lg:w-auto pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           placeholder="Hasta"
         />
       </div>

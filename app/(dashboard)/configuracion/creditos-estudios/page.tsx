@@ -41,6 +41,7 @@ import {
   IconDollarSign,
   IconFileText,
 } from '@/components/icons'
+import { SkeletonPage } from '@/components/ui/Skeleton'
 
 const TIPO_LABELS: Record<string, string> = {
   compra: 'Compra',
@@ -258,9 +259,7 @@ export default function CreditosEstudiosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <IconLoader className="animate-spin text-primary-600" size={32} />
-      </div>
+      <SkeletonPage etiqueta="Cargando cupos de estudios…" />
     )
   }
 
@@ -289,7 +288,7 @@ export default function CreditosEstudiosPage() {
 
       {/* Saldo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Saldo total</p>
@@ -307,7 +306,7 @@ export default function CreditosEstudiosPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Sin vencimiento</p>
@@ -320,7 +319,7 @@ export default function CreditosEstudiosPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Con vencimiento</p>
@@ -342,7 +341,7 @@ export default function CreditosEstudiosPage() {
 
       {/* Detalle por paquete — Adenda de precios §3.8 */}
       {detallePaquetes.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Sus paquetes</h2>
           <p className="text-sm text-gray-500 mb-4">
             Los estudios se descuentan primero del paquete que vence antes. El cupo queda reservado al habilitar el
@@ -391,7 +390,7 @@ export default function CreditosEstudiosPage() {
 
       {/* Paquetes */}
       {isInmobiliaria && puedeEditar && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">Comprar paquete</h2>
           <p className="text-sm text-gray-500 mb-4">
             Pague con tarjeta o PSE por la pasarela de pago segura. Los cupos se suman a su saldo
@@ -549,7 +548,7 @@ export default function CreditosEstudiosPage() {
       )}
 
       {/* Historial */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         {comprasPendientes.length > 0 && (
           <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
             <p className="text-sm font-semibold text-amber-900">
@@ -809,7 +808,7 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {faltantes.includes('email') && (
           <div>
             <label htmlFor="creditos-estudios-campo-4" className="block text-sm font-medium text-gray-700 mb-1">

@@ -338,16 +338,16 @@ export function EstudiosTable({
             className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-primary-300 hover:shadow-sm transition-all"
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900">{getSolicitanteName(estudio)}</p>
+                <p className="text-sm font-medium text-gray-900 break-words">{getSolicitanteName(estudio)}</p>
                 {getCoarrendatarioDe(estudio) && <p className="text-xs text-gray-500">{getCoarrendatarioDe(estudio)}</p>}
               </div>
               <Badge estado={estudio.estado} />
             </div>
 
             {/* Info row */}
-            <div className="flex items-center gap-3 mb-2 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-xs text-gray-500">
               <span className="font-mono">{getExpedienteNumero(estudio)}</span>
               <span>{PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}</span>
               <span>{estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Titular'}</span>
@@ -374,7 +374,7 @@ export function EstudiosTable({
       {/* Pagination */}
       {meta && meta.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-600">
             <span>
               Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
               {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}

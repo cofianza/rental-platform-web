@@ -239,7 +239,7 @@ function Formulario({
         <Aviso tono="aviso">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span>Tiene cambios sin guardar. ¿Los descarta?</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variante="secondary" tamano="sm" onClick={onSeguir}>
                 Seguir editando
               </Button>

@@ -9,6 +9,7 @@ import { useState, useEffect, use } from 'react'
 import { estudioPublicService } from '@/services/estudioService'
 import type { IVerificacionCertificado } from '@/types/estudio'
 import { IconAlertTriangle, IconCheck, IconRefresh, IconX } from '@/components/icons'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 interface PageProps {
   params: Promise<{ codigo: string }>
@@ -51,9 +52,9 @@ function formatDate(dateStr: string): string {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between py-2.5 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value || '—'}</span>
+    <div className="flex justify-between gap-4 py-2.5 border-b border-gray-100 last:border-0">
+      <span className="shrink-0 text-sm text-gray-500">{label}</span>
+      <span className="min-w-0 break-words text-right text-sm font-medium text-gray-900">{value || '—'}</span>
     </div>
   )
 }
@@ -83,10 +84,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 mt-4">Verificando certificado...</p>
-      </div>
+      <EsqueletoFlujo variante="resultado" etiqueta="Verificando certificado…" />
     )
   }
 
@@ -118,7 +116,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         </div>
         <h1 className="text-xl font-semibold text-gray-900 mb-2">Certificado no encontrado</h1>
         <p className="text-sm text-gray-600 mb-4">
-          El código <span className="font-mono font-medium">{codigo}</span> no corresponde a ningún certificado emitido.
+          El código <span className="font-mono font-medium break-all">{codigo}</span> no corresponde a ningún certificado emitido.
         </p>
         <p className="text-xs text-gray-500">
           Si cree que es un error, contacte a {data.empresa}.
@@ -166,7 +164,7 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Resultado badge */}
         {!sinEfecto && (
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm font-medium text-gray-700">Resultado del estudio</span>
             <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${badge.bg} ${badge.text}`}>
               {badge.label}

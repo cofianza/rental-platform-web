@@ -231,6 +231,9 @@ export default function VolumenExpedientesPage() {
 
   const hasPeriodos = data && data.periodos.length > 0
 
+  // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
+  const recargando = loading && !!data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -238,7 +241,7 @@ export default function VolumenExpedientesPage() {
         title="Volumen de Estudios"
         subtitle="Creados vs cerrados por periodo"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportButton
               endpoint="/export/reportes/volumen"
               params={{
@@ -330,8 +333,8 @@ export default function VolumenExpedientesPage() {
       </div>
 
       {/* Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 p-4 sm:p-6 transition-opacity ${recargando ? 'opacity-60' : ''}`}>
+        {loading && !data ? (
           <ChartSkeleton />
         ) : hasPeriodos ? (
           <BarChart data={data.periodos} />
@@ -343,8 +346,8 @@ export default function VolumenExpedientesPage() {
       </div>
 
       {/* Summary Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
+        {loading && !data ? (
           <div className="p-4">
             <TableSkeleton />
           </div>

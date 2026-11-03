@@ -14,6 +14,7 @@ import { IconLoader, IconUser, IconCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IAnalistaOption, IExpedienteAnalista } from '@/types/expediente'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export interface AsignacionResponsableModalProps {
   isOpen: boolean
@@ -133,8 +134,11 @@ export function AsignacionResponsableModal({
             </p>
 
             {isLoadingAnalistas ? (
-              <div className="flex items-center justify-center py-8">
-                <IconLoader size={24} className="text-gray-500 animate-spin" />
+              <div role="status" className="space-y-2">
+                <span className="sr-only">Cargando analistas…</span>
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
               </div>
             ) : analistas.length === 0 ? (
               <div className="text-center py-8 text-gray-500">

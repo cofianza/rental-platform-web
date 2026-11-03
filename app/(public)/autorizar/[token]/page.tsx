@@ -63,6 +63,7 @@ import { CapturaBiometrica, nombreDocumento } from '@/components/public/CapturaB
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { Modal } from '@/components/ui/Modal'
 import { buttonClasses } from '@/components/ui/Button'
+import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -654,10 +655,7 @@ export default function AutorizarPage() {
   // ── Pantallas de estado ────────────────────────────────────
   if (pageState === 'loading') {
     return (
-      <div role="status" className="flex items-center justify-center py-20">
-        <IconLoader size={28} className="animate-spin text-primary-600" aria-hidden />
-        <span className="sr-only">Cargando su autorización…</span>
-      </div>
+      <EsqueletoFlujo bloques={1} campos={4} etiqueta="Cargando su autorización…" className="mx-auto max-w-lg" />
     )
   }
 
@@ -881,8 +879,8 @@ export default function AutorizarPage() {
     <Card>
       {/* Header de marca */}
       <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-700 text-white">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-700 text-white">
             <IconShieldCheck size={18} />
           </span>
           <div className="leading-tight">
@@ -890,7 +888,7 @@ export default function AutorizarPage() {
             <p className="text-[11px] text-gray-500">Cofianza S.A.S. · NIT 902.038.122-7</p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-700">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-700">
           <IconLock size={12} /> Conexión protegida
         </span>
       </div>
@@ -911,7 +909,7 @@ export default function AutorizarPage() {
           return (
             <div key={label}>
               <div className={cn('h-1.5 rounded-full', on ? 'bg-primary-600' : 'bg-gray-200')} />
-              <p className={cn('mt-1 text-[10px] font-bold leading-tight', on ? 'text-primary-700' : 'text-gray-500')}>
+              <p className={cn('mt-1 break-words text-[10px] font-bold leading-tight', on ? 'text-primary-700' : 'text-gray-500')}>
                 {i + 1} · {label}
               </p>
             </div>
@@ -997,7 +995,7 @@ export default function AutorizarPage() {
                   <p id="repaso-doc-titulo" className="text-sm text-gray-700">
                     Escribió este número de {nombreDocumento(data.solicitante.tipo_documento)}:
                   </p>
-                  <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-center font-mono text-2xl font-bold tracking-wide text-gray-900">
+                  <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-center font-mono text-2xl font-bold tracking-wide break-all text-gray-900">
                     {formatearDocumento(documento, data.solicitante.tipo_documento)}
                   </p>
                   <p className="text-sm font-bold text-gray-900">¿Es correcto?</p>
@@ -1098,7 +1096,7 @@ export default function AutorizarPage() {
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
                         <f.Icon size={17} />
                       </span>
-                      <span className="flex-1">
+                      <span className="min-w-0 flex-1">
                         <span className="block text-sm font-bold text-gray-900">{f.titulo}</span>
                         <span className="block text-[11px] text-gray-500">{f.sub}</span>
                       </span>
@@ -1136,7 +1134,7 @@ export default function AutorizarPage() {
                   Este es el texto íntegro que está aceptando. Versión {data.version_terminos}.
                 </p>
               </div>
-              <div className="whitespace-pre-wrap bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+              <div className="whitespace-pre-wrap break-words bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
                 {data.texto_legal}
               </div>
             </div>
@@ -1156,7 +1154,7 @@ export default function AutorizarPage() {
                 type="checkbox"
                 checked={acepta}
                 onChange={(e) => setAcepta(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <span className="text-sm text-gray-700">
                 <strong>He leído, comprendido y acepto</strong> la autorización de tratamiento de datos y la{' '}
@@ -1213,7 +1211,7 @@ export default function AutorizarPage() {
                       aria-pressed={on}
                       onClick={() => setSituacion(on ? null : sit.key)}
                       className={cn(
-                        'rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
+                        'min-h-11 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
                         on
                           ? 'border-primary-600 bg-primary-50 text-primary-700'
                           : 'border-gray-200 bg-white text-gray-700',
@@ -1239,7 +1237,7 @@ export default function AutorizarPage() {
                         aria-pressed={on}
                         onClick={() => setTieneRut(on ? null : v)}
                         className={cn(
-                          'rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
+                          'min-h-11 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
                           on
                             ? 'border-primary-600 bg-primary-50 text-primary-700'
                             : 'border-gray-200 bg-white text-gray-700',
@@ -1527,7 +1525,7 @@ export default function AutorizarPage() {
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
                         <b.Icon size={17} />
                       </span>
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <p id={`ben-${b.key}-t`} className="text-sm font-bold text-gray-900">{b.titulo}</p>
                       </div>
                       <Toggle
@@ -1635,7 +1633,7 @@ export default function AutorizarPage() {
                         —
                       </span>
                     )}
-                    <span className="flex-1 text-gray-700">
+                    <span className="min-w-0 flex-1 text-gray-700">
                       {r.txt}
                       <span className="sr-only">{r.on ? ': sí' : ': no'}</span>
                     </span>

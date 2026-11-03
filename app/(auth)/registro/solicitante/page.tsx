@@ -202,7 +202,7 @@ function RegistroSolicitanteContent() {
 
   if (enlaceEnviado) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full text-center">
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
           <IconCheck size={32} className="text-green-600" />
         </div>
@@ -267,7 +267,7 @@ function RegistroSolicitanteContent() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField label="Nombre" autoComplete="given-name" value={nombre} onChange={setNombre} error={errors.nombre} />
             <FormField label="Apellido" autoComplete="family-name" value={apellido} onChange={setApellido} error={errors.apellido} />
           </div>
@@ -282,7 +282,7 @@ function RegistroSolicitanteContent() {
 
           {vieneDeInvitacion && (
             <label className="flex items-start gap-2 cursor-pointer bg-primary-50 border border-primary-200 rounded-lg p-3">
-              <input type="checkbox" checked={sinContrasena} onChange={(e) => setSinContrasena(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <input type="checkbox" checked={sinContrasena} onChange={(e) => setSinContrasena(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-sm text-primary-900">
                 Prefiero no crear contraseña: envíenme un enlace a mi correo para entrar.
                 <span className="block text-xs text-primary-700 mt-0.5">Use el correo al que le llegó la invitación.</span>
@@ -297,7 +297,7 @@ function RegistroSolicitanteContent() {
           {/* Checkboxes */}
           <div className="space-y-3">
             <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-xs text-gray-600">
                 Acepto los{' '}
                 <Link
@@ -315,7 +315,7 @@ function RegistroSolicitanteContent() {
             {errors.accept_terms && <p className="text-xs text-red-500 ml-6">{errors.accept_terms}</p>}
 
             <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={acceptData} onChange={(e) => setAcceptData(e.target.checked)} className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <input type="checkbox" checked={acceptData} onChange={(e) => setAcceptData(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
               <span className="text-xs text-gray-600">
                 Autorizo el{' '}
                 <Link
@@ -399,7 +399,7 @@ function FormField({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600 transition-colors"
+            className="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-gray-500 hover:text-gray-600 transition-colors"
             aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}

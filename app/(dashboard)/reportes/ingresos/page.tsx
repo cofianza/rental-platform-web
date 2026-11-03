@@ -159,7 +159,7 @@ function TableSkeleton() {
 
 function CardSkeleton() {
   return (
-    <div className="animate-pulse bg-white rounded-lg border border-gray-200 p-6">
+    <div className="animate-pulse bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
       <div className="h-4 bg-gray-200 rounded w-24 mb-3" />
       <div className="h-8 bg-gray-200 rounded w-32" />
     </div>
@@ -262,6 +262,9 @@ export default function IngresosReportePage() {
       )
     : { cantidad_pagos: 0, monto_total: 0 }
 
+  // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
+  const recargando = loading && !!data
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -269,7 +272,7 @@ export default function IngresosReportePage() {
         title="Ingresos por Pagos"
         subtitle="Pagos de estudios, primas y otros conceptos por periodo. Los estudios liberados con un cupo cuentan a precio de lista; no incluye las compras de paquetes de cupos ni la tarifa mensual."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportButton
               endpoint="/export/reportes/ingresos"
               params={{
@@ -307,7 +310,7 @@ export default function IngresosReportePage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {loading ? (
+        {loading && !data ? (
           <>
             <CardSkeleton />
             <CardSkeleton />
@@ -331,7 +334,7 @@ export default function IngresosReportePage() {
                 {data ? formatCurrency(data.resumen.total_pendiente) : '—'}
               </p>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
                 Cantidad de Pagos
               </p>
@@ -387,8 +390,8 @@ export default function IngresosReportePage() {
       </div>
 
       {/* Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 p-4 sm:p-6 transition-opacity ${recargando ? 'opacity-60' : ''}`}>
+        {loading && !data ? (
           <ChartSkeleton />
         ) : hasMeses ? (
           <IngresosBarChart data={data.meses} />
@@ -398,8 +401,8 @@ export default function IngresosReportePage() {
       </div>
 
       {/* Detail Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
-        {loading ? (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity ${recargando ? 'opacity-60' : ''}`} aria-busy={recargando}>
+        {loading && !data ? (
           <div className="p-4">
             <TableSkeleton />
           </div>

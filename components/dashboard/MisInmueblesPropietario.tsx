@@ -26,8 +26,8 @@ import {
   IconBuilding2,
   IconDollarSign,
   IconPlus,
-  IconLoader,
 } from '@/components/icons'
+import { Skeleton } from '@/components/ui/Skeleton'
 import {
   money,
   moneyCompact,
@@ -287,11 +287,14 @@ function SolicitudesVisita() {
     }
   }
 
-  if (loading) {
+  if (loading && citas.length === 0) {
     return (
-      <div className="rounded-xl border border-ink-200 bg-white p-6 text-center" role="status" aria-live="polite">
-        <IconLoader size={20} className="mx-auto animate-spin text-primary-600" />
+      <div role="status" aria-live="polite" className="rounded-xl border border-ink-200 bg-white p-4 sm:p-6 space-y-3">
         <span className="sr-only">Cargando solicitudes…</span>
+        <Skeleton className="h-5 w-40 max-w-full" />
+        {Array.from({ length: 2 }, (_, i) => (
+          <Skeleton key={i} className="h-10 w-full rounded-lg" />
+        ))}
       </div>
     )
   }
@@ -444,7 +447,7 @@ export function MisInmueblesPropietario() {
       </div>
 
       <SeccionEstado
-        loading={loading}
+        loading={loading} datos={!!data}
         error={error}
         onRetry={reload}
         vacio={
