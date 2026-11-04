@@ -95,7 +95,20 @@ export function AprobarCondicionadoCard({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   // Los motivos que el estudio contradice no se pueden registrar (la API da 400).
   const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(expedienteId, userRol === 'administrador' || userRol === 'operador_analista')
-  const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplican, documentos, evaluacion.arrendamiento_previo)
+  // Lo que el propio formulario ya sabe que no aplica, dicho en el motivo (no al final):
+  // sin documentos cargados no hay ingreso que verificar (A1), y sin referencia
+  // positiva elegida abajo no hay referencia de arrendamiento (A3).
+  const [docsCargados, setDocsCargados] = useState<number | null>(null)
+  const noAplicanTodos: Record<string, string> = {
+    ...noAplican,
+    ...(docsCargados === 0 && !noAplican.A1
+      ? { A1: 'Este estudio no tiene documentos de ingreso cargados. Pídalos con «Enviar enlace al solicitante» o elija otro motivo.' }
+      : {}),
+    ...(evaluacion.arrendamiento_previo && evaluacion.arrendamiento_previo !== 'referencia_positiva' && !noAplican.A3
+      ? { A3: 'En «Historial de arrendamiento verificado», más abajo, eligió una opción sin referencia positiva.' }
+      : {}),
+  }
+  const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplicanTodos, documentos, evaluacion.arrendamiento_previo)
   // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
   const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
   const [condicionAdicional, setCondicionAdicional] = useState(false)
@@ -416,7 +429,7 @@ export function AprobarCondicionadoCard({
         {cargandoMotivos ? (
           <CargandoMotivos />
         ) : catalogo ? (
-          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} noAplican={noAplican} errorLectura={errorMotivosLectura} onReintentar={reintentarMotivos} />
+          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} noAplican={noAplicanTodos} errorLectura={errorMotivosLectura} onReintentar={reintentarMotivos} />
         ) : (
         <div>
           <label htmlFor="fundamento-revision" className="block text-sm font-medium text-gray-700 mb-1">
@@ -433,7 +446,7 @@ export function AprobarCondicionadoCard({
           />
         </div>
         )}
-        <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
+        <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} onCargados={setDocsCargados} />
         {pideNotaIdentidad && (
           <div>
             <label htmlFor="nota-identidad" className="block text-sm font-medium text-gray-700 mb-1">
