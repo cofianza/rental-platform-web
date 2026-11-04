@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { expedienteSoportesService, type SoporteListItem, type PresignedUrlInput } from '@/services/expedienteSoportesService'
 import type { PropositoSoporte } from '@/types/estudio'
@@ -26,8 +26,12 @@ const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
   codeudor: 'Respaldo de un tercero',
   poliza: 'Póliza de arrendamiento',
   otros_soportes: 'Otros soportes',
+  // Adenda 5 §7: el candidato lo carga por su enlace; la API no se lo lista ni se lo
+  // firma a la inmobiliaria ni al propietario (§10: revela acreedor y monto).
+  paz_y_salvo: 'Paz y salvo',
 }
 
+// Sin 'paz_y_salvo': lo carga el candidato desde su enlace personal, no desde aquí.
 const PROPOSITO_OPCIONES: PropositoSoporte[] = [
   'codeudor',
   'poliza',
@@ -51,11 +55,20 @@ interface SoportesCondicionadoSectionProps {
   expedienteId: string
   /** Si true, muestra botón para subir (solicitante); si false, solo lista (propietario / lectura). */
   permitirSubir: boolean
+  /** Solo los soportes de este propósito (p. ej. 'paz_y_salvo' en el requisito de la Adenda 5). */
+  soloProposito?: PropositoSoporte
+  /** Lo que se leyó, para que quien monta la sección no lo pida otra vez. */
+  onSoportes?: (soportes: SoporteListItem[]) => void
+  /** Sube al acreditar o recargar: vuelve a leer la lista. */
+  version?: number
 }
 
 export function SoportesCondicionadoSection({
   expedienteId,
   permitirSubir,
+  soloProposito,
+  onSoportes,
+  version = 0,
 }: SoportesCondicionadoSectionProps) {
   const [soportes, setSoportes] = useState<SoporteListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,12 +77,19 @@ export function SoportesCondicionadoSection({
   const [uploading, setUploading] = useState(false)
   const [proposito, setProposito] = useState<PropositoSoporte>('codeudor')
   const [file, setFile] = useState<File | null>(null)
+  // El aviso a quien monta la sección no vuelve a disparar la lectura si cambia la función.
+  const avisar = useRef(onSoportes)
+  useEffect(() => {
+    avisar.current = onSoportes
+  }, [onSoportes])
 
   const fetchSoportes = useCallback(async () => {
     try {
-      const data = await expedienteSoportesService.listar(expedienteId)
+      const todos = await expedienteSoportesService.listar(expedienteId)
+      const data = soloProposito ? todos.filter((s) => s.proposito === soloProposito) : todos
       setSoportes(data)
       setFetchError(false)
+      avisar.current?.(data)
     } catch {
       // Distinguir "no hay documentos" de "no se pudo consultar": un 429/red
       // aquí mostraba 'el solicitante aún no ha subido documentos' con
@@ -79,9 +99,10 @@ export function SoportesCondicionadoSection({
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, soloProposito])
 
-  useEffect(() => { fetchSoportes() }, [fetchSoportes])
+  // `version` vuelve a pedir la lista (p. ej. después de acreditar el paz y salvo).
+  useEffect(() => { fetchSoportes() }, [fetchSoportes, version])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null
@@ -158,9 +179,11 @@ export function SoportesCondicionadoSection({
         </p>
       ) : soportes.length === 0 ? (
         <p className="text-sm text-gray-600 italic">
-          {permitirSubir
-            ? 'Aún no ha subido documentos adicionales.'
-            : 'El solicitante aún no ha subido documentos adicionales.'}
+          {soloProposito === 'paz_y_salvo'
+            ? 'El candidato aún no ha cargado el paz y salvo.'
+            : permitirSubir
+              ? 'Aún no ha subido documentos adicionales.'
+              : 'El solicitante aún no ha subido documentos adicionales.'}
         </p>
       ) : (
         <ul className="space-y-2">

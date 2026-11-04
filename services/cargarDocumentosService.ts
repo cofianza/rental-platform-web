@@ -13,6 +13,25 @@ export type PropositoSoporte =
   | 'codeudor'
   | 'poliza'
   | 'otros_soportes'
+  /** Adenda 5 §7: paz y salvo de la obligación en mora que exigió el analista. */
+  | 'paz_y_salvo'
+
+/**
+ * Adenda 5 §7 y §10: lo que el evaluado (y solo él, por su enlace personal) ve
+ * del requisito: las obligaciones exigidas con su acreedor y saldo en mora, y el
+ * plazo. Nunca la razón, el tramo ni los parámetros.
+ */
+export interface PazYSalvoCandidato {
+  /** ISO: hasta cuándo puede acreditarlo. */
+  vence_en: string
+  vencida?: boolean
+  obligaciones?: Array<{
+    ref?: string
+    acreedor?: string | null
+    tipo_cuenta?: string | null
+    saldo_mora_cop?: number | null
+  }>
+}
 
 export interface ContextoCargaDocumentos {
   solicitante: string
@@ -32,6 +51,8 @@ export interface ContextoCargaDocumentos {
   /** Adenda 4 R3: «Está cerca» con R2: decide un analista (ausente en un API anterior). */
   condicion_decide_analista?: boolean
   soportes: Array<{ id: string; proposito: PropositoSoporte; nombre_original: string; created_at: string }>
+  /** Adenda 5 §7: aprobado sujeto a paz y salvo; null o ausente sin el requisito (o con un API anterior). */
+  paz_y_salvo?: PazYSalvoCandidato | null
   /** Su coarrendatario: si puede invitarlo, a quién invitó y lo que declaró al autorizar (ausente en un API anterior). */
   coarrendatario?: {
     /** En revisión o aprobado antes del contrato, y canal de inmobiliaria (Decisiones 2 y 4). */
