@@ -967,6 +967,8 @@ export default function ExpedienteDetallePage() {
                         reconsultaParcial={reconsultaParcial}
                         condicion={condicionCoa}
                         canalPropietario={!expediente.inmueble?.inmobiliaria_id}
+                        motivoRevision={titularCondicionado?.observaciones ?? null}
+                        sinInmueble={!expediente.inmueble}
                         onAprobado={fetchExpediente}
                       />
                     ) : null,

@@ -109,12 +109,13 @@ export function SelectorMotivos({
   errorLectura?: boolean
   onReintentar?: () => void
 }) {
-  // Los que no aplican a este estudio (y no están marcados) van al final, para que
-  // los que sí se pueden elegir queden juntos arriba.
-  const opciones = Object.entries(catalogo[tipo] ?? {}).sort(
-    ([a], [b]) =>
-      Number(!!noAplican[a] && !value.motivos.includes(a)) - Number(!!noAplican[b] && !value.motivos.includes(b)),
-  )
+  // Los que no aplican a este estudio (y no están marcados) se guardan en un
+  // desplegable aparte: arriba quedan solo los que se pueden elegir. Uno marcado
+  // que deja de aplicar se queda arriba, con su aviso, para poder desmarcarlo.
+  const todas = Object.entries(catalogo[tipo] ?? {})
+  const esBloqueado = (codigo: string) => !!noAplican[codigo] && !value.motivos.includes(codigo)
+  const opciones = todas.filter(([codigo]) => !esBloqueado(codigo))
+  const bloqueadas = todas.filter(([codigo]) => esBloqueado(codigo))
   const idBase = `motivos-${tipo}`
   const conOtro = value.motivos.includes(OTRO[tipo])
 
@@ -139,39 +140,36 @@ export function SelectorMotivos({
         </p>
       )}
       <ul className="space-y-1.5">
-        {opciones.map(([codigo, m]) => {
-          const marcado = value.motivos.includes(codigo)
-          const bloqueado = !!noAplican[codigo] && !marcado
-          return (
-          <li key={codigo}>
-            <label
-              className={`flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 ${
-                bloqueado ? 'cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:bg-gray-50'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={marcado}
-                disabled={bloqueado}
-                onChange={() => alternar(codigo)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              {/* Arriba el motivo específico (lo que decide el analista); abajo lo que
-                  verá la inmobiliaria, que puede repetirse entre motivos. */}
-              <span className="min-w-0 text-sm">
-                {/* El catálogo lo escribe la API; sin «(§14)» ni «Anexo A» en pantalla. */}
-                <span className={`block ${bloqueado ? 'text-gray-500' : 'text-gray-900'}`}>{textoVisible(m.interno)}</span>
-                {noAplican[codigo] ? (
-                  <span className="block text-xs text-amber-800">No aplica. {noAplican[codigo]}</span>
-                ) : m.interno !== m.visible && (
-                  <span className="block text-xs text-gray-500">La inmobiliaria ve: «{textoVisible(m.visible, { externo: true })}»</span>
-                )}
-              </span>
-            </label>
-          </li>
-          )
-        })}
+        {opciones.map(([codigo, m]) => (
+          <FilaMotivo
+            key={codigo}
+            texto={textoVisible(m.interno)}
+            visible={loVeLaInmobiliaria(tipo, m)}
+            marcado={value.motivos.includes(codigo)}
+            noAplica={noAplican[codigo]}
+            onAlternar={() => alternar(codigo)}
+          />
+        ))}
       </ul>
+      {bloqueadas.length > 0 && (
+        <details className="rounded-lg border border-dashed border-gray-300">
+          <summary className="block cursor-pointer px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900">
+            {bloqueadas.length === 1 ? 'Un motivo no aplica' : `${bloqueadas.length} motivos no aplican`} a este estudio (ver por qué)
+          </summary>
+          <ul className="space-y-1.5 px-3 pb-3">
+            {bloqueadas.map(([codigo, m]) => (
+              <FilaMotivo
+                key={codigo}
+                texto={textoVisible(m.interno)}
+                visible={null}
+                marcado={false}
+                noAplica={noAplican[codigo]}
+                onAlternar={() => {}}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
       <div>
         {tipo === 'condicionar' && <LoVeLaInmobiliaria />}
         <label htmlFor={`${idBase}-detalle`} className="mb-1 block text-sm font-medium text-gray-700">
@@ -194,5 +192,69 @@ export function SelectorMotivos({
         <p className="mt-1 text-xs text-gray-500">{AYUDA_DETALLE[tipo]}</p>
       </div>
     </fieldset>
+  )
+}
+
+/**
+ * Un motivo de la lista. Arriba el motivo específico (lo que decide el analista);
+ * abajo lo que verá la inmobiliaria, que puede repetirse entre motivos, o por qué
+ * no aplica a este estudio. El catálogo lo escribe la API: llega ya limpio de
+ * «(§14)» o «Anexo A» (textoVisible).
+ */
+/**
+ * Lo que verá la inmobiliaria o el propietario de este motivo, o null. Al aprobar
+ * la API guarda solo el texto interno (el aviso dice que se aprobó, sin motivo):
+ * ahí no se promete nada. Si el texto visible repite el interno, tampoco.
+ */
+function loVeLaInmobiliaria(tipo: TipoDecision, m: { interno: string; visible: string }): string | null {
+  if (tipo === 'aprobar') return null
+  const visible = textoVisible(m.visible, { externo: true })
+  return visible && visible !== textoVisible(m.interno) ? visible : null
+}
+
+function FilaMotivo({
+  texto,
+  visible,
+  marcado,
+  noAplica,
+  onAlternar,
+}: {
+  texto: string
+  visible: string | null
+  marcado: boolean
+  noAplica?: string
+  onAlternar: () => void
+}) {
+  const bloqueado = !!noAplica && !marcado
+  return (
+    <li>
+      <label
+        className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
+          bloqueado
+            ? 'cursor-not-allowed border-gray-200 bg-gray-50'
+            : marcado && noAplica
+              ? 'cursor-pointer border-amber-300 bg-amber-50/60'
+              : marcado
+              ? 'cursor-pointer border-primary-300 bg-primary-50/60'
+              : 'cursor-pointer border-gray-200 hover:bg-gray-50'
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={marcado}
+          disabled={bloqueado}
+          onChange={onAlternar}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+        />
+        <span className="min-w-0 text-sm">
+          <span className={`block ${bloqueado ? 'text-gray-500' : 'text-gray-900'}`}>{texto}</span>
+          {noAplica ? (
+            <span className="block text-xs text-amber-800">No aplica. {noAplica}</span>
+          ) : visible && (
+            <span className="block text-xs text-gray-500">La inmobiliaria ve: «{visible}»</span>
+          )}
+        </span>
+      </label>
+    </li>
   )
 }

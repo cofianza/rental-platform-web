@@ -26,34 +26,41 @@ interface DocumentosConsultadosProps {
 export function DocumentosConsultados({ expedienteId, value, onChange, disabled, onCargados }: DocumentosConsultadosProps) {
   const [opciones, setOpciones] = useState<string[]>([REPORTE_CENTRALES])
   const [cargados, setCargados] = useState<number | null>(null)
+  // Si una de las dos lecturas falla, no se dice «no tiene documentos» (llevaría a
+  // reenviar el enlace, que anula el anterior): se avisa y se ofrece reintentar.
+  const [fallo, setFallo] = useState(false)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     let cancel = false
     Promise.all([
-      documentoService.getDocumentosByExpediente(expedienteId, { limit: 50 }).then((r) => r.documentos).catch(() => []),
-      expedienteSoportesService.listar(expedienteId).catch(() => []),
+      documentoService.getDocumentosByExpediente(expedienteId, { limit: 50 }).then((r) => r.documentos).catch(() => null),
+      expedienteSoportesService.listar(expedienteId).catch(() => null),
     ]).then(([docs, soportes]) => {
       if (cancel) return
       const nombres = [
-        ...docs.map((d) => (d.tipo_documento?.nombre ? `${d.tipo_documento.nombre}: ${d.nombre_original}` : d.nombre_original)),
-        ...soportes.map((s) => `Soporte: ${s.nombre_original}`),
+        ...(docs ?? []).map((d) => (d.tipo_documento?.nombre ? `${d.tipo_documento.nombre}: ${d.nombre_original}` : d.nombre_original)),
+        ...(soportes ?? []).map((s) => `Soporte: ${s.nombre_original}`),
       ]
       const unicos = [...new Set(nombres)]
       setOpciones([REPORTE_CENTRALES, ...unicos])
-      setCargados(unicos.length)
-      onCargados?.(unicos.length)
+      const incompleto = docs === null || soportes === null
+      setFallo(incompleto)
+      setCargados(incompleto ? null : unicos.length)
+      if (!incompleto) onCargados?.(unicos.length)
     })
     return () => { cancel = true }
     // onCargados es un setState del padre: estable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expedienteId])
+  }, [expedienteId, intento])
 
   const toggle = (nombre: string) =>
     onChange(value.includes(nombre) ? value.filter((v) => v !== nombre) : [...value, nombre])
 
   return (
     <fieldset>
-      <legend className="block text-sm font-medium text-gray-700 mb-2">Documentos que consultó</legend>
+      <legend className="block text-sm font-medium text-gray-700">Documentos que consultó</legend>
+      <p className="mb-2 text-xs text-gray-500">Marque lo que revisó para decidir: queda en el registro de la decisión.</p>
       <div className="max-h-44 overflow-y-auto space-y-1.5 rounded-lg border border-gray-200 p-3">
         {opciones.map((nombre) => (
           <label key={nombre} className="flex items-start gap-2 text-sm text-gray-700">
@@ -68,6 +75,14 @@ export function DocumentosConsultados({ expedienteId, value, onChange, disabled,
           </label>
         ))}
       </div>
+      {fallo && (
+        <p role="status" className="mt-1 text-xs text-amber-800">
+          No pudimos leer todos los documentos del estudio.{' '}
+          <button type="button" onClick={() => setIntento((n) => n + 1)} className="font-medium underline">
+            Reintentar
+          </button>
+        </p>
+      )}
       {cargados === 0 && (
         <p className="mt-1 text-xs text-amber-800">
           Este estudio no tiene documentos ni soportes cargados: solo puede marcar el reporte de las centrales. Si

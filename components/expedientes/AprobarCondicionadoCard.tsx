@@ -35,7 +35,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
-import { seCierraSiVence, textoCondicionCoarrendatario } from './textoVisible'
+import { seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
@@ -58,6 +58,10 @@ interface AprobarCondicionadoCardProps {
   canalPropietario?: boolean
   /** Adenda 3 §6: aprobado con condición de presentar un coarrendatario. */
   condicion?: ICondicionCoarrendatario | null
+  /** Observaciones del motor en la evaluación del titular: por qué llegó a revisión. */
+  motivoRevision?: string | null
+  /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
+  sinInmueble?: boolean
   onAprobado?: () => void
 }
 
@@ -70,6 +74,8 @@ export function AprobarCondicionadoCard({
   reconsultaParcial,
   canalPropietario,
   condicion,
+  motivoRevision,
+  sinInmueble,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -114,6 +120,8 @@ export function AprobarCondicionadoCard({
   const [condicionAdicional, setCondicionAdicional] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
+  // Por qué llegó a revisión, arriba del formulario: los motivos que elija deben responder a esto.
+  const revision = motivoRevision ? partirObservaciones(textoVisible(motivoRevision)) : null
   // Lo que falta para que se active «Aprobar estudio», dicho junto al botón:
   // los campos obligatorios quedan abajo del modal y no se veían.
   const faltantes: string[] = []
@@ -422,15 +430,39 @@ export function AprobarCondicionadoCard({
       size="xl"
     >
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
-          El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Su decisión queda
-          registrada con su usuario, la fecha, el fundamento y los documentos que consultó.
-        </p>
+        {revision && (revision.motivos.length > 0 || revision.datos) ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-800">
+            <p className="font-semibold text-gray-900">Por qué llegó a revisión</p>
+            {revision.motivos.length > 0 ? (
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {revision.motivos.map((m) => <li key={m}>{m}</li>)}
+              </ul>
+            ) : (
+              <p className="mt-1">El motor no dejó un motivo escrito: revíselo en «Evaluación crediticia», en el estudio.</p>
+            )}
+            {revision.datos && <p className="mt-1 text-xs text-gray-600">{revision.datos}</p>}
+            <p className="mt-2 text-xs font-medium text-amber-900">
+              Apruebe solo si lo que verificó resuelve estos puntos.
+              {docsCargados === 0 &&
+                ' Este estudio no tiene documentos cargados: si necesita soportes de ingreso, cierre esta ventana y use «Enviar enlace al solicitante».'}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600">
+            No hay un motivo escrito del motor: revíselo en «Evaluación crediticia», en el estudio. Complete los dos
+            pasos; abajo verá lo que falta para aprobar.
+          </p>
+        )}
         {/* Dos columnas en pantallas anchas: a la izquierda por qué se aprueba; a la
             derecha lo que se verificó. Así el formulario cabe casi sin desplazarse. */}
         <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3">
-          <PasoModal n={1} titulo="Por qué lo aprueba" listo={motivoListo && !errorFundamento} />
+          <PasoModal
+            n={1}
+            titulo="Por qué lo aprueba"
+            ayuda="Marque solo lo que pasó en este caso. Queda en el registro interno de Cofianza: la inmobiliaria o el propietario solo reciben el aviso de que se aprobó."
+            listo={motivoListo && !errorFundamento}
+          />
         {cargandoMotivos ? (
           <CargandoMotivos />
         ) : catalogo ? (
@@ -453,7 +485,12 @@ export function AprobarCondicionadoCard({
         )}
         </section>
         <section className="space-y-4">
-          <PasoModal n={2} titulo="Lo que verificó" listo={evaluacionCompleta(evaluacion) && !faltaNotaIdentidad} />
+          <PasoModal
+            n={2}
+            titulo="Lo que verificó"
+            ayuda="Queda en el registro de la decisión y, si el estudio tiene puntaje, lo vuelve a calcular."
+            listo={evaluacionCompleta(evaluacion) && !faltaNotaIdentidad}
+          />
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} onCargados={setDocsCargados} />
         {pideNotaIdentidad && (
@@ -500,15 +537,37 @@ export function AprobarCondicionadoCard({
         )}
         </section>
         </div>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+          <p className="font-semibold text-gray-900">Al aprobar</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            <li>
+              {sinInmueble
+                ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
+                : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
+            </li>
+            <li>
+              {sinInmueble
+                ? 'Se le avisa al solicitante.'
+                : 'Se le avisa al solicitante y a la inmobiliaria o al propietario.'}
+            </li>
+            <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
+          </ul>
+        </div>
         <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
-        {faltantes.length > 0 && !loading && (
+        {!loading && (faltantes.length > 0 ? (
           <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             <p className="font-semibold">Para activar «Aprobar estudio» falta:</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {/* En el celular el pie fijo no puede tapar el formulario: la lista se desplaza. */}
+            <ul className="mt-1 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 sm:max-h-none">
               {faltantes.map((f) => <li key={f}>{f}</li>)}
             </ul>
           </div>
-        )}
+        ) : (
+          <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-primary-800">
+            <IconCheck size={16} className="shrink-0" />
+            Todo completo: revise «Al aprobar» y confirme.
+          </p>
+        ))}
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -561,8 +620,9 @@ function Opcion({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 /** Encabezado de cada bloque del modal de aprobación, con su estado (pendiente o listo). */
-function PasoModal({ n, titulo, listo }: { n: number; titulo: string; listo: boolean }) {
+function PasoModal({ n, titulo, ayuda, listo }: { n: number; titulo: string; ayuda?: string; listo: boolean }) {
   return (
+    <div>
     <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
       <span
         aria-hidden
@@ -575,5 +635,24 @@ function PasoModal({ n, titulo, listo }: { n: number; titulo: string; listo: boo
       {titulo}
       <span className="sr-only">{listo ? '(completo)' : '(pendiente)'}</span>
     </h3>
+    {ayuda && <p className="mt-0.5 pl-8 text-xs text-gray-500">{ayuda}</p>}
+    </div>
   )
+}
+
+/**
+ * Separa las observaciones del motor en los datos de la central y los motivos de
+ * la revisión, que van después de «El caso pasa a revisión…». Si el texto no
+ * trae ese corte, todas las frases van como motivos.
+ */
+function partirObservaciones(texto: string): { datos: string; motivos: string[] } {
+  const partes = texto.split(/\.\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
+  const frases = partes
+    .map((f, i) => (i < partes.length - 1 ? `${f}.` : f).trim())
+    // La API no reescribe las observaciones cuando la condición de coarrendatario
+    // vence o no se cumple: aquí ya no está vigente (el modal no sale con condición).
+    .filter((f) => f && !/^Condici[oó]n pendiente:/i.test(f))
+  const corte = frases.findIndex((f) => /pasa a revisi[oó]n/i.test(f))
+  if (corte < 0) return { datos: '', motivos: frases }
+  return { datos: frases.slice(0, corte).join(' '), motivos: frases.slice(corte + 1) }
 }

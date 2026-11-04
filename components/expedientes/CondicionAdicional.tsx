@@ -23,10 +23,18 @@ export function CondicionAdicional({
         disabled={disabled}
         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
       />
-      <span>
-        Exigí una condición adicional para aprobarlo, además de los soportes de ingreso (por ejemplo, un
-        coarrendatario, un depósito o un plazo menor). Si la revisión se abrió solo por la capacidad de pago o
-        porque la persona prefirió no dar la foto, marcarla cambia la tarifa a la de aprobación no automática; en los demás casos la tarifa ya es esa.
+      <span className="min-w-0">
+        <span className="block font-medium text-gray-900">
+          Aprobé con una condición adicional <span className="font-normal text-gray-500">(opcional)</span>
+        </span>
+        <span className="block">
+          Además de los soportes de ingreso: por ejemplo, un coarrendatario, un depósito o un plazo menor.
+        </span>
+        <span className="mt-1 block text-xs text-gray-600">
+          <span className="font-medium">Tarifa:</span> si la revisión se abrió solo por la capacidad de pago o porque
+          la persona prefirió no dar la foto, marcarla cambia la tarifa a la de aprobación no automática. En los
+          demás casos la tarifa ya es esa.
+        </span>
       </span>
     </label>
   )
