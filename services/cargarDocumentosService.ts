@@ -25,11 +25,10 @@ export interface PazYSalvoCandidato {
   /** ISO: hasta cuándo puede acreditarlo. */
   vence_en: string
   vencida?: boolean
+  /** Las obligaciones exigidas: solo acreedor y saldo en mora (getContextoDocumentosPublico). */
   obligaciones?: Array<{
-    ref?: string
-    acreedor?: string | null
-    tipo_cuenta?: string | null
-    saldo_mora_cop?: number | null
+    acreedor: string | null
+    saldo_mora_cop: number | null
   }>
 }
 

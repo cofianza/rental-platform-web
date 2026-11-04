@@ -35,14 +35,14 @@ import { IngresoVerificadoSection } from './IngresoVerificadoSection'
 import { PazYSalvoPendiente } from './PazYSalvoPendiente'
 import { ObligacionesEnMora } from './ObligacionesEnMora'
 import { useMoraVigente } from '@/hooks/useMoraVigente'
-import { pazYSalvoPendiente, pesosA5, razonMoraPct, textoPct, TRAMO_A5, venceSiSeExigeHoy } from '@/lib/pazYSalvo'
+import { pazYSalvoDeMoraVigente, pazYSalvoPendiente, pesosA5, razonMoraPct, textoPct, TRAMO_A5, venceSiSeExigeHoy } from '@/lib/pazYSalvo'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
-import type { ICondicionCoarrendatario, IMotivosElegidos, IPazYSalvo } from '@/types/estudio'
+import type { ICondicionCoarrendatario, IMotivosElegidos, IPazYSalvo, TramoAdenda5 } from '@/types/estudio'
 import { fechaCondicion, seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
@@ -72,6 +72,12 @@ interface AprobarCondicionadoCardProps {
   sinInmueble?: boolean
   /** Adenda 5 §7: aprobado sujeto a paz y salvo (el del estudio del titular; sin detalle para externos). */
   pazYSalvo?: IPazYSalvo | null
+  /**
+   * Adenda 5 §4: tramo de la escalera del titular (estudio.adenda5_tramo; solo
+   * llega a Cofianza). Sin él (ADENDA5 apagada o sin mora) no se pide GET
+   * mora-vigente y la tarjeta queda como antes.
+   */
+  adenda5Tramo?: TramoAdenda5 | null
   onAprobado?: () => void
 }
 
@@ -87,6 +93,7 @@ export function AprobarCondicionadoCard({
   motivoRevision,
   sinInmueble,
   pazYSalvo,
+  adenda5Tramo,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -133,14 +140,20 @@ export function AprobarCondicionadoCard({
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
   // Adenda 5: la escalera de mora vigente y el paz y salvo. El detalle (acreedor,
   // saldo, razón, tramo) solo lo lee Cofianza (§10); los demás ven el plazo.
+  // Solo se pide con el titular en el tramo de revisión: con ADENDA5 apagada
+  // (o sin mora) no hay petición nueva ni aviso de error posible.
   const [versionA5, setVersionA5] = useState(0)
   const {
     moraVigente,
     error: errorA5,
     reintentar: reintentarA5,
-  } = useMoraVigente(expedienteId, esCofianza && expedienteEstado === 'condicionado' && !condicion, versionA5)
-  const pazYSalvoDeMora = moraVigente?.paz_y_salvo ?? null
-  const pazYSalvoVivo = pazYSalvoPendiente(pazYSalvo) ? pazYSalvo : pazYSalvoPendiente(pazYSalvoDeMora) ? pazYSalvoDeMora : null
+  } = useMoraVigente(
+    expedienteId,
+    esCofianza && expedienteEstado === 'condicionado' && !condicion && adenda5Tramo === 'revision',
+    versionA5,
+  )
+  const pazYSalvoDeMora = pazYSalvoDeMoraVigente(moraVigente)
+  const pazYSalvoVivo = pazYSalvoPendiente(pazYSalvo) ? pazYSalvo : pazYSalvoDeMora
   const obligacionesMora = moraVigente?.obligaciones ?? []
   // §7: solo en el tramo de revisión el analista puede exigir el paz y salvo.
   const enRevisionA5 = esCofianza && moraVigente?.tramo === 'revision'
@@ -311,7 +324,7 @@ export function AprobarCondicionadoCard({
         // Adenda 5 §7: no pasa a Aprobado; queda pendiente del candidato.
         const res = await expedienteService.aprobarSujetoPazYSalvo(expedienteId, { ...revisionBody, obligaciones: exigidas })
         setConfirmAprobarOpen(false)
-        const vence = res.paz_y_salvo?.vence_en ?? res.vence_en ?? null
+        const vence = res?.paz_y_salvo?.vence_en ?? null
         toast.success(
           `Aprobado sujeto a paz y salvo. El candidato tiene ${vence ? `hasta el ${fechaCondicion(vence)}` : 'el plazo vigente'} para acreditarlo; le escribimos con el detalle.`,
         )

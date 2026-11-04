@@ -23,7 +23,7 @@ import type {
   IEvaluacionRevisionManual,
   IPuntajeRevisionManual,
 } from '@/types/expediente'
-import type { IAcreditarPazYSalvoInput, IMoraVigente, IPazYSalvo } from '@/types/estudio'
+import type { IAcreditarPazYSalvoInput, IMoraVigente } from '@/types/estudio'
 
 /** Lo que el analista resuelve al aprobar una revisión manual (aprobar o aprobar sujeto a paz y salvo). */
 export interface IRevisionManualInput {
@@ -659,12 +659,15 @@ class ExpedienteService {
   async aprobarSujetoPazYSalvo(
     expedienteId: string,
     revision: IRevisionManualInput & { obligaciones: string[] },
-  ): Promise<{ paz_y_salvo?: IPazYSalvo | null; vence_en?: string | null }> {
-    const response = await apiClient.post<{ paz_y_salvo?: IPazYSalvo | null; vence_en?: string | null }>(
-      `/expedientes/${expedienteId}/aprobar-sujeto-paz-y-salvo`,
-      revision,
-    )
-    return response.data ?? {}
+  ): Promise<{
+    expediente: { id: string; numero: string; estado: 'condicionado' }
+    paz_y_salvo: { vence_en: string; dias_plazo: number; obligaciones: string[] }
+  }> {
+    const response = await apiClient.post<{
+      expediente: { id: string; numero: string; estado: 'condicionado' }
+      paz_y_salvo: { vence_en: string; dias_plazo: number; obligaciones: string[] }
+    }>(`/expedientes/${expedienteId}/aprobar-sujeto-paz-y-salvo`, revision)
+    return response.data
   }
 
   /**
@@ -675,12 +678,19 @@ class ExpedienteService {
   async acreditarPazYSalvo(
     expedienteId: string,
     body: IAcreditarPazYSalvoInput,
-  ): Promise<{ expediente?: { id: string; numero?: string; estado: string } | null; puntaje_revision_manual?: IPuntajeRevisionManual | null }> {
+  ): Promise<{
+    expediente: { id: string; numero: string; estado: 'aprobado' }
+    contrato_id: string | null
+    puntaje_revision_manual: IPuntajeRevisionManual | null
+    paz_y_salvo: { via: 'documento' | 'consulta'; acreditado_en: string }
+  }> {
     const response = await apiClient.post<{
-      expediente?: { id: string; numero?: string; estado: string } | null
-      puntaje_revision_manual?: IPuntajeRevisionManual | null
+      expediente: { id: string; numero: string; estado: 'aprobado' }
+      contrato_id: string | null
+      puntaje_revision_manual: IPuntajeRevisionManual | null
+      paz_y_salvo: { via: 'documento' | 'consulta'; acreditado_en: string }
     }>(`/expedientes/${expedienteId}/paz-y-salvo/acreditar`, body)
-    return response.data ?? {}
+    return response.data
   }
 
   /**

@@ -55,10 +55,12 @@ export interface IEstudio {
    */
   paz_y_salvo?: IPazYSalvo | null
   /**
-   * Traza del motor (estudios.cascada). Hoy solo se lee `adenda5`, y solo la
-   * reciben los roles de Cofianza; ausente en las demás vistas o en un API anterior.
+   * Adenda 5 §4: tramo de la escalera de mora vigente de este estudio
+   * (cascada.adenda5.tramo). null o ausente = la escalera no se evaluó
+   * (ADENDA5 apagada o sin mora vigente). Solo lo reciben los roles de
+   * Cofianza: la API lo quita a la inmobiliaria, al propietario y al solicitante (§10).
    */
-  cascada?: { adenda5?: ITrazaAdenda5 | null } | null
+  adenda5_tramo?: TramoAdenda5 | null
   /** Adenda 3 V2 §6.1: por qué espera una evaluación lista (solo en el listado del estudio). */
   /** Adenda 3 V2 §7: coincidencia en listas (solo la reciben los roles de Cofianza). */
   listas?: { estado: 'por_confirmar' | 'confirmada' | 'descartada'; motivo?: string } | null
@@ -180,21 +182,6 @@ export interface IObligacionMoraA5 {
   financiera?: boolean
 }
 
-/** cascada.adenda5 del titular: razón de mora y tramo calculados por el motor. */
-export interface ITrazaAdenda5 {
-  suma_moras_cop?: number | null
-  canon_cop?: number | null
-  /** Fracción exacta suma/canon (0,1384…), sin redondear. */
-  razon_mora?: number | null
-  /** La misma razón en %, con un decimal, para mostrar. */
-  razon_mora_pct?: number | null
-  tramo: TramoAdenda5
-  causa?: string | null
-  obligaciones?: IObligacionMoraA5[]
-  reclamo_en_tramite?: boolean
-  financieras_al_dia?: number | null
-}
-
 /** Cómo se acreditó el paz y salvo (§7): con el documento del candidato o con una nueva consulta. */
 export interface IAcreditacionPazYSalvo {
   via: 'documento' | 'consulta'
@@ -205,9 +192,19 @@ export interface IAcreditacionPazYSalvo {
 }
 
 /**
+ * Una obligación exigida tal como llega en el estudio: Cofianza recibe el
+ * detalle con su `ref`; el solicitante, solo acreedor y saldo (sin `ref`);
+ * la inmobiliaria y el propietario, nada (§10).
+ */
+export type IObligacionExigida = Omit<IObligacionMoraA5, 'ref'> & { ref?: string }
+
+/**
  * Adenda 5 §7: «aprobado sujeto a paz y salvo» (subestado de la revisión
- * manual). La fianza no se expide hasta acreditarlo. `obligaciones` son las
- * referencias (`ref`) de las obligaciones exigidas; solo Cofianza las recibe.
+ * manual). La fianza no se expide hasta acreditarlo. La API solo lo manda
+ * mientras está pendiente (al acreditar, rechazar o vencer deja de venir) y lo
+ * redacta por rol: Cofianza recibe {vence_en, vencida, exigido_en,
+ * obligaciones con detalle}; el solicitante {vence_en, vencida, obligaciones:
+ * [{acreedor, saldo_mora_cop}]}; la inmobiliaria y el propietario {vence_en, vencida}.
  */
 export interface IPazYSalvo {
   /** ISO timestamptz: fin del plazo de DIAS_PLAZO_PAZ_Y_SALVO (días calendario). */
@@ -216,29 +213,48 @@ export interface IPazYSalvo {
   vencida?: boolean
   exigido_en?: string | null
   exigido_por?: string | null
-  /** Refs exigidas; la API puede mandar el detalle de cada una en lugar de la ref sola. */
-  obligaciones?: Array<string | IObligacionMoraA5>
+  /** Refs exigidas (respuesta de exigirlo) o las obligaciones con su detalle (estudio). */
+  obligaciones?: Array<string | IObligacionExigida>
   acreditacion?: IAcreditacionPazYSalvo | null
 }
 
+/** paz_y_salvo de GET mora-vigente: el último exigido, pendiente o ya resuelto. */
+export interface IPazYSalvoMoraVigente {
+  pendiente: boolean
+  /** null si ya no está pendiente (acreditado, vencido o limpiado al rechazar). */
+  vence_en: string | null
+  exigido_en: string | null
+  exigido_por: string | null
+  obligaciones: IObligacionMoraA5[]
+  acreditacion: IAcreditacionPazYSalvo | null
+  vencimiento: { en: string; destino: 'rechazo' | 'revision_manual'; soporte_id?: string | null } | null
+}
+
 /**
- * GET /expedientes/:id/mora-vigente (solo Cofianza): la escalera del titular y
- * el estado del paz y salvo. `tramo` null o ausente = la escalera no se evaluó.
+ * GET /expedientes/:id/mora-vigente (solo Cofianza, `MoraVigenteDelEstudio`
+ * de la API): la escalera del titular y el estado del paz y salvo. `aplica`
+ * false y `tramo` null = la escalera no se evaluó.
  */
 export interface IMoraVigente {
-  tramo?: TramoAdenda5 | null
-  /** Razón de mora como fracción (suma/canon). */
-  razon?: number | null
-  razon_mora?: number | null
-  razon_mora_pct?: number | null
-  suma_moras_cop?: number | null
-  canon_cop?: number | null
-  causa?: string | null
-  reclamo_en_tramite?: boolean
-  obligaciones?: IObligacionMoraA5[]
-  /** DIAS_PLAZO_PAZ_Y_SALVO vigente: el plazo que tendría el candidato si se exige hoy. */
+  aplica: boolean
+  estudio_id: string | null
+  tramo: TramoAdenda5 | null
+  causa: string | null
+  /** Razón de mora como fracción exacta (suma/canon). */
+  razon_mora: number | null
+  /** La misma en %, con un decimal. */
+  razon_mora_pct: number | null
+  suma_moras_cop: number | null
+  canon_cop: number | null
+  condiciones: { a: boolean | null; b: boolean | null; c: boolean | null; d: boolean | null } | null
+  reclamo_en_tramite: boolean
+  obligaciones: IObligacionMoraA5[]
+  /** Un coarrendatario quedó en el tramo de revisión (el conjunto va a revisión). */
+  conjunto_en_revision: boolean
+  parametros: { factor_tolerada: number; factor_rechazo: number; min_financieras_al_dia: number; meses_ventana: number } | null
+  /** DIAS_PLAZO_PAZ_Y_SALVO vigente: el plazo que tendría el candidato si se exige hoy (ausente en un API anterior). */
   dias_plazo_paz_y_salvo?: number | null
-  paz_y_salvo?: IPazYSalvo | null
+  paz_y_salvo: IPazYSalvoMoraVigente | null
 }
 
 /** Body de «Acreditar paz y salvo» (Adenda 5 §7). */
@@ -550,6 +566,8 @@ export type RutaResultado =
   | 'coarrendatario_requerido'
   | 'no_aprobable'
   | 'en_revision'
+  /** Adenda 5 §7: aprobado sujeto a un requisito a cargo del candidato (paz y salvo); el mensaje trae el plazo. */
+  | 'requisito_pendiente'
 
 export interface IRutaResultado {
   ruta: RutaResultado

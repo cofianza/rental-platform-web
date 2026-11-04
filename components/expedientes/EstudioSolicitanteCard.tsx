@@ -642,7 +642,7 @@ export function EstudioSolicitanteCard({
       const tono =
         r.ruta === 'perfil_fuerte' || r.ruta === 'perfil_medio'
           ? { borde: 'border-green-200', fondo: 'bg-green-50', titulo: 'text-green-900', texto: 'text-green-800', icono: 'text-green-600' }
-          : r.ruta === 'coarrendatario_requerido'
+          : r.ruta === 'coarrendatario_requerido' || r.ruta === 'requisito_pendiente'
             ? { borde: 'border-amber-200', fondo: 'bg-amber-50', titulo: 'text-amber-900', texto: 'text-amber-800', icono: 'text-amber-600' }
             : r.ruta === 'en_revision'
               ? { borde: 'border-blue-200', fondo: 'bg-blue-50', titulo: 'text-blue-900', texto: 'text-blue-800', icono: 'text-blue-600' }
@@ -656,7 +656,8 @@ export function EstudioSolicitanteCard({
             <span className={`shrink-0 mt-0.5 ${tono.icono}`}>
               {r.ruta === 'no_aprobable' ? (
                 <IconInfo size={20} />
-              ) : r.ruta === 'en_revision' ? (
+              ) : r.ruta === 'en_revision' || r.ruta === 'requisito_pendiente' ? (
+                // Adenda 5 §7: el requisito pendiente (paz y salvo) también espera: no es un aprobado.
                 <IconClock size={20} />
               ) : r.ruta === 'coarrendatario_requerido' ? (
                 <IconUsers size={20} />

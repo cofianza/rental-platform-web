@@ -986,6 +986,7 @@ export default function ExpedienteDetallePage() {
                         motivoRevision={titularCondicionado?.observaciones ?? null}
                         sinInmueble={!expediente.inmueble}
                         pazYSalvo={pazYSalvo}
+                        adenda5Tramo={titularCondicionado?.adenda5_tramo ?? null}
                         onAprobado={fetchExpediente}
                       />
                     ) : null,

@@ -8,7 +8,7 @@
  * requisito pendiente a cargo del candidato y hasta cuándo.
  */
 
-import type { IMoraVigente, IObligacionMoraA5, IPazYSalvo, ITrazaAdenda5, TramoAdenda5 } from '../types/estudio'
+import type { IMoraVigente, IObligacionExigida, IObligacionMoraA5, IPazYSalvo, TramoAdenda5 } from '../types/estudio'
 
 const BOGOTA = 'America/Bogota'
 
@@ -32,15 +32,26 @@ export function textoRequisitoPendiente(venceEn: string): string {
 }
 
 /**
- * La razón de mora en %, con un decimal. Prefiere la que ya viene en % y, si
- * no, la fracción (suma / canon). null si no hay con qué calcularla.
+ * La razón de mora en %, con un decimal. Prefiere la que ya viene en %
+ * (razon_mora_pct) y, si no, la fracción exacta (razon_mora = suma / canon).
+ * null si no hay con qué calcularla.
  */
-export function razonMoraPct(m: Pick<IMoraVigente, 'razon_mora_pct' | 'razon_mora' | 'razon'> | Pick<ITrazaAdenda5, 'razon_mora_pct' | 'razon_mora'> | null | undefined): number | null {
+export function razonMoraPct(m: Partial<Pick<IMoraVigente, 'razon_mora_pct' | 'razon_mora'>> | null | undefined): number | null {
   if (!m) return null
   if (typeof m.razon_mora_pct === 'number' && Number.isFinite(m.razon_mora_pct)) return m.razon_mora_pct
-  const fraccion = m.razon_mora ?? ('razon' in m ? m.razon : null)
+  const fraccion = m.razon_mora
   if (typeof fraccion !== 'number' || !Number.isFinite(fraccion)) return null
   return Math.round(fraccion * 1000) / 10
+}
+
+/**
+ * El paz y salvo PENDIENTE según GET mora-vigente, con la forma del estudio
+ * (respaldo si la lista del estudio aún no lo trae). null si no hay uno pendiente.
+ */
+export function pazYSalvoDeMoraVigente(m: Pick<IMoraVigente, 'paz_y_salvo'> | null | undefined): IPazYSalvo | null {
+  const p = m?.paz_y_salvo
+  if (!p?.pendiente || !p.vence_en) return null
+  return { vence_en: p.vence_en, exigido_en: p.exigido_en, exigido_por: p.exigido_por, obligaciones: p.obligaciones }
 }
 
 /** «13,8 %». */
@@ -70,7 +81,7 @@ export function refsExigidas(p: IPazYSalvo | null | undefined): string[] {
 export function obligacionesExigidas(p: IPazYSalvo | null | undefined, enMora: IObligacionMoraA5[] = []): IObligacionMoraA5[] {
   const porRef = new Map(enMora.map((o) => [o.ref, o]))
   return (p?.obligaciones ?? [])
-    .map((o) => (typeof o === 'string' ? (porRef.get(o) ?? { ref: o }) : o))
+    .map((o): IObligacionExigida => (typeof o === 'string' ? (porRef.get(o) ?? { ref: o }) : o))
     .filter((o): o is IObligacionMoraA5 => !!o && typeof o.ref === 'string')
 }
 

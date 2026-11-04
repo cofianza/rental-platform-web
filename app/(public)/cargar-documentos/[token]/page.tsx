@@ -133,8 +133,10 @@ export default function CargarDocumentosPage() {
   // Adenda 5 §7: el requisito, solo mientras el plazo sigue corriendo.
   const pazYSalvo =
     ctx?.paz_y_salvo && !ctx.paz_y_salvo.vencida && new Date(ctx.paz_y_salvo.vence_en) > new Date() ? ctx.paz_y_salvo : null
-  const propositoElegido: PropositoSoporte = proposito ?? (pazYSalvo ? 'paz_y_salvo' : 'certificacion_laboral')
   const opcionesProposito = pazYSalvo ? OPCIONES_CON_PAZ_Y_SALVO : OPCIONES_PROPOSITO
+  // Lo elegido solo si sigue entre las opciones (el paz y salvo deja de ofrecerse al acreditarse o vencer).
+  const propositoElegido: PropositoSoporte =
+    proposito && opcionesProposito.some((p) => p.value === proposito) ? proposito : pazYSalvo ? 'paz_y_salvo' : 'certificacion_laboral'
 
   const handleSubir = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -174,7 +176,6 @@ export default function CargarDocumentosPage() {
           : 'Documento cargado correctamente',
       )
       setFile(null)
-      setProposito(null)
       form.reset()
       await cargar()
     } catch (err: unknown) {
@@ -279,11 +280,8 @@ export default function CargarDocumentosPage() {
                     </p>
                     <ul className="mt-2 space-y-1.5">
                       {pazYSalvo.obligaciones!.map((o, i) => (
-                        <li key={o.ref ?? i} className="rounded-lg border border-amber-200 bg-white px-3 py-2">
-                          <p className="break-words font-medium text-gray-900">
-                            {o.acreedor?.trim() || 'Entidad acreedora'}
-                            {o.tipo_cuenta?.trim() ? ` · ${o.tipo_cuenta.trim()}` : ''}
-                          </p>
+                        <li key={i} className="rounded-lg border border-amber-200 bg-white px-3 py-2">
+                          <p className="break-words font-medium text-gray-900">{o.acreedor?.trim() || 'Entidad acreedora'}</p>
                           {typeof o.saldo_mora_cop === 'number' && (
                             <p className="text-xs text-gray-700">Saldo en mora: {pesosA5(o.saldo_mora_cop)}</p>
                           )}

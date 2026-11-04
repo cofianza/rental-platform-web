@@ -10,6 +10,7 @@ import {
   nombreObligacion,
   nombreSector,
   obligacionesExigidas,
+  pazYSalvoDeMoraVigente,
   pazYSalvoPendiente,
   razonMoraPct,
   refsExigidas,
@@ -21,8 +22,8 @@ import { conUnidad, META, rigeHoy } from '../components/calibracion/parametros'
 test('razón de mora: prefiere el %; si no, la fracción exacta con un decimal', () => {
   assert.equal(razonMoraPct({ razon_mora_pct: 13.8, razon_mora: 0.5 }), 13.8)
   assert.equal(razonMoraPct({ razon_mora: 180_000 / 1_300_000 }), 13.8)
-  assert.equal(razonMoraPct({ razon: 300_000 / 1_300_000 }), 23.1)
-  assert.equal(razonMoraPct({ razon: null }), null)
+  assert.equal(razonMoraPct({ razon_mora_pct: null, razon_mora: 300_000 / 1_300_000 }), 23.1)
+  assert.equal(razonMoraPct({ razon_mora: null }), null)
   assert.equal(razonMoraPct(null), null)
   assert.equal(textoPct(15.4), '15,4 %')
 })
@@ -42,6 +43,20 @@ test('paz y salvo: pendiente hasta acreditarlo, y las refs vengan como vengan', 
   assert.equal(detalleMora(exigidas[0]), '$56.000 en mora · 150 días')
   assert.equal(nombreSector('4'), 'Sector telecomunicaciones')
   assert.equal(nombreSector(null), null)
+})
+
+test('GET mora-vigente: solo el paz y salvo pendiente cuenta (la API manda el último, resuelto o no)', () => {
+  const base = { exigido_en: '2026-11-04T15:00:00Z', exigido_por: 'analista', acreditacion: null, vencimiento: null }
+  const obligaciones = [{ ref: '900123:*4321', acreedor: 'Operador de ejemplo', saldo_mora_cop: 56_000 }]
+  const pendiente = pazYSalvoDeMoraVigente({ paz_y_salvo: { ...base, pendiente: true, vence_en: '2026-11-19T15:00:00Z', obligaciones } })
+  assert.equal(pazYSalvoPendiente(pendiente), true)
+  assert.equal(obligacionesExigidas(pendiente)[0].acreedor, 'Operador de ejemplo')
+  // Acreditado o vencido: la API manda pendiente=false y vence_en=null.
+  assert.equal(pazYSalvoDeMoraVigente({ paz_y_salvo: { ...base, pendiente: false, vence_en: null, obligaciones } }), null)
+  assert.equal(pazYSalvoDeMoraVigente({ paz_y_salvo: null }), null)
+  assert.equal(pazYSalvoDeMoraVigente(null), null)
+  // Lo que recibe el solicitante en su estudio: sin ref; no se inventa una.
+  assert.deepEqual(obligacionesExigidas({ vence_en: '2026-11-19T15:00:00Z', obligaciones: [{ acreedor: 'Operador de ejemplo', saldo_mora_cop: 56_000 }] }), [])
 })
 
 test('§10: lo que ve la inmobiliaria no trae acreedor ni monto', () => {
