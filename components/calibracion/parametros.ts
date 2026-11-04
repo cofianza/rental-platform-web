@@ -31,6 +31,8 @@ export type Unidad =
   | 'veces'
   | 'consultas'
   | 'num'
+  // Fracción del canon guardada como 0,15: se muestra «15 % del canon» (con 'pct' saldría «0,15 %»).
+  | 'fraccion_canon'
 
 export type SeccionId = 'aprobacion' | 'ingreso' | 'coarrendatarios' | 'capacidad' | 'precios' | 'plazos' | 'contratos' | 'migracion' | 'otros'
 
@@ -39,7 +41,7 @@ export type SeccionId = 'aprobacion' | 'ingreso' | 'coarrendatarios' | 'capacida
  * reglas encendido (o apagado), nunca (retirado) o en parte (`notaRige` dice
  * dónde). Con lo que no rige hoy, la sección lo pliega al final.
  */
-export type Rige = 'siempre' | 'v2' | 'sin_v2' | 'a4' | 'v2_a4' | 'nunca' | 'parcial'
+export type Rige = 'siempre' | 'v2' | 'sin_v2' | 'a4' | 'v2_a4' | 'a5' | 'nunca' | 'parcial'
 
 export interface MetaParametro {
   nombre: string
@@ -96,6 +98,26 @@ export const SECCIONES: { id: SeccionId; titulo: string; ayuda: string }[] = [
 // es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
 export const fmt = (n: number, entero = false) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
 const pesos = (n: number) => `$${fmt(Math.round(n), true)}`
+
+/**
+ * La escalera de la mora vigente con un canon de ejemplo (Adenda 5 §4): hasta
+ * dónde no frena, de dónde a dónde va a un analista y desde dónde rechaza. Los
+ * bordes son exactos (la API compara sin redondear): la tolerada es «menor que»,
+ * la de rechazo es «mayor que». Los factores se pasan a diezmilésimas para no
+ * arrastrar el error de coma flotante (1.300.000 × 0,3 = 389.999,99…).
+ */
+const CANON_EJEMPLO = 1_300_000
+function escaleraMora(tolerada: number, rechazo: number, canon = CANON_EJEMPLO) {
+  const tope = (f: number) => (canon * Math.round(f * 10_000)) / 10_000
+  const desdeRevision = Math.ceil(tope(tolerada))
+  const hastaRevision = Math.floor(tope(rechazo))
+  return { hastaTolerada: desdeRevision - 1, desdeRevision, hastaRevision }
+}
+const textoEscalera = (v: Valores) => {
+  const e = escaleraMora(v.FACTOR_MORA_TOLERADA, v.FACTOR_MORA_RECHAZO)
+  if (e.hastaRevision < e.desdeRevision) return null
+  return `Con canon de ${pesos(CANON_EJEMPLO)}: hasta ${pesos(Math.max(0, e.hastaTolerada))} en mora sigue la evaluación normal; de ${pesos(e.desdeRevision)} a ${pesos(e.hastaRevision)} decide un analista; más de ${pesos(e.hastaRevision)} se rechaza.`
+}
 
 /** 209912 = «nunca»: es el valor con el que el cobro queda apagado. */
 export const MES_APAGADO = 209912
@@ -175,34 +197,78 @@ export const META: Record<string, MetaParametro> = {
     rige: 'siempre',
     ...DECISION,
   },
-  MORA_VIGENTE_MONTO_MINIMO: {
-    nombre: 'Mora vigente que rechaza: desde qué saldo',
+  // Adenda 5: la mora vigente deja de rechazar siempre (escalera frente al canon).
+  // El monto mínimo de la mora vigente (PR #152) se retiró: la Adenda 5 §5(a)
+  // dice «de cualquier monto» y la escalera lo reemplaza.
+  ADENDA5: {
+    nombre: 'Reglas de mora vigente de bajo monto (Adenda 5)',
     seccion: 'aprobacion',
-    sub: 'Moras que rechazan',
-    unidad: 'cop',
-    queHace: 'Si la persona tiene hoy obligaciones en atraso y el saldo en mora sumado es igual o mayor a este valor, el estudio se rechaza sin importar el puntaje, y un coarrendatario así no cuenta. En 0, cualquier saldo en mora rechaza. La mora que deja pasar resta puntos y nunca cuenta como «sin mora». Solo deja pasar moras de menos de 30 días: una que ya lleva 30 días o más también es mora de los últimos 6 meses y la rechaza la regla siguiente, así que para dejarla pasar hay que ajustar las dos.',
-    ejemplo: (v) =>
-      v.MORA_VIGENTE_MONTO_MINIMO === 0
-        ? 'Con $0: una mora de $50.000 en un celular rechaza el estudio.'
-        : `Con ${pesos(v.MORA_VIGENTE_MONTO_MINIMO)}: una mora de ${pesos(Math.max(1, Math.round(v.MORA_VIGENTE_MONTO_MINIMO / 2)))} con menos de 30 días de atraso no rechaza; una de ${pesos(v.MORA_VIGENTE_MONTO_MINIMO)} sí.`,
+    sub: 'Mora vigente y reciente',
+    unidad: 'onoff',
+    queHace:
+      'Encendido: una mora vigente deja de rechazar siempre. Si toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin castigo, dudoso recaudo ni cobro jurídico, la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente, el saldo en mora se compara con el canon: por debajo de la mora tolerada sigue la evaluación normal; entre la tolerada y la de rechazo decide un analista, que puede aprobarlo sujeto a paz y salvo; por encima se rechaza. Apagado: toda mora vigente rechaza.',
+    nota: 'Solo se puede encender con las reglas de capacidad de pago (Adenda 4) encendidas, y estas no se pueden apagar mientras esta esté encendida. Solo aplica cuando la central principal es DataCrédito: con TransUnion, la mora vigente rechaza.',
     rige: 'siempre',
-    nota: 'Hoy solo DataCrédito informa el saldo en mora. Si el estudio se decide con TransUnion, o la central no informa el saldo, cualquier mora rechaza aunque cambie este valor. Moverlo exige autorización escrita de la Dirección de Riesgo.',
+    motivo: true,
+    ...DECISION,
+  },
+  FACTOR_MORA_TOLERADA: {
+    nombre: 'Mora vigente tolerada: hasta qué parte del canon',
+    seccion: 'aprobacion',
+    sub: 'Mora vigente y reciente',
+    unidad: 'fraccion_canon',
+    queHace:
+      'Si el saldo en mora sumado (todo de sector no financiero y con las demás condiciones) es menor que esta parte del canon, la mora no rechaza ni frena el estudio: sigue la evaluación normal, aunque resta puntos y no cuenta como «sin moras». El canon es sin administración ni servicios. Se escribe como fracción: 0,15 = 15 % del canon.',
+    ejemplo: textoEscalera,
+    nota: 'Solo aplica con DataCrédito como central principal. Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo. Debe quedar por debajo de la mora que rechaza.',
+    rige: 'a5',
+    motivo: true,
+    ...DECISION,
+  },
+  FACTOR_MORA_RECHAZO: {
+    nombre: 'Mora vigente que rechaza: desde qué parte del canon',
+    seccion: 'aprobacion',
+    sub: 'Mora vigente y reciente',
+    unidad: 'fraccion_canon',
+    queHace:
+      'Si el saldo en mora sumado supera esta parte del canon, el estudio se rechaza. Desde la mora tolerada hasta este valor, ambos inclusive, el estudio va a un analista y no puede aprobarse solo; el analista lo aprueba, lo aprueba sujeto a paz y salvo o lo rechaza, y si lo aprueba se cobra la tarifa de aprobación no automática. Se escribe como fracción: 0,30 = 30 % del canon.',
+    ejemplo: textoEscalera,
+    nota: 'Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo. Debe quedar por encima de la mora tolerada.',
+    rige: 'a5',
+    motivo: true,
+    ...DECISION,
+  },
+  MIN_OBLIGACIONES_FINANCIERAS_AL_DIA: {
+    nombre: 'Créditos financieros al día para tolerar una mora',
+    seccion: 'aprobacion',
+    sub: 'Mora vigente y reciente',
+    unidad: 'num',
+    queHace:
+      'Créditos con bancos, cooperativas o financieras, vigentes, todos al día y a nombre de la persona como deudor principal, que debe tener para que una mora vigente de sector no financiero no la rechace. Sin ellos, la mora vigente rechaza cualquiera que sea su monto.',
+    ejemplo: (v) => {
+      const n = v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA
+      const menos = n - 1
+      return `Con ${n}: quien tiene ${menos === 0 ? 'ningún crédito financiero' : menos === 1 ? 'un solo crédito financiero' : `${menos} créditos financieros`} al día y una mora de $50.000 en un celular se rechaza.`
+    },
+    nota: 'Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo.',
+    rige: 'a5',
     motivo: true,
     ...DECISION,
   },
   DIAS_MORA_RECIENTE_RECHAZO: {
     nombre: 'Mora de los últimos 6 meses que rechaza: desde cuántos días',
     seccion: 'aprobacion',
-    sub: 'Moras que rechazan',
+    sub: 'Mora vigente y reciente',
     unidad: 'dias',
-    queHace: 'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos: 30, 60, 90 o 120 días. En 30, cualquier mora reportada rechaza. Una mora que no llega a estos días no rechaza, pero sigue restando puntos.',
+    queHace:
+      'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos: 30, 60, 90 o 120 días. En 30, cualquier mora reportada rechaza. Con las reglas de mora vigente de bajo monto encendidas, esta regla no cuenta la mora vigente que esas reglas toleran o mandan a un analista; cualquier otra mora de los últimos 6 meses sigue rechazando.',
     ejemplo: (v) =>
       v.DIAS_MORA_RECIENTE_RECHAZO === 30
         ? 'Con 30: una mora de 30 días hace 4 meses rechaza el estudio.'
         : `Con ${v.DIAS_MORA_RECIENTE_RECHAZO}: una mora de 30 días hace 4 meses no rechaza (sigue restando puntos); una de ${v.DIAS_MORA_RECIENTE_RECHAZO} días sí.`,
     rige: 'siempre',
     opciones: [30, 60, 90, 120],
-    nota: 'Esta regla solo aplica con DataCrédito: TransUnion no informa la mora mes a mes. Moverlo exige autorización escrita de la Dirección de Riesgo.',
+    nota: 'La política vigente la fija en 30, también con las reglas de mora vigente de bajo monto. Solo aplica con DataCrédito: TransUnion no informa la mora mes a mes. Moverlo exige autorización escrita de la Dirección de Riesgo.',
     motivo: true,
     ...DECISION,
   },
@@ -429,7 +495,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Paquete de reglas',
     unidad: 'onoff',
     queHace: 'Encendido: sin ingreso comprobado con documentos, un endeudamiento alto o un canon alto frente al ingreso ya no rechazan solos (van a un analista o piden coarrendatario) y el endeudamiento se puntúa por cómo paga la persona. Apagado: se decide como antes.',
-    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas.',
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas, y no se puede apagar mientras estén encendidas las reglas de mora vigente de bajo monto (Adenda 5).',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -449,7 +515,10 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'capacidad',
     sub: 'Quién es buen pagador',
     unidad: 'meses',
-    queHace: 'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Solo 6 o 12.',
+    queHace:
+      'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Con las reglas de mora vigente de bajo monto encendidas, es también la ventana en la que no puede haber mora en ningún crédito financiero para que una mora vigente no financiera no rechace. Solo 6 o 12.',
+    nota: 'Moverlo cambia a la vez quién es buen pagador y la condición de las moras vigentes de bajo monto.',
+    // Las reglas de mora vigente de bajo monto exigen las de capacidad de pago: 'a4' cubre las dos.
     rige: 'a4',
     opciones: [6, 12],
     ...DECISION,
@@ -555,7 +624,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
-    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario), o si un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad.',
+    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario), o si un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad (no si también lo frenó una mora vigente de bajo monto).',
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
@@ -564,7 +633,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
-    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza en las demás aprobaciones: de un analista por otros motivos, con una condición adicional o de la Gerencia General sobre el tope.',
+    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza en las demás aprobaciones: de un analista por otros motivos (incluida la mora vigente de bajo monto que fue a revisión, con o sin paz y salvo), con una condición adicional o de la Gerencia General sobre el tope.',
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_NO_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
@@ -631,6 +700,16 @@ export const META: Record<string, MetaParametro> = {
     notaRige: 'además Tecnología debe tener encendido el cierre automático (hoy lo está)',
     nota: 'Acortarlo aplica también a los estudios ya creados: los que ya pasen el plazo nuevo sin la autorización del solicitante se cierran en la siguiente revisión automática (cada hora). Alargarlo no reabre los cerrados.',
     rige: 'a4',
+  },
+  DIAS_PLAZO_PAZ_Y_SALVO: {
+    nombre: 'Plazo para acreditar el paz y salvo',
+    seccion: 'plazos',
+    sub: 'Plazos',
+    unidad: 'dias',
+    queHace:
+      'Días calendario que tiene el candidato para acreditar el paz y salvo de una mora cuando el analista aprueba el estudio sujeto a ese requisito. Mientras tanto no se puede crear el contrato. Vencido sin acreditarlo, el estudio se cierra como no aprobado; si el candidato cargó el documento a tiempo y nadie lo ha revisado, decide un analista.',
+    nota: 'Debe quedar por debajo de los días que vale el certificado de riesgo. Aplica a los requisitos que se exijan desde el cambio: los ya exigidos conservan su fecha.',
+    rige: 'a5',
   },
   VIGENCIA_CRC_DIAS: {
     nombre: 'Días que vale el certificado de riesgo',
@@ -874,6 +953,8 @@ export function rigeHoy(rige: Rige, v: Valores): boolean {
       return v.ADENDA4 === 1
     case 'v2_a4':
       return v.ADENDA3_V2 === 1 && v.ADENDA4 === 1
+    case 'a5':
+      return v.ADENDA5 === 1
     case 'nunca':
       return false
     default:
@@ -890,6 +971,8 @@ export function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'e
       return `$${v}`
     case 'pct':
       return `${v} %`
+    case 'fraccion_canon':
+      return `${fmt(n * 100)} % del canon`
     case 'puntos':
       return `${v} pts`
     case 'horas':

@@ -16,7 +16,7 @@ import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
-import { conUnidad, humanizar, MES_APAGADO, metaDe, rigeHoy, type Valores } from './parametros'
+import { conUnidad, fmt, humanizar, MES_APAGADO, metaDe, rigeHoy, type Valores } from './parametros'
 
 interface Props {
   p: IParametroCalibracion
@@ -311,6 +311,8 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
 /** La unidad al lado del campo: «pts», «%», «días»… ($ va antes). */
 function sufijo(unidad: string, n: number): string {
   const uno = n === 1
+  // La fracción se escribe como tal (0,15) y al lado se lee en porcentaje del canon.
+  if (unidad === 'fraccion_canon') return Number.isFinite(n) ? `= ${fmt(n * 100)} % del canon` : '% del canon'
   return (
     {
       pct: '%',
