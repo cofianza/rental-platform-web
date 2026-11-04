@@ -63,6 +63,8 @@ export interface IEstudio {
   /** Adenda 4 §13: el endeudamiento con que decidió el motor. Solo Cofianza, en el detalle. */
   endeudamiento_motor?: IEndeudamientoMotor | null
   observaciones?: string | null
+  /** Puntaje del estudio (0 a 100) con que decidió el motor; viaja en el listado por expediente. Interno de Cofianza. */
+  puntaje_final?: number | null
   duracion_contrato_meses: number
   pago_por: PagoPor
   fecha_solicitud: string

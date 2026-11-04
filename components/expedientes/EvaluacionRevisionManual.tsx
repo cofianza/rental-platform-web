@@ -52,13 +52,16 @@ export function EvaluacionRevisionManual({
     label: string,
     campo: keyof IEvaluacionRevisionManual,
     opciones: Array<[string, number, string]>,
+    ayuda: string,
   ) => (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700">
         {label} <span className="text-red-500">*</span>
       </label>
+      <p id={`${id}-ayuda`} className="mb-1 text-xs text-gray-500">{ayuda}</p>
       <select
         id={id}
+        aria-describedby={`${id}-ayuda`}
         value={value[campo] ?? ''}
         onChange={(e) => onChange({ ...value, [campo]: e.target.value || undefined })}
         disabled={disabled}
@@ -76,12 +79,25 @@ export function EvaluacionRevisionManual({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500">
-        En la revisión manual el puntaje se recalcula con lo que usted verificó: la situación laboral y el
-        historial de arrendamiento del solicitante.
+      <p className="text-xs text-gray-600">
+        Las centrales no miden estos dos datos: los verifica usted y el puntaje del estudio se recalcula con
+        ellos. La situación laboral suma hasta 10 puntos; el historial de arrendamiento, hasta 5 (un reporte
+        negativo resta 10).
       </p>
-      {select('v7-estabilidad', 'Situación laboral verificada', 'estabilidad_laboral', OPCIONES_V7)}
-      {select('v9-arrendamiento', 'Historial de arrendamiento verificado', 'arrendamiento_previo', OPCIONES_V9)}
+      {select(
+        'v7-estabilidad',
+        'Situación laboral verificada',
+        'estabilidad_laboral',
+        OPCIONES_V7,
+        'Según los soportes que revisó: certificado laboral, desprendibles de nómina, RUT o extractos.',
+      )}
+      {select(
+        'v9-arrendamiento',
+        'Historial de arrendamiento verificado',
+        'arrendamiento_previo',
+        OPCIONES_V9,
+        'Referencia del arrendador anterior (llamada o carta). Si nunca ha arrendado, elija «Sin historial de arrendamiento previo».',
+      )}
     </div>
   )
 }
