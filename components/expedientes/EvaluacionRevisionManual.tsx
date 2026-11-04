@@ -80,9 +80,9 @@ export function EvaluacionRevisionManual({
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-600">
-        Las centrales no miden estos dos datos: los verifica usted y el puntaje del estudio se recalcula con
-        ellos. La situación laboral suma hasta 10 puntos; el historial de arrendamiento, hasta 5 (un reporte
-        negativo resta 10).
+        Las centrales no miden estos dos datos: los verifica usted. Si el estudio tiene puntaje, se vuelve a
+        calcular con más factores, así que puede subir o bajar. La situación laboral vale hasta 10 puntos y el
+        historial de arrendamiento hasta 5 (un reporte negativo resta 10).
       </p>
       {select(
         'v7-estabilidad',

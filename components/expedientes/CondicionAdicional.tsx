@@ -25,7 +25,7 @@ export function CondicionAdicional({
       />
       <span className="min-w-0">
         <span className="block font-medium text-gray-900">
-          Exigí una condición adicional para aprobarlo <span className="font-normal text-gray-500">(opcional)</span>
+          Aprobé con una condición adicional <span className="font-normal text-gray-500">(opcional)</span>
         </span>
         <span className="block">
           Además de los soportes de ingreso: por ejemplo, un coarrendatario, un depósito o un plazo menor.

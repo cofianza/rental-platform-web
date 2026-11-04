@@ -144,7 +144,7 @@ export function SelectorMotivos({
           <FilaMotivo
             key={codigo}
             texto={textoVisible(m.interno)}
-            visible={m.interno !== m.visible ? textoVisible(m.visible, { externo: true }) : null}
+            visible={loVeLaInmobiliaria(tipo, m)}
             marcado={value.motivos.includes(codigo)}
             noAplica={noAplican[codigo]}
             onAlternar={() => alternar(codigo)}
@@ -152,11 +152,11 @@ export function SelectorMotivos({
         ))}
       </ul>
       {bloqueadas.length > 0 && (
-        <details className="rounded-lg border border-dashed border-gray-300 px-3 py-2">
-          <summary className="cursor-pointer text-sm text-gray-600">
+        <details className="rounded-lg border border-dashed border-gray-300">
+          <summary className="block cursor-pointer px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900">
             {bloqueadas.length === 1 ? 'Un motivo no aplica' : `${bloqueadas.length} motivos no aplican`} a este estudio (ver por qué)
           </summary>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="space-y-1.5 px-3 pb-3">
             {bloqueadas.map(([codigo, m]) => (
               <FilaMotivo
                 key={codigo}
@@ -201,6 +201,17 @@ export function SelectorMotivos({
  * no aplica a este estudio. El catálogo lo escribe la API: llega ya limpio de
  * «(§14)» o «Anexo A» (textoVisible).
  */
+/**
+ * Lo que verá la inmobiliaria o el propietario de este motivo, o null. Al aprobar
+ * la API guarda solo el texto interno (el aviso dice que se aprobó, sin motivo):
+ * ahí no se promete nada. Si el texto visible repite el interno, tampoco.
+ */
+function loVeLaInmobiliaria(tipo: TipoDecision, m: { interno: string; visible: string }): string | null {
+  if (tipo === 'aprobar') return null
+  const visible = textoVisible(m.visible, { externo: true })
+  return visible && visible !== textoVisible(m.interno) ? visible : null
+}
+
 function FilaMotivo({
   texto,
   visible,
@@ -221,7 +232,9 @@ function FilaMotivo({
         className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
           bloqueado
             ? 'cursor-not-allowed border-gray-200 bg-gray-50'
-            : marcado
+            : marcado && noAplica
+              ? 'cursor-pointer border-amber-300 bg-amber-50/60'
+              : marcado
               ? 'cursor-pointer border-primary-300 bg-primary-50/60'
               : 'cursor-pointer border-gray-200 hover:bg-gray-50'
         }`}

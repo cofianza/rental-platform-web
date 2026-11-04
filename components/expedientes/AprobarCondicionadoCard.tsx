@@ -60,8 +60,8 @@ interface AprobarCondicionadoCardProps {
   condicion?: ICondicionCoarrendatario | null
   /** Observaciones del motor en la evaluación del titular: por qué llegó a revisión. */
   motivoRevision?: string | null
-  /** Puntaje del estudio (0 a 100) con que decidió el motor. Solo se muestra a Cofianza. */
-  puntajeEstudio?: number | null
+  /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
+  sinInmueble?: boolean
   onAprobado?: () => void
 }
 
@@ -75,7 +75,7 @@ export function AprobarCondicionadoCard({
   canalPropietario,
   condicion,
   motivoRevision,
-  puntajeEstudio,
+  sinInmueble,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -432,18 +432,13 @@ export function AprobarCondicionadoCard({
       <div className="space-y-4">
         {revision && (revision.motivos.length > 0 || revision.datos) ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-800">
-            <p className="font-semibold text-gray-900">
-              Por qué llegó a revisión
-              {puntajeEstudio != null && (
-                <span className="ml-2 font-normal text-gray-600">
-                  · Puntaje del estudio: {puntajeEstudio.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100
-                </span>
-              )}
-            </p>
-            {revision.motivos.length > 0 && (
+            <p className="font-semibold text-gray-900">Por qué llegó a revisión</p>
+            {revision.motivos.length > 0 ? (
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 {revision.motivos.map((m) => <li key={m}>{m}</li>)}
               </ul>
+            ) : (
+              <p className="mt-1">El motor no dejó un motivo escrito: revíselo en «Evaluación crediticia», en el estudio.</p>
             )}
             {revision.datos && <p className="mt-1 text-xs text-gray-600">{revision.datos}</p>}
             <p className="mt-2 text-xs font-medium text-amber-900">
@@ -454,7 +449,8 @@ export function AprobarCondicionadoCard({
           </div>
         ) : (
           <p className="text-sm text-gray-600">
-            Complete los dos pasos. Abajo verá lo que falta y lo que pasa al aprobar.
+            No hay un motivo escrito del motor: revíselo en «Evaluación crediticia», en el estudio. Complete los dos
+            pasos; abajo verá lo que falta para aprobar.
           </p>
         )}
         {/* Dos columnas en pantallas anchas: a la izquierda por qué se aprueba; a la
@@ -464,7 +460,7 @@ export function AprobarCondicionadoCard({
           <PasoModal
             n={1}
             titulo="Por qué lo aprueba"
-            ayuda="Marque solo lo que pasó en este caso. Debajo de cada motivo está lo que verá la inmobiliaria."
+            ayuda="Marque solo lo que pasó en este caso. Queda en el registro interno de Cofianza: la inmobiliaria o el propietario solo reciben el aviso de que se aprobó."
             listo={motivoListo && !errorFundamento}
           />
         {cargandoMotivos ? (
@@ -492,7 +488,7 @@ export function AprobarCondicionadoCard({
           <PasoModal
             n={2}
             titulo="Lo que verificó"
-            ayuda="Con esto se recalcula el puntaje y queda el registro de la decisión."
+            ayuda="Queda en el registro de la decisión y, si el estudio tiene puntaje, lo vuelve a calcular."
             listo={evaluacionCompleta(evaluacion) && !faltaNotaIdentidad}
           />
         <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
@@ -541,23 +537,36 @@ export function AprobarCondicionadoCard({
         )}
         </section>
         </div>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+          <p className="font-semibold text-gray-900">Al aprobar</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            <li>
+              {sinInmueble
+                ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
+                : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
+            </li>
+            <li>
+              {sinInmueble
+                ? 'Se le avisa al solicitante.'
+                : 'Se le avisa al solicitante y a la inmobiliaria o al propietario.'}
+            </li>
+            <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
+          </ul>
+        </div>
         <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
         {!loading && (faltantes.length > 0 ? (
           <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             <p className="font-semibold">Para activar «Aprobar estudio» falta:</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {/* En el celular el pie fijo no puede tapar el formulario: la lista se desplaza. */}
+            <ul className="mt-1 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 sm:max-h-none">
               {faltantes.map((f) => <li key={f}>{f}</li>)}
             </ul>
           </div>
         ) : (
-          <div role="status" className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
-            <p className="font-semibold">Listo para aprobar. Al confirmar:</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              <li>El estudio pasa a Aprobado y se puede crear el contrato.</li>
-              <li>El solicitante y la inmobiliaria o el propietario reciben el aviso en la plataforma y por correo.</li>
-              <li>Queda registrado con su usuario, la fecha, los motivos, los documentos y el puntaje recalculado.</li>
-            </ul>
-          </div>
+          <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-primary-800">
+            <IconCheck size={16} className="shrink-0" />
+            Todo completo: revise «Al aprobar» y confirme.
+          </p>
         ))}
         <div className="flex justify-end gap-2">
           <button
@@ -638,8 +647,12 @@ function PasoModal({ n, titulo, ayuda, listo }: { n: number; titulo: string; ayu
  */
 function partirObservaciones(texto: string): { datos: string; motivos: string[] } {
   const partes = texto.split(/\.\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
-  const frases = partes.map((f, i) => (i < partes.length - 1 ? `${f}.` : f).trim()).filter(Boolean)
+  const frases = partes
+    .map((f, i) => (i < partes.length - 1 ? `${f}.` : f).trim())
+    // La API no reescribe las observaciones cuando la condición de coarrendatario
+    // vence o no se cumple: aquí ya no está vigente (el modal no sale con condición).
+    .filter((f) => f && !/^Condici[oó]n pendiente:/i.test(f))
   const corte = frases.findIndex((f) => /pasa a revisi[oó]n/i.test(f))
-  if (corte < 0 || corte === frases.length - 1) return { datos: '', motivos: frases }
+  if (corte < 0) return { datos: '', motivos: frases }
   return { datos: frases.slice(0, corte).join(' '), motivos: frases.slice(corte + 1) }
 }
