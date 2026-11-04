@@ -30,7 +30,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IngresoVerificadoSection } from './IngresoVerificadoSection'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
-import { IconShieldCheck, IconAlertTriangle } from '@/components/icons'
+import { IconShieldCheck, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
@@ -105,7 +105,7 @@ export function AprobarCondicionadoCard({
       ? { A1: 'Este estudio no tiene documentos de ingreso cargados. Pídalos con «Enviar enlace al solicitante» o elija otro motivo.' }
       : {}),
     ...(evaluacion.arrendamiento_previo && evaluacion.arrendamiento_previo !== 'referencia_positiva' && !noAplican.A3
-      ? { A3: 'En «Historial de arrendamiento verificado», más abajo, eligió una opción sin referencia positiva.' }
+      ? { A3: 'En «Historial de arrendamiento verificado» eligió una opción sin referencia positiva.' }
       : {}),
   }
   const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplicanTodos, documentos, evaluacion.arrendamiento_previo)
@@ -419,13 +419,18 @@ export function AprobarCondicionadoCard({
       isOpen={confirmAprobarOpen}
       onClose={() => { if (!loading) setConfirmAprobarOpen(false) }}
       title="Aprobar estudio en revisión manual"
-      size="md"
+      size="xl"
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600">
           El estudio pasará a Aprobado y se podrá crear el contrato desde el estudio. Su decisión queda
           registrada con su usuario, la fecha, el fundamento y los documentos que consultó.
         </p>
+        {/* Dos columnas en pantallas anchas: a la izquierda por qué se aprueba; a la
+            derecha lo que se verificó. Así el formulario cabe casi sin desplazarse. */}
+        <div className="grid gap-6 lg:grid-cols-2">
+        <section className="space-y-3">
+          <PasoModal n={1} titulo="Por qué lo aprueba" listo={motivoListo && !errorFundamento} />
         {cargandoMotivos ? (
           <CargandoMotivos />
         ) : catalogo ? (
@@ -446,6 +451,10 @@ export function AprobarCondicionadoCard({
           />
         </div>
         )}
+        </section>
+        <section className="space-y-4">
+          <PasoModal n={2} titulo="Lo que verificó" listo={evaluacionCompleta(evaluacion) && !faltaNotaIdentidad} />
+        <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} onCargados={setDocsCargados} />
         {pideNotaIdentidad && (
           <div>
@@ -466,7 +475,6 @@ export function AprobarCondicionadoCard({
             />
           </div>
         )}
-        <EvaluacionRevisionManual value={evaluacion} onChange={setEvaluacion} disabled={loading} />
         <CondicionAdicional checked={condicionAdicional} onChange={setCondicionAdicional} disabled={loading} />
         {sinInfoBuro && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-700">
@@ -490,6 +498,8 @@ export function AprobarCondicionadoCard({
             </label>
           </div>
         )}
+        </section>
+        </div>
         <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
         {faltantes.length > 0 && !loading && (
           <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -547,5 +557,23 @@ function Opcion({ titulo, children }: { titulo: string; children: ReactNode }) {
       <p className="font-medium text-gray-900 mb-0.5">{titulo}</p>
       <div className="text-sm text-gray-700">{children}</div>
     </li>
+  )
+}
+
+/** Encabezado de cada bloque del modal de aprobación, con su estado (pendiente o listo). */
+function PasoModal({ n, titulo, listo }: { n: number; titulo: string; listo: boolean }) {
+  return (
+    <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+      <span
+        aria-hidden
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+          listo ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
+        }`}
+      >
+        {listo ? <IconCheck size={14} /> : n}
+      </span>
+      {titulo}
+      <span className="sr-only">{listo ? '(completo)' : '(pendiente)'}</span>
+    </h3>
   )
 }
