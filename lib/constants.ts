@@ -211,7 +211,9 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'Inbox',
     description: 'Tickets de soporte funcional',
     resource: 'dashboard',
-    requiredRoles: ['administrador'],
+    // Oculto por ahora (4-nov-2026, entrega a Gerencia): nadie lo usa todavía.
+    // Para mostrarlo de nuevo, vuelva a ['administrador']. La ruta /soporte sigue viva.
+    requiredRoles: [],
     group: 'Administración',
   },
   {
