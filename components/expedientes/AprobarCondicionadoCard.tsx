@@ -95,12 +95,34 @@ export function AprobarCondicionadoCard({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   // Los motivos que el estudio contradice no se pueden registrar (la API da 400).
   const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(expedienteId, userRol === 'administrador' || userRol === 'operador_analista')
-  const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplican, documentos, evaluacion.arrendamiento_previo)
+  // Lo que el propio formulario ya sabe que no aplica, dicho en el motivo (no al final):
+  // sin documentos cargados no hay ingreso que verificar (A1), y sin referencia
+  // positiva elegida abajo no hay referencia de arrendamiento (A3).
+  const [docsCargados, setDocsCargados] = useState<number | null>(null)
+  const noAplicanTodos: Record<string, string> = {
+    ...noAplican,
+    ...(docsCargados === 0 && !noAplican.A1
+      ? { A1: 'Este estudio no tiene documentos de ingreso cargados. Pídalos con «Enviar enlace al solicitante» o elija otro motivo.' }
+      : {}),
+    ...(evaluacion.arrendamiento_previo && evaluacion.arrendamiento_previo !== 'referencia_positiva' && !noAplican.A3
+      ? { A3: 'En «Historial de arrendamiento verificado», más abajo, eligió una opción sin referencia positiva.' }
+      : {}),
+  }
+  const errorFundamento = errorMotivosAprobacion(motivos.motivos, noAplicanTodos, documentos, evaluacion.arrendamiento_previo)
   // Política §15 (sin historial en ninguna central): fuente de capacidad verificada.
   const [fuenteCapacidad, setFuenteCapacidad] = useState(false)
   const [condicionAdicional, setCondicionAdicional] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
+  // Lo que falta para que se active «Aprobar estudio», dicho junto al botón:
+  // los campos obligatorios quedan abajo del modal y no se veían.
+  const faltantes: string[] = []
+  if (cargandoMotivos) faltantes.push('Esperar a que carguen los motivos.')
+  else if (!motivoListo) faltantes.push(catalogo ? (errorMotivos('aprobar', motivos, catalogo) ?? 'Elija al menos un motivo.') : 'Escriba el fundamento de la decisión (mínimo 10 caracteres).')
+  if (errorFundamento) faltantes.push(errorFundamento)
+  if (!evaluacion.estabilidad_laboral) faltantes.push('Elija la «Situación laboral verificada».')
+  if (!evaluacion.arrendamiento_previo) faltantes.push('Elija el «Historial de arrendamiento verificado» (si no tiene, elija «Sin historial de arrendamiento previo»).')
+  if (faltaNotaIdentidad) faltantes.push('Escriba cómo verificó la identidad (mínimo 10 caracteres).')
   // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
   // se dice antes del formulario, no al final después de llenarlo.
   const [bloqueo, setBloqueo] = useState<{ codigo: string; motivo: string } | null>(null)
@@ -407,7 +429,7 @@ export function AprobarCondicionadoCard({
         {cargandoMotivos ? (
           <CargandoMotivos />
         ) : catalogo ? (
-          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} noAplican={noAplican} errorLectura={errorMotivosLectura} onReintentar={reintentarMotivos} />
+          <SelectorMotivos tipo="aprobar" catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={loading} noAplican={noAplicanTodos} errorLectura={errorMotivosLectura} onReintentar={reintentarMotivos} />
         ) : (
         <div>
           <label htmlFor="fundamento-revision" className="block text-sm font-medium text-gray-700 mb-1">
@@ -424,7 +446,7 @@ export function AprobarCondicionadoCard({
           />
         </div>
         )}
-        <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} />
+        <DocumentosConsultados expedienteId={expedienteId} value={documentos} onChange={setDocumentos} disabled={loading} onCargados={setDocsCargados} />
         {pideNotaIdentidad && (
           <div>
             <label htmlFor="nota-identidad" className="block text-sm font-medium text-gray-700 mb-1">
@@ -468,8 +490,16 @@ export function AprobarCondicionadoCard({
             </label>
           </div>
         )}
-        {errorFundamento && <p role="status" className="text-sm text-amber-800">{errorFundamento}</p>}
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+        <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
+        {faltantes.length > 0 && !loading && (
+          <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="font-semibold">Para activar «Aprobar estudio» falta:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {faltantes.map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          </div>
+        )}
+        <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={() => setConfirmAprobarOpen(false)}
@@ -486,6 +516,7 @@ export function AprobarCondicionadoCard({
           >
             {loading ? 'Aprobando…' : 'Aprobar estudio'}
           </button>
+        </div>
         </div>
       </div>
     </Modal>

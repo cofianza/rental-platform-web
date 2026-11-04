@@ -19,10 +19,13 @@ interface DocumentosConsultadosProps {
   value: string[]
   onChange: (documentos: string[]) => void
   disabled?: boolean
+  /** Cuántos documentos y soportes tiene el estudio (además del reporte), al cargarlos. */
+  onCargados?: (cantidad: number) => void
 }
 
-export function DocumentosConsultados({ expedienteId, value, onChange, disabled }: DocumentosConsultadosProps) {
+export function DocumentosConsultados({ expedienteId, value, onChange, disabled, onCargados }: DocumentosConsultadosProps) {
   const [opciones, setOpciones] = useState<string[]>([REPORTE_CENTRALES])
+  const [cargados, setCargados] = useState<number | null>(null)
 
   useEffect(() => {
     let cancel = false
@@ -35,9 +38,14 @@ export function DocumentosConsultados({ expedienteId, value, onChange, disabled 
         ...docs.map((d) => (d.tipo_documento?.nombre ? `${d.tipo_documento.nombre}: ${d.nombre_original}` : d.nombre_original)),
         ...soportes.map((s) => `Soporte: ${s.nombre_original}`),
       ]
-      setOpciones([REPORTE_CENTRALES, ...new Set(nombres)])
+      const unicos = [...new Set(nombres)]
+      setOpciones([REPORTE_CENTRALES, ...unicos])
+      setCargados(unicos.length)
+      onCargados?.(unicos.length)
     })
     return () => { cancel = true }
+    // onCargados es un setState del padre: estable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expedienteId])
 
   const toggle = (nombre: string) =>
@@ -60,6 +68,12 @@ export function DocumentosConsultados({ expedienteId, value, onChange, disabled 
           </label>
         ))}
       </div>
+      {cargados === 0 && (
+        <p className="mt-1 text-xs text-amber-800">
+          Este estudio no tiene documentos ni soportes cargados: solo puede marcar el reporte de las centrales. Si
+          necesita revisar el ingreso, pídalos con «Enviar enlace al solicitante».
+        </p>
+      )}
     </fieldset>
   )
 }
