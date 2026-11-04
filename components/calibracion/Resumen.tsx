@@ -9,6 +9,7 @@
 import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/calibracionService'
 import { IconInfo, IconLock } from '@/components/icons'
 import { EscalaDecision } from './EscalaDecision'
+import { ComoSeCalcula } from './ComoSeCalcula'
 import { ParametroFila } from './ParametroFila'
 import { conUnidad, metaDe, rigeHoy, type SeccionId, type Valores } from './parametros'
 
@@ -91,6 +92,15 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
       >
         <div className="p-4">
           <EscalaDecision valores={valores} onAbrir={onAbrir} />
+        </div>
+      </Tarjeta>
+
+      <Tarjeta
+        titulo="Cómo se calcula el puntaje del solicitante"
+        ayuda="La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100."
+      >
+        <div className="p-4">
+          <ComoSeCalcula valores={valores} />
         </div>
       </Tarjeta>
 
