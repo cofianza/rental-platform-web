@@ -574,7 +574,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Tarifa mensual de la fianza',
     unidad: 'mes',
     queHace: 'Primer mes cuya tarifa mensual liquida y factura la plataforma. Los meses anteriores se cobran por fuera. «Sin activar» = la plataforma no cobra ningún mes.',
-    notaRige: 'además necesita encendido en el servidor el cobro automático de la tarifa; mientras esté apagado, no se liquida ningún mes aunque aquí haya uno elegido',
+    notaRige: 'además Tecnología debe tener encendido el cobro automático de la tarifa; si está apagado, no se liquida ningún mes aunque aquí haya uno elegido',
     rige: 'siempre',
   },
   VIGENCIA_PAQUETE_MESES: {
@@ -628,7 +628,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Plazos',
     unidad: 'dias',
     queHace: 'Si el solicitante no autoriza en estos días desde que se creó el estudio, el estudio se cierra para siempre (hay que crear otro). Lo pagado se devuelve si nadie llegó a consultarse en la central.',
-    notaRige: 'además necesita el cierre automático encendido en el servidor',
+    notaRige: 'además Tecnología debe tener encendido el cierre automático (hoy lo está)',
     nota: 'Acortarlo aplica también a los estudios ya creados: los que ya pasen el plazo nuevo sin la autorización del solicitante se cierran en la siguiente revisión automática (cada hora). Alargarlo no reabre los cerrados.',
     rige: 'a4',
   },
