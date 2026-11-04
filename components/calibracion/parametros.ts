@@ -175,6 +175,37 @@ export const META: Record<string, MetaParametro> = {
     rige: 'siempre',
     ...DECISION,
   },
+  MORA_VIGENTE_MONTO_MINIMO: {
+    nombre: 'Mora vigente que rechaza: desde qué saldo',
+    seccion: 'aprobacion',
+    sub: 'Moras que rechazan',
+    unidad: 'cop',
+    queHace: 'Si la persona tiene hoy obligaciones en atraso y el saldo en mora sumado es igual o mayor a este valor, el estudio se rechaza sin importar el puntaje, y un coarrendatario así no cuenta. En 0, cualquier saldo en mora rechaza. La mora que deja pasar resta puntos y nunca cuenta como «sin mora». Solo deja pasar moras de menos de 30 días: una que ya lleva 30 días o más también es mora de los últimos 6 meses y la rechaza la regla siguiente, así que para dejarla pasar hay que ajustar las dos.',
+    ejemplo: (v) =>
+      v.MORA_VIGENTE_MONTO_MINIMO === 0
+        ? 'Con $0: una mora de $50.000 en un celular rechaza el estudio.'
+        : `Con ${pesos(v.MORA_VIGENTE_MONTO_MINIMO)}: una mora de ${pesos(Math.max(1, Math.round(v.MORA_VIGENTE_MONTO_MINIMO / 2)))} con menos de 30 días de atraso no rechaza; una de ${pesos(v.MORA_VIGENTE_MONTO_MINIMO)} sí.`,
+    rige: 'siempre',
+    nota: 'Hoy solo DataCrédito informa el saldo en mora. Si el estudio se decide con TransUnion, o la central no informa el saldo, cualquier mora rechaza aunque cambie este valor. Moverlo exige autorización escrita de la Dirección de Riesgo.',
+    motivo: true,
+    ...DECISION,
+  },
+  DIAS_MORA_RECIENTE_RECHAZO: {
+    nombre: 'Mora de los últimos 6 meses que rechaza: desde cuántos días',
+    seccion: 'aprobacion',
+    sub: 'Moras que rechazan',
+    unidad: 'dias',
+    queHace: 'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos: 30, 60, 90 o 120 días. En 30, cualquier mora reportada rechaza. Una mora que no llega a estos días no rechaza, pero sigue restando puntos.',
+    ejemplo: (v) =>
+      v.DIAS_MORA_RECIENTE_RECHAZO === 30
+        ? 'Con 30: una mora de 30 días hace 4 meses rechaza el estudio.'
+        : `Con ${v.DIAS_MORA_RECIENTE_RECHAZO}: una mora de 30 días hace 4 meses no rechaza (sigue restando puntos); una de ${v.DIAS_MORA_RECIENTE_RECHAZO} días sí.`,
+    rige: 'siempre',
+    opciones: [30, 60, 90, 120],
+    nota: 'Esta regla solo aplica con DataCrédito: TransUnion no informa la mora mes a mes. Moverlo exige autorización escrita de la Dirección de Riesgo.',
+    motivo: true,
+    ...DECISION,
+  },
   UMBRAL_DIFERENCIA_INGRESO: {
     nombre: 'Diferencia de ingreso que pide revisión',
     seccion: 'aprobacion',
