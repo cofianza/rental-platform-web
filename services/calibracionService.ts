@@ -62,6 +62,16 @@ export interface IRevisionManual {
   dentro_del_sla: number
   escaladas_sin_ingreso: number
   datacredito: { consultas: number; caidas: number; errores_de_dato: number; tasa_caida_pct: number | null }
+  /** Revisión de antecedentes y listas restrictivas en Auco. Opcional: un API anterior no lo manda. */
+  auco?: {
+    consultas: number
+    verificadas: number
+    lista_caida: number
+    sin_respuesta: number
+    otras: number
+    tasa_falla_pct: number | null
+    ultima_falla: { en: string; motivo: string } | null
+  }
 }
 
 export const calibracionService = {
