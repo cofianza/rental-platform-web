@@ -65,6 +65,16 @@ const EVENTOS_CIERRE = new Set([
 ])
 
 /**
+ * Tabla 4 — eventos de pago de una obligación en mora hoy: 17-41 mora activa,
+ * 45 castigada y 47 dudoso recaudo (el mismo criterio del motor). Sirve para
+ * reconocer la fila en mora cuando la API quitó los importes (Adenda 5 §10).
+ */
+function eventoEnMora(evento: string): boolean {
+  const n = Number(evento)
+  return Number.isInteger(n) && ((n >= 17 && n <= 41) || n === 45 || n === 47)
+}
+
+/**
  * Anexo Advance Income DW, "Exclusiones del Producto Advance Income".
  * La razon 99 es el caso normal (hay estimacion); 50-54 la excluyen, y no
  * significan lo mismo entre si: la 53 dice que el buro reporta al titular
@@ -420,11 +430,22 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
   const esVigente = (item: (typeof obligaciones)[number]) =>
     ESTADOS_ABIERTOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) &&
     !EVENTOS_CIERRE.has(codigoCatalogo(item.status?.payment?.businessBureauEvent))
-  // Deterioro: estado negativo de la Tabla 41 o mora efectiva en importes/dias.
+  // Deterioro: estado negativo de la Tabla 41, evento de mora de la Tabla 4 o
+  // mora efectiva en importes/dias. El evento cuenta aunque la API haya quitado
+  // los importes de la fila (Adenda 5 §10, vista de la inmobiliaria).
   const esNegativa = (item: (typeof obligaciones)[number]) =>
     ESTADOS_NEGATIVOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) ||
+    eventoEnMora(codigoCatalogo(item.status?.payment?.businessBureauEvent)) ||
     (num(item.values?.businessValueBalanceOverdue) ?? 0) > 0 ||
     (num(item.values?.delinquencyMaturation) ?? 0) > 0
+  /**
+   * Adenda 5 §10: a la inmobiliaria y al propietario la API les quita el
+   * acreedor, el número y los montos de las obligaciones EN MORA (solo el
+   * evaluado conoce el detalle). La fila sigue: estado y tipo, sin inventar datos.
+   */
+  const esReservada = (item: (typeof obligaciones)[number]) =>
+    externo && esNegativa(item) && nombreEntidad(item.account) === '—'
+  const hayReservadas = obligaciones.some(esReservada)
   // El historial negativo es lo que sustenta un condicionado: va primero, para
   // que nunca quede fuera de las filas visibles.
   const rango = (item: (typeof obligaciones)[number]) => (esNegativa(item) ? 0 : esVigente(item) ? 1 : 2)
@@ -762,10 +783,13 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                   const valorMoraCuenta = num(item.values?.businessValueBalanceOverdue)
                   const diasMora = num(item.values?.delinquencyMaturation)
                   const enMora = (valorMoraCuenta !== null && valorMoraCuenta > 0) || (diasMora !== null && diasMora > 0)
+                  const reservada = esReservada(item)
 
                   return (
                     <tr key={item.account?.primaryKey ?? idx} className="border-b border-gray-50">
-                      <td className="py-1.5 px-1 text-gray-700">{nombreEntidad(item.account)}</td>
+                      <td className="py-1.5 px-1 text-gray-700">
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : nombreEntidad(item.account)}
+                      </td>
                       <td className="py-1.5 px-1 text-gray-700">{tipoObligacion(item.account)}</td>
                       <td className="py-1.5 px-1 text-right text-gray-900">
                         {formatCOP(item.values?.debtBalance)}
@@ -776,10 +800,12 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                       <td className="py-1.5 px-1">
                         <EstadoPill texto={estadoTexto} tono={tono} />
                       </td>
-                      <td className={`py-1.5 px-1 text-right ${enMora ? 'text-red-700 font-medium' : 'text-gray-900'}`}>
+                      <td className={`py-1.5 px-1 text-right ${enMora || reservada ? 'text-red-700 font-medium' : 'text-gray-900'}`}>
                         {enMora
                           ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
-                          : '—'}
+                          : reservada
+                            ? 'En mora'
+                            : '—'}
                       </td>
                     </tr>
                   )
@@ -807,6 +833,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
           <p className="text-[10px] text-gray-500 mt-2">
             Saldo, cuota y mora en pesos. Las obligaciones ya canceladas no reportan importes: se muestran con
             guion.
+            {hayReservadas &&
+              ' Por reserva, el acreedor y los montos de las obligaciones en mora solo se le comunican al candidato.'}
           </p>
         </AccordionSection>
       )}

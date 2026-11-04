@@ -7,6 +7,9 @@
  * estudio aprobado y antes del contrato, para bajar la prima al 10 % (el enlace
  * llega en el correo del aprobado). El API decide si se puede (Decisión 4: no en
  * el canal del propietario directo).
+ * Adenda 5 §7 y §10: si el analista aprobó el estudio sujeto a paz y salvo,
+ * aquí (y solo aquí, porque el enlace es personal) el evaluado ve la obligación
+ * en mora con su acreedor y saldo, el plazo, y carga el paz y salvo.
  */
 
 'use client'
@@ -14,7 +17,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
+import { IconLoader, IconCheckCircle, IconClock, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
@@ -25,6 +28,7 @@ import {
   type PropositoSoporte,
 } from '@/services/cargarDocumentosService'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { pesosA5 } from '@/lib/pazYSalvo'
 
 // Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
 // estudio ya resuelto no se promete una revisión que no va a ocurrir, y al
@@ -80,11 +84,14 @@ const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
   { value: 'codeudor', label: 'Documentos de respaldo de un tercero' },
   { value: 'poliza', label: 'Póliza' },
   { value: 'otros_soportes', label: 'Otros soportes' },
+  { value: 'paz_y_salvo', label: 'Paz y salvo de la obligación' },
 ]
 const PROPOSITO_LABEL = Object.fromEntries(PROPOSITOS.map((p) => [p.value, p.label]))
 // Al arrendatario no se le ofrecen codeudor ni póliza: Cofianza es justamente
 // lo que reemplaza a ambos. Siguen en el mapa de arriba para nombrar lo ya subido.
-const OPCIONES_PROPOSITO = PROPOSITOS.filter((p) => p.value !== 'codeudor' && p.value !== 'poliza')
+// El paz y salvo solo se ofrece mientras el analista lo exige (va primero).
+const OPCIONES_PROPOSITO = PROPOSITOS.filter((p) => p.value !== 'codeudor' && p.value !== 'poliza' && p.value !== 'paz_y_salvo')
+const OPCIONES_CON_PAZ_Y_SALVO = [PROPOSITOS.find((p) => p.value === 'paz_y_salvo')!, ...OPCIONES_PROPOSITO]
 
 const MIME_OK = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_BYTES = 10 * 1024 * 1024
@@ -95,7 +102,8 @@ export default function CargarDocumentosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reintentable, setReintentable] = useState(false)
-  const [proposito, setProposito] = useState<PropositoSoporte>('certificacion_laboral')
+  // null = el de omisión: el paz y salvo si se lo exigen, si no la certificación laboral.
+  const [proposito, setProposito] = useState<PropositoSoporte | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [subiendo, setSubiendo] = useState(false)
 
@@ -122,9 +130,16 @@ export default function CargarDocumentosPage() {
     cargar()
   }, [cargar])
 
+  // Adenda 5 §7: el requisito, solo mientras el plazo sigue corriendo.
+  const pazYSalvo =
+    ctx?.paz_y_salvo && !ctx.paz_y_salvo.vencida && new Date(ctx.paz_y_salvo.vence_en) > new Date() ? ctx.paz_y_salvo : null
+  const propositoElegido: PropositoSoporte = proposito ?? (pazYSalvo ? 'paz_y_salvo' : 'certificacion_laboral')
+  const opcionesProposito = pazYSalvo ? OPCIONES_CON_PAZ_Y_SALVO : OPCIONES_PROPOSITO
+
   const handleSubir = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
+    const propositoCarga = propositoElegido
     if (!file) {
       toast.error('Seleccione un archivo')
       return
@@ -143,7 +158,7 @@ export default function CargarDocumentosPage() {
         nombre_original: file.name,
         tipo_mime: file.type,
         tamano_bytes: file.size,
-        proposito,
+        proposito: propositoCarga,
       })
       await cargarDocumentosService.uploadToSignedUrl(pre.signed_url, file)
       await cargarDocumentosService.confirmar(token, {
@@ -151,10 +166,15 @@ export default function CargarDocumentosPage() {
         nombre_original: file.name,
         tipo_mime: file.type,
         tamano_bytes: file.size,
-        proposito,
+        proposito: propositoCarga,
       })
-      toast.success('Documento cargado correctamente')
+      toast.success(
+        propositoCarga === 'paz_y_salvo'
+          ? 'Paz y salvo cargado. Un analista de Cofianza lo revisa y le avisamos por correo.'
+          : 'Documento cargado correctamente',
+      )
       setFile(null)
+      setProposito(null)
       form.reset()
       await cargar()
     } catch (err: unknown) {
@@ -212,7 +232,11 @@ export default function CargarDocumentosPage() {
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {conCondicion ? (ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
+            {conCondicion
+              ? ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+              : pazYSalvo
+                ? 'Requisito pendiente: paz y salvo'
+                : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1 break-words">
             {conCondicion ? (
@@ -220,6 +244,11 @@ export default function CargarDocumentosPage() {
               <>
                 Hola {ctx.solicitante}: así va su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
+              </>
+            ) : pazYSalvo ? (
+              <>
+                Hola {ctx.solicitante}: para continuar con su estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} necesitamos un paz y salvo.
               </>
             ) : soloCoarrendatario ? (
               <>
@@ -235,6 +264,49 @@ export default function CargarDocumentosPage() {
             )}
           </p>
         </div>
+
+        {pazYSalvo && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-gray-800">
+            <div className="flex items-start gap-3">
+              <IconClock size={20} className="mt-0.5 shrink-0 text-amber-700" />
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900">Cárguelo antes del {fechaCondicion(pazYSalvo.vence_en)}</p>
+                {(pazYSalvo.obligaciones?.length ?? 0) > 0 ? (
+                  <>
+                    <p className="mt-1">
+                      Las centrales de riesgo reportan en mora a su nombre{' '}
+                      {pazYSalvo.obligaciones!.length === 1 ? 'esta obligación' : 'estas obligaciones'}:
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {pazYSalvo.obligaciones!.map((o, i) => (
+                        <li key={o.ref ?? i} className="rounded-lg border border-amber-200 bg-white px-3 py-2">
+                          <p className="break-words font-medium text-gray-900">
+                            {o.acreedor?.trim() || 'Entidad acreedora'}
+                            {o.tipo_cuenta?.trim() ? ` · ${o.tipo_cuenta.trim()}` : ''}
+                          </p>
+                          {typeof o.saldo_mora_cop === 'number' && (
+                            <p className="text-xs text-gray-700">Saldo en mora: {pesosA5(o.saldo_mora_cop)}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="mt-1">Las centrales de riesgo reportan a su nombre una obligación en mora; le enviamos el detalle por correo.</p>
+                )}
+                <p className="mt-2">
+                  Suba el certificado de paz y salvo que le entregue la entidad (que diga que la obligación está paga o al día). Si ya
+                  la pagó y la central todavía no lo refleja, ese certificado es justamente lo que necesitamos. Si vence el plazo sin
+                  acreditarlo, su estudio no podrá aprobarse.
+                </p>
+                <p className="mt-2 text-xs text-gray-600">
+                  Esta información es solo para usted: a la inmobiliaria o al propietario solo les informamos que hay un requisito
+                  pendiente a su cargo.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {ctx.coarrendatario?.puede_invitar && (
           <CoarrendatarioInviteForm
@@ -269,7 +341,7 @@ export default function CargarDocumentosPage() {
           </div>
         )}
 
-        {ctx.puede_subir && (
+        {ctx.puede_subir && !pazYSalvo && (
           <div className="rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-900">
             <p className="font-semibold">¿Qué subir?</p>
             <p className="mt-1 text-primary-800">
@@ -292,11 +364,11 @@ export default function CargarDocumentosPage() {
               </label>
               <select
                 id="cargar-proposito"
-                value={proposito}
+                value={propositoElegido}
                 onChange={(e) => setProposito(e.target.value as PropositoSoporte)}
                 className="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               >
-                {OPCIONES_PROPOSITO.map((p) => (
+                {opcionesProposito.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
