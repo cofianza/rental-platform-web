@@ -420,32 +420,35 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
       account: item?.account,
       status: item?.status,
       values: item?.values?.[0] as DcAccountValues | undefined,
+      reservada: item?.detalle_reservado === true,
     })),
     ...creditCard.map((item) => ({
       account: item?.account,
       status: item?.status,
       values: item?.values?.[0] as DcAccountValues | undefined,
+      reservada: item?.detalle_reservado === true,
     })),
   ]
   const esVigente = (item: (typeof obligaciones)[number]) =>
     ESTADOS_ABIERTOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) &&
     !EVENTOS_CIERRE.has(codigoCatalogo(item.status?.payment?.businessBureauEvent))
-  // Deterioro: estado negativo de la Tabla 41, evento de mora de la Tabla 4 o
-  // mora efectiva en importes/dias. El evento cuenta aunque la API haya quitado
-  // los importes de la fila (Adenda 5 §10, vista de la inmobiliaria).
-  const esNegativa = (item: (typeof obligaciones)[number]) =>
-    ESTADOS_NEGATIVOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) ||
-    eventoEnMora(codigoCatalogo(item.status?.payment?.businessBureauEvent)) ||
-    (num(item.values?.businessValueBalanceOverdue) ?? 0) > 0 ||
-    (num(item.values?.delinquencyMaturation) ?? 0) > 0
   /**
    * Adenda 5 §10: a la inmobiliaria y al propietario la API les quita el
-   * acreedor, el número y los montos de las obligaciones EN MORA (solo el
-   * evaluado conoce el detalle). La fila sigue: estado y tipo, sin inventar datos.
+   * acreedor, el número y los montos de las obligaciones EN MORA y las marca
+   * con `detalle_reservado` (solo el evaluado conoce el detalle). La fila
+   * sigue: estado y tipo, sin inventar datos. Sin la marca, nada cambia.
    */
-  const esReservada = (item: (typeof obligaciones)[number]) =>
-    externo && esNegativa(item) && nombreEntidad(item.account) === '—'
+  const esReservada = (item: (typeof obligaciones)[number]) => item.reservada
   const hayReservadas = obligaciones.some(esReservada)
+  // Deterioro: estado negativo de la Tabla 41 o mora efectiva en importes/dias.
+  // En una fila reservada (sin importes) cuenta también el evento de mora de la Tabla 4.
+  const moraPorEstado = (item: (typeof obligaciones)[number]) =>
+    ESTADOS_NEGATIVOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) ||
+    (esReservada(item) && eventoEnMora(codigoCatalogo(item.status?.payment?.businessBureauEvent)))
+  const esNegativa = (item: (typeof obligaciones)[number]) =>
+    moraPorEstado(item) ||
+    (num(item.values?.businessValueBalanceOverdue) ?? 0) > 0 ||
+    (num(item.values?.delinquencyMaturation) ?? 0) > 0
   // El historial negativo es lo que sustenta un condicionado: va primero, para
   // que nunca quede fuera de las filas visibles.
   const rango = (item: (typeof obligaciones)[number]) => (esNegativa(item) ? 0 : esVigente(item) ? 1 : 2)
@@ -467,6 +470,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
     .map((v) => num(v))
     .filter((v): v is number => v !== null)
   const valorMora = moras.length > 0 ? Math.max(...moras) : null
+  // §10: la API también quitó el saldo en mora del consolidado (con una sola obligación lo revela).
+  const moraConsolidadaReservada = hayReservadas && valorMora === null
   const cuotaMensual = num(balances?.valueMonthlyPayment)
   const creditoMasAlto = num(balances?.HightestDebtBalance ?? balances?.hightestDebtBalance)
   const negativos12Meses = num(principals?.negativeHistoricalLast12Months)
@@ -620,8 +625,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             />
             <SummaryCard
               label="Valor en mora"
-              value={formatCOP(valorMora, MILES)}
-              color={valorMora !== null && valorMora > 0 ? 'red' : 'green'}
+              value={moraConsolidadaReservada ? 'Reservado' : formatCOP(valorMora, MILES)}
+              color={moraConsolidadaReservada ? undefined : valorMora !== null && valorMora > 0 ? 'red' : 'green'}
             />
           </div>
 
@@ -684,10 +689,14 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             <InfoRow label="Mayor saldo individual" value={formatCOP(creditoMasAlto, MILES)} />
             <InfoRow
               label="Saldo en mora 30 / 60 / 90 días"
-              value={`${formatCOP(balances?.debtBalanceD30, MILES)} / ${formatCOP(
-                balances?.debtBalanceD60,
-                MILES
-              )} / ${formatCOP(balances?.debtBalanceD90, MILES)}`}
+              value={
+                moraConsolidadaReservada
+                  ? 'Reservado'
+                  : `${formatCOP(balances?.debtBalanceD30, MILES)} / ${formatCOP(
+                      balances?.debtBalanceD60,
+                      MILES
+                    )} / ${formatCOP(balances?.debtBalanceD90, MILES)}`
+              }
             />
             <InfoRow
               label="Negativos últimos 12 meses"
@@ -804,7 +813,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                         {enMora
                           ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
                           : reservada
-                            ? 'En mora'
+                            ? moraPorEstado(item) ? 'En mora' : 'Reservado'
                             : '—'}
                       </td>
                     </tr>

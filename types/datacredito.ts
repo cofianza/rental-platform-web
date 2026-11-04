@@ -231,6 +231,12 @@ export interface DcLiability {
   featuresLiabilities?: DcFeaturesLiabilities
   status?: DcAccountStatus
   values?: DcAccountValues[]
+  /**
+   * Adenda 5 §10 (no es de DataCrédito: lo agrega la API): a la inmobiliaria y
+   * al propietario les quitó el acreedor, la cuenta y los montos de esta
+   * obligación en mora. Solo el evaluado conoce el detalle.
+   */
+  detalle_reservado?: boolean
 }
 
 export interface DcCreditCard {
@@ -240,6 +246,8 @@ export interface DcCreditCard {
   FeaturesCreditCard?: DcFeaturesCreditCard
   status?: DcAccountStatus
   values?: DcAccountValues[]
+  /** Adenda 5 §10: ver DcLiability.detalle_reservado. */
+  detalle_reservado?: boolean
 }
 
 export interface DcSaving {
