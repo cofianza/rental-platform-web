@@ -109,7 +109,12 @@ export function SelectorMotivos({
   errorLectura?: boolean
   onReintentar?: () => void
 }) {
-  const opciones = Object.entries(catalogo[tipo] ?? {})
+  // Los que no aplican a este estudio (y no están marcados) van al final, para que
+  // los que sí se pueden elegir queden juntos arriba.
+  const opciones = Object.entries(catalogo[tipo] ?? {}).sort(
+    ([a], [b]) =>
+      Number(!!noAplican[a] && !value.motivos.includes(a)) - Number(!!noAplican[b] && !value.motivos.includes(b)),
+  )
   const idBase = `motivos-${tipo}`
   const conOtro = value.motivos.includes(OTRO[tipo])
 
