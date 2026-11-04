@@ -31,7 +31,8 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida } from './textoVisible'
+import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, fechaCondicion } from './textoVisible'
+import { pazYSalvoPendiente, textoRequisitoPendiente } from '@/lib/pazYSalvo'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -120,6 +121,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
       if (e.decision_cofianza === 'negado') return 'No aprobable'
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
+      // Adenda 5 §7: aprobado sujeto a paz y salvo; espera al candidato, no al analista.
+      if (pazYSalvoPendiente(e.paz_y_salvo)) return 'Requisito pendiente del candidato'
       // U8: un nombre por situación, como la lista, la barra y las notificaciones.
       return 'En revisión de Cofianza'
     }
@@ -259,6 +262,12 @@ function getSiguientePaso(
         return esCofianza && !estudio.condicion_coarrendatario.vencida && !estudio.condicion_coarrendatario.obligatoria
           ? `${texto} No requiere decisión del analista mientras la condición esté vigente.`
           : texto
+      }
+      // Adenda 5 §7 y §10: a la inmobiliaria y al propietario, sin acreedor ni monto.
+      if (pazYSalvoPendiente(estudio.paz_y_salvo)) {
+        return esCofianza
+          ? `Aprobado sujeto a paz y salvo: el candidato tiene hasta el ${fechaCondicion(estudio.paz_y_salvo.vence_en)} para acreditarlo. Cuando cargue el documento, acredítelo en el resumen del estudio.`
+          : `${textoRequisitoPendiente(estudio.paz_y_salvo.vence_en)}. Por reserva, el detalle solo se le comunica al candidato; mientras tanto no se puede crear el contrato.`
       }
       return esCofianza
         ? 'Revise el motivo y decida si lo aprueba.'
@@ -585,9 +594,14 @@ function EstudioPanel({
   // Esconder el boton por una condicion que aqui no se puede comprobar dejaria
   // al gestor sin saber por que no aparece.
   // Adenda 3 §6: con la condición en pie la API responde 409 (el puntaje
-  // objetivo depende del canon de este inmueble).
+  // objetivo depende del canon de este inmueble). Adenda 5 §7: igual con el paz
+  // y salvo pendiente (la razón de mora se midió contra el canon de este inmueble).
   const puedeReasignar =
-    esGestor && onReasignado != null && estudio.estado === 'completado' && !estudio.condicion_coarrendatario
+    esGestor &&
+    onReasignado != null &&
+    estudio.estado === 'completado' &&
+    !estudio.condicion_coarrendatario &&
+    !pazYSalvoPendiente(estudio.paz_y_salvo)
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
   // La decisión del analista sobre el condicionado del titular (como rotuloEvaluacion).

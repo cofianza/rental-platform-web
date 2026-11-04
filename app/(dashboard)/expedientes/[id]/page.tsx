@@ -64,6 +64,7 @@ import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
+import { pazYSalvoPendiente } from '@/lib/pazYSalvo'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -200,6 +201,9 @@ export default function ExpedienteDetallePage() {
   const [reasignadoDesde, setReasignadoDesde] = useState<string | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
+  // Adenda 5 §7: exigir el paz y salvo no mueve el expediente (sigue en revisión),
+  // así que en revisión el titular se relee con cada carga, no solo al cambiar.
+  const recargaEnRevision = estadoExpediente === 'condicionado' ? cargas : 0
   useEffect(() => {
     if (!estadoExpediente) return
     let cancel = false
@@ -226,7 +230,7 @@ export default function ExpedienteDetallePage() {
         setListaFallo(true)
       })
     return () => { cancel = true }
-  }, [id, estadoExpediente, actualizadoEn])
+  }, [id, estadoExpediente, actualizadoEn, recargaEnRevision])
   // F6/F3: el banner del rechazo ofrece la apelación solo si la API la admite,
   // con su último día real. El historial de cualquier evaluación de la cadena
   // la trae entera: se relee con cada carga del estudio (en un rechazado son
@@ -258,6 +262,12 @@ export default function ExpedienteDetallePage() {
   // Adenda 3 §6: aprobado con condición de coarrendatario (la API responde 409
   // a aprobarlo a mano, pedir soportes y reasignar).
   const condicionCoa = titularCondicionado?.condicion_coarrendatario ?? null
+  // Adenda 5 §7: aprobado sujeto a paz y salvo. Como la condición, espera al
+  // candidato (no al analista) y la API responde 409 a aprobarlo a mano.
+  const pazYSalvoTitular = titularCondicionado?.paz_y_salvo ?? null
+  const pazYSalvo = pazYSalvoPendiente(pazYSalvoTitular) ? pazYSalvoTitular : null
+  // La decisión espera algo del candidato: el coarrendatario o el paz y salvo.
+  const esperaCandidato = !!condicionCoa || !!pazYSalvo
 
   // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
@@ -528,20 +538,25 @@ export default function ExpedienteDetallePage() {
         expediente.estado === 'borrador'
         ? 'En preparación'
         : expediente.estado === 'condicionado'
-          ? condicionCoa ? (condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'En revisión'
+          ? condicionCoa
+            ? condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+            : pazYSalvo ? 'Pendiente de un requisito' : 'En revisión'
           : undefined
       : coaFallidaVive
         ? 'Falló la consulta del coarrendatario'
         : etapa === 'decision' && condicionCoa
           ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
-          : etapa
+          : etapa === 'decision' && pazYSalvo
+            ? 'Requisito pendiente del candidato'
+            : etapa
             ? ETAPA_LABEL[etapa]
             : undefined
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
-  const turno = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
+  const turno = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, esperaCandidato) : null
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
-  // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
-  const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))
+  // Las mismas transiciones que ofrece el modal: con condición o con el paz y salvo
+  // pendiente no se aprueba a mano (la API responde 409); no aprobarlo sí se ofrece.
+  const transicionesModal = (transiciones ?? []).filter((t) => !(esperaCandidato && t.estado_destino === 'aprobado'))
   // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
   const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
 
@@ -719,7 +734,7 @@ export default function ExpedienteDetallePage() {
               <PastillaTurno
                 turno={turno}
                 vista={vistaTurno}
-                revision={etapaTurno === 'decision' && !condicionCoa}
+                revision={etapaTurno === 'decision' && !esperaCandidato}
                 analista={puedeAsignar}
                 sinEjecutar={etapaTurno === 'sin_ejecutar'}
                 className="shrink-0 self-start"
@@ -728,7 +743,7 @@ export default function ExpedienteDetallePage() {
             {/* L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h). */}
             {(() => {
               const demora =
-                isInternalRole && etapaTurno === 'decision' && !condicionCoa
+                isInternalRole && etapaTurno === 'decision' && !esperaCandidato
                   ? revisionDemorada(expediente.en_revision_desde, Date.now())
                   : null
               return demora ? (
@@ -746,6 +761,7 @@ export default function ExpedienteDetallePage() {
                 fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
                 esperaHasta,
                 sinInmueble: !expediente.inmueble,
+                fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
                 // Propietario directo: la API no admite coarrendatario (espera el Convenio).
               })}
             </p>
@@ -969,6 +985,7 @@ export default function ExpedienteDetallePage() {
                         canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                         motivoRevision={titularCondicionado?.observaciones ?? null}
                         sinInmueble={!expediente.inmueble}
+                        pazYSalvo={pazYSalvo}
                         onAprobado={fetchExpediente}
                       />
                     ) : null,
