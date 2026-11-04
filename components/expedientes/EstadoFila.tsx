@@ -49,7 +49,7 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
 const BOGOTA = 'America/Bogota'
 const diaBogota = (d: Date) => Date.parse(d.toLocaleDateString('en-CA', { timeZone: BOGOTA }))
 
-/** Plazo de la condición del coarrendatario, en días de calendario de Colombia. */
+/** Plazo de la condición del coarrendatario o del paz y salvo, en días de calendario de Colombia. */
 function plazo(venceEn: string): string {
   const vence = new Date(venceEn)
   const d = Math.round((diaBogota(vence) - diaBogota(new Date())) / 86_400_000)
@@ -72,6 +72,10 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
   const c = ev?.condicion_coarrendatario
   if (etapa === 'decision' && c) {
     return { texto: `${c.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'} · ${plazo(c.vence_en)}`, tono }
+  }
+  // Adenda 5 §7 y §10: el mismo rótulo para todos, sin acreedor ni monto.
+  if (etapa === 'decision' && ev?.paz_y_salvo_vence_en) {
+    return { texto: `Requisito pendiente del candidato · ${plazo(ev.paz_y_salvo_vence_en)}`, tono }
   }
   if (etapa === 'espera_coarrendatario' && ev?.espera_coarrendatario_hasta) {
     const hasta = new Date(ev.espera_coarrendatario_hasta).toLocaleString('es-CO', {
@@ -126,9 +130,11 @@ export function EstadoFila({
   const conPuntaje = etapa !== 'no_aprobado' && etapa !== 'cancelado'
   const score = conPuntaje && ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
   const c = ev?.condicion_coarrendatario
+  // Adenda 5 §7: aprobado sujeto a paz y salvo; espera al candidato, no al analista.
+  const pazYSalvo = ev?.paz_y_salvo_vence_en ?? null
   const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
-  const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
+  const demora = interno && etapa === 'decision' && !c && !pazYSalvo ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
   const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
@@ -151,6 +157,7 @@ export function EstadoFila({
           fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
           esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
           sinInmueble: !expediente.inmueble_id,
+          fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo) : null,
         })}
         // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
         className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}

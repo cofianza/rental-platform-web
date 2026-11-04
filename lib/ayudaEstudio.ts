@@ -98,9 +98,22 @@ export function queSigue(
     fechaCondicion: string | null
     esperaHasta: string | null
     sinInmueble: boolean
+    /** Adenda 5 §7: aprobado sujeto a paz y salvo; el candidato tiene hasta esta fecha (DD/MM/AAAA). */
+    fechaPazYSalvo?: string | null
   },
 ): string {
   const gestor = o.vista === 'gestor'
+  // §10: a la inmobiliaria y al propietario, sin el detalle de la obligación.
+  if (etapa === 'decision' && o.fechaPazYSalvo) {
+    if (o.vista === 'cofianza') {
+      return o.analista
+        ? `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}. Cuando cargue el documento, revíselo y acredítelo aquí abajo.`
+        : `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}; luego lo acredita un analista de Cofianza.`
+    }
+    return gestor
+      ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió con el detalle: usted no tiene que hacer nada; le avisamos cuando se resuelva.`
+      : `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}.`
+  }
   if (etapa === 'contrato' && o.sinInmueble) {
     return 'El estudio está aprobado: falta vincular el inmueble que eligió la persona; después se crea el contrato.'
   }
