@@ -67,6 +67,8 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   'estudio.rechazado.propietario': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'estudio.condicionado': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
   'estudio.condicionado.propietario': { icon: IconAlertTriangle, badge: 'bg-amber-50 text-amber-600' },
+  // Adenda 5 §7: aprobado sujeto a paz y salvo; espera un requisito del candidato.
+  'estudio.requisito_pendiente': { icon: IconClock, badge: 'bg-amber-50 text-amber-600' },
   'pago.disponible': { icon: IconCreditCard, badge: 'bg-indigo-50 text-indigo-600' },
   'pago.confirmado': { icon: IconReceipt, badge: 'bg-indigo-50 text-indigo-600' },
   'pago.no_conciliado': { icon: IconAlertTriangle, badge: 'bg-red-50 text-red-600' },
