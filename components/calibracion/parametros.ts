@@ -127,22 +127,22 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_CASCADA_RECHAZO: {
-    nombre: 'Rechazo sin consultar la segunda central',
+    nombre: 'Puntaje para rechazar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
     unidad: 'puntos',
-    queHace: 'Si con la primera central (casi siempre DataCrédito) el estudio saca menos de este puntaje, se rechaza sin consultar la otra, salvo que la central dé un puntaje de la franja que exige un analista.',
+    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepción: si el puntaje que reporta la central cae en la franja que exige un analista, decide el analista.',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_CASCADA_RECHAZO}: ${Math.max(0, v.UMBRAL_CASCADA_RECHAZO - 5)} puntos se rechaza solo con la primera central; ${v.UMBRAL_CASCADA_RECHAZO + 15} puntos consulta también la segunda.`,
     rige: 'siempre',
     ...DECISION,
   },
   UMBRAL_CASCADA_APROBACION: {
-    nombre: 'Aprobación sin consultar la segunda central',
+    nombre: 'Puntaje para aprobar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
     unidad: 'puntos',
-    queHace: 'Si con la primera central el estudio llega a este puntaje, no se consulta la otra: se aprueba si el ingreso alcanza y nada pide revisión.',
+    queHace: 'Para ahorrar consultas: si con la primera central el puntaje del solicitante (0 a 100) llega a este valor, el caso ya es claramente bueno y no se paga la segunda consulta. Se aprueba si el ingreso alcanza y nada pide revisión. Entre este valor y el de rechazo se consultan las dos centrales.',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_CASCADA_APROBACION}: ${Math.min(100, v.UMBRAL_CASCADA_APROBACION + 2)} puntos se decide solo con la primera central; ${v.UMBRAL_CASCADA_APROBACION - 2} consulta también la segunda.`,
     rige: 'siempre',
@@ -247,7 +247,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'ingreso',
     sub: 'Ajustes del ingreso',
     unidad: 'factor',
-    queHace: 'El ingreso que estima la central se multiplica por este factor al medir cuánto pesa el canon: en el puntaje, en el tope del 40 % y en el canon máximo del certificado de riesgo. No se aplica a un ingreso comprobado.',
+    queHace: 'Las centrales suelen estimar un ingreso más bajo que el real. Por eso, para medir cuánto pesa el canon, el ingreso estimado se multiplica por este número (1,50 = se toma un 50 % más). Afecta el puntaje, el tope del 40 % y el canon máximo del certificado. No se aplica a un ingreso comprobado con documentos.',
     ejemplo: (v) => {
       const f = v.FACTOR_AJUSTE_INGRESO_CANON
       return `Con ×${fmt(f)}: si la central estima $2.000.000, el canon se mide contra ${pesos(2_000_000 * f)}; el tope del 40 % deja un canon de hasta ${pesos(800_000 * f)}.`
@@ -260,7 +260,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'ingreso',
     sub: 'Ajustes del ingreso',
     unidad: 'factor',
-    queHace: 'El ingreso que estima la central se multiplica por este factor antes de medir qué parte se le va en cuotas, en el puntaje y en el tope del 65 %. No se aplica a un ingreso comprobado.',
+    queHace: 'Igual que el anterior, pero para medir qué parte del ingreso se le va en cuotas de deudas: el ingreso estimado se multiplica por este número (1,15 = se toma un 15 % más). Afecta el puntaje y el tope del 65 %. No se aplica a un ingreso comprobado con documentos.',
     ejemplo: (v) => {
       const f = v.FACTOR_AJUSTE_INGRESO_DTI
       return `Con ×${fmt(f)}: si la central estima $2.000.000, el endeudamiento se mide contra ${pesos(2_000_000 * f)}; el tope del 65 % deja hasta ${pesos(1_300_000 * f)} al mes en cuotas.`
@@ -273,7 +273,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'ingreso',
     sub: 'Ajustes del ingreso',
     unidad: 'onoff',
-    queHace: 'Encendido: si las cuotas que la persona ya paga muestran un ingreso mayor que el estimado ya ajustado, el canon se mide contra ese ingreso. Apagado: solo se calcula y se anota.',
+    queHace: 'Si la persona ya paga cuotas altas cada mes, es porque gana al menos lo suficiente para pagarlas. Encendido: si ese ingreso mínimo que muestran sus deudas es mayor que el estimado, el canon se mide contra ese ingreso. Apagado: solo se calcula y se anota en el estudio.',
     nota: 'Solo actúa si la central estimó un ingreso y no hay uno comprobado, y solo cambia la medida del canon, no la de las deudas.',
     rige: 'v2',
     ...DECISION,
@@ -283,7 +283,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'ingreso',
     sub: 'Ajustes del ingreso',
     unidad: 'criterio',
-    queHace: 'Si las dos centrales estiman el ingreso, se usa el mayor o el menor. Un ingreso comprobado con documentos siempre manda.',
+    queHace: 'Cuando DataCrédito y TransUnion estiman ingresos distintos, se elige cuál usar: el mayor (más favorable al solicitante) o el menor (más prudente). Un ingreso comprobado con documentos siempre manda sobre los dos.',
     rige: 'parcial',
     notaRige: 'hoy solo DataCrédito entrega un ingreso estimado, así que no hay dos para elegir',
     ...DECISION,
@@ -459,7 +459,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'capacidad',
     sub: 'Puntos de endeudamiento del buen pagador',
     unidad: 'veces',
-    queHace: 'Si un buen pagador sin ingreso comprobado y con más del 65 % de endeudamiento paga en cuotas al mes al menos estas veces el canon, recibe los puntos del nivel alto en vez de 0.',
+    queHace: 'Para quien paga al día pero aparece muy endeudado (más del 65 %) y no comprobó su ingreso: si lo que paga en cuotas cada mes es al menos estas veces el canon, demuestra que puede pagar y recibe los puntos del nivel alto en vez de 0. Ejemplo: con 3, quien paga $4.500.000 al mes en cuotas y busca un canon de $1.500.000.',
     ejemplo: (v) =>
       `Con canon de $1.500.000: quien paga ${pesos(1_500_000 * v.RATIO_COBERTURA_ALTA)} o más al mes en cuotas recibe ${v.PUNTOS_DTI_COMPORTAMIENTO_ALTO} de 15 puntos.`,
     rige: 'a4',
@@ -495,11 +495,11 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   FACTOR_CUOTA_MINIMA_TARJETA: {
-    nombre: 'Cuota que se cuenta en tarjetas reportadas por su saldo',
+    nombre: 'Cuota real de una tarjeta de crédito',
     seccion: 'capacidad',
     sub: 'Tarjetas de crédito',
     unidad: 'num',
-    queHace: 'Si la central reporta como cuota de una tarjeta todo su saldo, se cuenta solo esta fracción del saldo (0,05 = 5 %). Así el endeudamiento no se infla.',
+    queHace: 'Algunas centrales reportan como «cuota» de una tarjeta de crédito todo lo que se debe en ella, como si se pagara completo cada mes. En ese caso se cuenta solo esta parte del saldo (0,05 = 5 %), que es lo que se paga en realidad. Así la persona no parece más endeudada de lo que está.',
     ejemplo: (v) => `Con ${fmt(v.FACTOR_CUOTA_MINIMA_TARJETA)}: una tarjeta con saldo de $2.000.000 reportada con cuota de $2.000.000 cuenta ${pesos(2_000_000 * v.FACTOR_CUOTA_MINIMA_TARJETA)} al mes.`,
     rige: 'a4',
     ...DECISION,
