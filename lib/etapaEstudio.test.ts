@@ -104,3 +104,20 @@ test('U8: la revisión sin condición se llama «En revisión de Cofianza»', as
   const { ETAPA_LABEL } = await import('./etapaEstudio')
   assert.equal(ETAPA_LABEL.decision, 'En revisión de Cofianza')
 })
+
+test('Adenda 5: el paz y salvo pendiente espera al candidato y no dice el detalle', () => {
+  // turnoDeEtapa: la decisión espera al candidato (coarrendatario o paz y salvo).
+  assert.equal(turnoDeEtapa('decision', true), 'prospecto')
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false, fechaPazYSalvo: '19/11/2026' }
+  const gestor = queSigue('decision', o)
+  assert.match(gestor, /requisito pendiente a cargo del candidato hasta el 19\/11\/2026/)
+  assert.match(gestor, /no tiene que hacer nada/)
+  const equipo = queSigue('decision', { ...o, vista: 'equipo' })
+  assert.match(equipo, /requisito pendiente a cargo del candidato/)
+  // §10: a la inmobiliaria y al propietario nunca se les dice que es una mora ni el monto.
+  for (const t of [gestor, equipo]) assert.doesNotMatch(t, /mora|paz y salvo|\$/i)
+  assert.match(queSigue('decision', { ...o, vista: 'cofianza', analista: true }), /acreditar el paz y salvo antes del 19\/11\/2026.*acredítelo aquí abajo/)
+  assert.doesNotMatch(queSigue('decision', { ...o, vista: 'cofianza' }), /acredítelo/)
+  // Sin paz y salvo, la decisión sigue siendo del analista.
+  assert.equal(queSigue('decision', { ...o, vista: 'cofianza', analista: true, fechaPazYSalvo: null }), 'Revise el caso y decida si lo aprueba.')
+})
