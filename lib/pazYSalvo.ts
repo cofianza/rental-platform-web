@@ -30,7 +30,7 @@ export function pazYSalvoPendiente(p: IPazYSalvo | null | undefined): p is IPazY
  * El paz y salvo que el candidato cargó para el requisito en pie: el soporte
  * 'paz_y_salvo' más reciente desde que se exigió (el criterio del barrido de la
  * API, que con él manda el caso a revisión en vez de cerrarlo). Sin `exigido_en`
- * (al candidato no le llega) cuenta cualquiera. null si no hay ninguno.
+ * (un API anterior no se lo mandaba al candidato) cuenta cualquiera. null si no hay ninguno.
  */
 export function pazYSalvoCargado<T extends { proposito: string; created_at: string }>(
   p: { exigido_en?: string | null } | null | undefined,

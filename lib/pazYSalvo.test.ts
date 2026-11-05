@@ -70,7 +70,8 @@ test('paz y salvo cargado: el más reciente desde que se exigió (criterio del b
   assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, soportes)?.id, 'c')
   // Uno cargado antes de exigirlo no cuenta.
   assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, [soportes[3]]), null)
-  // Al candidato no le llega exigido_en: cuenta cualquiera, el más reciente.
+  // Sin exigido_en (un API anterior no se lo mandaba al candidato): cuenta cualquiera, el más reciente.
+  assert.equal(pazYSalvoCargado({ exigido_en: null }, soportes)?.id, 'c')
   assert.equal(pazYSalvoCargado({}, soportes)?.id, 'c')
   assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, [soportes[0]]), null)
   assert.equal(pazYSalvoCargado(null, soportes), null)
