@@ -1,12 +1,11 @@
 /**
  * TimelineSection - HP-270
- * Timeline unificado del expediente con filtros por tipo, fechas relativas y paginación
+ * Historial unificado del estudio: lista ordenada por día, filtros por tipo y paginación
  */
 
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Avatar } from '@/components/ui/Avatar'
 import {
   IconLoader,
   IconRefresh,
@@ -20,7 +19,10 @@ import {
   IconPencil,
   IconSearch,
   IconX,
+  IconAlertTriangle,
+  IconArrowRight,
 } from '@/components/icons'
+import { formatDateTime } from '@/lib/constants'
 import { expedienteService } from '@/services/expedienteService'
 import type { ITimelineEvento, ITimelinePagination } from '@/types/expediente'
 import { cn } from '@/lib/utils'
@@ -35,30 +37,6 @@ export interface TimelineSectionProps {
 // ============================================
 // Helpers
 // ============================================
-
-function timeAgo(dateStr: string): string {
-  const now = new Date()
-  const date = new Date(dateStr)
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-  if (seconds < 60) return 'hace un momento'
-
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `hace ${minutes} min`
-
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `hace ${hours}h`
-
-  const days = Math.floor(hours / 24)
-  if (days === 1) return 'ayer'
-  if (days < 7) return `hace ${days}d`
-
-  return new Date(dateStr).toLocaleDateString('es-CO', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
 
 const ESTADO_LABELS: Record<string, string> = {
   borrador: 'Borrador',
@@ -143,17 +121,73 @@ function esResultadoRepetido(evento: ITimelineEvento, eventos: ITimelineEvento[]
 
 const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
   { value: 'todos', label: 'Todos' },
-  { value: 'transicion', label: 'Transiciones' },
+  { value: 'transicion', label: 'Cambios de estado' },
+  // La API ya filtraba por evaluación y firma; la pantalla no los ofrecía.
+  { value: 'estudio', label: 'Evaluación' },
   { value: 'comentario', label: 'Comentarios' },
   { value: 'asignacion', label: 'Asignaciones' },
   { value: 'cita', label: 'Citas' },
   // Eventos del contrato (activado / finalizado / cancelado).
   { value: 'contrato', label: 'Contrato' },
+  { value: 'firma', label: 'Firmas' },
   { value: 'pago', label: 'Pagos' },
   { value: 'creacion', label: 'Creación' },
 ]
 
+/** Nombre del tipo en la línea de cada evento: el color y el ícono no lo dicen solos. */
+const TIPO_LABEL: Record<TipoEvento, string> = {
+  creacion: 'Creación',
+  transicion: 'Cambio de estado',
+  documento: 'Documento',
+  comentario: 'Comentario',
+  asignacion: 'Asignación',
+  estudio: 'Evaluación',
+  contrato: 'Contrato',
+  firma: 'Firma',
+  pago: 'Pago',
+  cita: 'Cita',
+}
+
 const PAGE_SIZE = 10
+
+// El mismo botón de fila que Documentos, Contratos y Pagos: 40 px de alto, con texto.
+const BOTON_FILA =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+const BOTON_SECUNDARIO = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+
+// ---- Fechas en hora de Colombia (como formatDateTime) ----
+
+const ZONA = 'America/Bogota'
+const claveDia = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: ZONA }).format(d)
+const fmtDia = new Intl.DateTimeFormat('es-CO', { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const fmtHora = new Intl.DateTimeFormat('es-CO', { timeZone: ZONA, hour: 'numeric', minute: '2-digit' })
+
+/** «Hoy», «Ayer» o «lunes, 3 de noviembre de 2026». */
+function etiquetaDia(clave: string, fecha: Date): string {
+  const hoy = new Date()
+  if (clave === claveDia(hoy)) return 'Hoy'
+  if (clave === claveDia(new Date(hoy.getTime() - 86_400_000))) return 'Ayer'
+  const texto = fmtDia.format(fecha)
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
+/** Agrupa por día sin cambiar el orden que manda la API (del más reciente al más antiguo). */
+function agruparPorDia(eventos: ITimelineEvento[]) {
+  const grupos: { clave: string; etiqueta: string; eventos: ITimelineEvento[] }[] = []
+  for (const evento of eventos) {
+    const fecha = new Date(evento.created_at)
+    const clave = Number.isNaN(fecha.getTime()) ? 'sin-fecha' : claveDia(fecha)
+    const ultimo = grupos[grupos.length - 1]
+    if (ultimo && ultimo.clave === clave) ultimo.eventos.push(evento)
+    else grupos.push({ clave, etiqueta: clave === 'sin-fecha' ? 'Sin fecha' : etiquetaDia(clave, fecha), eventos: [evento] })
+  }
+  return grupos
+}
+
+function horaEvento(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : fmtHora.format(d)
+}
 
 // ============================================
 // Component
@@ -215,21 +249,37 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
   }
 
   const handleLoadMore = () => {
+    if (isLoadingMore) return
     if (pagination && pagination.page < pagination.totalPages) {
       fetchTimeline(pagination.page + 1, true)
     }
   }
 
   const hasMore = pagination ? pagination.page < pagination.totalPages : false
+  const filtroLabel = FILTROS.find((f) => f.value === filtro)?.label ?? ''
+
+  const encabezado = (
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900">Historial del estudio</h3>
+        <p className="mt-1 text-sm text-gray-600">
+          {pagination && !error && !(isLoading && eventos.length === 0)
+            ? `${pagination.total} ${pagination.total === 1 ? 'evento' : 'eventos'}${filtro !== 'todos' ? ` de tipo «${filtroLabel}»` : ''} · del más reciente al más antiguo`
+            : 'Cambios de estado, evaluaciones, pagos, firmas y comentarios, del más reciente al más antiguo.'}
+        </p>
+      </div>
+      <FilterChips filtro={filtro} onChange={handleFiltroChange} />
+    </div>
+  )
 
   // ---- Renders ----
 
   // Solo la primera carga: al cambiar el filtro se siguen viendo los eventos de antes.
   if (isLoading && eventos.length === 0) {
     return (
-      <div>
-        <FilterChips filtro={filtro} onChange={handleFiltroChange} />
-        <div role="status" className="mt-4 space-y-5">
+      <div className="space-y-5">
+        {encabezado}
+        <div role="status" className="space-y-5">
           <span className="sr-only">Cargando historial…</span>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="flex gap-3">
@@ -244,15 +294,23 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
   if (error) {
     return (
-      <div>
-        <FilterChips filtro={filtro} onChange={handleFiltroChange} />
-        <div className="text-center py-8">
-          <p className="text-sm text-red-600 mb-4">{error}</p>
+      <div className="space-y-5">
+        {encabezado}
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span aria-hidden="true" className="mt-0.5 shrink-0 text-red-700"><IconAlertTriangle size={18} /></span>
+            <div>
+              <p className="text-sm font-medium text-red-900">No pudimos cargar el historial de este estudio.</p>
+              <p className="mt-0.5 text-sm text-red-800">{error}</p>
+            </div>
+          </div>
           <button
+            type="button"
             onClick={() => fetchTimeline(1)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+            disabled={isLoading}
+            className={cn(BOTON_FILA, 'shrink-0 border border-red-300 bg-white text-red-800 hover:bg-red-100')}
           >
-            <IconRefresh size={16} />
+            {isLoading ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
             Reintentar
           </button>
         </div>
@@ -262,106 +320,114 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
   if (eventos.length === 0) {
     return (
-      <div>
-        <FilterChips filtro={filtro} onChange={handleFiltroChange} />
-        <div className="text-center py-12">
-          <IconClock size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-sm text-gray-500">Sin actividad registrada</p>
+      <div className="space-y-5">
+        {encabezado}
+        <div className="flex flex-col items-center rounded-xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
+          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+            <IconClock size={20} />
+          </span>
+          {filtro === 'todos' ? (
+            <>
+              <p className="mt-3 text-sm font-semibold text-gray-900">Sin actividad registrada</p>
+              <p className="mt-1 max-w-md text-sm text-gray-600">
+                Aquí aparecerán los cambios de estado, las evaluaciones, los pagos, las firmas y los comentarios del estudio.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm font-semibold text-gray-900">No hay eventos de tipo «{filtroLabel}»</p>
+              <p className="mt-1 max-w-md text-sm text-gray-600">Pruebe con otro tipo o vea todo el historial.</p>
+              <button type="button" onClick={() => handleFiltroChange('todos')} className={cn(BOTON_FILA, BOTON_SECUNDARIO, 'mt-5')}>
+                Ver todos los eventos
+              </button>
+            </>
+          )}
         </div>
       </div>
     )
   }
 
+  const visibles = eventos.filter((e) => !esResultadoRepetido(e, eventos))
+  const grupos = agruparPorDia(visibles)
+  const ultimoId = visibles[visibles.length - 1]?.id
+
   return (
-    <div>
-      <FilterChips filtro={filtro} onChange={handleFiltroChange} />
+    <div className="space-y-5">
+      {encabezado}
 
-      <div className={cn('relative mt-4', isLoading && 'opacity-60 pointer-events-none')} aria-busy={isLoading}>
-        {/* Línea vertical */}
-        <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200" />
+      <ol
+        aria-label="Eventos del estudio"
+        aria-busy={isLoading}
+        className={cn('space-y-6', isLoading && 'opacity-60 pointer-events-none')}
+      >
+        {grupos.map((grupo) => (
+          <li key={grupo.clave}>
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {grupo.etiqueta}
+            </h4>
+            <ol>
+              {grupo.eventos.map((evento) => {
+                const config = configEvento(evento)
+                const Icon = config.icon
+                const nombreCompleto = `${evento.usuario.nombre} ${evento.usuario.apellido}`.trim() || 'Sistema'
+                const esUltimo = evento.id === ultimoId
 
-        {/* Eventos */}
-        <div className="space-y-6">
-          {eventos.filter((e) => !esResultadoRepetido(e, eventos)).map((evento, index) => {
-            const config = configEvento(evento)
-            const Icon = config.icon
-            const nombreCompleto = `${evento.usuario.nombre} ${evento.usuario.apellido}`.trim()
-            const isFirst = index === 0
+                return (
+                  <li key={evento.id} className="relative flex gap-3 pb-5 last:pb-0">
+                    {/* Riel: une cada evento con el siguiente, también entre días */}
+                    {!esUltimo && (
+                      <span aria-hidden="true" className="absolute left-4 top-9 -bottom-1 w-px -translate-x-1/2 bg-gray-200" />
+                    )}
+                    <span
+                      aria-hidden="true"
+                      className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bgColor)}
+                    >
+                      <Icon size={16} className={config.color} />
+                    </span>
 
-            return (
-              <div key={evento.id} className="relative flex gap-4 pl-2">
-                {/* Icono */}
-                <div
-                  className={cn(
-                    'relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-                    config.bgColor,
-                    isFirst && 'ring-4 ring-white'
-                  )}
-                >
-                  <Icon size={16} className={config.color} />
-                </div>
-
-                {/* Contenido */}
-                <div className="flex-1 min-w-0 pb-6">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0 flex-1 pt-1">
+                      <p className="break-words text-sm font-medium text-gray-900">
                         {descripcionEvento(evento.descripcion)}
                       </p>
-                      <span
-                        className="text-xs text-gray-500 whitespace-nowrap"
-                        title={new Date(evento.created_at).toLocaleString('es-CO')}
-                      >
-                        {timeAgo(evento.created_at)}
-                      </span>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-600">
+                        <span>{TIPO_LABEL[evento.tipo] ?? 'Evento'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-medium text-gray-700">{nombreCompleto}</span>
+                        <span aria-hidden="true">·</span>
+                        <time dateTime={evento.created_at} title={formatDateTime(evento.created_at)} className="tabular-nums">
+                          {horaEvento(evento.created_at)}
+                        </time>
+                      </p>
+
+                      {/* Detalle por tipo */}
+                      <EventoDetalle evento={evento} />
                     </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </li>
+        ))}
+      </ol>
 
-                    {/* Usuario */}
-                    <div className="flex items-center gap-2">
-                      <Avatar name={nombreCompleto} size="sm" />
-                      <span className="text-xs text-gray-600">{nombreCompleto}</span>
-                    </div>
-
-                    {/* Detalle por tipo */}
-                    <EventoDetalle evento={evento} />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Cargar más */}
-      {hasMore && (
-        <div className="text-center mt-4">
-          <button
-            onClick={handleLoadMore}
-            disabled={isLoadingMore}
-            className={cn(
-              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'text-primary-600 hover:bg-primary-50 border border-primary-200',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-          >
-            {isLoadingMore ? (
-              <>
-                <IconLoader size={16} className="animate-spin" />
-                Cargando...
-              </>
-            ) : (
-              'Cargar más'
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Total info */}
+      {/* Ver más + cuántos se ven */}
       {pagination && (
-        <p className="text-xs text-gray-500 text-center mt-3">
-          Mostrando {eventos.length} de {pagination.total} eventos
-        </p>
+        <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4">
+          {hasMore && (
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
+            >
+              {isLoadingMore && <IconLoader size={16} className="animate-spin" />}
+              {isLoadingMore ? 'Cargando eventos…' : 'Ver más eventos'}
+            </button>
+          )}
+          <p className="text-xs text-gray-600" aria-live="polite">
+            Mostrando {eventos.length} de {pagination.total} eventos
+          </p>
+        </div>
       )}
     </div>
   )
@@ -379,24 +445,47 @@ function FilterChips({
   onChange: (f: TipoEvento | 'todos') => void
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {FILTROS.map((f) => (
-        <button
-          key={f.value}
-          onClick={() => onChange(f.value)}
-          className={cn(
-            'px-3 py-1 text-xs font-medium rounded-full transition-colors',
-            filtro === f.value
-              ? 'bg-primary-100 text-primary-700 border border-primary-300'
-              : 'bg-gray-100 text-gray-600 border border-transparent hover:bg-gray-200'
-          )}
-        >
-          {f.label}
-        </button>
-      ))}
+    <div
+      role="group"
+      aria-label="Filtrar por tipo de evento"
+      className="flex flex-wrap gap-2"
+    >
+      {FILTROS.map((f) => {
+        const activo = filtro === f.value
+        return (
+          <button
+            key={f.value}
+            type="button"
+            aria-pressed={activo}
+            onClick={() => onChange(f.value)}
+            className={cn(
+              'inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border px-3 text-sm font-medium transition-colors',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1',
+              activo
+                ? 'border-primary-300 bg-primary-50 text-primary-800'
+                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+            )}
+          >
+            {activo && <IconCheck size={14} />}
+            {f.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
+
+/** Flecha entre dos estados: el lector de pantalla oye «a». */
+function Flecha() {
+  return (
+    <>
+      <span aria-hidden="true" className="inline-flex text-gray-400"><IconArrowRight size={14} /></span>
+      <span className="sr-only"> a </span>
+    </>
+  )
+}
+
+const DETALLE = 'mt-2 max-w-3xl space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600'
 
 function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
   const { tipo, detalle } = evento
@@ -415,32 +504,34 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     const recalculo = detalle.puntaje_revision_manual as number | { puntaje_normalizado?: number | null } | null | undefined
     const puntaje = typeof recalculo === 'number' ? recalculo : recalculo?.puntaje_normalizado
 
+    if (!(anterior && nuevo) && !comentario && documentos.length === 0 && typeof puntaje !== 'number') return null
+
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+      <div className={DETALLE}>
         {anterior && nuevo && (
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-700">{estadoLabel(anterior)}</span>
-            {' → '}
-            <span className="font-medium text-gray-700">{estadoNuevoLabel(anterior, nuevo)}</span>
+          <p className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium text-gray-800">{estadoLabel(anterior)}</span>
+            <Flecha />
+            <span className="font-medium text-gray-800">{estadoNuevoLabel(anterior, nuevo)}</span>
           </p>
         )}
         {comentario && (
-          <p className="text-xs text-gray-500 italic">&quot;{textoVisible(comentario)}&quot;</p>
+          <p className="whitespace-pre-line break-words italic">«{textoVisible(comentario)}»</p>
         )}
         {/* Adenda 2 §5.1: el analista registra fundamento, documentos
             consultados y puntaje recalculado. El API los guardaba y ninguna
             pantalla los mostraba — ni la bitácora, que está cerrada a
             'administrador'. */}
         {documentos.length > 0 && (
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-700">Documentos consultados:</span>{' '}
+          <p className="break-words">
+            <span className="font-medium text-gray-800">Documentos consultados:</span>{' '}
             {documentos.join(', ')}
           </p>
         )}
         {typeof puntaje === 'number' && (
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-700">Puntaje recalculado:</span>{' '}
-            {puntaje.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100
+          <p>
+            <span className="font-medium text-gray-800">Puntaje recalculado:</span>{' '}
+            <span className="tabular-nums">{puntaje.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100</span>
           </p>
         )}
       </div>
@@ -452,8 +543,8 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     if (!contenido) return null
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-600 line-clamp-3">{contenido}</p>
+      <div className={DETALLE}>
+        <p className="line-clamp-3 break-words">{contenido}</p>
       </div>
     )
   }
@@ -465,21 +556,18 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     if (!anterior && !nuevo) return null
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-500">
-          {anterior ? (
-            <>
-              <span className="font-medium text-gray-700">{anterior}</span>
-              {' → '}
-              <span className="font-medium text-gray-700">{nuevo}</span>
-            </>
-          ) : (
-            <>
-              Asignado a:{' '}
-              <span className="font-medium text-gray-700">{nuevo}</span>
-            </>
-          )}
-        </p>
+      <div className={DETALLE}>
+        {anterior ? (
+          <p className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium text-gray-800">{anterior}</span>
+            <Flecha />
+            <span className="font-medium text-gray-800">{nuevo}</span>
+          </p>
+        ) : (
+          <p>
+            Asignado a: <span className="font-medium text-gray-800">{nuevo}</span>
+          </p>
+        )}
       </div>
     )
   }
@@ -487,9 +575,10 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
   // Fundamento interno del analista (P33, P34): este timeline es solo de Cofianza.
   if (tipo === 'estudio' && typeof detalle.fundamento === 'string') {
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-500">
-          <span className="font-medium text-gray-700">Fundamento:</span> {textoVisible(detalle.fundamento.replace(/(^|\n)[ARC]\d+ · /g, '$1'))}
+      <div className={DETALLE}>
+        <p className="font-medium text-gray-800">Fundamento</p>
+        <p className="whitespace-pre-line break-words">
+          {textoVisible(detalle.fundamento.replace(/(^|\n)[ARC]\d+ · /g, '$1'))}
         </p>
       </div>
     )
@@ -499,19 +588,18 @@ function EventoDetalle({ evento }: { evento: ITimelineEvento }) {
     const firmadoEn = detalle.firmado_en as string | null
     const nombreFirmante = detalle.nombre_firmante as string | null
 
+    if (!nombreFirmante && !firmadoEn) return null
+
     return (
-      <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+      <div className={DETALLE}>
         {nombreFirmante && (
-          <p className="text-xs text-gray-500">
-            Firmante: <span className="font-medium text-gray-700">{nombreFirmante}</span>
+          <p>
+            Firmante: <span className="font-medium text-gray-800">{nombreFirmante}</span>
           </p>
         )}
         {firmadoEn && (
-          <p className="text-xs text-gray-500">
-            {new Date(firmadoEn).toLocaleString('es-CO', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            })}
+          <p>
+            Firmado el <time dateTime={firmadoEn} className="tabular-nums">{formatDateTime(firmadoEn)}</time>
           </p>
         )}
       </div>
