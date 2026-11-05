@@ -205,8 +205,13 @@ export default function ExpedienteDetallePage() {
   // Adenda 5 §7: exigir el paz y salvo no mueve el expediente (sigue en revisión),
   // así que en revisión el titular se relee con cada carga, no solo al cambiar.
   const recargaEnRevision = estadoExpediente === 'condicionado' ? cargas : 0
+  // Última lectura correcta (id, estado y updated_at). Una relectura por recarga con la
+  // misma clave es nueva respecto de main: si falla, se conserva lo leído (un 429 no
+  // borra la condición del coarrendatario ni el paz y salvo).
+  const titularLeidoRef = useRef<string | null>(null)
   useEffect(() => {
     if (!estadoExpediente) return
+    const clave = `${id}|${estadoExpediente}|${actualizadoEn ?? ''}`
     let cancel = false
     estudioService
       .getEstudiosForExpediente(id, 1, 10)
@@ -219,6 +224,7 @@ export default function ExpedienteDetallePage() {
           .filter((e) => e.tipo !== 'con_coarrendatario' && (e.estado === 'completado' || !!e.estudio_padre_id))
           .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
         if (cancel) return
+        titularLeidoRef.current = clave
         setTitular(vigente ?? null)
         setApelableId(apelable?.id ?? null)
         setListaFallo(false)
@@ -226,6 +232,8 @@ export default function ExpedienteDetallePage() {
       })
       .catch(() => {
         if (cancel) return
+        // Relectura por recarga (mismo id, estado y updated_at): main no la hacía; se conserva lo último.
+        if (titularLeidoRef.current === clave) return
         setTitular(null)
         setApelableId(null)
         setListaFallo(true)
@@ -743,6 +751,7 @@ export default function ExpedienteDetallePage() {
           conCondicion={!!condicionCoa}
           condicionObligatoria={!!condicionCoa?.obligatoria}
           condicionDecideAnalista={!!condicionCoa?.decide_analista}
+          requisitoPendienteHasta={pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null}
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
           etiquetaActual={etiquetaEtapa}
         />
