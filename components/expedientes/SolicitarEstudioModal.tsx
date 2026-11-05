@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import type { ICreateEstudioInput, TipoEstudio, ProveedorEstudio, PagoPor } from '@/types/estudio'
@@ -95,8 +95,9 @@ export function SolicitarEstudioModal({
   }
 
   const handleSubmit = async () => {
+    if (isLoading) return
     if (duracion < 1 || duracion > 60) {
-      setError('La duracion debe ser entre 1 y 60 meses')
+      setError('La duración del contrato va de 1 a 60 meses.')
       return
     }
     setError(null)
@@ -117,14 +118,40 @@ export function SolicitarEstudioModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Solicitar evaluación crediticia" size="md">
-      <div className="space-y-4">
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Solicitar evaluación crediticia"
+      description="Elija el tipo, el proveedor y quién paga la evaluación de este estudio."
+      size="md"
+      footer={
+        <div className="space-y-2">
+          {error && (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {error}
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isLoading} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button type="submit" form="solicitar-estudio-form" disabled={isLoading} aria-busy={isLoading || undefined} className={botonModal('primary')}>
+              {isLoading && <IconLoader size={16} className="animate-spin" />}
+              {isLoading ? 'Solicitando…' : 'Solicitar evaluación'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
+    >
+      <form
+        id="solicitar-estudio-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        className="space-y-4"
+      >
         {/* Tipo */}
         <div>
           <label htmlFor="solicitar-estudio-modal-tipo-de-estudio" className="block text-sm font-medium text-gray-700 mb-1">
@@ -160,7 +187,7 @@ export function SolicitarEstudioModal({
         {/* Duracion */}
         <div>
           <label htmlFor="solicitar-estudio-modal-duracion-del-contrato-meses" className="block text-sm font-medium text-gray-700 mb-1">
-            Duracion del contrato (meses)
+            Duración del contrato (meses)
           </label>
           <input id="solicitar-estudio-modal-duracion-del-contrato-meses"
             type="number"
@@ -168,8 +195,10 @@ export function SolicitarEstudioModal({
             max={60}
             value={duracion}
             onChange={(e) => setDuracion(Number(e.target.value))}
+            aria-describedby="solicitar-estudio-duracion-ayuda"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
+          <p id="solicitar-estudio-duracion-ayuda" className="mt-1 text-xs text-gray-500">De 1 a 60 meses.</p>
         </div>
 
         {/* Quien paga */}
@@ -213,31 +242,7 @@ export function SolicitarEstudioModal({
           />
         </div>
 
-        {/* Botones */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-          >
-            {isLoading ? (
-              <>
-                <IconLoader size={16} className="animate-spin" />
-                Solicitando...
-              </>
-            ) : (
-              'Solicitar evaluación'
-            )}
-          </button>
-        </div>
-      </div>
+      </form>
     </Modal>
   )
 }

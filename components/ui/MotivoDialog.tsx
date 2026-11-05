@@ -6,8 +6,9 @@
  * pestana. Misma familia que ConfirmDialog.
  */
 
-import { useState, type ReactNode } from 'react'
-import { Modal } from './Modal'
+import { useId, useState, type ReactNode } from 'react'
+import { IconLoader } from '@/components/icons'
+import { Modal, ModalAcciones, botonModal } from './Modal'
 
 export interface MotivoDialogProps {
   isOpen: boolean
@@ -48,6 +49,8 @@ export function MotivoDialog({
 }: MotivoDialogProps) {
   const [motivo, setMotivo] = useState(valorInicial)
   const valido = motivo.trim().length >= minLength
+  const campoId = useId()
+  const ayudaId = useId()
 
   const confirmar = async () => {
     if (!valido || isLoading) return
@@ -56,44 +59,56 @@ export function MotivoDialog({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose} title={title} size="sm">
-      <div className="space-y-3">
-        {descripcion && <div className="text-sm text-gray-600">{descripcion}</div>}
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-          <textarea
-            autoFocus
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            rows={3}
-            maxLength={500}
-            placeholder={placeholder}
-            disabled={isLoading}
-            className={`${INPUT_CLASS} mt-1`}
-          />
-        </label>
-        {!valido && motivo.length > 0 && (
-          <p className="text-xs text-gray-500">Escriba al menos {minLength} caracteres.</p>
-        )}
-        <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
+    <Modal
+      isOpen={isOpen}
+      onClose={isLoading ? () => {} : onClose}
+      title={title}
+      size="sm"
+      encima
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={onClose} disabled={isLoading} className={botonModal('secondary')}>
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={confirmar}
             disabled={!valido || isLoading}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
-              variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
-            }`}
+            aria-busy={isLoading || undefined}
+            className={botonModal(variant === 'danger' ? 'danger' : 'primary')}
           >
+            {isLoading && <IconLoader size={16} className="animate-spin" />}
             {isLoading ? 'Guardando…' : confirmLabel}
           </button>
+        </ModalAcciones>
+      }
+    >
+      <div className="space-y-3">
+        {descripcion && <div className="text-sm leading-relaxed text-gray-700">{descripcion}</div>}
+        <div>
+          <label htmlFor={campoId} className="block text-sm font-medium text-gray-700">
+            {label} {minLength > 0 && <span className="text-red-600" aria-hidden="true">*</span>}
+          </label>
+          <textarea
+            id={campoId}
+            autoFocus
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            rows={3}
+            maxLength={500}
+            required={minLength > 0}
+            aria-describedby={ayudaId}
+            placeholder={placeholder}
+            disabled={isLoading}
+            className={`${INPUT_CLASS} mt-1`}
+          />
+          <p id={ayudaId} className={`mt-1 text-xs ${!valido && motivo.length > 0 ? 'text-amber-800' : 'text-gray-500'}`}>
+            {!valido && motivo.length > 0
+              ? `Escriba al menos ${minLength} caracteres.`
+              : minLength > 0
+                ? `Obligatorio, mínimo ${minLength} caracteres.`
+                : 'Opcional.'}
+          </p>
         </div>
       </div>
     </Modal>

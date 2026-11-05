@@ -1,10 +1,10 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle } from '@/components/icons'
+import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye } from '@/components/icons'
 import { EnviarFirmaModal } from './EnviarFirmaModal'
 import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
@@ -52,6 +52,7 @@ export function FirmaSolicitudesSection({
   // Email destino del reenvío — prellenado con el del firmante y corregible
   // en el modal (antes era solo lectura y un email mal escrito no tenía arreglo).
   const [reenviarEmail, setReenviarEmail] = useState('')
+  const [reenviarError, setReenviarError] = useState<string | null>(null)
 
   const fetchSolicitudes = useCallback(async () => {
     setIsLoading(true)
@@ -70,27 +71,29 @@ export function FirmaSolicitudesSection({
   }, [fetchSolicitudes])
 
   async function handleReenviarConfirmed() {
-    if (!reenviarTarget) return
+    if (!reenviarTarget || reenviandoId) return
     const emailNuevo = reenviarEmail.trim().toLowerCase()
     if (!emailNuevo || !/.+@.+\..+/.test(emailNuevo)) {
-      toast.error('Ingrese un correo válido para reenviar')
+      setReenviarError('Escriba un correo válido para reenviar.')
       return
     }
+    setReenviarError(null)
     const id = reenviarTarget.id
     // Solo mandamos email_alternativo si difiere del registrado — así el
     // backend hace un reenvío simple cuando no cambió, y re-emite la
     // solicitud al nuevo firmante cuando sí.
     const original = (reenviarTarget.email_firmante ?? '').toLowerCase()
     const options = emailNuevo !== original ? { email_alternativo: emailNuevo } : undefined
-    setReenviarTarget(null)
+    // El diálogo sigue abierto (con «Reenviando…») hasta que la lista se recarga.
     setReenviandoId(id)
     try {
       await firmaService.reenviarSolicitud(id, options)
       toast.success(`Solicitud reenviada a ${emailNuevo}`)
-      fetchSolicitudes()
+      await fetchSolicitudes()
+      setReenviarTarget(null)
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error al reenviar'
-      toast.error(message)
+      const message = err instanceof Error ? err.message : 'No se pudo reenviar la solicitud.'
+      setReenviarError(message)
     } finally {
       setReenviandoId(null)
     }
@@ -213,6 +216,7 @@ export function FirmaSolicitudesSection({
                       <button
                         onClick={() => {
                           setReenviarEmail(s.email_firmante ?? '')
+                          setReenviarError(null)
                           setReenviarTarget(s)
                         }}
                         disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
@@ -251,60 +255,81 @@ export function FirmaSolicitudesSection({
         onEvaluacionVencida={onEvaluacionVencida}
       />
 
-      {/* Confirmation modal for reenviar */}
+      {/* Confirmación del reenvío */}
       {reenviarTarget && (
-        <Modal isOpen onClose={() => setReenviarTarget(null)} bare ariaLabel="Reenviar solicitud de firma" closeOnBackdrop={false} className="rounded-xl max-w-sm w-full mx-4 p-4 sm:p-6 space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <IconAlertTriangle size={20} className="text-amber-600" />
+        <Modal
+          isOpen
+          onClose={reenviandoId ? () => {} : () => setReenviarTarget(null)}
+          title="Reenviar enlace de firma"
+          description="El enlace anterior quedará invalidado por seguridad: el firmante deberá usar el nuevo."
+          size="sm"
+          closeOnBackdrop={false}
+          footer={
+            <div className="space-y-2">
+              {reenviarError && (
+                <p id="reenviar-firma-error" role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  {reenviarError}
+                </p>
+              )}
+              <ModalAcciones>
+                <button type="button" onClick={() => setReenviarTarget(null)} disabled={!!reenviandoId} className={botonModal('secondary')}>
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  form="reenviar-firma-form"
+                  disabled={!!reenviandoId}
+                  aria-busy={!!reenviandoId || undefined}
+                  className={botonModal('primary')}
+                >
+                  {reenviandoId ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+                  {reenviandoId ? 'Reenviando…' : 'Reenviar enlace'}
+                </button>
+              </ModalAcciones>
             </div>
+          }
+        >
+          <form
+            id="reenviar-firma-form"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleReenviarConfirmed()
+            }}
+            className="space-y-4"
+          >
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt className="text-gray-500">Firmante</dt>
+              <dd className="min-w-0 break-words font-medium text-gray-900">{reenviarTarget.nombre_firmante}</dd>
+              <dt className="text-gray-500">Envíos</dt>
+              <dd className="font-medium tabular-nums text-gray-900">
+                {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
+              </dd>
+            </dl>
             <div>
-              <h3 className="font-semibold text-gray-900">Reenviar enlace de firma</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Se enviará un nuevo enlace a:
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-            <p className="text-sm font-medium text-gray-900">{reenviarTarget.nombre_firmante}</p>
-            <div>
-              <label htmlFor="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e" className="block text-[11px] font-medium text-gray-500 mb-1">
-                Correo destino (corríjalo si estaba mal escrito)
+              <label htmlFor="firma-solicitudes-section-correo-destino" className="block text-sm font-medium text-gray-700 mb-1">
+                Correo de destino <span className="text-red-600" aria-hidden="true">*</span>
               </label>
-              <input id="firma-solicitudes-section-correo-destino-corrigelo-si-estaba-mal-e"
+              <input
+                id="firma-solicitudes-section-correo-destino"
                 type="email"
                 value={reenviarEmail}
-                onChange={(e) => setReenviarEmail(e.target.value)}
+                onChange={(e) => {
+                  setReenviarEmail(e.target.value)
+                  setReenviarError(null)
+                }}
                 placeholder="correo@ejemplo.com"
+                required
+                disabled={!!reenviandoId}
+                aria-invalid={!!reenviarError || undefined}
+                aria-describedby={reenviarError ? 'reenviar-firma-error firma-correo-ayuda' : 'firma-correo-ayuda'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
+              <p id="firma-correo-ayuda" className="mt-1 text-xs text-gray-600">
+                Corríjalo si estaba mal escrito.
+              </p>
             </div>
-            <p className="text-xs text-gray-500">
-              Envíos: {reenviarTarget.envios_realizados} de {reenviarTarget.max_envios}
-            </p>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-800">
-              El enlace anterior quedará <span className="font-semibold">invalidado</span> por seguridad. El firmante deberá usar el nuevo enlace.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setReenviarTarget(null)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleReenviarConfirmed}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 rounded-lg"
-            >
-              Reenviar enlace
-            </button>
-          </div>
+          </form>
         </Modal>
       )}
     </div>

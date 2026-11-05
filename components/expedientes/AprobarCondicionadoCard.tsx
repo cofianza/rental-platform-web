@@ -37,8 +37,8 @@ import { ObligacionesEnMora } from './ObligacionesEnMora'
 import { useMoraVigente } from '@/hooks/useMoraVigente'
 import { pazYSalvoDeMoraVigente, pazYSalvoPendiente, pesosA5, razonMoraPct, textoPct, TRAMO_A5, venceSiSeExigeHoy } from '@/lib/pazYSalvo'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
-import { IconShieldCheck, IconAlertTriangle, IconCheck, IconArrowRight, IconBell, IconMail, IconRefresh, IconPaperclip, IconUser, IconUsers } from '@/components/icons'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
+import { IconShieldCheck, IconAlertTriangle, IconCheck, IconLoader, IconArrowRight, IconBell, IconMail, IconRefresh, IconPaperclip, IconUser, IconUsers } from '@/components/icons'
 import { Button } from '@/components/ui/Button'
 import { TarjetaSiguientePaso, SeccionPaso } from './TarjetaSiguientePaso'
 import { expedienteService } from '@/services/expedienteService'
@@ -539,6 +539,48 @@ export function AprobarCondicionadoCard({
       onClose={() => { if (!loading) setConfirmAprobarOpen(false) }}
       title="Aprobar estudio en revisión manual"
       size="xl"
+      footer={
+        <div className="space-y-2">
+          {!loading && (faltantes.length > 0 ? (
+            <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p className="font-semibold">Para activar «{etiquetaAprobar}» falta:</p>
+              {/* En el celular el pie fijo no puede tapar el formulario: solo lo primero que falta. */}
+              <p className="mt-0.5 sm:hidden">
+                {faltantes.length > 1 ? faltantes[0].replace(/\.\s*$/, '') : faltantes[0]}
+                {faltantes.length > 1 && ` (y ${faltantes.length - 1} ${faltantes.length === 2 ? 'cosa más' : 'cosas más'}).`}
+              </p>
+              <ul className="mt-1 hidden max-h-32 list-disc space-y-0.5 overflow-y-auto pl-5 sm:block">
+                {faltantes.map((f) => <li key={f}>{f}</li>)}
+              </ul>
+            </div>
+          ) : (
+            <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-primary-800">
+              <IconCheck size={16} className="shrink-0" />
+              Todo completo: revise «{sujeto ? 'Al aprobar sujeto a paz y salvo' : 'Al aprobar'}» y confirme.
+            </p>
+          ))}
+          <ModalAcciones>
+            <button
+              type="button"
+              onClick={() => setConfirmAprobarOpen(false)}
+              disabled={loading}
+              className={botonModal('secondary')}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleAprobar() }}
+              disabled={loading || esperandoA5 || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad || (sujeto && exigidas.length === 0)}
+              aria-busy={loading || undefined}
+              className={botonModal('primary')}
+            >
+              {loading && <IconLoader size={16} className="animate-spin" />}
+              {loading ? 'Aprobando…' : etiquetaAprobar}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
     >
       <div className="space-y-4">
         {revision && (revision.motivos.length > 0 || revision.datos) ? (
@@ -758,40 +800,6 @@ export function AprobarCondicionadoCard({
               <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
             </ul>
           )}
-        </div>
-        <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
-        {!loading && (faltantes.length > 0 ? (
-          <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <p className="font-semibold">Para activar «{etiquetaAprobar}» falta:</p>
-            {/* En el celular el pie fijo no puede tapar el formulario: la lista se desplaza. */}
-            <ul className="mt-1 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 sm:max-h-none">
-              {faltantes.map((f) => <li key={f}>{f}</li>)}
-            </ul>
-          </div>
-        ) : (
-          <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-primary-800">
-            <IconCheck size={16} className="shrink-0" />
-            Todo completo: revise «Al aprobar» y confirme.
-          </p>
-        ))}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setConfirmAprobarOpen(false)}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => { void handleAprobar() }}
-            disabled={loading || esperandoA5 || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad || (sujeto && exigidas.length === 0)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-          >
-            {loading ? 'Aprobando…' : etiquetaAprobar}
-          </button>
-        </div>
         </div>
       </div>
     </Modal>

@@ -23,9 +23,10 @@ import {
   IconCamera,
   IconCheck,
 } from '@/components/icons'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, botonModal } from '@/components/ui/Modal'
 import { documentoService } from '@/services/documentoService'
 import type { IDocumento } from '@/types/documento'
+import { formatDateTime } from '@/lib/constants'
 import { Skeleton } from '@/components/ui/Skeleton'
 
 // ============================================
@@ -78,7 +79,7 @@ function ImagePanel({ documento, title, icon, emptyMessage, zoom }: ImagePanelPr
         const result = await documentoService.getViewUrl(documento.id)
         setImageUrl(result.url)
       } catch {
-        setError('Error al cargar imagen')
+        setError('No se pudo cargar la imagen.')
       } finally {
         setIsLoading(false)
       }
@@ -89,9 +90,9 @@ function ImagePanel({ documento, title, icon, emptyMessage, zoom }: ImagePanelPr
 
   const metadatos = documento?.metadatos
   const metodoCapturaLabel = metadatos?.metodo_captura === 'camara'
-    ? 'Capture con camara'
+    ? 'Tomada con la cámara'
     : metadatos?.metodo_captura === 'archivo'
-      ? 'Subida de archivo'
+      ? 'Subida como archivo'
       : null
 
   return (
@@ -158,7 +159,7 @@ function ImagePanel({ documento, title, icon, emptyMessage, zoom }: ImagePanelPr
           </div>
           {metadatos?.timestamp_captura && (
             <div className="text-xs text-gray-500 mt-1">
-              Capturado: {new Date(metadatos.timestamp_captura).toLocaleString('es-CO')}
+              Capturada: {formatDateTime(metadatos.timestamp_captura)}
             </div>
           )}
         </div>
@@ -203,7 +204,7 @@ export function SelfieComparisonView({
 
   // Approve selfie document
   const handleApprove = async () => {
-    if (!selfieDoc || !onApprove) return
+    if (!selfieDoc || !onApprove || isApproving) return
     setIsApproving(true)
     try {
       await onApprove(selfieDoc.id)
@@ -217,7 +218,7 @@ export function SelfieComparisonView({
 
   // Reject selfie document
   const handleReject = async () => {
-    if (!selfieDoc || !onReject || !rejectMotivo.trim()) return
+    if (!selfieDoc || !onReject || !rejectMotivo.trim() || isRejecting) return
     setIsRejecting(true)
     try {
       await onReject(selfieDoc.id, rejectMotivo.trim())
@@ -240,48 +241,48 @@ export function SelfieComparisonView({
       ariaLabel="Comparación de identidad"
       className="h-full max-h-none bg-black/90 shadow-none flex flex-col"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-gray-900 border-b border-gray-800">
-        <div>
-          <h2 className="text-base md:text-lg font-semibold text-white">
-            Comparacion de Identidad
-          </h2>
-          <p className="text-xs md:text-sm text-gray-400">
-            Verifique que la persona de la selfie coincida con la identificacion
-          </p>
+      {/* Encabezado: título, para qué sirve, zoom y cerrar en una sola franja. */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-gray-800 bg-gray-900 py-3 pl-4 pr-2 md:pl-6 md:pr-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold text-white md:text-lg">Comparación de identidad</h2>
+          <p className="text-xs text-gray-300 md:text-sm">Verifique que la persona de la selfie coincida con la de la identificación.</p>
+        </div>
+        <div className="order-last flex w-full items-center justify-center gap-1 md:order-none md:w-auto" role="group" aria-label="Zoom de las dos imágenes">
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            disabled={zoom <= 0.5}
+            aria-label="Reducir zoom"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          >
+            <IconZoomOut size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={handleResetZoom}
+            aria-label={`Zoom ${Math.round(zoom * 100)} %. Volver al 100 %`}
+            className="h-10 min-w-16 rounded-lg px-3 text-sm tabular-nums text-gray-200 transition-colors hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          >
+            {Math.round(zoom * 100)} %
+          </button>
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            disabled={zoom >= 3}
+            aria-label="Ampliar zoom"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          >
+            <IconZoomIn size={18} />
+          </button>
         </div>
         <button
+          type="button"
+          data-modal-close
           onClick={onClose}
-          className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+          aria-label="Cerrar"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-gray-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
         >
-          <IconX size={24} />
-        </button>
-      </div>
-
-      {/* CR: Zoom controls - sincronizados */}
-      <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 border-b border-gray-800">
-        <span className="text-xs text-gray-400 mr-2">Zoom sincronizado:</span>
-        <button
-          onClick={handleZoomOut}
-          disabled={zoom <= 0.5}
-          className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
-          title="Reducir"
-        >
-          <IconZoomOut size={18} />
-        </button>
-        <button
-          onClick={handleResetZoom}
-          className="px-3 py-1 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors min-w-[60px]"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          onClick={handleZoomIn}
-          disabled={zoom >= 3}
-          className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
-          title="Ampliar"
-        >
-          <IconZoomIn size={18} />
+          <IconX size={22} />
         </button>
       </div>
 
@@ -290,103 +291,109 @@ export function SelfieComparisonView({
         {/* Selfie panel */}
         <ImagePanel
           documento={selfieDoc}
-          title="Selfie del Solicitante"
+          title="Selfie del solicitante"
           icon={<IconUser size={20} className="text-primary-400" />}
-          emptyMessage="No se ha cargado selfie"
+          emptyMessage="Aún no se ha cargado la selfie."
           zoom={zoom}
         />
 
         {/* ID Frontal panel */}
         <ImagePanel
           documento={idFrontalDoc}
-          title="Identificacion Frontal"
+          title="Identificación (cara frontal)"
           icon={<IconId size={20} className="text-blue-400" />}
-          emptyMessage="No se ha cargado identificacion frontal"
+          emptyMessage="Aún no se ha cargado la cara frontal de la identificación."
           zoom={zoom}
         />
       </div>
 
-      {/* Footer with tips and actions */}
-      <div className="px-4 md:px-6 py-4 bg-gray-900 border-t border-gray-800">
-        {/* Reject input */}
-        {showRejectInput && (
-          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-            <label htmlFor="selfie-comparison-view-motivo-del-rechazo" className="block text-sm text-gray-300 mb-2">
-              Motivo del rechazo:
+      {/* Pie: qué revisar y la decisión. */}
+      <div className="shrink-0 border-t border-gray-800 bg-gray-900 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-6">
+        {showRejectInput ? (
+          <div className="space-y-2">
+            <label htmlFor="selfie-comparison-view-motivo-del-rechazo" className="block text-sm font-medium text-gray-100">
+              Motivo del rechazo <span className="text-red-300" aria-hidden="true">*</span>
             </label>
-            <textarea id="selfie-comparison-view-motivo-del-rechazo"
+            <textarea
+              id="selfie-comparison-view-motivo-del-rechazo"
+              autoFocus
               value={rejectMotivo}
               onChange={(e) => setRejectMotivo(e.target.value)}
-              placeholder="Describa por qué rechaza la selfie..."
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Por ejemplo: la persona de la selfie no coincide con la foto del documento."
+              required
+              disabled={isRejecting}
+              className="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
               rows={2}
             />
-            <div className="flex justify-end gap-2 mt-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end [&>*]:w-full sm:[&>*]:w-auto">
               <button
+                type="button"
                 onClick={() => {
                   setShowRejectInput(false)
                   setRejectMotivo('')
                 }}
-                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+                disabled={isRejecting}
+                className={botonModal('secondary', 'border-gray-600 bg-gray-800 text-gray-100 hover:bg-gray-700')}
               >
-                Cancelar
+                Volver
               </button>
               <button
+                type="button"
                 onClick={handleReject}
                 disabled={!rejectMotivo.trim() || isRejecting}
-                className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                aria-busy={isRejecting || undefined}
+                className={botonModal('danger')}
               >
-                {isRejecting ? 'Rechazando...' : 'Confirmar rechazo'}
+                {isRejecting && <IconLoader size={16} className="animate-spin" />}
+                {isRejecting ? 'Rechazando…' : 'Rechazar selfie'}
               </button>
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="text-sm text-gray-300">
+              <p className="mb-1 font-medium text-gray-100">Puntos a verificar</p>
+              <ul className="list-disc space-y-0.5 pl-5 text-xs md:text-sm">
+                <li>Los rasgos faciales coinciden entre ambas imágenes.</li>
+                <li>La foto del documento no presenta alteraciones visibles.</li>
+                <li>La selfie fue tomada recientemente (revise la fecha de captura).</li>
+              </ul>
+            </div>
+
+            <div className="flex shrink-0 flex-col-reverse gap-2 sm:flex-row [&>*]:w-full sm:[&>*]:w-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className={botonModal('secondary', 'border-gray-600 bg-gray-800 text-gray-100 hover:bg-gray-700')}
+              >
+                Cerrar
+              </button>
+              {canTakeAction && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectInput(true)}
+                    disabled={isApproving}
+                    className={botonModal('secondary', 'border-red-400/60 bg-gray-800 text-red-200 hover:bg-red-950')}
+                  >
+                    <IconX size={16} />
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApprove}
+                    disabled={isApproving}
+                    aria-busy={isApproving || undefined}
+                    className={botonModal('primary')}
+                  >
+                    {isApproving ? <IconLoader size={16} className="animate-spin" /> : <IconCheck size={16} />}
+                    Aprobar selfie
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         )}
-
-        <div className="flex flex-col md:flex-row md:items-start gap-4">
-          {/* Tips */}
-          <div className="flex-1 text-sm text-gray-400">
-            <p className="font-medium text-gray-300 mb-1">Puntos a verificar:</p>
-            <ul className="list-disc list-inside space-y-1 text-xs md:text-sm">
-              <li>Los rasgos faciales coinciden entre ambas imagenes</li>
-              <li>La foto del documento no presenta alteraciones visibles</li>
-              <li>La selfie fue tomada recientemente (verificar metadatos)</li>
-            </ul>
-          </div>
-
-          {/* CR: Action buttons - aprobar/rechazar */}
-          <div className="flex gap-2 shrink-0">
-            {canTakeAction && !showRejectInput && (
-              <>
-                <button
-                  onClick={() => setShowRejectInput(true)}
-                  disabled={isApproving}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm font-medium"
-                >
-                  <IconX size={16} className="inline mr-1" />
-                  Rechazar
-                </button>
-                <button
-                  onClick={handleApprove}
-                  disabled={isApproving}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm font-medium"
-                >
-                  {isApproving ? (
-                    <IconLoader size={16} className="inline mr-1 animate-spin" />
-                  ) : (
-                    <IconCheck size={16} className="inline mr-1" />
-                  )}
-                  Aprobar
-                </button>
-              </>
-            )}
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
       </div>
     </Modal>
   )

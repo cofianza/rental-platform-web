@@ -6,10 +6,10 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Badge } from '@/components/ui/Badge'
-import { IconLoader, IconArrowRight } from '@/components/icons'
+import { IconLoader, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/expediente'
 import type { IMotivosElegidos } from '@/types/estudio'
@@ -237,36 +237,70 @@ export function TransicionModal({
       'El estudio queda archivado y sale del flujo. Se cancelan los contratos que aún no se hayan firmado y se libera la reserva del inmueble. No se puede reabrir.',
   }
 
+  const botonDeshabilitado = isLoading || !estadoSeleccionado || !motivoValido || !motivoGestorValido
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Cambiar el estado del estudio"
+      description={
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+          Estado actual: <Badge estado={estadoActual} label={etiquetaActual} />
+        </span>
+      }
       size="md"
+      footer={
+        <div className="space-y-2">
+          {/* El error va junto al botón: con el cuerpo desplazado no se vería. */}
+          {error && (
+            <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </p>
+          )}
+          {!error && esDestructiva && (
+            <p className="text-sm text-gray-600">
+              {estadoSeleccionado === 'cerrado' ? 'No se puede deshacer: antes' : 'Antes'} de aplicarlo le mostramos qué pasa y le pedimos confirmarlo.
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isLoading} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmar}
+              disabled={botonDeshabilitado}
+              aria-busy={isLoading || undefined}
+              className={botonModal(esDestructiva ? 'danger' : 'primary')}
+            >
+              {isLoading && <IconLoader size={16} className="animate-spin" />}
+              Confirmar cambio
+            </button>
+          </ModalAcciones>
+        </div>
+      }
     >
       <div className="space-y-6">
-        {/* Estado actual */}
-        <div>
-          <p className="block text-sm font-medium text-gray-700 mb-2">
-            Estado actual
-          </p>
-          <Badge estado={estadoActual} label={etiquetaActual} />
-        </div>
-
         {/* Selector de estado destino */}
         <div>
-          <p id="transicion-modal-nuevo-estado" className="block text-sm font-medium text-gray-700 mb-3">
-            Nuevo estado
+          <p id="transicion-modal-nuevo-estado" className="block text-sm font-medium text-gray-700 mb-2">
+            Nuevo estado <span className="text-red-600" aria-hidden="true">*</span>
           </p>
-          <div role="group" aria-labelledby="transicion-modal-nuevo-estado" className="grid grid-cols-2 gap-2">
+          <div role="group" aria-labelledby="transicion-modal-nuevo-estado" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {transiciones.map((transicion) => {
               const config = ESTADOS_EXPEDIENTE[transicion.estado_destino]
               const isSelected = labelSeleccionado === transicion.etiqueta
+              const sinVuelta = transicion.estado_destino === 'cerrado'
+              const reabrible = transicion.estado_destino === 'rechazado'
 
               return (
                 <button
                   key={`${transicion.estado_destino}-${transicion.etiqueta}`}
                   type="button"
+                  
+                  aria-pressed={isSelected}
                   onClick={() => {
                     // M2/M4: lo escrito o marcado para otra transición no se arrastra.
                     if (transicion.etiqueta !== labelSeleccionado) {
@@ -279,40 +313,38 @@ export function TransicionModal({
                     setLabelSeleccionado(transicion.etiqueta)
                   }}
                   disabled={isLoading}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 text-left transition-all ${
+                  className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 ${
                     isSelected
                       ? `${config.borderColor} ${config.bgColor}`
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <span
-                    className={`w-3 h-3 rounded-full ${
-                      isSelected
-                        ? config.textColor.replace('text-', 'bg-')
-                        : 'bg-gray-300'
-                    }`}
-                  />
-                  <span
-                    className={`text-sm font-medium ${
-                      isSelected ? config.textColor : 'text-gray-700'
+                    aria-hidden="true"
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                      isSelected ? `${config.textColor.replace('text-', 'bg-')} border-transparent text-white` : 'border-gray-300 bg-white'
                     }`}
                   >
-                    {transicion.etiqueta}
+                    {isSelected && <IconCheck size={12} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-sm font-medium ${isSelected ? config.textColor : 'text-gray-900'}`}>
+                      {transicion.etiqueta}
+                    </span>
+                    {sinVuelta && <span className="block text-xs text-gray-600">Sin vuelta atrás</span>}
+                    {reabrible && <span className="block text-xs text-gray-600">Solo se reabre con una apelación o una reevaluación</span>}
                   </span>
                 </button>
               )
             })}
           </div>
+          {/* Cómo queda el estudio: «Cancelar» y «cerrar un no aprobable» llevan a cerrado con otro nombre. */}
+          {estadoSeleccionado && (
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-700">
+              Queda en: <Badge estado={estadoSeleccionado} label={etiquetaDestino} />
+            </p>
+          )}
         </div>
-
-        {/* Visualización de la transición */}
-        {estadoSeleccionado && (
-          <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
-            <Badge estado={estadoActual} label={etiquetaActual} />
-            <IconArrowRight size={20} className="text-gray-500" />
-            <Badge estado={estadoSeleccionado} label={etiquetaDestino} />
-          </div>
-        )}
 
         {tipoLista && catalogo && (
           <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={(v) => { setMotivos(v); setError(null) }} disabled={isLoading} noAplican={validaNoAplican ? noAplican : undefined} errorLectura={validaNoAplican && errorMotivosLectura} onReintentar={reintentarMotivos} />
@@ -330,7 +362,7 @@ export function TransicionModal({
               : cancelaCofianza
                 ? 'Motivo de la cancelación (lo ven la inmobiliaria o el propietario y el solicitante)'
                 : 'Comentario / Motivo'}{' '}
-            <span className="text-red-500">*</span>
+            <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <textarea id="transicion-modal-comentario-motivo"
             value={comentario}
@@ -357,7 +389,7 @@ export function TransicionModal({
           <div>
             <LoVeLaInmobiliaria />
             <label htmlFor="transicion-modal-motivo-gestor" className="block text-sm font-medium text-gray-700 mb-2">
-              Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
+              Motivo para la inmobiliaria o el propietario <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <textarea id="transicion-modal-motivo-gestor"
               value={motivoGestor}
@@ -382,7 +414,7 @@ export function TransicionModal({
         {pideEvaluacion && pideNotaIdentidad && (
           <div>
             <label htmlFor="transicion-modal-nota-identidad" className="block text-sm font-medium text-gray-700 mb-2">
-              Cómo verificó la identidad <span className="text-red-500">*</span>
+              Cómo verificó la identidad <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <textarea id="transicion-modal-nota-identidad"
               value={notaIdentidad}
@@ -403,35 +435,6 @@ export function TransicionModal({
           </>
         )}
 
-        {/* Mensaje de error */}
-        {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Botones de acción */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmar}
-            disabled={isLoading || !estadoSeleccionado || !motivoValido || !motivoGestorValido}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-              esDestructiva ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
-            }`}
-          >
-            {isLoading && <IconLoader size={16} className="animate-spin" />}
-            Confirmar cambio
-          </button>
-        </div>
       </div>
 
       <ConfirmDialog

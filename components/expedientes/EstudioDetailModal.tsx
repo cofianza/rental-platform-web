@@ -8,9 +8,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
-import { IconFileText, IconLoader, IconCheck, IconAlertTriangle } from '@/components/icons'
+import { IconFileText, IconLoader, IconCheck, IconAlertTriangle, IconChevronDown } from '@/components/icons'
 import { estudioService, type IListasEstudio } from '@/services/estudioService'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { ScoreGauge } from '@/components/estudios/ScoreGauge'
@@ -26,7 +26,7 @@ type IEstudioConNota = IEstudio & { nota_interna?: string | null; version_politi
 import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
-import { formatCurrency, TIPOS_DOCUMENTO } from '@/lib/constants'
+import { formatCurrency, formatDateTime, TIPOS_DOCUMENTO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import { motivoCoarrendatario, textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
@@ -99,21 +99,14 @@ function valorFormulario(key: string, value: unknown): string {
 }
 
 function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('es-CO', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return dateStr ? formatDateTime(dateStr) : '—'
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between py-2 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900 text-right">{value}</span>
+    <div className="flex justify-between gap-4 py-2 border-b border-gray-100 last:border-0">
+      <dt className="shrink-0 text-sm text-gray-500">{label}</dt>
+      <dd className="min-w-0 break-words text-right text-sm font-medium text-gray-900">{value}</dd>
     </div>
   )
 }
@@ -313,11 +306,24 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de la evaluación" size="lg" closeOnBackdrop>
-      <div className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Detalle de la evaluación"
+      size="lg"
+      closeOnBackdrop
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={onClose} className={botonModal('secondary')}>
+            Cerrar
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <div className="space-y-5">
         {/* a. Resultado: de lo que más se entiende a lo más técnico. */}
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-1">Resultado</h4>
+          <h3 className="sr-only">Resultado</h3>
           <div className="flex flex-col items-center gap-2 py-2">
             <Badge estado={colorEvaluacion(estudio)} label={rotuloEvaluacion(estudio)} />
             {/* La API la manda sin puntaje a los externos. Como en el Resumen: solo
@@ -333,7 +339,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* b. Por qué salió así: observaciones, motivo de rechazo y condiciones en un solo bloque. */}
             {(porQue.length > 0 || aprobadoSinTexto) && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-1">Por qué salió así</h4>
+                <h3 className="mb-1.5 text-sm font-semibold text-gray-900">Por qué salió así</h3>
                 <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
                   {porQue.length > 0
                     ? porQue.map((t) => (
@@ -367,13 +373,14 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* Certificado */}
             {isCertificable && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Certificado</h4>
+                <h3 className="mb-2 text-sm font-semibold text-gray-900">Certificado</h3>
                 {estudio.certificado_url ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
+                      type="button"
                       onClick={handleDescargarCertificado}
                       disabled={loadingCert}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50"
+                      className={botonModal('secondary')}
                     >
                       {loadingCert ? (
                         <IconLoader size={16} className="animate-spin" />
@@ -387,14 +394,14 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                       <button
                         onClick={handleGenerarCertificado}
                         disabled={generatingCert}
-                        className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                        className={botonModal('secondary')}
                       >
                         {generatingCert ? (
                           <IconLoader size={14} className="animate-spin" />
                         ) : (
                           <IconCheck size={14} />
                         )}
-                        Regenerar
+                        Regenerar certificado
                       </button>
                     )}
                   </div>
@@ -409,7 +416,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   <button
                     onClick={handleGenerarCertificado}
                     disabled={generatingCert}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
+                    className={botonModal('primary')}
                   >
                     {generatingCert ? (
                       <>
@@ -442,7 +449,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             {/* d. Cómo lo calculó Cofianza: nota interna, endeudamiento y versión. La API solo los manda a Cofianza. */}
             {(nota || estudio.endeudamiento_motor || (estudio as IEstudioConNota).version_politica) && (
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-700">Cómo lo calculó Cofianza (solo Cofianza)</h4>
+                <h3 className="text-sm font-semibold text-gray-900">Cómo lo calculó Cofianza <span className="font-normal text-gray-600">(solo Cofianza)</span></h3>
                 {nota && (
                   <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">{nota}</p>
                 )}
@@ -462,12 +469,12 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 DataCrédito o `respuesta_proveedor` no persistida) quedan los
                 datos del formulario: es el único insumo que queda. */}
             {(isBuroCompleted || (estudio.datos_formulario && !hayReporteFinanciero)) && (
-              <details className="rounded-lg border border-gray-200 bg-white">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-gray-50">
+              <details className="group rounded-lg border border-gray-200 bg-white">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 [&::-webkit-details-marker]:hidden">
                   <span className="font-medium text-gray-800">
                     {externo || !isBuroCompleted ? 'Reporte de la central de riesgo' : isTransUnion ? 'Reporte TransUnion' : 'Reporte DataCrédito'}
                   </span>
-                  <span className="text-xs text-gray-500">Ver</span>
+                  <IconChevronDown size={16} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="space-y-4 border-t border-gray-200 p-4">
                   {transunionData && (
@@ -488,7 +495,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   {estudio.datos_formulario && !hayReporteFinanciero && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
-                      <div className="bg-gray-50 rounded-lg p-4">
+                      <dl className="bg-gray-50 rounded-lg px-4 py-2">
                         {Object.entries(estudio.datos_formulario)
                           .filter(([key, value]) => key !== 'acepta_terminos' && value != null && value !== '')
                           .map(([key, value]) => (
@@ -498,7 +505,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                               value={valorFormulario(key, value)}
                             />
                           ))}
-                      </div>
+                      </dl>
                     </div>
                   )}
                 </div>
@@ -506,12 +513,12 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
             )}
 
             {/* f. Datos del trámite, plegado. */}
-            <details className="rounded-lg border border-gray-200 bg-white">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-gray-50">
+            <details className="group rounded-lg border border-gray-200 bg-white">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 [&::-webkit-details-marker]:hidden">
                 <span className="font-medium text-gray-800">Datos del trámite</span>
-                <span className="text-xs text-gray-500">Ver</span>
+                <IconChevronDown size={16} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
               </summary>
-              <div className="border-t border-gray-200 px-4 py-2">
+              <dl className="border-t border-gray-200 px-4 py-2">
                 {solicitante && (
                   <>
                     <DetailRow
@@ -547,19 +554,10 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                     value={`${estudio.solicitado_por.nombre} ${estudio.solicitado_por.apellido}`}
                   />
                 )}
-              </div>
+              </dl>
             </details>
         </div>
 
-        {/* Boton cerrar */}
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Cerrar
-          </button>
-        </div>
       </div>
     </Modal>
   )

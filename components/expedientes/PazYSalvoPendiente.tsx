@@ -19,7 +19,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { IconCheck, IconClock, IconLoader, IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
@@ -292,15 +292,54 @@ function AcreditarPazYSalvoModal({
   )
 
   return (
-    <Modal isOpen onClose={enviando ? () => {} : onClose} title="Acreditar paz y salvo" size="lg">
+    <Modal
+      isOpen
+      onClose={enviando ? () => {} : onClose}
+      title="Acreditar paz y salvo"
+      description={`Plazo del candidato: hasta el ${fechaCondicion(venceEn)}. Acredítelo solo si lo que revisó muestra la obligación pagada o al día.`}
+      size="lg"
+      footer={
+        <div className="space-y-2 text-sm">
+          {/* Pie fijo, como en «Aprobar estudio»: en el celular el botón no queda debajo del pliegue. */}
+          {faltantes.length > 0 ? (
+            <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+              <p className="font-semibold">Para acreditar falta:</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {faltantes.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p role="status" className="flex items-center gap-1.5 font-medium text-primary-800">
+              <IconCheck size={16} className="shrink-0" />
+              Todo completo: revise «Al acreditar» y confirme.
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={onClose} disabled={enviando} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void acreditar()
+              }}
+              disabled={enviando || faltantes.length > 0}
+              aria-busy={enviando || undefined}
+              className={botonModal('primary')}
+            >
+              {enviando ? <IconLoader size={16} className="animate-spin" /> : <IconShieldCheck size={16} />}
+              {enviando ? 'Acreditando…' : 'Acreditar y aprobar'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
+    >
       <div className="space-y-4 text-sm">
-        <p className="text-gray-700">
-          Plazo del candidato: hasta el {fechaCondicion(venceEn)}. Acredítelo solo si lo que revisó muestra la obligación pagada
-          o al día.
-        </p>
 
         <fieldset className="space-y-2">
-          <legend className="mb-1 text-xs font-semibold text-gray-700">Cómo lo verificó</legend>
+          <legend className="mb-2 text-sm font-medium text-gray-700">Cómo lo verificó <span className="text-red-600" aria-hidden="true">*</span></legend>
           {opcion('documento', 'Con el paz y salvo que cargó el candidato', 'El documento de la entidad acreedora que certifica que la obligación está paga.')}
           {opcion(
             'consulta',
@@ -328,7 +367,7 @@ function AcreditarPazYSalvoModal({
             </p>
           ) : (
             <fieldset className="space-y-2">
-              <legend className="mb-1 text-xs font-semibold text-gray-700">Documento revisado</legend>
+              <legend className="mb-2 text-sm font-medium text-gray-700">Documento revisado <span className="text-red-600" aria-hidden="true">*</span></legend>
               {soportes.map((s) => (
                 <label key={s.id} className="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-200 bg-white p-2.5">
                   <input
@@ -358,9 +397,19 @@ function AcreditarPazYSalvoModal({
             </fieldset>
           ))}
 
-        <label className="block text-xs font-medium text-gray-700">
-          {via === 'consulta' ? 'Qué consultó y qué mostró (obligatorio)' : 'Nota (opcional)'} — queda en el registro interno
+        <label className="block text-sm font-medium text-gray-700">
+          {via === 'consulta' ? (
+            <>
+              Qué consultó y qué mostró <span className="text-red-600" aria-hidden="true">*</span>
+            </>
+          ) : (
+            <>
+              Nota <span className="font-normal text-gray-500">(opcional)</span>
+            </>
+          )}
+          <span className="mt-0.5 block text-xs font-normal text-gray-600">Queda en el registro interno.</span>
           <textarea
+            required={via === 'consulta'}
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             maxLength={1000}
@@ -388,45 +437,6 @@ function AcreditarPazYSalvoModal({
           </ul>
         </div>
 
-        {/* Pie fijo, como en «Aprobar estudio»: en el celular el botón no queda debajo del pliegue. */}
-        <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pb-4 pt-3">
-          {faltantes.length > 0 ? (
-            <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-              <p className="font-semibold">Para acreditar falta:</p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5">
-                {faltantes.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p role="status" className="flex items-center gap-1.5 font-medium text-primary-800">
-              <IconCheck size={16} className="shrink-0" />
-              Todo completo: revise «Al acreditar» y confirme.
-            </p>
-          )}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={enviando}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                void acreditar()
-              }}
-              disabled={enviando || faltantes.length > 0}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
-            >
-              {enviando ? <IconLoader size={16} className="animate-spin" /> : <IconShieldCheck size={16} />}
-              {enviando ? 'Acreditando…' : 'Acreditar y aprobar'}
-            </button>
-          </div>
-        </div>
       </div>
     </Modal>
   )

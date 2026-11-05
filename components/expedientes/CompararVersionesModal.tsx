@@ -1,8 +1,8 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
-import { IconX } from '@/components/icons'
+import { formatDate } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import type { IVersionComparison, IVersionDiferencia } from '@/types/contrato'
 import { SkeletonText } from '@/components/ui/Skeleton'
@@ -11,7 +11,7 @@ const CAMBIO_STYLES: Record<IVersionDiferencia['cambio'], { label: string; bg: s
   agregada: { label: 'Agregada', bg: 'bg-green-100', text: 'text-green-700' },
   eliminada: { label: 'Eliminada', bg: 'bg-red-100', text: 'text-red-700' },
   modificada: { label: 'Modificada', bg: 'bg-amber-100', text: 'text-amber-700' },
-  sin_cambio: { label: 'Sin cambio', bg: 'bg-gray-100', text: 'text-gray-500' },
+  sin_cambio: { label: 'Sin cambio', bg: 'bg-gray-100', text: 'text-gray-700' },
 }
 
 interface CompararVersionesModalProps {
@@ -33,6 +33,7 @@ export function CompararVersionesModal({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showUnchanged, setShowUnchanged] = useState(false)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     if (!isOpen) return
@@ -44,9 +45,9 @@ export function CompararVersionesModal({
     contratoService
       .compararVersiones(contratoId, v1, v2)
       .then(setComparison)
-      .catch(() => setError('Error al cargar la comparación'))
+      .catch(() => setError('No se pudo cargar la comparación de las versiones.'))
       .finally(() => setIsLoading(false))
-  }, [isOpen, contratoId, v1, v2])
+  }, [isOpen, contratoId, v1, v2, intento])
 
   if (!isOpen) return null
 
@@ -54,135 +55,93 @@ export function CompararVersionesModal({
     (d) => showUnchanged || d.cambio !== 'sin_cambio'
   ) ?? []
 
+  const fecha = (f: string | null | undefined) => (f ? formatDate(f) : null)
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Comparar versiones del contrato" encima closeOnBackdrop className="rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Comparar versiones v{v1} y v{v2}
-        </h2>
-        <button type="button" data-modal-close aria-label="Cerrar"
-          onClick={onClose}
-          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100"
-        >
-          <IconX size={20} />
-        </button>
-      </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Comparar versiones v${v1} y v${v2}`}
+      description={
+        comparison
+          ? `${comparison.total_cambios} ${comparison.total_cambios === 1 ? 'cambio' : 'cambios'} entre la v${comparison.v1.version}${
+              fecha(comparison.v1.fecha_generacion) ? ` (${fecha(comparison.v1.fecha_generacion)})` : ''
+            } y la v${comparison.v2.version}${fecha(comparison.v2.fecha_generacion) ? ` (${fecha(comparison.v2.fecha_generacion)})` : ''}.`
+          : undefined
+      }
+      size="lg"
+      encima
+      closeOnBackdrop
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={onClose} className={botonModal('secondary')}>
+            Cerrar
+          </button>
+        </ModalAcciones>
+      }
+    >
+      {isLoading && (
+        <div role="status">
+          <span className="sr-only">Cargando versiones…</span>
+          <SkeletonText lineas={8} />
+        </div>
+      )}
 
-      <div className="p-4 sm:p-6">
-        {isLoading && (
-          <div role="status">
-            <span className="sr-only">Cargando versiones…</span>
-            <SkeletonText lineas={8} />
-          </div>
-        )}
+      {error && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p>{error}</p>
+          <button type="button" onClick={() => setIntento((n) => n + 1)} className={botonModal('secondary', 'mt-3')}>
+            Reintentar
+          </button>
+        </div>
+      )}
 
-        {error && (
-          <div className="text-center py-8">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
+      {comparison && (
+        <div className="space-y-4">
+          <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={showUnchanged}
+              onChange={(e) => setShowUnchanged(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            Mostrar también los campos sin cambios
+          </label>
 
-        {comparison && (
-          <div className="space-y-4">
-            {/* Summary */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">{comparison.total_cambios}</span> cambio(s) encontrado(s)
-              </p>
-              <label className="flex items-center gap-2 text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={showUnchanged}
-                  onChange={(e) => setShowUnchanged(e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                Mostrar sin cambios
-              </label>
-            </div>
-
-            {/* Version info */}
-            <div className="grid grid-cols-1 gap-2 text-xs text-gray-500 sm:grid-cols-2 sm:gap-4">
-              <div className="bg-gray-50 rounded-lg p-2.5">
-                <span className="font-medium text-gray-700">v{comparison.v1.version}</span>
-                {comparison.v1.fecha_generacion && (
-                  <span className="ml-2">
-                    {new Date(comparison.v1.fecha_generacion).toLocaleDateString('es-CO')}
-                  </span>
-                )}
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2.5">
-                <span className="font-medium text-gray-700">v{comparison.v2.version}</span>
-                {comparison.v2.fecha_generacion && (
-                  <span className="ml-2">
-                    {new Date(comparison.v2.fecha_generacion).toLocaleDateString('es-CO')}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Diff table */}
-            {filteredDiffs.length === 0 ? (
-              <p className="text-center py-6 text-sm text-gray-500">
-                No hay diferencias entre las versiones
-              </p>
-            ) : (
-              <div className="border border-gray-200 rounded-lg overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
-                        Campo
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
-                        v{v1}
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
-                        v{v2}
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase">
-                        Estado
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredDiffs.map((d) => {
-                      const style = CAMBIO_STYLES[d.cambio]
-                      return (
-                        <tr key={d.variable} className="hover:bg-gray-50">
-                          {/* El API ya manda la etiqueta legible («Canon mensual»). */}
-                          <td className="px-4 py-2.5 text-gray-900">{d.variable}</td>
-                          <td className="px-4 py-2.5 text-gray-700 max-w-[200px] truncate">
-                            {d.valor_v1 || <span className="text-gray-500">(vacío)</span>}
-                          </td>
-                          <td className="px-4 py-2.5 text-gray-700 max-w-[200px] truncate">
-                            {d.valor_v2 || <span className="text-gray-500">(vacío)</span>}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
-                              {style.label}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 sm:px-6 py-3 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Cerrar
-        </button>
-      </div>
+          {filteredDiffs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-gray-300 py-6 text-center text-sm text-gray-600">
+              No hay diferencias entre las versiones.
+            </p>
+          ) : (
+            <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+              {filteredDiffs.map((d) => {
+                const style = CAMBIO_STYLES[d.cambio]
+                return (
+                  <li key={d.variable} className="px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      {/* El API ya manda la etiqueta legible («Canon mensual»). */}
+                      <p className="text-sm font-medium text-gray-900">{d.variable}</p>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
+                        {style.label}
+                      </span>
+                    </div>
+                    <dl className="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 sm:gap-4">
+                      <div className="min-w-0">
+                        <dt className="text-xs text-gray-500">v{v1}</dt>
+                        <dd className="mt-0.5 break-words text-gray-700">{d.valor_v1 || <span className="text-gray-500">(vacío)</span>}</dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-xs text-gray-500">v{v2}</dt>
+                        <dd className="mt-0.5 break-words font-medium text-gray-900">{d.valor_v2 || <span className="font-normal text-gray-500">(vacío)</span>}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </Modal>
   )
 }
