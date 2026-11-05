@@ -37,7 +37,7 @@ interface SortableHeaderProps {
   onSort: (column: IExpedienteFilters['sortBy']) => void
 }
 
-function SortableHeader({
+export function SortableHeader({
   column,
   label,
   currentSortBy,
@@ -70,7 +70,7 @@ function SortableHeader({
  * clic fija orden y sentido (siguienteOrdenActividad): actividad reciente,
  * actividad antigua, creación reciente, creación antigua.
  */
-function ActividadHeader({
+export function ActividadHeader({
   currentSortBy,
   currentSortOrder,
   onOrdenar,
@@ -98,7 +98,7 @@ function ActividadHeader({
 }
 
 /** Vista de Cofianza. Ausente = la API no pudo leerla: mejor un guion que afirmar que no tiene. */
-function nombreInmobiliaria(e: IExpediente): string {
+export function nombreInmobiliaria(e: IExpediente): string {
   if (e.inmobiliaria_nombre === undefined) return '—'
   return e.inmobiliaria_nombre ?? 'Sin inmobiliaria'
 }
@@ -119,7 +119,7 @@ function diasDesde(iso: string): number {
  * caso abierto hace 2 meses y tocado ayer se veía igual de urgente que uno
  * parado hace 3 semanas. Los casos cerrados no se pintan de rojo: ya no esperan.
  */
-function Actividad({ expediente }: { expediente: IExpediente }) {
+export function Actividad({ expediente }: { expediente: IExpediente }) {
   // U14: en alerta solo si alguien tiene que mover el estudio (gestor o Cofianza).
   const cerrado = !actividadConAlerta(expediente)
   const d = diasDesde(expediente.updated_at)
@@ -221,37 +221,7 @@ export function ExpedientesTable({
 
   // Empty state
   if (expedientes.length === 0) {
-    const [titulo, texto] = VACIO[vacio]
-    return (
-      <div className="text-center py-12">
-        {vacio === 'accion' ? (
-          <IconCheckCircle size={48} className="mx-auto text-primary-300 mb-4" />
-        ) : (
-          <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
-        )}
-        <h3 className="text-lg font-medium text-gray-900 mb-1">{titulo}</h3>
-        {texto && <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{texto}</p>}
-        {vacio === 'filtros' && onClearFilters && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <IconX size={16} />
-            {M.CLEAR_FILTERS}
-          </button>
-        )}
-        {vacio === 'nada' && puedeCrear && (
-          <Link
-            href="/expedientes/nuevo"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-          >
-            <IconPlus size={18} />
-            {M.NEW_EXPEDIENTE}
-          </Link>
-        )}
-      </div>
-    )
+    return <EstadoVacio vacio={vacio} puedeCrear={puedeCrear} onClearFilters={onClearFilters} />
   }
 
   const responsable = (expediente: IExpediente, movil: boolean) => {
@@ -458,85 +428,143 @@ export function ExpedientesTable({
         ))}
       </div>
 
-      {/* Paginación */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
-          {/* Info y selector de items */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-600">
-            <span>
-              Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
-              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}
-            </span>
-            <select
-              value={filters.limit}
-              onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option} por página
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Botones de paginación */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Página anterior"
-              onClick={() => onPageChange(meta.page - 1)}
-              disabled={meta.page <= 1}
-              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <IconChevronLeft size={18} />
-            </button>
-
-            {/* Números de página */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
-                // Calcular qué páginas mostrar
-                let pageNum: number
-                if (meta.totalPages <= 5) {
-                  pageNum = i + 1
-                } else if (meta.page <= 3) {
-                  pageNum = i + 1
-                } else if (meta.page >= meta.totalPages - 2) {
-                  pageNum = meta.totalPages - 4 + i
-                } else {
-                  pageNum = meta.page - 2 + i
-                }
-
-                return (
-                  <button
-                    key={pageNum}
-                    type="button"
-                    onClick={() => onPageChange(pageNum)}
-                    className={cn(
-                      'min-h-10 min-w-10 rounded text-sm font-medium transition-colors',
-                      pageNum === meta.page
-                        ? 'bg-primary-700 text-white'
-                        : 'hover:bg-gray-100 text-gray-600'
-                    )}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
-            </div>
-
-            <button
-              type="button"
-              aria-label="Página siguiente"
-              onClick={() => onPageChange(meta.page + 1)}
-              disabled={meta.page >= meta.totalPages}
-              className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <IconChevronRight size={18} />
-            </button>
-          </div>
-        </div>
-      )}
+      <Paginacion meta={meta} limit={filters.limit} onPageChange={onPageChange} onLimitChange={onLimitChange} />
     </>
+  )
+}
+
+/** Estado vacío según por qué está vacía la tabla (compartido con la cola de Cofianza). */
+export function EstadoVacio({
+  vacio,
+  puedeCrear,
+  onClearFilters,
+}: {
+  vacio: NonNullable<ExpedientesTableProps['vacio']>
+  puedeCrear: boolean
+  onClearFilters?: () => void
+}) {
+  const [titulo, texto] = VACIO[vacio]
+  return (
+    <div className="text-center py-12">
+      {vacio === 'accion' ? (
+        <IconCheckCircle size={48} className="mx-auto text-primary-300 mb-4" />
+      ) : (
+        <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
+      )}
+      <h3 className="text-lg font-medium text-gray-900 mb-1">{titulo}</h3>
+      {texto && <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{texto}</p>}
+      {vacio === 'filtros' && onClearFilters && (
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <IconX size={16} />
+          {M.CLEAR_FILTERS}
+        </button>
+      )}
+      {vacio === 'nada' && puedeCrear && (
+        <Link
+          href="/expedientes/nuevo"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+        >
+          <IconPlus size={18} />
+          {M.NEW_EXPEDIENTE}
+        </Link>
+      )}
+    </div>
+  )
+}
+
+/** Paginación de la lista (compartida con la cola de Cofianza). */
+export function Paginacion({
+  meta,
+  limit,
+  onPageChange,
+  onLimitChange,
+}: {
+  meta: IExpedientesMeta | null
+  limit: number
+  onPageChange: (page: number) => void
+  onLimitChange: (limit: number) => void
+}) {
+  if (!meta || meta.totalPages <= 1) return null
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
+      {/* Info y selector de items */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-600">
+        <span>
+          Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
+          {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}
+        </span>
+        <select
+          value={limit}
+          onChange={(e) => onLimitChange(Number(e.target.value))}
+          className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option} por página
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Botones de paginación */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Página anterior"
+          onClick={() => onPageChange(meta.page - 1)}
+          disabled={meta.page <= 1}
+          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <IconChevronLeft size={18} />
+        </button>
+
+        {/* Números de página */}
+        <div className="flex items-center gap-1">
+          {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
+            // Calcular qué páginas mostrar
+            let pageNum: number
+            if (meta.totalPages <= 5) {
+              pageNum = i + 1
+            } else if (meta.page <= 3) {
+              pageNum = i + 1
+            } else if (meta.page >= meta.totalPages - 2) {
+              pageNum = meta.totalPages - 4 + i
+            } else {
+              pageNum = meta.page - 2 + i
+            }
+
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => onPageChange(pageNum)}
+                className={cn(
+                  'min-h-10 min-w-10 rounded text-sm font-medium transition-colors',
+                  pageNum === meta.page
+                    ? 'bg-primary-700 text-white'
+                    : 'hover:bg-gray-100 text-gray-600'
+                )}
+              >
+                {pageNum}
+              </button>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          aria-label="Página siguiente"
+          onClick={() => onPageChange(meta.page + 1)}
+          disabled={meta.page >= meta.totalPages}
+          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <IconChevronRight size={18} />
+        </button>
+      </div>
+        </div>
   )
 }

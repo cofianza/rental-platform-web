@@ -47,6 +47,8 @@ export interface BandejaTabsProps {
   onToggleMisExpedientes: () => void
   /** Filtro «Turno del gestor» activo (llega por el enlace del aviso de bloqueos). */
   requiereAccionActivo?: boolean
+  /** false: el interruptor va en la barra de filtros (ToggleAsignados). */
+  mostrarToggle?: boolean
 }
 
 export function BandejaTabs({
@@ -56,6 +58,7 @@ export function BandejaTabs({
   onBandejaChange,
   onToggleMisExpedientes,
   requiereAccionActivo = false,
+  mostrarToggle = true,
 }: BandejaTabsProps) {
   const getCount = (estado: EstadoExpediente | null): number => {
     if (!stats) return 0
@@ -69,7 +72,7 @@ export function BandejaTabs({
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Bandeja tabs con scroll horizontal */}
         <div className="flex-1 overflow-x-auto">
-          <nav className="flex gap-1 min-w-max" aria-label="Bandejas">
+          <nav className="flex gap-1 min-w-max sm:min-w-0 sm:flex-wrap" aria-label="Bandejas">
             {/* Cofianza no tiene esa pestaña: llega al filtro por el enlace del aviso
                 de bloqueos, y sin este chip quedaba activo sin decirlo ni poder quitarse. */}
             {requiereAccionActivo && (
@@ -92,6 +95,8 @@ export function BandejaTabs({
               return (
                 <button
                   key={bandeja.label}
+                  type="button"
+                  aria-pressed={isActive}
                   onClick={() => onBandejaChange(bandeja.estado)}
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
@@ -124,48 +129,58 @@ export function BandejaTabs({
                     )}
                   >
                     {count}
-                    {/* U3: cuántos de los condicionados esperan la decisión de Cofianza. */}
-                    {bandeja.estado === 'condicionado' && stats?.condicionados_por_decidir != null &&
-                      ` · ${stats.condicionados_por_decidir} por decidir`}
                   </span>
+                  {/* U3: cuántos de los condicionados esperan la decisión de Cofianza:
+                      es el trabajo del analista, por eso aparte y en coral. */}
+                  {bandeja.estado === 'condicionado' && !!stats?.condicionados_por_decidir && (
+                    <span className="inline-flex items-center rounded-full bg-coral-100 px-1.5 py-0.5 text-xs font-semibold text-coral-800">
+                      {stats.condicionados_por_decidir} por decidir
+                    </span>
+                  )}
                 </button>
               )
             })}
           </nav>
         </div>
 
-        {/* Toggle «Asignados a mí» (analista de Cofianza) */}
-        <button
-          type="button"
-          aria-pressed={misExpedientes}
-          onClick={onToggleMisExpedientes}
-          className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',
-            misExpedientes
-              ? 'bg-primary-50 text-primary-700 border-primary-300'
-              : 'text-gray-600 hover:bg-gray-100 border-gray-200'
-          )}
-        >
-          <span
-            className={cn(
-              'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-              misExpedientes ? 'bg-primary-600' : 'bg-gray-300'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
-                misExpedientes ? 'translate-x-4' : 'translate-x-1'
-              )}
-            />
-          </span>
-          Asignados a mí
-        </button>
+        {mostrarToggle && <ToggleAsignados activo={misExpedientes} onToggle={onToggleMisExpedientes} />}
       </div>
       {(() => {
         const nota = !requiereAccionActivo ? BANDEJAS.find((b) => b.estado !== null && b.estado === activeBandeja)?.nota : undefined
         return nota ? <p className="text-xs text-gray-500">{nota}</p> : null
       })()}
     </div>
+  )
+}
+
+/** «Asignados a mí» (analista de Cofianza): filtra la lista por quien mira. */
+export function ToggleAsignados({ activo, onToggle }: { activo: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={onToggle}
+      className={cn(
+        'flex h-10 items-center gap-2 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',
+        activo
+          ? 'bg-primary-50 text-primary-700 border-primary-300'
+          : 'text-gray-600 hover:bg-gray-100 border-gray-200'
+      )}
+    >
+      <span
+        className={cn(
+          'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+          activo ? 'bg-primary-600' : 'bg-gray-300'
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform',
+            activo ? 'translate-x-4' : 'translate-x-1'
+          )}
+        />
+      </span>
+      Asignados a mí
+    </button>
   )
 }

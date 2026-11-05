@@ -50,38 +50,23 @@ function ExpedientesPageSkeleton() {
         <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
       </div>
 
-      {/* KPI cards skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="h-3 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
-          </div>
-        ))}
-      </div>
-
-      {/* Bandeja tabs skeleton */}
+      {/* Bandejas */}
       <div className="flex gap-2 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-9 w-28 shrink-0 bg-gray-200 rounded-lg animate-pulse" />
         ))}
       </div>
 
-      {/* Filters skeleton */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse" />
-          <div className="lg:w-56 h-10 bg-gray-200 rounded animate-pulse" />
-          <div className="flex gap-2">
-            <div className="flex-1 lg:w-40 h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="flex-1 lg:w-40 h-10 bg-gray-200 rounded animate-pulse" />
-          </div>
+      {/* Barra de filtros + lista, en una sola superficie */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="flex flex-col gap-2 border-b border-gray-100 p-4 md:flex-row">
+          <div className="h-10 flex-1 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 md:w-52 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 md:w-80 bg-gray-200 rounded-lg animate-pulse" />
         </div>
-      </div>
-
-      {/* Table skeleton */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <ExpedientesSkeleton count={10} />
+        <div className="p-4">
+          <ExpedientesSkeleton count={10} />
+        </div>
       </div>
     </div>
   )
