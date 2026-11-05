@@ -204,17 +204,18 @@ export function ReintentarEstudioForm({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3">
-      <p className="text-xs font-semibold text-gray-700 mb-2">
+    // Sin marco propio: va dentro de una sección de la tarjeta que lo contiene.
+    <div>
+      <p className="mb-2 text-sm text-gray-700">
         {esPrimeraEjecucion
           ? 'Verifique el documento antes de ejecutar la consulta'
           : 'Verifique el documento antes de reintentar'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="flex-1 min-w-0 sm:min-w-[10rem]">
-          <p className="block text-[11px] font-medium text-gray-500 mb-1">Documento</p>
+          <p className="mb-1 block text-xs font-medium text-gray-600">Documento</p>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-mono text-gray-900">
+            <span className="inline-flex min-h-10 items-center px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-mono text-gray-900">
               {documento(tipoDoc, numeroDoc || '—')}
             </span>
             {puedeCorregir && !sinCorrecciones && (
@@ -222,9 +223,9 @@ export function ReintentarEstudioForm({
                 type="button"
                 onClick={abrirCorregir}
                 disabled={reintentando}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800 disabled:opacity-50"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-primary-700 hover:bg-primary-50 hover:text-primary-800 disabled:opacity-50"
               >
-                <IconPencil size={12} />
+                <IconPencil size={14} />
                 Corregir datos
               </button>
             )}
@@ -234,7 +235,7 @@ export function ReintentarEstudioForm({
             contra Registraduría (código 10 si no coincide). */}
         {requiereApellido && (
           <div className="sm:w-52">
-            <label htmlFor="reintentar-estudio-form-primer-apellido" className="block text-[11px] font-medium text-gray-500 mb-1">
+            <label htmlFor="reintentar-estudio-form-primer-apellido" className="mb-1 block text-xs font-medium text-gray-600">
               Primer apellido
             </label>
             <input id="reintentar-estudio-form-primer-apellido"
@@ -244,7 +245,7 @@ export function ReintentarEstudioForm({
               placeholder="Como en la Registraduría"
               disabled={reintentando}
               maxLength={80}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+              className="w-full min-h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
             />
           </div>
         )}
@@ -252,9 +253,9 @@ export function ReintentarEstudioForm({
           type="button"
           onClick={handleReintentar}
           disabled={reintentando || numeroDoc.length < 5}
-          className="inline-flex shrink-0 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {reintentando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
+          {reintentando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
           {reintentando
             ? esPrimeraEjecucion
               ? 'Ejecutando…'
@@ -270,7 +271,7 @@ export function ReintentarEstudioForm({
           estudio y cree uno nuevo.
         </p>
       )}
-      <p className="text-[11px] text-gray-500 mt-2">
+      <p className="mt-2 text-xs text-gray-600">
         Se consultan cédula de ciudadanía, cédula de extranjería, PPT, PEP y pasaporte.
         {requiereApellido
           ? ' La central de riesgo valida el primer apellido contra la Registraduría: debe ir solo el primero, sin el segundo.'
@@ -289,9 +290,9 @@ export function ReintentarEstudioForm({
             type="button"
             onClick={handleEnviarAutorizacion}
             disabled={enviandoAutorizacion}
-            className="mt-2 inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-amber-900 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {enviandoAutorizacion ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
+            {enviandoAutorizacion ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
             {enviandoAutorizacion ? 'Enviando…' : 'Reenviar el enlace de autorización'}
           </button>
         </div>

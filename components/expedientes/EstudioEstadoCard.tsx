@@ -4,7 +4,7 @@
  *
  * Auto-oculto cuando no hay estudio activo. Muestra estado + resultado +
  * proveedor + fecha y CTA al tab Estudios. Mismo patrón visual que la card
- * de cita y de contrato.
+ * de cita y de contrato. Usa el marco común del Resumen (TarjetaSiguientePaso).
  *
  * Para el solicitante existe EstudioSolicitanteCard que es accionable
  * (formulario, polling, reintentos). Esta es solo informativa.
@@ -14,8 +14,10 @@
 
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
-import { useCallback, useEffect, useState } from 'react'
-import { IconBuilding2, IconCheck, IconClock, IconRefresh, IconX } from '@/components/icons'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconCheck, IconClock, IconRefresh, IconX } from '@/components/icons'
+import { cn } from '@/lib/utils'
+import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSiguientePaso'
 import { documento } from '@/components/contratos/v3/campos'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
@@ -360,37 +362,14 @@ function getTone(estudio: IEstudio) {
   return 'pending'
 }
 
-const TONE_STYLES: Record<string, { card: string; icon: string; pill: string }> = {
-  success: {
-    card: 'bg-green-50 border-green-200',
-    icon: 'bg-green-100 text-green-600',
-    pill: 'bg-white text-green-700 border-green-200',
-  },
-  warning: {
-    card: 'bg-amber-50 border-amber-200',
-    icon: 'bg-amber-100 text-amber-600',
-    pill: 'bg-white text-amber-700 border-amber-200',
-  },
-  danger: {
-    card: 'bg-red-50 border-red-200',
-    icon: 'bg-red-100 text-red-600',
-    pill: 'bg-white text-red-700 border-red-200',
-  },
-  progress: {
-    card: 'bg-blue-50 border-blue-200',
-    icon: 'bg-blue-100 text-blue-600',
-    pill: 'bg-white text-blue-700 border-blue-200',
-  },
-  pending: {
-    card: 'bg-gray-50 border-gray-200',
-    icon: 'bg-gray-100 text-gray-600',
-    pill: 'bg-white text-gray-700 border-gray-200',
-  },
-  muted: {
-    card: 'bg-gray-50 border-gray-200',
-    icon: 'bg-gray-100 text-gray-500',
-    pill: 'bg-white text-gray-600 border-gray-200',
-  },
+// El marco común del Resumen (TarjetaSiguientePaso): el color va en la banda.
+const TONO_PASO: Record<string, TonoPaso> = {
+  success: 'accion',
+  warning: 'revision',
+  danger: 'alerta',
+  progress: 'neutro',
+  pending: 'neutro',
+  muted: 'neutro',
 }
 
 export function EstudioEstadoCard({
@@ -621,13 +600,15 @@ function EstudioPanel({
       : decisionAnalista === 'negado'
         ? 'danger'
         : getTone(estudio)
-  const styles = TONE_STYLES[tone]
   const rotulo = rotuloEvaluacion(estudio, etiqueta === 'Coarrendatario')
 
   // No aprobable o fallida: una X, no el visto de las aprobadas.
-  const iconNode = estudio.estado === 'en_proceso' || estudio.estado === 'pago_pendiente'
-    ? <IconClock size={16} />
-    : tone === 'danger' ? <IconX size={16} /> : <IconCheck size={16} />
+  // En revisión, en espera o consultando: un reloj; el visto solo para lo aprobado.
+  const iconNode = tone === 'danger' || tone === 'muted'
+    ? <IconX size={18} />
+    : tone === 'success'
+      ? <IconCheck size={18} />
+      : <IconClock size={18} />
 
   const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
       ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
@@ -645,167 +626,164 @@ function EstudioPanel({
   const interno = esRolInterno(userRol)
   const visible = (t: string | null | undefined) => textoVisible(t, { externo: !interno })
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
+  const mostrarPorQueRevision =
+    (rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión') && !!visible(estudio.observaciones)
+  const mostrarFallo = estudio.estado === 'fallido' && !!visible(estudio.observaciones)
 
   return (
-    <div className={`border rounded-lg p-4 ${styles.card}`}>
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <h3 className="inline-flex items-center gap-1 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-          Evaluación crediticia
+    <TarjetaSiguientePaso
+      tono={TONO_PASO[tone]}
+      icono={iconNode}
+      titulo={
+        <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <span>
+            {etiqueta === 'Coarrendatario' ? 'Evaluación del coarrendatario' : 'Evaluación crediticia del titular'}: {rotulo}
+          </span>
           <InfoTip texto={AYUDA.evaluacion} lado="derecha" />
-        </h3>
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${
-            etiqueta === 'Coarrendatario'
-              ? 'bg-amber-100 text-amber-800 border-amber-200'
-              : 'bg-primary-50 text-primary-700 border-primary-200'
-          }`}
-        >
-          {etiqueta}
-        </span>
-      </div>
-
-      <div className="flex items-start gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${styles.icon}`}>
-          {iconNode}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${styles.pill}`}>
-              {rotulo}
+          {estudio.expiracion?.expirado && (
+            <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">
+              {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
             </span>
-            {estudio.expiracion?.expirado && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border bg-amber-100 text-amber-800 border-amber-200">
-                {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
-              </span>
+          )}
+        </span>
+      }
+      descripcion={
+        siguientePaso || mostrarPorQueRevision || mostrarFallo ? (
+          <div className="space-y-2">
+            {siguientePaso && <p>{siguientePaso}</p>}
+            {/* El motivo de la revisión (R2, R4, listas, identidad, puntaje de la
+                central…): antes solo se veía abriendo el detalle. Compara con el
+                rótulo de rotuloEvaluacion (antes con «Condicionado», que ya no sale). */}
+            {mostrarPorQueRevision && (
+              <p>
+                <span className="font-semibold">Por qué está en revisión:</span> {visible(estudio.observaciones)}
+              </p>
+            )}
+            {/* Motivo real del fallo. El texto de arriba es genérico para
+                cualquier error; el backend guarda en `observaciones` la causa
+                concreta (documento no encontrado, apellido que no coincide con
+                Registraduría, buró caído…). Sin esto había que ir a la base de
+                datos para saber qué corregir. */}
+            {mostrarFallo && (
+              <p>
+                <span className="font-semibold">Respuesta de la consulta:</span> {visible(estudio.observaciones)}
+              </p>
             )}
           </div>
-
-          {siguientePaso && (
-            <p className="text-sm text-gray-800 font-medium mb-2">{siguientePaso}</p>
+        ) : undefined
+      }
+    >
+      {/* Los datos de la evaluación, en pares etiqueta-valor */}
+      <div className="px-4 py-4 sm:px-5">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          {persona && (
+            <Dato etiqueta="Persona evaluada">
+              {nombreCompleto}
+              {persona.numero_documento && (
+                <span className="block text-gray-600">
+                  {persona.tipo_documento ? documento(persona.tipo_documento, persona.numero_documento) : persona.numero_documento}
+                </span>
+              )}
+            </Dato>
           )}
-
-          {/* El motivo de la revisión (R2, R4, listas, identidad, puntaje de la
-              central…): antes solo se veía abriendo el detalle. Compara con el
-              rótulo de rotuloEvaluacion (antes con «Condicionado», que ya no sale). */}
-          {(rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión') && visible(estudio.observaciones) && (
-            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
-              Por qué está en revisión: {visible(estudio.observaciones)}
-            </p>
+          {typeof estudio.score === 'number' && estudio.score > 0 && (
+            <Dato
+              etiqueta={
+                <span className="inline-flex items-center gap-1">
+                  Puntaje de la central
+                  <InfoTip texto={PUNTAJE_CENTRAL_AYUDA} etiqueta="Qué es el puntaje de la central" />
+                </span>
+              }
+            >
+              <span className="text-base font-semibold tabular-nums">{estudio.score}</span>
+            </Dato>
           )}
-
-          {/* Motivo real del fallo. El texto de arriba es genérico para
-              cualquier error; el backend guarda en `observaciones` la causa
-              concreta (documento no encontrado, apellido que no coincide con
-              Registraduría, buró caído…). Sin esto había que ir a la base de
-              datos para saber qué corregir. */}
-          {estudio.estado === 'fallido' && visible(estudio.observaciones) && (
-            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2">
-              {visible(estudio.observaciones)}
-            </p>
+          {/* El tipo ya lo dice el título (titular o coarrendatario). */}
+          {interno && centralDefinida(estudio) && (
+            <Dato etiqueta="Central consultada">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</Dato>
           )}
-
-          <div className="space-y-0.5 text-sm">
-            {persona && (
-              <p className="text-xs text-gray-600">
-                Evaluado: <span className="font-medium text-gray-800">{nombreCompleto}</span>
-                {persona.numero_documento && (
-                  <>
-                    {' · '}
-                    <span className="font-medium text-gray-800">
-                      {persona.tipo_documento ? documento(persona.tipo_documento, persona.numero_documento) : persona.numero_documento}
-                    </span>
-                  </>
-                )}
-              </p>
+          <Dato etiqueta="Fechas">
+            Solicitada el {formatDate(estudio.fecha_solicitud)}
+            {estudio.fecha_completado && (
+              <span className="block text-gray-600">Completada el {formatDate(estudio.fecha_completado)}</span>
             )}
-            {/* El tipo ya lo dice la insignia Titular/Coarrendatario. */}
-            {interno && centralDefinida(estudio) && (
-              <p className="text-xs text-gray-600">
-                Proveedor: <span className="font-medium text-gray-800">{BURO_LABELS[estudio.proveedor] || estudio.proveedor}</span>
-              </p>
-            )}
-            <p className="text-xs text-gray-600">
-              Solicitado: {formatDate(estudio.fecha_solicitud)}
-              {estudio.fecha_completado ? ` · Completado: ${formatDate(estudio.fecha_completado)}` : ''}
-            </p>
-            {typeof estudio.score === 'number' && estudio.score > 0 && (
-              <p className="flex items-center gap-1 text-xs text-gray-700">
-                Puntaje de la central: <span className="font-semibold">{estudio.score}</span>
-                <InfoTip texto={PUNTAJE_CENTRAL_AYUDA} etiqueta="Qué es el puntaje de la central" />
-              </p>
-            )}
-            {estudio.antecedentes && (
-              <p
-                className={`text-xs mt-1 ${
+          </Dato>
+          {estudio.antecedentes && (
+            <Dato etiqueta="Listas restrictivas" className="sm:col-span-2">
+              <span
+                className={cn(
+                  'inline-flex items-start gap-1.5',
                   estudio.antecedentes.reportado_en_listas
-                    ? 'text-red-700'
+                    ? 'text-red-800'
                     : estudio.antecedentes.estado !== 'verificado' || estudio.antecedentes.flags_revision.length > 0
-                      ? 'text-amber-700'
-                      : 'text-gray-700'
-                }`}
+                      ? 'text-amber-900'
+                      : 'text-gray-900',
+                )}
                 title={esCofianza ? (estudio.antecedentes.motivo ?? undefined) : undefined}
               >
-                Listas restrictivas:{' '}
-                <span className="font-medium">{describirAntecedentes(estudio.antecedentes, esCofianza)}</span>
-              </p>
-            )}
-            {visible(estudio.motivo_rechazo) && (
-              <p className="text-xs text-red-700 mt-1">
-                Motivo:{' '}
-                <span className="font-medium">
-                  {estudio.tipo === 'con_coarrendatario' ? motivoCoarrendatario(visible(estudio.motivo_rechazo)) : visible(estudio.motivo_rechazo)}
-                </span>
-              </p>
-            )}
-            {visible(estudio.condiciones) && (
-              <p className="text-xs text-amber-700 mt-1">
-                Condiciones: <span className="font-medium">{visible(estudio.condiciones)}</span>
-              </p>
-            )}
-          </div>
-          {/* La tarifa es una sola por arriendo: se ve y se negocia en el titular (P35). */}
-          {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} />}
-        </div>
+                {(estudio.antecedentes.reportado_en_listas ||
+                  estudio.antecedentes.estado !== 'verificado' ||
+                  estudio.antecedentes.flags_revision.length > 0) && (
+                  <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                )}
+                <span>{primeraMayuscula(describirAntecedentes(estudio.antecedentes, esCofianza))}</span>
+              </span>
+            </Dato>
+          )}
+          {visible(estudio.motivo_rechazo) && (
+            <Dato etiqueta="Motivo" className="sm:col-span-2">
+              <span className="text-red-800">
+                {estudio.tipo === 'con_coarrendatario' ? motivoCoarrendatario(visible(estudio.motivo_rechazo)) : visible(estudio.motivo_rechazo)}
+              </span>
+            </Dato>
+          )}
+          {visible(estudio.condiciones) && (
+            <Dato etiqueta="Condiciones" className="sm:col-span-2">
+              <span className="text-amber-900">{visible(estudio.condiciones)}</span>
+            </Dato>
+          )}
+        </dl>
+        {/* La tarifa es una sola por arriendo: se ve y se negocia en el titular (P35). */}
+        {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} />}
       </div>
 
-      {(puedeReintentar || puedeReasignar || onVerEstudios) && (
-        <div className="mt-3 pt-3 border-t border-gray-200/60 space-y-3">
-          {puedeReintentar && (
-            <ReintentarEstudioForm
-              // key: el form inicializa su estado de forma lazy, así que sin
-              // esto el documento quedaría del estudio anterior.
-              key={estudio.id}
-              estudioId={estudio.id}
-              persona={persona}
-              esTitular={etiqueta === 'Titular'}
-              expedienteId={expedienteId}
-              esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
-              onRetried={onRetried}
-            />
+      {puedeReintentar && (
+        <SeccionPaso titulo={esPendienteDeEjecutar(estudio) ? 'Ejecutar la consulta' : 'Volver a consultar'}>
+          <ReintentarEstudioForm
+            // key: el form inicializa su estado de forma lazy, así que sin
+            // esto el documento quedaría del estudio anterior.
+            key={estudio.id}
+            estudioId={estudio.id}
+            persona={persona}
+            esTitular={etiqueta === 'Titular'}
+            expedienteId={expedienteId}
+            esPrimeraEjecucion={esPendienteDeEjecutar(estudio)}
+            onRetried={onRetried}
+          />
+        </SeccionPaso>
+      )}
+
+      {(puedeReasignar || onVerEstudios) && (
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
+          {onVerEstudios && (
+            <button
+              type="button"
+              onClick={onVerEstudios}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            >
+              Ver detalle de la evaluación
+              <IconArrowRight size={16} />
+            </button>
           )}
-          {(puedeReasignar || onVerEstudios) && (
-            // Fila propia con gap: sueltos, los dos botones inline quedaban pegados.
-            <div className="flex flex-wrap items-center gap-4">
-              {puedeReasignar && (
-                <button
-                  type="button"
-                  onClick={() => setReasignarAbierto(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <IconBuilding2 size={14} />
-                  {inmuebleActualId ? 'Reasignar a otra propiedad' : 'Vincular inmueble'}
-                </button>
-              )}
-              {onVerEstudios && (
-                <button
-                  type="button"
-                  onClick={onVerEstudios}
-                  className="text-xs font-medium text-primary-700 hover:text-primary-800"
-                >
-                  Ver detalle de la evaluación →
-                </button>
-              )}
-            </div>
+          {puedeReasignar && (
+            <button
+              type="button"
+              onClick={() => setReasignarAbierto(true)}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            >
+              <IconBuilding2 size={16} />
+              {inmuebleActualId ? 'Reasignar a otra propiedad' : 'Vincular inmueble'}
+            </button>
           )}
         </div>
       )}
@@ -823,9 +801,21 @@ function EstudioPanel({
           onReasignado={onReasignado}
         />
       )}
+    </TarjetaSiguientePaso>
+  )
+}
+
+/** Un par etiqueta-valor de la evaluación. */
+function Dato({ etiqueta, children, className }: { etiqueta: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('min-w-0', className)}>
+      <dt className="text-xs text-gray-600">{etiqueta}</dt>
+      <dd className="mt-0.5 font-medium text-gray-900">{children}</dd>
     </div>
   )
 }
+
+const primeraMayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 /**
  * Para estudios tipo='con_coarrendatario' los datos de la persona evaluada

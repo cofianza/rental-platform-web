@@ -10,9 +10,10 @@ import { InfoTip } from '@/components/ui/InfoTip'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/Badge'
+import { documento } from '@/components/contratos/v3/campos'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
-import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList } from '@/components/icons'
+import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList, IconEye } from '@/components/icons'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
@@ -331,11 +332,12 @@ export function EstudiosSection({
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-sm text-red-600 mb-3">{error}</p>
+      <div role="alert" className="py-8 text-center">
+        <p className="mb-3 text-sm text-red-700">{error}</p>
         <button
+          type="button"
           onClick={fetchEstudios}
-          className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           <IconRefresh size={16} />
           Reintentar
@@ -347,47 +349,45 @@ export function EstudiosSection({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="inline-flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-          Evaluaciones crediticias
-          <InfoTip texto={AYUDA.evaluaciones} lado="derecha" />
-        </h3>
-        {canManage && (
-          <span className="inline-flex items-center gap-1.5">
-          {hasActiveEstudio && (
-            <InfoTip
-              texto="Ya hay una evaluación en curso en este estudio. Para pedir otra, primero termine o cancele la que está activa."
-              etiqueta="Por qué no se puede solicitar otra evaluación"
-              lado="izquierda"
-            />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="inline-flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+            Evaluaciones crediticias
+            <InfoTip texto={AYUDA.evaluaciones} lado="derecha" />
+          </h3>
+          {canManage && hasActiveEstudio && (
+            <p className="mt-1 text-sm text-gray-600">
+              Ya hay una evaluación en curso. Para pedir otra, primero termine o cancele la que está activa.
+            </p>
           )}
+        </div>
+        {canManage && estudios.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowSolicitar(true)}
             disabled={hasActiveEstudio || actionLoading}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <IconPlus size={16} />
             Solicitar evaluación
           </button>
-          </span>
         )}
       </div>
 
       {/* Empty state */}
       {estudios.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <IconClipboardList size={48} className="mx-auto text-gray-300 mb-3" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">
-            Sin evaluación crediticia
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
+        <div className="rounded-xl border border-dashed border-gray-300 px-4 py-10 text-center">
+          <IconClipboardList size={32} className="mx-auto mb-3 text-gray-400" />
+          <h4 className="text-base font-semibold text-gray-900">Sin evaluación crediticia</h4>
+          <p className="mx-auto mt-1 max-w-md text-sm text-gray-600">
             Todavía no hay ninguna evaluación crediticia para este estudio.
           </p>
           {canManage && (
             <button
+              type="button"
               onClick={() => setShowSolicitar(true)}
               disabled={hasActiveEstudio}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary-700 px-4 text-sm font-semibold text-white hover:bg-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <IconPlus size={16} />
               Solicitar evaluación
@@ -396,206 +396,139 @@ export function EstudiosSection({
         </div>
       )}
 
-      {/* List */}
+      {/* List: una tarjeta por evaluación; el detalle se abre con su botón (antes
+          la tarjeta entera era un botón con otros botones adentro). */}
       {estudios.length > 0 && (
-        <div className="space-y-3">
+        <ul className="space-y-3">
           {estudios.map((estudio) => {
-            const cardClickable = canViewDetail
             const persona = getPersonaEvaluada(estudio, solicitante)
+            const cancelada = estudio.estado === 'cancelado'
+            const motivo =
+              textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) }) &&
+              (estudio.estado === 'fallido' ||
+                estudio.resultado === 'condicionado' ||
+                estudio.resultado === 'rechazado')
+                ? textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) })
+                : null
+            const notaInterna = (estudio as IEstudio & { nota_interna?: string | null }).nota_interna
+            const gestionable = canManage && !ESTADOS_FINALIZADOS.includes(estudio.estado)
+            const puedeRegistrar =
+              !estudio.espera_autorizacion &&
+              ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
+              estudio.resultado === 'pendiente' &&
+              (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso' || !!estudio.estudio_padre_id)
+            // Esperando el pago o consultando el buró, el enlace sacaría a la
+            // evaluación de su estado; y en consulta tampoco se cancela. La
+            // reevaluación no lleva formulario: la decide un analista.
+            const puedeEnviarFormulario =
+              estudio.estado !== 'pago_pendiente' && estudio.estado !== 'en_proceso' && !estudio.estudio_padre_id
+            const puedeCancelar = estudio.estado !== 'en_proceso'
+            const reintentable =
+              (canManage || isStakeholder) &&
+              puedeEditar &&
+              // La reevaluación no se ejecuta: la API responde 409 (no vuelve a consultar la central).
+              !estudio.estudio_padre_id &&
+              puedeRelanzarEstudio(estudio) &&
+              (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario')
+            const hayAcciones = canViewDetail || (gestionable && (puedeRegistrar || puedeEnviarFormulario || puedeCancelar))
+
             return (
-              <div
+              <li
                 key={estudio.id}
-                onClick={cardClickable ? () => setShowDetail(estudio) : undefined}
-                role={cardClickable ? 'button' : undefined}
-                tabIndex={cardClickable ? 0 : undefined}
-                onKeyDown={
-                  cardClickable
-                    ? (e) => {
-                        // Enter sobre «Registrar resultado», «Enviar enlace» o
-                        // «Cancelar» es de ese botón, no abre el detalle.
-                        if (e.target !== e.currentTarget) return
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setShowDetail(estudio)
-                        }
-                      }
-                    : undefined
-                }
-                className={`border border-gray-200 rounded-lg p-4 transition-colors ${
-                  cardClickable ? 'hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer' : 'hover:border-gray-300'
-                }`}
+                className={`overflow-hidden rounded-xl border ${cancelada ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-white'}`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <>
-                          {esRolInterno(user?.rol) &&
-                            centralDefinida(estudio) && (
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                              estudio.proveedor === 'transunion'
-                                ? 'bg-blue-100 text-blue-700'
-                                : estudio.proveedor === 'manual'
-                                  ? 'bg-gray-100 text-gray-600'
-                                  : 'bg-purple-100 text-purple-700'
-                            }`}
-                          >
-                            {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}
-                          </span>
-                          )}
-                          {/* Una sola pastilla, con el mismo nombre que el Resumen y el detalle. */}
-                          <Badge
-                            estado={colorEvaluacion(estudio)}
-                            label={rotuloEvaluacion(estudio)}
-                          />
-                        </>
-                      {persona?.etiqueta === 'Coarrendatario' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                          Coarrendatario
+                <div className="px-4 py-4 sm:px-5">
+                  {/* Quién y cómo salió */}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className={`text-base font-semibold ${cancelada ? 'text-gray-600' : 'text-gray-900'}`}>
+                          {persona?.nombre || 'Persona evaluada'}
                         </span>
-                      )}
-                    </div>
-                    {persona && (
-                      <div className="text-sm text-gray-700 mb-1">
-                        <span className="font-medium">{persona.nombre}</span>
-                        {persona.numero_documento && (
-                          <span className="text-gray-500">
-                            {' · '}
-                            {persona.tipo_documento ? `${persona.tipo_documento} ` : ''}
-                            {persona.numero_documento}
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                          {persona?.etiqueta ?? (estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Titular')}
+                        </span>
+                        {estudio.estudio_padre_id && (
+                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                            Reevaluación
                           </span>
                         )}
-                      </div>
-                    )}
-                    <div className="text-sm text-gray-500 space-x-3">
-                      <span>{formatDate(estudio.fecha_solicitud || estudio.created_at)}</span>
-                      {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
-                        <span>{estudio.duracion_contrato_meses} meses</span>
-                      )}
-                      {estudio.solicitado_por && (
-                        <span>
-                          por {estudio.solicitado_por.nombre} {estudio.solicitado_por.apellido}
-                        </span>
-                      )}
-                    </div>
-                    {estudio.score != null && (
-                      <div className="mt-1">
-                        {/* Neutro: el puntaje de la central no es el veredicto. */}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                          Puntaje de la central: {estudio.score}
-                        </span>
-                      </div>
-                    )}
-                    {/* Motivo del desenlace. Solo se muestra donde el "por qué"
-                        cambia lo que el gestor debe hacer: sin score (buró sin
-                        información), rechazo, o fallo técnico. En un aprobado
-                        las observaciones son solo el detalle del reporte, y el
-                        badge + el score ya lo dicen todo. */}
-                    {textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) }) &&
-                      (estudio.estado === 'fallido' ||
-                        estudio.resultado === 'condicionado' ||
-                        estudio.resultado === 'rechazado') && (
-                        <p
-                          className={`mt-2 text-xs rounded-lg border px-2.5 py-1.5 ${
-                            estudio.estado === 'fallido' || estudio.resultado === 'rechazado'
-                              ? 'bg-red-50 border-red-200 text-red-800'
-                              : 'bg-amber-50 border-amber-200 text-amber-800'
-                          }`}
-                        >
-                          {textoVisible(estudio.observaciones, { externo: !esRolInterno(user?.rol) })}
+                      </p>
+                      {persona?.numero_documento && (
+                        <p className="mt-0.5 text-sm text-gray-600">
+                          {persona.tipo_documento ? documento(persona.tipo_documento, persona.numero_documento) : persona.numero_documento}
                         </p>
                       )}
-                    {/* Nota interna (cifras, umbrales, centrales): la API solo
-                        la manda a Cofianza. Las observaciones de arriba son
-                        las que ve la inmobiliaria. */}
-                    {(estudio as IEstudio & { nota_interna?: string | null }).nota_interna && (
-                      <p className="mt-2 text-xs rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-gray-700">
-                        <span className="font-semibold">Nota interna (solo Cofianza): </span>
-                        {(estudio as IEstudio & { nota_interna?: string | null }).nota_interna}
-                      </p>
-                    )}
+                    </div>
+                    {/* Una sola pastilla, con el mismo nombre que el Resumen y el detalle. */}
+                    <Badge
+                      estado={colorEvaluacion(estudio)}
+                      label={rotuloEvaluacion(estudio)}
+                      className="self-start"
+                    />
                   </div>
 
-                  {/* Actions — solo gestion (admin/operador). El click "ver detalle"
-                      ahora es la card entera. stopPropagation evita disparar el
-                      modal de detalle al accionar sobre estos botones. */}
-                  {canManage && !ESTADOS_FINALIZADOS.includes(estudio.estado) && (
-                    <div
-                      className="flex items-center gap-1 shrink-0"
-                      onClick={(e) => e.stopPropagation()}
+                  {/* Datos de la solicitud */}
+                  <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                    <span>Solicitada el {formatDate(estudio.fecha_solicitud || estudio.created_at)}</span>
+                    {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (
+                      <span>Contrato de {estudio.duracion_contrato_meses} meses</span>
+                    )}
+                    {estudio.solicitado_por && (
+                      <span>
+                        Por {estudio.solicitado_por.nombre} {estudio.solicitado_por.apellido}
+                      </span>
+                    )}
+                    {esRolInterno(user?.rol) && centralDefinida(estudio) && (
+                      <span>Central: {PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor}</span>
+                    )}
+                    {estudio.score != null && (
+                      // Neutro: el puntaje de la central no es el veredicto.
+                      <span className="font-medium text-gray-900">
+                        Puntaje de la central: <span className="tabular-nums">{estudio.score}</span>
+                      </span>
+                    )}
+                  </p>
+
+                  {/* Motivo del desenlace. Solo se muestra donde el "por qué"
+                      cambia lo que el gestor debe hacer: sin score (buró sin
+                      información), rechazo, o fallo técnico. En un aprobado
+                      las observaciones son solo el detalle del reporte, y el
+                      badge + el score ya lo dicen todo. */}
+                  {motivo && (
+                    <p
+                      className={`mt-3 rounded-lg px-3 py-2 text-sm ${
+                        estudio.estado === 'fallido' || estudio.resultado === 'rechazado'
+                          ? 'bg-red-50 text-red-800'
+                          : 'bg-amber-50 text-amber-900'
+                      }`}
                     >
-                      {/* Cargar el resultado a mano: la evaluación manual, una consulta
-                          que quedó en curso o la reevaluación (apelación), que nace
-                          'solicitado' con la central del padre y solo se decide aquí.
-                          No mientras se espera la autorización. */}
-                      {/* Adenda 4 V3 §12: retenida por la espera del coarrendatario, la API no la deja decidir. */}
-                      {estudio.espera_autorizacion ? (
-                        <span className="max-w-56 text-xs text-amber-800">
-                          La decisión espera al coarrendatario hasta el{' '}
-                          {new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })}.
-                        </span>
-                      ) : ESTADOS_PERMITIDOS_RESULTADO.includes(estudio.estado) &&
-                        estudio.resultado === 'pendiente' &&
-                        (estudio.proveedor === 'manual' || estudio.estado === 'en_proceso' || !!estudio.estudio_padre_id) && (
-                        <button
-                          onClick={() => setResultadoTarget(estudio)}
-                          disabled={actionLoading}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50"
-                        >
-                          <IconClipboardList size={16} />
-                          Registrar resultado
-                        </button>
-                      )}
-                      {/* Esperando el pago o consultando el buró, el enlace sacaría a la
-                          evaluación de su estado; y en consulta tampoco se cancela. La
-                          reevaluación no lleva formulario: la decide un analista. */}
-                      {estudio.estado !== 'pago_pendiente' && estudio.estado !== 'en_proceso' && !estudio.estudio_padre_id && (
-                        <button
-                          onClick={() => {
-                            setSendLinkEmail(solicitante?.email ?? '')
-                            setSendLinkTarget(estudio)
-                          }}
-                          disabled={actionLoading}
-                          title="Envía a la persona el enlace del formulario de la evaluación"
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-50"
-                        >
-                          <IconMail size={16} />
-                          Enviar formulario
-                        </button>
-                      )}
-                      {estudio.estado !== 'en_proceso' && (
-                        <button
-                          onClick={() => setCancelTarget(estudio)}
-                          disabled={actionLoading}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-                        >
-                          <IconX size={16} />
-                          Cancelar evaluación
-                        </button>
-                      )}
-                    </div>
+                      {motivo}
+                    </p>
+                  )}
+                  {/* Nota interna (cifras, umbrales, centrales): la API solo
+                      la manda a Cofianza. Las observaciones de arriba son
+                      las que ve la inmobiliaria. */}
+                  {notaInterna && (
+                    <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <span className="font-semibold">Nota interna (solo Cofianza): </span>
+                      {notaInterna}
+                    </p>
+                  )}
+                  {/* Adenda 4 V3 §12: retenida por la espera del coarrendatario, la API no la deja decidir. */}
+                  {gestionable && estudio.espera_autorizacion && (
+                    <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                      La decisión espera al coarrendatario hasta el{' '}
+                      {new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })}.
+                    </p>
                   )}
                 </div>
 
-                {/* Estudio fallido (o que no arrancó solo): reintento con el documento corregible aquí
-                    mismo (antes este tab no ofrecía NINGUNA salida — el form
-                    solo existía en la card del resumen). Gestores + dueños:
-                    el backend autoriza a ambos en /ejecutar. stopPropagation
-                    para no abrir el modal de detalle al interactuar. */}
-                {(canManage || isStakeholder) &&
-                  puedeEditar &&
-                  // La reevaluación no se ejecuta: la API responde 409 (no vuelve a consultar la central).
-                  !estudio.estudio_padre_id &&
-                  puedeRelanzarEstudio(estudio) &&
-                  (coarrendatarioVigente || estudio.tipo !== 'con_coarrendatario') && (
-                  <div
-                    className="mt-3"
-                    onClick={(e) => e.stopPropagation()}
-                    // Sin esto, Enter/Espacio dentro de los inputs burbujea al
-                    // onKeyDown de la card y abre el modal de detalle.
-                    onKeyDown={(e) => e.stopPropagation()}
-                  >
+                {/* Estudio fallido (o que no arrancó solo): reintento con el documento
+                    corregible aquí mismo. Gestores + dueños: el backend autoriza a
+                    ambos en /ejecutar. */}
+                {reintentable && (
+                  <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
                     <ReintentarEstudioForm
                       key={estudio.id}
                       estudioId={estudio.id}
@@ -607,10 +540,67 @@ export function EstudiosSection({
                     />
                   </div>
                 )}
-              </div>
+
+                {/* Acciones: el detalle para quien lo puede abrir; la gestión
+                    (registrar, enviar formulario, cancelar) solo admin/operador. */}
+                {hayAcciones && (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3 sm:px-5">
+                    {gestionable && puedeRegistrar && (
+                      // Cargar el resultado a mano: la evaluación manual, una consulta
+                      // que quedó en curso o la reevaluación (apelación), que nace
+                      // 'solicitado' con la central del padre y solo se decide aquí.
+                      <button
+                        type="button"
+                        onClick={() => setResultadoTarget(estudio)}
+                        disabled={actionLoading}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary-700 px-4 text-sm font-semibold text-white hover:bg-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:opacity-50"
+                      >
+                        <IconClipboardList size={16} />
+                        Registrar resultado
+                      </button>
+                    )}
+                    {canViewDetail && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDetail(estudio)}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                      >
+                        <IconEye size={16} />
+                        Ver detalle
+                      </button>
+                    )}
+                    {gestionable && puedeEnviarFormulario && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSendLinkEmail(solicitante?.email ?? '')
+                          setSendLinkTarget(estudio)
+                        }}
+                        disabled={actionLoading}
+                        title="Envía a la persona el enlace del formulario de la evaluación"
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
+                      >
+                        <IconMail size={16} />
+                        Enviar formulario
+                      </button>
+                    )}
+                    {gestionable && puedeCancelar && (
+                      <button
+                        type="button"
+                        onClick={() => setCancelTarget(estudio)}
+                        disabled={actionLoading}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-50 sm:ml-auto"
+                      >
+                        <IconX size={16} />
+                        Cancelar evaluación
+                      </button>
+                    )}
+                  </div>
+                )}
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
       {/* Modals */}
